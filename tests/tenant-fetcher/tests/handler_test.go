@@ -30,7 +30,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/google/uuid"
-	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
@@ -65,7 +64,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, "")
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, nil)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 		})
 	})
@@ -77,7 +76,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -87,7 +86,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    parentTenant.TenantID,
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -123,7 +122,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -156,7 +155,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    parentTenantId,
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -166,7 +165,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -202,7 +201,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -226,7 +225,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				CustomerID:                  uuid.New().String(),
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -250,7 +249,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				CustomerID:                  uuid.New().String(),
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -274,7 +273,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:                  uuid.New().String(),
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -298,7 +297,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:                  uuid.New().String(),
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     testLicenseType,
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -322,7 +321,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:               tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:              uuid.New().String(),
 				SubscriptionProviderID:  uuid.New().String(),
-				SubscriptionLicenseType: testLicenseType,
+				SubscriptionLicenseType: &testLicenseType,
 				ConsumerTenantID:        uuid.New().String(),
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
@@ -494,12 +493,12 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetche
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string, licenseType string) {
+func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string, licenseType *string) {
 	require.Equal(t, tenantID, tenant.ID)
 	if len(subdomain) > 0 {
 		require.Equal(t, subdomain, tenant.Labels["subdomain"])
 	}
-	if len(licenseType) > 0 {
+	if licenseType != nil {
 		require.Equal(t, licenseType, tenant.Labels["licensetype"])
 	}
 }
