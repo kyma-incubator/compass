@@ -145,13 +145,14 @@ data:
           "hiddenSeries": false,
           "id": 48,
           "legend": {
-            "avg": false,
-            "current": false,
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
             "max": false,
             "min": false,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 1,
@@ -171,7 +172,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(istio_requests_total{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"200\"})",
+              "expr": "sum(rate(istio_requests_total{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"200\"}[1m]) * 60)",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -181,7 +182,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Total istio ingresgateway successful requests",
+          "title": "Istio ingresgateway successful requests [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -198,7 +199,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:334",
-              "format": "short",
+              "format": "req/min",
               "label": null,
               "logBase": 1,
               "max": null,
@@ -241,13 +242,14 @@ data:
           "hiddenSeries": false,
           "id": 46,
           "legend": {
-            "avg": false,
-            "current": false,
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
             "max": false,
             "min": false,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 1,
@@ -267,7 +269,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(istio_requests_total{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"})",
+              "expr": "sum(rate(istio_requests_total{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m]) * 60)",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -277,7 +279,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Total istio ingresgateway failed requests",
+          "title": "Istio ingresgateway failed requests [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -294,7 +296,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:251",
-              "format": "short",
+              "format": "req/min",
               "label": null,
               "logBase": 1,
               "max": null,
@@ -562,7 +564,9 @@ data:
       "refresh": "",
       "schemaVersion": 27,
       "style": "dark",
-      "tags": [],
+      "tags": [
+        "compass"
+      ],
       "templating": {
         "list": []
       },

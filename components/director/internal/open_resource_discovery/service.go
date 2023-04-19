@@ -1374,13 +1374,16 @@ func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplate
 func (s *Service) getUniqueLocalTenantID(documents Documents) string {
 	var uniqueLocalTenantIds []string
 	localTenants := make(map[string]bool, 0)
+	var systemInstanceLocalTenantID *string
 
 	for _, doc := range documents {
-		systemInstanceLocalTenantID := doc.DescribedSystemInstance.LocalTenantID
-		if systemInstanceLocalTenantID != nil {
-			if _, exists := localTenants[*systemInstanceLocalTenantID]; !exists {
-				localTenants[*systemInstanceLocalTenantID] = true
-				uniqueLocalTenantIds = append(uniqueLocalTenantIds, *doc.DescribedSystemInstance.LocalTenantID)
+		if doc != nil && doc.DescribedSystemInstance != nil {
+			systemInstanceLocalTenantID = doc.DescribedSystemInstance.LocalTenantID
+			if systemInstanceLocalTenantID != nil {
+				if _, exists := localTenants[*systemInstanceLocalTenantID]; !exists {
+					localTenants[*systemInstanceLocalTenantID] = true
+					uniqueLocalTenantIds = append(uniqueLocalTenantIds, *doc.DescribedSystemInstance.LocalTenantID)
+				}
 			}
 		}
 	}
