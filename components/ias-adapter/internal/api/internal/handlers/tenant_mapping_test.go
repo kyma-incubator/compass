@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal/handlers/automock"
@@ -44,7 +45,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			handler.Patch(ctx)
 			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
-			Expect(responseBody).To(ContainSubstring("failed to decode tenant mapping body"))
+			Expect(responseBody).To(ContainSubstring(url.QueryEscape("failed to decode tenant mapping body")))
 			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 	})
@@ -60,7 +61,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			handler.Patch(ctx)
 			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
-			Expect(responseBody).To(ContainSubstring("tenant mapping body is invalid"))
+			Expect(responseBody).To(ContainSubstring(url.QueryEscape("tenant mapping body is invalid")))
 			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 	})

@@ -263,16 +263,11 @@ func buildFormationLifecycleInput(details *formationconstraintpkg.GenerateFormat
 	}
 }
 
-func determineResourceSubtype(labels map[string]interface{}, labelKey string) (string, error) {
+func determineResourceSubtype(labels map[string]string, labelKey string) (string, error) {
 	labelValue, ok := labels[labelKey]
 	if !ok {
 		return "", errors.Errorf("Missing %q label", labelKey)
 	}
 
-	subtype, ok := labelValue.(string)
-	if !ok {
-		return "", errors.Errorf("Failed to convert %q label to string", labelKey)
-	}
-
-	return subtype, nil
+	return labelValue, nil
 }
