@@ -937,11 +937,11 @@ func convertLabels(labels map[string]*model.Label) map[string]string {
 	for _, l := range labels {
 		stringLabel, ok := l.Value.(string)
 		if !ok {
-			marshaled, err := json.Marshal(l.Value)
+			marshalled, err := json.Marshal(l.Value)
 			if err != nil {
 				return nil
 			}
-			stringLabel = string(marshaled)
+			stringLabel = string(marshalled)
 		}
 
 		convertedLabels[l.Key] = stringLabel
