@@ -15,8 +15,8 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	allDetailsInput := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	allDetailsExpected := fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
+	allDetailsInput := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	allDetailsExpected := fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	// GIVEN
 	testCases := []struct {
@@ -64,14 +64,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
 	input := []*model.Runtime{
-		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum"),
-		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Dolor sit amet"),
+		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum", "test.ns"),
+		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Dolor sit amet", "test.ns"),
 		{},
 		nil,
 	}
 	expected := []*graphql.Runtime{
-		fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum"),
-		fixGQLRuntime(t, "bar", "Bar", "Dolor sit amet"),
+		fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns"),
+		fixGQLRuntime(t, "bar", "Bar", "Dolor sit amet", "test.ns"),
 		{
 			Status: &graphql.RuntimeStatus{
 				Condition: graphql.RuntimeStatusConditionInitial,
@@ -108,8 +108,8 @@ func TestConverter_RegisterInputFromGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixGQLRuntimeRegisterInput("foo", "Lorem ipsum", gqlWebhooks),
-			Expected: fixModelRuntimeRegisterInput("foo", "Lorem ipsum", modelWebhooks),
+			Input:    fixGQLRuntimeRegisterInput("foo", "Lorem ipsum", "test.ns", gqlWebhooks),
+			Expected: fixModelRuntimeRegisterInput("foo", "Lorem ipsum", "test.ns", modelWebhooks),
 			ConverterFn: func() *automock.WebhookConverter {
 				converter := &automock.WebhookConverter{}
 				converter.Mock.On("MultipleInputFromGraphQL", gqlWebhooks).Return(modelWebhooks, nil)
@@ -130,7 +130,7 @@ func TestConverter_RegisterInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Error While converting webhooks",
-			Input:    fixGQLRuntimeRegisterInput("foo", "Lorem ipsum", gqlWebhooks),
+			Input:    fixGQLRuntimeRegisterInput("foo", "Lorem ipsum", "test.ns", gqlWebhooks),
 			Expected: model.RuntimeRegisterInput{},
 			ConverterFn: func() *automock.WebhookConverter {
 				converter := &automock.WebhookConverter{}
@@ -321,7 +321,7 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	t.Run("All properties given", func(t *testing.T) {
 		// GIVEN
-		rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
+		rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 		// WHEN
 		rtEntity, err := conv.ToEntity(rtModel)
@@ -361,7 +361,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	t.Run("All properties given", func(t *testing.T) {
 		// GIVEN
-		rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+		rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 		// WHEN
 		rtModel := conv.FromEntity(rtEntity)
@@ -402,4 +402,5 @@ func assertRuntimeDefinition(t *testing.T, runtimeModel *model.Runtime, entity *
 	}
 
 	testdb.AssertSQLNullStringEqualTo(t, entity.Description, runtimeModel.Description)
+	testdb.AssertSQLNullStringEqualTo(t, entity.ApplicationNamespace, runtimeModel.ApplicationNamespace)
 }

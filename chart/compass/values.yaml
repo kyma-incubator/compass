@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-3016"
+      version: "PR-3003"
       name: compass-director
     hydrator:
       dir:
@@ -163,7 +163,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-3001"
+      version: "PR-3003"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-3016"
+      version: "PR-3003"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -298,6 +298,7 @@ global:
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
+    kymaApplicationNamespaceValue: "sap.kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
