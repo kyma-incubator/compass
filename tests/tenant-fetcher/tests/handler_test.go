@@ -123,7 +123,6 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
