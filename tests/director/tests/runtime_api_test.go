@@ -713,9 +713,9 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 	ctx := context.Background()
 	runtimeName := "runtime-with-int-sys-creds"
-	runtimeInput := fixRuntimeInput(runtimeName)
 
 	t.Run(fmt.Sprintf("Validate %q, %q labels and application namespace - they are added when runtime is registered with integration system credentials", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey), func(t *testing.T) {
+		runtimeInput := fixRuntimeInput(runtimeName)
 		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount) // randomly selected subaccount the parent of which is the default tenant used below
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
 		intSysName := "runtime-integration-system"
@@ -766,7 +766,8 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
+		rtInput := fixRuntimeInput(runtimeName)
+		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(rtInput)
 		require.NoError(t, err)
 		actualRuntime := graphql.RuntimeExt{}
 
@@ -778,7 +779,7 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assertions.AssertRuntime(t, runtimeInput, actualRuntime)
+		assertions.AssertRuntime(t, rtInput, actualRuntime)
 
 		t.Logf("Validate %q label is not added when runtime is registered without integration system credentials...", conf.RuntimeTypeLabelKey)
 		runtimeTypeLabelValue, ok := actualRuntime.Labels[conf.RuntimeTypeLabelKey].(string)
