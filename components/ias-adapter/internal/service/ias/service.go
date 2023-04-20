@@ -102,7 +102,8 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 
 func filterByAppTenantID(applications []types.Application, clientID, appTenantID string) (types.Application, error) {
 	for _, application := range applications {
-		if application.Authentication.SAPManagedAttributes.AppTenantId == appTenantID {
+		if application.Authentication.SAPManagedAttributes.AppTenantId == appTenantID ||
+			application.Authentication.SAPManagedAttributes.SAPZoneId == appTenantID {
 			return application, nil
 		}
 	}
