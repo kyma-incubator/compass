@@ -495,7 +495,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 1,
-              "legendFormat": "Number of tenants",
+              "legendFormat": "Number of customer tenants",
               "metric": "container_memory_usage_bytes",
               "refId": "A",
               "step": 15
