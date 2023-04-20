@@ -713,6 +713,7 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 	ctx := context.Background()
 	runtimeName := "runtime-with-int-sys-creds"
+	runtimeNameCert := "runtime-with-cert-creds"
 
 	t.Run(fmt.Sprintf("Validate %q, %q labels and application namespace - they are added when runtime is registered with integration system credentials", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey), func(t *testing.T) {
 		runtimeInput := fixRuntimeInput(runtimeName)
@@ -766,7 +767,7 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		rtInput := fixRuntimeInput(runtimeName)
+		rtInput := fixRuntimeInput(runtimeNameCert)
 		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(rtInput)
 		require.NoError(t, err)
 		actualRuntime := graphql.RuntimeExt{}
