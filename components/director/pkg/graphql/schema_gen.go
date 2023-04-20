@@ -5451,6 +5451,7 @@ input BusinessTenantMappingInput {
 	region: String
 	type: String!
 	provider: String!
+	licenseType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -31259,6 +31260,12 @@ func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context
 		case "provider":
 			var err error
 			it.Provider, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "licenseType":
+			var err error
+			it.LicenseType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -628,7 +628,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		parentID := "test"
 
 		resultTntModel := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, tenantEntity.Account),
+			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
 		}
 
 		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
@@ -710,7 +710,7 @@ func TestPgRepository_ListByType(t *testing.T) {
 		parentID := "test"
 
 		resultTntModel := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, tenantEntity.Account),
+			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
 		}
 
 		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
@@ -812,7 +812,7 @@ func chunkSizedTenantIDs(chunkSize int) []string {
 func TestPgRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
 		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 
 		mockConverter := &automock.Converter{}
@@ -846,7 +846,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when getting", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
 
 		db, dbMock := testdb.MockDatabase(t)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
@@ -867,7 +867,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when updating", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
 		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 
 		mockConverter := &automock.Converter{}
@@ -902,8 +902,8 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Success when parent is updated", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
 		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
 
@@ -951,8 +951,8 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when parent is updated and list tenant accesses fail", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
 		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
 
@@ -991,8 +991,8 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when parent is updated and create tenant access fail", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
 		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
 
@@ -1035,8 +1035,8 @@ func TestPgRepository_Update(t *testing.T) {
 
 	t.Run("Error when parent is updated and tenant access delete fail", func(t *testing.T) {
 		// GIVEN
-		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
-		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, nil, tenantEntity.Account)
 		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
 

@@ -314,6 +314,7 @@ type BusinessTenantMappingInput struct {
 	Region         *string `json:"region"`
 	Type           string  `json:"type"`
 	Provider       string  `json:"provider"`
+	LicenseType    *string `json:"licenseType"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {

@@ -73,6 +73,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		TenantIDProperty:                    "tenantProperty",
 		SubaccountTenantIDProperty:          "subaccountProperty",
 		SubdomainProperty:                   "subdomainProperty",
+		LicenseTypeProperty:                 "LicenseTypeProperty",
 		SubscriptionProviderIDProperty:      "subscriptionProviderProperty",
 		ProviderSubaccountIDProperty:        "providerSubaccountIDProperty",
 		ConsumerTenantIDProperty:            "consumerTenantIdProperty",

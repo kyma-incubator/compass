@@ -28,18 +28,19 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 	)
 
 	ctx := context.TODO()
+	testLicenseType := "LICENSETYPE"
 	tenantConverter := domaintenant.NewConverter()
 	jobConfig := configForTenantType(tenant.Subaccount)
 	jobConfig.EventsConfig.QueryConfig.RegionField = "region"
 
 	movedSubaccount1 := model.MovedSubaccountMappingInput{
-		TenantMappingInput: fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", sourceParentTenantID, tenant.Subaccount),
+		TenantMappingInput: fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", sourceParentTenantID, tenant.Subaccount, &testLicenseType),
 		SubaccountID:       "1",
 		SourceTenant:       sourceParentTenantID,
 		TargetTenant:       targetParentTenantID,
 	}
 	movedSubaccount2 := model.MovedSubaccountMappingInput{
-		TenantMappingInput: fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", sourceParentTenantID, tenant.Subaccount),
+		TenantMappingInput: fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", sourceParentTenantID, tenant.Subaccount, nil),
 		SubaccountID:       "2",
 		SourceTenant:       sourceParentTenantID,
 		TargetTenant:       targetParentTenantID,
@@ -179,7 +180,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 	}
 
 	movedSubaccount1 := model.MovedSubaccountMappingInput{
-		TenantMappingInput: fixBusinessTenantMappingInput(subaccountExternalTenant, provider, "", "", sourceParentTenantID, tenant.Subaccount),
+		TenantMappingInput: fixBusinessTenantMappingInput(subaccountExternalTenant, provider, "", "", sourceParentTenantID, tenant.Subaccount, nil),
 		SubaccountID:       subaccountExternalTenant,
 		SourceTenant:       sourceParentTenantID,
 		TargetTenant:       targetParentTenantID,
