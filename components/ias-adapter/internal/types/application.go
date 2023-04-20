@@ -17,8 +17,8 @@ type ApplicationAuthentication struct {
 }
 
 type SAPManagedAttributes struct {
-	AppTenantId string `json:"appTenantId"`
-	SAPZoneId   string `json:"sapZoneId"`
+	AppTenantID string `json:"appTenantId"`
+	SAPZoneID   string `json:"sapZoneId"`
 }
 
 type ApplicationConsumedAPI struct {
