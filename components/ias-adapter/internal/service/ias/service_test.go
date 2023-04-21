@@ -50,12 +50,3 @@ var _ = Describe("Removing consumed API", func() {
 		})
 	})
 })
-
-var _ = Describe("Normalize name", func() {
-	When("API Name has invalid characters", func() {
-		It("Should replace them with -", func() {
-			result := normalizeIASDisplayName("api_name+with/invalid-characters%$@!")
-			Expect(result).To(Equal("api_name-with-invalid-characters----"))
-		})
-	})
-})
