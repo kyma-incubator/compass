@@ -572,7 +572,7 @@ data:
             "y": 8
           },
           "hiddenSeries": false,
-          "id": 56,
+          "id": 60,
           "isNew": false,
           "legend": {
             "alignAsTable": true,
@@ -688,7 +688,7 @@ data:
             "y": 8
           },
           "hiddenSeries": false,
-          "id": 58,
+          "id": 62,
           "isNew": false,
           "legend": {
             "alignAsTable": true,
@@ -2661,7 +2661,7 @@ data:
             "x": 0,
             "y": 64
           },
-          "id": 62,
+          "id": 58,
           "panels": [],
           "title": "GraphQL Operations per endpoint",
           "type": "row"
@@ -2689,7 +2689,7 @@ data:
             "y": 65
           },
           "hiddenSeries": false,
-          "id": 60,
+          "id": 56,
           "legend": {
             "alignAsTable": true,
             "avg": true,
@@ -2794,7 +2794,7 @@ data:
             "y": 65
           },
           "hiddenSeries": false,
-          "id": 63,
+          "id": 59,
           "legend": {
             "alignAsTable": true,
             "avg": true,
