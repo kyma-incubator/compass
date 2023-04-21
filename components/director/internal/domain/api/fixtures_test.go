@@ -27,6 +27,7 @@ const (
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	ordID            = "com.compass.ord.v1"
+	localTenantID    = "localTenantID"
 	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 	successors       = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
 	resourceHash     = "123456"
@@ -86,6 +87,7 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 		TargetURLs:                              api.ConvertTargetURLToJSONArray(fmt.Sprintf("https://%s.com", placeholder)),
 		Group:                                   str.Ptr("group_" + placeholder),
 		OrdID:                                   str.Ptr(ordID),
+		LocalTenantID:                           str.Ptr(localTenantID),
 		ShortDescription:                        str.Ptr("shortDescription"),
 		SystemInstanceAware:                     &boolVar,
 		PolicyLevel:                             nil,
@@ -111,6 +113,8 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 		Version:                                 v,
 		Extensible:                              json.RawMessage(extensible),
 		ResourceHash:                            str.Ptr(resourceHash),
+		Hierarchy:                               json.RawMessage("[]"),
+		SupportedUseCases:                       json.RawMessage("[]"),
 		DocumentationLabels:                     json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
@@ -242,6 +246,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		Group:                                   repo.NewValidNullableString("group_" + placeholder),
 		TargetURLs:                              repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
 		OrdID:                                   repo.NewValidNullableString(ordID),
+		LocalTenantID:                           repo.NewValidNullableString(localTenantID),
 		ShortDescription:                        repo.NewValidNullableString("shortDescription"),
 		SystemInstanceAware:                     repo.NewValidNullableBool(false),
 		PolicyLevel:                             sql.NullString{},
@@ -272,6 +277,8 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 			ForRemoval:      repo.NewValidNullableBool(false),
 		},
 		ResourceHash:        repo.NewValidNullableString(resourceHash),
+		SupportedUseCases:   repo.NewValidNullableString("[]"),
+		Hierarchy:           repo.NewValidNullableString("[]"),
 		DocumentationLabels: repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiDefID,
@@ -285,34 +292,34 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol",
 		"tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready",
 		"created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard",
-		"custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "documentation_labels"}
+		"custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		ordID, "shortDescription", &boolVar, nil, nil, "apiProtocol", repo.NewValidNullableString("[]"),
+		ordID, localTenantID, "shortDescription", &boolVar, nil, nil, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
 		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
-		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
-		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, nil, nil, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
+		apiDef.OrdID, apiDef.LocalTenantID, apiDef.ShortDescription, apiDef.SystemInstanceAware, nil, nil, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
 		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error,
 		apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs), extensible,
-		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

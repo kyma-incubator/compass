@@ -16,6 +16,7 @@ func (i RuntimeRegisterInput) Validate() error {
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required, validation.Match(alphanumericUnderscoreRegexp))),
 		validation.Field(&i.Webhooks, validation.Each(validation.Required)),
+		validation.Field(&i.ApplicationNamespace, validation.RuneLength(0, applicationNamespaceStringLengthLimit)),
 	)
 }
 
@@ -25,5 +26,6 @@ func (i RuntimeUpdateInput) Validate() error {
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(1, longStringLengthLimit), validation.Match(runtimeNameRgx)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required, validation.Match(alphanumericUnderscoreRegexp))),
+		validation.Field(&i.ApplicationNamespace, validation.RuneLength(0, applicationNamespaceStringLengthLimit)),
 	)
 }

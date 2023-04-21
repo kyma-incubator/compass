@@ -145,31 +145,6 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 	require.Nil(t, resp)
 }
 
-func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
-	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
-	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhookclient.Request{
-		Webhook: graphql.Webhook{
-			URLTemplate:    &URLTemplate,
-			InputTemplate:  &inputTemplate,
-			HeaderTemplate: &headersTemplate,
-			OutputTemplate: &emptyTemplate,
-		},
-		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
-	}
-
-	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
-	var ctx context.Context
-
-	resp, err := client.Do(ctx, webhookReq)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "nil Context")
-	require.Nil(t, resp)
-}
-
 func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
@@ -444,7 +419,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
 			Auth: &graphql.Auth{
-				Credential: &graphql.BasicCredentialData{
+				Credential: graphql.BasicCredentialData{
 					Username: username,
 					Password: password,
 				},
@@ -492,7 +467,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
 			Auth: &graphql.Auth{
-				Credential: &graphql.OAuthCredentialData{
+				Credential: graphql.OAuthCredentialData{
 					ClientID:     clientID,
 					ClientSecret: clientSecret,
 					URL:          tokenURL,
@@ -847,7 +822,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
 				Auth: &graphql.Auth{
-					Credential: &graphql.BasicCredentialData{
+					Credential: graphql.BasicCredentialData{
 						Username: username,
 						Password: password,
 					},
@@ -892,7 +867,7 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
 				Auth: &graphql.Auth{
-					Credential: &graphql.OAuthCredentialData{
+					Credential: graphql.OAuthCredentialData{
 						ClientID:     "client-id",
 						ClientSecret: "client-secret",
 						URL:          "https://test-domain.com/oauth/token",

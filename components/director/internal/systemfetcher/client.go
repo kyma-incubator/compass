@@ -7,14 +7,17 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
 )
 
 // APIClient missing godoc
+//
 //go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
@@ -29,6 +32,7 @@ type APIConfig struct {
 	PagingSkipParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
 	PagingSizeParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 	SystemSourceKey string        `envconfig:"APP_SYSTEM_INFORMATION_SOURCE_KEY"`
+	SystemRPSLimit  uint64        `envconfig:"default=15,APP_SYSTEM_INFORMATION_RPS_LIMIT"`
 }
 
 // Client missing godoc
@@ -44,6 +48,8 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 		httpClient: client,
 	}
 }
+
+var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
@@ -97,7 +103,41 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 
 func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant string) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
-		currentSystems, err := c.fetchSystemsForTenant(ctx, url, tenant)
+		err := retry.Do(
+			func() error {
+				if atomic.LoadUint64(&currentRPS) >= c.apiConfig.SystemRPSLimit {
+					return errors.New("RPS limit reached")
+				} else {
+					atomic.AddUint64(&currentRPS, 1)
+					return nil
+				}
+			},
+			retry.Attempts(0),
+			retry.Delay(time.Millisecond*100),
+		)
+
+		if err != nil {
+			return 0, err
+		}
+
+		var currentSystems []System
+		err = retry.Do(
+			func() error {
+				currentSystems, err = c.fetchSystemsForTenant(ctx, url, tenant)
+				if err != nil && err.Error() == "unexpected status code: expected: 200, but got: 401" {
+					return retry.Unrecoverable(err)
+				}
+				return err
+			},
+			retry.Attempts(3),
+			retry.Delay(time.Second),
+			retry.OnRetry(func(n uint, err error) {
+				log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+			}),
+		)
+
+		atomic.AddUint64(&currentRPS, ^uint64(0))
+
 		if err != nil {
 			return 0, err
 		}

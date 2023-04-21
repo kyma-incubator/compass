@@ -284,8 +284,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -334,8 +334,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -396,8 +396,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -458,8 +458,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -513,8 +513,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -563,8 +563,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -625,8 +625,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignRuntimeDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -685,8 +685,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -740,8 +740,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -807,8 +807,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignRuntimeCtxDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -850,8 +850,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignTenantDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignTenantDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
@@ -891,7 +891,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -919,7 +919,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -961,7 +961,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -997,7 +997,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1026,7 +1026,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1062,7 +1062,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1126,7 +1126,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1189,7 +1189,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1217,7 +1217,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1259,7 +1259,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1295,7 +1295,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1324,7 +1324,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1352,7 +1352,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignTenantDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -1393,7 +1393,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignTenantDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -1508,7 +1508,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1536,7 +1536,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1641,7 +1641,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1708,7 +1708,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1747,7 +1747,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
@@ -1774,7 +1774,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1826,7 +1826,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1873,7 +1873,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1913,7 +1913,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1958,7 +1958,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2011,7 +2011,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2068,7 +2068,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -2113,7 +2113,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -2159,7 +2159,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -2217,7 +2217,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignRuntimeContextDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -2274,7 +2274,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2331,7 +2331,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2358,7 +2358,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2412,8 +2412,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postAssignLocation, assignAppDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2698,7 +2698,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(nil, applicationRepository, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, nil, runtimeContextRepo, formationAssignmentSvc, nil, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(nil, applicationRepository, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, nil, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)

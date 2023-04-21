@@ -18,6 +18,7 @@ type Entity struct {
 	Group                                   sql.NullString `db:"group_name"`
 	TargetURLs                              sql.NullString `db:"target_urls"`
 	OrdID                                   sql.NullString `db:"ord_id"`
+	LocalTenantID                           sql.NullString `db:"local_tenant_id"`
 	ShortDescription                        sql.NullString `db:"short_description"`
 	SystemInstanceAware                     sql.NullBool   `db:"system_instance_aware"`
 	PolicyLevel                             sql.NullString `db:"policy_level"`
@@ -42,6 +43,8 @@ type Entity struct {
 	CustomImplementationStandardDescription sql.NullString `db:"custom_implementation_standard_description"`
 	Extensible                              sql.NullString `db:"extensible"`
 	ResourceHash                            sql.NullString `db:"resource_hash"`
+	Hierarchy                               sql.NullString `db:"hierarchy"`
+	SupportedUseCases                       sql.NullString `db:"supported_use_cases"`
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
 
 	*repo.BaseEntity

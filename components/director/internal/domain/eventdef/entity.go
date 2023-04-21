@@ -17,6 +17,7 @@ type Entity struct {
 	Description         sql.NullString `db:"description"`
 	GroupName           sql.NullString `db:"group_name"`
 	OrdID               sql.NullString `db:"ord_id"`
+	LocalTenantID       sql.NullString `db:"local_tenant_id"`
 	ShortDescription    sql.NullString `db:"short_description"`
 	SystemInstanceAware sql.NullBool   `db:"system_instance_aware"`
 	PolicyLevel         sql.NullString `db:"policy_level"`
@@ -36,6 +37,7 @@ type Entity struct {
 	Industry            sql.NullString `db:"industry"`
 	Extensible          sql.NullString `db:"extensible"`
 	ResourceHash        sql.NullString `db:"resource_hash"`
+	Hierarchy           sql.NullString `db:"hierarchy"`
 	DocumentationLabels sql.NullString `db:"documentation_labels"`
 	version.Version
 

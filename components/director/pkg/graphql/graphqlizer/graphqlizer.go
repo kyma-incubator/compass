@@ -472,6 +472,9 @@ func (g *Graphqlizer) RuntimeRegisterInputToGQL(in graphql.RuntimeRegisterInput)
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }},
 		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
+		{{- end }}
 	}`)
 }
 
@@ -487,6 +490,9 @@ func (g *Graphqlizer) RuntimeUpdateInputToGQL(in graphql.RuntimeUpdateInput) (st
 		{{- end }}
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }},
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
 	}`)
 }
@@ -758,6 +764,9 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 				{{- if $tenant.Subdomain }}
 				subdomain: {{ quote $tenant.Subdomain }},
 				{{- end }}
+				{{- if $tenant.LicenseType }}
+				licenseType: {{ quote $tenant.LicenseType }},
+				{{- end }}
 				type: {{ quote $tenant.Type }},
 				provider: {{ quote $tenant.Provider }}
 			}
@@ -777,6 +786,9 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 		{{- end }}
 		{{- if .Subdomain }}
 		subdomain: {{ quote .Subdomain }},
+		{{- end }}
+		{{- if $.LicenseType }}
+		licenseType: {{ quote .LicenseType }},
 		{{- end }}
 		type: {{ quote .Type }},
 		provider: {{ quote .Provider }}
@@ -807,6 +819,9 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 			{{- end }}
 			{{- if .Subdomain }}
 			subdomain: {{ quote .Subdomain }},
+			{{- end }}
+			{{- if .LicenseType }}
+			licenseType: {{ quote .LicenseType }},
 			{{- end }}
 			type: {{ quote .Type }},
 			provider: {{ quote .Provider }}

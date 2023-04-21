@@ -314,6 +314,7 @@ type BusinessTenantMappingInput struct {
 	Region         *string `json:"region"`
 	Type           string  `json:"type"`
 	Provider       string  `json:"provider"`
+	LicenseType    *string `json:"licenseType"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
@@ -519,6 +520,11 @@ type FormationConstraintUpdateInput struct {
 	InputTemplate string `json:"inputTemplate"`
 }
 
+type FormationError struct {
+	Message   string `json:"message"`
+	ErrorCode int    `json:"errorCode"`
+}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
@@ -541,9 +547,9 @@ type FormationStatus struct {
 }
 
 type FormationStatusError struct {
-	AssignmentID string `json:"assignmentID"`
-	Message      string `json:"message"`
-	ErrorCode    int    `json:"errorCode"`
+	AssignmentID *string `json:"assignmentID"`
+	Message      string  `json:"message"`
+	ErrorCode    int     `json:"errorCode"`
 }
 
 type FormationTemplateInput struct {
@@ -727,9 +733,10 @@ type RuntimeRegisterInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	Webhooks        []*WebhookInput         `json:"webhooks"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+	Labels               Labels                  `json:"labels"`
+	Webhooks             []*WebhookInput         `json:"webhooks"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
+	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
 type RuntimeStatus struct {
@@ -753,8 +760,9 @@ type RuntimeUpdateInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+	Labels               Labels                  `json:"labels"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
+	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
 type SystemAuthUpdateInput struct {
@@ -1174,16 +1182,18 @@ type ConstraintType string
 const (
 	ConstraintTypePre  ConstraintType = "PRE"
 	ConstraintTypePost ConstraintType = "POST"
+	ConstraintTypeUI   ConstraintType = "UI"
 )
 
 var AllConstraintType = []ConstraintType{
 	ConstraintTypePre,
 	ConstraintTypePost,
+	ConstraintTypeUI,
 }
 
 func (e ConstraintType) IsValid() bool {
 	switch e {
-	case ConstraintTypePre, ConstraintTypePost:
+	case ConstraintTypePre, ConstraintTypePost, ConstraintTypeUI:
 		return true
 	}
 	return false
@@ -1940,6 +1950,8 @@ const (
 	TargetOperationDeleteFormation                         TargetOperation = "DELETE_FORMATION"
 	TargetOperationGenerateFormationAssignmentNotification TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
 	TargetOperationGenerateFormationNotification           TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
+	TargetOperationLoadFormations                          TargetOperation = "LOAD_FORMATIONS"
+	TargetOperationSelectSystemsForFormation               TargetOperation = "SELECT_SYSTEMS_FOR_FORMATION"
 )
 
 var AllTargetOperation = []TargetOperation{
@@ -1949,11 +1961,13 @@ var AllTargetOperation = []TargetOperation{
 	TargetOperationDeleteFormation,
 	TargetOperationGenerateFormationAssignmentNotification,
 	TargetOperationGenerateFormationNotification,
+	TargetOperationLoadFormations,
+	TargetOperationSelectSystemsForFormation,
 }
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation:
 		return true
 	}
 	return false

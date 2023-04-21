@@ -15,6 +15,7 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/ias"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
@@ -221,6 +222,13 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
+	var iasConfig ias.Config
+	err := envconfig.Init(&iasConfig)
+	exitOnError(err, "while loading IAS adapter config")
+	iasHandler := ias.NewHandler(iasConfig)
+	router.HandleFunc("/ias/Applications/v1", iasHandler.GetAll).Methods(http.MethodGet)
+	router.HandleFunc("/ias/Applications/v1/{appID}", iasHandler.Patch).Methods(http.MethodPatch)
+
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
@@ -324,8 +332,11 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/fail-once/{uclFormationId}", notificationHandler.FailOnceFormation).Methods(http.MethodPost, http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncPostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncDeleteFormation).Methods(http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/async-no-response/{uclFormationId}", notificationHandler.AsyncNoResponse).Methods(http.MethodPost, http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),

@@ -190,7 +190,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 				return webhookConv
 			},
 			formationTemplateWebhooks:         formationLifecycleSyncWebhooks,
-			expectedFormationNotificationReqs: formationNotificationRequests,
+			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
 		},
 		{
 			name: "Error when enforcing pre generate formation notification constraints",
@@ -281,26 +281,26 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 
 	application := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels: map[string]interface{}{
+		Labels: map[string]string{
 			applicationType: applicationType,
 		},
 	}
 
 	runtime := &webhookdir.RuntimeWithLabels{
 		Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-		Labels: map[string]interface{}{
+		Labels: map[string]string{
 			runtimeType: runtimeType,
 		},
 	}
 
 	applicationWithoutType := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels:      map[string]interface{}{},
+		Labels:      map[string]string{},
 	}
 
 	runtimeWithoutType := &webhookdir.RuntimeWithLabels{
 		Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-		Labels:  map[string]interface{}{},
+		Labels:  map[string]string{},
 	}
 
 	runtimeContext := &webhookdir.RuntimeContextWithLabels{
@@ -483,14 +483,14 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 
 	application := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels: map[string]interface{}{
+		Labels: map[string]string{
 			applicationType: applicationType,
 		},
 	}
 
 	applicationWithoutType := &webhookdir.ApplicationWithLabels{
 		Application: fixApplicationModel(ApplicationID),
-		Labels:      map[string]interface{}{},
+		Labels:      map[string]string{},
 	}
 
 	testCases := []struct {

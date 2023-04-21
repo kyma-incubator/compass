@@ -21,6 +21,7 @@ const (
 	invalidOrdID                  = "invalidOrdId"
 	invalidShortDescriptionLength = 257 // max allowed: 256
 	invalidTitleLength            = 256 // max allowed: 255
+	invalidLocalTenantIDLength    = 256 //max allowed: 255
 	maxDescriptionLength          = 5000
 	invalidVersion                = "invalidVersion"
 	invalidPolicyLevel            = "invalidPolicyLevel"
@@ -148,6 +149,10 @@ var (
 	invalidTagsValue = `["invalid!@#"]`
 
 	invalidTagsValueIntegerElement = `["storage", 992]`
+
+	invalidSupportedUseCasesValue = `["some-value"]`
+
+	validSupportedUseCasesValue = `["mass-extraction"]`
 
 	invalidLabelsWhenValueIsNotArray = `{
   		"label-key-1": "label-value-1"
@@ -365,6 +370,8 @@ var (
 		  "version": "1.0.0"
         }
       ]`
+	validNamespace   = `foo.bar.baz`
+	invalidNamespace = `.foo.bar.baz`
 
 	invalidCorrelationIDsElement          = `["foo.bar.baz:123456", "wrongID"]`
 	invalidCorrelationIDsNonStringElement = `["foo.bar.baz:123456", 992]`
@@ -380,9 +387,6 @@ var (
 	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty  = `{"supported":"automatic"}`
 	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty     = `{"supported":"manual"}`
 	invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength = `{"supported":"%s", "description": "%s"}`
-
-	invalidSuccessorsDueToInvalidAPIRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
-	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 
 	invalidDescriptionFieldWithExceedingMaxLength = strings.Repeat("a", maxDescriptionLength+1)
 )
@@ -662,6 +666,91 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid `tags` field element for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`ApplicationNamespace` values are not valid",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(invalidNamespace)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`ApplicationNamespace` values are valid",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(validNamespace)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid missing `localTenantID` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Exceeded length of `localTenantID` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid empty `localTenantID` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
 		},
 	}
 
@@ -681,7 +770,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				url = baseURL
 			}
 
-			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -729,7 +818,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1527,7 +1616,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -1571,6 +1660,50 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Name = ""
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Valid missing `localTenantID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Exceeded length of `localTenantID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid empty `localTenantID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `version` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Version = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `version` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Version = str.Ptr(invalidVersion)
 
 				return []*ord.Document{doc}
 			},
@@ -1951,7 +2084,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1990,6 +2123,30 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].Name = ""
 
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localTenantID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localTenantID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localTenantID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LocalTenantID = str.Ptr("")
 				return []*ord.Document{doc}
 			},
 		}, {
@@ -2285,6 +2442,48 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid value for `supportedUseCases` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(invalidSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is one of enumerated values for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid value for `countries` field for API",
 			DocumentProvider: func() []*ord.Document {
@@ -2900,31 +3099,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, api2ORDID))
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
-				doc.APIResources[0].SunsetDate = str.Ptr("2020-04-29")
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` field for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` when values do not match the regex for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidAPIRegex)
 
 				return []*ord.Document{doc}
 			},
@@ -3665,6 +3839,82 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Missing `implementationStandard`  when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeCustom
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Wrong `type` when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPI
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeOpenAPI
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Correct `type` when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeCustom
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Wrong `type` in one of the ResourceDefinitions when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeOpenAPI
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Correct `type` when APIResources has apiProtocol `sap-sql-api-v1`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Wrong `type` when APIResources has apiProtocol `sap-sql-api-v1`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCsdl
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
+				return []*ord.Document{doc}
+			},
 		},
 		// Test invalid entity relations
 
@@ -3700,7 +3950,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -3743,6 +3993,31 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Name = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localTenantID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localTenantID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localTenantID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LocalTenantID = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
@@ -4634,22 +4909,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid json field `successors` field for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` when values do not match the regex for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidEventRegex)
-
-				return []*ord.Document{doc}
-			},
-		}, {
 			Name: "Missing `ordId` field in `PartOfConsumptionBundles` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4860,7 +5119,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -5127,7 +5386,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5294,7 +5553,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5348,7 +5607,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5392,7 +5651,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents(test.DocumentProvider())
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, map[string]bool{})
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, map[string]bool{})
 			if len(test.ExpectedStringsInError) != 0 {
 				require.Error(t, err)
 				for _, expectedStr := range test.ExpectedStringsInError {

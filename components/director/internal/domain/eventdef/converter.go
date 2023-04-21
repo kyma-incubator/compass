@@ -143,6 +143,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		Description:         repo.StringPtrFromNullableString(entity.Description),
 		Group:               repo.StringPtrFromNullableString(entity.GroupName),
 		OrdID:               repo.StringPtrFromNullableString(entity.OrdID),
+		LocalTenantID:       repo.StringPtrFromNullableString(entity.LocalTenantID),
 		ShortDescription:    repo.StringPtrFromNullableString(entity.ShortDescription),
 		SystemInstanceAware: repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
 		PolicyLevel:         repo.StringPtrFromNullableString(entity.PolicyLevel),
@@ -163,6 +164,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		Version:             c.vc.FromEntity(entity.Version),
 		Extensible:          repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:        repo.StringPtrFromNullableString(entity.ResourceHash),
+		Hierarchy:           repo.JSONRawMessageFromNullableString(entity.Hierarchy),
 		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -189,6 +191,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Description:         repo.NewNullableString(eventModel.Description),
 		GroupName:           repo.NewNullableString(eventModel.Group),
 		OrdID:               repo.NewNullableString(eventModel.OrdID),
+		LocalTenantID:       repo.NewNullableString(eventModel.LocalTenantID),
 		ShortDescription:    repo.NewNullableString(eventModel.ShortDescription),
 		SystemInstanceAware: repo.NewNullableBool(eventModel.SystemInstanceAware),
 		PolicyLevel:         repo.NewNullableString(eventModel.PolicyLevel),
@@ -209,6 +212,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Version:             c.convertVersionToEntity(eventModel.Version),
 		Extensible:          repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
 		ResourceHash:        repo.NewNullableString(eventModel.ResourceHash),
+		Hierarchy:           repo.NewNullableStringFromJSONRawMessage(eventModel.Hierarchy),
 		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,

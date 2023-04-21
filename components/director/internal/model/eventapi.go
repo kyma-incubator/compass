@@ -23,6 +23,7 @@ type EventDefinition struct {
 	Description         *string
 	Group               *string
 	OrdID               *string
+	LocalTenantID       *string
 	ShortDescription    *string
 	SystemInstanceAware *bool
 	PolicyLevel         *string
@@ -43,6 +44,7 @@ type EventDefinition struct {
 	Extensible          json.RawMessage
 	ResourceHash        *string
 	Version             *Version
+	Hierarchy           json.RawMessage
 	DocumentationLabels json.RawMessage
 	*BaseEntity
 }
@@ -69,6 +71,7 @@ type EventDefinitionInput struct {
 	Description              *string                       `json:"description"`
 	Group                    *string                       `json:",omitempty"`
 	OrdID                    *string                       `json:"ordId"`
+	LocalTenantID            *string                       `json:"localTenantId"`
 	ShortDescription         *string                       `json:"shortDescription"`
 	SystemInstanceAware      *bool                         `json:"systemInstanceAware"`
 	PolicyLevel              *string                       `json:"policyLevel"`
@@ -90,6 +93,7 @@ type EventDefinitionInput struct {
 	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle *string                       `json:"defaultConsumptionBundle"`
+	Hierarchy                json.RawMessage               `json:"hierarchy"`
 	DocumentationLabels      json.RawMessage               `json:"documentationLabels"`
 
 	*VersionInput `hash:"ignore"`
@@ -161,6 +165,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Description:         e.Description,
 		Group:               e.Group,
 		OrdID:               e.OrdID,
+		LocalTenantID:       e.LocalTenantID,
 		ShortDescription:    e.ShortDescription,
 		SystemInstanceAware: e.SystemInstanceAware,
 		PolicyLevel:         e.PolicyLevel,
@@ -180,6 +185,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Industry:            e.Industry,
 		Version:             e.VersionInput.ToVersion(),
 		Extensible:          e.Extensible,
+		Hierarchy:           e.Hierarchy,
 		DocumentationLabels: e.DocumentationLabels,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{

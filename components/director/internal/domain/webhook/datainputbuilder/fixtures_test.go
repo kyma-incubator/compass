@@ -26,40 +26,51 @@ var (
 	applicationMappings = map[string]*webhook.ApplicationWithLabels{
 		ApplicationID: {
 			Application: fixApplicationModel(ApplicationID),
-			Labels:      fixApplicationLabelsMap(),
+			Labels:      fixLabelsMapForApplicationWithLabels(),
 		},
 		Application2ID: {
 			Application: fixApplicationModelWithoutTemplate(Application2ID),
-			Labels:      fixApplicationLabelsMap(),
+			Labels:      fixLabelsMapForApplicationWithLabels(),
+		},
+	}
+
+	applicationMappingsWithCompositeLabel = map[string]*webhook.ApplicationWithLabels{
+		ApplicationID: {
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixLabelsMapForApplicationWithCompositeLabels(),
+		},
+		Application2ID: {
+			Application: fixApplicationModelWithoutTemplate(Application2ID),
+			Labels:      fixLabelsMapForApplicationWithLabels(),
 		},
 	}
 
 	applicationTemplateMappings = map[string]*webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplateID: {
 			ApplicationTemplate: fixApplicationTemplateModel(),
-			Labels:              fixApplicationTemplateLabelsMap(),
+			Labels:              fixLabelsMapForApplicationTemplateWithLabels(),
 		},
 	}
 
 	runtimeMappings = map[string]*webhook.RuntimeWithLabels{
 		RuntimeContextRuntimeID: {
 			Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-			Labels:  fixRuntimeLabelsMap(),
+			Labels:  fixLabelsMapForRuntimeWithLabels(),
 		},
 		RuntimeID: {
 			Runtime: fixRuntimeModel(RuntimeID),
-			Labels:  fixRuntimeLabelsMap(),
+			Labels:  fixLabelsMapForRuntimeWithLabels(),
 		},
 	}
 
 	runtimeContextMappings = map[string]*webhook.RuntimeContextWithLabels{
 		RuntimeContextRuntimeID: {
 			RuntimeContext: fixRuntimeContextModel(),
-			Labels:         fixRuntimeContextLabelsMap(),
+			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
 		},
 		RuntimeID: {
 			RuntimeContext: fixRuntimeContextModelWithRuntimeID(RuntimeID),
-			Labels:         fixRuntimeContextLabelsMap(),
+			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
 		},
 	}
 )
@@ -70,8 +81,32 @@ func fixApplicationLabelsMap() map[string]interface{} {
 	}
 }
 
+func fixApplicationLabelsMapWithUnquotableLabels() map[string]interface{} {
+	return map[string]interface{}{
+		"app-label-key": []string{"app-label-value"},
+	}
+}
+
+func fixLabelsMapForApplicationWithLabels() map[string]string {
+	return map[string]string{
+		"app-label-key": "app-label-value",
+	}
+}
+
+func fixLabelsMapForApplicationWithCompositeLabels() map[string]string {
+	return map[string]string{
+		"app-label-key": "[\"app-label-value\"]",
+	}
+}
+
 func fixApplicationTemplateLabelsMap() map[string]interface{} {
 	return map[string]interface{}{
+		"apptemplate-label-key": "apptemplate-label-value",
+	}
+}
+
+func fixLabelsMapForApplicationTemplateWithLabels() map[string]string {
+	return map[string]string{
 		"apptemplate-label-key": "apptemplate-label-value",
 	}
 }
@@ -109,8 +144,20 @@ func fixRuntimeLabelsMap() map[string]interface{} {
 	}
 }
 
+func fixLabelsMapForRuntimeWithLabels() map[string]string {
+	return map[string]string{
+		"runtime-label-key": "runtime-label-value",
+	}
+}
+
 func fixRuntimeContextLabelsMap() map[string]interface{} {
 	return map[string]interface{}{
+		"runtime-context-label-key": "runtime-context-label-value",
+	}
+}
+
+func fixLabelsMapForRuntimeContextWithLabels() map[string]string {
+	return map[string]string{
 		"runtime-context-label-key": "runtime-context-label-value",
 	}
 }

@@ -4,6 +4,7 @@ query {
     id
     name
     formationTemplateId
+    state
     status {
       condition
       errors {

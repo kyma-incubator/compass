@@ -277,7 +277,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config, internalDire
 
 	certSubjectMappingCache := certsubjectmapping.StartCertSubjectMappingLoader(ctx, cfg.CertSubjectMappingConfig, internalDirectorClientProvider.Client())
 
-	subjectProcessor, err := subject.NewProcessor(certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
+	subjectProcessor, err := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -285,7 +285,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config, internalDire
 	connectorCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
 		subject.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
 	externalCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
-		subject.ExternalCertIssuerSubjectMatcher(cfg.ExternalIssuerSubject), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
+		subject.ExternalCertIssuerSubjectMatcher(cfg.ExternalIssuerSubject), subjectProcessor.AuthIDFromSubjectFunc(ctx), subjectProcessor.AuthSessionExtraFromSubjectFunc())
 
 	return certresolver.NewValidationHydrator(revokedCertsCache, connectorCertHeaderParser, externalCertHeaderParser), revokedCertsLoader, nil
 }

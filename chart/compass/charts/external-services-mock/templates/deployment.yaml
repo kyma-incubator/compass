@@ -107,6 +107,8 @@ spec:
                 value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
               - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
                 value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+              - name: APP_TENANT_PROVIDER_LICENSE_TYPE_PROPERTY
+                value: {{ .Values.global.tenantFetcher.tenantProvider.licenseTypeProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
                 value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
               - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
@@ -165,6 +167,20 @@ spec:
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
               - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
                 value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds  | quote}}
+              - name : APP_IAS_ADAPTER_CONSUMER_APP_ID
+                value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppID }}
+              - name : APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID
+                value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppClientID }}
+              - name : APP_IAS_ADAPTER_CONSUMER_APP_TENANT_ID
+                value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppTenantID }}
+              - name : APP_IAS_ADAPTER_PROVIDER_APP_ID
+                value: {{ .Values.global.externalServicesMock.iasAdapter.providerAppID }}
+              - name : APP_IAS_ADAPTER_PROVIDER_APP_CLIENT_ID
+                value: {{ .Values.global.externalServicesMock.iasAdapter.providerAppClientID }}
+              - name : APP_IAS_ADAPTER_PROVIDER_APP_TENANT_ID
+                value: {{ .Values.global.externalServicesMock.iasAdapter.providerAppTenantID }}
+              - name : APP_IAS_ADAPTER_PROVIDED_API_NAME
+                value: {{ .Values.global.externalServicesMock.iasAdapter.apiName }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

@@ -120,13 +120,13 @@ func (_m *BusinessTenantMappingService) ListByParentAndType(ctx context.Context,
 	return r0, r1
 }
 
-type NewBusinessTenantMappingServiceT interface {
+type mockConstructorTestingTNewBusinessTenantMappingService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBusinessTenantMappingService(t NewBusinessTenantMappingServiceT) *BusinessTenantMappingService {
+func NewBusinessTenantMappingService(t mockConstructorTestingTNewBusinessTenantMappingService) *BusinessTenantMappingService {
 	mock := &BusinessTenantMappingService{}
 	mock.Mock.Test(t)
 

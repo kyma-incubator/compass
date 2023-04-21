@@ -81,6 +81,8 @@ spec:
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_REGION2
               value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: TEST_EXTERNAL_CERT_CN
@@ -107,6 +109,10 @@ spec:
               value: {{ .Values.global.director.runtimeTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
+            - name: APP_DEFAULT_TENANT_REGION
+              value: {{ .Values.global.defaultTenantRegion }}
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY

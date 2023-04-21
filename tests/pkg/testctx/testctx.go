@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/sirupsen/logrus"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"

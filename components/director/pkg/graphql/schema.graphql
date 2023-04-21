@@ -108,6 +108,7 @@ enum ConstraintScope {
 enum ConstraintType {
 	PRE
 	POST
+	UI
 }
 
 enum DocumentFormat {
@@ -214,6 +215,8 @@ enum TargetOperation {
 	DELETE_FORMATION
 	GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION
 	GENERATE_FORMATION_NOTIFICATION
+	LOAD_FORMATIONS
+	SELECT_SYSTEMS_FOR_FORMATION
 }
 
 enum TenantAccessObjectType {
@@ -527,6 +530,7 @@ input BusinessTenantMappingInput {
 	region: String
 	type: String!
 	provider: String!
+	licenseType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -789,6 +793,7 @@ input RuntimeRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input RuntimeUpdateInput {
@@ -805,6 +810,7 @@ input RuntimeUpdateInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input SystemAuthUpdateInput {
@@ -1166,9 +1172,19 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	"""
+	Formation lifecycle notifications state
+	"""
 	state: String!
+	"""
+	Formation lifecycle notifications error
+	"""
+	error: FormationError
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
+	"""
+	Aggregated formation status
+	"""
 	status: FormationStatus!
 }
 
@@ -1200,6 +1216,11 @@ type FormationConstraint {
 	constraintScope: String!
 }
 
+type FormationError {
+	message: String!
+	errorCode: Int!
+}
+
 type FormationPage implements Pageable {
 	data: [Formation!]!
 	pageInfo: PageInfo!
@@ -1212,7 +1233,7 @@ type FormationStatus {
 }
 
 type FormationStatusError {
-	assignmentID: ID!
+	assignmentID: ID
 	message: String!
 	errorCode: Int!
 }
@@ -1226,6 +1247,7 @@ type FormationTemplate {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
+	formationConstraints: [FormationConstraint!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1342,6 +1364,7 @@ type Runtime {
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
 	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
+	applicationNamespace: String
 }
 
 type RuntimeContext {

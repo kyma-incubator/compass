@@ -231,6 +231,29 @@ func (_m *TenantMappingRepository) ListByParentAndType(ctx context.Context, pare
 	return r0, r1
 }
 
+// ListByType provides a mock function with given fields: ctx, tenantType
+func (_m *TenantMappingRepository) ListByType(ctx context.Context, tenantType pkgtenant.Type) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, tenantType)
+
+	var r0 []*model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context, pkgtenant.Type) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, tenantType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, pkgtenant.Type) error); ok {
+		r1 = rf(ctx, tenantType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListPageBySearchTerm provides a mock function with given fields: ctx, searchTerm, pageSize, cursor
 func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
 	ret := _m.Called(ctx, searchTerm, pageSize, cursor)

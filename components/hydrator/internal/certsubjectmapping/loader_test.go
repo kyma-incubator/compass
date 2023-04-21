@@ -27,13 +27,11 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 	testID := "testID"
 	internalConsumerID := "internalConsumerID"
 	endCursor := "endCursor"
-	resyncInterval := 100 * time.Millisecond
 	envMappings := "[{\"consumer_type\":\"Runtime\",\"tenant_access_levels\":[\"account\"],\"subject\":\"C=DE,O=SAP SE,OU=SAP Cloud Platform Clients,OU=unit-test-ou,L=unit-test-locality,CN=unit-test-cn\"}]"
-	invalidEnvMappings := "[{invalid]"
 	testErr := errors.New("cert-subject-mapping-test-error")
 
 	cfg := certsubjectmapping.Config{
-		ResyncInterval:      resyncInterval,
+		ResyncInterval:      100 * time.Millisecond,
 		EnvironmentMappings: envMappings,
 	}
 
@@ -45,7 +43,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		TenantAccessLevels: validTntAccessLevels,
 	}
 
-	certSubjcetMappingPage := &graphql.CertificateSubjectMappingPage{
+	certSubjcetMappingPageWithoutNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping},
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
@@ -69,6 +67,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		name                            string
 		certSubjectMappingCfg           certsubjectmapping.Config
 		directorClientFn                func() *automock.DirectorClient
+		eventualTickInterval            time.Duration
 		expectedCertSubjectMappingCount int
 		expectedErrMsg                  string
 	}{
@@ -77,9 +76,22 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPage, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
 				return directorClient
 			},
+			eventualTickInterval:            30 * time.Millisecond,
+			expectedCertSubjectMappingCount: 2,
+		},
+		{
+			name:                  "Successfully resync certificate subject mappings multiple times",
+			certSubjectMappingCfg: cfg,
+			directorClientFn: func() *automock.DirectorClient {
+				directorClient := &automock.DirectorClient{}
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
+				return directorClient
+			},
+			eventualTickInterval:            120 * time.Millisecond,
 			expectedCertSubjectMappingCount: 2,
 		},
 		{
@@ -88,33 +100,23 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingWithNextPage, nil).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPage, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
 				return directorClient
 			},
+			eventualTickInterval:            30 * time.Millisecond,
 			expectedCertSubjectMappingCount: 4,
 		},
 		{
-			name:                  "Error when listing certificate subject mappings fails",
+			name:                  "Error when the first list of certificate subject mappings fails and the second one succeeds",
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, testErr).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
 				return directorClient
 			},
-			expectedCertSubjectMappingCount: 0,
-		},
-		{
-			name: "Error when unmarshalling certificate subject mappings from environment fails",
-			certSubjectMappingCfg: certsubjectmapping.Config{
-				ResyncInterval:      resyncInterval,
-				EnvironmentMappings: invalidEnvMappings,
-			},
-			directorClientFn: func() *automock.DirectorClient {
-				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPage, nil).Once()
-				return directorClient
-			},
-			expectedCertSubjectMappingCount: 0,
+			eventualTickInterval:            120 * time.Millisecond,
+			expectedCertSubjectMappingCount: 2,
 		},
 	}
 
@@ -139,12 +141,12 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				}
 				assert.Len(t, cacheMappings, testCase.expectedCertSubjectMappingCount)
 				return true
-			}, time.Second, 150*time.Millisecond)
+			}, time.Second, testCase.eventualTickInterval)
 			cancel()
 			assert.Eventually(t, func() bool {
 				<-ctx.Done()
 				return true
-			}, time.Second, 100*time.Millisecond)
+			}, time.Second, 50*time.Millisecond)
 		})
 	}
 }

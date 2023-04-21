@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/stretchr/testify/require"
 
@@ -362,11 +364,6 @@ var (
 		RuntimeContextRuntimeID: runtimeCtxWithLabels,
 	}
 
-	appWithLabelsWithoutTemplate = &webhook.ApplicationWithLabels{
-		Application: fixApplicationModelWithoutTemplate(ApplicationID),
-		Labels:      fixApplicationLabelsMap(),
-	}
-
 	appWithLabelsWithoutTemplate2 = &webhook.ApplicationWithLabels{
 		Application: fixApplicationModelWithoutTemplate(Application2ID),
 		Labels:      fixApplicationLabelsMap(),
@@ -578,14 +575,21 @@ var (
 	// Formation notification variables
 	emptyFormationNotificationRequests = make([]*webhookclient.FormationNotificationRequest, 0)
 
-	formationNotificationRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationSyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
 	}
-	formationNotificationAsyncRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
+		Request: &webhookclient.Request{
+			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			CorrelationID: "",
+		},
+	}
+	formationNotificationAsyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
@@ -593,8 +597,9 @@ var (
 		},
 	}
 
-	formationNotificationRequests      = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
-	formationNotificationAsyncRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncRequest}
+	formationNotificationSyncCreateRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncCreateRequest}
+	formationNotificationSyncDeleteRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncDeleteRequest}
+	formationNotificationAsyncCreateRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncCreateRequest}
 
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
 	formationNotificationWebhookErrorResponse   = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, str.Ptr(testErr.Error()))
@@ -682,16 +687,6 @@ var (
 		TenantID:            TntInternalID,
 	}
 
-	assignAppDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.ApplicationResourceType,
-		ResourceSubtype:     applicationType,
-		ResourceID:          ApplicationID,
-		FormationType:       testFormationTemplateName,
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
-	}
-
 	unassignAppDetails = &formationconstraint.UnassignFormationOperationDetails{
 		ResourceType:        model.ApplicationResourceType,
 		ResourceSubtype:     applicationType,
@@ -703,23 +698,15 @@ var (
 	}
 
 	assignAppInvalidTypeDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.ApplicationResourceType,
-		ResourceSubtype:     "invalidApplicationType",
-		ResourceID:          ApplicationID,
-		FormationType:       testFormationTemplateName,
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
-	}
-
-	assignRuntimeDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.RuntimeResourceType,
-		ResourceSubtype:     runtimeType,
-		ResourceID:          RuntimeID,
-		FormationType:       testFormationTemplateName,
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
+		ResourceType:         model.ApplicationResourceType,
+		ResourceSubtype:      "invalidApplicationType",
+		ResourceID:           ApplicationID,
+		FormationName:        secondTestFormationName,
+		FormationType:        testFormationTemplateName,
+		FormationTemplateID:  FormationTemplateID,
+		FormationID:          FormationID,
+		TenantID:             TntInternalID,
+		ResourceTypeLabelKey: applicationType,
 	}
 
 	unassignRuntimeDetails = &formationconstraint.UnassignFormationOperationDetails{
@@ -733,43 +720,27 @@ var (
 	}
 
 	assignRuntimeOtherTemplateDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.RuntimeResourceType,
-		ResourceSubtype:     runtimeType,
-		ResourceID:          RuntimeID,
-		FormationType:       "some-other-template",
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
-	}
-
-	assignRuntimeContextDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.RuntimeContextResourceType,
-		ResourceSubtype:     runtimeType,
-		ResourceID:          RuntimeContextID,
-		FormationType:       testFormationTemplateName,
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
+		ResourceType:         model.RuntimeResourceType,
+		ResourceSubtype:      runtimeType,
+		ResourceID:           RuntimeID,
+		FormationName:        testFormationName,
+		FormationType:        "some-other-template",
+		FormationTemplateID:  FormationTemplateID,
+		FormationID:          FormationID,
+		TenantID:             TntInternalID,
+		ResourceTypeLabelKey: runtimeType,
 	}
 
 	assignRuntimeContextOtherTemplateDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.RuntimeContextResourceType,
-		ResourceSubtype:     runtimeType,
-		ResourceID:          RuntimeContextID,
-		FormationType:       "some-other-template",
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
-	}
-
-	assignTenantDetails = &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:        model.TenantResourceType,
-		ResourceSubtype:     "account",
-		ResourceID:          TargetTenant,
-		FormationType:       testFormationTemplateName,
-		FormationTemplateID: FormationTemplateID,
-		FormationID:         FormationID,
-		TenantID:            TntInternalID,
+		ResourceType:         model.RuntimeContextResourceType,
+		ResourceSubtype:      runtimeType,
+		ResourceID:           RuntimeContextID,
+		FormationName:        testFormationName,
+		FormationType:        "some-other-template",
+		FormationTemplateID:  FormationTemplateID,
+		FormationID:          FormationID,
+		TenantID:             TntInternalID,
+		ResourceTypeLabelKey: runtimeType,
 	}
 
 	unassignTenantDetails = &formationconstraint.UnassignFormationOperationDetails{
@@ -847,6 +818,10 @@ var (
 		AccountID:  nil,
 		Path:       str.Ptr(gaTenantObject.ExternalTenant),
 	}
+	firstFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID, State: string(model.ReadyFormationState)}
+	secondFormationStatusParams = dataloader.ParamFormationStatus{ID: FormationID + "2", State: string(model.InitialFormationState)}
+	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
+	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
 )
 
 func unusedApplicationRepository() *automock.ApplicationRepository {
@@ -1090,26 +1065,26 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 	}
 }
 
-func fixApplicationLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixApplicationLabelsMap() map[string]string {
+	return map[string]string{
 		"app-label-key": "app-label-value",
 	}
 }
 
-func fixApplicationTemplateLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixApplicationTemplateLabelsMap() map[string]string {
+	return map[string]string{
 		"apptemplate-label-key": "apptemplate-label-value",
 	}
 }
 
-func fixRuntimeLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixRuntimeLabelsMap() map[string]string {
+	return map[string]string{
 		"runtime-label-key": "runtime-label-value",
 	}
 }
 
-func fixRuntimeContextLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixRuntimeContextLabelsMap() map[string]string {
+	return map[string]string{
 		"runtime-context-label-key": "runtime-context-label-value",
 	}
 }
@@ -1290,10 +1265,10 @@ func fixFormationModelWithState(state model.FormationState) *model.Formation {
 }
 
 func fixFormationModelWithStateAndAssignmentError(t *testing.T, state model.FormationState, errMsg string, errCode formationassignment.AssignmentErrorCode) *model.Formation {
-	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+	formationError := formationassignment.AssignmentError{
 		Message:   errMsg,
 		ErrorCode: errCode,
-	}}
+	}
 
 	marshaledErr, err := json.Marshal(formationError)
 	require.NoError(t, err)
@@ -1423,5 +1398,60 @@ func fixGQLFormationAssignmentPage(gqlFAS []*graphql.FormationAssignment) *graph
 			HasNextPage: false,
 		},
 		TotalCount: len(gqlFAS),
+	}
+}
+
+func fixAssignAppDetails(formationName string) *formationconstraint.AssignFormationOperationDetails {
+	return &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:         model.ApplicationResourceType,
+		ResourceSubtype:      applicationType,
+		ResourceID:           ApplicationID,
+		FormationName:        formationName,
+		FormationType:        testFormationTemplateName,
+		FormationTemplateID:  FormationTemplateID,
+		FormationID:          FormationID,
+		TenantID:             TntInternalID,
+		ResourceTypeLabelKey: applicationType,
+	}
+}
+
+func fixAssignRuntimeDetails(formationName string) *formationconstraint.AssignFormationOperationDetails {
+	return &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:         model.RuntimeResourceType,
+		ResourceSubtype:      runtimeType,
+		ResourceID:           RuntimeID,
+		FormationName:        formationName,
+		FormationType:        testFormationTemplateName,
+		FormationTemplateID:  FormationTemplateID,
+		FormationID:          FormationID,
+		TenantID:             TntInternalID,
+		ResourceTypeLabelKey: runtimeType,
+	}
+}
+
+func fixAssignRuntimeCtxDetails(formationName string) *formationconstraint.AssignFormationOperationDetails {
+	return &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:         model.RuntimeContextResourceType,
+		ResourceSubtype:      runtimeType,
+		ResourceID:           RuntimeContextID,
+		FormationName:        formationName,
+		FormationType:        testFormationTemplateName,
+		FormationTemplateID:  FormationTemplateID,
+		FormationID:          FormationID,
+		TenantID:             TntInternalID,
+		ResourceTypeLabelKey: runtimeType,
+	}
+}
+
+func fixAssignTenantDetails(formationName string) *formationconstraint.AssignFormationOperationDetails {
+	return &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.TenantResourceType,
+		ResourceSubtype:     "account",
+		ResourceID:          TargetTenant,
+		FormationName:       formationName,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            TntInternalID,
 	}
 }

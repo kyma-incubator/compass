@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/selfregmngrtest"
@@ -243,7 +242,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
-			ExpectedOutput: fixLblInputAfterPrep(),
+			ExpectedOutput: fixLblInputAfterPrepForRuntime(),
 		},
 		{
 			Name:           "Success with subaccount label for application templates",
@@ -255,7 +254,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.ApplicationTemplate,
 			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
-			ExpectedOutput: fixLblInputAfterPrepWithSubaccount(),
+			ExpectedOutput: fixLblInputAfterPrep(),
 		},
 		{
 			Name:           "Success for non-matching consumer",
@@ -564,16 +563,15 @@ func fixLblInputAfterPrep() map[string]interface{} {
 		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
 		selfregmanager.RegionLabel:      testRegion,
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		testConfig.SaaSAppNameLabelKey:  testSaaSAppName,
 	}
 }
 
-func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
+func fixLblInputAfterPrepForRuntime() map[string]interface{} {
 	return map[string]interface{}{
-		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
-		scenarioassignment.SubaccountIDKey: consumerID,
-		selfregmanager.RegionLabel:         testRegion,
-		selfRegisterDistinguishLabelKey:    distinguishLblVal,
+		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
+		selfregmanager.RegionLabel:      testRegion,
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		testConfig.SaaSAppNameLabelKey:  testSaaSAppName,
 	}
 }
 
