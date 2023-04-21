@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
@@ -17,8 +16,6 @@ import (
 )
 
 const applicationsPath = "/Applications/v1"
-
-var iasNameForbiddenSymbols = regexp.MustCompile("[^a-zA-Z0-9-_]")
 
 type Service struct {
 	cfg    config.IAS
@@ -39,11 +36,6 @@ type UpdateData struct {
 	ProviderApplicationID string
 }
 
-// normalizeIASDisplayName replaces forbidden symbols with -. Allowed symbols [a-zA-Z0-9-_]
-func normalizeIASDisplayName(name string) string {
-	return iasNameForbiddenSymbols.ReplaceAllLiteralString(name, "-")
-}
-
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
@@ -53,14 +45,14 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	case types.OperationAssign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			addConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
-				Name:    normalizeIASDisplayName(consumedAPI),
-				APIName: consumedAPI,
+				Name:    consumedAPI.AliasAPIName,
+				APIName: consumedAPI.APIName,
 				AppID:   data.ProviderApplicationID,
 			})
 		}
 	case types.OperationUnassign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
-			removeConsumedAPI(&consumedAPIs, consumedAPI)
+			removeConsumedAPI(&consumedAPIs, consumedAPI.APIName)
 		}
 	}
 

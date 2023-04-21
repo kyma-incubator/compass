@@ -30,14 +30,21 @@ var _ = Describe("Tenant Mapping Type", func() {
 							ClientID: "clientID",
 						},
 						Config: AssignedTenantConfiguration{
-							ConsumedAPIs: []string{"qwe"},
+							ConsumedAPIs: []API{{
+								APIName:      "qwe",
+								AliasAPIName: "qwe",
+							}},
 						},
 					},
 				},
 			}
 			Expect(tenantMapping.AssignedTenants[0].Configuration).To(Equal(AssignedTenantConfiguration{}))
 			Expect(tenantMapping.AssignedTenants[0].SetConfiguration(context.Background())).To(Succeed())
-			Expect(tenantMapping.AssignedTenants[0].Configuration).To(Equal(AssignedTenantConfiguration{ConsumedAPIs: []string{"qwe"}}))
+			Expect(tenantMapping.AssignedTenants[0].Configuration).To(Equal(AssignedTenantConfiguration{
+				ConsumedAPIs: []API{
+					{APIName: "qwe", AliasAPIName: "qwe"},
+				},
+			}))
 		})
 	})
 })

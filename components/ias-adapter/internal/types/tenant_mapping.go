@@ -75,7 +75,12 @@ type AssignedTenantParameters struct {
 }
 
 type AssignedTenantConfiguration struct {
-	ConsumedAPIs []string `json:"apis"`
+	ConsumedAPIs []API `json:"apis"`
+}
+
+type API struct {
+	APIName      string `json:"apiName"`
+	AliasAPIName string `json:"name"`
 }
 
 func (tm TenantMapping) Validate() error {
