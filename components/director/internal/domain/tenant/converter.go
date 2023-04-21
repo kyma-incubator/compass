@@ -76,6 +76,7 @@ func (c *converter) ToGraphQLInput(in model.BusinessTenantMappingInput) graphql.
 		Region:         str.Ptr(in.Region),
 		Type:           in.Type,
 		Provider:       in.Provider,
+		LicenseType:    in.LicenseType,
 	}
 }
 
@@ -91,6 +92,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMapping
 			Region:         str.PtrStrToStr(tnt.Region),
 			Type:           tnt.Type,
 			Provider:       tnt.Provider,
+			LicenseType:    tnt.LicenseType,
 		})
 	}
 
@@ -106,6 +108,7 @@ func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) mod
 		Region:         str.PtrStrToStr(tnt.Region),
 		Type:           tnt.Type,
 		Provider:       tnt.Provider,
+		LicenseType:    tnt.LicenseType,
 	}
 }
 

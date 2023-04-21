@@ -187,6 +187,8 @@ spec:
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH

@@ -26,6 +26,17 @@ func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region
 	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil)
 }
 
+func FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string) graphql.ApplicationTemplateInput {
+	appTemplateInput := FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil)
+	appTemplateInput.Labels = map[string]interface{}{
+		"composite": map[string]interface{}{
+			"key":  "value",
+			"key2": "value2",
+		},
+	}
+	return appTemplateInput
+}
+
 func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookInput *graphql.WebhookInput) graphql.ApplicationTemplateInput {
 	var webhooks []*graphql.WebhookInput = nil
 	if webhookInput != nil {

@@ -19,7 +19,8 @@ import (
 const runtimeTable string = `public.runtimes`
 
 var (
-	runtimeColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
+	runtimeColumns   = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}
+	updatableColumns = []string{"name", "description", "status_condition", "status_timestamp", "application_namespace"}
 )
 
 // EntityConverter missing godoc
@@ -57,7 +58,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		ownerLister:        repo.NewOwnerLister(runtimeTable, runtimeColumns, true),
 		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
-		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, []string{"id"}),
+		updater:            repo.NewUpdater(runtimeTable, updatableColumns, []string{"id"}),
 		conv:               conv,
 	}
 }

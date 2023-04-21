@@ -298,6 +298,7 @@ global:
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
+    kymaApplicationNamespaceValue: "sap.kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
@@ -755,6 +756,7 @@ global:
       customerIdProperty: "customerId"
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
+      licenseTypeProperty: "licenseType"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
@@ -964,6 +966,7 @@ global:
           nameField: "name"
           customerIdField: "customerId"
           subdomainField: "subdomain"
+          licenseTypeField: "licenseType"
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
@@ -989,6 +992,7 @@ global:
           nameField: "displayName"
           customerIdField: "customerId"
           subdomainField: "subdomain"
+          licenseTypeField: "licenseType"
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"

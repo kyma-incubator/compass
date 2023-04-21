@@ -623,6 +623,7 @@ type ComplexityRoot struct {
 	}
 
 	Runtime struct {
+		ApplicationNamespace  func(childComplexity int) int
 		Auths                 func(childComplexity int) int
 		Description           func(childComplexity int) int
 		EventingConfiguration func(childComplexity int) int
@@ -4332,6 +4333,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Viewer(childComplexity), true
 
+	case "Runtime.applicationNamespace":
+		if e.complexity.Runtime.ApplicationNamespace == nil {
+			break
+		}
+
+		return e.complexity.Runtime.ApplicationNamespace(childComplexity), true
+
 	case "Runtime.auths":
 		if e.complexity.Runtime.Auths == nil {
 			break
@@ -5443,6 +5451,7 @@ input BusinessTenantMappingInput {
 	region: String
 	type: String!
 	provider: String!
+	licenseType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -5705,6 +5714,7 @@ input RuntimeRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input RuntimeUpdateInput {
@@ -5721,6 +5731,7 @@ input RuntimeUpdateInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input SystemAuthUpdateInput {
@@ -6274,6 +6285,7 @@ type Runtime {
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
 	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
+	applicationNamespace: String
 }
 
 type RuntimeContext {
@@ -27455,6 +27467,37 @@ func (ec *executionContext) _Runtime_runtimeContexts(ctx context.Context, field 
 	return ec.marshalORuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Runtime_applicationNamespace(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Runtime",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _RuntimeContext_id(ctx context.Context, field graphql.CollectedField, obj *RuntimeContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31220,6 +31263,12 @@ func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context
 			if err != nil {
 				return it, err
 			}
+		case "licenseType":
+			var err error
+			it.LicenseType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -32053,6 +32102,12 @@ func (ec *executionContext) unmarshalInputRuntimeRegisterInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -32086,6 +32141,12 @@ func (ec *executionContext) unmarshalInputRuntimeUpdateInput(ctx context.Context
 		case "statusCondition":
 			var err error
 			it.StatusCondition, err = ec.unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35918,6 +35979,8 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Runtime_runtimeContexts(ctx, field, obj)
 				return res
 			})
+		case "applicationNamespace":
+			out.Values[i] = ec._Runtime_applicationNamespace(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

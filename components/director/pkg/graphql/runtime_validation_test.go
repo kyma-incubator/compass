@@ -204,6 +204,51 @@ func TestRuntimeRegisterInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
+func TestRuntimeRegisterInput_Validate_Application_Namespace(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         *string
+		ExpectedValid bool
+	}{
+		{
+			Name: "ExpectedValid",
+			Value: str.Ptr("valid	valid"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValid - Nil",
+			Value:         (*string)(nil),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValid - Empty",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Invalid - Too long",
+			Value:         str.Ptr(inputvalidationtest.String257Long),
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidRuntimeRegisterInput()
+			sut.ApplicationNamespace = testCase.Value
+			// WHEN
+			err := sut.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func fixValidRuntimeRegisterInput() graphql.RuntimeRegisterInput {
 	return graphql.RuntimeRegisterInput{
 		Name: inputvalidationtest.ValidName,
@@ -351,6 +396,51 @@ func TestRuntimeUpdateInput_Validate_Labels(t *testing.T) {
 			//GIVEN
 			sut := fixValidRuntimeUpdateInput()
 			sut.Labels = testCase.Value
+			// WHEN
+			err := sut.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestRuntimeUpdateInput_Validate_Application_Namespace(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         *string
+		ExpectedValid bool
+	}{
+		{
+			Name: "ExpectedValid",
+			Value: str.Ptr("valid	valid"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValid - Nil",
+			Value:         (*string)(nil),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValid - Empty",
+			Value:         str.Ptr(inputvalidationtest.EmptyString),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Invalid - Too long",
+			Value:         str.Ptr(inputvalidationtest.String257Long),
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidRuntimeUpdateInput()
+			sut.ApplicationNamespace = testCase.Value
 			// WHEN
 			err := sut.Validate()
 			// THEN
