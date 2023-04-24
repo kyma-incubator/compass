@@ -1725,6 +1725,23 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Exceeded length of `shortDescription` field for Bundle when it has special characters",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].ShortDescription = str.Ptr(strings.Repeat("’", invalidShortDescriptionLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Not exceeded length of `shortDescription` field for Bundle when it has special characters",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].ShortDescription = str.Ptr(strings.Repeat("’", invalidShortDescriptionLength-1))
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "Invalid empty `shortDescription` field for Bundle",
