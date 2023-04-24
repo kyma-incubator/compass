@@ -78,6 +78,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: APP_TENANT_PROVIDER_LICENSE_TYPE_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.licenseTypeProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
@@ -215,6 +217,8 @@ spec:
               value: {{ $config.api.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_ENTITY_TYPE
               value: {{ $config.api.fieldMapping.entityTypeField }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_LICENSE_TYPE
+              value: {{ default "licenseType" $config.api.fieldMapping.licenseTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_DISCRIMINATOR
               value: {{ $config.api.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_VALUE_DISCRIMINATOR
@@ -272,6 +276,8 @@ spec:
               value: {{ default "region"  $config.regionalConfig.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_ENTITY_TYPE
               value: {{ $config.regionalConfig.fieldMapping.entityTypeField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_LICENSE_TYPE
+              value: {{ default "licenseType" $config.regionalConfig.fieldMapping.licenseTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_DISCRIMINATOR
               value: {{ $config.regionalConfig.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_VALUE_DISCRIMINATOR

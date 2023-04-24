@@ -27,6 +27,7 @@ var (
 	parent          = ""
 	subdomain       = "subdomain"
 	region          = "region"
+	licenseType     = "TESTLICENSE"
 )
 
 func TestConverter(t *testing.T) {
@@ -118,7 +119,7 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 		c := tenant.NewConverter()
 
 		// WHEN
-		in := newModelBusinessTenantMappingInput(names[0], subdomain, region)
+		in := newModelBusinessTenantMappingInput(names[0], subdomain, region, &licenseType)
 		res := c.ToGraphQLInput(in)
 		expected := graphql.BusinessTenantMappingInput{
 			Name:           names[0],
@@ -128,6 +129,7 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 			Region:         str.Ptr(region),
 			Type:           string(tnt.Account),
 			Provider:       testProvider,
+			LicenseType:    str.Ptr(licenseType),
 		}
 
 		// THEN
@@ -293,6 +295,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 				Region:         region,
 				Type:           string(tnt.Account),
 				Provider:       testProvider,
+				LicenseType:    str.Ptr(testLicenseType),
 			},
 			{
 				Name:           names[1],
@@ -314,6 +317,7 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
 				Provider:       testProvider,
+				LicenseType:    str.Ptr(testLicenseType),
 			},
 			{
 				Name:           names[1],

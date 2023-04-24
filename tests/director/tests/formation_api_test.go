@@ -1330,7 +1330,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-	ft = fixtures.CreateFormationTemplateWithLeadingProductIDs(t, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType1, applicationType2}, graphql.ArtifactTypeSubscription, leadingProductIDs)
+	ft = fixtures.CreateAppOnlyFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, []string{applicationType1, applicationType2}, leadingProductIDs)
 
 	appFromTmplSrc := fixtures.FixApplicationFromTemplateInput(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name")
 

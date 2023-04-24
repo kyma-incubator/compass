@@ -530,6 +530,7 @@ input BusinessTenantMappingInput {
 	region: String
 	type: String!
 	provider: String!
+	licenseType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {

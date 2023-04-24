@@ -30,7 +30,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/google/uuid"
-	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
@@ -40,6 +39,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+)
+
+var (
+	testLicenseType = "LICENSETYPE"
 )
 
 func TestRegionalOnboardingHandler(t *testing.T) {
@@ -52,6 +55,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubscriptionProviderID:      uuid.New().String(),
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
 
@@ -61,7 +65,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain)
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, providedTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 		})
 	})
@@ -73,6 +77,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -82,6 +87,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    parentTenant.TenantID,
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -91,7 +97,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain, parentTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parent.Labels[tenantfetcher.RegionKey])
 
 			// WHEN
@@ -100,12 +106,12 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
 			require.NoError(t, err)
-			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain, childTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 
 			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
+			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain, parentTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parentTenantAfterInsert.Labels[tenantfetcher.RegionKey])
 		})
 
@@ -128,17 +134,17 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			childTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.SubaccountID)
 			require.NoError(t, err)
-			assertTenant(t, childTenant, providedTenant.SubaccountID, providedTenant.Subdomain)
+			assertTenant(t, childTenant, providedTenant.SubaccountID, providedTenant.Subdomain, providedTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, childTenant.Labels[tenantfetcher.RegionKey])
 
 			parentTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parentTenant, providedTenant.TenantID, "")
+			assertTenant(t, parentTenant, providedTenant.TenantID, "", providedTenant.SubscriptionLicenseType)
 			require.Empty(t, parentTenant.Labels)
 
 			customerTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.CustomerID)
 			require.NoError(t, err)
-			assertTenant(t, customerTenant, providedTenant.CustomerID, "")
+			assertTenant(t, customerTenant, providedTenant.CustomerID, "", providedTenant.SubscriptionLicenseType)
 			require.Empty(t, customerTenant.Labels)
 		})
 
@@ -149,6 +155,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    parentTenantId,
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -158,6 +165,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -168,7 +176,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain, parentTenant.SubscriptionLicenseType)
 
 			// WHEN
 			for i := 0; i < 10; i++ {
@@ -182,7 +190,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			require.NoError(t, err)
 
 			// THEN
-			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain, childTenant.SubscriptionLicenseType)
 			assert.Equal(t, oldTenantState.TotalCount+2, tenants.TotalCount)
 		})
 
@@ -193,6 +201,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -216,6 +225,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				CustomerID:                  uuid.New().String(),
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -239,6 +249,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				CustomerID:                  uuid.New().String(),
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -262,6 +273,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:                  uuid.New().String(),
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -285,6 +297,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:                  uuid.New().String(),
 				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				ProviderSubaccountID:        uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -303,12 +316,13 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Should fail when subscriptionProviderAppName is not provided", func(t *testing.T) {
 			// GIVEN
 			providedTenant := tenantfetcher.Tenant{
-				TenantID:               uuid.New().String(),
-				SubaccountID:           uuid.New().String(),
-				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
-				CustomerID:             uuid.New().String(),
-				SubscriptionProviderID: uuid.New().String(),
-				ConsumerTenantID:       uuid.New().String(),
+				TenantID:                uuid.New().String(),
+				SubaccountID:            uuid.New().String(),
+				Subdomain:               tenantfetcher.DefaultSubaccountSubdomain,
+				CustomerID:              uuid.New().String(),
+				SubscriptionProviderID:  uuid.New().String(),
+				SubscriptionLicenseType: &testLicenseType,
+				ConsumerTenantID:        uuid.New().String(),
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -465,6 +479,7 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetche
 		CustomerIDProperty:                  config.CustomerIDProperty,
 		SubdomainProperty:                   config.SubdomainProperty,
 		SubscriptionProviderIDProperty:      config.SubscriptionProviderIDProperty,
+		SubscriptionLicenseTypeProperty:     config.SubscriptionLicenseTypeProperty,
 		ProviderSubaccountIdProperty:        config.ProviderSubaccountIDProperty,
 		ConsumerTenantIDProperty:            config.ConsumerTenantIDProperty,
 		SubscriptionProviderAppNameProperty: config.SubscriptionProviderAppNameProperty,
@@ -472,16 +487,19 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetche
 
 	request := tenantfetcher.CreateTenantRequest(t, providedTenant, tenantProperties, httpMethod, url, config.ExternalServicesMockURL, config.ClientID, config.ClientSecret)
 
-	t.Log(fmt.Sprintf("Provisioning tenant with ID %s", tenantfetcher.ActualTenantID(providedTenant)))
+	t.Logf("Provisioning tenant with ID %s", tenantfetcher.ActualTenantID(providedTenant))
 	response, err := httpClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string) {
+func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string, licenseType *string) {
 	require.Equal(t, tenantID, tenant.ID)
 	if len(subdomain) > 0 {
 		require.Equal(t, subdomain, tenant.Labels["subdomain"])
+	}
+	if licenseType != nil {
+		require.Equal(t, *licenseType, tenant.Labels["licensetype"])
 	}
 }
 
@@ -509,7 +527,8 @@ const (
 		"guid": "%s",
 		"displayName": "%s",
 		"customerId": "%s",
-		"subdomain": "%s"
+		"subdomain": "%s",
+		"licenseType": "%s"
 	},
 	"type": "GlobalAccount"
 }`
@@ -519,6 +538,7 @@ const (
 		"guid": "%s",
 		"displayName": "%s",
 		"subdomain": "%s",
+		"licenseType": "%s",
 		"parentGuid": "%s",
 		"sourceGlobalAccountGUID": "%s",
 		"targetGlobalAccountGUID": "%s",
@@ -539,12 +559,12 @@ func TestGlobalAccounts(t *testing.T) {
 
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, customerIDs...))
 
-	createEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0])
-	createEvent2 := genMockGlobalAccountEvent(externalTenantIDs[1], names[1], customerIDs[1], subdomains[1])
+	createEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0], testLicenseType)
+	createEvent2 := genMockGlobalAccountEvent(externalTenantIDs[1], names[1], customerIDs[1], subdomains[1], testLicenseType)
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2), globalAccountCreateSubPath)
 	defer cleanupMockEvents(t, globalAccountCreateSubPath)
 
-	deleteEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0])
+	deleteEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0], testLicenseType)
 	setMockTenantEvents(t, genMockPage(deleteEvent1, 1), globalAccountDeleteSubPath)
 	defer cleanupMockEvents(t, globalAccountDeleteSubPath)
 
@@ -597,6 +617,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           gaNames[1],
@@ -606,6 +627,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountNames[0],
@@ -615,6 +637,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountNames[1],
@@ -624,6 +647,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -638,8 +662,8 @@ func TestMoveSubaccounts(t *testing.T) {
 	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
 	runtime2 := registerRuntime(t, ctx, runtimeNames[1], subaccount2.InternalID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
-	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1, event2}, ","), 2), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -723,6 +747,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountExternalTenants[0],
@@ -732,6 +757,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 
@@ -756,7 +782,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountExternalTenants[0], defaultTenantID)
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountExternalTenants[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountExternalTenants[0], subaccountSubdomain, testLicenseType, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1}, ","), 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -813,6 +839,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountNames[0],
@@ -822,6 +849,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -830,11 +858,11 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	// cleanup global account and subaccounts
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
 
-	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath)
+	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath)
 	setMockTenantEvents(t, genMockPage(deleteEvent, 1), subaccountDeleteSubPath)
 	defer cleanupMockEvents(t, subaccountDeleteSubPath)
 
-	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath)
+	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath)
 	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
@@ -888,6 +916,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Account),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -895,7 +924,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, []string{subaccountExternalTenant, gaExternalTenantIDs[1]})
 
-	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
 	setMockTenantEvents(t, genMockPage(event, 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -923,12 +952,12 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
-func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain string) string {
-	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain)
+func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain, licenseType string) string {
+	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain, licenseType)
 }
 
-func genMockSubaccountMoveEvent(guid, displayName, subdomain, directoryParentGUID, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region string) string {
-	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, directoryParentGUID, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, parentGuid)
+func genMockSubaccountMoveEvent(guid, displayName, subdomain, licenseType, directoryParentGUID, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region string) string {
+	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, licenseType, directoryParentGUID, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, parentGuid)
 }
 
 func genMockPage(events string, numEvents int) string {

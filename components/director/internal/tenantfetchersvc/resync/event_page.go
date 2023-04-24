@@ -125,7 +125,15 @@ func (ep EventsPage) eventDataToMovedSubaccount(ctx context.Context, eventData [
 		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.FieldMapping.SubdomainField, id)
 	}
 
-	subaccountInput, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, ep)
+	licenseType := gjson.Get(jsonPayload, ep.FieldMapping.LicenseTypeField)
+	var licenseTypeValue *string
+	if licenseType.Exists() && licenseType.Type == gjson.String {
+		licenseTypeValue = &licenseType.Str
+	} else {
+		log.C(ctx).Warnf("Missing or invalid format of licenseType field: %s for tenant with ID: %s", ep.FieldMapping.LicenseTypeField, id)
+	}
+
+	subaccountInput, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
 	if err != nil {
 		return nil, err
 	}
@@ -173,15 +181,23 @@ func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType
 		return nil, invalidFieldFormatError(ep.FieldMapping.EntityTypeField)
 	}
 
+	licenseType := gjson.Get(jsonPayload, ep.FieldMapping.LicenseTypeField)
+	var licenseTypeValue *string
+	if licenseType.Exists() && licenseType.Type == gjson.String {
+		licenseTypeValue = &licenseType.Str
+	} else {
+		log.C(ctx).Warnf("Missing or invalid format of licenseType field: %s for tenant with ID: %s", ep.FieldMapping.LicenseTypeField, id)
+	}
+
 	globalAccountRegex := regexp.MustCompile(GlobalAccountRegex)
 	if globalAccountRegex.MatchString(entityType.String()) {
-		return constructGlobalAccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, ep), nil
+		return constructGlobalAccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep), nil
 	} else {
-		return constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, ep)
+		return constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, licenseTypeValue, ep)
 	}
 }
 
-func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, ep EventsPage) *model.BusinessTenantMappingInput {
+func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, licenseType *string, ep EventsPage) *model.BusinessTenantMappingInput {
 	parentID := ""
 	customerIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CustomerIDField)
 	if !customerIDResult.Exists() {
@@ -197,10 +213,11 @@ func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdom
 		Region:         "",
 		Type:           tenant.TypeToStr(tenant.Account),
 		Provider:       ep.ProviderName,
+		LicenseType:    licenseType,
 	}
 }
 
-func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, ep EventsPage) (*model.BusinessTenantMappingInput, error) {
+func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, licenseType *string, ep EventsPage) (*model.BusinessTenantMappingInput, error) {
 	regionField := gjson.Get(jsonPayload, ep.FieldMapping.RegionField)
 	if !regionField.Exists() {
 		log.C(ctx).Debugf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
@@ -219,6 +236,7 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 		Region:         region,
 		Type:           tenant.TypeToStr(tenant.Subaccount),
 		Provider:       ep.ProviderName,
+		LicenseType:    licenseType,
 	}, nil
 }
 
