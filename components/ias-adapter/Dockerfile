@@ -12,7 +12,7 @@ COPY internal ./internal
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /main cmd/adapter/main.go
 
-FROM alpine:3.17.2 as runtime
+FROM alpine:3.17.3 as runtime
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
