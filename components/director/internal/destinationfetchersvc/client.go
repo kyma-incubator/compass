@@ -49,7 +49,7 @@ type DestinationServiceAPIConfig struct {
 
 // Client destination client
 type Client struct {
-	httpClient        *http.Client
+	HTTPClient        *http.Client
 	apiConfig         DestinationServiceAPIConfig
 	authConfig        config.InstanceConfig
 	authToken         string
@@ -57,7 +57,7 @@ type Client struct {
 }
 
 func (c *Client) Close() {
-	c.httpClient.CloseIdleConnections()
+	c.HTTPClient.CloseIdleConnections()
 }
 
 // destinationFromService destination received from destination service
@@ -186,7 +186,7 @@ func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServic
 	}
 
 	return &Client{
-		httpClient: httpClient,
+		HTTPClient: httpClient,
 		apiConfig:  apiConfig,
 		authConfig: instanceConfig,
 	}, nil
@@ -307,7 +307,7 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 }
 
 func (c *Client) doTokenRequest(tokenRequest *http.Request) (token, error) {
-	res, err := c.httpClient.Do(tokenRequest)
+	res, err := c.HTTPClient.Do(tokenRequest)
 	if err != nil {
 		return token{}, err
 	}
@@ -368,7 +368,7 @@ func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationN
 func (c *Client) sendRequestWithRetry(req *http.Request) (*http.Response, error) {
 	var response *http.Response
 	err := retry.Do(func() error {
-		res, err := c.httpClient.Do(req)
+		res, err := c.HTTPClient.Do(req)
 		if err != nil {
 			return errors.Wrap(err, "failed to execute HTTP request")
 		}
