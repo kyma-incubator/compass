@@ -3,7 +3,6 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -613,7 +612,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	if response.State != nil { // if there is a state in the response
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
-			return errors.New(fmt.Sprintf("The provided state in the response %q is not valid.", *response.State))
+			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
 		}
 		assignment.State = *response.State
 	} else {
@@ -682,29 +681,6 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	return nil
 }
 
-func validateResponseState(newState, previousState string) bool {
-	if newState != string(model.InitialAssignmentState) &&
-		newState != string(model.ReadyAssignmentState) &&
-		newState != string(model.ConfigPendingAssignmentState) &&
-		newState != string(model.CreateErrorAssignmentState) &&
-		newState != string(model.DeletingAssignmentState) &&
-		newState != string(model.DeleteErrorAssignmentState) {
-		return false
-	}
-
-	if previousState == string(model.DeletingAssignmentState) &&
-		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState)) {
-		return false
-	}
-
-	if previousState == string(model.InitialAssignmentState) &&
-		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState)) {
-		return false
-	}
-
-	return true
-}
-
 // CleanupFormationAssignment If the provided mappingPair does not contain notification request the assignment is deleted.
 // If the provided pair contains notification request - sends it and adapts the `State` and `Config` of the formation assignment
 // based on the response.
@@ -741,6 +717,13 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
 	}
 
+	if response.Error != nil && *response.Error != "" {
+		if err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState); err != nil {
+			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
+		}
+		return false, errors.Errorf("Received error from response: %v", *response.Error)
+	}
+
 	requestWebhookMode := mappingPair.Assignment.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", mappingPair.Assignment.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
@@ -752,7 +735,17 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
-	if *response.ActualStatusCode == *response.SuccessStatusCode {
+	if response.State != nil { // if there is a state in the response
+		log.C(ctx).Info("There is a state in the response. Validating it...")
+		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
+			return false, errors.Errorf("The provided state in the response %q is not valid.", *response.State)
+		}
+	}
+
+	// if there is a state in the body - check if it is READY
+	// if there is no state in the body - check if the status code is 'success'
+	if (response.State != nil && *response.State == string(model.ReadyAssignmentState)) ||
+		(response.State == nil && *response.ActualStatusCode == *response.SuccessStatusCode) {
 		if err = s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
 			updateError := s.SetAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState)
@@ -769,6 +762,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
+	if response.State != nil && *response.State == string(model.DeleteErrorAssignmentState) {
+		if err = s.SetAssignmentToErrorState(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState); err != nil {
+			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
+		}
+	}
+
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		err = errors.New("Error while deleting assignment: config propagation is not supported on unassign notifications")
 		updateErr := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState)
@@ -778,15 +777,27 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, err
 	}
 
-	if response.Error != nil && *response.Error != "" {
-		err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState)
-		if err != nil {
-			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
-		}
-		return false, errors.Errorf("Received error from response: %v", *response.Error)
+	return false, nil
+}
+
+func validateResponseState(newState, previousState string) bool {
+	if !model.SupportedFormationAssignmentStates[newState] {
+		return false
 	}
 
-	return false, nil
+	// handles synchronous "delete/unassign" statuses
+	if previousState == string(model.DeletingAssignmentState) &&
+		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		return false
+	}
+
+	// handles synchronous "create/assign" statuses
+	if previousState == string(model.InitialAssignmentState) &&
+		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		return false
+	}
+
+	return true
 }
 
 func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState) error {
