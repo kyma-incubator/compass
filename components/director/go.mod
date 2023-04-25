@@ -21,9 +21,9 @@ require (
 	github.com/imdario/mergo v0.3.14
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230410095712-be8c0a57707d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230410095712-be8c0a57707d
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230410095712-be8c0a57707d
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230420100909-e153ed781b4c
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230420100909-e153ed781b4c
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230420100909-e153ed781b4c
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lib/pq v1.10.7

@@ -8,6 +8,7 @@ type Runtime struct {
 	Status                *RuntimeStatus                `json:"status"`
 	Metadata              *RuntimeMetadata              `json:"metadata"`
 	EventingConfiguration *RuntimeEventingConfiguration `json:"eventingConfiguration"`
+	ApplicationNamespace  *string                       `json:"applicationNamespace"`
 }
 
 // RuntimePageExt is an extended types used by external API

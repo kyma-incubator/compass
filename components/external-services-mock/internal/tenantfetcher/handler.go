@@ -112,6 +112,7 @@ func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byt
 		"guid": "%s",
 		"displayName": "%s",
 		"subdomain": "%s",
+		"licenseType": "%s",
 		"parentGuid": "%s",
 		"region": "%s"
 	},
@@ -127,7 +128,7 @@ func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byt
 	"events": []
 }`
 	if subaccountID == tenantOnDemandID {
-		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "LICENSETYPE", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
 		return []byte(mockedEvent)
 	}
 	return []byte(emptyTenantProviderResponse)

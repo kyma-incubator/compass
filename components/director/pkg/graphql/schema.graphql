@@ -530,6 +530,7 @@ input BusinessTenantMappingInput {
 	region: String
 	type: String!
 	provider: String!
+	licenseType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -792,6 +793,7 @@ input RuntimeRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input RuntimeUpdateInput {
@@ -808,6 +810,7 @@ input RuntimeUpdateInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input SystemAuthUpdateInput {
@@ -1361,6 +1364,7 @@ type Runtime {
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
 	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
+	applicationNamespace: String
 }
 
 type RuntimeContext {
@@ -1780,6 +1784,10 @@ type Mutation {
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	"""
+	**Examples**
+	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
+	"""
 	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**
