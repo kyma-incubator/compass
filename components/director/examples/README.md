@@ -94,6 +94,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [remove tenant access](./remove-tenant-access/remove-tenant-access.graphql)
 - [request bundle instance auth creation](./request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 - [request bundle instance auth deletion](./request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
+- [resynchronize formation notifications](./resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 - [set application label](./set-application-label/set-application-label.graphql)
 - [set bundle instance auth](./set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 - [unassign application from formation](./unassign-formation/unassign-application-from-formation.graphql)
