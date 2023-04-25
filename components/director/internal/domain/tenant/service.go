@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,6 +19,8 @@ const (
 	SubdomainLabelKey = "subdomain"
 	// RegionLabelKey is the key of the tenant label for region.
 	RegionLabelKey = "region"
+	// LicenseTypeLabelKey is the key of the tenant label for licensetype.
+	LicenseTypeLabelKey = "licensetype"
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
@@ -394,18 +397,23 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 		return "", errors.Wrapf(err, "while retrieving the internal tenant ID of tenant with external ID %s", tenant.ExternalTenant)
 	}
 
-	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
+	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region, str.PtrStrToStr(tenant.LicenseType))
 }
 
-func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType string) error {
 	if len(subdomain) > 0 {
-		if err := s.upsertSubdomainLabel(ctx, tenantID, subdomain); err != nil {
+		if err := s.upsertLabel(ctx, tenantID, SubdomainLabelKey, subdomain); err != nil {
 			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
 		}
 	}
 	if len(region) > 0 {
-		if err := s.upsertRegionLabel(ctx, tenantID, region); err != nil {
+		if err := s.upsertLabel(ctx, tenantID, RegionLabelKey, region); err != nil {
 			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
+		}
+	}
+	if len(licenseType) > 0 {
+		if err := s.upsertLabel(ctx, tenantID, LicenseTypeLabelKey, licenseType); err != nil {
+			return errors.Wrapf(err, "while setting licenseType label for tenant with ID %s", tenantID)
 		}
 	}
 	return nil
@@ -454,20 +462,10 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	return labels, nil
 }
 
-func (s *labeledService) upsertSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
+func (s *labeledService) upsertLabel(ctx context.Context, tenantID, key, value string) error {
 	label := &model.LabelInput{
-		Key:        SubdomainLabelKey,
-		Value:      subdomain,
-		ObjectID:   tenantID,
-		ObjectType: model.TenantLabelableObject,
-	}
-	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
-}
-
-func (s *labeledService) upsertRegionLabel(ctx context.Context, tenantID, region string) error {
-	label := &model.LabelInput{
-		Key:        RegionLabelKey,
-		Value:      region,
+		Key:        key,
+		Value:      value,
 		ObjectID:   tenantID,
 		ObjectType: model.TenantLabelableObject,
 	}

@@ -206,6 +206,11 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
+	body, err = sjson.Set(body, h.providerConfig.LicenseTypeProperty, DefaultLicenseType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+
 	if len(h.tenantConfig.SubscriptionProviderID) > 0 {
 		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderIDProperty, h.tenantConfig.SubscriptionProviderID)
 		if err != nil {

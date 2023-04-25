@@ -1065,26 +1065,26 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 	}
 }
 
-func fixApplicationLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixApplicationLabelsMap() map[string]string {
+	return map[string]string{
 		"app-label-key": "app-label-value",
 	}
 }
 
-func fixApplicationTemplateLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixApplicationTemplateLabelsMap() map[string]string {
+	return map[string]string{
 		"apptemplate-label-key": "apptemplate-label-value",
 	}
 }
 
-func fixRuntimeLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixRuntimeLabelsMap() map[string]string {
+	return map[string]string{
 		"runtime-label-key": "runtime-label-value",
 	}
 }
 
-func fixRuntimeContextLabelsMap() map[string]interface{} {
-	return map[string]interface{}{
+func fixRuntimeContextLabelsMap() map[string]string {
+	return map[string]string{
 		"runtime-context-label-key": "runtime-context-label-value",
 	}
 }
