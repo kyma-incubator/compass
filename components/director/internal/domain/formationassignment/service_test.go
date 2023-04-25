@@ -2941,6 +2941,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			ErrorCode: 2,
 		},
 	})
+	require.NoError(t, err)
 
 	configAssignment := &model.FormationAssignmentInput{
 		Source: source,
