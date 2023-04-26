@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.20.2-alpine3.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.20.3-alpine3.17 as builder
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests
 WORKDIR ${BASE_TEST_DIR}
@@ -22,7 +22,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connectivity-ad
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./ord-service/bench -o ord-service.bench && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test
 
-FROM alpine:3.17.2
+FROM alpine:3.17.3
 
 RUN apk add --no-cache curl
 

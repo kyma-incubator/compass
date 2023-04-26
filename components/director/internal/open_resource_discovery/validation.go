@@ -197,11 +197,11 @@ var (
 )
 
 var shortDescriptionRules = []validation.Rule{
-	validation.Required, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.Required, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ORDDocumentValidationError contains the validation errors when aggregating ord documents
