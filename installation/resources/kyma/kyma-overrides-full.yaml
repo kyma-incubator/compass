@@ -118,25 +118,6 @@ istio:
   meshConfig:
     defaultConfig:
       holdApplicationUntilProxyStarts: true
-kiali:
-  authProxy:
-    enabled: false
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-  kcproxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-logging:
-  loki:
-    resources:
-      limits:
-        memory: 512Mi
 monitoring:
   alertmanager:
     alertmanagerSpec:
@@ -316,28 +297,3 @@ serverless:
         buildRequestsMemory.value: 200Mi
   tests:
     enabled: false
-tracing:
-  jaeger:
-    spec:
-      resources:
-        limits:
-          memory: 150Mi
-      storage:
-        options:
-          memory:
-            max-traces: "10000"
-        type: memory
-      strategy: allInOne
-  kcproxy:
-    authProxy:
-      enabled: false
-      resources:
-        limits:
-          memory: 256Mi
-        requests:
-          memory: 32Mi
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
