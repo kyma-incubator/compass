@@ -56,6 +56,7 @@ type Client struct {
 	authTokenValidity time.Time
 }
 
+// Close closes idle connections
 func (c *Client) Close() {
 	c.HTTPClient.CloseIdleConnections()
 }
@@ -138,7 +139,7 @@ type DestinationResponse struct {
 	pageCount    int
 }
 
-func getHttpClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig) (*http.Client, error) {
+func getHTTPClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig) (*http.Client, error) {
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {
 		return nil, errors.Errorf("failed to create destinations client x509 pair: %v", err)
@@ -154,9 +155,8 @@ func getHttpClient(instanceConfig config.InstanceConfig, apiConfig DestinationSe
 	}, nil
 }
 
-func setInstanceConfigTokenURLForSubdomain(
-	instanceConfig *config.InstanceConfig, apiConfig DestinationServiceAPIConfig, subdomain string) error {
-
+func setInstanceConfigTokenURLForSubdomain(instanceConfig *config.InstanceConfig,
+	apiConfig DestinationServiceAPIConfig, subdomain string) error {
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
 	if err != nil {
 		return errors.Errorf("failed to parse auth url '%s': %v", instanceConfig.TokenURL, err)
@@ -176,11 +176,10 @@ func setInstanceConfigTokenURLForSubdomain(
 // NewClient returns new destination client
 func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
 	subdomain string) (*Client, error) {
-
 	if err := setInstanceConfigTokenURLForSubdomain(&instanceConfig, apiConfig, subdomain); err != nil {
 		return nil, err
 	}
-	httpClient, err := getHttpClient(instanceConfig, apiConfig)
+	httpClient, err := getHTTPClient(instanceConfig, apiConfig)
 	if err != nil {
 		return nil, err
 	}

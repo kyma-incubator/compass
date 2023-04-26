@@ -67,7 +67,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	defer client.HTTPClient.CloseIdleConnections()
-	setHttpClientMockHost(client.HTTPClient, mockServer.URL)
+	setHTTPClientMockHost(client.HTTPClient, mockServer.URL)
 
 	t.Run("Success fetching data page 3", func(t *testing.T) {
 		// WHEN
@@ -126,7 +126,7 @@ func TestClient_SensitiveDataEndpoint(t *testing.T) {
 	client, err := destinationfetchersvc.NewClient(instanceCfg, apiConfig, subdomain)
 	require.NoError(t, err)
 	defer client.HTTPClient.CloseIdleConnections()
-	setHttpClientMockHost(client.HTTPClient, mockServer.URL)
+	setHTTPClientMockHost(client.HTTPClient, mockServer.URL)
 
 	t.Run("Success fetching sensitive data", func(t *testing.T) {
 		// WHEN
@@ -161,7 +161,7 @@ func TestClient_SensitiveDataEndpoint(t *testing.T) {
 	})
 }
 
-func setHttpClientMockHost(client *http.Client, testServerURL string) {
+func setHTTPClientMockHost(client *http.Client, testServerURL string) {
 	client.Transport = &http.Transport{
 		DialContext: func(_ context.Context, network, address string) (net.Conn, error) {
 			return net.Dial(network, strings.TrimPrefix(testServerURL, "https://"))
@@ -216,7 +216,9 @@ func mockServerWithSyncEndpoint(t *testing.T) *httptest.Server {
 
 func tokenEndpointHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(newToken())
+	if _, err := w.Write(newToken()); err != nil {
+		panic(err)
+	}
 }
 
 func newToken() []byte {
