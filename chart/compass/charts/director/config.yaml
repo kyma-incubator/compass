@@ -127,6 +127,7 @@ graphql:
       auths: ["application.auths:read"]
       webhooks: ["application.webhooks:read"]
       application_template: [ "application.application_template:read" ]
+      tenant_business_type: [ "application.tenant_business_type:read" ]
     application_template:
       webhooks: ["application_template.webhooks:read"]
     bundle:

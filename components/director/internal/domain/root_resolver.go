@@ -1021,8 +1021,14 @@ func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Applicati
 	return r.app.Bundle(ctx, obj, id)
 }
 
+// ApplicationTemplate resolves application template for application object
 func (r *applicationResolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
 	return r.app.ApplicationTemplate(ctx, obj)
+}
+
+// TenantBusinessType resolves tenant business type for application object
+func (r *applicationResolver) TenantBusinessType(ctx context.Context, obj *graphql.Application) (*graphql.TenantBusinessType, error) {
+	return r.app.TenantBusinessType(ctx, obj)
 }
 
 type applicationTemplateResolver struct {

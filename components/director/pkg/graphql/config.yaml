@@ -70,6 +70,8 @@ models:
         resolver: true
       applicationTemplate:
         resolver: true
+      tenantBusinessType:
+        resolver: true
   Bundle:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Bundle"
     fields:
