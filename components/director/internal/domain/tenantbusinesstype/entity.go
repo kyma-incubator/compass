@@ -1,4 +1,4 @@
-package tenant_business_type
+package tenantbusinesstype
 
 // Entity represents the tenant business types entity
 type Entity struct {

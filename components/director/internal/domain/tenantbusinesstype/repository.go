@@ -1,4 +1,4 @@
-package tenant_business_type
+package tenantbusinesstype
 
 import (
 	"context"

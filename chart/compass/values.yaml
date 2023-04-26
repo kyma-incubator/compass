@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2999"
+      version: "PR-3032"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1248,6 +1248,7 @@ global:
         - "application:write"
         - "application.local_tenant_id:write"
         - "application.application_template:read"
+        - "application.tenant_business_type:read"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"

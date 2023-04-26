@@ -1,4 +1,4 @@
-package tenant_business_type
+package tenantbusinesstype
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"

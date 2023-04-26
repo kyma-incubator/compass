@@ -1,7 +1,8 @@
-package tenant_business_type
+package tenantbusinesstype
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 
@@ -49,7 +50,7 @@ func (s *service) Create(ctx context.Context, in *model.TenantBusinessTypeInput)
 	return tenantBusinessTypeID, nil
 }
 
-//GetByID get tenant business type with given id
+// GetByID get tenant business type with given id
 func (s *service) GetByID(ctx context.Context, id string) (*model.TenantBusinessType, error) {
 	log.C(ctx).Infof("Getting tenant business type with ID: %q", id)
 

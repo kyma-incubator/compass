@@ -3,7 +3,7 @@
 package automock
 
 import (
-	tenant_business_type "github.com/kyma-incubator/compass/components/director/internal/domain/tenant_business_type"
+	tenantbusinesstype "github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -14,11 +14,11 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity *tenant_business_type.Entity) *model.TenantBusinessType {
+func (_m *EntityConverter) FromEntity(entity *tenantbusinesstype.Entity) *model.TenantBusinessType {
 	ret := _m.Called(entity)
 
 	var r0 *model.TenantBusinessType
-	if rf, ok := ret.Get(0).(func(*tenant_business_type.Entity) *model.TenantBusinessType); ok {
+	if rf, ok := ret.Get(0).(func(*tenantbusinesstype.Entity) *model.TenantBusinessType); ok {
 		r0 = rf(entity)
 	} else {
 		if ret.Get(0) != nil {
@@ -30,15 +30,15 @@ func (_m *EntityConverter) FromEntity(entity *tenant_business_type.Entity) *mode
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in *model.TenantBusinessType) *tenant_business_type.Entity {
+func (_m *EntityConverter) ToEntity(in *model.TenantBusinessType) *tenantbusinesstype.Entity {
 	ret := _m.Called(in)
 
-	var r0 *tenant_business_type.Entity
-	if rf, ok := ret.Get(0).(func(*model.TenantBusinessType) *tenant_business_type.Entity); ok {
+	var r0 *tenantbusinesstype.Entity
+	if rf, ok := ret.Get(0).(func(*model.TenantBusinessType) *tenantbusinesstype.Entity); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tenant_business_type.Entity)
+			r0 = ret.Get(0).(*tenantbusinesstype.Entity)
 		}
 	}
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant_business_type"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -153,7 +154,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	tenantConverter := tenant.NewConverter()
-	tenantBusinessTypeConverter := tenant_business_type.NewConverter()
+	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -179,7 +180,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantBusinessTypeRepo := tenant_business_type.NewRepository(tenantBusinessTypeConverter)
+	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -204,7 +205,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	tenantBusinessTypeSvc := tenant_business_type.NewService(tenantBusinessTypeRepo, uidSvc)
+	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
