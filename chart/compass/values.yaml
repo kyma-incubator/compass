@@ -387,7 +387,7 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "kibana"
+    format: "text"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
