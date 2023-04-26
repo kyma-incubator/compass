@@ -6705,6 +6705,10 @@ type Mutation {
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	"""
+	**Examples**
+	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
+	"""
 	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**
