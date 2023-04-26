@@ -35,8 +35,8 @@ The System Broker is a component that is part of the Compass installation, so it
 To do this, perform the following procedure:
 
 1. Navigate to `compass/installation/cmd`.
-2. Execute `./run.sh --kyma-installation full`.
-This script starts Compass on top of a fully-featured Kyma cluster. Alternativey, if you want to run Compass with minimal Kyma dependencies, you can use the `--kyma-installation minimal` argument.
+2. Execute `./run.sh`.
+This script starts Compass on top of a minimal Kyma cluster.
 3. Access the System Broker API at the following URL: `https://compass-gateway-mtls.kyma.local/broker`.
 
 ## Configuration
