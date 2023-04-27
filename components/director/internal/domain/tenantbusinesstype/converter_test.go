@@ -118,5 +118,4 @@ func assertTenantBusinessTypeDefinition(t *testing.T, tbtModel *model.TenantBusi
 	assert.Equal(t, tbtModel.ID, entity.ID)
 	assert.Equal(t, tbtModel.Code, entity.Code)
 	assert.Equal(t, tbtModel.Name, entity.Name)
-
 }
