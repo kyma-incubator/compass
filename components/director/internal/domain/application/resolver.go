@@ -159,17 +159,17 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 }
 
-// tenantBusinessTypeService is responsible for the service-layer Tenant Business Type operations.
+// TenantBusinessTypeService is responsible for the service-layer Tenant Business Type operations.
 //
-//go:generate mockery --name=tenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
-type tenantBusinessTypeService interface {
+//go:generate mockery --name=TenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
+type TenantBusinessTypeService interface {
 	GetByID(ctx context.Context, id string) (*model.TenantBusinessType, error)
 }
 
-// tenantBusinessTypeConverter converts between the graphql and model
+// TenantBusinessTypeConverter converts between the graphql and model
 //
-//go:generate mockery --name=tenantBusinessTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type tenantBusinessTypeConverter interface {
+//go:generate mockery --name=TenantBusinessTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantBusinessTypeConverter interface {
 	ToGraphQL(in *model.TenantBusinessType) *graphql.TenantBusinessType
 }
 
@@ -183,8 +183,8 @@ type Resolver struct {
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
 
-	tenantBusinessTypeSvc       tenantBusinessTypeService
-	tenantBusinessTypeConverter tenantBusinessTypeConverter
+	tenantBusinessTypeSvc       TenantBusinessTypeService
+	tenantBusinessTypeConverter TenantBusinessTypeConverter
 
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
@@ -214,8 +214,8 @@ func NewResolver(transact persistence.Transactioner,
 	bndlConverter BundleConverter,
 	appTemplateSvc ApplicationTemplateService,
 	appTemplateConverter ApplicationTemplateConverter,
-	tenantBusinessTypeSvc tenantBusinessTypeService,
-	tenantBusinessTypeConverter tenantBusinessTypeConverter,
+	tenantBusinessTypeSvc TenantBusinessTypeService,
+	tenantBusinessTypeConverter TenantBusinessTypeConverter,
 	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
 		transact:                        transact,
