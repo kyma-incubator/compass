@@ -13,10 +13,7 @@ import (
 const tableName string = `public.tenant_business_types`
 
 var (
-	//	idTableColumns        = []string{"id"}
-	//	updatableTableColumns = []string{"state", "value"}
 	tableColumns = []string{"id", "code", "name"}
-	//	tenantColumn          = "tenant_id"
 )
 
 // EntityConverter converts between the internal model and entity

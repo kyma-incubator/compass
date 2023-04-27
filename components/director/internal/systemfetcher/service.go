@@ -289,6 +289,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				system.StatusCondition = app.Status.Condition
 			}
 
+			log.C(ctx).Infof("Started processing tenant business type for system with system number %s", system.SystemNumber)
 			tenantBusinessType, err := s.processSystemTenantBusinessType(ctx, system, tenantBusinessTypes)
 			if err != nil {
 				return err
@@ -392,6 +393,7 @@ func (s *SystemFetcher) processSystemTenantBusinessType(ctx context.Context, sys
 	tbt, exists := tenantBusinessTypes[system.BusinessTypeID]
 	if system.BusinessTypeID != "" && system.BusinessTypeDescription != "" {
 		if !exists {
+			log.C(ctx).Infof("Creating tenant business type with code: %q", system.BusinessTypeID)
 			createdTbtID, err := s.tbtService.Create(ctx, &model.TenantBusinessTypeInput{Code: system.BusinessTypeID, Name: system.BusinessTypeDescription})
 			if err != nil {
 				return nil, err
