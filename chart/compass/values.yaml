@@ -596,7 +596,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application.tenant_business_type:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -1236,7 +1236,6 @@ global:
         - "application.auths:read"
         - "application.webhooks:read"
         - "application.application_template:read"
-        - "application.tenant_business_type:read"
         - "bundle.instance_auths:read"
         - "document.fetch_request:read"
         - "event_spec.fetch_request:read"
@@ -1248,7 +1247,6 @@ global:
         - "application:write"
         - "application.local_tenant_id:write"
         - "application.application_template:read"
-        - "application.tenant_business_type:read"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"
@@ -1285,7 +1283,6 @@ global:
         - "application.auths:read"
         - "application.webhooks:read"
         - "application.application_template:read"
-        - "application.tenant_business_type:read"
         - "application_template.webhooks:read"
         - "bundle.instance_auths:read"
         - "document.fetch_request:read"
