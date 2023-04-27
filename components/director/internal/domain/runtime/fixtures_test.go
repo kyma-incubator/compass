@@ -22,7 +22,7 @@ const (
 	runtimeType = "runtimeType"
 )
 
-var fixColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
+var fixColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}
 
 func fixRuntimePage(runtimes []*model.Runtime) *model.RuntimePage {
 	return &model.RuntimePage{
@@ -48,7 +48,7 @@ func fixGQLRuntimePage(runtimes []*graphql.Runtime) *graphql.RuntimePage {
 	}
 }
 
-func fixModelRuntime(t *testing.T, id, tenant, name, description string) *model.Runtime {
+func fixModelRuntime(t *testing.T, id, tenant, name, description, appNamespace string) *model.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -57,13 +57,14 @@ func fixModelRuntime(t *testing.T, id, tenant, name, description string) *model.
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 		},
-		Name:              name,
-		Description:       &description,
-		CreationTimestamp: time,
+		Name:                 name,
+		Description:          &description,
+		CreationTimestamp:    time,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
-func fixGQLRuntime(t *testing.T, id, name, description string) *graphql.Runtime {
+func fixGQLRuntime(t *testing.T, id, name, description, appNamespace string) *graphql.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -77,10 +78,11 @@ func fixGQLRuntime(t *testing.T, id, name, description string) *graphql.Runtime 
 		Metadata: &graphql.RuntimeMetadata{
 			CreationTimestamp: graphql.Timestamp(time),
 		},
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
-func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.Runtime {
+func fixDetailedModelRuntime(t *testing.T, id, name, description, appNamespace string) *model.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -90,27 +92,29 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 			Condition: model.RuntimeStatusConditionInitial,
 			Timestamp: time,
 		},
-		Name:              name,
-		Description:       &description,
-		CreationTimestamp: time,
+		Name:                 name,
+		Description:          &description,
+		CreationTimestamp:    time,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
-func fixDetailedEntityRuntime(t *testing.T, id, name, description string) *runtime.Runtime {
+func fixDetailedEntityRuntime(t *testing.T, id, name, description, appNamespace string) *runtime.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
 	return &runtime.Runtime{
-		ID:                id,
-		StatusCondition:   string(model.RuntimeStatusConditionInitial),
-		StatusTimestamp:   time,
-		Name:              name,
-		Description:       repo.NewValidNullableString(description),
-		CreationTimestamp: time,
+		ID:                   id,
+		StatusCondition:      string(model.RuntimeStatusConditionInitial),
+		StatusTimestamp:      time,
+		Name:                 name,
+		Description:          repo.NewValidNullableString(description),
+		CreationTimestamp:    time,
+		ApplicationNamespace: repo.NewValidNullableString(appNamespace),
 	}
 }
 
-func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.Runtime {
+func fixDetailedGQLRuntime(t *testing.T, id, name, description, appNamespace string) *graphql.Runtime {
 	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -125,30 +129,33 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 		Metadata: &graphql.RuntimeMetadata{
 			CreationTimestamp: graphql.Timestamp(time),
 		},
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
-func fixModelRuntimeRegisterInput(name, description string, webhooks []*model.WebhookInput) model.RuntimeRegisterInput {
+func fixModelRuntimeRegisterInput(name, description, appNamespace string, webhooks []*model.WebhookInput) model.RuntimeRegisterInput {
 	return model.RuntimeRegisterInput{
 		Name:        name,
 		Description: &description,
 		Labels: map[string]interface{}{
 			"test": []string{"val", "val2"},
 		},
-		Webhooks: webhooks,
+		Webhooks:             webhooks,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
-func fixGQLRuntimeRegisterInput(name, description string, webhooks []*graphql.WebhookInput) graphql.RuntimeRegisterInput {
+func fixGQLRuntimeRegisterInput(name, description, appNamespace string, webhooks []*graphql.WebhookInput) graphql.RuntimeRegisterInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},
 	}
 
 	return graphql.RuntimeRegisterInput{
-		Name:        name,
-		Description: &description,
-		Labels:      labels,
-		Webhooks:    webhooks,
+		Name:                 name,
+		Description:          &description,
+		Labels:               labels,
+		Webhooks:             webhooks,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 

@@ -8,11 +8,12 @@ import (
 
 // Runtime missing godoc
 type Runtime struct {
-	ID                string
-	Name              string
-	Description       *string
-	Status            *RuntimeStatus
-	CreationTimestamp time.Time
+	ID                   string
+	Name                 string
+	Description          *string
+	Status               *RuntimeStatus
+	CreationTimestamp    time.Time
+	ApplicationNamespace *string
 }
 
 // GetID missing godoc
@@ -42,11 +43,12 @@ const (
 
 // RuntimeRegisterInput missing godoc
 type RuntimeRegisterInput struct {
-	Name            string
-	Description     *string
-	Labels          map[string]interface{}
-	Webhooks        []*WebhookInput
-	StatusCondition *RuntimeStatusCondition
+	Name                 string
+	Description          *string
+	Labels               map[string]interface{}
+	Webhooks             []*WebhookInput
+	StatusCondition      *RuntimeStatusCondition
+	ApplicationNamespace *string
 }
 
 // ToRuntime missing godoc
@@ -63,16 +65,18 @@ func (i *RuntimeRegisterInput) ToRuntime(id string, creationTimestamp, condition
 			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: conditionTimestamp,
 		},
-		CreationTimestamp: creationTimestamp,
+		CreationTimestamp:    creationTimestamp,
+		ApplicationNamespace: i.ApplicationNamespace,
 	}
 }
 
 // RuntimeUpdateInput missing godoc
 type RuntimeUpdateInput struct {
-	Name            string
-	Description     *string
-	Labels          map[string]interface{}
-	StatusCondition *RuntimeStatusCondition
+	Name                 string
+	Description          *string
+	Labels               map[string]interface{}
+	StatusCondition      *RuntimeStatusCondition
+	ApplicationNamespace *string
 }
 
 // ToRuntime missing godoc
@@ -89,7 +93,8 @@ func (i *RuntimeUpdateInput) ToRuntime(id string, creationTimestamp, conditionTi
 			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: conditionTimestamp,
 		},
-		CreationTimestamp: creationTimestamp,
+		CreationTimestamp:    creationTimestamp,
+		ApplicationNamespace: i.ApplicationNamespace,
 	}
 }
 

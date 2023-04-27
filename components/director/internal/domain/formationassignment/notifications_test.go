@@ -63,7 +63,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 		ObjectType: model.RuntimeWebhookReference,
 	}
 
-	testLabels := map[string]interface{}{"testLabelKey": "testLabelValue"}
+	testLabels := map[string]string{"testLabelKey": "testLabelValue"}
 	testAppWithLabels := &webhook.ApplicationWithLabels{
 		Application: &model.Application{
 			Name:                  "testAppName",

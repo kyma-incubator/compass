@@ -127,27 +127,27 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-3018"
+      version: "PR-3002"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-hydrator
     ias_adapter:
       dir:
-      version: "PR-3010"
+      version: "PR-3022"
       name: compass-ias-adapter
     tm_adapter:
       dir:
@@ -155,23 +155,23 @@ global:
       name: compass-tm-adapter
     gateway:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-91"
+      version: "PR-92"
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-3001"
+      version: "PR-3022"
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,15 +180,15 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-3007"
+      version: "PR-3022"
       name: compass-external-services-mock
     console:
       dir:
-      version: "PR-80"
+      version: "PR-83"
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-3007"
+      version: "PR-2999"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -302,6 +302,7 @@ global:
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
+    kymaApplicationNamespaceValue: "sap.kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
@@ -779,6 +780,7 @@ global:
       customerIdProperty: "customerId"
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
+      licenseTypeProperty: "licenseType"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
@@ -988,6 +990,7 @@ global:
           nameField: "name"
           customerIdField: "customerId"
           subdomainField: "subdomain"
+          licenseTypeField: "licenseType"
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
@@ -1013,6 +1016,7 @@ global:
           nameField: "displayName"
           customerIdField: "customerId"
           subdomainField: "subdomain"
+          licenseTypeField: "licenseType"
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"

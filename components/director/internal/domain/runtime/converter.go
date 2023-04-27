@@ -28,11 +28,12 @@ func (c *converter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	}
 
 	return &graphql.Runtime{
-		ID:          in.ID,
-		Status:      c.statusToGraphQL(in.Status),
-		Name:        in.Name,
-		Description: in.Description,
-		Metadata:    c.metadataToGraphQL(in.CreationTimestamp),
+		ID:                   in.ID,
+		Status:               c.statusToGraphQL(in.Status),
+		Name:                 in.Name,
+		Description:          in.Description,
+		Metadata:             c.metadataToGraphQL(in.CreationTimestamp),
+		ApplicationNamespace: in.ApplicationNamespace,
 	}
 }
 
@@ -63,11 +64,12 @@ func (c *converter) RegisterInputFromGraphQL(in graphql.RuntimeRegisterInput) (m
 	}
 
 	return model.RuntimeRegisterInput{
-		Name:            in.Name,
-		Description:     in.Description,
-		Labels:          labels,
-		Webhooks:        webhooks,
-		StatusCondition: c.statusConditionToModel(in.StatusCondition),
+		Name:                 in.Name,
+		Description:          in.Description,
+		Labels:               labels,
+		Webhooks:             webhooks,
+		StatusCondition:      c.statusConditionToModel(in.StatusCondition),
+		ApplicationNamespace: in.ApplicationNamespace,
 	}, nil
 }
 
@@ -79,10 +81,11 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.RuntimeUpdateInput) model.
 	}
 
 	return model.RuntimeUpdateInput{
-		Name:            in.Name,
-		Description:     in.Description,
-		Labels:          labels,
-		StatusCondition: c.statusConditionToModel(in.StatusCondition),
+		Name:                 in.Name,
+		Description:          in.Description,
+		Labels:               labels,
+		StatusCondition:      c.statusConditionToModel(in.StatusCondition),
+		ApplicationNamespace: in.ApplicationNamespace,
 	}
 }
 
@@ -157,13 +160,22 @@ func (*converter) ToEntity(model *model.Runtime) (*Runtime, error) {
 		return nil, apperrors.NewInternalError("invalid input model")
 	}
 
+	var nullApplicationNamespace sql.NullString
+	if model.ApplicationNamespace != nil && len(*model.ApplicationNamespace) > 0 {
+		nullApplicationNamespace = sql.NullString{
+			String: *model.ApplicationNamespace,
+			Valid:  true,
+		}
+	}
+
 	return &Runtime{
-		ID:                model.ID,
-		Name:              model.Name,
-		Description:       nullDescription,
-		StatusCondition:   string(model.Status.Condition),
-		StatusTimestamp:   model.Status.Timestamp,
-		CreationTimestamp: model.CreationTimestamp,
+		ID:                   model.ID,
+		Name:                 model.Name,
+		Description:          nullDescription,
+		StatusCondition:      string(model.Status.Condition),
+		StatusTimestamp:      model.Status.Timestamp,
+		CreationTimestamp:    model.CreationTimestamp,
+		ApplicationNamespace: nullApplicationNamespace,
 	}, nil
 }
 
@@ -178,6 +190,12 @@ func (*converter) FromEntity(e *Runtime) *model.Runtime {
 		*description = e.Description.String
 	}
 
+	var applicationNamespace *string
+	if e.ApplicationNamespace.Valid {
+		applicationNamespace = new(string)
+		*applicationNamespace = e.ApplicationNamespace.String
+	}
+
 	return &model.Runtime{
 		ID:          e.ID,
 		Name:        e.Name,
@@ -186,6 +204,7 @@ func (*converter) FromEntity(e *Runtime) *model.Runtime {
 			Condition: model.RuntimeStatusCondition(e.StatusCondition),
 			Timestamp: e.StatusTimestamp,
 		},
-		CreationTimestamp: e.CreationTimestamp,
+		CreationTimestamp:    e.CreationTimestamp,
+		ApplicationNamespace: applicationNamespace,
 	}
 }

@@ -13,6 +13,7 @@ func TestRuntimeRegisterInput_ToRuntime(t *testing.T) {
 	// GIVEN
 	desc := "Sample"
 	id := "foo"
+	appNamespace := "testRegisterNs"
 	creationTimestamp := time.Now()
 	conditionTimestamp := time.Now()
 	conditionStatus := model.RuntimeStatusConditionConnected
@@ -29,7 +30,8 @@ func TestRuntimeRegisterInput_ToRuntime(t *testing.T) {
 				Labels: map[string]interface{}{
 					"test": []string{"val", "val2"},
 				},
-				StatusCondition: &conditionStatus,
+				StatusCondition:      &conditionStatus,
+				ApplicationNamespace: &appNamespace,
 			},
 			Expected: &model.Runtime{
 				Name:        "Foo",
@@ -39,7 +41,8 @@ func TestRuntimeRegisterInput_ToRuntime(t *testing.T) {
 					Condition: conditionStatus,
 					Timestamp: conditionTimestamp,
 				},
-				CreationTimestamp: creationTimestamp,
+				CreationTimestamp:    creationTimestamp,
+				ApplicationNamespace: &appNamespace,
 			},
 		},
 		{
@@ -64,6 +67,7 @@ func TestRuntimeUpdateInput_ToRuntime(t *testing.T) {
 	// GIVEN
 	desc := "Sample"
 	id := "foo"
+	appNamespace := "testUpdateNs"
 	creationTimestamp := time.Now()
 	conditionTimestamp := time.Now()
 	conditionStatus := model.RuntimeStatusConditionConnected
@@ -80,7 +84,8 @@ func TestRuntimeUpdateInput_ToRuntime(t *testing.T) {
 				Labels: map[string]interface{}{
 					"test": []string{"val", "val2"},
 				},
-				StatusCondition: &conditionStatus,
+				StatusCondition:      &conditionStatus,
+				ApplicationNamespace: &appNamespace,
 			},
 			Expected: &model.Runtime{
 				Name:        "Foo",
@@ -90,7 +95,8 @@ func TestRuntimeUpdateInput_ToRuntime(t *testing.T) {
 					Condition: conditionStatus,
 					Timestamp: conditionTimestamp,
 				},
-				CreationTimestamp: creationTimestamp,
+				CreationTimestamp:    creationTimestamp,
+				ApplicationNamespace: &appNamespace,
 			},
 		},
 		{

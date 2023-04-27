@@ -153,7 +153,7 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 			Context: ctx,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, "", tenantEntity.Account), nil).Once()
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, "", nil, tenantEntity.Account), nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testID,
@@ -163,7 +163,7 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 			Context: ctx,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Subaccount), nil).Once()
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, testParentID, nil, tenantEntity.Subaccount), nil).Once()
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testParentID,
@@ -366,7 +366,7 @@ func TestService_ListPageBySearchTerm(t *testing.T) {
 func TestService_DeleteMany(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
-	tenantInput := newModelBusinessTenantMappingInput(testName, "", "")
+	tenantInput := newModelBusinessTenantMappingInput(testName, "", "", nil)
 	testErr := errors.New("test")
 	testCases := []struct {
 		Name                string
@@ -418,20 +418,24 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
-	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", ""),
-		newModelBusinessTenantMappingInput("test2", "", "").WithExternalTenant("external2")}
-	tenantInputsWithSubdomains := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", testSubdomain, ""),
-		newModelBusinessTenantMappingInput("test2", "", "").WithExternalTenant("external2")}
-	tenantInputsWithRegions := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", testRegion),
-		newModelBusinessTenantMappingInput("test2", "", testRegion).WithExternalTenant("external2")}
-	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", tenantEntity.Account),
-		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", tenantEntity.Customer)}
-	tenantWithSubdomainAndRegion := newModelBusinessTenantMappingInput("test1", testSubdomain, testRegion)
-	tenantModelInputsWithParentOrganization := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", tenantEntity.Organization),
-		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", tenantEntity.Folder)}
+	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", "", nil),
+		newModelBusinessTenantMappingInput("test2", "", "", nil).WithExternalTenant("external2")}
+	tenantInputsWithSubdomains := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", testSubdomain, "", nil),
+		newModelBusinessTenantMappingInput("test2", "", "", nil).WithExternalTenant("external2")}
+	tenantInputsWithRegions := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", testRegion, nil),
+		newModelBusinessTenantMappingInput("test2", "", testRegion, nil).WithExternalTenant("external2")}
+	tenantInputsWithLicenseType := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", "", str.Ptr(testLicenseType)),
+		newModelBusinessTenantMappingInput("test2", "", "", str.Ptr(testLicenseType)).WithExternalTenant("external2")}
+	tenantModelInputsWithParent := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", nil, tenantEntity.Account),
+		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", nil, tenantEntity.Customer)}
+	tenantWithSubdomainAndRegion := newModelBusinessTenantMappingInput("test1", testSubdomain, testRegion, nil)
+	tenantModelInputsWithParentOrganization := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInputWithType(testID, "test1", testParentID, "", "", nil, tenantEntity.Organization),
+		newModelBusinessTenantMappingInputWithType(testParentID, "test2", "", "", "", nil, tenantEntity.Folder)}
 
 	tenantModels := []model.BusinessTenantMapping{*newModelBusinessTenantMapping(testID, "test1"),
 		newModelBusinessTenantMapping(testID, "test2").WithExternalTenant("external2")}
+	tenantModelsWithLicense := []model.BusinessTenantMapping{*newModelBusinessTenantMappingWithLicense(testID, "test1", str.Ptr(testLicenseType)),
+		newModelBusinessTenantMappingWithLicense(testID, "test2", str.Ptr(testLicenseType)).WithExternalTenant("external2")}
 
 	expectedResult := []string{testID, testID}
 	uidSvcFn := func() *automock.UIDService {
@@ -567,6 +571,28 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			ExpectedResult: expectedResult,
 		},
 		{
+			Name:         "Success when licenseType should be added",
+			tenantInputs: tenantInputsWithLicenseType,
+			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
+				return createRepoSvc(ctx, createFuncName, *tenantInputsWithLicenseType[0].ToBusinessTenantMapping(testID), *tenantInputsWithLicenseType[1].ToBusinessTenantMapping(testID))
+			},
+			UIDSvcFn:    uidSvcFn,
+			LabelRepoFn: noopLabelRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				label := &model.LabelInput{
+					Key:        "licensetype",
+					Value:      testLicenseType,
+					ObjectID:   tenantModelsWithLicense[1].ID,
+					ObjectType: model.TenantLabelableObject,
+				}
+				svc.On("UpsertLabel", ctx, testID, label).Return(nil).Twice()
+				return svc
+			},
+			ExpectedError:  nil,
+			ExpectedResult: expectedResult,
+		},
+		{
 			Name:         "Error when checking the existence of tenant",
 			tenantInputs: []model.BusinessTenantMappingInput{tenantWithSubdomainAndRegion},
 			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
@@ -622,6 +648,31 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				label := &model.LabelInput{
 					Key:        "region",
 					Value:      testRegion,
+					ObjectID:   testID,
+					ObjectType: model.TenantLabelableObject,
+				}
+				svc.On("UpsertLabel", ctx, testID, label).Return(testErr).Once()
+				return svc
+			},
+			ExpectedError:  testErr,
+			ExpectedResult: nil,
+		},
+		{
+			Name:         "Error when licenseType label setting fails",
+			tenantInputs: tenantInputsWithLicenseType,
+			TenantMappingRepoFn: func(createFuncName string) *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On(createFuncName, ctx, tenantModelsWithLicense[0]).Return(nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithRegions[0].ExternalTenant).Return(&tenantModelsWithLicense[0], nil)
+				return tenantMappingRepo
+			},
+			UIDSvcFn:    uidSvcFn,
+			LabelRepoFn: noopLabelRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				label := &model.LabelInput{
+					Key:        "licensetype",
+					Value:      testLicenseType,
 					ObjectID:   testID,
 					ObjectType: model.TenantLabelableObject,
 				}
@@ -703,9 +754,9 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 func Test_UpsertSingle(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
-	tenantInput := newModelBusinessTenantMappingInput("test1", "", "")
-	tenantInputWithSubdomain := newModelBusinessTenantMappingInput("test1", testSubdomain, "")
-	tenantInputWithRegion := newModelBusinessTenantMappingInput("test1", "", testRegion)
+	tenantInput := newModelBusinessTenantMappingInput("test1", "", "", nil)
+	tenantInputWithSubdomain := newModelBusinessTenantMappingInput("test1", testSubdomain, "", nil)
+	tenantInputWithRegion := newModelBusinessTenantMappingInput("test1", "", testRegion, nil)
 
 	tenantModel := newModelBusinessTenantMapping(testID, "test1")
 

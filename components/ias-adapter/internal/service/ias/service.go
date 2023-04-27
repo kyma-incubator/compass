@@ -96,16 +96,14 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if len(applications.Applications) == 0 {
 		return types.Application{}, errors.Newf("no applications found with clientID '%s'", clientID)
 	}
-	if len(applications.Applications) == 1 {
-		return applications.Applications[0], nil // TODO do we leave this?
-	}
 
 	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
 }
 
 func filterByAppTenantID(applications []types.Application, clientID, appTenantID string) (types.Application, error) {
 	for _, application := range applications {
-		if application.Authentication.SAPManagedAttributes.AppTenantId == appTenantID {
+		if application.Authentication.SAPManagedAttributes.AppTenantID == appTenantID ||
+			application.Authentication.SAPManagedAttributes.SAPZoneID == appTenantID {
 			return application, nil
 		}
 	}
