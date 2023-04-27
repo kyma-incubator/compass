@@ -345,7 +345,7 @@ config:
             usage: "COUNTER"
             description: "Number of INTERNAL tenants that have at least one non auto-discovered Application (the tenant is owner and its parent is null) or tenants that have at least 1 formation different from the default one where their parent is either null or their parent is of type customer"
     
-     compass_director_trial_customer_adoption:
+    compass_director_trial_customer_adoption:
       query: "SELECT COUNT(DISTINCT (id)) as quantity FROM business_tenant_mappings WHERE ((id IN ( SELECT b.id FROM applications a JOIN tenant_applications ta ON a.id = ta.id JOIN business_tenant_mappings b ON ta.tenant_id = b.id WHERE ta.owner IS true AND ta.id IN (SELECT app_id FROM labels WHERE key='managed' AND value ? 'false') AND b.parent IS null) OR id IN ( SELECT b2.id FROM formations JOIN business_tenant_mappings b2 ON formations.tenant_id = b2.id WHERE name <> 'DEFAULT' AND (parent IS null OR parent IN (SELECT id FROM business_tenant_mappings b3 WHERE type = 'customer')))) AND (id IN (SELECT tenant_id FROM labels WHERE key = 'licensetype' AND (value ? 'TRIAL'))));"
       master: true
       cache_seconds: 43200
