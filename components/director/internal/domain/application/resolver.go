@@ -170,7 +170,7 @@ type tenantBusinessTypeService interface {
 //
 //go:generate mockery --name=tenantBusinessTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantBusinessTypeConverter interface {
-	ToGraphQL(in *model.TenantBusinessType) (*graphql.TenantBusinessType, error)
+	ToGraphQL(in *model.TenantBusinessType) *graphql.TenantBusinessType
 }
 
 // Resolver missing godoc
@@ -214,6 +214,8 @@ func NewResolver(transact persistence.Transactioner,
 	bndlConverter BundleConverter,
 	appTemplateSvc ApplicationTemplateService,
 	appTemplateConverter ApplicationTemplateConverter,
+	tenantBusinessTypeSvc tenantBusinessTypeService,
+	tenantBusinessTypeConverter tenantBusinessTypeConverter,
 	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
 		transact:                        transact,
@@ -229,6 +231,8 @@ func NewResolver(transact persistence.Transactioner,
 		bndlConv:                        bndlConverter,
 		appTemplateSvc:                  appTemplateSvc,
 		appTemplateConverter:            appTemplateConverter,
+		tenantBusinessTypeSvc:           tenantBusinessTypeSvc,
+		tenantBusinessTypeConverter:     tenantBusinessTypeConverter,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		tokenPrefix:                     tokenPrefix,
 	}
@@ -883,7 +887,7 @@ func (r *Resolver) TenantBusinessType(ctx context.Context, obj *graphql.Applicat
 		return nil, err
 	}
 
-	return r.tenantBusinessTypeConverter.ToGraphQL(tenantBusinessType)
+	return r.tenantBusinessTypeConverter.ToGraphQL(tenantBusinessType), nil
 }
 
 // getApplicationProviderTenant should be used when making requests with double authentication, i.e. consumerInfo.OnBehalfOf != nil;

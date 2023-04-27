@@ -15,7 +15,7 @@ type tenantBusinessTypeConverter struct {
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *tenantBusinessTypeConverter) ToGraphQL(in *model.TenantBusinessType) (*graphql.TenantBusinessType, error) {
+func (_m *tenantBusinessTypeConverter) ToGraphQL(in *model.TenantBusinessType) *graphql.TenantBusinessType {
 	ret := _m.Called(in)
 
 	var r0 *graphql.TenantBusinessType
@@ -27,14 +27,7 @@ func (_m *tenantBusinessTypeConverter) ToGraphQL(in *model.TenantBusinessType) (
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*model.TenantBusinessType) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 type mockConstructorTestingTnewTenantBusinessTypeConverter interface {
