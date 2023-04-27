@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Compass Tenant Mapping Adapter
+name: tm-adapter
+version: 0.1.0

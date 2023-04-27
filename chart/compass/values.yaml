@@ -149,6 +149,10 @@ global:
       dir:
       version: "PR-3010"
       name: compass-ias-adapter
+    tm_adapter:
+      dir:
+      version: "PR-XXXX"
+      name: compass-tm-adapter
     gateway:
       dir:
       version: "PR-3007"
@@ -477,6 +481,26 @@ global:
       port: 3003
       enableClientInstrumentation: true
       censoredFlows: "JWT"
+  tenantMappingAdapter:
+    port: 3000
+    apiRootPath: "/tm-adapter"
+    tmApiPath: "/v1/tenantMappings/{tenantId}"
+    readTimeout: 30s
+    readHeaderTimeout: 30s
+    writeTimeout: 30s
+    idleTimeout: 30s
+    http:
+      client:
+        timeout: 30s
+        skipSSLValidation: false
+    oauthSecret:
+      manage: false
+      name: "sm-credentials"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
+      oauthTokenPath: "/oauth/token" # todo::: change/fix local overrides - oauthTokenPath: "/secured/oauth/token"
+      smUrlKey: sm-url
   iasAdapter:
     port: 8080
     apiRootPath: "/ias-adapter"

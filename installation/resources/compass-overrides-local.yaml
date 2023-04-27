@@ -84,6 +84,12 @@ global:
     http:
       client:
         skipSSLValidation: true
+  tenantMappingAdapter:
+    http:
+      client:
+        skipSSLValidation: true
+    oauthSecret:
+      manage: true
   iasAdapter:
     tenantInfo:
       insecureSkipVerify: true

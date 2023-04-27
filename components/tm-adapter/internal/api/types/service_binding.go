@@ -1,0 +1,18 @@
+package types
+
+import (
+	"encoding/json"
+)
+
+type ServiceKeyReqBody struct {
+	Name              string          `json:"name"`
+	ServiceInstanceId string          `json:"service_instance_id"`
+	Parameters        json.RawMessage `json:"parameters,omitempty"` // todo::: differs from service to service. Most probably the necessary data will be provided as arbitrary json in the TN notification body?
+}
+
+type ServiceKey struct {
+	Id                string          `json:"id"`
+	Name              string          `json:"name"`
+	ServiceInstanceId string          `json:"service_instance_id"`
+	Credentials       json.RawMessage `json:"credentials"`
+}
