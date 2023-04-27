@@ -273,7 +273,7 @@ config:
     #       description: "Total time the statement spent reading blocks, in seconds"
     #   - block_write_seconds_total:
     #       usage: "COUNTER"
-    #       description: "Total time the statement spent writing blocks, in seconds"#
+    #       description: "Total time the statement spent writing blocks, in seconds"
 
     compass_director_tenants_total:
       query: "SELECT COUNT(ID) as quantity FROM business_tenant_mappings;"
