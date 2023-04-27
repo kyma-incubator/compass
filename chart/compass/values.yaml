@@ -124,7 +124,7 @@ global:
       parent: 4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900
   images:
     containerRegistry:
-      path: eu.gcr.io/kyma-project/incubator
+      path: europe-docker.pkg.dev/kyma-project/dev/incubator
     connector:
       dir:
       version: "PR-3022"
