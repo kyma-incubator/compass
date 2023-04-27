@@ -36,7 +36,7 @@ To do this, perform the following procedure:
 
 1. Navigate to `compass/installation/cmd`.
 2. Execute `./run.sh`.
-This script starts Compass on top of a minimal Kyma cluster.
+This script starts Compass with minimal Kyma dependencies.
 3. Access the System Broker API at the following URL: `https://compass-gateway-mtls.kyma.local/broker`.
 
 ## Configuration
