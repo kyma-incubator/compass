@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3002"
+      version: "PR-3041"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -1196,6 +1196,7 @@ global:
         - "application_template.webhooks:read"
         - "internal_visibility:read"
         - "webhook:write"
+        - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
       managed_application_consumer: []
       landscape_resource_operator:
