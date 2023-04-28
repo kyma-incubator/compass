@@ -27,7 +27,7 @@ spec:
       - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       containers:
-        - name: {{ .Values.global.systemFetcher.containerName }}
+        - name: {{ .Values.global.systemFetcher.containerName }}-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
