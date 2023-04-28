@@ -103,6 +103,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		systemStatus
 		integrationSystemID
 		applicationTemplateID
+		tenantBusinessType {id}
 		labels
 		deletedAt
 		updatedAt
