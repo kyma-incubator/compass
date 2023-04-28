@@ -227,5 +227,23 @@ func credentialToModel(in graphql.CredentialData) model.CredentialData {
 		}
 	}
 
+	switch cred := in.(type) {
+	case *graphql.BasicCredentialData:
+		if basic == nil {
+			basic = &model.BasicCredentialData{
+				Username: cred.Username,
+				Password: cred.Password,
+			}
+		}
+	case *graphql.OAuthCredentialData:
+		if oauth == nil {
+			oauth = &model.OAuthCredentialData{
+				ClientID:     cred.ClientID,
+				ClientSecret: cred.ClientSecret,
+				URL:          cred.URL,
+			}
+		}
+	}
+
 	return model.CredentialData{Basic: basic, Oauth: oauth}
 }
