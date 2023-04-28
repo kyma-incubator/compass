@@ -416,7 +416,7 @@ func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.B
 	conditions := repo.Conditions{
 		repo.NewInConditionForSubQuery(
 			idColumn, "SELECT DISTINCT tenant_id from tenant_runtime_contexts", []interface{}{}),
-		repo.NewNotNullCondition(parentColumn),
+		repo.NewEqualCondition(typeColumn, tenant.Subaccount),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
