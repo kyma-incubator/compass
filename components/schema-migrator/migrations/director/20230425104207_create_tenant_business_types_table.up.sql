@@ -2,9 +2,9 @@ BEGIN;
 
 -- Create tables --
 CREATE TABLE tenant_business_types (
-                                       id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-                                       code varchar(10) NOT NULL,
-                                       name varchar(100) NOT NULL
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    code varchar(10) NOT NULL,
+    name varchar(100) NOT NULL
 );
 
 -- Alter tables --
