@@ -27,20 +27,20 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
-		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
 	logProcessing(ctx, tenantMapping)
 
 	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
 		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
-		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
 	if err := tenantMapping.Validate(); err != nil {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)
-		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
 	if !strings.HasPrefix(tenantMapping.ReceiverTenant.ApplicationURL, "http") {
