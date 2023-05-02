@@ -245,11 +245,6 @@ The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/
 ```bash
 ./installation/cmd/run.sh --kyma-release {KYMA_VERSION} --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
-You can also specify if you want the Kyma installation to contain only `minimal` components or whether you want `full` Kyma
-
-```bash
-./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
-```
 
 Optionally, you can use the `--dump-db` flag to populate the DB with sample data. As a result, a DB dump is downloaded from the Compass development environment and is imported into the DB during the installation of Compass. Note that you can only use this feature if you are part of the Compass contributors. Otherwise, you will not have access to the development environment, from which the data is obtained.
 Note that using this flag also results in building a new `schema-migrator` image from the local files.
