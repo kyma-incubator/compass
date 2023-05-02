@@ -17,7 +17,7 @@ import (
 )
 
 var _ = Describe("Tenant Mapping Handler", func() {
-	var tenantMapping = types.TenantMapping{
+	var tenantMappingOkReverse = types.TenantMapping{
 		FormationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
 		ReceiverTenant: types.ReceiverTenant{
 			ApplicationURL: "localhost",
@@ -30,11 +30,30 @@ var _ = Describe("Tenant Mapping Handler", func() {
 				Parameters: types.AssignedTenantParameters{
 					ClientID: "clientID",
 				},
+				ReverseAssignmentState: "READY",
+			},
+		},
+	}
+
+	var tenantMappingFailedReverse = types.TenantMapping{
+		FormationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+		ReceiverTenant: types.ReceiverTenant{
+			ApplicationURL: "localhost",
+		},
+		AssignedTenants: []types.AssignedTenant{
+			{
+				UCLApplicationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				LocalTenantID:    "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				Operation:        types.OperationAssign,
+				Parameters: types.AssignedTenantParameters{
+					ClientID: "clientID",
+				},
+				ReverseAssignmentState: "CREATE_ERROR",
 			},
 		},
 	}
 	When("Tenant mapping cannot be decoded", func() {
-		It("Should fail with 422", func() {
+		It("Should fail with 400", func() {
 			handler := TenantMappingsHandler{
 				Service: &automock.TenantMappingsService{},
 			}
@@ -46,11 +65,11 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
 			Expect(responseBody).To(ContainSubstring(url.QueryEscape("failed to decode tenant mapping body")))
-			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(w.Code).To(Equal(http.StatusBadRequest))
 		})
 	})
 	When("Tenant mapping is invalid", func() {
-		It("Should fail with 422", func() {
+		It("Should fail with 400", func() {
 			handler := TenantMappingsHandler{
 				Service: &automock.TenantMappingsService{},
 			}
@@ -62,6 +81,22 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
 			Expect(responseBody).To(ContainSubstring(url.QueryEscape("tenant mapping body is invalid")))
+			Expect(w.Code).To(Equal(http.StatusBadRequest))
+		})
+	})
+	When("Reverse assignment state is not ready", func() {
+		It("Should fail with 422", func() {
+			service := &automock.TenantMappingsService{}
+			handler := TenantMappingsHandler{
+				Service: service,
+			}
+
+			data, err := json.Marshal(tenantMappingFailedReverse)
+			Expect(err).Error().ToNot(HaveOccurred())
+			body := bytes.NewReader(data)
+			w, ctx := createTestRequest(body)
+
+			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 	})
@@ -73,7 +108,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 				Service: service,
 			}
 
-			data, err := json.Marshal(tenantMapping)
+			data, err := json.Marshal(tenantMappingOkReverse)
 			Expect(err).Error().ToNot(HaveOccurred())
 			body := bytes.NewReader(data)
 			w, ctx := createTestRequest(body)
@@ -90,7 +125,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 				Service: service,
 			}
 
-			data, err := json.Marshal(tenantMapping)
+			data, err := json.Marshal(tenantMappingOkReverse)
 			Expect(err).Error().ToNot(HaveOccurred())
 			body := bytes.NewReader(data)
 			w, ctx := createTestRequest(body)
