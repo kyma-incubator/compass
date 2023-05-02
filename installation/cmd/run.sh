@@ -32,12 +32,6 @@ do
     key="$1"
 
     case ${key} in
-        --kyma-installation)
-            checkInputParameterValue "${2}"
-            KYMA_INSTALLATION="${2}"
-            shift # past argument
-            shift # past value
-        ;;
         --skip-k3d-start)
             SKIP_K3D_START=true
             shift # past argument
@@ -175,10 +169,6 @@ else
   fi
 fi
 
-if [ -z "$KYMA_INSTALLATION" ]; then
-  KYMA_INSTALLATION="minimal"
-fi
-
 if [[ ${DUMP_DB} ]]; then
     echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
 
@@ -242,7 +232,7 @@ NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
 kubectl label --overwrite node "$NODE" benchmark=true || true
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
-  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-installation ${KYMA_INSTALLATION}
+  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
   kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
   kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
   until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
