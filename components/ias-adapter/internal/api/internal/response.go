@@ -1,12 +1,19 @@
 package internal
 
 import (
+	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
+)
+
+const (
+	SuccessStatusCode    = http.StatusOK
+	IncompleteStatusCode = http.StatusUnprocessableEntity
+	ErrorStatusCode      = http.StatusInternalServerError
 )
 
 type errorResponse struct {

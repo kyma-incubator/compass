@@ -47,9 +47,16 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
+	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
+	if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
+		errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
+		err := errors.Newf(errMsgf, reverseAssignmentState)
+		internal.RespondWithError(ctx, internal.IncompleteStatusCode, err)
+		return
+	}
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
-		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
+		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)
 		return
 	}
 
