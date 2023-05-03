@@ -36,6 +36,12 @@ var (
 
 	first = 2
 	after = "test"
+
+	readyState         = string(model.ReadyAssignmentState)
+	configPendingState = string(model.ConfigPendingAssignmentState)
+	initialState       = string(model.InitialAssignmentState)
+	deleteErrorState   = string(model.DeleteErrorAssignmentState)
+	invalidState       = "asd"
 )
 
 func TestService_Create(t *testing.T) {
@@ -2200,11 +2206,6 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		CorrelationID: "",
 	}
 
-	configPendingState := string(model.ConfigPendingAssignmentState)
-	initialState := string(model.InitialAssignmentState)
-	deleteErrorState := string(model.DeleteErrorAssignmentState)
-	invalidState := "asd"
-
 	testCases := []struct {
 		Name                         string
 		Context                      context.Context
@@ -3054,9 +3055,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	incompleteResponse := &webhook.Response{ActualStatusCode: &accepted, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted}
 	errorResponse := &webhook.Response{ActualStatusCode: &notFound, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, Error: &errMsg}
 
-	readyState := string(model.ReadyAssignmentState)
-	deleteErrorState := string(model.DeleteErrorAssignmentState)
-	invalidState := "asd"
 	successResponseWithStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &readyState}
 	deleteErrorResponseWithStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &deleteErrorState}
 	responseWithInvalidStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &invalidState}

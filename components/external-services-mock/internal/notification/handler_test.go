@@ -63,8 +63,7 @@ func TestHandler_Patch(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			//WHEN
-			patchHandler := h.Patch
-			patchHandler(r, req)
+			h.Patch(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
@@ -121,8 +120,7 @@ func TestHandler_PatchWithState(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			//WHEN
-			patchHandler := h.PatchWithState
-			patchHandler(r, req)
+			h.PatchWithState(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
