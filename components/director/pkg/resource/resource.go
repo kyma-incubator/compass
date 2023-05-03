@@ -84,6 +84,8 @@ const (
 	AppWebhook Type = "appWebhook"
 	// RuntimeWebhook type represents runtime webhook resource.
 	RuntimeWebhook Type = "runtimeWebhook"
+	// Operation type represents operation resource.
+	Operation Type = "operation"
 	// FormationTemplateWebhook type represents formation template webhook resource.
 	FormationTemplateWebhook Type = "formationTemplateWebhook"
 	// Tenant type represents tenant resource.
