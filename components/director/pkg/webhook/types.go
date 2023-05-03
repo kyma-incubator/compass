@@ -68,6 +68,7 @@ type URL struct {
 type Response struct {
 	Config               *string `json:"config"`
 	Location             *string `json:"location"`
+	State                *string `json:"state"`
 	SuccessStatusCode    *int    `json:"success_status_code"`
 	IncompleteStatusCode *int    `json:"incomplete_status_code"`
 	ActualStatusCode     *int    `json:"-"`
