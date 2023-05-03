@@ -73,6 +73,7 @@ type FormationAssignmentResponseBody struct {
 // FormationAssignmentResponseBodyWithState contains the synchronous formation assignment notification response body with state in it
 type FormationAssignmentResponseBodyWithState struct {
 	Config FormationAssignmentResponseConfig
+	Error  string         `json:"error,omitempty"`
 	State  FormationState `json:"state"`
 }
 

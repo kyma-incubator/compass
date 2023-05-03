@@ -255,8 +255,7 @@ func TestHandler_Delete(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			//WHEN
-			deleteHandler := h.Delete
-			deleteHandler(r, req)
+			h.Delete(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
@@ -327,8 +326,7 @@ func TestHandler_DeleteWithState(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			//WHEN
-			deleteHandler := h.DeleteWithState
-			deleteHandler(r, req)
+			h.DeleteWithState(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
