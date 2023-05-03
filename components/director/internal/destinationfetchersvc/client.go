@@ -358,7 +358,7 @@ func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationN
 	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read body of response")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	return body, nil
