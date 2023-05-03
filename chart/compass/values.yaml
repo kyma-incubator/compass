@@ -147,7 +147,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3047"
       name: compass-ias-adapter
     gateway:
       dir: dev/incubator/
@@ -176,7 +176,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3017"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-2999"
+      version: "PR-3017"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
