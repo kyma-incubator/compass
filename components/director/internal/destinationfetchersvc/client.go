@@ -302,7 +302,7 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 	}
 	c.authToken = authToken.AccessToken
 	c.authTokenValidity = time.Now().Add(time.Second * time.Duration(authToken.ExpiresInSeconds))
-	return "", nil
+	return c.authToken, nil
 }
 
 func (c *Client) doTokenRequest(tokenRequest *http.Request) (token, error) {
