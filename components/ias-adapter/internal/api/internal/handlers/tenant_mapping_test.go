@@ -67,7 +67,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 	})
 	When("Reverse assignment state is neither INITIAL nor READY", func() {
 		BeforeEach(func() {
-			tenantMapping.AssignedTenants[0].ReverseAssignmentState = "not-initial/ready"
+			tenantMapping.AssignedTenants[0].ReverseAssignmentState = "CREATE_ERROR"
 		})
 		It("Should fail with 422 CONFIG_PENDING", func() {
 			service := &automock.TenantMappingsService{}
