@@ -544,13 +544,361 @@ data:
           }
         },
         {
+          "type": "graph",
+          "title": "Customer adoption - External",
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 6,
+            "h": 7
+          },
+          "aliasColors": {},
+          "dashLength": 10,
+          "datasource": "Prometheus",
+          "editable": true,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "grid": {
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 61,
+          "legend": {
+            "alignAsTable": true,
+            "avg": false,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "pointradius": 5,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "targets": [
+            {
+              "expr": "sum(compass_director_external_customer_adoption_quantity)",
+              "legendFormat": "Number of external customer tenants",
+              "interval": "10s",
+              "exemplar": true,
+              "format": "time_series",
+              "instant": false,
+              "intervalFactor": 1,
+              "metric": "container_memory_usage_bytes",
+              "refId": "A",
+              "step": 15
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1242",
+              "decimals": 0,
+              "format": "none",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1243",
+              "decimals": 0,
+              "format": "none",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          },
+          "bars": false,
+          "dashes": false,
+          "decimals": 0,
+          "error": false,
+          "fillGradient": 0,
+          "hiddenSeries": false,
+          "isNew": false,
+          "percentage": false,
+          "pluginVersion": "",
+          "points": false,
+          "stack": false,
+          "steppedLine": false,
+          "timeFrom": null,
+          "timeShift": null
+        },
+        {
+          "type": "graph",
+          "title": "Customer adoption - Internal",
+          "gridPos": {
+            "x": 6,
+            "y": 8,
+            "w": 6,
+            "h": 7
+          },
+          "aliasColors": {},
+          "dashLength": 10,
+          "datasource": "Prometheus",
+          "editable": true,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "grid": {
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 63,
+          "legend": {
+            "alignAsTable": true,
+            "avg": false,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "pointradius": 5,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "targets": [
+            {
+              "expr": "sum(compass_director_internal_customer_adoption_quantity)",
+              "legendFormat": "Number of internal customer tenants",
+              "interval": "10s",
+              "exemplar": true,
+              "format": "time_series",
+              "instant": false,
+              "intervalFactor": 1,
+              "metric": "container_memory_usage_bytes",
+              "refId": "A",
+              "step": 15
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1242",
+              "decimals": 0,
+              "format": "none",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1243",
+              "decimals": 0,
+              "format": "none",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          },
+          "bars": false,
+          "dashes": false,
+          "decimals": 0,
+          "error": false,
+          "fillGradient": 0,
+          "hiddenSeries": false,
+          "isNew": false,
+          "percentage": false,
+          "pluginVersion": "",
+          "points": false,
+          "stack": false,
+          "steppedLine": false,
+          "timeFrom": null,
+          "timeShift": null
+        },
+        {
+          "type": "graph",
+          "title": "Customer adoption - Trial",
+          "gridPos": {
+            "x": 12,
+            "y": 8,
+            "w": 6,
+            "h": 7
+          },
+          "aliasColors": {},
+          "dashLength": 10,
+          "datasource": "Prometheus",
+          "editable": true,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "grid": {
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 65,
+          "legend": {
+            "alignAsTable": true,
+            "avg": false,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "pointradius": 5,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "targets": [
+            {
+              "expr": "sum(compass_director_trial_customer_adoption_quantity)",
+              "legendFormat": "Number of trial customer tenants",
+              "interval": "10s",
+              "exemplar": true,
+              "format": "time_series",
+              "instant": false,
+              "intervalFactor": 1,
+              "metric": "container_memory_usage_bytes",
+              "refId": "A",
+              "step": 15
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1242",
+              "decimals": 0,
+              "format": "none",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1243",
+              "decimals": 0,
+              "format": "none",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          },
+          "bars": false,
+          "dashes": false,
+          "decimals": 0,
+          "error": false,
+          "fillGradient": 0,
+          "hiddenSeries": false,
+          "isNew": false,
+          "percentage": false,
+          "pluginVersion": "",
+          "points": false,
+          "stack": false,
+          "steppedLine": false,
+          "timeFrom": null,
+          "timeShift": null
+        },
+        {
           "collapsed": false,
           "datasource": null,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 8
+            "y": 15
           },
           "id": 2,
           "panels": [],
@@ -582,7 +930,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 9
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 6,
@@ -717,7 +1065,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 9
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 7,
@@ -847,7 +1195,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 9
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 15,
@@ -991,7 +1339,7 @@ data:
             "h": 6,
             "w": 6,
             "x": 0,
-            "y": 17
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 13,
@@ -1091,7 +1439,7 @@ data:
             "h": 6,
             "w": 6,
             "x": 6,
-            "y": 17
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 21,
@@ -1191,7 +1539,7 @@ data:
             "h": 6,
             "w": 6,
             "x": 12,
-            "y": 17
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 17,
@@ -1294,7 +1642,7 @@ data:
             "h": 6,
             "w": 6,
             "x": 18,
-            "y": 17
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 19,
@@ -1387,7 +1735,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 23
+            "y": 30
           },
           "id": 36,
           "panels": [],
@@ -1415,7 +1763,7 @@ data:
             "h": 7,
             "w": 10,
             "x": 0,
-            "y": 24
+            "y": 31
           },
           "hiddenSeries": false,
           "id": 34,
@@ -1521,7 +1869,7 @@ data:
             "h": 7,
             "w": 14,
             "x": 10,
-            "y": 24
+            "y": 31
           },
           "hiddenSeries": false,
           "id": 33,
@@ -1658,7 +2006,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 0,
-            "y": 31
+            "y": 38
           },
           "hiddenSeries": false,
           "id": 9,
@@ -1761,7 +2109,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 31
+            "y": 38
           },
           "hiddenSeries": false,
           "id": 23,
@@ -1872,7 +2220,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 38
+            "y": 45
           },
           "id": 40,
           "panels": [],
@@ -1899,7 +2247,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 39
+            "y": 46
           },
           "hiddenSeries": false,
           "id": 42,
@@ -2009,7 +2357,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 47
+            "y": 54
           },
           "hiddenSeries": false,
           "id": 43,
@@ -2119,7 +2467,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 47
+            "y": 54
           },
           "hiddenSeries": false,
           "id": 44,
@@ -2214,7 +2562,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 55
+            "y": 62
           },
           "id": 29,
           "panels": [],
@@ -2281,7 +2629,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 56
+            "y": 63
           },
           "id": 46,
           "links": [],
@@ -2336,7 +2684,7 @@ data:
             "h": 8,
             "w": 18,
             "x": 6,
-            "y": 56
+            "y": 63
           },
           "hiddenSeries": false,
           "id": 38,
@@ -2427,7 +2775,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 64
+            "y": 71
           },
           "id": 58,
           "panels": [],
@@ -2454,7 +2802,7 @@ data:
             "h": 14,
             "w": 12,
             "x": 0,
-            "y": 65
+            "y": 72
           },
           "hiddenSeries": false,
           "id": 56,
@@ -2559,7 +2907,7 @@ data:
             "h": 14,
             "w": 12,
             "x": 12,
-            "y": 65
+            "y": 72
           },
           "hiddenSeries": false,
           "id": 59,

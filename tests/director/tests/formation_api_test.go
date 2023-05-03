@@ -109,12 +109,12 @@ func TestListFormations(t *testing.T) {
 	require.Empty(t, formationPage1.Data)
 
 	t.Logf("Should create formation: %q", firstFormationName)
-	firstFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
+	firstFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
 
 	t.Logf("Should create formation: %q", secondFormationName)
-	secondFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
+	secondFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
 
 	expectedFormations = 2
 	t.Logf("List should return %d formations", expectedFormations)
@@ -214,8 +214,8 @@ func TestApplicationOnlyFormationFlow(t *testing.T) {
 	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, input)
 
 	t.Logf("Should create formation: %s", newFormation)
-	fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation, &formationTemplate.Name)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, newFormation)
+	fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation, &formationTemplate.Name)
 
 	t.Log("Create application")
 	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
@@ -233,8 +233,9 @@ func TestApplicationOnlyFormationFlow(t *testing.T) {
 	rtmName := "rt"
 	rtmInput := fixRuntimeInput(rtmName)
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, rtmInput, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, rtmInput, conf.GatewayOauth)
 
 	t.Logf("Should fail to assign runtime to formation %s", newFormation)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formationInput, runtime.ID, tenantId)
@@ -3952,8 +3953,8 @@ func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
 	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
 
 	formationTemplate := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formation.FormationTemplateID)
 
