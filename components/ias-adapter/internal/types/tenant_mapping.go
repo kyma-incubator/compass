@@ -22,27 +22,34 @@ func (tm TenantMapping) String() string {
 	}
 	assignedTenant := tm.AssignedTenants[0]
 	return fmt.Sprintf("$.formationId: '%s', $.receiverTenant.applicationUrl: '%s', $.assignedTenants[0]: (%s)",
-		tm.FormationID, tm.ReceiverTenant.ApplicationURL, assignedTenant)
+		tm.FormationID, tm.ReceiverTenant.ApplicationURL, &assignedTenant)
 }
 
 type ReceiverTenant struct {
 	ApplicationURL string `json:"applicationUrl"`
 }
 
-type Operation string
+type (
+	Operation string
+	State     string
+)
 
 const (
 	OperationAssign   Operation = "assign"
 	OperationUnassign Operation = "unassign"
+
+	StateInitial State = "INITIAL"
+	StateReady   State = "READY"
 )
 
 type AssignedTenant struct {
-	UCLApplicationID string                      `json:"uclApplicationId"`
-	LocalTenantID    string                      `json:"localTenantId"`
-	Operation        Operation                   `json:"operation"`
-	Parameters       AssignedTenantParameters    `json:"parameters"`
-	Config           any                         `json:"configuration"`
-	Configuration    AssignedTenantConfiguration `json:"-"`
+	UCLApplicationID       string                      `json:"uclApplicationId"`
+	LocalTenantID          string                      `json:"localTenantId"`
+	Operation              Operation                   `json:"operation"`
+	ReverseAssignmentState State                       `json:"reverseAssignmentState"`
+	Parameters             AssignedTenantParameters    `json:"parameters"`
+	Config                 any                         `json:"configuration"`
+	Configuration          AssignedTenantConfiguration `json:"-"`
 }
 
 func (at *AssignedTenant) String() string {
@@ -62,8 +69,8 @@ func (at *AssignedTenant) SetConfiguration(ctx context.Context) error {
 	if err != nil {
 		return errors.Newf("failed to marshal $.assignedTenants[0].configuration: %w", err)
 	}
-	if err := json.Unmarshal(b, &at.Configuration); err != nil {
-		log.Info().Msgf("$.assignedTenants[0].configuration doesn't contain apis: %s", err)
+	if err := json.Unmarshal(b, &at.Configuration); err != nil || len(at.Configuration.ConsumedAPIs) == 0 {
+		log.Info().Msg("$.assignedTenants[0].configuration doesn't contain apis")
 		return nil
 	}
 
@@ -93,6 +100,9 @@ func (tm TenantMapping) Validate() error {
 	}
 	if tm.AssignedTenants[0].Operation != OperationAssign && tm.AssignedTenants[0].Operation != OperationUnassign {
 		return errors.New("$.assignedTenants[0].operation can only be assign or unassign")
+	}
+	if tm.AssignedTenants[0].ReverseAssignmentState == "" {
+		return errors.New("$.assignedTenants[0].reverseAssignmentState is required")
 	}
 	if tm.AssignedTenants[0].Parameters.ClientID == "" {
 		return errors.New("$.assignedTenants[0].parameters.technicalIntegrationId is required")
