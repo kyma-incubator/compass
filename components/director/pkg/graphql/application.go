@@ -8,6 +8,7 @@ type Application struct {
 	ProviderName          *string            `json:"providerName"`
 	IntegrationSystemID   *string            `json:"integrationSystemID"`
 	ApplicationTemplateID *string            `json:"applicationTemplateID"`
+	TenantBusinessTypeID  *string            `json:"tenantBusinessTypeID"`
 	Description           *string            `json:"description"`
 	Status                *ApplicationStatus `json:"status"`
 	HealthCheckURL        *string            `json:"healthCheckURL"`

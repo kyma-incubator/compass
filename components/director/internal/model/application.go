@@ -18,6 +18,7 @@ type Application struct {
 	HealthCheckURL        *string
 	IntegrationSystemID   *string
 	ApplicationTemplateID *string
+	TenantBusinessTypeID  *string
 	SystemNumber          *string
 	LocalTenantID         *string
 	BaseURL               *string         `json:"baseUrl"`
@@ -141,6 +142,7 @@ type ApplicationRegisterInput struct {
 	Webhooks             []*WebhookInput
 	Bundles              []*BundleCreateInput
 	IntegrationSystemID  *string
+	TenantBusinessTypeID *string
 	StatusCondition      *ApplicationStatusCondition
 	BaseURL              *string
 	ApplicationNamespace *string
@@ -166,11 +168,12 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 	}
 
 	return &Application{
-		Name:                i.Name,
-		Description:         i.Description,
-		HealthCheckURL:      i.HealthCheckURL,
-		IntegrationSystemID: i.IntegrationSystemID,
-		ProviderName:        i.ProviderName,
+		Name:                 i.Name,
+		Description:          i.Description,
+		HealthCheckURL:       i.HealthCheckURL,
+		IntegrationSystemID:  i.IntegrationSystemID,
+		TenantBusinessTypeID: i.TenantBusinessTypeID,
+		ProviderName:         i.ProviderName,
 		Status: &ApplicationStatus{
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
