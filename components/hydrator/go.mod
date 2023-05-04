@@ -22,11 +22,11 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230420100909-e153ed781b4c
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20230420100909-e153ed781b4c
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230420100909-e153ed781b4c
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230504080958-c16a2f91701a
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230504080958-c16a2f91701a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230504080958-c16a2f91701a
 	github.com/prometheus/client_golang v1.14.0
-	golang.org/x/oauth2 v0.6.0
+	golang.org/x/oauth2 v0.7.0
 )
 
 require (
@@ -50,7 +50,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -60,7 +60,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230420100909-e153ed781b4c // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230504080958-c16a2f91701a // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
@@ -89,13 +89,13 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/term v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/term v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
