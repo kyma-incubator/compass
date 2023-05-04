@@ -29,7 +29,7 @@ const (
 	FieldCorrelationID = "x-request-id"
 )
 
-// LagerAdapter is used to adapt log.Logger interface with logrus logger and kibana formatter
+// LagerAdapter is used to adapt log.Logger interface with logrus logger
 type LagerAdapter struct {
 	entry *logrus.Entry
 }

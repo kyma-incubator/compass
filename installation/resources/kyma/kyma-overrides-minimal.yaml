@@ -121,28 +121,6 @@ istio:
   meshConfig:
     defaultConfig:
       holdApplicationUntilProxyStarts: true
-kiali:
-  authProxy:
-    enabled: false
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-  kcproxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-logging:
-  global:
-    logging_integration_tests:
-      enabled: false
-  loki:
-    resources:
-      limits:
-        memory: 512Mi
 monitoring:
   alertmanager:
     alertmanagerSpec:
@@ -297,17 +275,3 @@ ory:
           requests:
             cpu: 50m
             memory: 64Mi
-tracing:
-  authProxy:
-    enabled: false
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-  kcproxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi

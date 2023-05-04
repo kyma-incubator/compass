@@ -74,7 +74,6 @@ EOF
 
 function patchDeploymentsToInjectSidecar() {
   allDeploy=(
-    kiali-server
     monitoring-kube-state-metrics
     monitoring-operator
   )
@@ -262,7 +261,6 @@ function patchKymaServiceMonitorsForMTLS() {
     monitoring-operator
     monitoring-prometheus-node-exporter
     monitoring-prometheus-pushgateway
-    tracing-metrics
     ory-oathkeeper-maester
   )
 
@@ -300,14 +298,9 @@ function removeKymaPeerAuthsForPrometheus() {
   namespace="kyma-system"
 
   allPAs=(
-    kiali
-    logging-fluent-bit-metrics
-    logging-loki
     monitoring-grafana-policy
     ory-oathkeeper-maester-metrics
     ory-hydra-maester-metrics
-    tracing-jaeger-operator-metrics
-    tracing-jaeger-metrics
   )
 
   for pa in "${allPAs[@]}"; do
