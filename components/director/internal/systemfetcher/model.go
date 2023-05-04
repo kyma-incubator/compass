@@ -2,6 +2,7 @@ package systemfetcher
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -17,6 +18,8 @@ var (
 	ApplicationTemplateLabelFilter string
 	// SystemSourceKey represents a key for filtering systems
 	SystemSourceKey string
+	// SystemSynchronizationTimestamps represents the systems last synchronization timestamps for each tenant
+	SystemSynchronizationTimestamps map[string]map[string]SystemSynchronizationTimestamp
 )
 
 // TemplateMapping holds data for Application Templates and their Labels
@@ -49,6 +52,12 @@ type System struct {
 	SystemBase
 	TemplateID      string                           `json:"-"`
 	StatusCondition model.ApplicationStatusCondition `json:"-"`
+}
+
+// SystemSynchronizationTimestamp represents the last synchronization time of a system
+type SystemSynchronizationTimestamp struct {
+	ID                string
+	LastSyncTimestamp time.Time
 }
 
 // UnmarshalJSON missing godoc

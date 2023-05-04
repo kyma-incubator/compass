@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 
@@ -143,6 +145,10 @@ func main() {
 	if err = sf.SyncSystems(ctx); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
 	}
+
+	if err = sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to upsert systems synchronization timestamps in database"))
+	}
 }
 
 func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
@@ -175,6 +181,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationAssignmentConverter := formationassignment.NewConverter()
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	systemsSyncConverter := systemssync.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -198,6 +205,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConverter)
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
+	systemsSyncRepo := systemssync.NewRepository(systemsSyncConverter)
 
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
@@ -225,6 +233,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConverter, notificationSvc)
 	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
 
 	authProvider := pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cfg.ExternalClientCertSecretName, certCache, pkgAuth.DefaultMtlsClientCreator)
 	client := &http.Client{
@@ -262,6 +271,10 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
 	}
 
+	if err := loadSystemsSynchronizationTimestamps(ctx, tx, systemsSyncSvc); err != nil {
+		return nil, errors.Wrap(err, "failed while loading systems synchronization timestamps")
+	}
+
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
@@ -272,7 +285,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrapf(err, "while creating template renderer")
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -325,5 +338,44 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	systemfetcher.ApplicationTemplates = applicationTemplates
 	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
 	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
+	return nil
+}
+
+func loadSystemsSynchronizationTimestamps(ctx context.Context, transact persistence.Transactioner, systemSyncSvc systemfetcher.SystemsSyncService) error {
+	systemSynchronizationTimestamps := make(map[string]map[string]systemfetcher.SystemSynchronizationTimestamp, 0)
+
+	tx, err := transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin transaction")
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	syncTimestamps, err := systemSyncSvc.List(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range syncTimestamps {
+		currentTimestamp := systemfetcher.SystemSynchronizationTimestamp{
+			ID:                s.ID,
+			LastSyncTimestamp: s.LastSyncTimestamp,
+		}
+
+		if _, ok := systemSynchronizationTimestamps[s.TenantID]; !ok {
+			systemSynchronizationTimestamps[s.TenantID] = make(map[string]systemfetcher.SystemSynchronizationTimestamp, 0)
+		}
+
+		systemSynchronizationTimestamps[s.TenantID][s.ProductID] = currentTimestamp
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	systemfetcher.SystemSynchronizationTimestamps = systemSynchronizationTimestamps
+
 	return nil
 }

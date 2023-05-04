@@ -1,0 +1,77 @@
+package systemfetcher
+
+import (
+	"strings"
+)
+
+// Expression represents the single check expression
+type Expression struct {
+	Key       string
+	Operation string
+	Value     string
+}
+
+func (e *Expression) getValue() string {
+	return "'" + e.Value + "'"
+}
+
+func (e *Expression) buildExpression() string {
+	return strings.Join([]string{e.Key, e.Operation, e.getValue()}, " ")
+}
+
+type Filter struct {
+	Expressions []Expression
+}
+
+func (f *Filter) addExpression(e Expression) {
+	f.Expressions = append(f.Expressions, e)
+}
+
+func (f *Filter) buildFilter() string {
+	var filter strings.Builder
+
+	for i := 0; i < len(f.Expressions); i++ {
+		filter.WriteString(f.Expressions[i].buildExpression())
+		if i < len(f.Expressions)-1 {
+			filter.WriteString(" and ")
+		}
+	}
+
+	return filter.String()
+}
+
+type FilterBuilder struct {
+	Filters []Filter
+}
+
+func (b *FilterBuilder) NewExpression(key, operation, value string) Expression {
+	return Expression{
+		Key:       key,
+		Operation: operation,
+		Value:     value,
+	}
+}
+
+func (b *FilterBuilder) addFilter(expr ...Expression) {
+	var newFilter Filter
+
+	for _, e := range expr {
+		newFilter.addExpression(e)
+	}
+
+	b.Filters = append(b.Filters, newFilter)
+}
+
+func (b *FilterBuilder) buildFilterQuery() string {
+	var filterQuery strings.Builder
+
+	for i := 0; i < len(b.Filters); i++ {
+		filterQuery.WriteString("(" + b.Filters[i].buildFilter() + ")")
+
+		if i < len(b.Filters)-1 {
+			filterQuery.WriteString(" or ")
+		}
+	}
+
+	return filterQuery.String()
+}

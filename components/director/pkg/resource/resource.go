@@ -92,6 +92,8 @@ const (
 	TenantAccess Type = "tenantAccess"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
+	// SystemsSync type represents systems synchronization timestamps resource
+	SystemsSync Type = "systemsSync"
 )
 
 var tenantAccessTable = map[Type]string{

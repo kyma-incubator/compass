@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -62,6 +63,10 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	sourceKey := "key"
 	labelFilter := "templateProp"
 
+	tenantId := "tenantId1"
+	//productId := "productId1"
+	syncTimestampId := "timestampId1"
+
 	systemfetcher.SystemSourceKey = sourceKey
 	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
@@ -85,7 +90,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
-		mock.expectedFilterCriteria = " key eq 'type1' "
+		mock.expectedFilterCriteria = "(key eq 'type1')"
 
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
@@ -122,8 +127,58 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.Equal(t, systems[1].TemplateID, "")
 	})
 
+	t.Run("Success with template mappings and SystemSynchronizationTimestamps exist", func(t *testing.T) {
+		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
+
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type1",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: "type1",
+					},
+				},
+			},
+		}
+
+		systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
+			tenantId: {
+				"type1": {
+					ID:                syncTimestampId,
+					LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
+				},
+			},
+		}
+
+		mock.bodiesToReturn = [][]byte{[]byte(`[{
+			"displayName": "name1",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type1"
+		}, {
+			"displayName": "name2",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type2"
+		}]`)}
+		mock.callNumber = 0
+		mock.pageCount = 1
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		require.NoError(t, err)
+		require.Len(t, systems, 2)
+		require.Equal(t, systems[0].TemplateID, "type1")
+		require.Equal(t, systems[1].TemplateID, "")
+
+		systemfetcher.SystemSynchronizationTimestamps = nil
+	})
+
 	t.Run("Success for more than one page", func(t *testing.T) {
-		mock.expectedFilterCriteria = " key eq 'type1' "
+		mock.expectedFilterCriteria = "(key eq 'type1')"
 
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
@@ -156,7 +211,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
-		mock.expectedFilterCriteria = " key eq 'type1' or key eq 'type2' or key eq 'type3' "
+		mock.expectedFilterCriteria = "(key eq 'type1') or (key eq 'type2') or (key eq 'type3')"
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
 				AppTemplate: &model.ApplicationTemplate{
