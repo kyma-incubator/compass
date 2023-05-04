@@ -1,6 +1,7 @@
 package systemssync_test
 
 import (
+	"database/sql/driver"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
@@ -32,4 +33,12 @@ func fixSystemsSyncEntity(id, tenantID, productID string, lastSyncTimestamp time
 		ProductID:         productID,
 		LastSyncTimestamp: lastSyncTimestamp,
 	}
+}
+
+func fixSystemsSyncTimestampsColumns() []string {
+	return []string{"id", "tenant_id", "product_id", "last_sync_timestamp"}
+}
+
+func fixSystemsSyncCreateArgs(entity systemssync.Entity) []driver.Value {
+	return []driver.Value{entity.ID, entity.TenantID, entity.ProductID, entity.LastSyncTimestamp}
 }

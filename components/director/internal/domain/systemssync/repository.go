@@ -54,12 +54,7 @@ func (r *repository) List(ctx context.Context) ([]*model.SystemSynchronizationTi
 
 // Upsert updates sync timestamp or creates new one if it doesn't exist
 func (r *repository) Upsert(ctx context.Context, in *model.SystemSynchronizationTimestamp) error {
-	sync := Entity{
-		ID:                in.ID,
-		TenantID:          in.TenantID,
-		ProductID:         in.ProductID,
-		LastSyncTimestamp: in.LastSyncTimestamp,
-	}
+	sync := r.conv.ToEntity(in)
 
 	return r.upserter.UpsertGlobal(ctx, sync)
 }

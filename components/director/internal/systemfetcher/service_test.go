@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
@@ -905,6 +906,139 @@ func TestSyncSystems(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpsertSystemsSyncTimestamps(t *testing.T) {
+	testError := errors.New("testError")
+
+	systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
+		"t": {
+			"type1": {
+				ID:                "time",
+				LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
+			},
+		},
+	}
+
+	type testCase struct {
+		name                     string
+		mockTransactioner        func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
+		fixTestSystems           func() []systemfetcher.System
+		fixAppInputs             func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate
+		setupTenantSvc           func() *automock.TenantService
+		setupTemplateRendererSvc func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer
+		setupSystemSvc           func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService
+		setupSystemsSyncSvc      func() *automock.SystemsSyncService
+		setupSysAPIClient        func(testSystems []systemfetcher.System) *automock.SystemsAPIClient
+		setupDirectorClient      func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient
+		verificationTenant       string
+		expectedErr              error
+	}
+
+	tests := []testCase{
+		{
+			name: "Success",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(1)
+				return mockedTx, transactioner
+			},
+			fixTestSystems: func() []systemfetcher.System {
+				return []systemfetcher.System{}
+			},
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return []model.ApplicationRegisterInputWithTemplate{}
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSystemsSyncSvc: func() *automock.SystemsSyncService {
+				syncMock := &automock.SystemsSyncService{}
+				syncMock.On("Upsert", mock.Anything, mock.Anything).Return(nil)
+				return syncMock
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				return &automock.SystemsAPIClient{}
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+		},
+		{
+			name: "Error while upserting",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+				return mockedTx, transactioner
+			},
+			fixTestSystems: func() []systemfetcher.System {
+				return []systemfetcher.System{}
+			},
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return []model.ApplicationRegisterInputWithTemplate{}
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSystemsSyncSvc: func() *automock.SystemsSyncService {
+				syncMock := &automock.SystemsSyncService{}
+				syncMock.On("Upsert", mock.Anything, mock.Anything).Return(testError)
+				return syncMock
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				return &automock.SystemsAPIClient{}
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			expectedErr: testError,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			mockedTx, transactioner := testCase.mockTransactioner()
+			tenantSvc := testCase.setupTenantSvc()
+			testSystems := testCase.fixTestSystems()
+			appsInputs := testCase.fixAppInputs(testSystems)
+			systemSvc := testCase.setupSystemSvc(testSystems, appsInputs)
+			systemsSyncSvc := testCase.setupSystemsSyncSvc()
+			appInputsWithoutTemplates := make([]model.ApplicationRegisterInput, 0)
+			for _, in := range appsInputs {
+				appInputsWithoutTemplates = append(appInputsWithoutTemplates, in.ApplicationRegisterInput)
+			}
+			templateAppResolver := testCase.setupTemplateRendererSvc(testSystems, appInputsWithoutTemplates)
+			sysAPIClient := testCase.setupSysAPIClient(testSystems)
+			directorClient := testCase.setupDirectorClient(testSystems, appsInputs)
+			defer mock.AssertExpectationsForObjects(t, tenantSvc, sysAPIClient, systemSvc, templateAppResolver, mockedTx, transactioner)
+
+			svc := systemfetcher.NewSystemFetcher(transactioner, tenantSvc, systemSvc, systemsSyncSvc, templateAppResolver, sysAPIClient, directorClient, systemfetcher.Config{
+				SystemsQueueSize:     100,
+				FetcherParallellism:  30,
+				EnableSystemDeletion: true,
+				VerifyTenant:         testCase.verificationTenant,
+			})
+
+			err := svc.UpsertSystemsSyncTimestamps(context.TODO(), transactioner)
+			if testCase.expectedErr != nil {
+				require.ErrorIs(t, err, testCase.expectedErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+
+	systemfetcher.SystemSynchronizationTimestamps = nil
 }
 
 func fixAppsInputsWithTemplatesBySystems(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {

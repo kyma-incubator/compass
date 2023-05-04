@@ -64,7 +64,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	labelFilter := "templateProp"
 
 	tenantID := "tenantId1"
-	//productId := "productId1"
 	syncTimestampID := "timestampId1"
 
 	systemfetcher.SystemSourceKey = sourceKey
