@@ -19,6 +19,7 @@ func (e *Expression) buildExpression() string {
 	return strings.Join([]string{e.Key, e.Operation, e.getValue()}, " ")
 }
 
+// Filter is the set of single expressions which will be concatenated when building the query
 type Filter struct {
 	Expressions []Expression
 }
@@ -40,10 +41,12 @@ func (f *Filter) buildFilter() string {
 	return filter.String()
 }
 
+// FilterBuilder builds the filter query from given expressions
 type FilterBuilder struct {
 	Filters []Filter
 }
 
+// NewExpression returns new filter expression based on the given arguments
 func (b *FilterBuilder) NewExpression(key, operation, value string) Expression {
 	return Expression{
 		Key:       key,

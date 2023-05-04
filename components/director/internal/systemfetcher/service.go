@@ -44,6 +44,8 @@ type systemsService interface {
 	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
 }
 
+// SystemsSyncService is the service for managing systems synchronization timestamps
+//
 //go:generate mockery --name=SystemsSyncService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type SystemsSyncService interface {
 	List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error)
@@ -227,6 +229,9 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 // UpsertSystemsSyncTimestamps updates the synchronization timestamps of the systems for each tenant or creates new ones if they don't exist in the database
 func (s *SystemFetcher) UpsertSystemsSyncTimestamps(ctx context.Context, transact persistence.Transactioner) error {
 	tx, err := transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "Error while beginning transaction")
+	}
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
@@ -247,11 +252,11 @@ func (s *SystemFetcher) UpsertSystemsSyncTimestamps(ctx context.Context, transac
 }
 
 func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenant(ctx context.Context, tenant string, timestamps map[string]SystemSynchronizationTimestamp) error {
-	for productId, timestamp := range timestamps {
+	for productID, timestamp := range timestamps {
 		in := &model.SystemSynchronizationTimestamp{
 			ID:                timestamp.ID,
 			TenantID:          tenant,
-			ProductID:         productId,
+			ProductID:         productID,
 			LastSyncTimestamp: timestamp.LastSyncTimestamp,
 		}
 

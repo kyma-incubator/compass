@@ -16,19 +16,19 @@ var (
 	testError     = errors.New("test error")
 )
 
-func fixSystemsSyncModel(id, tenantId, productId string, lastSyncTimestamp time.Time) *model.SystemSynchronizationTimestamp {
+func fixSystemsSyncModel(id, tenantID, productId string, lastSyncTimestamp time.Time) *model.SystemSynchronizationTimestamp {
 	return &model.SystemSynchronizationTimestamp{
 		ID:                id,
-		TenantID:          tenantId,
+		TenantID:          tenantID,
 		ProductID:         productId,
 		LastSyncTimestamp: lastSyncTimestamp,
 	}
 }
 
-func fixSystemsSyncEntity(id, tenantId, productId string, lastSyncTimestamp time.Time) *systemssync.Entity {
+func fixSystemsSyncEntity(id, tenantID, productId string, lastSyncTimestamp time.Time) *systemssync.Entity {
 	return &systemssync.Entity{
 		ID:                id,
-		TenantID:          tenantId,
+		TenantID:          tenantID,
 		ProductID:         productId,
 		LastSyncTimestamp: lastSyncTimestamp,
 	}
