@@ -4,7 +4,7 @@ CREATE TABLE systems_sync_timestamps
 (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     tenant_id UUID NOT NULL,
-    product_id VARCHAR(50),
+    product_id VARCHAR(50) NOT NULL,
     last_sync_timestamp TIMESTAMP NOT NULL
 );
 

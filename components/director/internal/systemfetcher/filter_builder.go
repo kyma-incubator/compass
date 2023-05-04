@@ -31,8 +31,9 @@ func (f *Filter) addExpression(e Expression) {
 func (f *Filter) buildFilter() string {
 	var filter strings.Builder
 
-	for i := 0; i < len(f.Expressions); i++ {
-		filter.WriteString(f.Expressions[i].buildExpression())
+	for i, expr := range f.Expressions {
+		filter.WriteString(expr.buildExpression())
+
 		if i < len(f.Expressions)-1 {
 			filter.WriteString(" and ")
 		}
@@ -68,8 +69,8 @@ func (b *FilterBuilder) addFilter(expr ...Expression) {
 func (b *FilterBuilder) buildFilterQuery() string {
 	var filterQuery strings.Builder
 
-	for i := 0; i < len(b.Filters); i++ {
-		filterQuery.WriteString("(" + b.Filters[i].buildFilter() + ")")
+	for i, f := range b.Filters {
+		filterQuery.WriteString("(" + f.buildFilter() + ")")
 
 		if i < len(b.Filters)-1 {
 			filterQuery.WriteString(" or ")

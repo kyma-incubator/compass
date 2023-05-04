@@ -155,14 +155,18 @@ func (c *Client) buildFilter() map[string]string {
 			continue
 		}
 
-		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lbl.Value.(string))
+		lblToString, ok := lbl.Value.(string)
+		if !ok {
+			lblToString = ""
+		}
+		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
 		lblExists := false
 
 		for _, s := range SystemSynchronizationTimestamps {
-			v, ok1 := s[lbl.Value.(string)]
+			v, ok := s[lbl.Value.(string)]
 
-			if ok1 {
+			if ok {
 				lblExists = true
 
 				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", v.LastSyncTimestamp.String())
