@@ -122,7 +122,7 @@ type ComplexityRoot struct {
 		Status                func(childComplexity int) int
 		SystemNumber          func(childComplexity int) int
 		SystemStatus          func(childComplexity int) int
-		TenantBusinessTypeID  func(childComplexity int) int
+		TenantBusinessType    func(childComplexity int) int
 		UpdatedAt             func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -748,7 +748,7 @@ type APISpecResolver interface {
 }
 type ApplicationResolver interface {
 	ApplicationTemplate(ctx context.Context, obj *Application) (*ApplicationTemplate, error)
-
+	TenantBusinessType(ctx context.Context, obj *Application) (*TenantBusinessType, error)
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
@@ -1290,12 +1290,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.SystemStatus(childComplexity), true
 
-	case "Application.tenantBusinessTypeID":
-		if e.complexity.Application.TenantBusinessTypeID == nil {
+	case "Application.tenantBusinessType":
+		if e.complexity.Application.TenantBusinessType == nil {
 			break
 		}
 
-		return e.complexity.Application.TenantBusinessTypeID(childComplexity), true
+		return e.complexity.Application.TenantBusinessType(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -5874,7 +5874,7 @@ type Application {
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
-	tenantBusinessTypeID: String
+	tenantBusinessType: TenantBusinessType
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -11187,7 +11187,7 @@ func (ec *executionContext) _Application_applicationTemplate(ctx context.Context
 	return ec.marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_tenantBusinessTypeID(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_tenantBusinessType(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11198,13 +11198,13 @@ func (ec *executionContext) _Application_tenantBusinessTypeID(ctx context.Contex
 		Object:   "Application",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TenantBusinessTypeID, nil
+		return ec.resolvers.Application().TenantBusinessType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11213,9 +11213,9 @@ func (ec *executionContext) _Application_tenantBusinessTypeID(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*TenantBusinessType)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTenantBusinessType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantBusinessType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_labels(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -32969,8 +32969,17 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 				res = ec._Application_applicationTemplate(ctx, field, obj)
 				return res
 			})
-		case "tenantBusinessTypeID":
-			out.Values[i] = ec._Application_tenantBusinessTypeID(ctx, field, obj)
+		case "tenantBusinessType":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_tenantBusinessType(ctx, field, obj)
+				return res
+			})
 		case "labels":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -40662,6 +40671,17 @@ func (ec *executionContext) marshalOTenantAccess2ᚖgithubᚗcomᚋkymaᚑincuba
 		return graphql.Null
 	}
 	return ec._TenantAccess(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTenantBusinessType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantBusinessType(ctx context.Context, sel ast.SelectionSet, v TenantBusinessType) graphql.Marshaler {
+	return ec._TenantBusinessType(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTenantBusinessType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantBusinessType(ctx context.Context, sel ast.SelectionSet, v *TenantBusinessType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TenantBusinessType(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
