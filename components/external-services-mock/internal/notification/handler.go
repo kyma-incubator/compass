@@ -64,6 +64,27 @@ type FormationRequestBody struct {
 	Error string         `json:"error,omitempty"`
 }
 
+// FormationAssignmentResponseBody contains the synchronous formation assignment notification response body
+type FormationAssignmentResponseBody struct {
+	Config FormationAssignmentResponseConfig
+	Error  string `json:"error,omitempty"`
+}
+
+// FormationAssignmentResponseBodyWithState contains the synchronous formation assignment notification response body with state in it
+type FormationAssignmentResponseBodyWithState struct {
+	Config FormationAssignmentResponseConfig
+	Error  string         `json:"error,omitempty"`
+	State  FormationState `json:"state"`
+}
+
+// FormationAssignmentResponseConfig contains the configuration of the formation response body
+type FormationAssignmentResponseConfig struct {
+	Key  string `json:"key"`
+	Key2 struct {
+		Key string `json:"key"`
+	} `json:"key2"`
+}
+
 // FormationAssignmentState is a type that represents formation assignments state
 type FormationAssignmentState string
 
@@ -116,152 +137,84 @@ func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 
 // Formation Assignment notifications synchronous handlers
 
+// SyncFAResponseFn is a function type that represents the synchronous formation assignment response function signature
+type SyncFAResponseFn func(bodyBytes []byte)
+
 // Patch handles synchronous formation assignment notification requests for Assign operation
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
-	}
-
-	if _, ok = h.Mappings[id]; !ok {
-		h.Mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-	mappings := h.Mappings[id]
-	mappings = append(h.Mappings[id], Response{
-		Operation:   Assign,
-		RequestBody: bodyBytes,
-	})
-	h.Mappings[id] = mappings
-
-	response := struct {
-		Config struct {
-			Key  string `json:"key"`
-			Key2 struct {
-				Key string `json:"key"`
-			} `json:"key2"`
+	responseFunc := func([]byte) {
+		var response interface{} = FormationAssignmentResponseBody{
+			Config: FormationAssignmentResponseConfig{
+				Key: "value",
+				Key2: struct {
+					Key string `json:"key"`
+				}{Key: "value2"},
+			},
 		}
-	}{
-		Config: struct {
-			Key  string `json:"key"`
-			Key2 struct {
-				Key string `json:"key"`
-			} `json:"key2"`
-		}{
-			Key: "value",
-			Key2: struct {
-				Key string `json:"key"`
-			}{Key: "value2"},
-		},
+
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
-	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+
+	h.syncFAResponse(writer, r, responseFunc)
+}
+
+// PatchWithState handles synchronous formation assignment notification requests for Assign operation and returns state in the response body
+func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func([]byte) {
+		var response interface{} = FormationAssignmentResponseBodyWithState{
+			State: "CONFIG_PENDING",
+			Config: FormationAssignmentResponseConfig{
+				Key: "value",
+				Key2: struct {
+					Key string `json:"key"`
+				}{Key: "value2"},
+			},
+		}
+
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	}
+
+	h.syncFAResponse(writer, r, responseFunc)
 }
 
 // RespondWithIncomplete handles synchronous formation assignment notification requests for Assign operation
 // that based on the provided config in the request body we return either so called "incomplete" status coe(204) without config in case the config is not provided
 // or if the config is provided we just return it with "success" status code(200)
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
-	}
-
-	if _, ok = h.Mappings[id]; !ok {
-		h.Mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-
-	mappings := h.Mappings[id]
-	mappings = append(h.Mappings[id], Response{
-		Operation:   Assign,
-		RequestBody: bodyBytes,
-	})
-	h.Mappings[id] = mappings
-
-	if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
-		writer.WriteHeader(http.StatusNoContent)
-		return
-	}
-	response := struct {
-		Config struct {
-			Key  string `json:"key"`
-			Key2 struct {
-				Key string `json:"key"`
-			} `json:"key2"`
+	responseFunc := func(bodyBytes []byte) {
+		if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
 		}
-	}{
-		Config: struct {
-			Key  string `json:"key"`
-			Key2 struct {
-				Key string `json:"key"`
-			} `json:"key2"`
-		}{
-			Key: "value",
-			Key2: struct {
-				Key string `json:"key"`
-			}{Key: "value2"},
-		},
+		response := FormationAssignmentResponseBody{
+			Config: FormationAssignmentResponseConfig{
+				Key: "value",
+				Key2: struct {
+					Key string `json:"key"`
+				}{Key: "value2"},
+			},
+		}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
-	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+
+	h.syncFAResponse(writer, r, responseFunc)
 }
 
 // Delete handles synchronous formation assignment notification requests for Unassign operation
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
-	}
-	applicationId, ok := mux.Vars(r)["applicationId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
-		return
+	responseFunc := func([]byte) { writer.WriteHeader(http.StatusOK) }
+
+	h.syncFAResponse(writer, r, responseFunc)
+}
+
+// DeleteWithState handles synchronous formation assignment notification requests for Unassign operation and returns state in the response body
+func (h *Handler) DeleteWithState(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBodyWithState{State: "READY"}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
-	if _, ok := h.Mappings[id]; !ok {
-		h.Mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-
-	h.Mappings[id] = append(h.Mappings[id], Response{
-		Operation:     Unassign,
-		ApplicationID: &applicationId,
-		RequestBody:   bodyBytes,
-	})
-
-	writer.WriteHeader(http.StatusOK)
+	h.syncFAResponse(writer, r, responseFunc)
 }
 
 // GetResponses returns the notification data saved in the Mappings
@@ -281,57 +234,13 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
 	if h.ShouldReturnError {
-		id, ok := mux.Vars(r)["tenantId"]
-		if !ok {
-			httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-			return
+		responseFunc := func([]byte) {
+			response := FormationAssignmentResponseBody{Error: "failed to parse request"}
+			httputils.RespondWithBody(context.TODO(), writer, http.StatusBadRequest, response)
+			h.ShouldReturnError = false
 		}
 
-		if _, ok = h.Mappings[id]; !ok {
-			h.Mappings[id] = make([]Response, 0, 1)
-		}
-		bodyBytes, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-			return
-		}
-
-		var result interface{}
-		if err := json.Unmarshal(bodyBytes, &result); err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-			return
-		}
-
-		mappings := h.Mappings[id]
-		if r.Method == http.MethodPatch {
-			mappings = append(h.Mappings[id], Response{
-				Operation:   Assign,
-				RequestBody: bodyBytes,
-			})
-		}
-
-		if r.Method == http.MethodDelete {
-			applicationId, ok := mux.Vars(r)["applicationId"]
-			if !ok {
-				httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
-				return
-			}
-			mappings = append(h.Mappings[id], Response{
-				Operation:     Unassign,
-				ApplicationID: &applicationId,
-				RequestBody:   bodyBytes,
-			})
-		}
-
-		h.Mappings[id] = mappings
-
-		response := struct {
-			Error string `json:"error"`
-		}{
-			Error: "failed to parse request",
-		}
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusBadRequest, response)
-		h.ShouldReturnError = false
+		h.syncFAResponse(writer, r, responseFunc)
 		return
 	}
 
@@ -355,13 +264,61 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) syncFAResponse(writer http.ResponseWriter, r *http.Request, responseFunc SyncFAResponseFn) {
+	id, ok := mux.Vars(r)["tenantId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok = h.Mappings[id]; !ok {
+		h.Mappings[id] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+
+	mappings := h.Mappings[id]
+	if r.Method == http.MethodPatch {
+		mappings = append(h.Mappings[id], Response{
+			Operation:   Assign,
+			RequestBody: bodyBytes,
+		})
+	}
+
+	if r.Method == http.MethodDelete {
+		applicationId, ok := mux.Vars(r)["applicationId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+			return
+		}
+		mappings = append(h.Mappings[id], Response{
+			Operation:     Unassign,
+			ApplicationID: &applicationId,
+			RequestBody:   bodyBytes,
+		})
+	}
+
+	h.Mappings[id] = mappings
+
+	responseFunc(bodyBytes)
+}
+
 // Formation Assignment notifications asynchronous handlers and helper functions
 
-// FAResponseFn is a function type that represents the formation assignment response function signature
-type FAResponseFn func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)
+// AsyncFAResponseFn is a function type that represents the formation assignment response function signature
+type AsyncFAResponseFn func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)
 
-// NoopFAResponseFn is an empty implementation of the FAResponseFn function
-var NoopFAResponseFn = func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {}
+// AsyncNoopFAResponseFn is an empty implementation of the AsyncFAResponseFn function
+var AsyncNoopFAResponseFn = func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {}
 
 // Async handles asynchronous formation assignment notification requests for Assign operation
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
@@ -391,12 +348,12 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 
 // AsyncNoResponseAssign handles asynchronous formation assignment notification requests for Assign operation that do not send any request to the formation assignment status API
 func (h *Handler) AsyncNoResponseAssign(writer http.ResponseWriter, r *http.Request) {
-	h.asyncFAResponse(writer, r, Assign, "", NoopFAResponseFn)
+	h.asyncFAResponse(writer, r, Assign, "", AsyncNoopFAResponseFn)
 }
 
 // AsyncNoResponseUnassign handles asynchronous formation assignment notification requests for Unassign operation that do not send any request to the formation assignment status API
 func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Request) {
-	h.asyncFAResponse(writer, r, Unassign, "", NoopFAResponseFn)
+	h.asyncFAResponse(writer, r, Unassign, "", AsyncNoopFAResponseFn)
 }
 
 // AsyncFailOnce handles asynchronous formation assignment notification requests for both Assign and Unassign operations by first failing and setting error states. Afterwards the operation succeeds
@@ -465,7 +422,7 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 }
 
 // asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
-func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc FAResponseFn) {
+func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc AsyncFAResponseFn) {
 	ctx := r.Context()
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
