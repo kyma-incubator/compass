@@ -63,7 +63,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	sourceKey := "key"
 	labelFilter := "templateProp"
 
-	tenantId := "tenantId1"
+	tenantID := "tenantId1"
 	//productId := "productId1"
 	syncTimestampID := "timestampId1"
 
@@ -145,7 +145,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}
 
 		systemfetcher.SystemSynchronizationTimestamps = map[string]map[string]systemfetcher.SystemSynchronizationTimestamp{
-			tenantId: {
+			tenantID: {
 				"type1": {
 					ID:                syncTimestampID,
 					LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
