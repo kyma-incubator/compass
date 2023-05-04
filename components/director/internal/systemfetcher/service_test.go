@@ -142,6 +142,7 @@ func TestSyncSystems(t *testing.T) {
 				}, nil)
 				return systemSvc
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
@@ -191,6 +192,7 @@ func TestSyncSystems(t *testing.T) {
 				}, nil)
 				return systemSvc
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
@@ -594,6 +596,7 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				return &automock.SystemsService{}
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				return &automock.SystemsAPIClient{}
 			},
@@ -638,6 +641,7 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				return &automock.SystemsService{}
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				return &automock.SystemsAPIClient{}
 			},
@@ -685,6 +689,7 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				return &automock.SystemsService{}
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				return &automock.SystemsAPIClient{}
 			},
@@ -738,6 +743,7 @@ func TestSyncSystems(t *testing.T) {
 				}, nil)
 				return systemSvc
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
@@ -793,6 +799,7 @@ func TestSyncSystems(t *testing.T) {
 				}, nil)
 				return systemSvc
 			},
+			setupSystemsSyncSvc: emptySystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
@@ -1455,7 +1462,7 @@ func TestUpsertSystemsSyncTimestamps(t *testing.T) {
 			directorClient := testCase.setupDirectorClient(testSystems, appsInputs)
 			defer mock.AssertExpectationsForObjects(t, tenantSvc, sysAPIClient, systemSvc, templateAppResolver, mockedTx, transactioner)
 
-			svc := systemfetcher.NewSystemFetcher(transactioner, tenantSvc, systemSvc, tbtSvc, systemsSyncSvc, templateAppResolver, sysAPIClient, directorClient, systemfetcher.Config{
+			svc := systemfetcher.NewSystemFetcher(transactioner, tenantSvc, systemSvc, systemsSyncSvc, tbtSvc, templateAppResolver, sysAPIClient, directorClient, systemfetcher.Config{
 				SystemsQueueSize:     100,
 				FetcherParallellism:  30,
 				EnableSystemDeletion: true,
