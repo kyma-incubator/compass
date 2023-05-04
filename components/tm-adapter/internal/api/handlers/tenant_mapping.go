@@ -14,11 +14,15 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
+const subaccountKey = "subaccount_id"
+
 type Handler struct {
-	cfg    *config.Config
-	caller *external_caller.Caller
+	cfg      *config.Config
+	caller   *external_caller.Caller
+	tenantID string
 }
 
 func NewHandler(cfg *config.Config, caller *external_caller.Caller) *Handler {
@@ -42,16 +46,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	log.C(ctx).Infof("Tenant mapping request body: %q", reqBody)
 
-	//var tm types.TenantMapping
-	//err = json.Unmarshal(reqBody, &tm)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to unmarshal request body: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New( "Invalid json"))
-	//	return
-	//}
+	var tm types.TenantMapping
+	err = json.Unmarshal(reqBody, &tm)
+	if err != nil {
+		log.C(ctx).Errorf("Failed to unmarshal request body: %v", err)
+		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Invalid json"))
+		return
+	}
 
-	catalogName := "certificate-service" // todo::: should be provided as label on the runtime and will be used through TM notification body
-	planName := "standard"               // todo::: should be provided as label on the runtime and will be used through TM notification body
+	catalogName := "certificate-service" // todo::: should be provided as label on the runtime/app-template and will be used through TM notification body
+	planName := "standard"               // todo::: should be provided as label on the runtime/app-template and will be used through TM notification body
+	h.tenantID = tm.ReceiverTenant.SubaccountID
 
 	offeringID, err := h.retrieveServiceOffering(ctx, catalogName)
 	if err != nil {
@@ -83,226 +88,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Service key creds: %v", string(serviceKey.Credentials)) // todo::: remove
-
-	//// get service offerings
-	//log.C(ctx).Infof("Listing service offerings...")
-	//req, err := http.NewRequest(http.MethodGet, h.cfg.ServiceManagerURL+paths.ServiceOfferingsPath, nil)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//resp, err := h.caller.Call(req)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//defer closeResponseBody(ctx, resp)
-	//
-	//body, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to read service offerings response body: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//if resp.StatusCode != http.StatusOK {
-	//	errMsg := fmt.Sprintf("Failed to get service offerings, status: %d, body: %q", resp.StatusCode, body)
-	//	log.C(ctx).Error(errMsg)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New(errMsg))
-	//	return
-	//}
-	//log.C(ctx).Infof("offerings resp --> %s", string(body)) // todo::: remove
-	//log.C(ctx).Infof("Successfully fetch service offerings")
-	//
-	//var offerings types.ServiceOfferings
-	//err = json.Unmarshal(body, &offerings)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to unmarshal service offerings: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//var offeringID string
-	//for _, item := range offerings.Items {
-	//	if item.CatalogName == catalogName {
-	//		offeringID = item.Id
-	//		break
-	//	}
-	//}
-	//log.C(ctx).Infof("Service offering ID: %q", offeringID)
-	//
-	//// get service plans
-	//log.C(ctx).Infof("Listing service plans...")
-	//req, err = http.NewRequest(http.MethodGet, h.cfg.ServiceManagerURL+paths.ServicePlansPath, nil)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//resp, err = h.caller.Call(req)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//defer closeResponseBody(ctx, resp)
-	//
-	//body, err = ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to read service plans response body: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//if resp.StatusCode != http.StatusOK {
-	//	errMsg := fmt.Sprintf("Failed to get service plans, status: %d, body: %q", resp.StatusCode, body)
-	//	log.C(ctx).Error(errMsg)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New(errMsg))
-	//	return
-	//}
-	//log.C(ctx).Infof("plans resp --> %s", string(body)) // todo::: remove
-	//log.C(ctx).Infof("Successfully fetch service plans")
-	//
-	//var plans types.ServicePlans
-	//err = json.Unmarshal(body, &plans)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to unmarshal service plans: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//var planID string
-	//for _, item := range plans.Items {
-	//	if item.CatalogName == planName && item.ServiceOfferingId == offeringID {
-	//		planID = item.Id
-	//		break
-	//	}
-	//}
-	//log.C(ctx).Infof("Service plan ID: %q", planID)
-	//
-	//// create service instance
-	//serviceInstanceName := "test-instance-name-api"
-	//siReqBody := &types.ServiceInstanceReqBody{
-	//	Name:          serviceInstanceName,
-	//	ServicePlanId: planID,
-	//}
-	//
-	//siReqBodyBytes, err := json.Marshal(siReqBody)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to marshal service instance body: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//log.C(ctx).Infof("Creating service instance with name: %q", serviceInstanceName)
-	//req, err = http.NewRequest(http.MethodPost, h.cfg.ServiceManagerURL+paths.ServiceInstancesPath, bytes.NewBuffer(siReqBodyBytes))
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//resp, err = h.caller.Call(req)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//defer closeResponseBody(ctx, resp)
-	//
-	//body, err = ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to read response body from service instance creation request: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//if resp.StatusCode != http.StatusCreated {
-	//	errMsg := fmt.Sprintf("Failed to create service instance, status: %d, body: %q", resp.StatusCode, body)
-	//	log.C(ctx).Error(errMsg)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New(errMsg))
-	//	return
-	//}
-	//log.C(ctx).Infof("create service instance resp --> %s", string(body)) // todo::: remove
-	//log.C(ctx).Infof("Successfully create service instance with name: %q", serviceInstanceName)
-	//
-	//var serviceInstance types.ServiceInstance
-	//err = json.Unmarshal(body, &serviceInstance)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to unmarshal service instance: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//serviceInstanceID := serviceInstance.Id
-	//log.C(ctx).Infof("Service instance ID: %q", serviceInstanceID)
-	//
-	//// create service binding
-	//serviceKeyName := serviceInstanceName+"-key"
-	//serviceKeyReqBody := &types.ServiceKeyReqBody{
-	//	Name:              serviceKeyName,
-	//	ServiceInstanceId: serviceInstanceID,
-	//	//Parameters: // todo::: should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
-	//}
-	//
-	//serviceKeyReqBodyBytes, err := json.Marshal(serviceKeyReqBody)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to marshal service key body: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//log.C(ctx).Infof("Creating service key with name: %q from service instance with name: %q and ID: %q", serviceKeyName, serviceInstanceName, serviceInstanceID)
-	//req, err = http.NewRequest(http.MethodPost, h.cfg.ServiceManagerURL+paths.ServiceBindingsPath, bytes.NewBuffer(serviceKeyReqBodyBytes))
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//resp, err = h.caller.Call(req)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//defer closeResponseBody(ctx, resp)
-	//
-	//body, err = ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to read response body from service key creation request: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//if resp.StatusCode != http.StatusCreated {
-	//	errMsg := fmt.Sprintf("Failed to create service key, status: %d, body: %q", resp.StatusCode, body)
-	//	log.C(ctx).Error(errMsg)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New(errMsg))
-	//	return
-	//}
-	//log.C(ctx).Infof("create service key resp --> %s", string(body)) // todo::: remove
-	//log.C(ctx).Infof("Successfully create service key with name: %q", serviceKeyName)
-	//
-	//var serviceKey types.ServiceKey
-	//err = json.Unmarshal(body, &serviceKey)
-	//if err != nil {
-	//	log.C(ctx).Errorf("Failed to unmarshal service key: %v", err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-	//
-	//serviceKeyCreds := serviceKey.Credentials
-	//log.C(ctx).Infof("Service key ID: %q", serviceKey.Id)
-	//log.C(ctx).Infof("Service key creds: %v", string(serviceKeyCreds)) // todo::: remove
+	responseBody := types.Response{Configuration: serviceKey.Credentials}
 
 	log.C(ctx).Infof("Successfully processed tenant mapping notification")
-	httputil.Respond(w, http.StatusOK)
+	httputil.RespondWithBody(ctx, w, http.StatusOK, responseBody)
 }
 
 func closeResponseBody(ctx context.Context, resp *http.Response) {
@@ -312,12 +101,17 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 }
 
 func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName string) (string, error) {
-	log.C(ctx).Infof("Listing service offerings...")
-	req, err := http.NewRequest(http.MethodGet, h.cfg.ServiceManagerURL+paths.ServiceOfferingsPath, nil)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceOfferingsPath, subaccountKey, h.tenantID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building service offerings URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return "", err
 	}
 
+	log.C(ctx).Infof("Listing service offerings...")
 	resp, err := h.caller.Call(req)
 	if err != nil {
 		log.C(ctx).Error(err)
@@ -333,7 +127,6 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	if resp.StatusCode != http.StatusOK {
 		return "", errors.Errorf("Failed to get service offerings, status: %d, body: %q", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("offerings resp --> %s", string(body)) // todo::: remove
 	log.C(ctx).Infof("Successfully fetch service offerings")
 
 	var offerings types.ServiceOfferings
@@ -355,12 +148,17 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 }
 
 func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID string) (string, error) {
-	log.C(ctx).Infof("Listing service plans...")
-	req, err := http.NewRequest(http.MethodGet, h.cfg.ServiceManagerURL+paths.ServicePlansPath, nil)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServicePlansPath, subaccountKey, h.tenantID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building service plans URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
 	if err != nil {
 		return "", err
 	}
 
+	log.C(ctx).Infof("Listing service plans...")
 	resp, err := h.caller.Call(req)
 	if err != nil {
 		return "", err
@@ -375,7 +173,6 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	if resp.StatusCode != http.StatusOK {
 		return "", errors.Errorf("Failed to get service plans, status: %d, body: %q", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("plans resp --> %s", string(body)) // todo::: remove
 	log.C(ctx).Infof("Successfully fetch service plans")
 
 	var plans types.ServicePlans
@@ -407,12 +204,17 @@ func (h *Handler) createServiceInstance(ctx context.Context, planID, serviceInst
 		return "", errors.Errorf("Failed to marshal service instance body: %v", err)
 	}
 
-	log.C(ctx).Infof("Creating service instance with name: %q from plan with ID: %q", serviceInstanceName, planID)
-	req, err := http.NewRequest(http.MethodPost, h.cfg.ServiceManagerURL+paths.ServiceInstancesPath, bytes.NewBuffer(siReqBodyBytes))
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, subaccountKey, h.tenantID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building service instances URL")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(siReqBodyBytes))
 	if err != nil {
 		return "", err
 	}
 
+	log.C(ctx).Infof("Creating service instance with name: %q from plan with ID: %q", serviceInstanceName, planID)
 	resp, err := h.caller.Call(req)
 	if err != nil {
 		return "", err
@@ -427,7 +229,6 @@ func (h *Handler) createServiceInstance(ctx context.Context, planID, serviceInst
 	if resp.StatusCode != http.StatusCreated {
 		return "", errors.Errorf("Failed to create service instance, status: %d, body: %q", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("create service instance resp --> %s", string(body)) // todo::: remove
 	log.C(ctx).Infof("Successfully create service instance with name: %q", serviceInstanceName)
 
 	var serviceInstance types.ServiceInstance
@@ -454,8 +255,13 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 		return nil, errors.Errorf("Failed to marshal service key body: %v", err)
 	}
 
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, subaccountKey, h.tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building service bindings URL")
+	}
+
 	log.C(ctx).Infof("Creating service key with name: %q from service instance with ID: %q", serviceKeyName, serviceInstanceID)
-	req, err := http.NewRequest(http.MethodPost, h.cfg.ServiceManagerURL+paths.ServiceBindingsPath, bytes.NewBuffer(serviceKeyReqBodyBytes))
+	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(serviceKeyReqBodyBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -474,7 +280,6 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 	if resp.StatusCode != http.StatusCreated {
 		return nil, errors.Errorf("Failed to create service key, status: %d, body: %q", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("create service key resp --> %s", string(body)) // todo::: remove
 	log.C(ctx).Infof("Successfully create service key with name: %q", serviceKeyName)
 
 	var serviceKey types.ServiceKey
@@ -486,4 +291,21 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 	log.C(ctx).Infof("Service key ID: %q", serviceKey.Id)
 
 	return &serviceKey, nil
+}
+
+func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Path params
+	base.Path += path
+
+	// Query params
+	params := url.Values{}
+	params.Add(tenantKey, tenantValue)
+	base.RawQuery = params.Encode()
+
+	return base.String(), nil
 }

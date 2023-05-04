@@ -26,6 +26,16 @@ func RespondWithError(ctx context.Context, w http.ResponseWriter, status int, er
 	}
 }
 
+// RespondWithBody writes a http response using with the JSON encoded data as payload
+func RespondWithBody(ctx context.Context, w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Add(HeaderContentTypeKey, ContentTypeApplicationJSON)
+	w.WriteHeader(status)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to encode response body: %v", err)
+	}
+}
+
 func Respond(w http.ResponseWriter, status int) {
 	w.Header().Add(HeaderContentTypeKey, ContentTypeApplicationJSON)
 	w.WriteHeader(status)
