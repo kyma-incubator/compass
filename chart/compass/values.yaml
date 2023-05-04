@@ -484,6 +484,7 @@ global:
       censoredFlows: "JWT"
   tenantMappingAdapter:
     port: 3000
+    host: compass-tm-adapter.compass-system.svc.cluster.local
     apiRootPath: "/tm-adapter"
     tmApiPath: "/v1/tenantMappings/{tenantId}"
     readTimeout: 30s
