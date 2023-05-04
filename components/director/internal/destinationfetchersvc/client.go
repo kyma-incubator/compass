@@ -302,7 +302,7 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 	}
 	c.authToken = authToken.AccessToken
 	c.authTokenValidity = time.Now().Add(time.Second * time.Duration(authToken.ExpiresInSeconds))
-	return "", nil
+	return c.authToken, nil
 }
 
 func (c *Client) doTokenRequest(tokenRequest *http.Request) (token, error) {
@@ -358,7 +358,7 @@ func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationN
 	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read body of response")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	return body, nil

@@ -124,53 +124,53 @@ global:
       parent: 4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900
   images:
     containerRegistry:
-      path: eu.gcr.io/kyma-project/incubator
+      path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-connector
     connectivity_adapter:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-pairing-adapter
     director:
-      dir:
-      version: "PR-3002"
+      dir: dev/incubator/
+      version: "PR-3049"
       name: compass-director
     hydrator:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-hydrator
     ias_adapter:
-      dir:
-      version: "PR-3022"
+      dir: dev/incubator/
+      version: "PR-3047"
       name: compass-ias-adapter
     tm_adapter:
       dir:
       version: "PR-XXXX"
       name: compass-tm-adapter
     gateway:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-gateway
     operations_controller:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-operations-controller
     ord_service:
-      dir:
+      dir: dev/incubator/
       version: "PR-92"
       name: compass-ord-service
     schema_migrator:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-schema-migrator
     system_broker:
-      dir:
+      dir: dev/incubator/
       version: "PR-3022"
       name: compass-system-broker
     certs_setup_job:
@@ -179,16 +179,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir:
-      version: "PR-3022"
+      dir: dev/incubator/
+      version: "PR-3017"
       name: compass-external-services-mock
     console:
-      dir:
+      dir: dev/incubator/
       version: "PR-83"
       name: compass-console
     e2e_tests:
-      dir:
-      version: "PR-2999"
+      dir: dev/incubator/
+      version: "PR-3017"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1220,6 +1220,7 @@ global:
         - "application_template.webhooks:read"
         - "internal_visibility:read"
         - "webhook:write"
+        - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
       managed_application_consumer: []
       landscape_resource_operator:
