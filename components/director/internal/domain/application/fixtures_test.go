@@ -30,6 +30,7 @@ var (
 	localTenantID      = "1337"
 	appName            = "appName"
 	appNamespace       = "appNamespace"
+	tbtID              = "tbtID"
 )
 
 func stringPtr(s string) *string {
@@ -104,6 +105,28 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 	}
 }
 
+func fixGQLApplicationWithTenantBusinessType(id, name, description string) *graphql.Application {
+	return &graphql.Application{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Status: &graphql.ApplicationStatus{
+			Condition: graphql.ApplicationStatusConditionInitial,
+		},
+		Name:                 name,
+		Description:          &description,
+		TenantBusinessTypeID: &tbtID,
+	}
+}
+
+func fixGQLTenantBusinessType(id, name, code string) *graphql.TenantBusinessType {
+	return &graphql.TenantBusinessType{
+		ID:   id,
+		Name: name,
+		Code: code,
+	}
+}
+
 func fixDetailedModelApplication(t *testing.T, id, tenant, name, description string) *model.Application {
 	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
@@ -120,6 +143,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		SystemNumber:         &systemNumber,
 		LocalTenantID:        &localTenantID,
 		IntegrationSystemID:  &intSysID,
+		TenantBusinessTypeID: &tbtID,
 		BaseURL:              str.Ptr("base_url"),
 		ApplicationNamespace: &appNamespace,
 		OrdLabels:            json.RawMessage("[]"),
@@ -153,6 +177,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Description:          &description,
 		HealthCheckURL:       &testURL,
 		IntegrationSystemID:  &intSysID,
+		TenantBusinessTypeID: &tbtID,
 		ProviderName:         str.Ptr("provider name"),
 		BaseURL:              str.Ptr("base_url"),
 		ApplicationNamespace: &appNamespace,
@@ -187,6 +212,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		OrdLabels:            repo.NewValidNullableString("[]"),
 		CorrelationIDs:       repo.NewValidNullableString("[]"),
 		SystemStatus:         repo.NewValidNullableString("reachable"),
+		TenantBusinessTypeID: repo.NewValidNullableString(tbtID),
 		Tags:                 repo.NewValidNullableString("[]"),
 		DocumentationLabels:  repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
@@ -406,7 +432,7 @@ func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 }
 
 func fixAppColumns() []string {
-	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels"}
+	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels", "tenant_business_type_id"}
 }
 
 func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {
@@ -439,6 +465,14 @@ func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
 		Name:        name,
 		Description: &desc,
 		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
+	}
+}
+
+func fixModelTenantBusinessType(id, code, name string) *model.TenantBusinessType {
+	return &model.TenantBusinessType{
+		ID:   id,
+		Code: code,
+		Name: name,
 	}
 }
 

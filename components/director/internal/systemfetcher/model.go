@@ -36,15 +36,17 @@ type AdditionalAttributes map[string]string
 
 // SystemBase missing godoc
 type SystemBase struct {
-	SystemNumber           string               `json:"systemNumber"`
-	DisplayName            string               `json:"displayName"`
-	ProductID              string               `json:"productId"`
-	PpmsProductVersionID   string               `json:"ppmsProductVersionId"`
-	ProductDescription     string               `json:"productDescription"`
-	BaseURL                string               `json:"baseUrl"`
-	InfrastructureProvider string               `json:"infrastructureProvider"`
-	AdditionalURLs         AdditionalURLs       `json:"additionalUrls"`
-	AdditionalAttributes   AdditionalAttributes `json:"additionalAttributes"`
+	SystemNumber            string               `json:"systemNumber"`
+	DisplayName             string               `json:"displayName"`
+	ProductID               string               `json:"productId"`
+	PpmsProductVersionID    string               `json:"ppmsProductVersionId"`
+	ProductDescription      string               `json:"productDescription"`
+	BaseURL                 string               `json:"baseUrl"`
+	InfrastructureProvider  string               `json:"infrastructureProvider"`
+	BusinessTypeID          string               `json:"businessTypeId"`
+	BusinessTypeDescription string               `json:"businessTypeDescription"`
+	AdditionalURLs          AdditionalURLs       `json:"additionalUrls"`
+	AdditionalAttributes    AdditionalAttributes `json:"additionalAttributes"`
 }
 
 // System missing godoc

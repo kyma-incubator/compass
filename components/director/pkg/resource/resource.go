@@ -90,6 +90,8 @@ const (
 	Tenant Type = "tenant"
 	// TenantAccess type represents tenant access resource.
 	TenantAccess Type = "tenantAccess"
+	// TenantBusinessType type represents tenant business type resource.
+	TenantBusinessType Type = "tenantBusinessType"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 	// SystemsSync type represents systems synchronization timestamps resource

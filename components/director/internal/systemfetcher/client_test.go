@@ -352,3 +352,20 @@ func fixSystems() []systemfetcher.System {
 		},
 	}
 }
+
+func fixSystemsWithTbt() []systemfetcher.System {
+	return []systemfetcher.System{
+		{
+			SystemBase: systemfetcher.SystemBase{
+				DisplayName:             "System2",
+				ProductDescription:      "System2 description",
+				BaseURL:                 "http://example2.com",
+				InfrastructureProvider:  "test",
+				AdditionalURLs:          map[string]string{"mainUrl": "http://mainurl.com"},
+				BusinessTypeID:          "Test business type id",
+				BusinessTypeDescription: "Test business description",
+			},
+			StatusCondition: model.ApplicationStatusConditionInitial,
+		},
+	}
+}
