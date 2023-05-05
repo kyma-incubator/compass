@@ -176,7 +176,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3032"
+      version: "PR-3052"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
