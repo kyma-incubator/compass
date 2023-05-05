@@ -22,8 +22,8 @@ require (
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20230504201158-6594868472ff
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230504201158-6594868472ff
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230505075253-b6e2a3035e6a
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
