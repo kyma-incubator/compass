@@ -21,3 +21,8 @@ type DoesNotContainResourceOfSubtypeInput struct {
 	Tenant               string             `json:"tenant"`
 	ResourceTypeLabelKey string             `json:"resource_type_label_key"`
 }
+
+// DestinationCreationInput input for DestinationCreation operator
+type DestinationCreationInput struct {
+	Name string `json:"name"` // + other fields
+}

@@ -17,6 +17,8 @@ const (
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtypeOperator represents the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtypeOperator = "DoesNotContainResourceOfSubtype"
+	// DestinationCreationOperator represents the destination creation operator
+	DestinationCreationOperator = "DestinationCreationOperator"
 )
 
 // OperatorName represents the constraint operator name
@@ -39,6 +41,11 @@ func NewIsNotAssignedToAnyFormationOfTypeInput() OperatorInput {
 // NewDoesNotContainResourceOfSubtypeInput is input constructor for DoesNotContainResourceOfSubtypeOperator operator. It returns empty OperatorInput
 func NewDoesNotContainResourceOfSubtypeInput() OperatorInput {
 	return &formationconstraint.DoesNotContainResourceOfSubtypeInput{}
+}
+
+// NewDestinationCreationInput is input constructor for DestinationCreationOperator operator. It returns empty OperatorInput
+func NewDestinationCreationInput() OperatorInput {
+	return &formationconstraint.DestinationCreationInput{}
 }
 
 // IsNotAssignedToAnyFormationOfType is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
@@ -125,6 +132,12 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 		return false, errors.Errorf("Unsupported resource type %q", i.ResourceType)
 	}
 
+	return true, nil
+}
+
+// DestinationCreation is a operator that handles destination creations
+func (e *ConstraintEngine) DestinationCreation(ctx context.Context, input OperatorInput) (bool, error) {
+	log.C(ctx).Infof("Executing operator: %q", DestinationCreationOperator)
 	return true, nil
 }
 

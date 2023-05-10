@@ -72,11 +72,13 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
+			DestinationCreationOperator:               NewDestinationCreationInput,
 		},
 	}
 	c.operators = map[OperatorName]OperatorFunc{
 		IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType,
 		DoesNotContainResourceOfSubtypeOperator:   c.DoesNotContainResourceOfSubtype,
+		DestinationCreationOperator:               c.DestinationCreation,
 	}
 	return c
 }
