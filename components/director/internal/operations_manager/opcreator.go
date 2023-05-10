@@ -3,7 +3,6 @@ package operations_manager
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -17,6 +16,7 @@ const (
 )
 
 // OperationCreator is responsible for creation of different types of operations.
+//go:generate mockery --name=OperationCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationCreator interface {
 	Create(ctx context.Context) error
 }
@@ -29,7 +29,7 @@ type ORDOperationCreator struct {
 	appSvc     ApplicationService
 }
 
-// Create creates ord operations
+// Create lists all webhooks of type "OPEN_RESOURCE_DISCOVERY" and for every application creates corresponding operation
 func (oc *ORDOperationCreator) Create(ctx context.Context) error {
 	operations, err := oc.buildOperationInputs(ctx)
 	if err != nil {
@@ -66,7 +66,7 @@ func (oc *ORDOperationCreator) buildOperationInputs(ctx context.Context) ([]*mod
 			operations = append(operations, ops...)
 		} else if webhook.ObjectType == model.ApplicationWebhookReference {
 			opData := NewOrdOperationData(webhook.ObjectID, "")
-			data, err := opData.getData()
+			data, err := opData.GetData()
 			if err != nil {
 				return nil, err
 			}
@@ -90,7 +90,7 @@ func (oc *ORDOperationCreator) appTemplateWebhookToOperations(ctx context.Contex
 
 	for _, app := range apps {
 		opData := NewOrdOperationData(app.ID, webhook.ObjectID)
-		data, err := opData.getData()
+		data, err := opData.GetData()
 		if err != nil {
 			return nil, err
 		}
@@ -154,14 +154,14 @@ func buildORDOperationInput(data string) *model.OperationInput {
 	}
 }
 
-func NewOperationCreator(kind string, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) (OperationCreator, error) {
+func NewOperationCreator(kind string, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationCreator {
 	if kind == OrdCreatorType {
 		return &ORDOperationCreator{
 			transact:   transact,
 			opSvc:      opSvc,
 			webhookSvc: webhookSvc,
 			appSvc:     appSvc,
-		}, nil
+		}
 	}
-	return nil, fmt.Errorf("unsupported operation type")
+	return nil
 }

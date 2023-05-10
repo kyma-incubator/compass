@@ -19,7 +19,7 @@ func NewOrdOperationData(appID, appTemplateID string) *OrdOperationData {
 	}
 }
 
-func (b *OrdOperationData) getData() (string, error) {
+func (b *OrdOperationData) GetData() (string, error) {
 	data, err := json.Marshal(b)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshaling ord operation data")

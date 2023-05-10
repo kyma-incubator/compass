@@ -287,7 +287,8 @@ func createOperationsManagerService(ctx context.Context, cfgProvider *configprov
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, conf.Features.RuntimeTypeLabelKey, conf.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
-	return operations_manager.NewOperationService(transact, opSvc, webhookSvc, appSvc), nil
+	ordOpCreator := operations_manager.NewOperationCreator(operations_manager.OrdCreatorType, transact, opSvc, webhookSvc, appSvc)
+	return operations_manager.NewOperationService(transact, opSvc, ordOpCreator), nil
 }
 
 func exitOnError(err error, context string) {

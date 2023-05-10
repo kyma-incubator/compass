@@ -16,29 +16,22 @@ const (
 type Service struct {
 	transact persistence.Transactioner
 
-	opSvc      OperationService
-	webhookSvc WebhookService
-	appSvc     ApplicationService
+	opSvc        OperationService
+	ordOpCreator OperationCreator
 }
 
 // NewOperationService returns a new object responsible for service-layer Operation operations.
-func NewOperationService(transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) *Service {
+func NewOperationService(transact persistence.Transactioner, opSvc OperationService, ordOpCreator OperationCreator) *Service {
 	return &Service{
-		transact:   transact,
-		opSvc:      opSvc,
-		webhookSvc: webhookSvc,
-		appSvc:     appSvc,
+		transact:     transact,
+		opSvc:        opSvc,
+		ordOpCreator: ordOpCreator,
 	}
 }
 
-// CreateORDOperations lists all webhooks of type "OPEN_RESOURCE_DISCOVERY" and for every application creates corresponding operation
+// CreateORDOperations creates ord operations
 func (s *Service) CreateORDOperations(ctx context.Context) error {
-	creator, err := NewOperationCreator(OrdCreatorType, s.transact, s.opSvc, s.webhookSvc, s.appSvc)
-	if err != nil {
-		return errors.Wrap(err, "while creating operation creator")
-	}
-
-	return creator.Create(ctx)
+	return s.ordOpCreator.Create(ctx)
 }
 
 // DeleteOldOperations deletes all operations of type `opType` which are:
