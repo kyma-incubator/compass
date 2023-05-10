@@ -2,6 +2,7 @@ package webhookclient
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -21,6 +22,28 @@ func NewWebhookStatusGoneErr(goneStatusCode int) WebhookStatusGoneErr {
 // FormationNotificationRequest represents a formation webhook request to be executed
 type FormationNotificationRequest struct {
 	*Request
+}
+
+type FormationNotificationRequestExt struct {
+	*Request
+	Formation     *model.Formation
+	FormationType string
+}
+
+func (fnr *FormationNotificationRequestExt) GetObjectType() model.ResourceType {
+	return model.FormationResourceType
+}
+
+func (fnr *FormationNotificationRequestExt) GetObjectSubtype() string {
+	return fnr.FormationType
+}
+
+func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *model.FormationAssignment {
+	return nil
+}
+
+func (fnr *FormationNotificationRequestExt) GetFormation() *model.Formation {
+	return fnr.Formation
 }
 
 // FormationAssignmentNotificationRequest represents a formation assignment webhook request to be executed
@@ -104,4 +127,13 @@ func NewPollRequest(webhook graphql.Webhook, requestObject webhook.TemplateInput
 		Request: NewRequest(webhook, requestObject, correlationID),
 		PollURL: pollURL,
 	}
+}
+
+// WebhookExtRequest represent an extended request associated with registered webhook
+type WebhookExtRequest interface {
+	WebhookRequest
+	GetObjectType() model.ResourceType
+	GetObjectSubtype() string
+	GetFormationAssignment() *model.FormationAssignment
+	GetFormation() *model.Formation
 }

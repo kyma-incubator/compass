@@ -3,8 +3,8 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/hashicorp/go-multierror"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -100,6 +100,21 @@ type UIDService interface {
 	Generate() string
 }
 
+//go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type labelService interface {
+	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
+}
+
+//go:generate mockery --exported --name=constraintEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type constraintEngine interface {
+	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error
+}
+
+//go:generate mockery --name=formationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationTemplateRepository interface {
+	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
+}
+
 type service struct {
 	repo                         FormationAssignmentRepository
 	uidSvc                       UIDService
@@ -108,10 +123,16 @@ type service struct {
 	runtimeContextRepo           runtimeContextRepository
 	formationAssignmentConverter formationAssignmentConverter
 	notificationService          notificationService
+	labelService                 labelService
+	constraintEngine             constraintEngine
+	formationRepository          formationRepository
+	formationTemplateRepository  formationTemplateRepository
+	runtimeTypeLabelKey          string
+	applicationTypeLabelKey      string
 }
 
 // NewService creates a FormationTemplate service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentConverter formationAssignmentConverter, notificationService notificationService) *service {
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentConverter formationAssignmentConverter, notificationService notificationService, labelService labelService, constraintEngine constraintEngine, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		repo:                         repo,
 		uidSvc:                       uidSvc,
@@ -120,6 +141,12 @@ func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicati
 		runtimeContextRepo:           runtimeContextRepo,
 		formationAssignmentConverter: formationAssignmentConverter,
 		notificationService:          notificationService,
+		labelService:                 labelService,
+		constraintEngine:             constraintEngine,
+		formationRepository:          formationRepository,
+		formationTemplateRepository:  formationTemplateRepository,
+		runtimeTypeLabelKey:          runtimeTypeLabelKey,
+		applicationTypeLabelKey:      applicationTypeLabelKey,
 	}
 }
 
@@ -325,6 +352,24 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationAssi
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	formation, err := s.formationRepository.Get(ctx, in.FormationID, tenantID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation with ID %q in tenant %q: %v", in.FormationID, tenantID, err)
+		return errors.Wrapf(err, "An error occurred while getting formation with ID %q in tenant %q", in.FormationID, tenantID)
+	}
+
+	template, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by ID: %q: %v", formation.FormationTemplateID, err)
+		return errors.Wrapf(err, "An error occurred while getting formation template by ID: %q", formation.FormationTemplateID)
+	}
+
+	joinPointDetails := s.prepareDetailsForNotificationStatusReturned(id, template.Name, in, formation, template)
+
+	if err := s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreNotificationStatusReturned, joinPointDetails, formation.FormationTemplateID); err != nil {
+		return errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.NotificationStatusReturned, model.PreOperation)
+	}
+
 	if exists, err := s.repo.Exists(ctx, id, tenantID); err != nil {
 		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
 	} else if !exists {
@@ -333,6 +378,10 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationAssi
 
 	if err = s.repo.Update(ctx, in.ToModel(id, tenantID)); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
+	}
+
+	if err := s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostNotificationStatusReturned, joinPointDetails, formation.FormationTemplateID); err != nil {
+		return errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.NotificationStatusReturned, model.PostOperation)
 	}
 
 	return nil
@@ -575,7 +624,12 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	response, err := s.notificationService.SendNotification(ctx, assignmentClone.Request)
+	extendedRequest, err := s.createExtendedFARequest(ctx, assignmentClone)
+	if err != nil {
+		return errors.Wrap(err, "while creating extended formation assignment request")
+	}
+
+	response, err := s.notificationService.SendNotification(ctx, extendedRequest)
 	if err != nil {
 		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState)
 		if updateError != nil {
@@ -698,7 +752,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
-	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
+	extendedRequest, err := s.createExtendedFARequest(ctx, mappingPair.Assignment)
+	if err != nil {
+		return false, errors.Wrap(err, "while creating extended formation assignment request")
+	}
+
+	response, err := s.notificationService.SendNotification(ctx, extendedRequest)
 	if err != nil {
 		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 		if updateError != nil {
@@ -863,6 +922,96 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 	return assignmentMappingPairs
 }
 
+func (s *service) prepareDetailsForNotificationStatusReturned(faID, formationType string, faInput *model.FormationAssignmentInput, formation *model.Formation, formatioTemplate *model.FormationTemplate) *formationconstraint.NotificationStatusReturnedOperationDetails {
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		ResourceType:          model.FormationResourceType,
+		ResourceSubtype:       formationType,
+		FormationAssignmentID: faID,
+		FormationAssignment:   faInput,
+		Formation:             formation,
+		FormationTemplate:     formatioTemplate,
+	}
+}
+
+func (s *service) createExtendedFARequest(ctx context.Context, faRequestMapping *FormationAssignmentRequestMapping) (*FormationAssignmentRequestExt, error) {
+	targetSubtype, err := s.getObjectSubtype(ctx, faRequestMapping.FormationAssignment.TenantID, faRequestMapping.FormationAssignment.Target, faRequestMapping.FormationAssignment.TargetType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FormationAssignmentRequestExt{
+		FormationAssignmentNotificationRequest: faRequestMapping.Request,
+		FormationAssignment:                    faRequestMapping.FormationAssignment,
+		TargetSubtype:                          targetSubtype,
+	}, nil
+}
+
+func (s *service) getObjectSubtype(ctx context.Context, tnt, objectID string, objectType model.FormationAssignmentType) (string, error) {
+	switch objectType {
+	case model.FormationAssignmentTypeApplication:
+		applicationTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        s.applicationTypeLabelKey,
+			ObjectID:   objectID,
+			ObjectType: model.ApplicationLabelableObject,
+		})
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
+			return "", errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, objectID)
+		}
+
+		applicationType, ok := applicationTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing application type for application %q", objectID)
+		}
+		return applicationType, nil
+
+	case model.FormationAssignmentTypeRuntime:
+		runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        s.runtimeTypeLabelKey,
+			ObjectID:   objectID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
+			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, objectID)
+		}
+
+		runtimeType, ok := runtimeTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing runtime type for runtime %q", objectID)
+		}
+		return runtimeType, nil
+
+	case model.FormationAssignmentTypeRuntimeContext:
+		rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while fetching runtime context with ID %q", objectID)
+		}
+
+		runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        s.runtimeTypeLabelKey,
+			ObjectID:   rtmCtx.RuntimeID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, objectID)
+		}
+
+		runtimeType, ok := runtimeTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing runtime type for runtime %q", rtmCtx.RuntimeID)
+		}
+		return runtimeType, nil
+
+	default:
+		return "", errors.Errorf("unknown formation type %s", objectType)
+	}
+}
+
 // FormationAssignmentRequestMapping represents the mapping between the notification request and formation assignment
 type FormationAssignmentRequestMapping struct {
 	Request             *webhookclient.FormationAssignmentNotificationRequest
@@ -889,6 +1038,41 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 			Value:       f.FormationAssignment.Value,
 		},
 	}
+}
+
+//// Request is alias for FormationAssignmentNotificationRequest
+//type Request = *webhookclient.FormationAssignmentNotificationRequest
+
+type FormationAssignmentRequestExt struct {
+	*webhookclient.FormationAssignmentNotificationRequest
+	FormationAssignment *model.FormationAssignment
+	TargetSubtype       string
+}
+
+func (f *FormationAssignmentRequestExt) GetObjectType() model.ResourceType {
+	switch f.FormationAssignment.TargetType {
+	case model.FormationAssignmentTypeApplication:
+		return model.ApplicationResourceType
+
+	case model.FormationAssignmentTypeRuntime:
+		return model.RuntimeResourceType
+
+	case model.FormationAssignmentTypeRuntimeContext:
+		return model.RuntimeContextResourceType
+	}
+	return ""
+}
+
+func (f *FormationAssignmentRequestExt) GetObjectSubtype() string {
+	return f.TargetSubtype
+}
+
+func (f *FormationAssignmentRequestExt) GetFormationAssignment() *model.FormationAssignment {
+	return f.FormationAssignment
+}
+
+func (f *FormationAssignmentRequestExt) GetFormation() *model.Formation {
+	return nil
 }
 
 // AssignmentErrorCode represents error code used to differentiate the source of the error

@@ -24,7 +24,7 @@ type formationRepository interface {
 
 //go:generate mockery --exported --name=notificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationService interface {
-	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhook.Response, error)
+	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error)
 }
 
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string

@@ -17,6 +17,7 @@ import (
 //go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+	ToModel(in *graphql.Webhook) (*model.Webhook, error)
 }
 
 // NotificationBuilder is responsible for building notification requests

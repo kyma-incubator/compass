@@ -86,7 +86,7 @@ type FormationTemplateRepository interface {
 type NotificationsService interface {
 	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
 	GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
-	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error)
+	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error)
 }
 
 // FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
@@ -359,7 +359,8 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		if err := s.processFormationNotifications(ctx, newFormation, formationReq, model.CreateErrorFormationState); err != nil {
+		extendedFormationReq := createExtendedFormationReq(formationReq, &formation, formationTemplateName)
+		if err := s.processFormationNotifications(ctx, newFormation, extendedFormationReq, model.CreateErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
@@ -410,7 +411,8 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		if err := s.processFormationNotifications(ctx, ft.formation, formationReq, model.DeleteErrorFormationState); err != nil {
+		extendedFormationReq := createExtendedFormationReq(formationReq, &formation, formationTemplateName)
+		if err := s.processFormationNotifications(ctx, ft.formation, extendedFormationReq, model.DeleteErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formationName)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
@@ -1110,7 +1112,8 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 	}
 
 	for _, formationReq := range formationReqs {
-		if err = s.processFormationNotifications(ctx, formation, formationReq, errorState); err != nil {
+		extendedFormationReq := createExtendedFormationReq(formationReq, formation, formationTemplateName)
+		if err = s.processFormationNotifications(ctx, formation, extendedFormationReq, errorState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
@@ -1579,7 +1582,7 @@ func setToSlice(set map[string]bool) []string {
 	return result
 }
 
-func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {
+func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequestExt, errorState model.FormationState) error {
 	response, err := s.notificationsService.SendNotification(ctx, formationReq)
 	if err != nil {
 		updateError := s.SetFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
@@ -1679,4 +1682,12 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 	}
 
 	return true
+}
+
+func createExtendedFormationReq(formationReq *webhookclient.FormationNotificationRequest, formation *model.Formation, formationType string) *webhookclient.FormationNotificationRequestExt {
+	return &webhookclient.FormationNotificationRequestExt{
+		Request:       formationReq.Request,
+		Formation:     formation,
+		FormationType: formationType,
+	}
 }
