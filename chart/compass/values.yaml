@@ -124,50 +124,50 @@ global:
       parent: 4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900
   images:
     containerRegistry:
-      path: eu.gcr.io/kyma-project/incubator
+      path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-connector
     connectivity_adapter:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-pairing-adapter
     director:
-      dir:
+      dir: dev/incubator/
       version: "PR-2962"
       name: compass-director
     hydrator:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-hydrator
     ias_adapter:
-      dir:
-      version: "PR-2974"
+      dir: dev/incubator/
+      version: "PR-3047"
       name: compass-ias-adapter
     gateway:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-gateway
     operations_controller:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-operations-controller
     ord_service:
-      dir:
+      dir: dev/incubator/
       version: "PR-90"
       name: compass-ord-service
     schema_migrator:
-      dir:
+      dir: dev/incubator/
       version: "PR-2962"
       name: compass-schema-migrator
     system_broker:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -175,16 +175,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-external-services-mock
     console:
-      dir:
-      version: "PR-80"
+      dir: dev/incubator/
+      version: "PR-83"
       name: compass-console
     e2e_tests:
-      dir:
-      version: "PR-2970"
+      dir: dev/incubator/
+      version: "PR-3052"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -298,6 +298,7 @@ global:
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
+    kymaApplicationNamespaceValue: "sap.kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
@@ -386,7 +387,7 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "kibana"
+    format: "text"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
@@ -496,6 +497,7 @@ global:
         clientCert: cert
         clientKey: key
         ca: ca
+        manage: false
     postgres:
       connectTimeout: 30s
       requestTimeout: 30s
@@ -754,6 +756,7 @@ global:
       customerIdProperty: "customerId"
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
+      licenseTypeProperty: "licenseType"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
@@ -896,8 +899,8 @@ global:
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
-    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "displayName" }, { "placeholder_name": "display-name", "system_key": "displayName" }, { "placeholder_name": "systemNumber", "system_key": "systemNumber" }, { "placeholder_name": "productId", "system_key": "productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "ppmsProductVersionId", "optional": true }, { "placeholder_name": "description", "system_key": "productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "infrastructureProvider", "optional": true } ]'
-    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
+    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "displayName" }, { "placeholder_name": "display-name", "system_key": "displayName" }, { "placeholder_name": "systemNumber", "system_key": "systemNumber" }, { "placeholder_name": "productId", "system_key": "productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "infrastructureProvider", "optional": true } ]'
+    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}","region": "{{region}}"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:
         skipSSLValidation: false
@@ -963,6 +966,7 @@ global:
           nameField: "name"
           customerIdField: "customerId"
           subdomainField: "subdomain"
+          licenseTypeField: "licenseType"
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
@@ -988,6 +992,7 @@ global:
           nameField: "displayName"
           customerIdField: "customerId"
           subdomainField: "subdomain"
+          licenseTypeField: "licenseType"
           discriminatorField: ""
           discriminatorValue: ""
           detailsField: "details"
@@ -1191,6 +1196,7 @@ global:
         - "application_template.webhooks:read"
         - "internal_visibility:read"
         - "webhook:write"
+        - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
       managed_application_consumer: []
       landscape_resource_operator:
@@ -1241,6 +1247,7 @@ global:
         - "application:read"
         - "application:write"
         - "application.local_tenant_id:write"
+        - "application.application_template:read"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"

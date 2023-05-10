@@ -27,7 +27,7 @@ spec:
       - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       containers:
-        - name: {{ .Values.global.systemFetcher.containerName }}
+        - name: {{ .Values.global.systemFetcher.containerName }}-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
@@ -35,6 +35,8 @@ spec:
           env:
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: SYSTEM_FETCHER_PAGE_SIZE

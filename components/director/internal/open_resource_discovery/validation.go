@@ -18,6 +18,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -71,6 +72,10 @@ const (
 	MinDescriptionLength = 1
 	// MaxDescriptionLength represents the minimal accepted length of the Description field
 	MaxDescriptionLength = 5000
+	// MinLocalTenantIDLength represents the minimal accepted length of the LocalID field
+	MinLocalTenantIDLength = 1
+	// MaxLocalTenantIDLength represents the minimal accepted length of the LocalID field
+	MaxLocalTenantIDLength = 255
 )
 
 const (
@@ -192,11 +197,11 @@ var (
 )
 
 var shortDescriptionRules = []validation.Rule{
-	validation.Required, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.Required, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.RuneLength(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ORDDocumentValidationError contains the validation errors when aggregating ord documents
@@ -214,6 +219,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
+		validation.Field(&app.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&app.ApplicationNamespace, validation.Match(regexp.MustCompile(OrdNamespaceRegex))),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
 		validation.Field(&app.OrdLabels, validation.By(validateORDLabels)),
@@ -279,12 +285,16 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 	)
 }
 
-func validateBundleInput(bndl *model.BundleCreateInput) error {
+func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
+		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&bndl.Name, validation.Required),
 		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules...),
 		validation.Field(&bndl.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+		validation.Field(&bndl.Version, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
+			return validateBundleVersionInput(value, *bndl, bundlesFromDB, resourceHashes)
+		})),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
@@ -311,6 +321,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
+		validation.Field(&api.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
 		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
@@ -388,6 +399,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
+		validation.Field(&event.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&event.Name, validation.Required),
 		validation.Field(&event.ShortDescription, shortDescriptionRules...),
 		validation.Field(&event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
@@ -779,6 +791,33 @@ func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgs
 	return checkHashEquality(pkgFromDB.Version, pkg.Version, hashDB, hashDoc)
 }
 
+func validateBundleVersionInput(value interface{}, bndl model.BundleCreateInput, bndlsFromDB map[string]*model.Bundle, resourceHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(bndlsFromDB) == 0 {
+		return nil
+	}
+
+	bndlOrdID := str.PtrStrToStr(bndl.OrdID)
+	bndlFromDB, ok := bndlsFromDB[bndlOrdID]
+	if !ok || isResourceHashMissing(bndlFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(bndlFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(resourceHashes[str.PtrStrToStr(bndl.OrdID)], 10)
+
+	if bndlFromDB.Version != nil && bndl.Version != nil {
+		return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
+	}
+	if bndlFromDB.Version != nil && bndl.Version == nil {
+		return errors.New("bundle version is present in the DB, but is missing from the document")
+	}
+	return nil
+}
+
 func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
 	if value == nil {
 		return nil
@@ -859,6 +898,20 @@ func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
 	}
 
 	return normalizedPkgDefinition, nil
+}
+
+func normalizeBundle(bndl *model.BundleCreateInput) (model.BundleCreateInput, error) {
+	bytes, err := json.Marshal(bndl)
+	if err != nil {
+		return model.BundleCreateInput{}, errors.Wrapf(err, "error while marshalling bundle definition with ID %v", bndl.OrdID)
+	}
+
+	var normalizedBndlDefinition model.BundleCreateInput
+	if err := json.Unmarshal(bytes, &normalizedBndlDefinition); err != nil {
+		return model.BundleCreateInput{}, errors.Wrapf(err, "error while unmarshalling bundle definition with ID %v", bndl.OrdID)
+	}
+
+	return normalizedBndlDefinition, nil
 }
 
 func isResourceHashMissing(hash *string) bool {

@@ -111,7 +111,7 @@ func TestNewProcessor(t *testing.T) {
 }
 
 func TestAuthIDFromSubjectFunc(t *testing.T) {
-	expectedAuthID := "ed1f789b-1a85-4a63-b360-fac9d6484544"
+	expectedID := "ed1f789b-1a85-4a63-b360-fac9d6484544"
 
 	t.Run("Success when internal consumer id is provided", func(t *testing.T) {
 		cache := &automock.Cache{}
@@ -134,7 +134,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
-		require.Equal(t, expectedAuthID, res)
+		require.Equal(t, expectedID, res)
 	})
 
 	t.Run("Success getting authID from mapping", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
-		require.Equal(t, expectedAuthID, res)
+		require.Equal(t, expectedID, res)
 	})
 
 	t.Run("Success getting authID from OUs when region is missing", func(t *testing.T) {
@@ -158,7 +158,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
-		require.Equal(t, expectedAuthID, res)
+		require.Equal(t, expectedID, res)
 	})
 
 	t.Run("Success getting authID from OUs when region exists in subject", func(t *testing.T) {
@@ -170,7 +170,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithRegion)
-		require.Equal(t, expectedAuthID, res)
+		require.Equal(t, expectedID, res)
 	})
 }
 

@@ -220,6 +220,47 @@ var (
 
 	scenariosLabel             = &model.Label{Value: []interface{}{scenario}}
 	scenariosLabelInvalidValue = &model.Label{Value: "invalid"}
+
+	formationTemplateID1 = "123"
+	formationTemplateID2 = "456"
+	formationTemplateID3 = "789"
+	constraintID1        = "constraintID1"
+	constraintID2        = "constraintID2"
+	constraintID3        = "constraintID3"
+
+	formationConstraint1 = &model.FormationConstraint{
+		ID:              constraintID1,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+	formationConstraint2 = &model.FormationConstraint{
+		ID:              constraintID2,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+	globalConstraint = &model.FormationConstraint{
+		ID:              constraintID3,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.GlobalFormationConstraintScope,
+	}
 )
 
 func UnusedFormationConstraintService() *automock.FormationConstraintService {
@@ -256,4 +297,12 @@ func UnusedFormationTemplateConstraintReferenceRepository() *automock.FormationT
 
 func fixColumns() []string {
 	return []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
+}
+
+func UnusedLabelService() *automock.LabelService {
+	return &automock.LabelService{}
+}
+
+func UnusedApplicationRepo() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
 }

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -124,6 +126,7 @@ func NewRootResolver(
 	ordWebhookMappings []application.ORDWebhookMapping,
 	tenantMappingConfig map[string]interface{},
 	callbackURL string,
+	appTemplateProductLabel string,
 ) (*RootResolver, error) {
 	timeService := time.NewService()
 
@@ -155,6 +158,7 @@ func NewRootResolver(
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 	bundleReferenceConv := bundlereferences.NewConverter()
@@ -172,6 +176,7 @@ func NewRootResolver(
 	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
@@ -197,6 +202,7 @@ func NewRootResolver(
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -217,7 +223,7 @@ func NewRootResolver(
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, constraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, formationRepo, labelRepo)
+	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, formationRepo, labelRepo, labelSvc, applicationRepo)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator)
@@ -226,7 +232,7 @@ func NewRootResolver(
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, selfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMappings)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue, featuresConfig.KymaApplicationNamespaceValue)
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appTemplateConv, appSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.RuntimeTypeLabelKey, subscriptionConfig.ProviderLabelKey)
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
@@ -241,8 +247,8 @@ func NewRootResolver(
 
 	return &RootResolver{
 		appNameNormalizer:   appNameNormalizer,
-		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, appTemplateConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
-		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, tenantMappingConfig, callbackURL),
+		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
+		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, tenantMappingConfig, callbackURL, appTemplateProductLabel),
 		api:                 api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -263,7 +269,7 @@ func NewRootResolver(
 		bundleInstanceAuth:  bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
 		subscription:        subscription.NewResolver(transact, subscriptionSvc),
-		formationTemplate:   formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter),
+		formationTemplate:   formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter, formationConstraintSvc, formationConstraintConverter),
 		formationConstraint: formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
 		constraintReference: formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),
 		certSubjectMapping:  certsubjectmapping.NewResolver(transact, certSubjectMappingConv, certSubjectMappingSvc, uidSvc),
@@ -318,6 +324,11 @@ func (r *RootResolver) FormationAssignmentsDataLoader(ids []dataloader.ParamForm
 // StatusDataLoader is the FormationStatus dataloader used in the graphql API router
 func (r *RootResolver) StatusDataLoader(ids []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
 	return r.formation.StatusDataLoader(ids)
+}
+
+// FormationConstraintsDataLoader is the FormationConstraint dataloader used in the graphql API router
+func (r *RootResolver) FormationConstraintsDataLoader(ids []dataloader.ParamFormationConstraint) ([][]*graphql.FormationConstraint, []error) {
+	return r.formationTemplate.FormationConstraintsDataLoader(ids)
 }
 
 // Mutation missing godoc
@@ -1015,8 +1026,14 @@ func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Applicati
 	return r.app.Bundle(ctx, obj, id)
 }
 
+// ApplicationTemplate resolves application template for application object
 func (r *applicationResolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
 	return r.app.ApplicationTemplate(ctx, obj)
+}
+
+// TenantBusinessType resolves tenant business type for application object
+func (r *applicationResolver) TenantBusinessType(ctx context.Context, obj *graphql.Application) (*graphql.TenantBusinessType, error) {
+	return r.app.TenantBusinessType(ctx, obj)
 }
 
 type applicationTemplateResolver struct {
@@ -1045,6 +1062,11 @@ func (r *RootResolver) FormationTemplate() graphql.FormationTemplateResolver {
 // Webhooks missing godoc
 func (r *formationTemplateResolver) Webhooks(ctx context.Context, obj *graphql.FormationTemplate) ([]*graphql.Webhook, error) {
 	return r.formationTemplate.Webhooks(ctx, obj)
+}
+
+// FormationConstraints missing godoc
+func (r *formationTemplateResolver) FormationConstraints(ctx context.Context, obj *graphql.FormationTemplate) ([]*graphql.FormationConstraint, error) {
+	return r.formationTemplate.FormationConstraint(ctx, obj)
 }
 
 type runtimeResolver struct {

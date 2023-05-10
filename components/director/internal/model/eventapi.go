@@ -23,6 +23,7 @@ type EventDefinition struct {
 	Description         *string
 	Group               *string
 	OrdID               *string
+	LocalTenantID       *string
 	ShortDescription    *string
 	SystemInstanceAware *bool
 	PolicyLevel         *string
@@ -70,6 +71,7 @@ type EventDefinitionInput struct {
 	Description              *string                       `json:"description"`
 	Group                    *string                       `json:",omitempty"`
 	OrdID                    *string                       `json:"ordId"`
+	LocalTenantID            *string                       `json:"localTenantId"`
 	ShortDescription         *string                       `json:"shortDescription"`
 	SystemInstanceAware      *bool                         `json:"systemInstanceAware"`
 	PolicyLevel              *string                       `json:"policyLevel"`
@@ -163,6 +165,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Description:         e.Description,
 		Group:               e.Group,
 		OrdID:               e.OrdID,
+		LocalTenantID:       e.LocalTenantID,
 		ShortDescription:    e.ShortDescription,
 		SystemInstanceAware: e.SystemInstanceAware,
 		PolicyLevel:         e.PolicyLevel,

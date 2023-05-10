@@ -30,6 +30,7 @@ func NewService(cfg config.IAS, client *http.Client) Service {
 }
 
 type UpdateData struct {
+	Operation             types.Operation
 	TenantMapping         types.TenantMapping
 	ConsumerApplication   types.Application
 	ProviderApplicationID string
@@ -39,8 +40,9 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
-	switch {
-	case consumerTenant.Operation == types.OperationAssign:
+
+	switch data.Operation {
+	case types.OperationAssign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			addConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
 				Name:    consumedAPI,
@@ -48,7 +50,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 				AppID:   data.ProviderApplicationID,
 			})
 		}
-	case consumerTenant.Operation == types.OperationUnassign:
+	case types.OperationUnassign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			removeConsumedAPI(&consumedAPIs, consumedAPI)
 		}
@@ -57,7 +59,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	if consumedAPIsLen != len(consumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
 		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, consumedAPIs); err != nil {
-			errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, consumerTenant.UCLApplicationID, err)
+			return errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, consumerTenant.UCLApplicationID, err)
 		}
 	}
 
@@ -94,16 +96,14 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if len(applications.Applications) == 0 {
 		return types.Application{}, errors.Newf("no applications found with clientID '%s'", clientID)
 	}
-	if len(applications.Applications) == 1 {
-		return applications.Applications[0], nil // TODO do we leave this?
-	}
 
 	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
 }
 
 func filterByAppTenantID(applications []types.Application, clientID, appTenantID string) (types.Application, error) {
 	for _, application := range applications {
-		if application.Authentication.SAPManagedAttributes.AppTenantId == appTenantID {
+		if application.Authentication.SAPManagedAttributes.AppTenantID == appTenantID ||
+			application.Authentication.SAPManagedAttributes.SAPZoneID == appTenantID {
 			return application, nil
 		}
 	}
@@ -154,6 +154,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to marshal body: %w", err)
 	}
+	log.Info().Msgf("executing patch with body: %s", appUpdateBytes)
 	url := buildPatchApplicationURL(iasHost, applicationID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {
@@ -179,7 +180,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 
 func buildGetApplicationURL(host, clientID string) string {
 	escapedFilter := url.QueryEscape(fmt.Sprintf("clientId eq %s", clientID))
-	return fmt.Sprintf("%s%s?filter=%s", host, applicationsPath, escapedFilter)
+	return fmt.Sprintf("%s%s/?filter=%s", host, applicationsPath, escapedFilter)
 }
 
 func buildPatchApplicationURL(host, applicationID string) string {

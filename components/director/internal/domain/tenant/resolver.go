@@ -401,6 +401,10 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 
 	tenantAccess, err := r.srv.GetTenantAccessForResource(ctx, internalTenantID, resourceID, resourceTypeModel)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, apperrors.NewNotFoundErrorWithType(resource.TenantAccess)
+		}
+
 		return nil, errors.Wrapf(err, "while fetching stored tenant access for tenant %q about resource %q of type %q", internalTenantID, resourceID, resourceTypeModel)
 	}
 	tenantAccess.ExternalTenantID = tenantID

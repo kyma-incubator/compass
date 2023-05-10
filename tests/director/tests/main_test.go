@@ -57,6 +57,7 @@ type DirectorConfig struct {
 	RuntimeTypeLabelKey                             string
 	ApplicationTypeLabelKey                         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	KymaRuntimeTypeLabelValue                       string
+	KymaApplicationNamespaceValue                   string
 	SaaSAppNameLabelKey                             string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	ConsumerTokenURL                                string
 	ProviderClientID                                string
@@ -71,6 +72,8 @@ type DirectorConfig struct {
 	FormationMappingAsyncResponseDelay              int64         `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
 	SubscriptionProviderAppNameProperty             string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 	CertSubjectMappingResyncInterval                time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
+	ApplicationTemplateProductLabel                 string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
+	DefaultTenantRegion                             string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
 }
 
 var (

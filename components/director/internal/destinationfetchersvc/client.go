@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
@@ -20,14 +20,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
 	correlationIDPrefix = "sap.s4:communicationScenario:"
 	s4HANAType          = "SAP S/4HANA Cloud"
 	s4HANABaseURLSuffix = "-api"
+	authorizationHeader = "Authorization"
 )
 
 // DestinationServiceAPIConfig destination service api configuration
@@ -50,9 +49,16 @@ type DestinationServiceAPIConfig struct {
 
 // Client destination client
 type Client struct {
-	httpClient *http.Client
-	apiConfig  DestinationServiceAPIConfig
-	apiURL     string
+	HTTPClient        *http.Client
+	apiConfig         DestinationServiceAPIConfig
+	authConfig        config.InstanceConfig
+	authToken         string
+	authTokenValidity time.Time
+}
+
+// Close closes idle connections
+func (c *Client) Close() {
+	c.HTTPClient.CloseIdleConnections()
 }
 
 // destinationFromService destination received from destination service
@@ -133,59 +139,61 @@ type DestinationResponse struct {
 	pageCount    int
 }
 
-// NewClient returns new destination client
-func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	subdomain string) (*Client, error) {
-	ctx := context.Background()
-
-	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
-	if err != nil {
-		return nil, errors.Errorf("failed to parse auth url '%s': %v", instanceConfig.TokenURL, err)
-	}
-	parts := strings.Split(baseTokenURL.Hostname(), ".")
-	if len(parts) < 2 {
-		return nil, errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
-	}
-	originalSubdomain := parts[0]
-
-	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
-	cfg := clientcredentials.Config{
-		ClientID:  instanceConfig.ClientID,
-		TokenURL:  tokenURL,
-		AuthStyle: oauth2.AuthStyleInParams,
-	}
+func getHTTPClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig) (*http.Client, error) {
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {
 		return nil, errors.Errorf("failed to create destinations client x509 pair: %v", err)
 	}
-
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: apiConfig.SkipSSLVerify,
-			Certificates:       []tls.Certificate{cert},
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: apiConfig.SkipSSLVerify,
+				Certificates:       []tls.Certificate{cert},
+			},
 		},
+		Timeout: apiConfig.Timeout,
+	}, nil
+}
+
+func setInstanceConfigTokenURLForSubdomain(instanceConfig *config.InstanceConfig,
+	apiConfig DestinationServiceAPIConfig, subdomain string) error {
+	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
+	if err != nil {
+		return errors.Errorf("failed to parse auth url '%s': %v", instanceConfig.TokenURL, err)
 	}
-
-	mtlsClient := &http.Client{
-		Transport: transport,
-		Timeout:   apiConfig.Timeout,
+	parts := strings.Split(baseTokenURL.Hostname(), ".")
+	if len(parts) < 2 {
+		return errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
 	}
+	originalSubdomain := parts[0]
 
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, mtlsClient)
+	instanceConfig.TokenURL = strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) +
+		apiConfig.OAuthTokenPath
 
-	httpClient := cfg.Client(ctx)
-	httpClient.Timeout = apiConfig.Timeout
+	return nil
+}
+
+// NewClient returns new destination client
+func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
+	subdomain string) (*Client, error) {
+	if err := setInstanceConfigTokenURLForSubdomain(&instanceConfig, apiConfig, subdomain); err != nil {
+		return nil, err
+	}
+	httpClient, err := getHTTPClient(instanceConfig, apiConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Client{
-		httpClient: httpClient,
+		HTTPClient: httpClient,
 		apiConfig:  apiConfig,
-		apiURL:     instanceConfig.URL,
+		authConfig: instanceConfig,
 	}, nil
 }
 
 // FetchTenantDestinationsPage returns a page of destinations
 func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page string) (*DestinationResponse, error) {
-	fetchURL := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
+	fetchURL := c.authConfig.URL + c.apiConfig.EndpointGetTenantDestinations
 	req, err := c.buildFetchRequest(ctx, fetchURL, page)
 	if err != nil {
 		return nil, err
@@ -225,7 +233,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page
 	}
 
 	logDuration := log.C(ctx).Debugf
-	if destinationsPageCallFullDuration > c.apiConfig.Timeout/5 {
+	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
 		logDuration = log.C(ctx).Warnf
 	}
 	destinationCorrelationHeader := c.apiConfig.ResponseCorrelationIDHeader
@@ -237,6 +245,16 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page
 		destinations: destinations,
 		pageCount:    pageCount,
 	}, nil
+}
+
+func (c *Client) setToken(req *http.Request) error {
+	token, err := c.getToken(req.Context())
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set(authorizationHeader, "Bearer " + token)
+	return nil
 }
 
 func (c *Client) buildFetchRequest(ctx context.Context, url string, page string) (*http.Request, error) {
@@ -253,18 +271,72 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 	query.Add(c.apiConfig.PagingPageParam, page)
 	query.Add(c.apiConfig.PagingSizeParam, strconv.Itoa(c.apiConfig.PageSize))
 	req.URL.RawQuery = query.Encode()
+	if err := c.setToken(req); err != nil {
+		return nil, err
+	}
 	return req, nil
+}
+
+type token struct {
+	AccessToken      string `json:"access_token,omitempty"`
+	ExpiresInSeconds int64  `json:"expires_in,omitempty"`
+}
+
+func (c *Client) getToken(ctx context.Context) (string, error) {
+	if c.authToken != "" && time.Now().Before(c.authTokenValidity.Add(-c.apiConfig.Timeout)) {
+		return c.authToken, nil
+	}
+	tokenRequestBody := strings.NewReader(url.Values{
+		"grant_type":    {"client_credentials"},
+		"client_id":     {c.authConfig.ClientID},
+		"client_secret": {c.authConfig.ClientSecret},
+	}.Encode())
+	tokenRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, c.authConfig.TokenURL, tokenRequestBody)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create token request")
+	}
+	tokenRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	authToken, err := c.doTokenRequest(tokenRequest)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to do token request")
+	}
+	c.authToken = authToken.AccessToken
+	c.authTokenValidity = time.Now().Add(time.Second * time.Duration(authToken.ExpiresInSeconds))
+	return c.authToken, nil
+}
+
+func (c *Client) doTokenRequest(tokenRequest *http.Request) (token, error) {
+	res, err := c.HTTPClient.Do(tokenRequest)
+	if err != nil {
+		return token{}, err
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.C(tokenRequest.Context()).WithError(err).Error("Unable to close token response body")
+		}
+	}()
+	if res.StatusCode != http.StatusOK {
+		return token{}, fmt.Errorf("token request failed with %s", res.Status)
+	}
+	authToken := token{}
+	if err := json.NewDecoder(res.Body).Decode(&authToken); err != nil {
+		return token{}, errors.Wrap(err, "failed to decode token")
+	}
+	return authToken, nil
 }
 
 // FetchDestinationSensitiveData returns sensitive data of a destination
 func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationName string) ([]byte, error) {
-	fetchURL := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
+	fetchURL := fmt.Sprintf("%s%s/%s", c.authConfig.URL, c.apiConfig.EndpointFindDestination, destinationName)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
-	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")
 	}
-
+	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
+	if err := c.setToken(req); err != nil {
+		return nil, err
+	}
 	res, err := c.sendRequestWithRetry(req)
 	if err != nil {
 		return nil, err
@@ -287,7 +359,7 @@ func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationN
 	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read body of response")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	return body, nil
@@ -296,7 +368,7 @@ func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationN
 func (c *Client) sendRequestWithRetry(req *http.Request) (*http.Response, error) {
 	var response *http.Response
 	err := retry.Do(func() error {
-		res, err := c.httpClient.Do(req)
+		res, err := c.HTTPClient.Do(req)
 		if err != nil {
 			return errors.Wrap(err, "failed to execute HTTP request")
 		}

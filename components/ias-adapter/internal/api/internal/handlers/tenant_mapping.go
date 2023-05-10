@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -26,20 +27,36 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
-		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusBadRequest, err)
+		return
+	}
+	logProcessing(ctx, tenantMapping)
+
+	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
+		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
+		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
 	if err := tenantMapping.Validate(); err != nil {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)
-		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
+	if !strings.HasPrefix(tenantMapping.ReceiverTenant.ApplicationURL, "http") {
+		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
+	}
 
-	logProcessing(ctx, tenantMapping)
+	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
+	if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
+		errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
+		err := errors.Newf(errMsgf, reverseAssignmentState)
+		internal.RespondWithError(ctx, internal.IncompleteStatusCode, err)
+		return
+	}
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
-		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
+		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)
 		return
 	}
 
@@ -48,7 +65,5 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
-	tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
-	tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
-	log.Info().Msgf("Processing tenant mapping notification: %+v", tenantMapping)
+	log.Info().Msgf("Processing tenant mapping notification (%s)", tenantMapping)
 }

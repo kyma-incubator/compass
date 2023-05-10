@@ -24,18 +24,18 @@ import (
 )
 
 func TestPgRepository_GetByID(t *testing.T) {
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2))`),
 				Args:     []driver.Value{runtimeID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -56,20 +56,20 @@ func TestPgRepository_GetByID(t *testing.T) {
 }
 
 func TestPgRepository_GetByFiltersAndID(t *testing.T) {
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime By Filters and ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE id = $1 
-												AND id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4]) 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id = $1
+												AND id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
 												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $5))`),
 				Args:     []driver.Value{runtimeID, tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -91,24 +91,24 @@ func TestPgRepository_GetByFiltersAndID(t *testing.T) {
 }
 
 func TestPgRepository_GetByFiltersAndIDUsingUnion(t *testing.T) {
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime By Filters and ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp 
-											FROM public.runtimes 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace
+											FROM public.runtimes
 											WHERE id = $1 AND
-											      id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4] 
-                     							  		 UNION 
-                     									 SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $5)) AND "key" = $6 AND "value" ?| array[$7]) 
+											      id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4]
+                     							  		 UNION
+                     									 SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $5)) AND "key" = $6 AND "value" ?| array[$7])
                      							  AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $8))`),
 				Args:     []driver.Value{runtimeID, tenantID, "runtimeType", "runtimeType1", tenantID, "runtimeType", "runtimeType2", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -130,20 +130,20 @@ func TestPgRepository_GetByFiltersAndIDUsingUnion(t *testing.T) {
 }
 
 func TestPgRepository_GetByFilters(t *testing.T) {
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime By Filters",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE 
-												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3]) 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE
+												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
 												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4))`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -166,8 +166,8 @@ func TestPgRepository_GetByFilters(t *testing.T) {
 
 func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntity(t *testing.T) {
 	// GIVEN
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	mockConverter := &automock.EntityConverter{}
 	mockConverter.On("FromEntity", rtEntity).Return(rtModel, nil).Once()
@@ -175,8 +175,8 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntit
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
-		AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)
+	rows := sqlmock.NewRows([]string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}).
+		AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)
 
 	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = \$1\)$`).
 		WithArgs("someKey").
@@ -197,20 +197,20 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntit
 }
 
 func TestPgRepository_GetOldestForFilters(t *testing.T) {
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Oldest Runtime By Filters",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE  
-												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3]) 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE
+												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
 												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4)) ORDER BY creation_timestamp ASC`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -235,11 +235,11 @@ func TestPgRepository_ListByFiltersGlobal(t *testing.T) {
 	// GIVEN
 	runtime1ID := uuid.New().String()
 	runtime2ID := uuid.New().String()
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	mockConverter := &automock.EntityConverter{}
 	mockConverter.On("FromEntity", runtimeEntity1).Return(runtimeModel1)
@@ -248,9 +248,9 @@ func TestPgRepository_ListByFiltersGlobal(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	defer sqlMock.AssertExpectations(t)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
-		AddRow(runtime1ID, runtimeModel1.Name, runtimeModel1.Description, runtimeModel1.Status.Condition, runtimeModel1.CreationTimestamp, runtimeModel1.CreationTimestamp).
-		AddRow(runtime2ID, runtimeModel2.Name, runtimeModel2.Description, runtimeModel2.Status.Condition, runtimeModel2.CreationTimestamp, runtimeModel2.CreationTimestamp)
+	rows := sqlmock.NewRows([]string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}).
+		AddRow(runtime1ID, runtimeModel1.Name, runtimeModel1.Description, runtimeModel1.Status.Condition, runtimeModel1.CreationTimestamp, runtimeModel1.CreationTimestamp, runtimeModel1.ApplicationNamespace).
+		AddRow(runtime2ID, runtimeModel2.Name, runtimeModel2.Description, runtimeModel2.Status.Condition, runtimeModel2.CreationTimestamp, runtimeModel2.CreationTimestamp, runtimeModel2.ApplicationNamespace)
 
 	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = \$1 AND "value" \@\> \$2\ INTERSECT SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = \$3 AND "value" \@\> \$4\)$`).
 		WithArgs("someKey", "someValue", "someKey2", "someValue2").
@@ -286,25 +286,25 @@ func TestPgRepository_ListByFiltersGlobal(t *testing.T) {
 func TestPgRepository_List(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Runtimes",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes
 												WHERE (id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
 												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4))) ORDER BY name LIMIT 2 OFFSET 0`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp).
-						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp),
+						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp, runtimeEntity1.ApplicationNamespace).
+						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp, runtimeEntity2.ApplicationNamespace),
 					}
 				},
 			},
@@ -349,25 +349,25 @@ func TestPgRepository_List(t *testing.T) {
 func TestPgRepository_ListAll(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtimes Without Paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes
 												WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
 												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4))`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp).
-						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp),
+						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp, runtimeEntity1.ApplicationNamespace).
+						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp, runtimeEntity2.ApplicationNamespace),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -392,25 +392,25 @@ func TestPgRepository_ListAll(t *testing.T) {
 func TestPgRepository_ListOwnedRuntimes(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtimes Without Paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes
 												WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
 												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4 AND owner = true))`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp).
-						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp),
+						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp, runtimeEntity1.ApplicationNamespace).
+						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp, runtimeEntity2.ApplicationNamespace),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -434,15 +434,15 @@ func TestPgRepository_ListOwnedRuntimes(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	var nilRtModel *model.Runtime
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Generic Create Runtime",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(`INSERT INTO public.runtimes ( id, name, description, status_condition, status_timestamp, creation_timestamp ) VALUES ( ?, ?, ?, ?, ?, ? )`),
-				Args:        []driver.Value{rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp},
+				Query:       regexp.QuoteMeta(`INSERT INTO public.runtimes ( id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace ) VALUES ( ?, ?, ?, ?, ?, ?, ? )`),
+				Args:        []driver.Value{rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 			{
@@ -467,15 +467,15 @@ func TestPgRepository_Create(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	var nilRtModel *model.Runtime
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Runtime",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.runtimes SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.ID, tenantID},
+				Query:         regexp.QuoteMeta(`UPDATE public.runtimes SET name = ?, description = ?, status_condition = ?, status_timestamp = ?, application_namespace = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.ApplicationNamespace, rtModel.ID, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -578,11 +578,11 @@ func TestPgRepository_OwnerExistsByFiltersAndID(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(` SELECT 1
-											FROM public.runtimes 
+											FROM public.runtimes
 											WHERE id = $1 AND
-											      id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4] 
-                     							  		 UNION 
-                     									 SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $5)) AND "key" = $6 AND "value" ?| array[$7]) 
+											      id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4]
+                     							  		 UNION
+                     									 SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $5)) AND "key" = $6 AND "value" ?| array[$7])
                      							  AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $8 AND owner = true))`),
 
 				Args:     []driver.Value{runtimeID, tenantID, runtimeType, runtimeType, tenantID, runtimeType, "runtimeType2", tenantID},
@@ -611,23 +611,23 @@ func TestPgRepository_OwnerExistsByFiltersAndID(t *testing.T) {
 func TestPgRepository_ListByIDs(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtimes By IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE id IN ($1, $2) AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id IN ($1, $2) AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $3))`),
 				Args:     []driver.Value{runtime1ID, runtime2ID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp).
-						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp),
+						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp, runtimeEntity1.ApplicationNamespace).
+						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp, runtimeEntity2.ApplicationNamespace),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -670,32 +670,32 @@ func TestPgRepository_ListByScenariosAndIDs(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
 
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtimes By IDs and scenarios",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes 
-									        WHERE id IN (SELECT "runtime_id" FROM public.labels 
-											WHERE "runtime_id" IS NOT NULL 
-											AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) 
-											AND "key" = $2 AND "value" ?| array[$3] 
-											UNION SELECT "runtime_id" FROM public.labels 
-											WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $4)) 
-											AND "key" = $5 AND "value" ?| array[$6]) 
-											AND id IN ($7, $8) 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes
+									        WHERE id IN (SELECT "runtime_id" FROM public.labels
+											WHERE "runtime_id" IS NOT NULL
+											AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1))
+											AND "key" = $2 AND "value" ?| array[$3]
+											UNION SELECT "runtime_id" FROM public.labels
+											WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $4))
+											AND "key" = $5 AND "value" ?| array[$6])
+											AND id IN ($7, $8)
 											AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $9))`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, scenario1, tenantID, model.ScenariosKey, scenario2, runtime1ID, runtime2ID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp).
-						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp),
+						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp, runtimeEntity1.ApplicationNamespace).
+						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp, runtimeEntity2.ApplicationNamespace),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -738,17 +738,17 @@ func TestPgRepository_ListByScenarios(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
 
-	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1")
-	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2")
+	runtimeEntity1 := fixDetailedEntityRuntime(t, runtime1ID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeEntity2 := fixDetailedEntityRuntime(t, runtime2ID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
-	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1")
-	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2")
+	runtimeModel1 := fixModelRuntime(t, runtime1ID, tenantID, "Runtime 1", "Runtime desc 1", "test.ns1")
+	runtimeModel2 := fixModelRuntime(t, runtime2ID, tenantID, "Runtime 2", "Runtime desc 2", "test.ns2")
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtimes By scenarios",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes 
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes
 											WHERE id IN (SELECT "runtime_id" FROM public.labels
 											WHERE "runtime_id" IS NOT NULL
 											AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1))
@@ -759,8 +759,8 @@ func TestPgRepository_ListByScenarios(t *testing.T) {
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp).
-						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp),
+						AddRow(runtimeEntity1.ID, runtimeEntity1.Name, runtimeEntity1.Description, runtimeEntity1.StatusCondition, runtimeEntity1.StatusTimestamp, runtimeEntity1.CreationTimestamp, runtimeEntity1.ApplicationNamespace).
+						AddRow(runtimeEntity2.ID, runtimeEntity2.Name, runtimeEntity2.Description, runtimeEntity2.StatusCondition, runtimeEntity2.StatusTimestamp, runtimeEntity2.CreationTimestamp, runtimeEntity2.ApplicationNamespace),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {

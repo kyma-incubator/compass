@@ -52,6 +52,7 @@ var (
 )
 
 // Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.BusinessTenantMapping) *tenant.Entity
@@ -415,7 +416,7 @@ func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.B
 	conditions := repo.Conditions{
 		repo.NewInConditionForSubQuery(
 			idColumn, "SELECT DISTINCT tenant_id from tenant_runtime_contexts", []interface{}{}),
-		repo.NewNotNullCondition(parentColumn),
+		repo.NewEqualCondition(typeColumn, tenant.Subaccount),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
@@ -431,6 +432,21 @@ func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string,
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(parentColumn, parentID),
+		repo.NewEqualCondition(typeColumn, tenantType),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entityCollection), nil
+}
+
+// ListByType list tenants by tenant.Type
+func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
 		repo.NewEqualCondition(typeColumn, tenantType),
 	}
 

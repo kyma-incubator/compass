@@ -2,7 +2,6 @@ package ias
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"net/http"
 	"os"
 
@@ -16,7 +15,6 @@ import (
 type iasCockpit struct {
 	Cert string `yaml:"cert"`
 	Key  string `yaml:"key"`
-	CA   string `yaml:"ca"`
 }
 
 func NewClient(cfg config.IAS) (*http.Client, error) {
@@ -36,13 +34,9 @@ func NewClient(cfg config.IAS) (*http.Client, error) {
 		return nil, errors.Newf("failed to load IAS client cert: %w", err)
 	}
 
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM([]byte(iasCockpit.CA))
-
 	transport := &headerTransport{clientTransport: &http.Transport{
 		TLSClientConfig: &tls.Config{
 			Certificates: []tls.Certificate{clientCert},
-			RootCAs:      caCertPool,
 		},
 	}}
 	return &http.Client{
@@ -60,5 +54,6 @@ func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if requestID != "" {
 		req.Header.Add(logCtx.RequestIDHeader, requestID)
 	}
+	req.Header.Add("Content-Type", "application/json")
 	return t.clientTransport.RoundTrip(req)
 }

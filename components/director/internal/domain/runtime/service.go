@@ -25,8 +25,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IsNormalizedLabel represents the label that is used to mark a runtime as normalized
-const IsNormalizedLabel = "isNormalized"
+const (
+	// IsNormalizedLabel represents the label that is used to mark a runtime as normalized
+	IsNormalizedLabel = "isNormalized"
+
+	// RegionLabelKey is the key of the tenant label for region.
+	RegionLabelKey = "region"
+)
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
@@ -51,10 +56,11 @@ type labelRepository interface {
 	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
 }
 
-//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type labelUpsertService interface {
+//go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type labelService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -72,42 +78,44 @@ type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
 
-	labelUpsertService    labelUpsertService
+	labelService          labelService
 	uidService            uidService
 	formationService      formationService
 	tenantSvc             tenantService
 	webhookService        WebhookService
 	runtimeContextService RuntimeContextService
 
-	protectedLabelPattern     string
-	immutableLabelPattern     string
-	runtimeTypeLabelKey       string
-	kymaRuntimeTypeLabelValue string
+	protectedLabelPattern         string
+	immutableLabelPattern         string
+	runtimeTypeLabelKey           string
+	kymaRuntimeTypeLabelValue     string
+	kymaApplicationNamespaceValue string
 }
 
 // NewService missing godoc
 func NewService(repo runtimeRepository,
 	labelRepo labelRepository,
-	labelUpsertService labelUpsertService,
+	labelService labelService,
 	uidService uidService,
 	formationService formationService,
 	tenantService tenantService,
 	webhookService WebhookService,
 	runtimeContextService RuntimeContextService,
-	protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue string) *service {
+	protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue, kymaApplicationNamespaceValue string) *service {
 	return &service{
-		repo:                      repo,
-		labelRepo:                 labelRepo,
-		labelUpsertService:        labelUpsertService,
-		uidService:                uidService,
-		formationService:          formationService,
-		tenantSvc:                 tenantService,
-		webhookService:            webhookService,
-		runtimeContextService:     runtimeContextService,
-		protectedLabelPattern:     protectedLabelPattern,
-		immutableLabelPattern:     immutableLabelPattern,
-		runtimeTypeLabelKey:       runtimeTypeLabelKey,
-		kymaRuntimeTypeLabelValue: kymaRuntimeTypeLabelValue,
+		repo:                          repo,
+		labelRepo:                     labelRepo,
+		labelService:                  labelService,
+		uidService:                    uidService,
+		formationService:              formationService,
+		tenantSvc:                     tenantService,
+		webhookService:                webhookService,
+		runtimeContextService:         runtimeContextService,
+		protectedLabelPattern:         protectedLabelPattern,
+		immutableLabelPattern:         immutableLabelPattern,
+		runtimeTypeLabelKey:           runtimeTypeLabelKey,
+		kymaRuntimeTypeLabelValue:     kymaRuntimeTypeLabelValue,
+		kymaApplicationNamespaceValue: kymaApplicationNamespaceValue,
 	}
 }
 
@@ -233,17 +241,29 @@ func (s *service) Create(ctx context.Context, in model.RuntimeRegisterInput) (st
 
 // CreateWithMandatoryLabels creates a runtime in a given tenant and also adds mandatory labels to it.
 func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeRegisterInput, id string, mandatoryLabels map[string]interface{}) error {
+	var subaccountTnt string
 	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
 		if err != nil {
 			return err
 		}
+		subaccountTnt = tnt.ID
 		ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
 	}
 
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading consumer")
+	}
+
+	isConsumerIntegrationSystem := consumerInfo.ConsumerType == consumer.IntegrationSystem
+	if isConsumerIntegrationSystem {
+		in.ApplicationNamespace = &s.kymaApplicationNamespaceValue
 	}
 
 	rtm := in.ToRuntime(id, time.Now(), time.Now())
@@ -275,16 +295,17 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		delete(in.Labels, model.ScenariosKey)
 	}
 
-	consumerInfo, err := consumer.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading consumer")
-	}
-
-	if consumerInfo.ConsumerType == consumer.IntegrationSystem {
+	if isConsumerIntegrationSystem {
 		in.Labels[s.runtimeTypeLabelKey] = s.kymaRuntimeTypeLabelValue
+
+		region, err := s.extractRegionFromSubaccountTenant(ctx, subaccountTnt)
+		if err != nil {
+			return err
+		}
+		in.Labels[RegionLabelKey] = region
 	}
 
-	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
+	if err = s.labelService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
@@ -336,7 +357,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
-	rtm = in.ToRuntime(id, rtm.CreationTimestamp, time.Now())
+	rtm.SetFromUpdateInput(in, id, rtm.CreationTimestamp, time.Now())
 
 	if err = s.repo.Update(ctx, rtmTenant, rtm); err != nil {
 		return errors.Wrap(err, "while updating Runtime")
@@ -366,7 +387,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
-	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
+	if err = s.labelService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
@@ -428,7 +449,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 			return errors.Wrap(err, "while updating scenarios label")
 		}
 	} else {
-		if err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput); err != nil {
+		if err = s.labelService.UpsertLabel(ctx, rtmTenant, labelInput); err != nil {
 			return errors.Wrapf(err, "while creating label for Runtime")
 		}
 	}
@@ -668,6 +689,28 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
 	}
 	return tnt, nil
+}
+
+func (s *service) extractRegionFromSubaccountTenant(ctx context.Context, subaccountTnt string) (string, error) {
+	if subaccountTnt == "" {
+		return "", nil
+	}
+
+	regionLabel, err := s.labelService.GetByKey(ctx, subaccountTnt, model.TenantLabelableObject, subaccountTnt, RegionLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return "", errors.Wrapf(err, "while getting label %q for %q with id %q", RegionLabelKey, model.TenantLabelableObject, subaccountTnt)
+		}
+	}
+
+	regionValue := ""
+	if regionLabel != nil && regionLabel.Value != nil {
+		if regionLabelValue, ok := regionLabel.Value.(string); ok {
+			regionValue = regionLabelValue
+		}
+	}
+
+	return regionValue, nil
 }
 
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {

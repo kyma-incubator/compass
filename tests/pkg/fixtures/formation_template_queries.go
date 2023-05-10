@@ -71,6 +71,24 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 	return ft
 }
 
+func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string, leadingProductIDs []string) graphql.FormationTemplate {
+	formationTmplInput := graphql.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+	}
+
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	require.NoError(t, err)
+	formationTmplRequest := FixCreateFormationTemplateRequest(formationTmplGQLInput)
+
+	ft := graphql.FormationTemplate{}
+	t.Logf("Creating formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, formationTmplRequest, &ft)
+	require.NoError(t, err)
+	return ft
+}
+
 func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
 	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, applicationTypes, []string{runtimeType}, runtimeArtifactKind, leadingProductIDs)
 
@@ -89,6 +107,16 @@ func QueryFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *
 	queryRequest := FixQueryFormationTemplateRequest(id)
 
 	formationTemplate := graphql.FormationTemplate{}
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationTemplate))
+	require.NotEmpty(t, formationTemplate.ID)
+
+	return &formationTemplate
+}
+
+func QueryFormationTemplateWithConstraints(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplateExt {
+	queryRequest := FixQueryFormationTemplateWithConstraintsRequest(id)
+
+	formationTemplate := graphql.FormationTemplateExt{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationTemplate))
 	require.NotEmpty(t, formationTemplate.ID)
 

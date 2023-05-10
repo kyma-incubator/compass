@@ -5,7 +5,7 @@ mutation {
       subject: "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa, CN=E2E-test-compass"
       consumerType: "Integration System"
       internalConsumerID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-      tenantAccessLevels: ["account"]
+      tenantAccessLevels: ["account", "global"]
     }
   ) {
     id

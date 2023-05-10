@@ -108,6 +108,7 @@ enum ConstraintScope {
 enum ConstraintType {
 	PRE
 	POST
+	UI
 }
 
 enum DocumentFormat {
@@ -214,6 +215,8 @@ enum TargetOperation {
 	DELETE_FORMATION
 	GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION
 	GENERATE_FORMATION_NOTIFICATION
+	LOAD_FORMATIONS
+	SELECT_SYSTEMS_FOR_FORMATION
 }
 
 enum TenantAccessObjectType {
@@ -527,6 +530,7 @@ input BusinessTenantMappingInput {
 	region: String
 	type: String!
 	provider: String!
+	licenseType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -789,6 +793,7 @@ input RuntimeRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input RuntimeUpdateInput {
@@ -805,6 +810,7 @@ input RuntimeUpdateInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input SystemAuthUpdateInput {
@@ -911,6 +917,7 @@ type Application {
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
+	tenantBusinessType: TenantBusinessType
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -1241,6 +1248,7 @@ type FormationTemplate {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
+	formationConstraints: [FormationConstraint!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1357,6 +1365,7 @@ type Runtime {
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
 	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
+	applicationNamespace: String
 }
 
 type RuntimeContext {
@@ -1415,6 +1424,12 @@ type TenantAccess {
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
+}
+
+type TenantBusinessType {
+	id: ID!
+	code: String!
+	name: String!
 }
 
 type TenantPage implements Pageable {
@@ -1776,6 +1791,10 @@ type Mutation {
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	"""
+	**Examples**
+	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
+	"""
 	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**

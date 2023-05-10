@@ -1394,8 +1394,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
 
 				return svc
 			},
@@ -1407,25 +1406,12 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedFormation: &graphqlFormation,
 		},
 		{
-			Name: "failed to get formation after resynchronizing",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			FormationService: func() *automock.Service {
-				svc := &automock.Service{}
-
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(nil, testErr).Once()
-
-				return svc
-			},
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
 			Name: "failed during resynchronizing",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(testErr)
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil, testErr)
 
 				return svc
 			},
@@ -1437,8 +1423,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
-				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
 
 				return svc
 			},

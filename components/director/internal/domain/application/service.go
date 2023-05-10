@@ -52,6 +52,7 @@ type repoCreatorFunc func(ctx context.Context, tenant string, application *model
 type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
+//
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -81,6 +82,7 @@ type ApplicationRepository interface {
 }
 
 // LabelRepository missing godoc
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -92,6 +94,7 @@ type LabelRepository interface {
 }
 
 // WebhookRepository missing godoc
+//
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
@@ -99,6 +102,7 @@ type WebhookRepository interface {
 }
 
 // FormationService missing godoc
+//
 //go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationService interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -106,6 +110,7 @@ type FormationService interface {
 }
 
 // RuntimeRepository missing godoc
+//
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -113,12 +118,14 @@ type RuntimeRepository interface {
 }
 
 // IntegrationSystemRepository missing godoc
+//
 //go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelService missing godoc
+//
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
@@ -127,12 +134,14 @@ type LabelService interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // ApplicationHideCfgProvider missing godoc
+//
 //go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)

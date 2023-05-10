@@ -2338,10 +2338,10 @@ func Test_GenerateFormationLifecycleNotifications(t *testing.T) {
 			name: "Successfully generate formation notifications",
 			notificationsBuilderFn: func() *automock.NotificationBuilder {
 				notificationBuilder := &automock.NotificationBuilder{}
-				notificationBuilder.On("BuildFormationNotificationRequests", ctx, formationNotificationDetails, formationInput, formationLifecycleSyncWebhooks).Return(formationNotificationRequests, nil).Once()
+				notificationBuilder.On("BuildFormationNotificationRequests", ctx, formationNotificationDetails, formationInput, formationLifecycleSyncWebhooks).Return(formationNotificationSyncCreateRequests, nil).Once()
 				return notificationBuilder
 			},
-			expectedFormationNotificationReqs: formationNotificationRequests,
+			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
 		},
 		{
 			name: "Success when generating formation lifecycle notifications results in not generated notification due to error",

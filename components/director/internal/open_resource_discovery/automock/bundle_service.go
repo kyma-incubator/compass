@@ -14,20 +14,20 @@ type BundleService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, applicationID, in
-func (_m *BundleService) Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error) {
-	ret := _m.Called(ctx, applicationID, in)
+// CreateBundle provides a mock function with given fields: ctx, applicationID, in, bndlHash
+func (_m *BundleService) CreateBundle(ctx context.Context, applicationID string, in model.BundleCreateInput, bndlHash uint64) (string, error) {
+	ret := _m.Called(ctx, applicationID, in, bndlHash)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleCreateInput) string); ok {
-		r0 = rf(ctx, applicationID, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleCreateInput, uint64) string); ok {
+		r0 = rf(ctx, applicationID, in, bndlHash)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleCreateInput) error); ok {
-		r1 = rf(ctx, applicationID, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleCreateInput, uint64) error); ok {
+		r1 = rf(ctx, applicationID, in, bndlHash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -72,13 +72,13 @@ func (_m *BundleService) ListByApplicationIDNoPaging(ctx context.Context, appID 
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *BundleService) Update(ctx context.Context, id string, in model.BundleUpdateInput) error {
-	ret := _m.Called(ctx, id, in)
+// UpdateBundle provides a mock function with given fields: ctx, id, in, bndlHash
+func (_m *BundleService) UpdateBundle(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
+	ret := _m.Called(ctx, id, in, bndlHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleUpdateInput) error); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleUpdateInput, uint64) error); ok {
+		r0 = rf(ctx, id, in, bndlHash)
 	} else {
 		r0 = ret.Error(0)
 	}

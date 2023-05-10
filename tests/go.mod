@@ -3,14 +3,14 @@ module github.com/kyma-incubator/compass/tests
 go 1.18
 
 require (
-	github.com/avast/retry-go v3.0.0+incompatible
+	github.com/avast/retry-go/v4 v4.3.3
 	github.com/google/uuid v1.3.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230324140444-a477e7a61e6f
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230505075253-b6e2a3035e6a
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
@@ -18,8 +18,8 @@ require (
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
 	github.com/vrischmann/envconfig v1.3.0
-	golang.org/x/net v0.8.0
-	golang.org/x/oauth2 v0.6.0
+	golang.org/x/net v0.9.0
+	golang.org/x/oauth2 v0.7.0
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
@@ -42,7 +42,7 @@ require (
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -52,7 +52,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230324140444-a477e7a61e6f // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230505075253-b6e2a3035e6a // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
@@ -72,12 +72,12 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/term v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/term v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

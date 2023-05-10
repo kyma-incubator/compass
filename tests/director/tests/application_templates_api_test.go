@@ -66,6 +66,74 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
+	t.Run("Success for template with product label created with certificate", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		productLabelValue := "productLabelValue"
+		appTemplateName := createAppTemplateName("app-template-name-product")
+		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
+		appTemplateInput.Labels[conf.ApplicationTemplateProductLabel] = productLabelValue
+		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+		require.NoError(t, err)
+
+		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
+		output := graphql.ApplicationTemplate{}
+
+		// WHEN
+		t.Log("Create application template")
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output)
+
+		// THEN
+		require.Equal(t, output.Labels[conf.ApplicationTemplateProductLabel], productLabelValue)
+		require.NoError(t, err)
+		require.NotEmpty(t, output.ID)
+	})
+
+	t.Run("Error for self register when distinguished label or product label have not been defined and the call is made with a certificate", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		appTemplateName := createAppTemplateName("app-template-name-invalid")
+		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
+		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+		require.NoError(t, err)
+
+		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
+		output := graphql.ApplicationTemplate{}
+
+		// WHEN
+		t.Log("Create application template")
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("missing %q or %q label", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.ApplicationTemplateProductLabel))
+	})
+
+	t.Run("Error for self register when distinguished label and product label have been defined and the call is made with a certificate", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		appTemplateName := createAppTemplateName("app-template-name-invalid")
+		appTemplateInputInvalid := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+		appTemplateInputInvalid.Labels[conf.ApplicationTemplateProductLabel] = "test1"
+
+		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInputInvalid)
+		require.NoError(t, err)
+
+		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
+		output := graphql.ApplicationTemplate{}
+
+		// WHEN
+		t.Log("Create application template")
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("should provide either %q or %q label - providing both at the same time is not allowed", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.ApplicationTemplateProductLabel))
+	})
+
 	t.Run("Error when Self Registered Application Template already exists for a given region and distinguished label key", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
@@ -100,7 +168,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue))
+		require.Contains(t, err.Error(), fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion))
 		require.Empty(t, output2.ID)
 	})
 }
@@ -584,6 +652,77 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	saveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
 }
 
+func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	name := "template"
+
+	t.Log("Creating integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issuing a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	appTemplateName := createAppTemplateName(name)
+	appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
+
+	t.Log("Creating application template")
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+
+	appFromTemplate := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: "name",
+			Value:       "new-name",
+		},
+		{
+			Placeholder: "display-name",
+			Value:       "new-display-name",
+		}}}
+	appFromTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTemplate)
+	require.NoError(t, err)
+	createAppFromTemplateRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateGQL)
+	outputApp := graphql.ApplicationExt{}
+
+	t.Logf("Creating application from application template with id %s", appTemplate.ID)
+	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, createAppFromTemplateRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, tenantId, outputApp.ID)
+	require.NoError(t, err)
+
+	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
+	deleteOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Logf("Deleting application template with id %s when application with id %s is associated with it", appTemplate.ID, outputApp.ID)
+	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
+	require.Error(t, err)
+
+	//THEN
+	t.Logf("Checking if application template with id %s was deleted", appTemplate.ID)
+
+	out := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate.ID)
+	require.NotEmpty(t, out)
+
+	require.NotEmpty(t, outputApp)
+	require.NotNil(t, outputApp.Application.Description)
+	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
+	require.Equal(t, "new-name", outputApp.Application.Name)
+}
+
 func TestQueryApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -698,10 +837,10 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	outputApp := graphql.ApplicationExt{}
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
-	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
@@ -743,10 +882,10 @@ func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 	outputApp := graphql.ApplicationExt{}
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
-	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "appName", outputApp.Application.Name)

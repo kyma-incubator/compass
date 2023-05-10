@@ -26,6 +26,7 @@ import (
 const applicationTypeLabelKey = "applicationType"
 const otherSystemType = "Other System Type"
 const providerSAP = "SAP"
+const labelsKey = "labels"
 
 // ApplicationTemplateRepository missing godoc
 //
@@ -337,8 +338,45 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 		}
 
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
+		appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, placeholder.Name)
+		if err != nil {
+			return "", errors.Wrap(err, "error while clear optional empty value")
+		}
 	}
 	return appCreateInputJSON, nil
+}
+
+func removeEmptyKeyFromLabels(stringInput string, keyName string) (string, error) {
+	var objMap map[string]interface{}
+	err := json.Unmarshal([]byte(stringInput), &objMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while unmarshal input")
+	}
+	processMap(&objMap, keyName, true)
+
+	output, err := json.Marshal(objMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while marshal output")
+	}
+	return string(output), nil
+}
+
+func processMap(input *map[string]interface{}, keyName string, rootObject bool) {
+	for key, value := range *input {
+		if _, ok := value.(string); ok {
+			// String value
+			if value == "" && key == keyName {
+				if !rootObject {
+					delete(*input, key)
+				}
+			}
+		} else if mapValue, ok := value.(map[string]interface{}); ok {
+			// Object value - process only labels object
+			if key == labelsKey {
+				processMap(&mapValue, keyName, false)
+			}
+		}
+	}
 }
 
 func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
@@ -382,7 +420,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		return "", errors.Wrapf(err, "while unmarshaling application input json")
 	}
 
-	labels, ok := appInput["labels"]
+	labels, ok := appInput[labelsKey]
 	if ok && labels != nil {
 		labelsMap, ok := labels.(map[string]interface{})
 		if !ok {
@@ -401,9 +439,9 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		}
 
 		labelsMap[applicationTypeLabelKey] = applicationType
-		appInput["labels"] = labelsMap
+		appInput[labelsKey] = labelsMap
 	} else {
-		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
+		appInput[labelsKey] = map[string]interface{}{applicationTypeLabelKey: applicationType}
 	}
 
 	inputJSON, err := json.Marshal(appInput)

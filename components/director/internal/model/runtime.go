@@ -8,16 +8,17 @@ import (
 
 // Runtime missing godoc
 type Runtime struct {
-	ID                string
-	Name              string
-	Description       *string
-	Status            *RuntimeStatus
-	CreationTimestamp time.Time
+	ID                   string
+	Name                 string
+	Description          *string
+	Status               *RuntimeStatus
+	CreationTimestamp    time.Time
+	ApplicationNamespace *string
 }
 
 // GetID missing godoc
-func (r *Runtime) GetID() string {
-	return r.ID
+func (runtime *Runtime) GetID() string {
+	return runtime.ID
 }
 
 // RuntimeStatus missing godoc
@@ -42,11 +43,12 @@ const (
 
 // RuntimeRegisterInput missing godoc
 type RuntimeRegisterInput struct {
-	Name            string
-	Description     *string
-	Labels          map[string]interface{}
-	Webhooks        []*WebhookInput
-	StatusCondition *RuntimeStatusCondition
+	Name                 string
+	Description          *string
+	Labels               map[string]interface{}
+	Webhooks             []*WebhookInput
+	StatusCondition      *RuntimeStatusCondition
+	ApplicationNamespace *string
 }
 
 // ToRuntime missing godoc
@@ -63,33 +65,39 @@ func (i *RuntimeRegisterInput) ToRuntime(id string, creationTimestamp, condition
 			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: conditionTimestamp,
 		},
-		CreationTimestamp: creationTimestamp,
+		CreationTimestamp:    creationTimestamp,
+		ApplicationNamespace: i.ApplicationNamespace,
 	}
 }
 
 // RuntimeUpdateInput missing godoc
 type RuntimeUpdateInput struct {
-	Name            string
-	Description     *string
-	Labels          map[string]interface{}
-	StatusCondition *RuntimeStatusCondition
+	Name                 string
+	Description          *string
+	Labels               map[string]interface{}
+	StatusCondition      *RuntimeStatusCondition
+	ApplicationNamespace *string
 }
 
-// ToRuntime missing godoc
-func (i *RuntimeUpdateInput) ToRuntime(id string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
-	if i == nil {
-		return nil
+// SetFromUpdateInput sets fields to model Runtime from RuntimeUpdateInput
+func (runtime *Runtime) SetFromUpdateInput(update RuntimeUpdateInput, id string, creationTimestamp, conditionTimestamp time.Time) {
+	if runtime.Status == nil {
+		runtime.Status = &RuntimeStatus{}
 	}
 
-	return &Runtime{
-		ID:          id,
-		Name:        i.Name,
-		Description: i.Description,
-		Status: &RuntimeStatus{
-			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
-			Timestamp: conditionTimestamp,
-		},
-		CreationTimestamp: creationTimestamp,
+	runtime.ID = id
+	runtime.Name = update.Name
+
+	runtime.Status.Condition = getRuntimeStatusConditionOrDefault(update.StatusCondition)
+	runtime.Status.Timestamp = conditionTimestamp
+	runtime.CreationTimestamp = creationTimestamp
+
+	if update.Description != nil {
+		runtime.Description = update.Description
+	}
+
+	if update.ApplicationNamespace != nil {
+		runtime.ApplicationNamespace = update.ApplicationNamespace
 	}
 }
 

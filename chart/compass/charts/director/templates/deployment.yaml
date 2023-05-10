@@ -187,6 +187,8 @@ spec:
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_KYMA_APPLICATION_NAMESPACE_VALUE
+              value: {{ .Values.global.director.kymaApplicationNamespaceValue }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
@@ -231,6 +233,8 @@ spec:
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
             - name: APP_SELF_REGISTER_OAUTH_MODE
               value: {{ .Values.global.director.selfRegister.oauthMode }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
