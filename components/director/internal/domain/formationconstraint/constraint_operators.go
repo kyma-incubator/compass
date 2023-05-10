@@ -17,8 +17,8 @@ const (
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtypeOperator represents the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtypeOperator = "DoesNotContainResourceOfSubtype"
-	// DestinationCreationOperator represents the destination creation operator
-	DestinationCreationOperator = "DestinationCreationOperator"
+	// DestinationCreatorOperator represents the destination creator operator
+	DestinationCreatorOperator = "DestinationCreatorOperator"
 )
 
 // OperatorName represents the constraint operator name
@@ -43,9 +43,9 @@ func NewDoesNotContainResourceOfSubtypeInput() OperatorInput {
 	return &formationconstraint.DoesNotContainResourceOfSubtypeInput{}
 }
 
-// NewDestinationCreationInput is input constructor for DestinationCreationOperator operator. It returns empty OperatorInput
-func NewDestinationCreationInput() OperatorInput {
-	return &formationconstraint.DestinationCreationInput{}
+// NewDestinationCreatorInput is input constructor for DestinationCreatorOperator. It returns empty OperatorInput
+func NewDestinationCreatorInput() OperatorInput {
+	return &formationconstraint.DestinationCreatorInput{}
 }
 
 // IsNotAssignedToAnyFormationOfType is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
@@ -135,9 +135,19 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 	return true, nil
 }
 
-// DestinationCreation is a operator that handles destination creations
-func (e *ConstraintEngine) DestinationCreation(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Executing operator: %q", DestinationCreationOperator)
+// DestinationCreator is an operator that handles destination creations
+func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input OperatorInput) (bool, error) {
+	log.C(ctx).Infof("Executing operator: %q", DestinationCreatorOperator)
+
+	i, ok := input.(*formationconstraint.DestinationCreatorInput)
+	if !ok {
+		return false, errors.Errorf("Incompatible input for operator %q", DestinationCreatorOperator)
+	}
+
+	log.C(ctx).Infof("Enforcing constraint on resource of type: %q, subtype: %q and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID)
+
+	// todo::: implement biz logic
+
 	return true, nil
 }
 

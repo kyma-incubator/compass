@@ -1,6 +1,9 @@
 package formationconstraint
 
-import "github.com/kyma-incubator/compass/components/director/internal/model"
+import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+)
 
 // IsNotAssignedToAnyFormationOfTypeInput input for IsNotAssignedToAnyFormationOfType operator
 type IsNotAssignedToAnyFormationOfTypeInput struct {
@@ -22,7 +25,15 @@ type DoesNotContainResourceOfSubtypeInput struct {
 	ResourceTypeLabelKey string             `json:"resource_type_label_key"`
 }
 
-// DestinationCreationInput input for DestinationCreation operator
-type DestinationCreationInput struct {
-	Name string `json:"name"` // + other fields
+// DestinationCreatorInput input for DestinationCreator operator
+type DestinationCreatorInput struct { // todo::: keep only the necessary fields
+	Operation         model.FormationOperation `json:"operation"`
+	Name              string                   `json:"name"`
+	ResourceType      model.ResourceType       `json:"resource_type"`
+	ResourceSubtype   string                   `json:"resource_subtype"`
+	ResourceID        string                   `json:"resource_id"`
+	Tenant            string                   `json:"tenant"`
+	Assignment        *webhook.FormationAssignment
+	ReverseAssignment *webhook.FormationAssignment
+	// todo::: other?
 }

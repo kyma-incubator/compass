@@ -13,6 +13,9 @@ const IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfT
 // DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
 const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
 
+// DestinationCreator contains the name of the DestinationCreator operator
+const DestinationCreator = "DestinationCreator"
+
 // OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
 
@@ -20,6 +23,7 @@ type OperatorInput interface{}
 var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType: &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:   &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
+	DestinationCreator:               &formationconstraint.DestinationCreatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
