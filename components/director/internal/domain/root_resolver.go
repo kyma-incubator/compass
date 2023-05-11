@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -156,6 +158,7 @@ func NewRootResolver(
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 	bundleReferenceConv := bundlereferences.NewConverter()
@@ -173,6 +176,7 @@ func NewRootResolver(
 	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
@@ -198,6 +202,7 @@ func NewRootResolver(
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -242,7 +247,7 @@ func NewRootResolver(
 
 	return &RootResolver{
 		appNameNormalizer:   appNameNormalizer,
-		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, appTemplateConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
+		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, tenantMappingConfig, callbackURL, appTemplateProductLabel),
 		api:                 api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
@@ -1021,8 +1026,14 @@ func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Applicati
 	return r.app.Bundle(ctx, obj, id)
 }
 
+// ApplicationTemplate resolves application template for application object
 func (r *applicationResolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
 	return r.app.ApplicationTemplate(ctx, obj)
+}
+
+// TenantBusinessType resolves tenant business type for application object
+func (r *applicationResolver) TenantBusinessType(ctx context.Context, obj *graphql.Application) (*graphql.TenantBusinessType, error) {
+	return r.app.TenantBusinessType(ctx, obj)
 }
 
 type applicationTemplateResolver struct {
