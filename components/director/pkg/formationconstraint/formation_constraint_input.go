@@ -14,17 +14,20 @@ type IsNotAssignedToAnyFormationOfTypeInput struct {
 
 // DoesNotContainResourceOfSubtypeInput input for DoesNotContainResourceOfSubtype operator
 type DoesNotContainResourceOfSubtypeInput struct {
-	FormationName        string             `json:"formation_name"`
-	ResourceType         model.ResourceType `json:"resource_type"`
-	ResourceSubtype      string             `json:"resource_subtype"`
-	ResourceID           string             `json:"resource_id"`
-	Tenant               string             `json:"tenant"`
+	FormationName   string             `json:"formation_name"`
+	ResourceType    model.ResourceType `json:"resource_type"`
+	ResourceSubtype string             `json:"resource_subtype"`
+	ResourceID      string             `json:"resource_id"`
+	Tenant          string             `json:"tenant"`
 }
 
 // DoNotSendNotificationInput input for DoNotSendNotification operator
 type DoNotSendNotificationInput struct {
-	SourceResourceType         model.ResourceType `json:"resource_type"`
-	ResourceID           string             `json:"resource_id"`
-	Tenant               string             `json:"tenant"`
-	ResourceTypeLabelKey string             `json:"resource_type_label_key"`
+	ResourceType       model.ResourceType `json:"resource_type"`
+	ResourceSubtype    string             `json:"resource_subtype"`
+	ResourceID         string             `json:"resource_id"`
+	SourceResourceType model.ResourceType `json:"source_resource_type"`
+	SourceResourceID   string             `json:"source_resource_id"`
+	Tenant             string             `json:"tenant"`
+	ExceptSubtypes     []string           `json:"exceptSubtypes"`
 }
