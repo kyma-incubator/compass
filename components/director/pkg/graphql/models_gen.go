@@ -1952,6 +1952,8 @@ const (
 	TargetOperationGenerateFormationNotification           TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
 	TargetOperationLoadFormations                          TargetOperation = "LOAD_FORMATIONS"
 	TargetOperationSelectSystemsForFormation               TargetOperation = "SELECT_SYSTEMS_FOR_FORMATION"
+	TargetOperationSendNotification                        TargetOperation = "SEND_NOTIFICATION"
+	TargetOperationNotificationStatusReturned              TargetOperation = "NOTIFICATION_STATUS_RETURNED"
 )
 
 var AllTargetOperation = []TargetOperation{
@@ -1963,11 +1965,13 @@ var AllTargetOperation = []TargetOperation{
 	TargetOperationGenerateFormationNotification,
 	TargetOperationLoadFormations,
 	TargetOperationSelectSystemsForFormation,
+	TargetOperationSendNotification,
+	TargetOperationNotificationStatusReturned,
 }
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation, TargetOperationSendNotification, TargetOperationNotificationStatusReturned:
 		return true
 	}
 	return false

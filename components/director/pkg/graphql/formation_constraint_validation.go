@@ -36,6 +36,10 @@ var JoinPointDetailsByLocation = map[formationconstraint.JoinPointLocation]forma
 	formationconstraint.PostGenerateFormationAssignmentNotifications: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{},
 	formationconstraint.PreGenerateFormationNotifications:            &formationconstraint.GenerateFormationNotificationOperationDetails{},
 	formationconstraint.PostGenerateFormationNotifications:           &formationconstraint.GenerateFormationNotificationOperationDetails{},
+	formationconstraint.PreSendNotification:                          &formationconstraint.SendNotificationOperationDetails{},
+	formationconstraint.PostSendNotification:                         &formationconstraint.SendNotificationOperationDetails{},
+	formationconstraint.PreNotificationStatusReturned:                &formationconstraint.NotificationStatusReturnedOperationDetails{},
+	formationconstraint.PostNotificationStatusReturned:               &formationconstraint.NotificationStatusReturnedOperationDetails{},
 }
 
 // Validate validates FormationConstraintInput
@@ -43,7 +47,7 @@ func (i FormationConstraintInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required),
 		validation.Field(&i.ConstraintType, validation.Required, validation.In(ConstraintTypePre, ConstraintTypePost, ConstraintTypeUI)),
-		validation.Field(&i.TargetOperation, validation.Required, validation.In(TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation)),
+		validation.Field(&i.TargetOperation, validation.Required, validation.In(TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation, TargetOperationSendNotification, TargetOperationNotificationStatusReturned)),
 		validation.Field(&i.Operator, validation.Required),
 		validation.Field(&i.ResourceType, validation.Required, validation.In(ResourceTypeApplication, ResourceTypeRuntime, ResourceTypeFormation, ResourceTypeTenant, ResourceTypeRuntimeContext)),
 		validation.Field(&i.ResourceSubtype, validation.Required),
