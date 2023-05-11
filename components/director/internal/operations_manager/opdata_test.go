@@ -1,4 +1,4 @@
-package operations_manager_test
+package operationsmanager_test
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/operations_manager"
@@ -36,7 +36,7 @@ func TestOrdOperationData_GetData(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			opData := operations_manager.NewOrdOperationData(testCase.AppID, testCase.AppTemplateID)
+			opData := operationsmanager.NewOrdOperationData(testCase.AppID, testCase.AppTemplateID)
 
 			// WHEN
 			result, err := opData.GetData()

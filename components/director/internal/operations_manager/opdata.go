@@ -1,4 +1,4 @@
-package operations_manager
+package operationsmanager
 
 import (
 	"encoding/json"
@@ -19,6 +19,7 @@ func NewOrdOperationData(appID, appTemplateID string) *OrdOperationData {
 	}
 }
 
+// GetData builds ord operation data
 func (b *OrdOperationData) GetData() (string, error) {
 	data, err := json.Marshal(b)
 	if err != nil {

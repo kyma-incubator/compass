@@ -158,7 +158,7 @@ func main() {
 	runMainSrv()
 }
 
-func startCreateORDOperationsJob(ctx context.Context, opManager *operations_manager.Service, cfg config) error {
+func startCreateORDOperationsJob(ctx context.Context, opManager *operationsmanager.Service, cfg config) error {
 	job := cronjob.CronJob{
 		Name: "CreateORDOperations",
 		Fn: func(jobCtx context.Context) {
@@ -173,12 +173,12 @@ func startCreateORDOperationsJob(ctx context.Context, opManager *operations_mana
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, job)
 }
 
-func startDeleteOldORDOperationsJob(ctx context.Context, opManager *operations_manager.Service, cfg config) error {
+func startDeleteOldORDOperationsJob(ctx context.Context, opManager *operationsmanager.Service, cfg config) error {
 	job := cronjob.CronJob{
 		Name: "DeleteOldORDOperations",
 		Fn: func(jobCtx context.Context) {
 			log.C(jobCtx).Infof("Starting deletion of old ORD operations...")
-			if err := opManager.DeleteOldOperations(ctx, operations_manager.OrdAggregationOpType, cfg.DeleteCompletedOpsOlderThanDays, cfg.DeleteFailedOpsOlderThanDays); err != nil {
+			if err := opManager.DeleteOldOperations(ctx, operationsmanager.OrdAggregationOpType, cfg.DeleteCompletedOpsOlderThanDays, cfg.DeleteFailedOpsOlderThanDays); err != nil {
 				log.C(jobCtx).WithError(err).Errorf("error occurred while deleting old Open Resource Discovery operations")
 			}
 			log.C(jobCtx).Infof("Deletion of old ORD operations finished.")
@@ -188,7 +188,7 @@ func startDeleteOldORDOperationsJob(ctx context.Context, opManager *operations_m
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, job)
 }
 
-func createOperationsManagerService(ctx context.Context, cfgProvider *configprovider.Provider, transact persistence.Transactioner, ordWebhookMapping []application.ORDWebhookMapping, conf config) (*operations_manager.Service, error) {
+func createOperationsManagerService(ctx context.Context, cfgProvider *configprovider.Provider, transact persistence.Transactioner, ordWebhookMapping []application.ORDWebhookMapping, conf config) (*operationsmanager.Service, error) {
 	retryHTTPExecutor := retry.NewHTTPExecutor(&conf.RetryConfig)
 
 	httpClient := &http.Client{
@@ -287,8 +287,8 @@ func createOperationsManagerService(ctx context.Context, cfgProvider *configprov
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, conf.Features.RuntimeTypeLabelKey, conf.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
-	ordOpCreator := operations_manager.NewOperationCreator(operations_manager.OrdCreatorType, transact, opSvc, webhookSvc, appSvc)
-	return operations_manager.NewOperationService(transact, opSvc, ordOpCreator), nil
+	ordOpCreator := operationsmanager.NewOperationCreator(operationsmanager.OrdCreatorType, transact, opSvc, webhookSvc, appSvc)
+	return operationsmanager.NewOperationService(transact, opSvc, ordOpCreator), nil
 }
 
 func exitOnError(err error, context string) {

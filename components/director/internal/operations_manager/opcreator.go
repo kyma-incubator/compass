@@ -1,4 +1,4 @@
-package operations_manager
+package operationsmanager
 
 import (
 	"context"

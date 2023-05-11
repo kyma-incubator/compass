@@ -1,4 +1,4 @@
-package operations_manager_test
+package operationsmanager_test
 
 import (
 	"context"
@@ -52,7 +52,7 @@ func TestService_CreateORDOperations(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			opCreator := testCase.OpCreatorFn()
-			svc := operations_manager.NewOperationService(nil, nil, opCreator)
+			svc := operationsmanager.NewOperationService(nil, nil, opCreator)
 
 			// WHEN
 			err := svc.CreateORDOperations(ctx)
@@ -139,7 +139,7 @@ func TestService_DeleteOldOperations(t *testing.T) {
 			_, tx := testCase.TransactionerFn()
 			opSvc := testCase.OpSvcFn()
 
-			svc := operations_manager.NewOperationService(tx, opSvc, nil)
+			svc := operationsmanager.NewOperationService(tx, opSvc, nil)
 
 			// WHEN
 			err := svc.DeleteOldOperations(ctx, ordOpType, completedOpDays, failedOpDays)

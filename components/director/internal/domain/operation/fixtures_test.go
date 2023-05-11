@@ -17,8 +17,6 @@ const (
 	operationID       = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 )
 
-var fixedTimestamp = time.Now()
-
 func fixOperationInput(opType, opStatus string) *model.OperationInput {
 	return &model.OperationInput{
 		OpType:     opType,

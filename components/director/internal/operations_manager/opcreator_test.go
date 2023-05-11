@@ -1,4 +1,4 @@
-package operations_manager_test
+package operationsmanager_test
 
 import (
 	"context"
@@ -186,7 +186,7 @@ func TestORDOperationCreator_Create(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			appSvc := testCase.AppSvcFn()
 
-			opCreator := operations_manager.NewOperationCreator(operations_manager.OrdCreatorType, tx, opSvc, webhookSvc, appSvc)
+			opCreator := operationsmanager.NewOperationCreator(operationsmanager.OrdCreatorType, tx, opSvc, webhookSvc, appSvc)
 
 			// WHEN
 			err := opCreator.Create(ctx)
