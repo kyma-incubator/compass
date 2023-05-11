@@ -239,7 +239,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
 
-			engine := formationconstraint.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil)
+			engine := formationconstraint.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil, runtimeType, applicationType)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 
@@ -267,12 +267,11 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 	appID := "b55131c4-ca3a-11ed-afa1-0242ac120002"
 
 	in := &formationconstraintpkg.DoesNotContainResourceOfSubtypeInput{
-		FormationName:        scenario,
-		ResourceType:         model.ApplicationResourceType,
-		ResourceSubtype:      inputAppType,
-		ResourceID:           inputAppID,
-		Tenant:               testTenantID,
-		ResourceTypeLabelKey: applicationTypeLabel,
+		FormationName:   scenario,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: inputAppType,
+		ResourceID:      inputAppID,
+		Tenant:          testTenantID,
 	}
 
 	testCases := []struct {
@@ -370,7 +369,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			labelSvc := testCase.LabelSvc()
 			appRepo := testCase.ApplicationRepo()
-			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo)
+			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo, runtimeType, applicationType)
 
 			result, err := engine.DoesNotContainResourceOfSubtype(ctx, testCase.Input)
 

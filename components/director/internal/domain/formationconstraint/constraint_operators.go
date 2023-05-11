@@ -17,6 +17,8 @@ const (
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtypeOperator represents the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtypeOperator = "DoesNotContainResourceOfSubtype"
+	// DoNotSendNotification represents the DoNotSendNotification operator
+	DoNotSendNotification = "DoNotSendNotification"
 )
 
 // OperatorName represents the constraint operator name
@@ -112,9 +114,9 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 		}
 
 		for _, application := range applications {
-			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, i.ResourceTypeLabelKey)
+			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, e.applicationTypeLabelKey)
 			if err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", i.ResourceTypeLabelKey, application.ID, i.Tenant))
+				return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, application.ID, i.Tenant))
 			}
 
 			if i.ResourceSubtype == appTypeLbl.Value.(string) {
