@@ -154,6 +154,7 @@ func buildORDOperationInput(data string) *model.OperationInput {
 	}
 }
 
+// NewOperationCreator creates OperationCreator based on kind
 func NewOperationCreator(kind string, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationCreator {
 	if kind == OrdCreatorType {
 		return &ORDOperationCreator{

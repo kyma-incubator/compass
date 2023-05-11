@@ -25,21 +25,21 @@ type UIDService interface {
 	Generate() string
 }
 
-type Service struct {
+type service struct {
 	opRepo     OperationRepository
 	uidService UIDService
 }
 
 // NewService creates operations service
-func NewService(opRepo OperationRepository, uidService UIDService) *Service {
-	return &Service{
+func NewService(opRepo OperationRepository, uidService UIDService) *service {
+	return &service{
 		opRepo:     opRepo,
 		uidService: uidService,
 	}
 }
 
 // Create creates new operation entity
-func (s *Service) Create(ctx context.Context, in *model.OperationInput) error {
+func (s *service) Create(ctx context.Context, in *model.OperationInput) error {
 	id := s.uidService.Generate()
 	op := in.ToOperation(id)
 
@@ -52,7 +52,7 @@ func (s *Service) Create(ctx context.Context, in *model.OperationInput) error {
 }
 
 // CreateMultiple creates multiple operations
-func (s *Service) CreateMultiple(ctx context.Context, in []*model.OperationInput) error {
+func (s *service) CreateMultiple(ctx context.Context, in []*model.OperationInput) error {
 	if in == nil {
 		return nil
 	}
@@ -71,7 +71,7 @@ func (s *Service) CreateMultiple(ctx context.Context, in []*model.OperationInput
 }
 
 // DeleteOlderThan deletes all operations of type `opType` with status `status` older than `days`
-func (s *Service) DeleteOlderThan(ctx context.Context, opType, status string, days int) error {
+func (s *service) DeleteOlderThan(ctx context.Context, opType, status string, days int) error {
 	if err := s.opRepo.DeleteOlderThan(ctx, opType, status, time.Now().AddDate(0, 0, -1*days)); err != nil {
 		return errors.Wrapf(err, "while deleting Operations of type %s and status %s older than %d", opType, status, days)
 	}

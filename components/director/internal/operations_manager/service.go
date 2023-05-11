@@ -54,5 +54,4 @@ func (s *Service) DeleteOldOperations(ctx context.Context, opType string, comple
 	}
 
 	return tx.Commit()
-
 }
