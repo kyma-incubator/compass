@@ -11,7 +11,9 @@ import (
 )
 
 const (
-	OrdCreatorType       = "ORD"
+	// OrdCreatorType specifies open resource discovery creator type
+	OrdCreatorType = "ORD"
+	// OrdAggregationOpType specifies open resource discovery operation type
 	OrdAggregationOpType = "ORD_AGGREGATION"
 )
 
