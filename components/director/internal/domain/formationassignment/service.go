@@ -939,9 +939,15 @@ func (s *service) createExtendedFARequest(ctx context.Context, faRequestMapping 
 		return nil, err
 	}
 
+	formation, err := s.formationRepository.Get(ctx, faRequestMapping.FormationAssignment.FormationID, faRequestMapping.FormationAssignment.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &FormationAssignmentRequestExt{
 		FormationAssignmentNotificationRequest: faRequestMapping.Request,
 		FormationAssignment:                    faRequestMapping.FormationAssignment,
+		Formation:                              formation,
 		TargetSubtype:                          targetSubtype,
 	}, nil
 }
@@ -1046,6 +1052,7 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 type FormationAssignmentRequestExt struct {
 	*webhookclient.FormationAssignmentNotificationRequest
 	FormationAssignment *model.FormationAssignment
+	Formation           *model.Formation
 	TargetSubtype       string
 }
 
@@ -1072,7 +1079,7 @@ func (f *FormationAssignmentRequestExt) GetFormationAssignment() *model.Formatio
 }
 
 func (f *FormationAssignmentRequestExt) GetFormation() *model.Formation {
-	return nil
+	return f.Formation
 }
 
 // AssignmentErrorCode represents error code used to differentiate the source of the error

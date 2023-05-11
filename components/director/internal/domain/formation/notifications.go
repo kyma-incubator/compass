@@ -3,9 +3,8 @@ package formation
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -130,7 +129,7 @@ func (ns *notificationsService) GenerateFormationNotifications(ctx context.Conte
 func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error) {
 	joinPointDetails, err := ns.prepareDetailsForSendNotification(webhookNotificationReq)
 
-	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, *webhookNotificationReq.GetWebhook().FormationTemplateID); err != nil {
+	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PreOperation)
 	}
 
@@ -139,7 +138,7 @@ func (ns *notificationsService) SendNotification(ctx context.Context, webhookNot
 		return resp, nil
 	}
 
-	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostSendNotification, joinPointDetails, *webhookNotificationReq.GetWebhook().FormationTemplateID); err != nil {
+	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PostOperation)
 	}
 

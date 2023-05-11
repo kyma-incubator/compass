@@ -359,7 +359,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, &formation, formationTemplateName)
+		extendedFormationReq := createExtendedFormationReq(formationReq, newFormation, formationTemplateName)
 		if err := s.processFormationNotifications(ctx, newFormation, extendedFormationReq, model.CreateErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
 			log.C(ctx).Error(processErr)
@@ -411,7 +411,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, &formation, formationTemplateName)
+		extendedFormationReq := createExtendedFormationReq(formationReq, ft.formation, formationTemplateName)
 		if err := s.processFormationNotifications(ctx, ft.formation, extendedFormationReq, model.DeleteErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formationName)
 			log.C(ctx).Error(processErr)
