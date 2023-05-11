@@ -37,6 +37,29 @@ func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, erro
 	return r0, r1
 }
 
+// ToModel provides a mock function with given fields: in
+func (_m *WebhookConverter) ToModel(in *graphql.Webhook) (*model.Webhook, error) {
+	ret := _m.Called(in)
+
+	var r0 *model.Webhook
+	if rf, ok := ret.Get(0).(func(*graphql.Webhook) *model.Webhook); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Webhook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*graphql.Webhook) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewWebhookConverter interface {
 	mock.TestingT
 	Cleanup(func())
