@@ -177,7 +177,7 @@ func validate(tm types.TenantMapping) error {
 		return errors.New("The items in the tenant mapping request body should consists of one element")
 	}
 
-	if tm.ReceiverTenant.SubaccountID != "" {
+	if tm.ReceiverTenant.SubaccountID == "" {
 		return errors.New("The subaccount ID in the tenant mapping request body should not be empty")
 	}
 
