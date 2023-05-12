@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
@@ -149,6 +151,11 @@ var (
 		  "callbackUrl": "http://example.com/credentials",
           "customType": "ns:credential-exchange2:v3",
 		  "type": "custom"
+        },
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom"
         }
       ]`)
 
@@ -200,6 +207,15 @@ var (
 	hashPackage, _ = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
+
+	credentialExchangeStrategyType           = "sap.ucl:tenant_mapping:v1"
+	credentialExchangeStrategyVersion        = "v1"
+	credentialExchangeStrategyTenantMappings = map[string]ord.CredentialExchangeStrategyTenantMapping{
+		credentialExchangeStrategyType: {
+			Mode:    model.WebhookModeSync,
+			Version: credentialExchangeStrategyVersion,
+		},
+	}
 )
 
 func fixResourceHashes() map[string]uint64 {
@@ -311,7 +327,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                         json.RawMessage(tags),
 				Labels:                       json.RawMessage(labels),
 				DocumentationLabels:          json.RawMessage(documentLabels),
-				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
+				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL, credentialExchangeStrategyType)),
 				CorrelationIDs:               json.RawMessage(correlationIDs),
 			},
 		},
@@ -616,6 +632,29 @@ func fixApplications() []*model.Application {
 			Type:                  testApplicationType,
 			ApplicationTemplateID: str.Ptr(appTemplateID),
 		},
+	}
+}
+
+func fixTenantMappingWebhookGraphQLInput() *graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+	return &graphql.WebhookInput{
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &graphql.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:    &syncMode,
+		Version: str.Ptr(credentialExchangeStrategyVersion),
+	}
+}
+
+func fixTenantMappingWebhookModelInput() *model.WebhookInput {
+	syncMode := model.WebhookModeSync
+	return &model.WebhookInput{
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode: &syncMode,
 	}
 }
 
