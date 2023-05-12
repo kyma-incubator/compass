@@ -873,6 +873,7 @@ global:
     ordWebhookPartialProcessMaxDays: 0
     ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
+    tenantMappingConfiguration: '{"sap.ucl:tenant_mapping.c4c:v1": { "mode": "SYNC", "version": "configuration_changed:v2"}}'
   systemFetcher:
     enabled: false
     name: "system-fetcher"

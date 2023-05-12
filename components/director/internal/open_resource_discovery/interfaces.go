@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -158,6 +159,7 @@ type TenantService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
 }

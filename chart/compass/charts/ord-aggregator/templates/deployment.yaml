@@ -48,7 +48,7 @@ spec:
             name: compass-director-config
         - name: tenant-mapping-config
           configMap:
-            name: {{ template "fullname" . }}-tenant-mapping-config
+            name: compass-director-tenant-mapping-config
       containers:
         - name: {{ .Values.global.ordAggregator.containerName }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -160,6 +160,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS
+              value: {{ .Values.global.ordAggregator.tenantMappingConfiguration | quote }}
           command:
             - "/bin/sh"
           args:

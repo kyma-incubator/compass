@@ -3,15 +3,14 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
@@ -44,6 +43,13 @@ type ServiceConfig struct {
 	ordWebhookPartialProcessMaxDays    int
 	ordWebhookPartialProcessURL        string
 	ordWebhookPartialProcessing        bool
+
+	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
+}
+
+type CredentialExchangeStrategyTenantMapping struct {
+	Mode    model.WebhookMode
+	Version string
 }
 
 type ordFetchRequest struct {
@@ -65,13 +71,14 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
 	return ServiceConfig{
-		maxParallelWebhookProcessors:       maxParallelWebhookProcessors,
-		maxParallelSpecificationProcessors: maxParallelSpecificationProcessors,
-		ordWebhookPartialProcessMaxDays:    ordWebhookPartialProcessMaxDays,
-		ordWebhookPartialProcessURL:        ordWebhookPartialProcessURL,
-		ordWebhookPartialProcessing:        ordWebhookPartialProcessing,
+		maxParallelWebhookProcessors:             maxParallelWebhookProcessors,
+		maxParallelSpecificationProcessors:       maxParallelSpecificationProcessors,
+		ordWebhookPartialProcessMaxDays:          ordWebhookPartialProcessMaxDays,
+		ordWebhookPartialProcessURL:              ordWebhookPartialProcessURL,
+		ordWebhookPartialProcessing:              ordWebhookPartialProcessing,
+		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}
 }
 
@@ -817,35 +824,24 @@ func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFro
 
 func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentialExchangeStrategyJSON gjson.Result, appID string) error {
 	if !credentialExchangeStrategyJSON.IsObject() {
+		log.C(ctx).Debugf("There are no tenant mapping to resync")
 		return nil
 	}
 
 	tenantMappingType := credentialExchangeStrategyJSON.Get(customTypeProperty).String()
-	subParts := strings.Split(credentialExchangeStrategyJSON.Get(customTypeProperty).String(), ":")
-	matched, _ := regexp.MatchString(fmt.Sprintf(`(%s)(\.\w+){1,2}(:\w+)`, tenantMappingCustomTypeIdentifier), tenantMappingType)
-	if len(subParts) != 3 || !matched {
+	tenantMappingData, ok := s.config.credentialExchangeStrategyTenantMappings[tenantMappingType]
+	if !ok {
 		return errors.Errorf("Credential Exchange Strategy has invalid %s value: %s for application with ID %s", customTypeProperty, tenantMappingType, appID)
 	}
 
-	tenantMappingSubParts := strings.Split(subParts[1], ".")
-
-	var mode, version string
-	if len(tenantMappingSubParts) == 3 {
-		version = fmt.Sprintf("%s:%s", tenantMappingSubParts[1], subParts[2])
-		mode = tenantMappingSubParts[2]
-	} else {
-		version = subParts[2]
-		mode = tenantMappingSubParts[1]
-	}
-
-	inputMode := graphql.WebhookMode(strings.ToUpper(mode))
+	inputMode := graphql.WebhookMode(tenantMappingData.Mode)
 	whInput := &graphql.WebhookInput{
 		URL: str.Ptr(credentialExchangeStrategyJSON.Get(callbackURLProperty).String()),
 		Auth: &graphql.AuthInput{
 			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
 		},
 		Mode:    &inputMode,
-		Version: str.Ptr(version),
+		Version: str.Ptr(tenantMappingData.Version),
 	}
 
 	enrichedWhs, err := s.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks([]*graphql.WebhookInput{whInput})
