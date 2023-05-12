@@ -26,6 +26,7 @@ type FormationNotificationRequest struct {
 
 type FormationNotificationRequestExt struct {
 	*Request
+	Operation     model.FormationOperation
 	Formation     *model.Formation
 	FormationType string
 }
@@ -38,7 +39,15 @@ func (fnr *FormationNotificationRequestExt) GetObjectSubtype() string {
 	return fnr.FormationType
 }
 
+func (fnr *FormationNotificationRequestExt) GetOperation() model.FormationOperation {
+	return fnr.Operation
+}
+
 func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *model.FormationAssignment {
+	return nil
+}
+
+func (fnr *FormationNotificationRequestExt) GetReverseFormationAssignment() *model.FormationAssignment {
 	return nil
 }
 
@@ -134,6 +143,8 @@ type WebhookExtRequest interface {
 	WebhookRequest
 	GetObjectType() model.ResourceType
 	GetObjectSubtype() string
+	GetOperation() model.FormationOperation
 	GetFormationAssignment() *model.FormationAssignment
+	GetReverseFormationAssignment() *model.FormationAssignment
 	GetFormation() *model.Formation
 }

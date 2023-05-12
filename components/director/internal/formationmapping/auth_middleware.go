@@ -42,11 +42,11 @@ type formationAssignmentConverter interface {
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
-	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
 	Delete(ctx context.Context, id string) error
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
-	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error
+	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications

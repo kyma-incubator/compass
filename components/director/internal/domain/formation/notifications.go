@@ -128,7 +128,7 @@ func (ns *notificationsService) GenerateFormationNotifications(ctx context.Conte
 
 func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error) {
 	joinPointDetails, err := ns.prepareDetailsForSendNotification(webhookNotificationReq)
-
+	joinPointDetails.Location = formationconstraint.PreSendNotification
 	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PreOperation)
 	}
@@ -138,6 +138,7 @@ func (ns *notificationsService) SendNotification(ctx context.Context, webhookNot
 		return resp, nil
 	}
 
+	joinPointDetails.Location = formationconstraint.PostSendNotification
 	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PostOperation)
 	}
@@ -153,13 +154,15 @@ func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotific
 	}
 
 	joinPointDetails := &formationconstraint.SendNotificationOperationDetails{
-		ResourceType:        webhookNotificationReq.GetObjectType(),    // ???? if formationNotification - FORMATION, if formationAssignmentNotification - targetType
-		ResourceSubtype:     webhookNotificationReq.GetObjectSubtype(), // ???? if formationNotification - FORMATION type(should get it), if formationAssignmentNotification - targetID type(should get it from the DB with appTypeLabel or runtimeTypeLabel, the same as in the AssignFormation getobjectsubtype)
-		Webhook:             webhookModel,
-		CorrelationID:       webhookNotificationReq.GetCorrelationID(),
-		TemplateInput:       webhookNotificationReq.GetObject(),
-		FormationAssignment: webhookNotificationReq.GetFormationAssignment(),
-		Formation:           webhookNotificationReq.GetFormation(),
+		ResourceType:               webhookNotificationReq.GetObjectType(),
+		ResourceSubtype:            webhookNotificationReq.GetObjectSubtype(),
+		Operation:                  webhookNotificationReq.GetOperation(),
+		Webhook:                    webhookModel,
+		CorrelationID:              webhookNotificationReq.GetCorrelationID(),
+		TemplateInput:              webhookNotificationReq.GetObject(),
+		FormationAssignment:        webhookNotificationReq.GetFormationAssignment(),
+		ReverseFormationAssignment: webhookNotificationReq.GetReverseFormationAssignment(),
+		Formation:                  webhookNotificationReq.GetFormation(),
 	}
 
 	return joinPointDetails, nil

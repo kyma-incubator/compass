@@ -359,7 +359,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, newFormation, formationTemplateName)
+		extendedFormationReq := createExtendedFormationReq(formationReq, newFormation, formationTemplateName, model.CreateFormation)
 		if err := s.processFormationNotifications(ctx, newFormation, extendedFormationReq, model.CreateErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
 			log.C(ctx).Error(processErr)
@@ -411,7 +411,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, ft.formation, formationTemplateName)
+		extendedFormationReq := createExtendedFormationReq(formationReq, ft.formation, formationTemplateName, model.DeleteFormation)
 		if err := s.processFormationNotifications(ctx, ft.formation, extendedFormationReq, model.DeleteErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formationName)
 			log.C(ctx).Error(processErr)
@@ -537,7 +537,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
 			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -853,7 +853,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -922,7 +922,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -1044,9 +1044,12 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			FormationAssignment: reverseFA,
 		}
 
-		assignmentPair := formationassignment.AssignmentMappingPair{
-			Assignment:        &faReqMapping,
-			ReverseAssignment: &reverseFAReqMapping,
+		assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
+			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+				Assignment:        &faReqMapping,
+				ReverseAssignment: &reverseFAReqMapping,
+			},
+			Operation: "",
 		}
 		switch fa.State {
 		case string(model.InitialFormationState), string(model.CreateErrorFormationState):
@@ -1112,7 +1115,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, formation, formationTemplateName)
+		extendedFormationReq := createExtendedFormationReq(formationReq, formation, formationTemplateName, "")
 		if err = s.processFormationNotifications(ctx, formation, extendedFormationReq, errorState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
 			log.C(ctx).Error(processErr)
@@ -1684,9 +1687,10 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 	return true
 }
 
-func createExtendedFormationReq(formationReq *webhookclient.FormationNotificationRequest, formation *model.Formation, formationType string) *webhookclient.FormationNotificationRequestExt {
+func createExtendedFormationReq(formationReq *webhookclient.FormationNotificationRequest, formation *model.Formation, formationType string, operation model.FormationOperation) *webhookclient.FormationNotificationRequestExt {
 	return &webhookclient.FormationNotificationRequestExt{
 		Request:       formationReq.Request,
+		Operation:     operation,
 		Formation:     formation,
 		FormationType: formationType,
 	}
