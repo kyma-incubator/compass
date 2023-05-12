@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -148,20 +147,37 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 }
 
 func (c *Client) buildFilter() map[string]string {
-	var queryBuilder strings.Builder
+	var filterBuilder FilterBuilder
 
-	for idx, at := range ApplicationTemplates {
+	for _, at := range ApplicationTemplates {
 		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}
 
-		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
+		lblToString, ok := lbl.Value.(string)
+		if !ok {
+			lblToString = ""
+		}
+		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
-		if idx < len(ApplicationTemplates)-1 {
-			queryBuilder.WriteString("or")
+		lblExists := false
+
+		for _, s := range SystemSynchronizationTimestamps {
+			v, ok := s[lbl.Value.(string)]
+
+			if ok {
+				lblExists = true
+
+				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", v.LastSyncTimestamp.String())
+				filterBuilder.addFilter(expr1, expr2)
+			}
+		}
+
+		if !lblExists {
+			filterBuilder.addFilter(expr1)
 		}
 	}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, queryBuilder.String()), "fetchAcrossZones": "true"}
+	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery()), "fetchAcrossZones": "true"}
 }

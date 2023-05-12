@@ -44,6 +44,14 @@ type systemsService interface {
 	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
 }
 
+// SystemsSyncService is the service for managing systems synchronization timestamps
+//
+//go:generate mockery --name=SystemsSyncService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
+type SystemsSyncService interface {
+	List(ctx context.Context) ([]*model.SystemSynchronizationTimestamp, error)
+	Upsert(ctx context.Context, in *model.SystemSynchronizationTimestamp) error
+}
+
 //go:generate mockery --name=tenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantBusinessTypeService interface {
 	Create(ctx context.Context, in *model.TenantBusinessTypeInput) (string, error)
@@ -82,30 +90,32 @@ type Config struct {
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
 type SystemFetcher struct {
-	transaction      persistence.Transactioner
-	tenantService    tenantService
-	systemsService   systemsService
-	tbtService       tenantBusinessTypeService
-	templateRenderer templateRenderer
-	systemsAPIClient systemsAPIClient
-	directorClient   directorClient
+	transaction        persistence.Transactioner
+	tenantService      tenantService
+	systemsService     systemsService
+	systemsSyncService SystemsSyncService
+	tbtService         tenantBusinessTypeService
+	templateRenderer   templateRenderer
+	systemsAPIClient   systemsAPIClient
+	directorClient     directorClient
 
 	config  Config
 	workers chan struct{}
 }
 
 // NewSystemFetcher returns a new SystemFetcher.
-func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, tbts tenantBusinessTypeService, tr templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, sSync SystemsSyncService, tbts tenantBusinessTypeService, tr templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:      tx,
-		tenantService:    ts,
-		tbtService:       tbts,
-		systemsService:   ss,
-		templateRenderer: tr,
-		systemsAPIClient: sac,
-		directorClient:   directorClient,
-		workers:          make(chan struct{}, config.FetcherParallellism),
-		config:           config,
+		transaction:        tx,
+		tenantService:      ts,
+		systemsService:     ss,
+		systemsSyncService: sSync,
+		tbtService:         tbts,
+		templateRenderer:   tr,
+		systemsAPIClient:   sac,
+		directorClient:     directorClient,
+		workers:            make(chan struct{}, config.FetcherParallellism),
+		config:             config,
 	}
 }
 
@@ -162,6 +172,28 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 				continue
 			}
 
+			if SystemSynchronizationTimestamps == nil {
+				SystemSynchronizationTimestamps = make(map[string]map[string]SystemSynchronizationTimestamp, 0)
+			}
+
+			for _, i := range tenantSystems.systems {
+				currentTenant := tenantSystems.tenant.ExternalTenant
+				currentTimestamp := SystemSynchronizationTimestamp{
+					ID:                uuid.NewString(),
+					LastSyncTimestamp: time.Now().UTC(),
+				}
+
+				if _, ok := SystemSynchronizationTimestamps[currentTenant]; !ok {
+					SystemSynchronizationTimestamps[currentTenant] = make(map[string]SystemSynchronizationTimestamp, 0)
+				}
+
+				if v, ok1 := SystemSynchronizationTimestamps[currentTenant][i.ProductID]; ok1 {
+					currentTimestamp.ID = v.ID
+				}
+
+				SystemSynchronizationTimestamps[currentTenant][i.ProductID] = currentTimestamp
+			}
+
 			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantSystems.tenant.ExternalTenant))
 		}
 	}()
@@ -204,6 +236,49 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	}
 	close(systemsQueue)
 	wgDB.Wait()
+
+	return nil
+}
+
+// UpsertSystemsSyncTimestamps updates the synchronization timestamps of the systems for each tenant or creates new ones if they don't exist in the database
+func (s *SystemFetcher) UpsertSystemsSyncTimestamps(ctx context.Context, transact persistence.Transactioner) error {
+	tx, err := transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "Error while beginning transaction")
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	for tnt, v := range SystemSynchronizationTimestamps {
+		err := s.upsertSystemsSyncTimestampsForTenant(ctx, tnt, v)
+		if err != nil {
+			return errors.Wrapf(err, "failed to upsert systems sync timestamps for tenant %s", tnt)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return nil
+}
+
+func (s *SystemFetcher) upsertSystemsSyncTimestampsForTenant(ctx context.Context, tenant string, timestamps map[string]SystemSynchronizationTimestamp) error {
+	for productID, timestamp := range timestamps {
+		in := &model.SystemSynchronizationTimestamp{
+			ID:                timestamp.ID,
+			TenantID:          tenant,
+			ProductID:         productID,
+			LastSyncTimestamp: timestamp.LastSyncTimestamp,
+		}
+
+		err := s.systemsSyncService.Upsert(ctx, in)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
