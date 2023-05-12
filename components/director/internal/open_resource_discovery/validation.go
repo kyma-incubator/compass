@@ -297,17 +297,17 @@ func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string
 		})),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
-		//validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
-		//	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-		//		"type": {
-		//			validation.Required,
-		//			validation.In(custom),
-		//		},
-		//		"callbackUrl": {
-		//			is.RequestURI,
-		//		},
-		//	}, validateCustomType, validateCustomDescription)
-		//})),
+		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+				"type": {
+					validation.Required,
+					validation.In(custom),
+				},
+				"callbackUrl": {
+					is.RequestURI,
+				},
+			}, validateCustomType, validateCustomDescription)
+		})),
 		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
