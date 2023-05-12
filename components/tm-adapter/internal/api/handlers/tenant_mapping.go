@@ -48,6 +48,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	log.C(ctx).Infof("Tenant mapping request body: %q", reqBody)
 
+	formationID := gjson.Get(string(reqBody), "context.btp.uclFormationId").String()
+	if formationID == "" {
+		log.C(ctx).Error("Failed to get the formation ID from the request body")
+		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to get the formation ID from the request body"))
+		return
+	}
+
 	var tm types.TenantMapping
 	err = json.Unmarshal(reqBody, &tm)
 	if err != nil {
@@ -62,7 +69,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if string(tm.Items[0].Configuration) != "" {
+	if tm.Items[0].Configuration != nil && string(tm.Items[0].Configuration) != "{}" && string(tm.Items[0].Configuration) != "\"\"" {
 		log.C(ctx).Info("The configuration in the tenant mapping body is provided and no service instance/binding will be created. Returning...")
 		httputil.Respond(w, http.StatusOK)
 		return
@@ -86,7 +93,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serviceInstanceName := catalogName + "-instance"
+	serviceInstanceName := catalogName + "-instance-" + formationID
 	serviceInstanceID, err := h.createServiceInstance(ctx, planID, serviceInstanceName)
 	if err != nil {
 		log.C(ctx).Error(err)
