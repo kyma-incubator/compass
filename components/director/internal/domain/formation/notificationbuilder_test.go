@@ -336,6 +336,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
 				FormationID:         fixUUID(),
+				FormationTemplateID: FormationTemplateID,
 				ResourceType:        model.ApplicationResourceType,
 				ResourceSubtype:     applicationType,
 				ResourceID:          ApplicationID,
@@ -363,6 +364,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
 				FormationID:         fixUUID(),
+				FormationTemplateID: FormationTemplateID,
 				ResourceType:        model.RuntimeResourceType,
 				ResourceSubtype:     runtimeType,
 				ResourceID:          RuntimeContextRuntimeID,
@@ -390,6 +392,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
 				FormationID:         fixUUID(),
+				FormationTemplateID: FormationTemplateID,
 				ResourceType:        model.RuntimeContextResourceType,
 				ResourceSubtype:     runtimeType,
 				ResourceID:          RuntimeContextID,
@@ -463,7 +466,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil, tenantID.String())
+			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, FormationTemplateID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil, tenantID.String())
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -524,6 +527,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:                 model.AssignFormation,
 				FormationID:               fixUUID(),
+				FormationTemplateID:       FormationTemplateID,
 				ResourceType:              model.ApplicationResourceType,
 				ResourceSubtype:           applicationType,
 				ResourceID:                ApplicationID,
@@ -558,7 +562,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil, tenantID.String())
+			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, FormationTemplateID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil, tenantID.String())
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

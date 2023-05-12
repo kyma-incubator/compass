@@ -42,8 +42,8 @@ type webhookRepository interface {
 type notificationBuilder interface {
 	BuildFormationAssignmentNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
 	BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationNotificationOperationDetails, formation *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error)
-	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
-	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, formationTemplateID string, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, formationTemplateID string, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
 
 // NotificationsGenerator is responsible for generation of notification requests
@@ -120,6 +120,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
 			formation.ID,
+			formation.FormationTemplateID,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtime,
@@ -200,6 +201,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
 			formation.ID,
+			formation.FormationTemplateID,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtime,
@@ -305,6 +307,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 			details, err := ns.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 				operation,
 				formation.ID,
+				formation.FormationTemplateID,
 				appTemplate,
 				sourceApp,
 				appTemplateWithLabels,
@@ -351,6 +354,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		details, err := ns.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 			operation,
 			formation.ID,
+			formation.FormationTemplateID,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			targetAppTemplate,
@@ -466,6 +470,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
 			formation.ID,
+			formation.FormationTemplateID,
 			appTemplate,
 			app,
 			runtimeWithLabels,
@@ -531,6 +536,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
 			formation.ID,
+			formation.FormationTemplateID,
 			appTemplate,
 			app,
 			runtimeWithLabels,
@@ -590,6 +596,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
 			formation.ID,
+			formation.FormationTemplateID,
 			appTemplate,
 			app,
 			runtimeWithLabels,

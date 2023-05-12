@@ -144,6 +144,18 @@ func (e *ConstraintEngine) DoNotSendNotification(ctx context.Context, input Oper
 
 	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", DoNotSendNotificationOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
 
+	if len(i.ExceptFormationTypes) > 0 {
+		formationTemplate, err := e.formationTemplateRepo.Get(ctx, i.FormationTemplateID)
+		if err != nil {
+			return false, errors.Wrapf(err, "while getting formation template with ID %q", i.FormationTemplateID)
+		}
+		for _, exceptFormationType := range i.ExceptFormationTypes {
+			if formationTemplate.Name == exceptFormationType {
+				return true, nil
+			}
+		}
+	}
+
 	if len(i.ExceptSubtypes) == 0 {
 		log.C(ctx).Infof("Skipping notifications to target resource of type: %q, subtype: %q and ID: %q for source resource of type %q and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, i.SourceResourceID)
 		return false, nil

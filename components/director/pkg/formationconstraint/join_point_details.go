@@ -75,6 +75,7 @@ func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails
 type GenerateFormationAssignmentNotificationOperationDetails struct {
 	Operation             model.FormationOperation
 	FormationID           string
+	FormationTemplateID   string
 	ResourceType          model.ResourceType
 	ResourceSubtype       string
 	ResourceID            string

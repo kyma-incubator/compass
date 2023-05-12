@@ -239,7 +239,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
 
-			engine := formationconstraint.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil, nil, runtimeType, applicationType)
+			engine := formationconstraint.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil, nil, nil, runtimeType, applicationType)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 
@@ -369,7 +369,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			labelSvc := testCase.LabelSvc()
 			appRepo := testCase.ApplicationRepo()
-			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo, nil, runtimeType, applicationType)
+			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo, nil, nil, runtimeType, applicationType)
 
 			result, err := engine.DoesNotContainResourceOfSubtype(ctx, testCase.Input)
 
@@ -399,6 +399,7 @@ func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
 	runtimeCtxID := "f7156h4-ca3a-11ed-afa1-0242ac121237"
 
 	exceptType := "except-type"
+	formationType := "formationType"
 
 	in := &formationconstraintpkg.DoNotSendNotificationInput{
 		ResourceType:       model.ApplicationResourceType,
@@ -408,6 +409,18 @@ func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
 		SourceResourceID:   appID,
 		Tenant:             testTenantID,
 		ExceptSubtypes:     []string{exceptType},
+	}
+
+	inWithFormationTypeException := &formationconstraintpkg.DoNotSendNotificationInput{
+		ResourceType:         model.ApplicationResourceType,
+		FormationTemplateID:  formationTemplateID,
+		ResourceSubtype:      inputAppType,
+		ResourceID:           inputAppID,
+		SourceResourceType:   model.ApplicationResourceType,
+		SourceResourceID:     appID,
+		Tenant:               testTenantID,
+		ExceptSubtypes:       []string{exceptType},
+		ExceptFormationTypes: []string{formationType},
 	}
 
 	runtimeIn := &formationconstraintpkg.DoNotSendNotificationInput{
@@ -431,12 +444,13 @@ func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name               string
-		Input              formationconstraint.OperatorInput
-		LabelSvc           func() *automock.LabelService
-		RuntimeContextRepo func() *automock.RuntimeContextRepo
-		ExpectedResult     bool
-		ExpectedErrorMsg   string
+		Name                  string
+		Input                 formationconstraint.OperatorInput
+		LabelSvc              func() *automock.LabelService
+		RuntimeContextRepo    func() *automock.RuntimeContextRepo
+		FormationTemplateRepo func() *automock.FormationTemplateRepo
+		ExpectedResult        bool
+		ExpectedErrorMsg      string
 	}{
 		{
 			Name:  "Success for a system when notifications should be skipped",
@@ -464,6 +478,34 @@ func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
 			},
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "",
+		},
+		{
+			Name:  "Success for a formation type that is excepted and notifications should NOT be skipped",
+			Input: inWithFormationTypeException,
+			LabelSvc: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			FormationTemplateRepo: func() *automock.FormationTemplateRepo {
+				repo := &automock.FormationTemplateRepo{}
+				repo.On("Get", ctx, formationTemplateID).Return(&model.FormationTemplate{Name: formationType}, nil).Once()
+				return repo
+			},
+			ExpectedResult:   true,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:  "Error when get formation type fails",
+			Input: inWithFormationTypeException,
+			LabelSvc: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			FormationTemplateRepo: func() *automock.FormationTemplateRepo {
+				repo := &automock.FormationTemplateRepo{}
+				repo.On("Get", ctx, formationTemplateID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
 			Name:  "Success for a system that is excepted and notifications should NOT be skipped",
@@ -563,7 +605,11 @@ func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
 			if testCase.RuntimeContextRepo != nil {
 				runtimeContextRepo = testCase.RuntimeContextRepo()
 			}
-			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, runtimeType, applicationType)
+			var formationTemplateRepo *automock.FormationTemplateRepo
+			if testCase.FormationTemplateRepo != nil {
+				formationTemplateRepo = testCase.FormationTemplateRepo()
+			}
+			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, formationTemplateRepo, runtimeType, applicationType)
 
 			result, err := engine.DoNotSendNotification(ctx, testCase.Input)
 
@@ -578,6 +624,9 @@ func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, labelSvc)
 			if runtimeContextRepo != nil {
 				runtimeContextRepo.AssertExpectations(t)
+			}
+			if formationTemplateRepo != nil {
+				formationTemplateRepo.AssertExpectations(t)
 			}
 		})
 	}

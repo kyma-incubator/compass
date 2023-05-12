@@ -30,8 +30,8 @@ type notificationService interface {
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationBuilder interface {
 	BuildFormationAssignmentNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
-	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
-	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, formationTemplateID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, formationTemplateID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
 
 type formationAssignmentNotificationService struct {
@@ -119,6 +119,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		details, err := fan.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 			model.AssignFormation,
 			fa.FormationID,
+			referencedFormation.FormationTemplateID,
 			reverseAppTemplateWithLabels,
 			reverseAppWithLabels,
 			appTemplateWithLabels,
@@ -168,6 +169,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			model.AssignFormation,
 			fa.FormationID,
+			referencedFormation.FormationTemplateID,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtimeWithLabels,
@@ -225,6 +227,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			model.AssignFormation,
 			fa.FormationID,
+			referencedFormation.FormationTemplateID,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtimeWithLabels,
@@ -302,6 +305,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 		model.AssignFormation,
 		fa.FormationID,
+		referencedFormation.FormationTemplateID,
 		appTemplateWithLabels,
 		applicationWithLabels,
 		runtimeWithLabels,
@@ -377,6 +381,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 		model.AssignFormation,
 		fa.FormationID,
+		referencedFormation.FormationTemplateID,
 		appTemplateWithLabels,
 		applicationWithLabels,
 		runtimeWithLabels,

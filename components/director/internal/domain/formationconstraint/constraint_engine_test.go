@@ -128,7 +128,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			formationConstraintSvc := testCase.FormationConstraintService()
 
-			engine := formationconstraint.NewConstraintEngine(formationConstraintSvc, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := formationconstraint.NewConstraintEngine(formationConstraintSvc, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 			if testCase.OperatorFunc != nil {
 				engine.SetOperator(testCase.OperatorFunc)
 			} else {

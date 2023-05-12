@@ -23,11 +23,13 @@ type DoesNotContainResourceOfSubtypeInput struct {
 
 // DoNotSendNotificationInput input for DoNotSendNotification operator
 type DoNotSendNotificationInput struct {
-	ResourceType       model.ResourceType `json:"resource_type"`
-	ResourceSubtype    string             `json:"resource_subtype"`
-	ResourceID         string             `json:"resource_id"`
-	SourceResourceType model.ResourceType `json:"source_resource_type"`
-	SourceResourceID   string             `json:"source_resource_id"`
-	Tenant             string             `json:"tenant"`
-	ExceptSubtypes     []string           `json:"except_subtypes"`
+	ResourceType         model.ResourceType `json:"resource_type"`
+	ResourceSubtype      string             `json:"resource_subtype"`
+	ResourceID           string             `json:"resource_id"`
+	SourceResourceType   model.ResourceType `json:"source_resource_type"`
+	SourceResourceID     string             `json:"source_resource_id"`
+	Tenant               string             `json:"tenant"`
+	FormationTemplateID  string             `json:"formation_template_id"`
+	ExceptSubtypes       []string           `json:"except_subtypes"`
+	ExceptFormationTypes []string           `json:"except_formation_types"`
 }
