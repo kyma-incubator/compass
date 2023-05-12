@@ -260,13 +260,11 @@ func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplat
 			appTemplateInput.Placeholders = []model.ApplicationTemplatePlaceholder{
 				{
 					Name:        "name",
-					Description: str.Ptr("Application’s technical name"),
-					JSONPath:    str.Ptr("$.metadata.name"),
+					Description: str.Ptr("Application’s technical name")
 				},
 				{
 					Name:        "display-name",
-					Description: str.Ptr("Application’s display name"),
-					JSONPath:    str.Ptr("$.spec.displayName"),
+					Description: str.Ptr("Application’s display name")
 				},
 			}
 		}
