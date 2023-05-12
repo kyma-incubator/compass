@@ -163,5 +163,5 @@ func (c *Client) buildFilter() map[string]string {
 		}
 	}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, queryBuilder.String()), "fetchAcrossZones": "true"}
+	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, "productId eq 'SDWC'"), "fetchAcrossZones": "true"}
 }
