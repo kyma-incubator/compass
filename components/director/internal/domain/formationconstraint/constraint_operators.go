@@ -161,7 +161,7 @@ func (e *ConstraintEngine) DoNotSendNotification(ctx context.Context, input Oper
 		return false, nil
 	}
 
-	sourceSubType := ""
+	var sourceSubType string
 	switch i.SourceResourceType {
 	case model.ApplicationResourceType:
 		appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.SourceResourceID, e.applicationTypeLabelKey)
