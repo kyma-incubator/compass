@@ -117,6 +117,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	reverseAssignment *webhookdir.FormationAssignment,
 	targetType model.ResourceType,
 	tenantContext *webhookdir.CustomerTenantContext,
+	tenantID string,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:             operation,
@@ -129,6 +130,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 		Assignment:            assignment,
 		ReverseAssignment:     reverseAssignment,
 		ResourceType:          targetType,
+		TenantID:              tenantID,
 	}
 	switch targetType {
 	case model.ApplicationResourceType:
@@ -176,6 +178,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	assignment *webhookdir.FormationAssignment,
 	reverseAssignment *webhookdir.FormationAssignment,
 	tenantContext *webhookdir.CustomerTenantContext,
+	tenantID string,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 operation,
@@ -189,6 +192,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 		ReverseAssignment:         reverseAssignment,
 		ResourceType:              model.ApplicationResourceType,
 		ResourceID:                targetApplication.ID,
+		TenantID:                  tenantID,
 	}
 
 	subtype, err := determineResourceSubtype(targetApplication.Labels, nb.applicationTypeLabelKey)

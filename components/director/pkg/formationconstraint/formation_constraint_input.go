@@ -29,5 +29,5 @@ type DoNotSendNotificationInput struct {
 	SourceResourceType model.ResourceType `json:"source_resource_type"`
 	SourceResourceID   string             `json:"source_resource_id"`
 	Tenant             string             `json:"tenant"`
-	ExceptSubtypes     []string           `json:"exceptSubtypes"`
+	ExceptSubtypes     []string           `json:"except_subtypes"`
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
 // IsNotAssignedToAnyFormationOfType contains the name of the IsNotAssignedToAnyFormationOfType operator
@@ -13,6 +14,9 @@ const IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfT
 // DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
 const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
 
+// DoNotSendNotificationOperator represents the DoNotSendNotification operator
+const DoNotSendNotificationOperator = "DoNotSendNotification"
+
 // OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
 
@@ -20,22 +24,119 @@ type OperatorInput interface{}
 var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType: &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:   &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
+	DoNotSendNotificationOperator:     &formationconstraint.DoNotSendNotificationInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
 var JoinPointDetailsByLocation = map[formationconstraint.JoinPointLocation]formationconstraint.JoinPointDetails{
-	formationconstraint.PreAssign:                                    &formationconstraint.AssignFormationOperationDetails{},
-	formationconstraint.PostAssign:                                   &formationconstraint.AssignFormationOperationDetails{},
-	formationconstraint.PreUnassign:                                  &formationconstraint.UnassignFormationOperationDetails{},
-	formationconstraint.PostUnassign:                                 &formationconstraint.UnassignFormationOperationDetails{},
-	formationconstraint.PreCreate:                                    &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PostCreate:                                   &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PreDelete:                                    &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PostDelete:                                   &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PreGenerateFormationAssignmentNotifications:  &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{},
-	formationconstraint.PostGenerateFormationAssignmentNotifications: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{},
-	formationconstraint.PreGenerateFormationNotifications:            &formationconstraint.GenerateFormationNotificationOperationDetails{},
-	formationconstraint.PostGenerateFormationNotifications:           &formationconstraint.GenerateFormationNotificationOperationDetails{},
+	formationconstraint.PreAssign:    &formationconstraint.AssignFormationOperationDetails{},
+	formationconstraint.PostAssign:   &formationconstraint.AssignFormationOperationDetails{},
+	formationconstraint.PreUnassign:  &formationconstraint.UnassignFormationOperationDetails{},
+	formationconstraint.PostUnassign: &formationconstraint.UnassignFormationOperationDetails{},
+	formationconstraint.PreCreate:    &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PostCreate:   &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PreDelete:    &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PostDelete:   &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PreGenerateFormationAssignmentNotifications: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
+		CustomerTenantContext: &webhook.CustomerTenantContext{},
+		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: &model.ApplicationTemplate{},
+			Labels:              map[string]string{},
+		},
+		Application: &webhook.ApplicationWithLabels{
+			Application: &model.Application{
+				BaseEntity: &model.BaseEntity{},
+			},
+			Labels: map[string]string{},
+		},
+		Runtime: &webhook.RuntimeWithLabels{
+			Runtime: &model.Runtime{},
+			Labels:  map[string]string{},
+		},
+		RuntimeContext: &webhook.RuntimeContextWithLabels{
+			RuntimeContext: &model.RuntimeContext{},
+			Labels:         map[string]string{},
+		},
+		Assignment: &webhook.FormationAssignment{
+			Value: "\"\"",
+		},
+		ReverseAssignment: &webhook.FormationAssignment{
+			Value: "\"\"",
+		},
+		SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: &model.ApplicationTemplate{},
+			Labels:              map[string]string{},
+		},
+		SourceApplication: &webhook.ApplicationWithLabels{
+			Application: &model.Application{
+				BaseEntity: &model.BaseEntity{},
+			},
+			Labels: map[string]string{},
+		},
+		TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: &model.ApplicationTemplate{},
+			Labels:              map[string]string{},
+		},
+		TargetApplication: &webhook.ApplicationWithLabels{
+			Application: &model.Application{
+				BaseEntity: &model.BaseEntity{},
+			},
+			Labels: map[string]string{},
+		},
+	},
+	formationconstraint.PostGenerateFormationAssignmentNotifications: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
+		CustomerTenantContext: &webhook.CustomerTenantContext{},
+		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: &model.ApplicationTemplate{},
+			Labels:              map[string]string{},
+		},
+		Application: &webhook.ApplicationWithLabels{
+			Application: &model.Application{
+				BaseEntity: &model.BaseEntity{},
+			},
+			Labels: map[string]string{},
+		},
+		Runtime: &webhook.RuntimeWithLabels{
+			Runtime: &model.Runtime{},
+			Labels:  map[string]string{},
+		},
+		RuntimeContext: &webhook.RuntimeContextWithLabels{
+			RuntimeContext: &model.RuntimeContext{},
+			Labels:         map[string]string{},
+		},
+		Assignment: &webhook.FormationAssignment{
+			Value: "\"\"",
+		},
+		ReverseAssignment: &webhook.FormationAssignment{
+			Value: "\"\"",
+		},
+		SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: &model.ApplicationTemplate{},
+			Labels:              map[string]string{},
+		},
+		SourceApplication: &webhook.ApplicationWithLabels{
+			Application: &model.Application{
+				BaseEntity: &model.BaseEntity{},
+			},
+			Labels: map[string]string{},
+		},
+		TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: &model.ApplicationTemplate{},
+			Labels:              map[string]string{},
+		},
+		TargetApplication: &webhook.ApplicationWithLabels{
+			Application: &model.Application{
+				BaseEntity: &model.BaseEntity{},
+			},
+			Labels: map[string]string{},
+		},
+	},
+	formationconstraint.PreGenerateFormationNotifications: &formationconstraint.GenerateFormationNotificationOperationDetails{
+		CustomerTenantContext: &webhook.CustomerTenantContext{},
+	},
+	formationconstraint.PostGenerateFormationNotifications: &formationconstraint.GenerateFormationNotificationOperationDetails{
+		CustomerTenantContext: &webhook.CustomerTenantContext{},
+	},
 }
 
 // Validate validates FormationConstraintInput

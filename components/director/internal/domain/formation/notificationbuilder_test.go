@@ -345,6 +345,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 				RuntimeContext:      runtimeContext,
 				Assignment:          emptyFormationAssignment,
 				ReverseAssignment:   emptyFormationAssignment,
+				TenantID:            tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -371,6 +372,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 				RuntimeContext:      runtimeContext,
 				Assignment:          emptyFormationAssignment,
 				ReverseAssignment:   emptyFormationAssignment,
+				TenantID:            tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -397,6 +399,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 				RuntimeContext:      runtimeContext,
 				Assignment:          emptyFormationAssignment,
 				ReverseAssignment:   emptyFormationAssignment,
+				TenantID:            tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -460,7 +463,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil)
+			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil, tenantID.String())
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -530,6 +533,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 				TargetApplication:         application,
 				Assignment:                emptyFormationAssignment,
 				ReverseAssignment:         emptyFormationAssignment,
+				TenantID:                  tenantID.String(),
 			},
 			ExpectedErrMessage: "",
 		},
@@ -554,7 +558,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil)
+			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil, tenantID.String())
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

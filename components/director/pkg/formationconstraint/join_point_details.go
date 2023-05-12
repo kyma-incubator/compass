@@ -34,15 +34,14 @@ func (d *CRUDFormationOperationDetails) GetMatchingDetails() MatchingDetails {
 
 // AssignFormationOperationDetails contains details applicable to assignFormation join point
 type AssignFormationOperationDetails struct {
-	ResourceType         model.ResourceType
-	ResourceSubtype      string
-	ResourceID           string
-	FormationType        string
-	FormationTemplateID  string
-	FormationID          string
-	FormationName        string
-	TenantID             string
-	ResourceTypeLabelKey string
+	ResourceType        model.ResourceType
+	ResourceSubtype     string
+	ResourceID          string
+	FormationType       string
+	FormationTemplateID string
+	FormationID         string
+	FormationName       string
+	TenantID            string
 }
 
 // GetMatchingDetails returns matching details for AssignFormationOperationDetails

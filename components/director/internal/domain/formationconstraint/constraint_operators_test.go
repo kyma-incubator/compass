@@ -385,3 +385,200 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		})
 	}
 }
+
+func TestConstraintOperators_DoNotSendNotification(t *testing.T) {
+	ctx := context.TODO()
+	testErr := errors.New("test error")
+
+	applicationTypeLabel := "applicationType"
+	runtimeTypeLabel := "runtimeType"
+	inputAppType := "input-type"
+	inputAppID := "eb2d5110-ca3a-11ed-afa1-0242ac120002"
+	appID := "b55131c4-ca3a-11ed-afa1-0242ac120002"
+	runtimeID := "c66341c4-ca3a-11ed-afa1-0242ac120564"
+	runtimeCtxID := "f7156h4-ca3a-11ed-afa1-0242ac121237"
+
+	exceptType := "except-type"
+
+	in := &formationconstraintpkg.DoNotSendNotificationInput{
+		ResourceType:       model.ApplicationResourceType,
+		ResourceSubtype:    inputAppType,
+		ResourceID:         inputAppID,
+		SourceResourceType: model.ApplicationResourceType,
+		SourceResourceID:   appID,
+		Tenant:             testTenantID,
+		ExceptSubtypes:     []string{exceptType},
+	}
+
+	runtimeIn := &formationconstraintpkg.DoNotSendNotificationInput{
+		ResourceType:       model.ApplicationResourceType,
+		ResourceSubtype:    inputAppType,
+		ResourceID:         inputAppID,
+		SourceResourceType: model.RuntimeResourceType,
+		SourceResourceID:   runtimeID,
+		Tenant:             testTenantID,
+		ExceptSubtypes:     []string{exceptType},
+	}
+
+	runtimeContextIn := &formationconstraintpkg.DoNotSendNotificationInput{
+		ResourceType:       model.ApplicationResourceType,
+		ResourceSubtype:    inputAppType,
+		ResourceID:         inputAppID,
+		SourceResourceType: model.RuntimeContextResourceType,
+		SourceResourceID:   runtimeCtxID,
+		Tenant:             testTenantID,
+		ExceptSubtypes:     []string{exceptType},
+	}
+
+	testCases := []struct {
+		Name               string
+		Input              formationconstraint.OperatorInput
+		LabelSvc           func() *automock.LabelService
+		RuntimeContextRepo func() *automock.RuntimeContextRepo
+		ExpectedResult     bool
+		ExpectedErrorMsg   string
+	}{
+		{
+			Name:  "Success for a system when notifications should be skipped",
+			Input: in,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
+				return svc
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name: "Success when all notifications should be skipped",
+			Input: &formationconstraintpkg.DoNotSendNotificationInput{
+				ResourceType:       model.ApplicationResourceType,
+				ResourceSubtype:    inputAppType,
+				ResourceID:         inputAppID,
+				SourceResourceType: model.ApplicationResourceType,
+				SourceResourceID:   appID,
+				Tenant:             testTenantID,
+			},
+			LabelSvc: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:  "Success for a system that is excepted and notifications should NOT be skipped",
+			Input: in,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(&model.Label{Value: exceptType}, nil).Once()
+				return svc
+			},
+			ExpectedResult:   true,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:  "Error for a system if get label fail",
+			Input: in,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(nil, testErr).Once()
+				return svc
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:  "Success for runtime when notifications should be skipped",
+			Input: runtimeIn,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
+				return svc
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:  "Error for runtime if get label fail",
+			Input: runtimeIn,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(nil, testErr).Once()
+				return svc
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:  "Success for runtime context when notifications should be skipped",
+			Input: runtimeContextIn,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
+				return svc
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
+				repo := &automock.RuntimeContextRepo{}
+				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(&model.RuntimeContext{RuntimeID: runtimeID}, nil).Once()
+				return repo
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:  "Error for runtime context when get rt ctx fails",
+			Input: runtimeContextIn,
+			LabelSvc: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
+				repo := &automock.RuntimeContextRepo{}
+				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:  "Error for runtime context if runtime get label fail",
+			Input: runtimeContextIn,
+			LabelSvc: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(nil, testErr).Once()
+				return svc
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
+				repo := &automock.RuntimeContextRepo{}
+				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(&model.RuntimeContext{RuntimeID: runtimeID}, nil).Once()
+				return repo
+			},
+			ExpectedResult:   false,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelSvc := testCase.LabelSvc()
+			var runtimeContextRepo *automock.RuntimeContextRepo
+			if testCase.RuntimeContextRepo != nil {
+				runtimeContextRepo = testCase.RuntimeContextRepo()
+			}
+			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, runtimeType, applicationType)
+
+			result, err := engine.DoNotSendNotification(ctx, testCase.Input)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				assert.Equal(t, testCase.ExpectedResult, result)
+				assert.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, labelSvc)
+			if runtimeContextRepo != nil {
+				runtimeContextRepo.AssertExpectations(t)
+			}
+		})
+	}
+}
