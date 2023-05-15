@@ -21,8 +21,8 @@ type DoesNotContainResourceOfSubtypeInput struct {
 	Tenant          string             `json:"tenant"`
 }
 
-// DoNotSendNotificationInput input for DoNotSendNotification operator
-type DoNotSendNotificationInput struct {
+// DoNotGenerateFormationAssignmentNotificationInput input for DoNotGenerateFormationAssignmentNotification operator
+type DoNotGenerateFormationAssignmentNotificationInput struct {
 	ResourceType         model.ResourceType `json:"resource_type"`
 	ResourceSubtype      string             `json:"resource_subtype"`
 	ResourceID           string             `json:"resource_id"`

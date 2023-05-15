@@ -86,17 +86,17 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 		runtimeContextRepo:    runtimeContextRepo,
 		formationTemplateRepo: formationTemplateRepo,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
-			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
-			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
-			DoNotSendNotificationOperator:             NewDoNotSendNotificationInput,
+			IsNotAssignedToAnyFormationOfTypeOperator:            NewIsNotAssignedToAnyFormationOfTypeInput,
+			DoesNotContainResourceOfSubtypeOperator:              NewDoesNotContainResourceOfSubtypeInput,
+			DoNotGenerateFormationAssignmentNotificationOperator: NewDoNotGenerateFormationAssignmentNotificationInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 	c.operators = map[OperatorName]OperatorFunc{
-		IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType,
-		DoesNotContainResourceOfSubtypeOperator:   c.DoesNotContainResourceOfSubtype,
-		DoNotSendNotificationOperator:             c.DoNotSendNotification,
+		IsNotAssignedToAnyFormationOfTypeOperator:            c.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:              c.DoesNotContainResourceOfSubtype,
+		DoNotGenerateFormationAssignmentNotificationOperator: c.DoNotGenerateFormationAssignmentNotification,
 	}
 	return c
 }

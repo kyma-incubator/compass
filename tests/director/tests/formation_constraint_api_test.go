@@ -16,7 +16,7 @@ import (
 const (
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 	DoesNotContainResourceOfSubtypeOperator   = "DoesNotContainResourceOfSubtype"
-	DoNotSendNotificationOperator = "DoNotSendNotification"
+	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 )
 
 func TestCreateFormationConstraint(t *testing.T) {

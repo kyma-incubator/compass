@@ -2420,7 +2420,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Nil(t, nonexistentFormation)
 	})
 
-	t.Run("App to App Notifications are skipped if DoNotSendNotification constraints is attached to the formation type", func(t *testing.T) {
+	t.Run("App to App Notifications are skipped if DoNotGenerateFormationAssignmentNotification constraints is attached to the formation type", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -2437,10 +2437,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
 		in := graphql.FormationConstraintInput{
-			Name:            "TestDoNotSendNotifications",
+			Name:            "TestDoNotGenerateFormationAssignmentNotifications",
 			ConstraintType:  graphql.ConstraintTypePre,
 			TargetOperation: graphql.TargetOperationGenerateFormationAssignmentNotification,
-			Operator:        DoNotSendNotificationOperator,
+			Operator:        DoNotGenerateFormationAssignmentNotificationOperator,
 			ResourceType:    graphql.ResourceTypeApplication,
 			ResourceSubtype: applicationType1,
 			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{if .SourceApplication}}APPLICATION{{else if .RuntimeContext}}RUNTIME_CONTEXT{{else}}RUNTIME{{end}}\\\",\\\"source_resource_id\\\": \\\"{{if .SourceApplication}}{{.SourceApplication.ID}}{{else if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\",\\\"except_subtypes\\\": [\\\"%s\\\"]}", exceptionSystemType),
@@ -2517,7 +2517,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &exceptionTypeApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, exceptionTypeApp.ID)
-		t.Logf("exceptionTypeApp ID: %q", exceptionTypeApp.ID)
+		t.Logf("Successfully created exception type application with ID %q", exceptionTypeApp.ID)
 
 		t.Logf("Assign application 3 (exception one) to formation %s", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, exceptionTypeApp.ID, graphql.FormationObjectTypeApplication, tnt)
@@ -2671,7 +2671,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 
-	t.Run("App to App Notifications are skipped if DoNotSendNotification constraints is globally attached", func(t *testing.T) {
+	t.Run("App to App Notifications are skipped if DoNotGenerateFormationAssignmentNotification constraints is globally attached", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -2688,10 +2688,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
 		in := graphql.FormationConstraintInput{
-			Name:            "TestDoNotSendNotifications",
+			Name:            "TestDoNotGenerateFormationAssignmentNotifications",
 			ConstraintType:  graphql.ConstraintTypePre,
 			TargetOperation: graphql.TargetOperationGenerateFormationAssignmentNotification,
-			Operator:        DoNotSendNotificationOperator,
+			Operator:        DoNotGenerateFormationAssignmentNotificationOperator,
 			ResourceType:    graphql.ResourceTypeApplication,
 			ResourceSubtype: applicationType1,
 			InputTemplate:   fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{if .SourceApplication}}APPLICATION{{else if .RuntimeContext}}RUNTIME_CONTEXT{{else}}RUNTIME{{end}}\\\",\\\"source_resource_id\\\": \\\"{{if .SourceApplication}}{{.SourceApplication.ID}}{{else if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"formation_template_id\\\":\\\"{{.FormationTemplateID}}\\\",\\\"except_formation_types\\\": [\\\"%s\\\"]}", formationTmplName),

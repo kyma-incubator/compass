@@ -15,8 +15,8 @@ const (
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtypeOperator represents the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtypeOperator = "DoesNotContainResourceOfSubtype"
-	// DoNotSendNotificationOperator represents the DoNotSendNotification operator
-	DoNotSendNotificationOperator = "DoNotSendNotification"
+	// DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
+	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 )
 
 // OperatorName represents the constraint operator name
@@ -41,9 +41,9 @@ func NewDoesNotContainResourceOfSubtypeInput() OperatorInput {
 	return &formationconstraint.DoesNotContainResourceOfSubtypeInput{}
 }
 
-// NewDoNotSendNotificationInput is input constructor for DoNotSendNotificationOperator operator. It returns empty OperatorInput
-func NewDoNotSendNotificationInput() OperatorInput {
-	return &formationconstraint.DoNotSendNotificationInput{}
+// NewDoNotGenerateFormationAssignmentNotificationInput is input constructor for DoNotGenerateFormationAssignmentNotificationOperator operator. It returns empty OperatorInput
+func NewDoNotGenerateFormationAssignmentNotificationInput() OperatorInput {
+	return &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{}
 }
 
 // IsNotAssignedToAnyFormationOfType is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
@@ -117,12 +117,12 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 		}
 
 		for _, application := range applications {
-			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, e.applicationTypeLabelKey)
+			appSubtype, err := e.getObjectSubtype(ctx, i.Tenant, model.ApplicationResourceType, application.ID)
 			if err != nil {
-				return false, errors.Wrapf(err, "while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, application.ID, i.Tenant)
+				return false, errors.Wrapf(err, "while getting subtype of resource with type: %q and id: %q", model.ApplicationResourceType, application.ID)
 			}
 
-			if i.ResourceSubtype == appTypeLbl.Value.(string) {
+			if i.ResourceSubtype == appSubtype {
 				return false, nil
 			}
 		}
@@ -133,16 +133,16 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 	return true, nil
 }
 
-// DoNotSendNotification is a constraint operator. It skips notifications
-func (e *ConstraintEngine) DoNotSendNotification(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Executing operator: %q", DoNotSendNotificationOperator)
+// DoNotGenerateFormationAssignmentNotification is a constraint operator. It skips the generation of formation assignment notifications
+func (e *ConstraintEngine) DoNotGenerateFormationAssignmentNotification(ctx context.Context, input OperatorInput) (bool, error) {
+	log.C(ctx).Infof("Executing operator: %q", DoNotGenerateFormationAssignmentNotificationOperator)
 
-	i, ok := input.(*formationconstraint.DoNotSendNotificationInput)
+	i, ok := input.(*formationconstraint.DoNotGenerateFormationAssignmentNotificationInput)
 	if !ok {
-		return false, errors.Errorf("Incompatible input for operator %q", DoNotSendNotificationOperator)
+		return false, errors.Errorf("Incompatible input for operator %q", DoNotGenerateFormationAssignmentNotificationOperator)
 	}
 
-	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", DoNotSendNotificationOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
+	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", DoNotGenerateFormationAssignmentNotificationOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
 
 	if len(i.ExceptFormationTypes) > 0 {
 		formationTemplate, err := e.formationTemplateRepo.Get(ctx, i.FormationTemplateID)
@@ -157,36 +157,13 @@ func (e *ConstraintEngine) DoNotSendNotification(ctx context.Context, input Oper
 	}
 
 	if len(i.ExceptSubtypes) == 0 {
-		log.C(ctx).Infof("Skipping notifications to target resource of type: %q, subtype: %q and ID: %q for source resource of type %q and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, i.SourceResourceID)
+		log.C(ctx).Infof("Skipping notifications to target resource of type: %q, subtype: %q and ID: %q for source resource of type: %q and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, i.SourceResourceID)
 		return false, nil
 	}
 
-	var sourceSubType string
-	switch i.SourceResourceType {
-	case model.ApplicationResourceType:
-		appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.SourceResourceID, e.applicationTypeLabelKey)
-		if err != nil {
-			return false, errors.Wrapf(err, "while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, i.SourceResourceID, i.Tenant)
-		}
-		sourceSubType = appTypeLbl.Value.(string)
-	case model.RuntimeResourceType:
-		rtTypeLabel, err := e.labelService.GetByKey(ctx, i.Tenant, model.RuntimeLabelableObject, i.SourceResourceID, e.runtimeTypeLabelKey)
-		if err != nil {
-			return false, errors.Wrapf(err, "while getting label with key %q of runtime with ID %q in tenant %q", e.runtimeTypeLabelKey, i.SourceResourceID, i.Tenant)
-		}
-		sourceSubType = rtTypeLabel.Value.(string)
-	case model.RuntimeContextResourceType:
-		rtCtx, err := e.runtimeContextRepo.GetByID(ctx, i.Tenant, i.SourceResourceID)
-		if err != nil {
-			return false, errors.Wrapf(err, "while getting runtime context with ID %q in tenant %q", i.SourceResourceID, i.Tenant)
-		}
-		rtTypeLabel, err := e.labelService.GetByKey(ctx, i.Tenant, model.RuntimeLabelableObject, rtCtx.RuntimeID, e.runtimeTypeLabelKey)
-		if err != nil {
-			return false, errors.Wrapf(err, "while getting label with key %q of runtime with ID %q in tenant %q", e.runtimeTypeLabelKey, rtCtx.RuntimeID, i.Tenant)
-		}
-		sourceSubType = rtTypeLabel.Value.(string)
-	default:
-		return false, errors.Errorf("Unsupported resource type %q", i.SourceResourceID)
+	sourceSubType, err := e.getObjectSubtype(ctx, i.Tenant, i.SourceResourceType, i.SourceResourceID)
+	if err != nil {
+		return false, errors.Wrapf(err, "while getting subtype of resource with type: %q and id: %q", i.SourceResourceType, i.SourceResourceID)
 	}
 
 	for _, exceptSubtype := range i.ExceptSubtypes {
@@ -195,7 +172,7 @@ func (e *ConstraintEngine) DoNotSendNotification(ctx context.Context, input Oper
 		}
 	}
 
-	log.C(ctx).Infof("Skipping notifications to target resource of type: %q, subtype: %q and ID: %q for source resource of type %q, subtype: %q, and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, sourceSubType, i.SourceResourceID)
+	log.C(ctx).Infof("Skipping notifications to target resource of type: %q, subtype: %q and ID: %q for source resource of type: %q, subtype: %q, and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, sourceSubType, i.SourceResourceID)
 	return false, nil
 }
 
@@ -224,4 +201,33 @@ func (e *ConstraintEngine) isAllowedToParticipateInFormationsOfType(ctx context.
 	}
 
 	return true, nil
+}
+
+func (e *ConstraintEngine) getObjectSubtype(ctx context.Context, tenant string, objectType model.ResourceType, objectID string) (string, error) {
+	switch objectType {
+	case model.ApplicationResourceType:
+		appTypeLbl, err := e.labelService.GetByKey(ctx, tenant, model.ApplicationLabelableObject, objectID, e.applicationTypeLabelKey)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, objectID, tenant)
+		}
+		return appTypeLbl.Value.(string), nil
+	case model.RuntimeResourceType:
+		rtTypeLabel, err := e.labelService.GetByKey(ctx, tenant, model.RuntimeLabelableObject, objectID, e.runtimeTypeLabelKey)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting label with key %q of runtime with ID %q in tenant %q", e.runtimeTypeLabelKey, objectID, tenant)
+		}
+		return rtTypeLabel.Value.(string), nil
+	case model.RuntimeContextResourceType:
+		rtCtx, err := e.runtimeContextRepo.GetByID(ctx, tenant, objectID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting runtime context with ID %q in tenant %q", objectID, tenant)
+		}
+		rtTypeLabel, err := e.labelService.GetByKey(ctx, tenant, model.RuntimeLabelableObject, rtCtx.RuntimeID, e.runtimeTypeLabelKey)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting label with key %q of runtime with ID %q in tenant %q", e.runtimeTypeLabelKey, rtCtx.RuntimeID, tenant)
+		}
+		return rtTypeLabel.Value.(string), nil
+	default:
+		return "", errors.Errorf("Unsupported resource type %q", objectID)
+	}
 }
