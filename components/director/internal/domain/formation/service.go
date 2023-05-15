@@ -567,14 +567,6 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 		return nil, err
 	}
 
-	resourceTypeLabelKey := ""
-	switch objectType {
-	case graphql.FormationObjectTypeApplication:
-		resourceTypeLabelKey = s.applicationTypeLabelKey
-	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		resourceTypeLabelKey = s.runtimeTypeLabelKey
-	}
-
 	joinPointDetails := &formationconstraint.AssignFormationOperationDetails{
 		ResourceType:         model.ResourceType(objectType),
 		ResourceSubtype:      resourceSubtype,
@@ -584,7 +576,6 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 		FormationID:          formation.ID,
 		FormationName:        formation.Name,
 		TenantID:             tnt,
-		ResourceTypeLabelKey: resourceTypeLabelKey,
 	}
 	return joinPointDetails, nil
 }
