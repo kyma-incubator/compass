@@ -104,7 +104,7 @@ func (s *service) ListForApplication(ctx context.Context, applicationID string) 
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, applicationID, model.ApplicationWebhookReference)
 }
 
-// ListForApplicationGlobal missing godoc
+// ListForApplicationGlobal lists all webhooks for application without tenant restrictions
 func (s *service) ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
 	return s.webhookRepo.ListByReferenceObjectIDGlobal(ctx, applicationID, model.ApplicationWebhookReference)
 }
@@ -202,6 +202,8 @@ func (s *service) Delete(ctx context.Context, id string, objectType model.Webhoo
 	return s.webhookRepo.Delete(ctx, webhook.ID)
 }
 
+// EnrichWebhooksWithTenantMappingWebhooks enriches webhook inputs with tenant mapping webhooks based on the tenant mapping
+// configuration. In order to be enriched, the input webhooks should contain Version, URL and Mode
 func (s *service) EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.WebhookInput) ([]*graphql.WebhookInput, error) {
 	webhooks := make([]*graphql.WebhookInput, 0)
 	for _, w := range in {

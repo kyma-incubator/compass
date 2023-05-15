@@ -756,7 +756,7 @@ func (s *Service) processBundles(ctx context.Context, app *model.Application, bu
 
 		credentialExchangeStrategies, err := bndl.CredentialExchangeStrategies.MarshalJSON()
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while marshalling credential exchange strategies for application with ID %s", app.ID)
 		}
 
 		for _, credentialExchangeStrategy := range gjson.ParseBytes(credentialExchangeStrategies).Array() {
@@ -769,7 +769,7 @@ func (s *Service) processBundles(ctx context.Context, app *model.Application, bu
 
 			currentHash, err := HashObject(credentialExchangeStrategy)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "while hasing credential exchange strategy for application with ID %s", app.ID)
 			}
 
 			if credentialExchangeStrategyHashCurrent != 0 && currentHash != credentialExchangeStrategyHashCurrent {
@@ -825,7 +825,7 @@ func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFro
 
 func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentialExchangeStrategyJSON gjson.Result, appID string) error {
 	if !credentialExchangeStrategyJSON.IsObject() {
-		log.C(ctx).Debugf("There are no tenant mapping to resync")
+		log.C(ctx).Debugf("There are no tenant mappings to resync")
 		return nil
 	}
 
@@ -845,29 +845,31 @@ func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentia
 		Version: str.Ptr(tenantMappingData.Version),
 	}
 
+	log.C(ctx).Infof("Enriching tenant mapping webhooks for application with ID %s", appID)
+
 	enrichedWhs, err := s.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks([]*graphql.WebhookInput{whInput})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while enriching webhooks with tenant mappnig webhooks for application with ID %s", appID)
 	}
 
-	ctxWithNoTenant := context.Background()
+	ctxWithoutTenant := context.Background()
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
 	}
-	defer s.transact.RollbackUnlessCommitted(ctxWithNoTenant, tx)
+	defer s.transact.RollbackUnlessCommitted(ctxWithoutTenant, tx)
 
-	ctxWithNoTenant = persistence.SaveToContext(ctxWithNoTenant, tx)
-	ctxWithNoTenant = tenant.SaveToContext(ctxWithNoTenant, "", "")
+	ctxWithoutTenant = persistence.SaveToContext(ctxWithoutTenant, tx)
+	ctxWithoutTenant = tenant.SaveToContext(ctxWithoutTenant, "", "")
 
-	appWebhooksFromDB, err := s.webhookSvc.ListForApplicationGlobal(ctxWithNoTenant, appID)
+	appWebhooksFromDB, err := s.webhookSvc.ListForApplicationGlobal(ctxWithoutTenant, appID)
 	if err != nil {
 		return errors.Wrapf(err, "while listing webhooks from application with ID %s", appID)
 	}
 
 	tenantMappingRelatedWebhooksFromDB := make([]*model.Webhook, 0)
 	enrichedWhModels := make([]*model.Webhook, 0)
-	enrichedWhsModelInputs := make([]*model.WebhookInput, 0)
+	enrichedWhModelInputs := make([]*model.WebhookInput, 0)
 
 	for _, wh := range enrichedWhs {
 		convertedIn, err := s.webhookConverter.InputFromGraphQL(wh)
@@ -875,7 +877,7 @@ func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentia
 			return errors.Wrap(err, "while converting the WebhookInput")
 		}
 
-		enrichedWhsModelInputs = append(enrichedWhsModelInputs, convertedIn)
+		enrichedWhModelInputs = append(enrichedWhModelInputs, convertedIn)
 
 		whModel := convertedIn.ToWebhook("", "", "")
 
@@ -907,23 +909,23 @@ func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentia
 	}
 
 	if strconv.FormatUint(appWhsFromDBHash, 10) == strconv.FormatUint(enrichedHash, 10) {
-		log.C(ctxWithNoTenant).Infof("There are no differences in tenant mapping webhooks from the DB and the ORD document")
+		log.C(ctxWithoutTenant).Infof("There are no differences in tenant mapping webhooks from the DB and the ORD document")
 
 		return tx.Commit()
 	}
 
-	log.C(ctxWithNoTenant).Infof("There are differences in tenant mapping webhooks from the DB and the ORD document. Continuing the sync.")
+	log.C(ctxWithoutTenant).Infof("There are differences in tenant mapping webhooks from the DB and the ORD document. Continuing the sync.")
 	for _, webhook := range tenantMappingRelatedWebhooksFromDB {
-		log.C(ctxWithNoTenant).Infof("Deleting webhook with ID %s for application %s", webhook.ID, appID)
-		if err = s.webhookSvc.Delete(ctxWithNoTenant, webhook.ID, webhook.ObjectType); err != nil {
+		log.C(ctxWithoutTenant).Infof("Deleting webhook with ID %s for application %s", webhook.ID, appID)
+		if err = s.webhookSvc.Delete(ctxWithoutTenant, webhook.ID, webhook.ObjectType); err != nil {
 			log.C(ctx).Errorf("error while deleting webhook with ID %s", webhook.ID)
 			return errors.Wrapf(err, "while deleting webhook with ID %s", webhook.ID)
 		}
 	}
 
-	for _, webhook := range enrichedWhsModelInputs {
-		log.C(ctxWithNoTenant).Infof("Creating webhook with type %s for application %s", webhook.Type, appID)
-		if _, err = s.webhookSvc.Create(ctxWithNoTenant, appID, *webhook, model.ApplicationWebhookReference); err != nil {
+	for _, webhook := range enrichedWhModelInputs {
+		log.C(ctxWithoutTenant).Infof("Creating webhook with type %s for application %s", webhook.Type, appID)
+		if _, err = s.webhookSvc.Create(ctxWithoutTenant, appID, *webhook, model.ApplicationWebhookReference); err != nil {
 			log.C(ctx).Errorf("error while creating webhook for app %s with type %s", appID, webhook.Type)
 			return errors.Wrapf(err, "error while creating webhook for app %s with type %s", appID, webhook.Type)
 		}
