@@ -109,6 +109,7 @@ func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationGeneration(
 	operation model.FormationOperation,
 	formationID string,
+	formationTemplateID string,
 	applicationTemplate *webhookdir.ApplicationTemplateWithLabels,
 	application *webhookdir.ApplicationWithLabels,
 	runtime *webhookdir.RuntimeWithLabels,
@@ -117,10 +118,12 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	reverseAssignment *webhookdir.FormationAssignment,
 	targetType model.ResourceType,
 	tenantContext *webhookdir.CustomerTenantContext,
+	tenantID string,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:             operation,
 		FormationID:           formationID,
+		FormationTemplateID:   formationTemplateID,
 		CustomerTenantContext: tenantContext,
 		ApplicationTemplate:   applicationTemplate,
 		Application:           application,
@@ -129,6 +132,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 		Assignment:            assignment,
 		ReverseAssignment:     reverseAssignment,
 		ResourceType:          targetType,
+		TenantID:              tenantID,
 	}
 	switch targetType {
 	case model.ApplicationResourceType:
@@ -169,6 +173,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 	operation model.FormationOperation,
 	formationID string,
+	formationTemplateID string,
 	sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels,
 	sourceApplication *webhookdir.ApplicationWithLabels,
 	targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels,
@@ -176,10 +181,12 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	assignment *webhookdir.FormationAssignment,
 	reverseAssignment *webhookdir.FormationAssignment,
 	tenantContext *webhookdir.CustomerTenantContext,
+	tenantID string,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 operation,
 		FormationID:               formationID,
+		FormationTemplateID:       formationTemplateID,
 		CustomerTenantContext:     tenantContext,
 		SourceApplicationTemplate: sourceApplicationTemplate,
 		SourceApplication:         sourceApplication,
@@ -189,6 +196,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 		ReverseAssignment:         reverseAssignment,
 		ResourceType:              model.ApplicationResourceType,
 		ResourceID:                targetApplication.ID,
+		TenantID:                  tenantID,
 	}
 
 	subtype, err := determineResourceSubtype(targetApplication.Labels, nb.applicationTypeLabelKey)
