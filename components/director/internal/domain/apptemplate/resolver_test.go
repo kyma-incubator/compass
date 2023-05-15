@@ -613,7 +613,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return appTemplateConv
 			},
 			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndWebhook.Webhooks, gqlAppTemplateInputWithProviderAndWebhook.Webhooks),
+			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndWebhook.Webhooks, fixEnrichedTenantMappedWebhooks()),
 			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
 			Ctx:              ctxWithTokenConsumer,
 			Input:            gqlAppTemplateInputWithProviderAndWebhook,
