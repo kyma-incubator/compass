@@ -2,8 +2,11 @@ package webhook_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -92,7 +95,7 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 
-			svc := webhook.NewService(repo, nil, uidSvc, nil)
+			svc := webhook.NewService(repo, nil, uidSvc, nil, nil, "")
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
@@ -111,7 +114,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
 		// WHEN
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -223,7 +226,7 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 			tenantSvc := testCase.TenantSvcFn()
-			svc := webhook.NewService(repo, nil, uidSvc, tenantSvc)
+			svc := webhook.NewService(repo, nil, uidSvc, tenantSvc, nil, "")
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, model.FormationTemplateWebhookReference)
@@ -242,7 +245,7 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
 		// WHEN
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -292,7 +295,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			actual, err := svc.Get(ctx, id, model.ApplicationWebhookReference)
@@ -354,7 +357,7 @@ func TestService_ListForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			webhooks, err := svc.ListForApplication(ctx, applicationID)
@@ -372,7 +375,7 @@ func TestService_ListForApplication(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -423,7 +426,7 @@ func TestService_ListForRuntime(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			webhooks, err := svc.ListForRuntime(ctx, runtimeID)
@@ -441,7 +444,7 @@ func TestService_ListForRuntime(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
 		// WHEN
 		_, err := svc.ListForRuntime(context.TODO(), givenRuntimeID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -491,7 +494,7 @@ func TestService_ListForApplicationTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			webhooks, err := svc.ListForApplicationTemplate(ctx, applicationTemplateID)
@@ -576,7 +579,7 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			webhooks, err := svc.ListForFormationTemplate(ctx, testCase.Tenant, formationTemplateID)
@@ -749,7 +752,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			webhookRepo := testCase.WebhookRepositoryFn()
 			applicationRepo := testCase.ApplicationRepositoryFn()
-			svc := webhook.NewService(webhookRepo, applicationRepo, nil, nil)
+			svc := webhook.NewService(webhookRepo, applicationRepo, nil, nil, nil, "")
 
 			// WHEN
 			webhooks, err := svc.ListAllApplicationWebhooks(ctx, application.ID)
@@ -769,7 +772,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -868,7 +871,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.WebhookRepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			err := svc.Update(testCase.Context, id, *modelInput, testCase.WebhookType)
@@ -884,7 +887,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil, nil, "")
 		// WHEN
 		err := svc.Update(context.TODO(), givenApplicationID(), model.WebhookInput{}, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -942,7 +945,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
 
 			// WHEN
 			err := svc.Delete(ctx, id, model.ApplicationWebhookReference)
@@ -957,4 +960,107 @@ func TestService_Delete(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+}
+
+func TestService_EnrichWebhooksWithTenantMappingWebhooks(t *testing.T) {
+	// GIVEN
+	//testErr := errors.New("Test error")
+	callbackURL := "http://callback.url"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+	webhookWithoutURL := fixTenantMappedWebhooks()
+	webhookWithoutURL[0].URL = nil
+
+	webhookWithoutMode := fixTenantMappedWebhooks()
+	webhookWithoutMode[0].Mode = nil
+
+	testCases := []struct {
+		Name                  string
+		TenantMappingConfigFn func() map[string]interface{}
+		Input                 []*graphql.WebhookInput
+		Output                []*graphql.WebhookInput
+		ExpectedErrMessage    string
+	}{
+		{
+			Name:                  "Success",
+			TenantMappingConfigFn: fixTenantMappingConfig,
+			Input:                 fixTenantMappedWebhooks(),
+			Output:                fixEnrichedTenantMappedWebhooks(),
+		},
+		{
+			Name:                  "Success for ASYNC_CALLBACK mode",
+			TenantMappingConfigFn: fixTenantMappingConfigForAsyncCallback,
+			Input:                 fixTenantMappedWebhooksForAsyncCallbackMode(),
+			Output:                fixEnrichedTenantMappedWebhooksForAsyncCallbackMode(callbackURL),
+		},
+		{
+			Name:                  "Should not enrich webhooks if they do not have version",
+			TenantMappingConfigFn: fixTenantMappingConfig,
+			Input:                 []*graphql.WebhookInput{fixGQLWebhookInput(testURL)},
+			Output:                []*graphql.WebhookInput{fixGQLWebhookInput(testURL)},
+		},
+		{
+			Name:                  "Should throw error when tenant mapping webhook does not have a URL",
+			TenantMappingConfigFn: fixTenantMappingConfig,
+			Input:                 webhookWithoutURL,
+			ExpectedErrMessage:    "url and mode are required fields when version is provided",
+		},
+		{
+			Name:                  "Should throw error when tenant mapping webhook does not have a Mode",
+			TenantMappingConfigFn: fixTenantMappingConfig,
+			Input:                 webhookWithoutMode,
+			ExpectedErrMessage:    "url and mode are required fields when version is provided",
+		},
+		{
+			Name:                  "Should throw error when tenant mapping webhook version and mode does not match the tenant mapping config",
+			TenantMappingConfigFn: fixEmptyTenantMappingConfig,
+			Input:                 fixTenantMappedWebhooks(),
+			ExpectedErrMessage:    "missing tenant mapping configuration for mode SYNC",
+		},
+		{
+			Name:                  "Should throw error when tenant mapping configuration is not a map",
+			TenantMappingConfigFn: fixInvalidTenantMappingConfig,
+			Input:                 fixTenantMappedWebhooks(),
+			ExpectedErrMessage:    "unexpected mode type, should be a map, but was string",
+		},
+		{
+			Name:                  "Should throw error when tenant mapping configuration is not a map",
+			TenantMappingConfigFn: fixInvalidTenantMappingConfig,
+			Input:                 fixTenantMappedWebhooks(),
+			ExpectedErrMessage:    "unexpected mode type, should be a map, but was string",
+		},
+		{
+			Name:                  "Should throw error when tenant mapping webhook has a version that is not supported",
+			TenantMappingConfigFn: fixTenantMappingConfig,
+			Input:                 fixTenantMappedWebhooksWithInvalidVersion(),
+			ExpectedErrMessage:    "missing tenant mapping configuration for mode SYNC and version notfound",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantMappingConfig := testCase.TenantMappingConfigFn()
+			svc := webhook.NewService(nil, nil, nil, nil, tenantMappingConfig, callbackURL)
+
+			// WHEN
+			result, err := svc.EnrichWebhooksWithTenantMappingWebhooks(testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				require.Equal(t, testCase.Output, result)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
+	}
+}
+
+func GetTenantMappingConfig(config string) map[string]interface{} {
+	var tenantMappingConfig map[string]interface{}
+	if err := json.Unmarshal([]byte(config), &tenantMappingConfig); err != nil {
+		return nil
+	}
+	return tenantMappingConfig
 }

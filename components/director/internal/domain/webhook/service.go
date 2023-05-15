@@ -211,7 +211,7 @@ func (s *service) EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.WebhookI
 		}
 
 		if w.URL == nil || w.Mode == nil {
-			return nil, errors.Errorf("url and mode are required fields when version is provided")
+			return nil, errors.New("url and mode are required fields when version is provided")
 		}
 		tenantMappingWebhooks, err := s.getTenantMappingWebhooks(w.Mode.String(), *w.Version)
 		if err != nil {

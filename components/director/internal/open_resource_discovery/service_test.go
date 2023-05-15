@@ -2,6 +2,8 @@ package ord_test
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -55,7 +57,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	bundlePreSanitizedHash, err := ord.HashObject(fixORDDocument().ConsumptionBundles[0])
 	require.NoError(t, err)
 
-	successfulWebhookConvertion := func() *automock.WebhookConverter {
+	successfulWebhookConversion := func() *automock.WebhookConverter {
 		whConv := &automock.WebhookConverter{}
 		whConv.On("InputFromGraphQL", fixTenantMappingWebhookGraphQLInput()).Return(fixTenantMappingWebhookModelInput(), nil).Once()
 		return whConv
@@ -102,6 +104,23 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
+		return bundlesSvc
+	}
+
+	successfulBundleCreateWithGenericParam := func() *automock.BundleService {
+		bundlesSvc := &automock.BundleService{}
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, mock.Anything, mock.Anything).Return("", nil).Once()
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
+		return bundlesSvc
+	}
+
+	successfulListTwiceAndCeateBundle := func() *automock.BundleService {
+		bundlesSvc := &automock.BundleService{}
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, mock.Anything, mock.Anything).Return("", nil).Once()
 		return bundlesSvc
 	}
 
@@ -523,7 +542,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConvertion,
+			webhookConvFn:  successfulWebhookConversion,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
@@ -559,7 +578,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConvertion,
+			webhookConvFn:  successfulWebhookConversion,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
@@ -602,7 +621,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -642,7 +661,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return appSvc
 			},
 			tenantSvcFn:    successfulTenantSvc,
-			webhookConvFn:  successfulWebhookConvertion,
+			webhookConvFn:  successfulWebhookConversion,
 			webhookSvcFn:   successfulAppTemplateTenantMappingOnlyCreation,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
@@ -683,7 +702,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -724,7 +743,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -1114,7 +1133,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConvertion,
+			webhookConvFn:  successfulWebhookConversion,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
@@ -1213,7 +1232,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -1321,7 +1340,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -1376,7 +1395,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -1429,7 +1448,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -1861,7 +1880,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion,
+			webhookConvFn: successfulWebhookConversion,
 			productSvcFn:  successfulProductUpdate,
 			vendorSvcFn:   successfulVendorUpdate,
 			packageSvcFn:  successfulPackageUpdate,
@@ -1938,6 +1957,289 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
+			Name: "Does not resync resources if bundle have different tenant mapping configuration",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(15)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(15)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true)
+				return persistTx, transact
+			},
+			appSvcFn:     successfulAppGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			packageSvcFn: successfulPackageCreate,
+			bundleSvcFn:  successfulListTwiceAndCeateBundle,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithMultipleSameTypesFormat, credentialExchangeStrategyType, credentialExchangeStrategyType))
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
+				return client
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return eventSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Does not resync resources if webhooks could not be enriched",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(15)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(15)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true)
+				return persistTx, transact
+			},
+			appSvcFn:    successfulAppGet,
+			tenantSvcFn: successfulTenantSvc,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whInputs := []*graphql.WebhookInput{fixTenantMappingWebhookGraphQLInput()}
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("EnrichWebhooksWithTenantMappingWebhooks", whInputs).Return(nil, testErr).Once()
+				return whSvc
+			},
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			packageSvcFn: successfulPackageCreate,
+			bundleSvcFn:  successfulListTwiceAndCeateBundle,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
+				return client
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return eventSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Does not resync resources if webhooks cannot be listed for application",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(15)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(16)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true)
+				return persistTx, transact
+			},
+			appSvcFn:    successfulAppGet,
+			tenantSvcFn: successfulTenantSvc,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whInputs := []*graphql.WebhookInput{fixTenantMappingWebhookGraphQLInput()}
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("EnrichWebhooksWithTenantMappingWebhooks", whInputs).Return(whInputs, nil).Once()
+				whSvc.On("ListForApplicationGlobal", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+
+				return whSvc
+			},
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			packageSvcFn: successfulPackageCreate,
+			bundleSvcFn:  successfulListTwiceAndCeateBundle,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
+				return client
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return eventSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Does not resync resources if webhooks cannot be converted from graphql input to model input",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(15)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(16)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true)
+				return persistTx, transact
+			},
+			appSvcFn:    successfulAppGet,
+			tenantSvcFn: successfulTenantSvc,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whInputs := []*graphql.WebhookInput{fixTenantMappingWebhookGraphQLInput()}
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("EnrichWebhooksWithTenantMappingWebhooks", whInputs).Return(whInputs, nil).Once()
+				whSvc.On("ListForApplicationGlobal", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooksForApplication(), nil).Once()
+
+				return whSvc
+			},
+			webhookConvFn: func() *automock.WebhookConverter {
+				whConv := &automock.WebhookConverter{}
+				whConv.On("InputFromGraphQL", fixTenantMappingWebhookGraphQLInput()).Return(nil, testErr).Once()
+				return whConv
+			},
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			packageSvcFn: successfulPackageCreate,
+			bundleSvcFn:  successfulListTwiceAndCeateBundle,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
+				return client
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return eventSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Does not resync resources if webhooks cannot be created",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(15)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(16)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true)
+				return persistTx, transact
+			},
+			appSvcFn:    successfulAppGet,
+			tenantSvcFn: successfulTenantSvc,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whInputs := []*graphql.WebhookInput{fixTenantMappingWebhookGraphQLInput()}
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("EnrichWebhooksWithTenantMappingWebhooks", whInputs).Return(whInputs, nil).Once()
+				whSvc.On("ListForApplicationGlobal", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *fixTenantMappingWebhookModelInput(), model.ApplicationWebhookReference).Return("", testErr).Once()
+
+				return whSvc
+			},
+			webhookConvFn: successfulWebhookConversion,
+			productSvcFn:  successfulProductCreate,
+			vendorSvcFn:   successfulVendorCreate,
+			packageSvcFn:  successfulPackageCreate,
+			bundleSvcFn:   successfulListTwiceAndCeateBundle,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
+				return client
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				return eventSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Resync resources if webhooks can be created successfully",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(31)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(29)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+				return persistTx, transact
+			},
+			appSvcFn:    successfulAppGet,
+			tenantSvcFn: successfulTenantSvc,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whInputs := []*graphql.WebhookInput{fixTenantMappingWebhookGraphQLInput()}
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("EnrichWebhooksWithTenantMappingWebhooks", whInputs).Return(whInputs, nil).Once()
+				whSvc.On("ListForApplicationGlobal", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooksForApplication(), nil).Once()
+				whSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *fixTenantMappingWebhookModelInput(), model.ApplicationWebhookReference).Return("", nil).Once()
+
+				return whSvc
+			},
+			webhookConvFn: successfulWebhookConversion,
+			productSvcFn:  successfulProductCreate,
+			vendorSvcFn:   successfulVendorCreate,
+			packageSvcFn:  successfulPackageCreate,
+			bundleSvcFn:   successfulBundleCreateWithGenericParam,
+			clientFn: func() *automock.Client {
+				client := &automock.Client{}
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
+				return client
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return(api1ID, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return(api2ID, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(testErr).Once()
+				return apiSvc
+			},
+			tombstoneSvcFn: func() *automock.TombstoneService {
+				tombstoneSvc := &automock.TombstoneService{}
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				return tombstoneSvc
+			},
+			eventSvcFn:        successfulEventCreate,
+			specSvcFn:         successfulSpecCreate,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
 			Name: "Does not resync resources if api list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
@@ -1952,7 +2254,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			bundleSvcFn:  successfulBundleUpdate,
@@ -1981,7 +2283,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2015,7 +2317,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			bundleSvcFn:  successfulBundleUpdate,
@@ -2051,7 +2353,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2082,7 +2384,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductCreate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
 			packageSvcFn: successfulPackageCreate,
 			bundleSvcFn:  successfulBundleCreate,
@@ -2112,7 +2414,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2148,7 +2450,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2185,7 +2487,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2220,7 +2522,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulTenantMappingOnlyCreation,
-			webhookConvFn:  successfulWebhookConvertion,
+			webhookConvFn:  successfulWebhookConversion,
 			productSvcFn:   successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
@@ -2256,7 +2558,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2345,7 +2647,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2376,7 +2678,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2427,7 +2729,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			bundleSvcFn:  successfulBundleUpdate,
@@ -2467,7 +2769,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2499,7 +2801,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductCreate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductCreate,
 			vendorSvcFn:    successfulVendorCreate,
 			packageSvcFn:   successfulPackageCreate,
 			bundleSvcFn:    successfulBundleCreate,
@@ -2561,7 +2863,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2605,7 +2907,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2652,7 +2954,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2696,7 +2998,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2740,7 +3042,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2839,7 +3141,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2870,7 +3172,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2903,7 +3205,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductUpdate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductUpdate,
 			vendorSvcFn:    successfulVendorUpdate,
 			packageSvcFn:   successfulPackageUpdate,
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2935,7 +3237,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, productSvcFn: successfulProductCreate,
+			webhookConvFn: successfulWebhookConversion, productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
 			packageSvcFn: successfulPackageCreate,
 			bundleSvcFn:  successfulBundleCreate,
@@ -2966,7 +3268,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3007,7 +3309,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn:   successfulAPICreate,
 			eventSvcFn: successfulEventCreate,
 			specSvcFn:  successfulSpecCreate,
@@ -3057,7 +3359,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
@@ -3108,7 +3410,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn:     successfulAPICreate,
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreate,
@@ -3158,7 +3460,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn:     successfulAPICreate,
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreate,
@@ -3207,7 +3509,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: func() *automock.BundleService {
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
 				bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
@@ -3251,7 +3553,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3289,7 +3591,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3353,7 +3655,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3421,7 +3723,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3496,7 +3798,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleCreate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -3537,7 +3839,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:      successfulAppGet,
 			tenantSvcFn:   successfulTenantSvc,
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConvertion, bundleSvcFn: successfulBundleUpdate,
+			webhookConvFn: successfulWebhookConversion, bundleSvcFn: successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}

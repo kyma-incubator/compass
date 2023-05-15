@@ -141,6 +141,30 @@ var (
         "mass-extraction"
       ]`)
 
+	credentialExchangeStrategiesWithCustomTypeFormat = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        }
+      ]`)
+
+	credentialExchangeStrategiesWithMultipleSameTypesFormat = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials-fake",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        },
+        {
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        }
+      ]`)
+
 	credentialExchangeStrategiesFormat = removeWhitespace(`[
         {
 		  "callbackUrl": "%s/credentials/relative",
