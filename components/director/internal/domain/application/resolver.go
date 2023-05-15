@@ -159,6 +159,20 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 }
 
+// TenantBusinessTypeService is responsible for the service-layer Tenant Business Type operations.
+//
+//go:generate mockery --name=TenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
+type TenantBusinessTypeService interface {
+	GetByID(ctx context.Context, id string) (*model.TenantBusinessType, error)
+}
+
+// TenantBusinessTypeConverter converts between the graphql and model
+//
+//go:generate mockery --name=TenantBusinessTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantBusinessTypeConverter interface {
+	ToGraphQL(in *model.TenantBusinessType) *graphql.TenantBusinessType
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
@@ -168,6 +182,9 @@ type Resolver struct {
 
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
+
+	tenantBusinessTypeSvc       TenantBusinessTypeService
+	tenantBusinessTypeConverter TenantBusinessTypeConverter
 
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
@@ -197,6 +214,8 @@ func NewResolver(transact persistence.Transactioner,
 	bndlConverter BundleConverter,
 	appTemplateSvc ApplicationTemplateService,
 	appTemplateConverter ApplicationTemplateConverter,
+	tenantBusinessTypeSvc TenantBusinessTypeService,
+	tenantBusinessTypeConverter TenantBusinessTypeConverter,
 	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
 		transact:                        transact,
@@ -212,6 +231,8 @@ func NewResolver(transact persistence.Transactioner,
 		bndlConv:                        bndlConverter,
 		appTemplateSvc:                  appTemplateSvc,
 		appTemplateConverter:            appTemplateConverter,
+		tenantBusinessTypeSvc:           tenantBusinessTypeSvc,
+		tenantBusinessTypeConverter:     tenantBusinessTypeConverter,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		tokenPrefix:                     tokenPrefix,
 	}
@@ -837,6 +858,36 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Applica
 	}
 
 	return r.appTemplateConverter.ToGraphQL(appTemplate)
+}
+
+// TenantBusinessType retrieves tenant business type by given application
+func (r *Resolver) TenantBusinessType(ctx context.Context, obj *graphql.Application) (*graphql.TenantBusinessType, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+	if obj.TenantBusinessTypeID == nil {
+		return nil, nil
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenantBusinessType, err := r.tenantBusinessTypeSvc.GetByID(ctx, *obj.TenantBusinessTypeID)
+	if err != nil {
+		log.C(ctx).Infof("No tenant business type found with id %s", *obj.TenantBusinessTypeID)
+		return nil, errors.Wrapf(err, "no tenant business type found with id %s", *obj.TenantBusinessTypeID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.tenantBusinessTypeConverter.ToGraphQL(tenantBusinessType), nil
 }
 
 // getApplicationProviderTenant should be used when making requests with double authentication, i.e. consumerInfo.OnBehalfOf != nil;

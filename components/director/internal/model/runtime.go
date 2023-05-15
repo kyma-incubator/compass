@@ -17,8 +17,8 @@ type Runtime struct {
 }
 
 // GetID missing godoc
-func (r *Runtime) GetID() string {
-	return r.ID
+func (runtime *Runtime) GetID() string {
+	return runtime.ID
 }
 
 // RuntimeStatus missing godoc
@@ -79,22 +79,25 @@ type RuntimeUpdateInput struct {
 	ApplicationNamespace *string
 }
 
-// ToRuntime missing godoc
-func (i *RuntimeUpdateInput) ToRuntime(id string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
-	if i == nil {
-		return nil
+// SetFromUpdateInput sets fields to model Runtime from RuntimeUpdateInput
+func (runtime *Runtime) SetFromUpdateInput(update RuntimeUpdateInput, id string, creationTimestamp, conditionTimestamp time.Time) {
+	if runtime.Status == nil {
+		runtime.Status = &RuntimeStatus{}
 	}
 
-	return &Runtime{
-		ID:          id,
-		Name:        i.Name,
-		Description: i.Description,
-		Status: &RuntimeStatus{
-			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
-			Timestamp: conditionTimestamp,
-		},
-		CreationTimestamp:    creationTimestamp,
-		ApplicationNamespace: i.ApplicationNamespace,
+	runtime.ID = id
+	runtime.Name = update.Name
+
+	runtime.Status.Condition = getRuntimeStatusConditionOrDefault(update.StatusCondition)
+	runtime.Status.Timestamp = conditionTimestamp
+	runtime.CreationTimestamp = creationTimestamp
+
+	if update.Description != nil {
+		runtime.Description = update.Description
+	}
+
+	if update.ApplicationNamespace != nil {
+		runtime.ApplicationNamespace = update.ApplicationNamespace
 	}
 }
 
