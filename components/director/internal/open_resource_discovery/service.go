@@ -47,6 +47,7 @@ type ServiceConfig struct {
 	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
 }
 
+// CredentialExchangeStrategyTenantMapping contains tenant mappings configuration
 type CredentialExchangeStrategyTenantMapping struct {
 	Mode    model.WebhookMode
 	Version string

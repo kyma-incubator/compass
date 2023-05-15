@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -389,7 +388,7 @@ func fixEnrichedTenantMappedWebhooksForAsyncCallbackMode(callbackURL string) []*
 			Mode:           &asyncMode,
 			URLTemplate:    &testURL,
 			InputTemplate:  str.Ptr("input template"),
-			HeaderTemplate: str.Ptr(fmt.Sprintf("%s", callbackURL)),
+			HeaderTemplate: str.Ptr(callbackURL),
 			OutputTemplate: str.Ptr("output template"),
 		},
 	}

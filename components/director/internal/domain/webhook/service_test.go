@@ -964,11 +964,8 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_EnrichWebhooksWithTenantMappingWebhooks(t *testing.T) {
 	// GIVEN
-	//testErr := errors.New("Test error")
 	callbackURL := "http://callback.url"
 
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
 	webhookWithoutURL := fixTenantMappedWebhooks()
 	webhookWithoutURL[0].URL = nil
 

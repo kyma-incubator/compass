@@ -159,6 +159,8 @@ type TenantService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
+// WebhookConverter is responsible for converting webhook structs
+//
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
