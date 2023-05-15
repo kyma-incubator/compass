@@ -38,16 +38,14 @@ const (
 	fieldComponentName = "component"
 	jsonFormatterKey   = "json"
 	textFormatterKey   = "text"
-	kibanaFormatterKey = "kibana"
 )
 
 var (
 	defaultEntry = logrus.NewEntry(logrus.StandardLogger())
 
 	supportedFormatters = map[string]logrus.Formatter{
-		jsonFormatterKey:   &logrus.JSONFormatter{},
-		textFormatterKey:   &logrus.TextFormatter{},
-		kibanaFormatterKey: &KibanaFormatter{},
+		jsonFormatterKey: &logrus.JSONFormatter{},
+		textFormatterKey: &logrus.TextFormatter{},
 	}
 
 	supportedOutputs = map[string]io.Writer{

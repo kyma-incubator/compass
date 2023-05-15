@@ -21,17 +21,17 @@ To get a list of the supported parameters, open: [main.go](https://github.com/ky
 
 You can specify the following environment variables:
 
-| Environment variable                    | Default value                                                                    | Description                                                                 |                                                                             
-| ----------------------------------------| ---------------------------------------------------------------------------------| --------------------------------------------------------------------------- |
-| **APP_ADDRESS**                         | `127.0.0.1:8080`                                                                 | Address and port for the service to listen on                               |                                                                             |
-| **APP_SERVER_TIMEOUT**                  | `119s`                                                                           | The timeout used for incoming calls to the connectivity adapter server      |
-| **APP_APP_REGISTRY_DIRECTOR_ENDPOINT**  | `127.0.0.1:3000/graphql`                                                         | GraphQL endpoint of the running Director component                          |                      
-| **APP_APP_REGISTRY_CLIENT_TIMEOUT**     | `115s`                                                                           | Client timeout for calls to the running Director component                  |
-| **APP_CONNECTOR_CONNECTOR_ENDPOINT**    | `http://compass-connector.compass-system.svc.cluster.local:3000/graphql`         | GraphQL endpoint of the running Connector component                         |
-| **APP_CONNECTOR_CLIENT_TIMEOUT**        | `115s`                                                                           | Client timeout for calls to the running Connector component                 |
-| **APP_CONNECTOR_ADAPTER_BASE_URL**      | `https://adapter-gateway.kyma.local`                                             | Token secured endpoint of the Connectivity Adapter component                |
-| **APP_CONNECTOR_ADAPTER_MTLS_BASE_URL** | `https://adapter-gateway-mtls.kyma.local`                                        | Certificate secured endpoint of the Connectivity Adapter component          |
-| **APP_LOG_LEVEL**                       | `info`                                                                           | Log level                                                                   |
-| **APP_LOG_FORMAT**                      | `text`                                                                           | Format of the written logs. Supported values are `text` and `kibana`.        |
-| **APP_LOG_OUTPUT**                      | `/dev/stdout`                                                                    | Log output location                                                         |
-| **APP_LOG_FORMAT**                      | `text`                                                                           | Format of the written logs. Supported values are `text` and `kibana`.        |
+| Environment variable                    | Default value                                                                    | Description                                              |                                                                             
+| ----------------------------------------| ---------------------------------------------------------------------------------| -------------------------------------------------------- |
+| **APP_ADDRESS**                         | `127.0.0.1:8080`                                                                 | Address and port for the service to listen on            |                                                                             |
+| **APP_SERVER_TIMEOUT**                  | `119s`                                                                           | The timeout used for incoming calls to the connectivity adapter server |
+| **APP_APP_REGISTRY_DIRECTOR_ENDPOINT**  | `127.0.0.1:3000/graphql`                                                         | GraphQL endpoint of the running Director component       |                      
+| **APP_APP_REGISTRY_CLIENT_TIMEOUT**     | `115s`                                                                           | Client timeout for calls to the running Director component |
+| **APP_CONNECTOR_CONNECTOR_ENDPOINT**    | `http://compass-connector.compass-system.svc.cluster.local:3000/graphql`         | GraphQL endpoint of the running Connector component      |
+| **APP_CONNECTOR_CLIENT_TIMEOUT**        | `115s`                                                                           | Client timeout for calls to the running Connector component |
+| **APP_CONNECTOR_ADAPTER_BASE_URL**      | `https://adapter-gateway.kyma.local`                                             | Token secured endpoint of the Connectivity Adapter component |
+| **APP_CONNECTOR_ADAPTER_MTLS_BASE_URL** | `https://adapter-gateway-mtls.kyma.local`                                        | Certificate secured endpoint of the Connectivity Adapter component |
+| **APP_LOG_LEVEL**                       | `info`                                                                           | Log level                                                |
+| **APP_LOG_FORMAT**                      | `text`                                                                           | Format of the written logs. Supported values are `text`. |
+| **APP_LOG_OUTPUT**                      | `/dev/stdout`                                                                    | Log output location                                      |
+| **APP_LOG_FORMAT**                      | `text`                                                                           | Format of the written logs. Supported values are `text`. |

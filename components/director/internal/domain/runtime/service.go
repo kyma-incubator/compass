@@ -357,7 +357,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
-	rtm = in.ToRuntime(id, rtm.CreationTimestamp, time.Now())
+	rtm.SetFromUpdateInput(in, id, rtm.CreationTimestamp, time.Now())
 
 	if err = s.repo.Update(ctx, rtmTenant, rtm); err != nil {
 		return errors.Wrap(err, "while updating Runtime")

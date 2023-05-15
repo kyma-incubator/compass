@@ -127,23 +127,23 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3049"
+      version: "PR-3061"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -155,11 +155,11 @@ global:
       name: compass-tm-adapter
     gateway:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -167,11 +167,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3022"
+      version: "PR-3052"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3017"
+      version: "PR-3052"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
@@ -188,7 +188,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3017"
+      version: "PR-3061"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -391,7 +391,7 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "kibana"
+    format: "text"
   tenantConfig:
     useDefaultTenants: true
     dbPool:

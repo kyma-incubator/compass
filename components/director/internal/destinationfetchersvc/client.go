@@ -252,7 +252,8 @@ func (c *Client) setToken(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set(authorizationHeader, token)
+
+	req.Header.Set(authorizationHeader, "Bearer " + token)
 	return nil
 }
 

@@ -26,3 +26,10 @@ func DetachConstraintFromFormationTemplate(t require.TestingT, ctx context.Conte
 
 	return &constraintReference
 }
+
+func DetachConstraintFromFormationTemplateNoCheckError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, constraintID, formationTemplateID string) *graphql.ConstraintReference {
+	detachRequest := FixDetachConstraintFromFormationTemplateRequest(constraintID, formationTemplateID)
+	constraintReference := graphql.ConstraintReference{}
+	_ = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, detachRequest, &constraintReference)
+	return &constraintReference
+}
