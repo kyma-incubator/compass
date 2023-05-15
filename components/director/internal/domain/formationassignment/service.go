@@ -346,7 +346,6 @@ func (s *service) ListFormationAssignmentsForObjectIDs(ctx context.Context, form
 // Update updates a Formation Assignment matching ID `id` using `in`
 func (s *service) Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
-	in := s.formationAssignmentConverter.ToInput(fa)
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
 
@@ -370,7 +369,7 @@ func (s *service) Update(ctx context.Context, fa *model.FormationAssignment, ope
 		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
-	if err = s.repo.Update(ctx, in.ToModel(id, tenantID)); err != nil {
+	if err = s.repo.Update(ctx, fa); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
@@ -780,7 +779,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		if err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState); err != nil {
+		if err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 		return false, errors.Errorf("Received error from response: %v", *response.Error)
@@ -825,7 +824,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.State != nil && *response.State == string(model.DeleteErrorAssignmentState) {
-		if err = s.SetAssignmentToErrorState(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState); err != nil {
+		if err = s.SetAssignmentToErrorState(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 	}
