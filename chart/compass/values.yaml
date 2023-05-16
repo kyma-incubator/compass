@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3061"
+      version: "PR-3068"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -896,6 +896,7 @@ global:
     systemsAPIEndpoint: ""
     # systemsAPIFilterCriteria - criteria for fetching systems
     systemsAPIFilterCriteria: ""
+    systemsAPISelectCriteria: ""
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
