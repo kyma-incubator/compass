@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"io"
 	"net/http"
 	"net/url"
@@ -34,6 +35,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 }
 
 // Client represents ORD documents client
+//
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error)
@@ -82,6 +84,11 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
 
+	var additionalHeader string
+	if app.BaseURL != nil && strings.Contains(str.PtrStrToStr(app.BaseURL), "s4hana.ondemand.com") {
+		additionalHeader = str.PtrStrToStr(app.BaseURL)
+	}
+
 	docs := make([]*Document, 0)
 	docMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
@@ -108,7 +115,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 			if !ok {
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
-			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
+			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue, additionalHeader)
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
@@ -136,14 +143,14 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue, additionalHeader string) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue)
+	resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue, additionalHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +200,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
-		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue)
+		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue, "")
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
