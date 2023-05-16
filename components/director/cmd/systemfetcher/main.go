@@ -392,7 +392,7 @@ func loadSystemsSynchronizationTimestamps(ctx context.Context, transact persiste
 	return nil
 }
 
-func getTopParentFromJsonPath(jsonPath string) string {
+func getTopParentFromJSONPath(jsonPath string) string {
 	prefix := "$."
 	infix := "."
 
@@ -408,7 +408,7 @@ func getTopParentFromJsonPath(jsonPath string) string {
 func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {
 	for _, placeholder := range placeholders {
 		if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
-			topParent := getTopParentFromJsonPath(*placeholder.JSONPath)
+			topParent := getTopParentFromJSONPath(*placeholder.JSONPath)
 			if _, exists := selectFilterProperties[topParent]; !exists {
 				selectFilterProperties[topParent] = true
 			}
@@ -420,7 +420,7 @@ func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapp
 	selectFilter := make([]string, 0)
 
 	for _, pm := range placeholdersMapping {
-		topParent := getTopParentFromJsonPath(pm.SystemKey)
+		topParent := getTopParentFromJSONPath(pm.SystemKey)
 		if _, exists := selectFilterProperties[topParent]; !exists {
 			selectFilterProperties[topParent] = true
 		}

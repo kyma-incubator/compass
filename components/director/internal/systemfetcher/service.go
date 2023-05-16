@@ -32,15 +32,15 @@ const (
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 	mainURLKey                      = "mainUrl"
-	productIdKey                    = "productId"
+	productIDKey                    = "productId"
 	displayNameKey                  = "displayName"
 	systemNumberKey                 = "systemNumber"
 	additionalAttributesKey         = "additionalAttributes"
 	productDescriptionKey           = "productDescription"
 	infrastructureProviderKey       = "infrastructureProvider"
 	additionalUrlsKey               = "additionalUrls"
-	ppmsProductVersionIdKey         = "ppmsProductVersionId"
-	businessTypeIdKey               = "businessTypeId"
+	ppmsProductVersionIDKey         = "ppmsProductVersionId"
+	businessTypeIDKey               = "businessTypeId"
 	businessTypeDescriptionKey      = "businessTypeDescription"
 )
 
@@ -206,7 +206,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					log.C(ctx).Error(errors.Wrapf(err, "failed to marshal a system payload for tenant %s", tenantSystems.tenant.ExternalTenant))
 					return
 				}
-				productID := gjson.GetBytes(systemPayload, productIdKey).String()
+				productID := gjson.GetBytes(systemPayload, productIDKey).String()
 
 				if v, ok1 := SystemSynchronizationTimestamps[currentTenant][productID]; ok1 {
 					currentTimestamp.ID = v.ID
@@ -462,8 +462,8 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		SystemNumber:    str.Ptr(gjson.GetBytes(payload, systemNumberKey).String()),
 		Labels: map[string]interface{}{
 			"managed":              "true",
-			"productId":            str.Ptr(gjson.GetBytes(payload, productIdKey).String()),
-			"ppmsProductVersionId": str.Ptr(gjson.GetBytes(payload, ppmsProductVersionIdKey).String()),
+			"productId":            str.Ptr(gjson.GetBytes(payload, productIDKey).String()),
+			"ppmsProductVersionId": str.Ptr(gjson.GetBytes(payload, ppmsProductVersionIDKey).String()),
 		},
 	}, nil
 }
@@ -496,7 +496,7 @@ func (s *SystemFetcher) getTenantBusinessTypes(ctx context.Context) (map[string]
 }
 
 func (s *SystemFetcher) processSystemTenantBusinessType(ctx context.Context, systemPayload []byte, tenantBusinessTypes map[string]*model.TenantBusinessType) (*model.TenantBusinessType, error) {
-	businessTypeID := gjson.GetBytes(systemPayload, businessTypeIdKey).String()
+	businessTypeID := gjson.GetBytes(systemPayload, businessTypeIDKey).String()
 	businessTypeDescription := gjson.GetBytes(systemPayload, businessTypeDescriptionKey).String()
 	tbt, exists := tenantBusinessTypes[businessTypeID]
 	if businessTypeID != "" && businessTypeDescription != "" {
