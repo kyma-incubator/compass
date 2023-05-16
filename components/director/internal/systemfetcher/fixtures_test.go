@@ -1,8 +1,14 @@
 package systemfetcher_test
 
 import (
+	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -24,23 +30,43 @@ func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping
 	}
 }
 
-func fixInputValuesForSystem(s systemfetcher.System) model.ApplicationFromTemplateInputValues {
+func fixInputValuesForSystem(t *testing.T, s systemfetcher.System) model.ApplicationFromTemplateInputValues {
+	systemPayload, err := json.Marshal(s.SystemPayload)
+	require.NoError(t, err)
 	return model.ApplicationFromTemplateInputValues{
 		{
 			Placeholder: "name",
-			Value:       s.DisplayName,
+			Value:       gjson.GetBytes(systemPayload, "displayName").String(),
 		},
 	}
 }
 
-func fixAppInputBySystem(system systemfetcher.System) model.ApplicationRegisterInput {
+func fixInputValuesForSystemWhichAppTemplateHasPlaceholders(t *testing.T, s systemfetcher.System) model.ApplicationFromTemplateInputValues {
+	systemPayload, err := json.Marshal(s.SystemPayload)
+	require.NoError(t, err)
+	return model.ApplicationFromTemplateInputValues{
+		{
+			Placeholder: "name",
+			Value:       gjson.GetBytes(systemPayload, "displayName").String(),
+		},
+		{
+			Placeholder: "display-name",
+			Value:       gjson.GetBytes(systemPayload, "displayName").String(),
+		},
+	}
+}
+
+func fixAppInputBySystem(t *testing.T, system systemfetcher.System) model.ApplicationRegisterInput {
+	systemPayload, err := json.Marshal(system.SystemPayload)
+	require.NoError(t, err)
+
 	initStatusCond := model.ApplicationStatusConditionInitial
 	return model.ApplicationRegisterInput{
-		Name:            system.DisplayName,
-		Description:     &system.ProductDescription,
-		BaseURL:         &system.BaseURL,
-		ProviderName:    &system.InfrastructureProvider,
-		SystemNumber:    &system.SystemNumber,
+		Name:            gjson.GetBytes(systemPayload, "displayName").String(),
+		Description:     str.Ptr(gjson.GetBytes(systemPayload, "productDescription").String()),
+		BaseURL:         str.Ptr(gjson.GetBytes(systemPayload, "baseUrl").String()),
+		ProviderName:    str.Ptr(gjson.GetBytes(systemPayload, "infrastructureProvider").String()),
+		SystemNumber:    str.Ptr(gjson.GetBytes(systemPayload, "systemNumber").String()),
 		StatusCondition: &initStatusCond,
 		Labels: map[string]interface{}{
 			"managed": "true",

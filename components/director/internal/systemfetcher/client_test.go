@@ -71,7 +71,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",
-		FilterCriteria:  "%s",
+		FilterCriteria:  "%s%s",
 		PageSize:        4,
 		PagingSkipParam: "$skip",
 		PagingSizeParam: "$top",
@@ -341,12 +341,12 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 func fixSystems() []systemfetcher.System {
 	return []systemfetcher.System{
 		{
-			SystemBase: systemfetcher.SystemBase{
-				DisplayName:            "System1",
-				ProductDescription:     "System1 description",
-				BaseURL:                "http://example1.com",
-				InfrastructureProvider: "test",
-				AdditionalURLs:         map[string]string{"mainUrl": "http://mainurl.com"},
+			SystemPayload: map[string]interface{}{
+				"displayName":            "System1",
+				"productDescription":     "System1 description",
+				"baseUrl":                "http://example1.com",
+				"infrastructureProvider": "test",
+				"additionalUrls":         map[string]string{"mainUrl": "http://mainurl.com"},
 			},
 			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
@@ -356,14 +356,14 @@ func fixSystems() []systemfetcher.System {
 func fixSystemsWithTbt() []systemfetcher.System {
 	return []systemfetcher.System{
 		{
-			SystemBase: systemfetcher.SystemBase{
-				DisplayName:             "System2",
-				ProductDescription:      "System2 description",
-				BaseURL:                 "http://example2.com",
-				InfrastructureProvider:  "test",
-				AdditionalURLs:          map[string]string{"mainUrl": "http://mainurl.com"},
-				BusinessTypeID:          "Test business type id",
-				BusinessTypeDescription: "Test business description",
+			SystemPayload: map[string]interface{}{
+				"displayName":             "System2",
+				"productDescription":      "System2 description",
+				"baseUrl":                 "http://example2.com",
+				"infrastructureProvider":  "test",
+				"additionalUrls":          map[string]string{"mainUrl": "http://mainurl.com"},
+				"businessTypeId":          "Test business type id",
+				"businessTypeDescription": "Test business description",
 			},
 			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
