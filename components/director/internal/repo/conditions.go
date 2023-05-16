@@ -153,7 +153,7 @@ func (c *lessThanCondition) GetQueryPart() string {
 	return fmt.Sprintf("%s < ?", c.field)
 }
 
-// GetQueryArgs returns a boolean flag if the condition contain arguments and the actual arguments
+// GetQueryArgs returns a list of query arguments and boolean flag showing if there are placeholders for the arguments
 func (c *lessThanCondition) GetQueryArgs() ([]interface{}, bool) {
 	return []interface{}{c.val}, true
 }

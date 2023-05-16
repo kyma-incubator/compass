@@ -55,7 +55,7 @@ func (oc *ORDOperationCreator) Create(ctx context.Context) error {
 func (oc *ORDOperationCreator) buildOperationInputs(ctx context.Context) ([]*model.OperationInput, error) {
 	ordWebhooks, err := oc.getWebhooksWithOrdType(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting webhooks of type OPEN_RESOURCE_DISCOVERY")
+		return nil, errors.Wrapf(err, "while getting webhooks of type %s", model.WebhookTypeOpenResourceDiscovery)
 	}
 
 	operations := make([]*model.OperationInput, 0)

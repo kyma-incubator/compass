@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// OperationRepository missing godoc
+// OperationRepository is responsible for repository-layer operation operations
 //
 //go:generate mockery --name=OperationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationRepository interface {
@@ -18,7 +18,7 @@ type OperationRepository interface {
 	DeleteOlderThan(ctx context.Context, opType, status string, date time.Time) error
 }
 
-// UIDService missing godoc
+// UIDService is responsible for service-layer uid operations
 //
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
@@ -63,7 +63,7 @@ func (s *service) CreateMultiple(ctx context.Context, in []*model.OperationInput
 		}
 
 		if err := s.Create(ctx, op); err != nil {
-			return errors.Wrapf(err, "while creating Operation")
+			return err
 		}
 	}
 
