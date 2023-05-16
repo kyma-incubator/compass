@@ -11,7 +11,7 @@ import (
 //go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationService interface {
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
-	DeleteOlderThan(ctx context.Context, opType, status string, days int) error
+	DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, days int) error
 }
 
 // WebhookService is responsible for the service-layer Webhook operations.

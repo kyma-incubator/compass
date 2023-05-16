@@ -12,12 +12,11 @@ import (
 )
 
 const (
-	ordOpType         = "ORD_AGGREGATION"
-	scheduledOpStatus = "SCHEDULED"
-	operationID       = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	ordOpType   = "ORD_AGGREGATION"
+	operationID = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 )
 
-func fixOperationInput(opType, opStatus string) *model.OperationInput {
+func fixOperationInput(opType string, opStatus model.OperationStatus) *model.OperationInput {
 	return &model.OperationInput{
 		OpType:     opType,
 		Status:     opStatus,
@@ -29,11 +28,11 @@ func fixOperationInput(opType, opStatus string) *model.OperationInput {
 	}
 }
 
-func fixOperationModel(opType, status string) *model.Operation {
+func fixOperationModel(opType string, status model.OperationStatus) *model.Operation {
 	return fixOperationModelWithID(operationID, opType, status)
 }
 
-func fixOperationModelWithID(id, opType, opStatus string) *model.Operation {
+func fixOperationModelWithID(id, opType string, opStatus model.OperationStatus) *model.Operation {
 	return &model.Operation{
 		ID:         id,
 		OpType:     opType,
@@ -46,11 +45,11 @@ func fixOperationModelWithID(id, opType, opStatus string) *model.Operation {
 	}
 }
 
-func fixEntityOperation(id, opType, opStatus string) *operation.Entity {
+func fixEntityOperation(id, opType string, opStatus model.OperationStatus) *operation.Entity {
 	return &operation.Entity{
 		ID:         id,
 		Type:       opType,
-		Status:     opStatus,
+		Status:     string(opStatus),
 		Data:       repo.NewValidNullableString("[]"),
 		Error:      repo.NewValidNullableString("[]"),
 		Priority:   1,

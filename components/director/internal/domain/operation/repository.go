@@ -56,12 +56,12 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Operation) error
 }
 
 // DeleteOlderThan deletes all operations of type `opType` with status `status` older than `date`
-func (r *pgRepository) DeleteOlderThan(ctx context.Context, opType, status string, date time.Time) error {
+func (r *pgRepository) DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, date time.Time) error {
 	log.C(ctx).Infof("Deleting all operations of type %s with status %s older than %v", opType, status, date)
 	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{
 		repo.NewNotNullCondition(finishedAtColumn),
 		repo.NewEqualCondition(operationTypeColumn, opType),
-		repo.NewEqualCondition(statusColumn, status),
+		repo.NewEqualCondition(statusColumn, string(status)),
 		repo.NewLessThanCondition(finishedAtColumn, date),
 	})
 }

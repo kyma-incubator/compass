@@ -12,7 +12,7 @@ import (
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		// GIVEN
-		opModel := fixOperationModel(ordOpType, scheduledOpStatus)
+		opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
 		require.NotNil(t, opModel)
 
 		conv := operation.NewConverter()
@@ -21,7 +21,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity := conv.ToEntity(opModel)
 
 		// THEN
-		expectedOperation := fixEntityOperation(operationID, ordOpType, scheduledOpStatus)
+		expectedOperation := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
 
 		assert.Equal(t, expectedOperation, entity)
 	})
@@ -30,7 +30,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		opModel := &model.Operation{
 			ID:         operationID,
 			OpType:     ordOpType,
-			Status:     scheduledOpStatus,
+			Status:     model.OperationStatusScheduled,
 			Data:       nil,
 			Error:      nil,
 			Priority:   1,
@@ -41,7 +41,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		expectedEntity := &operation.Entity{
 			ID:         operationID,
 			Type:       ordOpType,
-			Status:     scheduledOpStatus,
+			Status:     string(model.OperationStatusScheduled),
 			Data:       sql.NullString{},
 			Error:      sql.NullString{},
 			Priority:   1,
@@ -61,14 +61,14 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		// GIVEN
-		entity := fixEntityOperation(operationID, ordOpType, scheduledOpStatus)
+		entity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
 		conv := operation.NewConverter()
 
 		// WHEN
 		opModel := conv.FromEntity(entity)
 
 		// THEN
-		expectedOperation := fixOperationModel(ordOpType, scheduledOpStatus)
+		expectedOperation := fixOperationModel(ordOpType, model.OperationStatusScheduled)
 		assert.Equal(t, expectedOperation, opModel)
 	})
 
@@ -77,7 +77,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		entity := &operation.Entity{
 			ID:         operationID,
 			Type:       ordOpType,
-			Status:     scheduledOpStatus,
+			Status:     string(model.OperationStatusScheduled),
 			Data:       sql.NullString{},
 			Error:      sql.NullString{},
 			Priority:   1,
@@ -87,7 +87,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		expectedModel := &model.Operation{
 			ID:         operationID,
 			OpType:     ordOpType,
-			Status:     scheduledOpStatus,
+			Status:     model.OperationStatusScheduled,
 			Data:       nil,
 			Error:      nil,
 			Priority:   1,

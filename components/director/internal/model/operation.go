@@ -5,11 +5,25 @@ import (
 	"time"
 )
 
+// OperationStatus defines operation status
+type OperationStatus string
+
+const (
+	// OperationStatusScheduled scheduled operation status
+	OperationStatusScheduled OperationStatus = "SCHEDULED"
+	// OperationStatusInProgress in progress operation status
+	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
+	// OperationStatusCompleted completed operation status
+	OperationStatusCompleted OperationStatus = "COMPLETED"
+	// OperationStatusFailed failed operation status
+	OperationStatusFailed OperationStatus = "FAILED"
+)
+
 // Operation represents an Operation
 type Operation struct {
 	ID         string
 	OpType     string
-	Status     string
+	Status     OperationStatus
 	Data       json.RawMessage
 	Error      json.RawMessage
 	Priority   int
@@ -20,7 +34,7 @@ type Operation struct {
 // OperationInput represents an OperationInput
 type OperationInput struct {
 	OpType     string
-	Status     string
+	Status     OperationStatus
 	Data       json.RawMessage
 	Error      json.RawMessage
 	Priority   int

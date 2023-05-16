@@ -2,6 +2,7 @@ package operationsmanager_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/internal/operations_manager/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -14,9 +15,7 @@ import (
 )
 
 const (
-	ordOpType         = "ORD_AGGREGATION"
-	completedOpStatus = "COMPLETED"
-	failedOpStatus    = "FAILED"
+	ordOpType = "ORD_AGGREGATION"
 )
 
 func TestService_CreateORDOperations(t *testing.T) {
@@ -90,8 +89,8 @@ func TestService_DeleteOldOperations(t *testing.T) {
 			},
 			OpSvcFn: func() *automock.OperationService {
 				repo := &automock.OperationService{}
-				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, completedOpStatus, completedOpDays).Return(nil).Once()
-				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, failedOpStatus, failedOpDays).Return(nil).Once()
+				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, model.OperationStatusCompleted, completedOpDays).Return(nil).Once()
+				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, model.OperationStatusFailed, failedOpDays).Return(nil).Once()
 				return repo
 			},
 		},
@@ -102,7 +101,7 @@ func TestService_DeleteOldOperations(t *testing.T) {
 			},
 			OpSvcFn: func() *automock.OperationService {
 				repo := &automock.OperationService{}
-				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, completedOpStatus, completedOpDays).Return(testErr).Once()
+				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, model.OperationStatusCompleted, completedOpDays).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErr: testErr,
@@ -114,8 +113,8 @@ func TestService_DeleteOldOperations(t *testing.T) {
 			},
 			OpSvcFn: func() *automock.OperationService {
 				repo := &automock.OperationService{}
-				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, completedOpStatus, completedOpDays).Return(nil).Once()
-				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, failedOpStatus, failedOpDays).Return(testErr).Once()
+				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, model.OperationStatusCompleted, completedOpDays).Return(nil).Once()
+				repo.On("DeleteOlderThan", txtest.CtxWithDBMatcher(), ordOpType, model.OperationStatusFailed, failedOpDays).Return(testErr).Once()
 
 				return repo
 			},

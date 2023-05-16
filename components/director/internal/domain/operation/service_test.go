@@ -16,8 +16,8 @@ func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(ordOpType, scheduledOpStatus)
-	opModel := fixOperationModel(ordOpType, scheduledOpStatus)
+	opInput := fixOperationInput(ordOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -86,8 +86,8 @@ func TestService_CreateMultiple(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(ordOpType, scheduledOpStatus)
-	opModel := fixOperationModel(ordOpType, scheduledOpStatus)
+	opInput := fixOperationInput(ordOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
 
 	ctx := context.TODO()
 
@@ -186,7 +186,7 @@ func TestService_DeleteOlderThan(t *testing.T) {
 		Name         string
 		RepositoryFn func() *automock.OperationRepository
 		OpType       string
-		OpStatus     string
+		OpStatus     model.OperationStatus
 		Days         int
 		ExpectedErr  error
 	}{
@@ -194,22 +194,22 @@ func TestService_DeleteOlderThan(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("DeleteOlderThan", ctx, ordOpType, scheduledOpStatus, mock.AnythingOfType("Time")).Return(nil).Once()
+				repo.On("DeleteOlderThan", ctx, ordOpType, model.OperationStatusScheduled, mock.AnythingOfType("Time")).Return(nil).Once()
 				return repo
 			},
 			OpType:   ordOpType,
-			OpStatus: scheduledOpStatus,
+			OpStatus: model.OperationStatusScheduled,
 			Days:     1,
 		},
 		{
 			Name: "Error while deleting operations",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("DeleteOlderThan", ctx, ordOpType, scheduledOpStatus, mock.AnythingOfType("Time")).Return(testErr).Once()
+				repo.On("DeleteOlderThan", ctx, ordOpType, model.OperationStatusScheduled, mock.AnythingOfType("Time")).Return(testErr).Once()
 				return repo
 			},
 			OpType:      ordOpType,
-			OpStatus:    scheduledOpStatus,
+			OpStatus:    model.OperationStatusScheduled,
 			Days:        1,
 			ExpectedErr: testErr,
 		},

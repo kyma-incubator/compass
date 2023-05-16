@@ -18,7 +18,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Operation {
 	return &model.Operation{
 		ID:         entity.ID,
 		OpType:     entity.Type,
-		Status:     entity.Status,
+		Status:     model.OperationStatus(entity.Status),
 		Data:       repo.JSONRawMessageFromNullableString(entity.Data),
 		Error:      repo.JSONRawMessageFromNullableString(entity.Error),
 		Priority:   entity.Priority,
@@ -32,7 +32,7 @@ func (c *converter) ToEntity(operationModel *model.Operation) *Entity {
 	return &Entity{
 		ID:         operationModel.ID,
 		Type:       operationModel.OpType,
-		Status:     operationModel.Status,
+		Status:     string(operationModel.Status),
 		Data:       repo.NewNullableStringFromJSONRawMessage(operationModel.Data),
 		Error:      repo.NewNullableStringFromJSONRawMessage(operationModel.Error),
 		Priority:   operationModel.Priority,

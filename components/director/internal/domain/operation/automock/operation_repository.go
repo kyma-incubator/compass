@@ -31,11 +31,11 @@ func (_m *OperationRepository) Create(ctx context.Context, _a1 *model.Operation)
 }
 
 // DeleteOlderThan provides a mock function with given fields: ctx, opType, status, date
-func (_m *OperationRepository) DeleteOlderThan(ctx context.Context, opType string, status string, date time.Time) error {
+func (_m *OperationRepository) DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, date time.Time) error {
 	ret := _m.Called(ctx, opType, status, date)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, time.Time) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.OperationStatus, time.Time) error); ok {
 		r0 = rf(ctx, opType, status, date)
 	} else {
 		r0 = ret.Error(0)
