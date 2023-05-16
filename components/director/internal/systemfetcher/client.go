@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -179,5 +180,5 @@ func (c *Client) buildFilter() map[string]string {
 		}
 	}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery()), "fetchAcrossZones": "true"}
+	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery(), strings.Join(SelectFilter, ",")), "fetchAcrossZones": "true"}
 }

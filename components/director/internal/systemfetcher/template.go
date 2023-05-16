@@ -1,15 +1,17 @@
 package systemfetcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"k8s.io/client-go/util/jsonpath"
 
 	"github.com/imdario/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
-	"github.com/tidwall/gjson"
 )
 
 //go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -69,7 +71,7 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
 	}
 
-	inputValues, err := r.getTemplateInputs(sc)
+	inputValues, err := r.getTemplateInputs(sc.SystemPayload, appTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting template inputs for Application Template with name %s", appTemplate.Name)
 	}
@@ -92,22 +94,47 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 	return &appRegisterInput, nil
 }
 
-func (r *renderer) getTemplateInputs(s System) (*model.ApplicationFromTemplateInputValues, error) {
-	systemJSON, err := json.Marshal(s)
-	if err != nil {
-		return nil, err
-	}
+func (r *renderer) getTemplateInputs(systemPayload map[string]interface{}, appTemplate *model.ApplicationTemplate) (*model.ApplicationFromTemplateInputValues, error) {
+	parser := jsonpath.New("parser")
 
 	inputValues := model.ApplicationFromTemplateInputValues{}
 	for _, pm := range r.placeholdersMapping {
-		placeholderInput := gjson.GetBytes(systemJSON, pm.SystemKey).String()
-		if len(placeholderInput) == 0 && !pm.Optional {
-			return nil, fmt.Errorf("missing or empty key %q in system input %s", pm.SystemKey, string(systemJSON))
+		if err := parser.Parse(fmt.Sprintf("{%s}", pm.SystemKey)); err != nil {
+			return nil, errors.Wrapf(err, "while parsing placeholder mapping with name %s and system key: %s", pm.PlaceholderName, pm.SystemKey)
 		}
+
+		placeholderInput := new(bytes.Buffer)
+		if err := parser.Execute(placeholderInput, systemPayload); err != nil && !pm.Optional {
+			return nil, errors.Wrapf(err, "missing or empty key %q in system payload.", pm.SystemKey)
+		}
+
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: pm.PlaceholderName,
-			Value:       placeholderInput,
+			Value:       placeholderInput.String(),
 		})
+	}
+	for _, placeholder := range appTemplate.Placeholders {
+		if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
+			if err := parser.Parse(fmt.Sprintf("{%s}", *placeholder.JSONPath)); err != nil {
+				return nil, errors.Wrapf(err, "while parsing placeholder jsonPath with name: %s and path: %s for ap template with id: %s", placeholder.Name, *placeholder.JSONPath, appTemplate.ID)
+			}
+
+			placeholderInput := new(bytes.Buffer)
+			if err := parser.Execute(placeholderInput, systemPayload); err != nil {
+				return nil, errors.Wrapf(err, "placeholder value with name: %s and path: %s for app template with id: %s not found in system payload", placeholder.Name, *placeholder.JSONPath, appTemplate.ID)
+			}
+
+			r.placeholdersOverride = append(r.placeholdersOverride, model.ApplicationTemplatePlaceholder{
+				Name:     placeholder.Name,
+				JSONPath: placeholder.JSONPath,
+				Optional: placeholder.Optional,
+			})
+
+			inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
+				Placeholder: placeholder.Name,
+				Value:       placeholderInput.String(),
+			})
+		}
 	}
 
 	return &inputValues, nil

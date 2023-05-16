@@ -2,10 +2,14 @@ package systemfetcher
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -28,6 +32,16 @@ const (
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 	mainURLKey                      = "mainUrl"
+	productIdKey                    = "productId"
+	displayNameKey                  = "displayName"
+	systemNumberKey                 = "systemNumber"
+	additionalAttributesKey         = "additionalAttributes"
+	productDescriptionKey           = "productDescription"
+	infrastructureProviderKey       = "infrastructureProvider"
+	additionalUrlsKey               = "additionalUrls"
+	ppmsProductVersionIdKey         = "ppmsProductVersionId"
+	businessTypeIdKey               = "businessTypeId"
+	businessTypeDescriptionKey      = "businessTypeDescription"
 )
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -187,11 +201,18 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					SystemSynchronizationTimestamps[currentTenant] = make(map[string]SystemSynchronizationTimestamp, 0)
 				}
 
-				if v, ok1 := SystemSynchronizationTimestamps[currentTenant][i.ProductID]; ok1 {
+				systemPayload, err := json.Marshal(i.SystemPayload)
+				if err != nil {
+					log.C(ctx).Error(errors.Wrapf(err, "failed to marshal a system payload for tenant %s", tenantSystems.tenant.ExternalTenant))
+					return
+				}
+				productID := gjson.GetBytes(systemPayload, productIdKey).String()
+
+				if v, ok1 := SystemSynchronizationTimestamps[currentTenant][productID]; ok1 {
 					currentTimestamp.ID = v.ID
 				}
 
-				SystemSynchronizationTimestamps[currentTenant][i.ProductID] = currentTimestamp
+				SystemSynchronizationTimestamps[currentTenant][productID] = currentTimestamp
 			}
 
 			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantSystems.tenant.ExternalTenant))
@@ -327,20 +348,30 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			ctx = persistence.SaveToContext(ctx, tx)
 			defer s.transaction.RollbackUnlessCommitted(ctx, tx)
 
-			log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
+			systemPayload, err := json.Marshal(system.SystemPayload)
+			if err != nil {
+				log.C(ctx).Error(errors.Wrapf(err, "failed to marshal a system payload for tenant %s", tenantMapping.ExternalTenant))
+				return err
+			}
+			displayName := gjson.GetBytes(systemPayload, displayNameKey).String()
+			systemNumber := gjson.GetBytes(systemPayload, systemNumberKey).String()
+			lifecycleStatus := gjson.GetBytes(systemPayload, additionalAttributesKey+"."+LifecycleAttributeName).String()
+
+			log.C(ctx).Infof("Getting system by name %s and system number %s", displayName, systemNumber)
 
 			system.StatusCondition = model.ApplicationStatusConditionInitial
-			app, err := s.systemsService.GetBySystemNumber(ctx, system.SystemNumber)
+			log.C(ctx).Infof("SYSTEM PAYLOAD %v", system.SystemPayload)
+			app, err := s.systemsService.GetBySystemNumber(ctx, systemNumber)
 			if err != nil {
 				if !apperrors.IsNotFoundError(err) {
-					log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
+					log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", displayName, systemNumber)
 					return nil
 				}
 			}
 
-			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
+			if lifecycleStatus == LifecycleDeleted && s.config.EnableSystemDeletion {
 				if app == nil {
-					log.C(ctx).Warnf("System with system number %s is not present. Skipping deletion.", system.SystemNumber)
+					log.C(ctx).Warnf("System with system number %s is not present. Skipping deletion.", systemNumber)
 					return nil
 				}
 
@@ -364,8 +395,8 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				system.StatusCondition = app.Status.Condition
 			}
 
-			log.C(ctx).Infof("Started processing tenant business type for system with system number %s", system.SystemNumber)
-			tenantBusinessType, err := s.processSystemTenantBusinessType(ctx, system, tenantBusinessTypes)
+			log.C(ctx).Infof("Started processing tenant business type for system with system number %s", systemNumber)
+			tenantBusinessType, err := s.processSystemTenantBusinessType(ctx, systemPayload, tenantBusinessTypes)
 			if err != nil {
 				return err
 			}
@@ -406,10 +437,6 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		return nil, err
 	}
 
-	if sc.ProductID == "S4_PC" { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
-		input.LocalTenantID = input.SystemNumber
-	}
-
 	return &model.ApplicationRegisterInputWithTemplate{
 		ApplicationRegisterInput: *input,
 		TemplateID:               sc.TemplateID,
@@ -421,18 +448,22 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		return s.templateRenderer.ApplicationRegisterInputFromTemplate(ctx, sc)
 	}
 
-	baseURL := sc.AdditionalURLs[mainURLKey]
+	payload, err := json.Marshal(sc.SystemPayload)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.ApplicationRegisterInput{
-		Name:            sc.DisplayName,
-		Description:     &sc.ProductDescription,
+		Name:            gjson.GetBytes(payload, displayNameKey).String(),
+		Description:     str.Ptr(gjson.GetBytes(payload, productDescriptionKey).String()),
 		StatusCondition: &sc.StatusCondition,
-		ProviderName:    &sc.InfrastructureProvider,
-		BaseURL:         &baseURL,
-		SystemNumber:    &sc.SystemNumber,
+		ProviderName:    str.Ptr(gjson.GetBytes(payload, infrastructureProviderKey).String()),
+		BaseURL:         str.Ptr(gjson.GetBytes(payload, additionalUrlsKey+"."+mainURLKey).String()),
+		SystemNumber:    str.Ptr(gjson.GetBytes(payload, systemNumberKey).String()),
 		Labels: map[string]interface{}{
 			"managed":              "true",
-			"productId":            &sc.ProductID,
-			"ppmsProductVersionId": &sc.PpmsProductVersionID,
+			"productId":            str.Ptr(gjson.GetBytes(payload, productIdKey).String()),
+			"ppmsProductVersionId": str.Ptr(gjson.GetBytes(payload, ppmsProductVersionIdKey).String()),
 		},
 	}, nil
 }
@@ -464,12 +495,14 @@ func (s *SystemFetcher) getTenantBusinessTypes(ctx context.Context) (map[string]
 	return tbtMap, nil
 }
 
-func (s *SystemFetcher) processSystemTenantBusinessType(ctx context.Context, system System, tenantBusinessTypes map[string]*model.TenantBusinessType) (*model.TenantBusinessType, error) {
-	tbt, exists := tenantBusinessTypes[system.BusinessTypeID]
-	if system.BusinessTypeID != "" && system.BusinessTypeDescription != "" {
+func (s *SystemFetcher) processSystemTenantBusinessType(ctx context.Context, systemPayload []byte, tenantBusinessTypes map[string]*model.TenantBusinessType) (*model.TenantBusinessType, error) {
+	businessTypeID := gjson.GetBytes(systemPayload, businessTypeIdKey).String()
+	businessTypeDescription := gjson.GetBytes(systemPayload, businessTypeDescriptionKey).String()
+	tbt, exists := tenantBusinessTypes[businessTypeID]
+	if businessTypeID != "" && businessTypeDescription != "" {
 		if !exists {
-			log.C(ctx).Infof("Creating tenant business type with code: %q", system.BusinessTypeID)
-			createdTbtID, err := s.tbtService.Create(ctx, &model.TenantBusinessTypeInput{Code: system.BusinessTypeID, Name: system.BusinessTypeDescription})
+			log.C(ctx).Infof("Creating tenant business type with code: %q", businessTypeID)
+			createdTbtID, err := s.tbtService.Create(ctx, &model.TenantBusinessTypeInput{Code: businessTypeID, Name: businessTypeDescription})
 			if err != nil {
 				return nil, err
 			}
