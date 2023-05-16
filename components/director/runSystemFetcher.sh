@@ -156,6 +156,7 @@ ENV_VARS=$(kubectl get cronjob -n compass-system compass-system-fetcher -o=jsonp
 
 export APP_SYSTEM_INFORMATION_ENDPOINT=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_ENDPOINT") | .value' )
 export APP_SYSTEM_INFORMATION_FILTER_CRITERIA=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_FILTER_CRITERIA") | .value')
+export APP_SYSTEM_INFORMATION_SELECT_CRITERIA=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_SELECT_CRITERIA") | .value')
 export APP_SYSTEM_INFORMATION_SOURCE_KEY=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_SOURCE_KEY") | .value')
 export APP_TEMPLATE_LABEL_FILTER=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_TEMPLATE_LABEL_FILTER") | .value')
 export APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT") | .value')

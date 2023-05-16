@@ -260,6 +260,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Formation, error) 
 	return formation, nil
 }
 
+// GetFormationByName returns the Formation by its name
 func (s *service) GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
 	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
