@@ -896,6 +896,7 @@ global:
     systemsAPIEndpoint: ""
     # systemsAPIFilterCriteria - criteria for fetching systems
     systemsAPIFilterCriteria: ""
+    systemsAPISelectCriteria: ""
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
