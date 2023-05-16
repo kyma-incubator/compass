@@ -829,27 +829,16 @@ func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentia
 		return nil
 	}
 
-	tenantMappingType := credentialExchangeStrategyJSON.Get(customTypeProperty).String()
-	tenantMappingData, ok := s.config.credentialExchangeStrategyTenantMappings[tenantMappingType]
-	if !ok {
-		return errors.Errorf("Credential Exchange Strategy has invalid %s value: %s for application with ID %s", customTypeProperty, tenantMappingType, appID)
-	}
-
-	inputMode := graphql.WebhookMode(tenantMappingData.Mode)
-	whInput := &graphql.WebhookInput{
-		URL: str.Ptr(credentialExchangeStrategyJSON.Get(callbackURLProperty).String()),
-		Auth: &graphql.AuthInput{
-			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
-		},
-		Mode:    &inputMode,
-		Version: str.Ptr(tenantMappingData.Version),
+	tenantMappingData, err := s.getTenantMappingData(credentialExchangeStrategyJSON, appID)
+	if err != nil {
+		return err
 	}
 
 	log.C(ctx).Infof("Enriching tenant mapping webhooks for application with ID %s", appID)
 
-	enrichedWhs, err := s.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks([]*graphql.WebhookInput{whInput})
+	enrichedWebhooks, err := s.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks([]*graphql.WebhookInput{createWebhookInput(credentialExchangeStrategyJSON, tenantMappingData)})
 	if err != nil {
-		return errors.Wrapf(err, "while enriching webhooks with tenant mappnig webhooks for application with ID %s", appID)
+		return errors.Wrapf(err, "while enriching webhooks with tenant mapping webhooks for application with ID %s", appID)
 	}
 
 	ctxWithoutTenant := context.Background()
@@ -867,71 +856,98 @@ func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentia
 		return errors.Wrapf(err, "while listing webhooks from application with ID %s", appID)
 	}
 
-	tenantMappingRelatedWebhooksFromDB := make([]*model.Webhook, 0)
-	enrichedWhModels := make([]*model.Webhook, 0)
-	enrichedWhModelInputs := make([]*model.WebhookInput, 0)
-
-	for _, wh := range enrichedWhs {
-		convertedIn, err := s.webhookConverter.InputFromGraphQL(wh)
-		if err != nil {
-			return errors.Wrap(err, "while converting the WebhookInput")
-		}
-
-		enrichedWhModelInputs = append(enrichedWhModelInputs, convertedIn)
-
-		whModel := convertedIn.ToWebhook("", "", "")
-
-		for _, appWh := range appWebhooksFromDB {
-			if appWh.Type == convertedIn.Type {
-				whModel.ID = appWh.ID
-				whModel.ObjectType = appWh.ObjectType
-				whModel.ObjectID = appWh.ObjectID
-				whModel.CreatedAt = appWh.CreatedAt
-
-				tenantMappingRelatedWebhooksFromDB = append(tenantMappingRelatedWebhooksFromDB, appWh)
-				break
-			}
-		}
-
-		enrichedWhModels = append(enrichedWhModels, whModel)
-	}
-
-	appWhsFromDBMarshaled, _ := json.Marshal(tenantMappingRelatedWebhooksFromDB)
-	appWhsFromDBHash, err := HashObject(string(appWhsFromDBMarshaled))
+	tenantMappingRelatedWebhooksFromDB, enrichedWhModels, enrichedWhModelInputs, err := s.processEnrichedWebhooks(enrichedWebhooks, appWebhooksFromDB)
 	if err != nil {
-		return errors.Wrapf(err, "while hashing webhooks from DB")
+		return err
 	}
 
-	enrichedWhsMarshaled, _ := json.Marshal(enrichedWhModels)
-	enrichedHash, err := HashObject(string(enrichedWhsMarshaled))
+	isEqual, err := isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels)
 	if err != nil {
-		return errors.Wrapf(err, "while hashing webhooks from ORD document")
+		return err
 	}
 
-	if strconv.FormatUint(appWhsFromDBHash, 10) == strconv.FormatUint(enrichedHash, 10) {
+	if isEqual {
 		log.C(ctxWithoutTenant).Infof("There are no differences in tenant mapping webhooks from the DB and the ORD document")
-
 		return tx.Commit()
 	}
 
 	log.C(ctxWithoutTenant).Infof("There are differences in tenant mapping webhooks from the DB and the ORD document. Continuing the sync.")
-	for _, webhook := range tenantMappingRelatedWebhooksFromDB {
-		log.C(ctxWithoutTenant).Infof("Deleting webhook with ID %s for application %s", webhook.ID, appID)
-		if err = s.webhookSvc.Delete(ctxWithoutTenant, webhook.ID, webhook.ObjectType); err != nil {
+
+	if err := s.deleteWebhooks(ctxWithoutTenant, tenantMappingRelatedWebhooksFromDB, appID); err != nil {
+		return err
+	}
+
+	if err := s.createWebhooks(ctxWithoutTenant, enrichedWhModelInputs, appID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *Service) deleteWebhooks(ctx context.Context, webhooks []*model.Webhook, appID string) error {
+	for _, webhook := range webhooks {
+		log.C(ctx).Infof("Deleting webhook with ID %s for application %s", webhook.ID, appID)
+		if err := s.webhookSvc.Delete(ctx, webhook.ID, webhook.ObjectType); err != nil {
 			log.C(ctx).Errorf("error while deleting webhook with ID %s", webhook.ID)
 			return errors.Wrapf(err, "while deleting webhook with ID %s", webhook.ID)
 		}
 	}
 
-	for _, webhook := range enrichedWhModelInputs {
-		log.C(ctxWithoutTenant).Infof("Creating webhook with type %s for application %s", webhook.Type, appID)
-		if _, err = s.webhookSvc.Create(ctxWithoutTenant, appID, *webhook, model.ApplicationWebhookReference); err != nil {
+	return nil
+}
+
+func (s *Service) createWebhooks(ctx context.Context, webhooks []*model.WebhookInput, appID string) error {
+	for _, webhook := range webhooks {
+		log.C(ctx).Infof("Creating webhook with type %s for application %s", webhook.Type, appID)
+		if _, err := s.webhookSvc.Create(ctx, appID, *webhook, model.ApplicationWebhookReference); err != nil {
 			log.C(ctx).Errorf("error while creating webhook for app %s with type %s", appID, webhook.Type)
 			return errors.Wrapf(err, "error while creating webhook for app %s with type %s", appID, webhook.Type)
 		}
 	}
 
-	return tx.Commit()
+	return nil
+}
+
+func (s *Service) getTenantMappingData(credentialExchangeStrategyJSON gjson.Result, appID string) (CredentialExchangeStrategyTenantMapping, error) {
+	tenantMappingType := credentialExchangeStrategyJSON.Get(customTypeProperty).String()
+	tenantMappingData, ok := s.config.credentialExchangeStrategyTenantMappings[tenantMappingType]
+	if !ok {
+		return CredentialExchangeStrategyTenantMapping{}, errors.Errorf("Credential Exchange Strategy has invalid %s value: %s for application with ID %s", customTypeProperty, tenantMappingType, appID)
+	}
+	return tenantMappingData, nil
+}
+
+func (s *Service) processEnrichedWebhooks(enrichedWebhooks []*graphql.WebhookInput, webhooksFromDB []*model.Webhook) ([]*model.Webhook, []*model.Webhook, []*model.WebhookInput, error) {
+	tenantMappingRelatedWebhooksFromDB := make([]*model.Webhook, 0)
+	enrichedWebhookModels := make([]*model.Webhook, 0)
+	enrichedWebhookModelInputs := make([]*model.WebhookInput, 0)
+
+	for _, wh := range enrichedWebhooks {
+		convertedIn, err := s.webhookConverter.InputFromGraphQL(wh)
+		if err != nil {
+			return nil, nil, nil, errors.Wrap(err, "while converting the WebhookInput")
+		}
+
+		enrichedWebhookModelInputs = append(enrichedWebhookModelInputs, convertedIn)
+
+		webhookModel := convertedIn.ToWebhook("", "", "")
+
+		for _, webhookFromDB := range webhooksFromDB {
+			if webhookFromDB.Type == convertedIn.Type {
+				webhookModel.ID = webhookFromDB.ID
+				webhookModel.ObjectType = webhookFromDB.ObjectType
+				webhookModel.ObjectID = webhookFromDB.ObjectID
+				webhookModel.CreatedAt = webhookFromDB.CreatedAt
+
+				tenantMappingRelatedWebhooksFromDB = append(tenantMappingRelatedWebhooksFromDB, webhookFromDB)
+				break
+			}
+		}
+
+		enrichedWebhookModels = append(enrichedWebhookModels, webhookModel)
+	}
+
+	return tenantMappingRelatedWebhooksFromDB, enrichedWebhookModels, enrichedWebhookModelInputs, nil
 }
 
 func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*ordFetchRequest, error) {
@@ -1782,4 +1798,36 @@ func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context
 	logger := log.LoggerFromContext(ctx)
 	logger = logger.WithField(fieldName, fieldValue)
 	return log.ContextWithLogger(ctx, logger)
+}
+
+func createWebhookInput(credentialExchangeStrategyJSON gjson.Result, tenantMappingData CredentialExchangeStrategyTenantMapping) *graphql.WebhookInput {
+	inputMode := graphql.WebhookMode(tenantMappingData.Mode)
+	return &graphql.WebhookInput{
+		URL: str.Ptr(credentialExchangeStrategyJSON.Get(callbackURLProperty).String()),
+		Auth: &graphql.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:    &inputMode,
+		Version: str.Ptr(tenantMappingData.Version),
+	}
+}
+
+func isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels []*model.Webhook) (bool, error) {
+	appWhsFromDBMarshaled, _ := json.Marshal(tenantMappingRelatedWebhooksFromDB)
+	appWhsFromDBHash, err := HashObject(string(appWhsFromDBMarshaled))
+	if err != nil {
+		return false, errors.Wrapf(err, "while hashing webhooks from DB")
+	}
+
+	enrichedWhsMarshaled, _ := json.Marshal(enrichedWhModels)
+	enrichedHash, err := HashObject(string(enrichedWhsMarshaled))
+	if err != nil {
+		return false, errors.Wrapf(err, "while hashing webhooks from ORD document")
+	}
+
+	if strconv.FormatUint(appWhsFromDBHash, 10) == strconv.FormatUint(enrichedHash, 10) {
+		return true, nil
+	}
+
+	return false, nil
 }
