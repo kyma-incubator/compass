@@ -706,7 +706,6 @@ var (
 		FormationTemplateID:  FormationTemplateID,
 		FormationID:          FormationID,
 		TenantID:             TntInternalID,
-		ResourceTypeLabelKey: applicationType,
 	}
 
 	unassignRuntimeDetails = &formationconstraint.UnassignFormationOperationDetails{
@@ -728,7 +727,6 @@ var (
 		FormationTemplateID:  FormationTemplateID,
 		FormationID:          FormationID,
 		TenantID:             TntInternalID,
-		ResourceTypeLabelKey: runtimeType,
 	}
 
 	assignRuntimeContextOtherTemplateDetails = &formationconstraint.AssignFormationOperationDetails{
@@ -740,7 +738,6 @@ var (
 		FormationTemplateID:  FormationTemplateID,
 		FormationID:          FormationID,
 		TenantID:             TntInternalID,
-		ResourceTypeLabelKey: runtimeType,
 	}
 
 	unassignTenantDetails = &formationconstraint.UnassignFormationOperationDetails{
@@ -1411,7 +1408,6 @@ func fixAssignAppDetails(formationName string) *formationconstraint.AssignFormat
 		FormationTemplateID:  FormationTemplateID,
 		FormationID:          FormationID,
 		TenantID:             TntInternalID,
-		ResourceTypeLabelKey: applicationType,
 	}
 }
 
@@ -1425,7 +1421,6 @@ func fixAssignRuntimeDetails(formationName string) *formationconstraint.AssignFo
 		FormationTemplateID:  FormationTemplateID,
 		FormationID:          FormationID,
 		TenantID:             TntInternalID,
-		ResourceTypeLabelKey: runtimeType,
 	}
 }
 
@@ -1439,7 +1434,6 @@ func fixAssignRuntimeCtxDetails(formationName string) *formationconstraint.Assig
 		FormationTemplateID:  FormationTemplateID,
 		FormationID:          FormationID,
 		TenantID:             TntInternalID,
-		ResourceTypeLabelKey: runtimeType,
 	}
 }
 

@@ -46,6 +46,16 @@ type labelService interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+//go:generate mockery --exported --name=runtimeContextRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
+type runtimeContextRepo interface {
+	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
+}
+
+//go:generate mockery --exported --name=formationTemplateRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationTemplateRepo interface {
+	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
+}
+
 // ConstraintEngine determines which constraints are applicable to the reached join point and enforces them
 type ConstraintEngine struct {
 	constraintSvc             formationConstraintSvc
@@ -55,12 +65,16 @@ type ConstraintEngine struct {
 	labelRepo                 labelRepository
 	labelService              labelService
 	applicationRepository     applicationRepository
+	runtimeContextRepo        runtimeContextRepo
+	formationTemplateRepo     formationTemplateRepo
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
+	runtimeTypeLabelKey       string
+	applicationTypeLabelKey   string
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:         constraintSvc,
 		tenantSvc:             tenantSvc,
@@ -69,14 +83,20 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 		labelRepo:             labelRepo,
 		labelService:          labelService,
 		applicationRepository: applicationRepository,
+		runtimeContextRepo:    runtimeContextRepo,
+		formationTemplateRepo: formationTemplateRepo,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
-			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
-			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
+			IsNotAssignedToAnyFormationOfTypeOperator:            NewIsNotAssignedToAnyFormationOfTypeInput,
+			DoesNotContainResourceOfSubtypeOperator:              NewDoesNotContainResourceOfSubtypeInput,
+			DoNotGenerateFormationAssignmentNotificationOperator: NewDoNotGenerateFormationAssignmentNotificationInput,
 		},
+		runtimeTypeLabelKey:     runtimeTypeLabelKey,
+		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 	c.operators = map[OperatorName]OperatorFunc{
-		IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType,
-		DoesNotContainResourceOfSubtypeOperator:   c.DoesNotContainResourceOfSubtype,
+		IsNotAssignedToAnyFormationOfTypeOperator:            c.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:              c.DoesNotContainResourceOfSubtype,
+		DoNotGenerateFormationAssignmentNotificationOperator: c.DoNotGenerateFormationAssignmentNotification,
 	}
 	return c
 }

@@ -70,7 +70,7 @@ type config struct {
 	CAKey  string `envconfig:"APP_CA_KEY"`
 }
 
-// DestinationServiceConfig configuration for destination service endpoints
+// DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
 	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
 	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
