@@ -70,7 +70,7 @@ type config struct {
 	CAKey  string `envconfig:"APP_CA_KEY"`
 }
 
-// DestinationServiceConfig configuration for destination service endpoints
+// DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
 	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
 	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
@@ -316,9 +316,11 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 
 	notificationHandler := notification.NewHandler(cfg.NotificationConfig)
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)

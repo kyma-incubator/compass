@@ -124,7 +124,7 @@ export APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL="https"
 export APP_OAUTH_TOKEN_REQUEST_TIMEOUT="30s"
 export APP_OAUTH_SKIP_SSL_VALIDATION="false"
 export APP_DB_SSL="disable"
-export APP_LOG_FORMAT="kibana"
+export APP_LOG_FORMAT="text"
 export APP_DB_MAX_OPEN_CONNECTIONS="5"
 export APP_DB_MAX_IDLE_CONNECTIONS="2"
 export APP_EXTERNAL_CLIENT_CERT_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${CLIENT_CERT_SECRET_NAME}-stage
@@ -156,6 +156,7 @@ ENV_VARS=$(kubectl get cronjob -n compass-system compass-system-fetcher -o=jsonp
 
 export APP_SYSTEM_INFORMATION_ENDPOINT=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_ENDPOINT") | .value' )
 export APP_SYSTEM_INFORMATION_FILTER_CRITERIA=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_FILTER_CRITERIA") | .value')
+export APP_SYSTEM_INFORMATION_SELECT_CRITERIA=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_SELECT_CRITERIA") | .value')
 export APP_SYSTEM_INFORMATION_SOURCE_KEY=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_SYSTEM_INFORMATION_SOURCE_KEY") | .value')
 export APP_TEMPLATE_LABEL_FILTER=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_TEMPLATE_LABEL_FILTER") | .value')
 export APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT=$(echo -E ${ENV_VARS} | jq -r '.[] | select(.name == "APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT") | .value')

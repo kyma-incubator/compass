@@ -260,6 +260,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Formation, error) 
 	return formation, nil
 }
 
+// GetFormationByName returns the Formation by its name
 func (s *service) GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
 	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
@@ -567,14 +568,6 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 		return nil, err
 	}
 
-	resourceTypeLabelKey := ""
-	switch objectType {
-	case graphql.FormationObjectTypeApplication:
-		resourceTypeLabelKey = s.applicationTypeLabelKey
-	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		resourceTypeLabelKey = s.runtimeTypeLabelKey
-	}
-
 	joinPointDetails := &formationconstraint.AssignFormationOperationDetails{
 		ResourceType:         model.ResourceType(objectType),
 		ResourceSubtype:      resourceSubtype,
@@ -584,7 +577,6 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 		FormationID:          formation.ID,
 		FormationName:        formation.Name,
 		TenantID:             tnt,
-		ResourceTypeLabelKey: resourceTypeLabelKey,
 	}
 	return joinPointDetails, nil
 }
