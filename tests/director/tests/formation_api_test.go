@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -4102,7 +4101,6 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
-			spew.Dump(string(body))
 
 			notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
@@ -4333,7 +4331,6 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 				assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
 
-				spew.Dump(string(body))
 				assertNotificationsCountForTenant(t, body, localTenantID, 2)
 				notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 				assertExpectationsForApplicationNotifications(t, notificationsForConsumerTenant.Array(), []*applicationFormationExpectations{
@@ -4723,11 +4720,6 @@ func assertFormationAssignmentsNotificationWithConfig(t *testing.T, notification
 	require.Equal(t, expectedAppNamespace, app1FromNotification.Get("application-namespace").String())
 	require.Equal(t, expectedAppRegion, app1FromNotification.Get("region").String())
 	if expectedConfig != nil {
-		spew.Dump("Checking config")
-		spew.Dump(app1FromNotification.String())
-		spew.Dump("Expected:")
-		spew.Dump(*expectedConfig)
-		spew.Dump(notification.Get("RequestBody.config").String())
 		require.Equal(t, *expectedConfig, notification.Get("RequestBody.config").String())
 	}
 }
