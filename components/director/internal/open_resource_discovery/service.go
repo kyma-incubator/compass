@@ -2,6 +2,8 @@ package ord
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -1424,6 +1426,10 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		return err
 	}
 	app, err := s.appSvc.Get(ctx, appID)
+
+	b, _ := json.MarshalIndent(app, "", "  ")
+	fmt.Println(string(b))
+
 	if err != nil {
 		return errors.Wrapf(err, "error while retrieving app with id %q", appID)
 	}
