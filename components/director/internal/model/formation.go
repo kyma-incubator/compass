@@ -7,7 +7,7 @@ import (
 )
 
 // DefaultTemplateName will be used as default formation template name if no other options are provided
-const DefaultTemplateName = "Side-by-side extensibility with Kyma"
+const DefaultTemplateName = "Side-by-Side Extensibility with Kyma"
 
 // FormationState represents the possible states a formation can be in
 type FormationState string
