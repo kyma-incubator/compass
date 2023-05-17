@@ -68,8 +68,12 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Additional header value %s ", additionalHeader)
+	log.C(ctx).Infof("Document URL %s ", documentURL)
+
 	if len(additionalHeader) != 0 {
 		req.Header.Set("target_host", additionalHeader)
+		log.C(ctx).Infof("Setting header target_hostwith value %s ", additionalHeader)
 	}
 
 	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header
