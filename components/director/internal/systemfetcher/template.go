@@ -198,7 +198,7 @@ func mergePlaceholders(appTemplatePlaceholdersOverride []model.ApplicationTempla
 			placeholdersMap[placeholder.Name] = placeholder
 		}
 	}
-	var mergedPlaceholders []model.ApplicationTemplatePlaceholder
+	mergedPlaceholders := make([]model.ApplicationTemplatePlaceholder, 0)
 	for _, p := range placeholdersMap {
 		mergedPlaceholders = append(mergedPlaceholders, p)
 	}
@@ -215,7 +215,7 @@ func mergeInputValues(appTemplatePlaceholdersInputValues model.ApplicationFromTe
 			inputsMap[input.Placeholder] = input
 		}
 	}
-	var mergedInputs model.ApplicationFromTemplateInputValues
+	mergedInputs := make(model.ApplicationFromTemplateInputValues, 0)
 	for _, input := range inputsMap {
 		mergedInputs = append(mergedInputs, input)
 	}
