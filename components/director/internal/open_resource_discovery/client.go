@@ -84,9 +84,11 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
 
+	log.C(ctx).Infof("BaseURL %s \n", str.PtrStrToStr(app.BaseURL))
+
 	var additionalHeader string
 	if app.BaseURL != nil && strings.Contains(str.PtrStrToStr(app.BaseURL), "s4hana.ondemand.com") {
-		additionalHeader = str.PtrStrToStr(app.BaseURL)
+		additionalHeader = strings.ReplaceAll(str.PtrStrToStr(app.BaseURL), "https://", "")
 	}
 
 	log.C(ctx).Infof("BaseURL %s \n", str.PtrStrToStr(app.BaseURL))
