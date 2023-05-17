@@ -256,9 +256,9 @@ func buildDocumentURL(docURL, baseURL string) (string, error) {
 // if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
 // if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
 func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error) {
-	if config.BaseURL != "" {
-		return config.BaseURL, nil
-	}
+	//if config.BaseURL != "" {
+	//	return config.BaseURL, nil
+	//}
 
 	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
 	if err != nil {
@@ -270,5 +270,6 @@ func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error)
 		parsedWebhookURL.Path = strippedPath
 		return parsedWebhookURL.String(), nil
 	}
-	return "", nil
+
+	return webhookURL, nil
 }
