@@ -89,6 +89,9 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		additionalHeader = str.PtrStrToStr(app.BaseURL)
 	}
 
+	log.C(ctx).Infof("BaseURL %s \n", str.PtrStrToStr(app.BaseURL))
+	log.C(ctx).Infof("Found additional header %s\n", additionalHeader)
+
 	docs := make([]*Document, 0)
 	docMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
