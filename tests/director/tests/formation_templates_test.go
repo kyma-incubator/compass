@@ -19,7 +19,7 @@ import (
 
 const (
 	CreateFormationTemplateCategory = "create formation template"
-	globalFormationTemplateName     = "Side-by-side extensibility with Kyma"
+	globalFormationTemplateName     = "Side-by-Side Extensibility with Kyma"
 )
 
 var (
