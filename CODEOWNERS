@@ -12,6 +12,7 @@
 /chart/compass/charts/gateway @kyma-incubator/team-raptor
 /chart/compass/charts/ias-adapter @kyma-incubator/team-atlas
 /chart/compass/charts/ns-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/operations-manager @kyma-incubator/team-falcon
 /chart/compass/charts/operations-controller @kyma-incubator/team-falcon
 /chart/compass/charts/ord-service @kyma-incubator/team-raptor
 /chart/compass/charts/pairing-adapter @kyma-incubator/team-falcon
@@ -21,6 +22,7 @@
 /components/connectivity-adapter @kyma-incubator/team-falcon
 /components/connector @kyma-incubator/team-raptor
 /components/director/cmd/ns-adapter @kyma-incubator/team-falcon
+/components/director/cmd/operations-manager @kyma-incubator/team-falcon
 /components/director/cmd/ordaggregator @kyma-incubator/team-falcon
 /components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
 /components/director/cmd/systemfetcher @kyma-incubator/team-falcon
@@ -57,6 +59,7 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /tests/gateway @kyma-incubator/team-raptor
 /tests/istio @kyma-incubator/team-raptor
 /tests/ns-adapter @kyma-incubator/team-falcon
+/tests/operations-manager @kyma-incubator/team-falcon
 /tests/ord-aggregator @kyma-incubator/team-falcon
 /tests/ord-service @kyma-incubator/team-raptor
 /tests/pairing-adapter @kyma-incubator/team-falcon
