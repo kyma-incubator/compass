@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -405,10 +406,10 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 		return err
 	}
 
-	return s.processSpecs(ctx, fetchRequests)
+	return s.processSpecs(ctx, fetchRequests, str.PtrStrToStr(app.BaseURL))
 }
 
-func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest) error {
+func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest, baseURL string) error {
 	queue := make(chan *model.FetchRequest)
 
 	workers := s.config.maxParallelSpecificationProcessors
@@ -424,6 +425,23 @@ func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetch
 
 			for fetchRequest := range queue {
 				fr := *fetchRequest
+
+				//baseURL
+				// https://my303028.s4hana.ondemand.com
+
+				//"https://my300098-api.s4hana.ondemand.com:443/sap/bc/http/sap/aps_oda_http_get_api_content/?api=CO_MMIM_MATSTOCK_REPLICATION&type=JSON&sap-client=100"
+				//"https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1/sap/bc/http/sap/ord_configuration"
+				url := fr.URL
+				additionalHeader := strings.ReplaceAll(baseURL, "https://", "")
+				headerRegex := regexp.MustCompile(`(\w+\d{6}-api)+(\.\w+)+`)
+				urlRegex := regexp.MustCompile(`(\S)+(\w+\d{6})(-api)?(\.\w+)+(\S)+(\/sap\/bc\/http\/sap)`)
+				if headerRegex.MatchString(url) {
+					additionalHeader = strings.ReplaceAll(headerRegex.FindString(url), "-api", "")
+					url = urlRegex.ReplaceAllString(url, "https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1/sap/bc/http/sap/ord_configuration")
+				}
+
+				fr.AdditionalHeader = additionalHeader
+
 				ctx = addFieldToLogger(ctx, "fetch_request_id", fr.ID)
 				log.C(ctx).Infof("Will attempt to execute spec fetch request for spec with id %q and spec entity type %q", fr.ObjectID, fr.ObjectType)
 				data, status := s.fetchReqSvc.FetchSpec(ctx, &fr)

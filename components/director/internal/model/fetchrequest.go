@@ -8,14 +8,15 @@ import (
 
 // FetchRequest represents a request to fetch a specification resource from a remote system.
 type FetchRequest struct {
-	ID         string
-	URL        string
-	Auth       *Auth
-	Mode       FetchMode
-	Filter     *string
-	Status     *FetchRequestStatus
-	ObjectType FetchRequestReferenceObjectType
-	ObjectID   string
+	ID               string
+	URL              string
+	Auth             *Auth
+	Mode             FetchMode
+	Filter           *string
+	Status           *FetchRequestStatus
+	ObjectType       FetchRequestReferenceObjectType
+	ObjectID         string
+	AdditionalHeader string `json:"-"`
 }
 
 // FetchRequestReferenceObjectType represents the type of the object that the fetch request is referencing.

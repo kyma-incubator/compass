@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
@@ -106,17 +104,6 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
 	}
 
-	//"https://my300098-api.s4hana.ondemand.com:443/sap/bc/http/sap/aps_oda_http_get_api_content/?api=CO_MMIM_MATSTOCK_REPLICATION&type=JSON&sap-client=100"
-	//"https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1/sap/bc/http/sap/ord_configuration"
-	url := fr.URL
-	additionalHeader := ""
-	headerRegex := regexp.MustCompile(`(\w+\d{6}-api)+(\.\w+)+`)
-	urlRegex := regexp.MustCompile(`(\S)+(\w+\d{6})(-api)?(\.\w+)+(\S)+(\/sap\/bc\/http\/sap)`)
-	if headerRegex.MatchString(url) {
-		additionalHeader = strings.ReplaceAll(headerRegex.FindString(url), "-api", "")
-		url = urlRegex.ReplaceAllString(url, "https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1/sap/bc/http/sap/ord_configuration")
-	}
-
 	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while getting local tenant id: %v", err)
@@ -133,15 +120,15 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(ctx, s.client, url, localTenantID, additionalHeader)
+			return executor.Execute(ctx, s.client, fr.URL, localTenantID, fr.AdditionalHeader)
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {
-			return httputil.GetRequestWithCredentials(ctx, s.client, url, localTenantID, fr.Auth)
+			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, localTenantID, fr.Auth)
 		}
 	} else {
 		doRequest = func() (*http.Response, error) {
-			return httputil.GetRequestWithoutCredentials(s.client, url, localTenantID)
+			return httputil.GetRequestWithoutCredentials(s.client, fr.URL, localTenantID)
 		}
 	}
 
