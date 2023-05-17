@@ -3,6 +3,7 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -93,6 +94,8 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		if len(clientCerts) != 2 {
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
+
+		fmt.Printf("\nURL: %s | err %+v\n", documentURL, err)
 		log.C(ctx).Info("Failed to execute request with initial mtls certificate. Will retry with backup certificate...")
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
 		client.Transport = tr
