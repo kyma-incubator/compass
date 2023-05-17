@@ -69,4 +69,25 @@ var (
 		OperationName:  model.GenerateFormationNotificationOperation,
 		ConstraintType: model.PostOperation,
 	}
+	// todo::: delete after prerequisite PR is merged
+	// PreSendNotification represents the location before SendNotification operation execution
+	PreSendNotification = JoinPointLocation{
+		OperationName:  model.SendNotificationOperation,
+		ConstraintType: model.PreOperation,
+	}
+	// PostSendNotification represents the location after SendNotification operation execution
+	PostSendNotification = JoinPointLocation{
+		OperationName:  model.SendNotificationOperation,
+		ConstraintType: model.PostOperation,
+	}
+	// PreNotificationStatusReturned represents the location before NotificationStatusReturned operation execution
+	PreNotificationStatusReturned = JoinPointLocation{
+		OperationName:  model.NotificationStatusReturned,
+		ConstraintType: model.PreOperation,
+	}
+	// PostNotificationStatusReturned represents the location after NotificationStatusReturned operation execution
+	PostNotificationStatusReturned = JoinPointLocation{
+		OperationName:  model.NotificationStatusReturned,
+		ConstraintType: model.PostOperation,
+	}
 )

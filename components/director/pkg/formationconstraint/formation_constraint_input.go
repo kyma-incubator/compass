@@ -26,14 +26,14 @@ type DoesNotContainResourceOfSubtypeInput struct {
 }
 
 // DestinationCreatorInput input for DestinationCreator operator
-type DestinationCreatorInput struct { // todo::: keep only the necessary fields
-	Operation         model.FormationOperation `json:"operation"`
-	Name              string                   `json:"name"`
-	ResourceType      model.ResourceType       `json:"resource_type"`
-	ResourceSubtype   string                   `json:"resource_subtype"`
-	ResourceID        string                   `json:"resource_id"`
-	Tenant            string                   `json:"tenant"`
-	Assignment        *webhook.FormationAssignment
-	ReverseAssignment *webhook.FormationAssignment
-	// todo::: other?
+type DestinationCreatorInput struct { // todo::: delete after prerequisite PR is merged
+	Operation         model.FormationOperation     `json:"operation"`
+	Name              string                       `json:"name"`
+	ResourceType      model.ResourceType           `json:"resource_type"`
+	ResourceSubtype   string                       `json:"resource_subtype"`
+	ResourceID        string                       `json:"resource_id"`
+	Tenant            string                       `json:"tenant"`
+	Assignment        *webhook.FormationAssignment `json:"assignment"`
+	ReverseAssignment *webhook.FormationAssignment `json:"reverseAssignment"`
+	JoinPointLocation JoinPointLocation            `json:"joinPointLocation"`
 }

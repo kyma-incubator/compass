@@ -26,6 +26,11 @@ const (
 	GenerateFormationAssignmentNotificationOperation TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
 	// GenerateFormationNotificationOperation represents the generate formation notifications operation
 	GenerateFormationNotificationOperation TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
+	// todo::: delete after prerequisite PR is merged
+	// SendNotificationOperation represents the send notification operation
+	SendNotificationOperation TargetOperation = "SEND_NOTIFICATION"
+	// NotificationStatusReturned represents the notification status returned operation
+	NotificationStatusReturned TargetOperation = "NOTIFICATION_STATUS_RETURNED"
 )
 
 // ResourceType represents the type of resource the constraint is applicable to
