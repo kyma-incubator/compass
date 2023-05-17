@@ -360,7 +360,6 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			log.C(ctx).Infof("Getting system by name %s and system number %s", displayName, systemNumber)
 
 			system.StatusCondition = model.ApplicationStatusConditionInitial
-			log.C(ctx).Infof("SYSTEM PAYLOAD %v", system.SystemPayload)
 			app, err := s.systemsService.GetBySystemNumber(ctx, systemNumber)
 			if err != nil {
 				if !apperrors.IsNotFoundError(err) {

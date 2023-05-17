@@ -147,8 +147,8 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 				resultTemplate := model.ApplicationTemplate{
 					ID: appTemplateID,
 					Placeholders: []model.ApplicationTemplatePlaceholder{
-						{Name: "name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 						{Name: "display-name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
+						{Name: "name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 					},
 					ApplicationInputJSON: `{"display-name":"{{display-name}}","integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"tenant":"123"},"name":"{{name}}"}`,
 				}
