@@ -175,9 +175,9 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
 	bodyBytes, err := io.ReadAll(resp.Body)
-	fmt.Printf("\n\n\n")
-	log.C(ctx).Infof(string(bodyBytes))
-	fmt.Printf("\n\n\n")
+	//fmt.Printf("\n\n\n")
+	//log.C(ctx).Infof(string(bodyBytes))
+	//fmt.Printf("\n\n\n")
 
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading document body")
