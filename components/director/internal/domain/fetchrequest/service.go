@@ -117,8 +117,6 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		url = urlRegex.ReplaceAllString(url, "https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1/sap/bc/http/sap/ord_configuration")
 	}
 
-	fmt.Println(headerRegex.ReplaceAllString("xy--xpppyxxppxy-", "https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1/sap/bc/http/sap/ord_configuration"))
-
 	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while getting local tenant id: %v", err)

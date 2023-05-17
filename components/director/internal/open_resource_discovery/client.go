@@ -71,7 +71,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	}
 
 	var additionalHeader string
-	if app.BaseURL != nil && strings.Contains(str.PtrStrToStr(app.BaseURL), "s4hana.ondemand.com") {
+	if app.BaseURL != nil && strings.Contains(str.PtrStrToStr(app.BaseURL), "s4hana") {
 		additionalHeader = strings.ReplaceAll(str.PtrStrToStr(app.BaseURL), "https://", "")
 	}
 
