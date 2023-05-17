@@ -232,6 +232,15 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) FailResponse(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBody{Error: "failed to parse request"}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusBadRequest, response)
+		h.ShouldReturnError = false
+	}
+	h.syncFAResponse(writer, r, responseFunc)
+}
+
 func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
 	if h.ShouldReturnError {
 		responseFunc := func([]byte) {

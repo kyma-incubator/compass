@@ -180,14 +180,5 @@ func (c *Client) buildFilter() map[string]string {
 		}
 	}
 
-	result := map[string]string{"fetchAcrossZones": "true"}
-
-	if len(c.apiConfig.FilterCriteria) > 0 {
-		result["$filter"] = fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery())
-	}
-
-	if len(c.apiConfig.SelectCriteria) > 0 {
-		result["$select"] = c.apiConfig.SelectCriteria
-	}
-	return result
+	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery()), "fetchAcrossZones": "true"}
 }
