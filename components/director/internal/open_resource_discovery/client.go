@@ -69,7 +69,12 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	config, err := c.fetchConfig(ctx, app, webhook, tenantValue)
+	var additionalHeader string
+	if app.BaseURL != nil && strings.Contains(str.PtrStrToStr(app.BaseURL), "s4hana.ondemand.com") {
+		additionalHeader = strings.ReplaceAll(str.PtrStrToStr(app.BaseURL), "https://", "")
+	}
+
+	config, err := c.fetchConfig(ctx, app, webhook, tenantValue, additionalHeader)
 	if err != nil {
 		return nil, "", err
 	}
@@ -85,11 +90,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	}
 
 	log.C(ctx).Infof("BaseURL %s \n", str.PtrStrToStr(app.BaseURL))
-
-	var additionalHeader string
-	if app.BaseURL != nil && strings.Contains(str.PtrStrToStr(app.BaseURL), "s4hana.ondemand.com") {
-		additionalHeader = strings.ReplaceAll(str.PtrStrToStr(app.BaseURL), "https://", "")
-	}
 
 	log.C(ctx).Infof("BaseURL %s \n", str.PtrStrToStr(app.BaseURL))
 	log.C(ctx).Infof("Found additional header %s\n", additionalHeader)
@@ -196,7 +196,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue, additionalHeader string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
@@ -205,7 +205,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
-		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue, "")
+		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue, additionalHeader)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
