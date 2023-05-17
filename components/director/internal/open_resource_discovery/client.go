@@ -111,7 +111,13 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 				<-workers
 			}()
 
+			fmt.Printf("baseURL %s \n\n", baseURL)
+			fmt.Printf("docDetails.URL %s \n\n", docDetails.URL)
+
 			documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
+
+			fmt.Printf("documentURL %s \n\n", documentURL)
+
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
