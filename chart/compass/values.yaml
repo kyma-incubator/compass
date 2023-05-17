@@ -127,15 +127,15 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -143,23 +143,23 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3047"
+      version: "PR-3070"
       name: compass-ias-adapter
     gateway:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-92"
+      version: "PR-94"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -167,7 +167,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -176,7 +176,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
@@ -896,6 +896,7 @@ global:
     systemsAPIEndpoint: ""
     # systemsAPIFilterCriteria - criteria for fetching systems
     systemsAPIFilterCriteria: ""
+    systemsAPISelectCriteria: ""
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
