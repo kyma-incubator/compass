@@ -489,8 +489,9 @@ global:
     tmApiPath: "/v1/tenantMappings/{tenantId}"
     readTimeout: 30s
     readHeaderTimeout: 30s
-    writeTimeout: 30s
+    writeTimeout: 60s
     idleTimeout: 30s
+    serverTimeout: 60s
     http:
       client:
         timeout: 30s

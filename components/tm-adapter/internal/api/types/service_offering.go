@@ -1,7 +1,7 @@
 package types
 
 type ServiceOffering struct {
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	BrokerId    string `json:"broker_id"`

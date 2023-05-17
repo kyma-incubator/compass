@@ -11,8 +11,22 @@ type ServiceKeyReqBody struct {
 }
 
 type ServiceKey struct {
-	Id                string          `json:"id"`
+	ID                string          `json:"id"`
 	Name              string          `json:"name"`
 	ServiceInstanceId string          `json:"service_instance_id"`
 	Credentials       json.RawMessage `json:"credentials"`
+}
+
+type IASParameters struct {
+	ConsumedServices      []ConsumedService `json:"consumed-services"`
+	XsuaaCrossConsumption bool              `json:"xsuaa-cross-consumption"`
+}
+
+type ConsumedService struct {
+	ServiceInstanceName string `json:"service-instance-name"`
+}
+
+type ServiceKeys struct {
+	NumItems int          `json:"num_items"`
+	Items    []ServiceKey `json:"items"`
 }

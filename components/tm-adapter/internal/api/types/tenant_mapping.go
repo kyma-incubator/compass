@@ -12,5 +12,7 @@ type ReceiverTenant struct {
 }
 
 type Item struct {
-	Configuration json.RawMessage `json:"configuration"`
+	Operation      string          `json:"operation"`
+	ApplicationURL string          `json:"applicationUrl"`
+	Configuration  json.RawMessage `json:"configuration"`
 }

@@ -74,6 +74,8 @@ spec:
               value: {{ .Values.global.tenantMappingAdapter.writeTimeout }}
             - name: APP_IDLE_TIMEOUT
               value: {{ .Values.global.tenantMappingAdapter.idleTimeout }}
+            - name: APP_SERVER_TIMEOUT
+              value: {{ .Values.global.tenantMappingAdapter.serverTimeout }}
             - name: APP_TM_ADAPTER_CLIENT_TIMEOUT
               value: {{ .Values.global.tenantMappingAdapter.http.client.timeout }}
             - name: APP_TM_ADAPTER_CLIENT_SKIP_SSL_VALIDATION

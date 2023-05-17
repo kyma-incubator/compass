@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/api/paths"
@@ -17,9 +18,13 @@ import (
 	"net/http"
 	"net/url"
 	"text/template"
+	"time"
 )
 
-const subaccountKey = "subaccount_id"
+const (
+	SubaccountKey     = "subaccount_id"
+	LocationHeaderKey = "Location"
+)
 
 type Handler struct {
 	cfg      *config.Config
@@ -46,12 +51,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to read request body"))
 		return
 	}
-	log.C(ctx).Infof("Tenant mapping request body: %q", reqBody)
+	log.C(ctx).Infof("Tenant mapping request body: %s", reqBody)
 
 	formationID := gjson.Get(string(reqBody), "context.btp.uclFormationId").String()
 	if formationID == "" {
-		log.C(ctx).Error("Failed to get the formation ID from the request body")
-		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to get the formation ID from the request body"))
+		log.C(ctx).Error("Failed to get the formation ID from the tenant mapping request body")
+		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to get the formation ID from the tenant mapping request body"))
 		return
 	}
 
@@ -75,34 +80,86 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	catalogName := "certificate-service" // todo::: should be provided as label on the runtime/app-template and will be used through TM notification body
-	planName := "standard"               // todo::: should be provided as label on the runtime/app-template and will be used through TM notification body
+	log.C(ctx).Info("Creating procurement service instance")
+
+	catalogNameProcurement := "procurement-service" // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+	planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
 	h.tenantID = tm.ReceiverTenant.SubaccountID
 
-	offeringID, err := h.retrieveServiceOffering(ctx, catalogName)
+	offeringIDProcurement, err := h.retrieveServiceOffering(ctx, catalogNameProcurement)
 	if err != nil {
 		log.C(ctx).Error(err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
-	planID, err := h.retrieveServicePlan(ctx, planName, offeringID)
+	planIDProcurement, err := h.retrieveServicePlan(ctx, planNameProcurement, offeringIDProcurement)
 	if err != nil {
 		log.C(ctx).Error(err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
-	serviceInstanceName := catalogName + "-instance-" + formationID
-	serviceInstanceID, err := h.createServiceInstance(ctx, planID, serviceInstanceName)
+	svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
+	_, err = h.createServiceInstance(ctx, planIDProcurement, svcInstanceNameProcurement)
 	if err != nil {
 		log.C(ctx).Error(err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
-	serviceKeyName := serviceInstanceName + "-key"
-	serviceKey, err := h.createServiceKey(ctx, serviceKeyName, serviceInstanceID)
+	log.C(ctx).Info("Creating IAS service instance and key")
+
+	catalogNameIAS := "identity" // IAS
+	planNameIAS := "application"
+
+	offeringIDIAS, err := h.retrieveServiceOffering(ctx, catalogNameIAS)
+	if err != nil {
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	planIDIAS, err := h.retrieveServicePlan(ctx, planNameIAS, offeringIDIAS)
+	if err != nil {
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	svcInstanceNameIAS := catalogNameIAS + "-instance-" + formationID
+	svcInstanceIDIAS, err := h.createServiceInstance(ctx, planIDIAS, svcInstanceNameIAS)
+	if err != nil {
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	// todo:: consider removing it
+	//svcInstanceIDIAS, err := h.retrieveServiceInstanceByName(ctx, svcInstanceNameIAS)
+	//if err != nil {
+	//	log.C(ctx).Error(err)
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+
+	svcKeyNameIAS := svcInstanceNameIAS + "-key"
+	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement)
+	if err != nil {
+		log.C(ctx).Error(err)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	// todo:: consider removing it
+	//serviceKeyIAS, err = h.retrieveServiceKeyByName(ctx, svcKeyNameIAS)
+	//if err != nil {
+	//	log.C(ctx).Error(err)
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+
+	serviceKeyIAS, err := h.retrieveServiceKeyByID(ctx, serviceKeyIDIAS)
 	if err != nil {
 		log.C(ctx).Error(err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -110,9 +167,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//// old response body containing service key credentials
-	//responseBody := types.Response{Configuration: serviceKey.Credentials} // todo::: deletee
+	//responseBody := types.Response{Configuration: serviceKey.Credentials} /// todo::: consider removing it?
 
-	data, err := h.buildTemplateData(serviceKey.Credentials)
+	if len(serviceKeyIAS.Credentials) < 0 {
+		log.C(ctx).Errorf("The credentials for service key with ID: %q should not be empty", serviceKeyIAS.ID)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	data, err := h.buildTemplateData(serviceKeyIAS.Credentials, tm)
 	if err != nil {
 		log.C(ctx).Error(err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -166,6 +229,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var jsonRawMsg json.RawMessage
 	err = json.Unmarshal([]byte(res.String()), &jsonRawMsg)
 	if err != nil {
+		log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
@@ -192,7 +257,7 @@ func validate(tm types.TenantMapping) error {
 }
 
 func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceOfferingsPath, subaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceOfferingsPath, SubaccountKey, h.tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service offerings URL")
 	}
@@ -216,7 +281,7 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("Failed to get service offerings, status: %d, body: %q", resp.StatusCode, body)
+		return "", errors.Errorf("Failed to get service offerings, status: %d, body: %s", resp.StatusCode, body)
 	}
 	log.C(ctx).Infof("Successfully fetch service offerings")
 
@@ -229,7 +294,7 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 	var offeringID string
 	for _, item := range offerings.Items {
 		if item.CatalogName == catalogName {
-			offeringID = item.Id
+			offeringID = item.ID
 			break
 		}
 	}
@@ -239,7 +304,7 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 }
 
 func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID string) (string, error) {
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServicePlansPath, subaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServicePlansPath, SubaccountKey, h.tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service plans URL")
 	}
@@ -262,7 +327,7 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("Failed to get service plans, status: %d, body: %q", resp.StatusCode, body)
+		return "", errors.Errorf("Failed to get service plans, status: %d, body: %s", resp.StatusCode, body)
 	}
 	log.C(ctx).Infof("Successfully fetch service plans")
 
@@ -275,7 +340,7 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	var planID string
 	for _, item := range plans.Items {
 		if item.CatalogName == planName && item.ServiceOfferingId == offeringID {
-			planID = item.Id
+			planID = item.ID
 			break
 		}
 	}
@@ -295,7 +360,7 @@ func (h *Handler) createServiceInstance(ctx context.Context, planID, serviceInst
 		return "", errors.Errorf("Failed to marshal service instance body: %v", err)
 	}
 
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, subaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
@@ -317,69 +382,398 @@ func (h *Handler) createServiceInstance(ctx context.Context, planID, serviceInst
 		return "", errors.Errorf("Failed to read response body from service instance creation request: %v", err)
 	}
 
-	if resp.StatusCode != http.StatusCreated {
-		return "", errors.Errorf("Failed to create service instance, status: %d, body: %q", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
+		return "", errors.Errorf("Failed to create service instance, status: %d, body: %s", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("Successfully create service instance with name: %q", serviceInstanceName)
 
+	if resp.StatusCode == http.StatusAccepted {
+		log.C(ctx).Infof("Handle asynchronous service instance creation...")
+		opStatusPath := resp.Header.Get(LocationHeaderKey)
+		if opStatusPath == "" {
+			return "", errors.Errorf("The service instance operation status path from %s header should not be empty", LocationHeaderKey)
+		}
+
+		opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while building asynchronous service instance operation URL")
+		}
+
+		opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
+		if err != nil {
+			return "", err
+		}
+
+		ticker := time.NewTicker(3 * time.Second)
+		timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+		for {
+			select {
+			case <-ticker.C:
+				log.C(ctx).Infof("Getting asynchronous operation status for service instance with name: %q", serviceInstanceName)
+				opResp, err := h.caller.Call(opReq)
+				if err != nil {
+					return "", err
+				}
+				defer closeResponseBody(ctx, opResp)
+
+				opBody, err := ioutil.ReadAll(opResp.Body)
+				if err != nil {
+					return "", errors.Errorf("Failed to read operation response body from asynchronous service instance creation request: %v", err)
+				}
+
+				if opResp.StatusCode != http.StatusOK {
+					return "", errors.Errorf("Failed to get asynchronous service instance operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
+				}
+
+				var opStatus types.OperationStatus
+				err = json.Unmarshal(opBody, &opStatus)
+				if err != nil {
+					return "", errors.Errorf("Failed to unmarshal service instance operation status: %v", err)
+				}
+
+				if opStatus.State == types.OperationStateInProgress {
+					log.C(ctx).Infof("The asynchronous service instance operation state is still: %q", types.OperationStateInProgress)
+					continue
+				}
+
+				if opStatus.State != types.OperationStateSucceeded {
+					return "", errors.Errorf("The asynchronous service instance operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
+				}
+
+				log.C(ctx).Infof("The asynchronous operation status for service instance with name: %q finished with state: %q", serviceInstanceName, opStatus.State)
+				serviceInstanceID := opStatus.ResourceID
+				if serviceInstanceID == "" {
+					return "", errors.New("The service instance ID could not be empty")
+				}
+
+				return serviceInstanceID, nil
+			case <-timeout:
+				return "", errors.New("Timeout waiting for asynchronous operation status to finish")
+			}
+		}
+	}
+
+	log.C(ctx).Infof("Successfully create service instance with name: %q synchronously", serviceInstanceName)
 	var serviceInstance types.ServiceInstance
 	err = json.Unmarshal(body, &serviceInstance)
 	if err != nil {
 		return "", errors.Errorf("Failed to unmarshal service instance: %v", err)
 	}
 
-	serviceInstanceID := serviceInstance.Id
+	serviceInstanceID := serviceInstance.ID
+	if serviceInstanceID == "" {
+		return "", errors.New("The service instance ID could not be empty")
+	}
 	log.C(ctx).Infof("Service instance ID: %q", serviceInstanceID)
 
 	return serviceInstanceID, nil
 }
 
-func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID string) (*types.ServiceKey, error) {
+// todo:: consider removing retrieveServiceInstanceByName
+func (h *Handler) retrieveServiceInstanceByName(ctx context.Context, serviceInstanceName string) (string, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building service instances URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Infof("Listing service instances...")
+	resp, err := h.caller.Call(req)
+	if err != nil {
+		log.C(ctx).Error(err)
+		return "", err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Errorf("Failed to read service instances response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("Failed to get service offerings, status: %d, body: %s", resp.StatusCode, body)
+	}
+	log.C(ctx).Infof("Successfully fetch service offerings")
+
+	var instances types.ServiceInstances
+	err = json.Unmarshal(body, &instances)
+	if err != nil {
+		return "", errors.Errorf("Failed to unmarshal service instances: %v", err)
+	}
+
+	var instanceID string
+	for _, item := range instances.Items {
+		if item.Name == serviceInstanceName {
+			instanceID = item.ID
+			break
+		}
+	}
+	log.C(ctx).Infof("Service instance ID: %q", instanceID)
+
+	return instanceID, nil
+}
+
+// todo:: double check
+func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstanceID string) (string, error) {
+	svcInstancePath := paths.ServiceInstancesPath + fmt.Sprintf("/%s", serviceInstanceID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, svcInstancePath, SubaccountKey, h.tenantID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building service instances URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Infof("Getting service instance by ID: %q", serviceInstanceID)
+	resp, err := h.caller.Call(req)
+	if err != nil {
+		log.C(ctx).Error(err)
+		return "", err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Errorf("Failed to read service instance response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("Failed to get service instance, status: %d, body: %s", resp.StatusCode, body)
+	}
+	log.C(ctx).Infof("Successfully fetch service instance by ID: %q", serviceInstanceID)
+
+	var instance types.ServiceInstance
+	err = json.Unmarshal(body, &instance)
+	if err != nil {
+		return "", errors.Errorf("Failed to unmarshal service instances: %v", err)
+	}
+	log.C(ctx).Infof("Service instance ID: %q", instance.ID)
+
+	return instance.ID, nil
+}
+
+func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement string) (string, error) {
+	iasParams := types.IASParameters{
+		ConsumedServices: []types.ConsumedService{
+			{
+				ServiceInstanceName: serviceInstanceNameProcurement,
+			},
+		},
+		XsuaaCrossConsumption: true,
+	}
+
+	iasParamsBytes, err := json.Marshal(iasParams)
+	if err != nil {
+		return "", errors.Errorf("Failed to marshal IAS parameters with procurement service details: %v", err)
+	}
+
 	serviceKeyReqBody := &types.ServiceKeyReqBody{
 		Name:              serviceKeyName,
 		ServiceInstanceId: serviceInstanceID,
-		//Parameters: // todo::: should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
+		Parameters:        iasParamsBytes, // todo::: most probably should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
 	}
 
 	serviceKeyReqBodyBytes, err := json.Marshal(serviceKeyReqBody)
 	if err != nil {
-		return nil, errors.Errorf("Failed to marshal service key body: %v", err)
+		return "", errors.Errorf("Failed to marshal service key body: %v", err)
 	}
 
-	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, subaccountKey, h.tenantID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while building service bindings URL")
+		return "", errors.Wrapf(err, "while building service bindings URL")
 	}
 
-	log.C(ctx).Infof("Creating service key with name: %q from service instance with ID: %q", serviceKeyName, serviceInstanceID)
+	log.C(ctx).Infof("Creating IAS service key for service instance with name: %q", serviceInstanceNameProcurement)
 	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(serviceKeyReqBodyBytes))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	resp, err := h.caller.Call(req)
 	if err != nil {
+		return "", err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Errorf("Failed to read response body from service key creation request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
+		return "", errors.Errorf("Failed to create service key, status: %d, body: %s", resp.StatusCode, body)
+	}
+
+	if resp.StatusCode == http.StatusAccepted {
+		log.C(ctx).Infof("Handle asynchronous service key creation...")
+		opStatusPath := resp.Header.Get(LocationHeaderKey)
+		if opStatusPath == "" {
+			return "", errors.Errorf("The service key operation status path from %s header should not be empty", LocationHeaderKey)
+		}
+
+		opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while building asynchronous service key operation URL")
+		}
+
+		opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
+		if err != nil {
+			return "", err
+		}
+
+		ticker := time.NewTicker(3 * time.Second)
+		timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+		for {
+			select {
+			case <-ticker.C:
+				log.C(ctx).Infof("Getting asynchronous operation status for service key with name: %q", serviceKeyName)
+				opResp, err := h.caller.Call(opReq)
+				if err != nil {
+					return "", err
+				}
+				defer closeResponseBody(ctx, opResp)
+
+				opBody, err := ioutil.ReadAll(opResp.Body)
+				if err != nil {
+					return "", errors.Errorf("Failed to read operation response body from asynchronous service key creation request: %v", err)
+				}
+
+				if opResp.StatusCode != http.StatusOK {
+					return "", errors.Errorf("Failed to get asynchronous service key operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
+				}
+
+				var opStatus types.OperationStatus
+				err = json.Unmarshal(opBody, &opStatus)
+				if err != nil {
+					return "", errors.Errorf("Failed to unmarshal service key operation status: %v", err)
+				}
+
+				if opStatus.State == types.OperationStateInProgress {
+					log.C(ctx).Infof("The asynchronous service key operation state is still: %q", types.OperationStateInProgress)
+					continue
+				}
+
+				if opStatus.State != types.OperationStateSucceeded {
+					return "", errors.Errorf("The asynchronous service key operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
+				}
+
+				log.C(ctx).Infof("The asynchronous operation status for service key with name: %q finished with state: %q", serviceKeyName, opStatus.State)
+				serviceKeyID := opStatus.ResourceID
+				if serviceKeyID == "" {
+					return "", errors.New("The service key ID could not be empty")
+				}
+
+				return serviceKeyID, nil
+			case <-timeout:
+				return "", errors.New("Timeout waiting for asynchronous operation status to finish")
+			}
+		}
+	}
+
+	log.C(ctx).Infof("Successfully create IAS service key for service instance with name: %q synchronously", serviceInstanceNameProcurement)
+	var serviceKey types.ServiceKey
+	err = json.Unmarshal(body, &serviceKey)
+	if err != nil {
+		return "", errors.Errorf("Failed to unmarshal service key: %v", err)
+	}
+
+	serviceKeyID := serviceKey.ID
+	if serviceKeyID == "" {
+		return "", errors.New("The service key ID could not be empty")
+	}
+	log.C(ctx).Infof("Service key ID: %q", serviceKeyID)
+
+	return serviceKeyID, nil
+}
+
+// todo:: consider removing retrieveServiceKeyByName
+func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName string) (*types.ServiceKey, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building service binding URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Listing service bindings...")
+	resp, err := h.caller.Call(req)
+	if err != nil {
+		log.C(ctx).Error(err)
 		return nil, err
 	}
 	defer closeResponseBody(ctx, resp)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Errorf("Failed to read response body from service key creation request: %v", err)
+		return nil, errors.Errorf("Failed to read service binding response body: %v", err)
 	}
 
-	if resp.StatusCode != http.StatusCreated {
-		return nil, errors.Errorf("Failed to create service key, status: %d, body: %q", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("Failed to get service bindings, status: %d, body: %s", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("Successfully create service key with name: %q", serviceKeyName)
+	log.C(ctx).Infof("Successfully fetch service bindings")
+
+	var svcKeys types.ServiceKeys
+	err = json.Unmarshal(body, &svcKeys)
+	if err != nil {
+		return nil, errors.Errorf("Failed to unmarshal service keys: %v", err)
+	}
+
+	var serviceKey types.ServiceKey
+	for _, item := range svcKeys.Items {
+		if item.Name == serviceKeyName {
+			serviceKey = item
+			break
+		}
+	}
+	log.C(ctx).Infof("Service key ID: %q", serviceKey.ID)
+
+	return &serviceKey, nil
+}
+
+func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID string) (*types.ServiceKey, error) {
+	svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", serviceKeyID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, svcKeyPath, SubaccountKey, h.tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building service binding URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Getting service key by ID: %q", serviceKeyID)
+	resp, err := h.caller.Call(req)
+	if err != nil {
+		log.C(ctx).Error(err)
+		return nil, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Errorf("Failed to read service binding response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("Failed to get service bindings, status: %d, body: %s", resp.StatusCode, body)
+	}
+	log.C(ctx).Infof("Successfully fetch service key by ID: %q", serviceKeyID)
 
 	var serviceKey types.ServiceKey
 	err = json.Unmarshal(body, &serviceKey)
 	if err != nil {
 		return nil, errors.Errorf("Failed to unmarshal service key: %v", err)
 	}
-
-	log.C(ctx).Infof("Service key ID: %q", serviceKey.Id)
 
 	return &serviceKey, nil
 }
@@ -401,31 +795,34 @@ func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 	return base.String(), nil
 }
 
-func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage) (map[string]string, error) {
-	svcKeyURL := gjson.Get(string(serviceKeyCredentials), "certificateservice.apiurl").String()
-	if svcKeyURL == "" {
-		return nil, errors.New("could not find 'certificateservice.apiurl' property")
-	}
+func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReqBody types.TenantMapping) (map[string]string, error) {
+	// todo::: consider removing it?
+	//svcKeyURL := gjson.Get(string(serviceKeyCredentials), "certificateservice.apiurl").String()
+	//if svcKeyURL == "" {
+	//	return nil, errors.New("could not find 'certificateservice.apiurl' property")
+	//}
 
-	svcKeyClientID, ok := gjson.Get(string(serviceKeyCredentials), "uaa.clientid").Value().(string)
+	appURL := tmReqBody.Items[0].ApplicationURL
+
+	svcKeyClientID, ok := gjson.Get(string(serviceKeyCredentials), "clientid").Value().(string)
 	if !ok {
-		return nil, errors.New("could not find 'uaa.clientid' property")
+		return nil, errors.New("could not find 'clientid' property")
 	}
 
-	svcKeyClientSecret, ok := gjson.Get(string(serviceKeyCredentials), "uaa.clientsecret").Value().(string)
+	svcKeyClientSecret, ok := gjson.Get(string(serviceKeyCredentials), "clientsecret").Value().(string)
 	if !ok {
-		return nil, errors.New("could not find 'uaa.clientsecret' property")
+		return nil, errors.New("could not find 'clientsecret' property")
 	}
 
-	svcKeyTokenURL, ok := gjson.Get(string(serviceKeyCredentials), "uaa.url").Value().(string)
+	svcKeyTokenURL, ok := gjson.Get(string(serviceKeyCredentials), "url").Value().(string)
 	if !ok {
 		return nil, errors.New("could not find 'uaa.url' property")
 	}
-	tokenPath := "/oauth/token"
+	//tokenPath := "/oauth/token" // todo::: consider removing it?
 
 	data := map[string]string{
-		"URL":          svcKeyURL,
-		"TokenURL":     svcKeyTokenURL + tokenPath,
+		"URL":          appURL,
+		"TokenURL":     svcKeyTokenURL,
 		"ClientID":     svcKeyClientID,
 		"ClientSecret": svcKeyClientSecret,
 		"SubaccountID": h.tenantID,
