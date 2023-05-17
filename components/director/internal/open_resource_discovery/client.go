@@ -276,5 +276,9 @@ func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error)
 		return parsedWebhookURL.String(), nil
 	}
 
+	if strings.Contains(webhookURL, "https://cert.staging.extensions.ondemand.com") {
+		return strings.ReplaceAll(webhookURL, "sap/bc/http/sap/ord_configuration/", ""), nil
+	}
+
 	return webhookURL, nil
 }
