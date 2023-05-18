@@ -63,6 +63,13 @@ then
    exit 1
 fi
 
+${kc} get cts  ${suiteName} -ojsonpath="{.metadata.name}" > /dev/null 2>&1
+if [[ $? -eq 0 ]]
+then
+   echo "ERROR: Another ClusterTestSuite CRD is currently running in this cluster."
+   exit 1
+fi
+
 # match all tests
 if [ -z "$testDefinitionName" ]
 then
