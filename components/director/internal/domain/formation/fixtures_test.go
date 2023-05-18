@@ -582,6 +582,20 @@ var (
 			CorrelationID: "",
 		},
 	}
+
+	formationWithInitialState                 = fixFormationModelWithState(model.InitialFormationState)
+	formationNotificationSyncCreateExtRequest = &webhookclient.FormationNotificationRequestExt{
+		Request:       formationNotificationSyncCreateRequest.Request,
+		Operation:     model.CreateFormation,
+		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		FormationType: testFormationTemplateName,
+	}
+	formationNotificationSyncCreateExtRequestWithNoOperation = &webhookclient.FormationNotificationRequestExt{
+		Request:       formationNotificationSyncCreateRequest.Request,
+		Operation:     "",
+		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		FormationType: testFormationTemplateName,
+	}
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
@@ -596,9 +610,30 @@ var (
 			CorrelationID: "",
 		},
 	}
+	formationNotificationAsyncCreateExtRequest = &webhookclient.FormationNotificationRequestExt{
+		Request:       formationNotificationAsyncCreateRequest.Request,
+		Operation:     model.CreateFormation,
+		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		FormationType: testFormationTemplateName,
+	}
+
+	formationNotificationAsyncDeleteRequest = &webhookclient.FormationNotificationRequest{
+		Request: &webhookclient.Request{
+			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			CorrelationID: "",
+		},
+	}
+	formationNotificationAsyncDeleteExtRequest = &webhookclient.FormationNotificationRequestExt{
+		Request:       formationNotificationAsyncDeleteRequest.Request,
+		Operation:     model.DeleteFormation,
+		Formation:     fixFormationModelWithState(model.ReadyFormationState),
+		FormationType: testFormationTemplateName,
+	}
 
 	formationNotificationSyncCreateRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncCreateRequest}
 	formationNotificationSyncDeleteRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncDeleteRequest}
+	formationNotificationAsyncDeleteRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncDeleteRequest}
 	formationNotificationAsyncCreateRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncCreateRequest}
 
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
@@ -1130,6 +1165,14 @@ func fixRuntimeWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
 	}
 }
 
+func fixRuntimeWebhookModel(webhookID, runtimeID string) *model.Webhook {
+	return &model.Webhook{
+		ID:       webhookID,
+		ObjectID: runtimeID,
+		Type:     model.WebhookTypeConfigurationChanged,
+	}
+}
+
 func fixApplicationWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:            webhookID,
@@ -1350,14 +1393,20 @@ func fixFormationAssignmentModelWithParameters(id, formationID, source, target s
 	}
 }
 
-func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPair {
-	return &formationassignment.AssignmentMappingPair{Assignment: &formationassignment.FormationAssignmentRequestMapping{
-		Request:             request,
-		FormationAssignment: assignment,
-	}, ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
-		Request:             nil,
-		FormationAssignment: nil,
-	}}
+func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             request,
+				FormationAssignment: assignment,
+			},
+			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             nil,
+				FormationAssignment: nil,
+			},
+		},
+		Operation: "",
+	}
 }
 
 func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMessage, suffix string) *model.FormationAssignment {

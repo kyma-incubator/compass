@@ -129,6 +129,9 @@ func (ns *notificationsService) GenerateFormationNotifications(ctx context.Conte
 
 func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error) {
 	joinPointDetails, err := ns.prepareDetailsForSendNotification(webhookNotificationReq)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing details for send notification")
+	}
 	joinPointDetails.Location = formationconstraint.PreSendNotification
 	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PreOperation)
@@ -137,6 +140,8 @@ func (ns *notificationsService) SendNotification(ctx context.Context, webhookNot
 	resp, err := ns.webhookClient.Do(ctx, webhookNotificationReq)
 	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
 		return resp, nil
+	} else if err != nil {
+		return resp, err
 	}
 
 	joinPointDetails.Location = formationconstraint.PostSendNotification
