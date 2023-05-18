@@ -1234,7 +1234,7 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, subscriptionConsumerCustomerID, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, subscriptionConsumerCustomerID)
 	})
 }
 
@@ -1421,7 +1421,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1445,7 +1445,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -1480,7 +1480,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == assignOperation {
 				assignNotificationsFound++
-				assertFormationAssignmentsNotificationWithConfig(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
@@ -1506,7 +1506,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationsFound++
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
@@ -1584,7 +1584,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1608,7 +1608,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -1643,7 +1643,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == assignOperation {
 				assignNotificationsFound++
-				assertFormationAssignmentsNotificationWithConfig(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
@@ -1669,7 +1669,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationsFound++
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
@@ -1745,7 +1745,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		assertNotificationsCountForTenant(t, body, app2.ID, 1)
 
@@ -1882,7 +1882,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		t.Logf("Unassign Application 1 from formation: %q", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1906,7 +1906,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -1941,7 +1941,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == assignOperation {
 				assignNotificationsFound++
-				assertFormationAssignmentsNotificationWithConfig(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
@@ -1967,7 +1967,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationsFound++
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
@@ -2553,7 +2553,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutExceptionTypeApp := notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutExceptionTypeApp, assignOperation, formation.ID, exceptionTypeApp.ID, localTenantID3, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutExceptionTypeApp, assignOperation, formation.ID, exceptionTypeApp.ID, localTenantID3, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -2584,7 +2584,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, exceptionTypeApp.ID, localTenantID3, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, exceptionTypeApp.ID, localTenantID3, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign exceptionTypeApp not found")
@@ -2634,7 +2634,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 = gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutExceptionTypeApp = notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutExceptionTypeApp, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutExceptionTypeApp, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -2657,7 +2657,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -2749,7 +2749,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+		assertFormationAssignmentsNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -2773,7 +2773,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -3106,7 +3106,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 			notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Assign application 2 to formation %s", providerFormationName)
 			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app2.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
@@ -3146,7 +3146,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == app2.ID {
 					notificationForApp2Found = true
-					assertFormationAssignmentsNotificationWithConfig(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+					assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 			require.True(t, notificationForApp2Found, "notification for assign app2 not found")
@@ -3180,7 +3180,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				op := notification.Get("Operation").String()
 				if op == unassignOperation {
 					unassignNotificationFound = true
-					assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+					assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 			require.True(t, unassignNotificationFound, "notification for unassign app1 not found")
@@ -3208,7 +3208,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				t.Logf("Found %q notification for app %q", op, appIDFromNotification)
 				if appIDFromNotification == app2.ID && op == unassignOperation {
 					unassignNotificationForApp2Found = true
-					assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+					assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 			require.True(t, unassignNotificationForApp2Found, "notification for unassign app2 not found")
@@ -3437,7 +3437,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 				notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 				assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-				assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 				// rtCtx -> App notifications
 				assertNotificationsCountForTenant(t, body, localTenantID, 2)
@@ -3765,7 +3765,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Assign application to formation %s should succeed on retry", formation.Name)
 			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app1.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
@@ -3793,7 +3793,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			var unassignFormation graphql.Formation
 			t.Logf("Unassign application from formation %s", formation.Name)
@@ -3823,7 +3823,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					t.Logf("Found notification for app %q", appIDFromNotification)
 					if appIDFromNotification == app1.ID {
 						unassignNotificationFound = true
-						assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+						assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 					}
 				}
 			}
@@ -3909,7 +3909,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			var unassignFormation graphql.Formation
 			// notification mock api should return error
@@ -3943,7 +3943,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Unassign application from formation %s should succeed on retry", formation.Name)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
@@ -3963,7 +3963,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					t.Logf("Found notification for app %q", appIDFromNotification)
 					if appIDFromNotification == app1.ID {
 						unassignNotificationFound = true
-						assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+						assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 					}
 				}
 			}
@@ -4074,7 +4074,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Resynchronize formation %s should retry and succeed", formation.Name)
 			resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
@@ -4105,7 +4105,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-			assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+			assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -4152,7 +4152,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					t.Logf("Found notification for app %q", appIDFromNotification)
 					if appIDFromNotification == app1.ID {
 						unassignNotificationFound = true
-						assertFormationAssignmentsNotificationWithConfig(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+						assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 					}
 				}
 			}
@@ -4271,7 +4271,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 				notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 				assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-				assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 				// rtCtx -> App notifications
 				assertNotificationsCountForTenant(t, body, localTenantID, 1)
@@ -4329,7 +4329,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
 				notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 				assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
-				assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 				assertNotificationsCountForTenant(t, body, localTenantID, 2)
 				notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
@@ -4511,7 +4511,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 				notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 				assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-				assertFormationAssignmentsNotificationWithConfig(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID, str.Ptr(""))
+				assertFormationAssignmentsNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 				// rtCtx -> App notifications
 				assertNotificationsCountForTenant(t, body, localTenantID, 1)
@@ -4698,7 +4698,7 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 }
 
 func assertFormationAssignmentsNotification(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
-	assertFormationAssignmentsNotificationWithConfig(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, nil)
+	assertFormationAssignmentsNotificationWithConfig(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, str.Ptr(""))
 }
 
 func assertFormationAssignmentsNotificationWithConfig(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string, expectedConfig *string) {
