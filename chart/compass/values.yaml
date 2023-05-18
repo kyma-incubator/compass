@@ -163,7 +163,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3076"
+      version: "PR-3059"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3076"
+      version: "PR-3075"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -202,6 +202,20 @@ global:
   portieris:
     isEnabled: false
     imagePullSecretName: "portieris-dummy-image-pull-secret"
+  operations_manager:
+    election:
+      enabled: false
+    lease:
+      lockname: opmanagerlease
+    job:
+      ordCreation:
+        schedulePeriod: 168h
+      ordDeletion:
+        schedulePeriod: 24h
+        completedOpsOlderThanDays: 5
+        failedOpsOlderThanDays: 10
+    external:
+      port: 3009
   nsAdapter:
     external:
       port: 3005
