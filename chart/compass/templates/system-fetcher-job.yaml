@@ -152,6 +152,8 @@ spec:
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
                 - name: APP_ORD_WEBHOOK_MAPPINGS
                   value: {{ .Values.global.director.ordWebhookMappings | quote }}
+                - name: APP_ORD_PROXY_BASE_URL
+                  value: {{ .Values.global.director.ordProxyURL }}
               command:
                 - "/bin/sh"
               args:

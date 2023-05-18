@@ -267,6 +267,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_ORD_PROXY_BASE_URL
+              value: {{ .Values.global.director.ordProxyURL }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
