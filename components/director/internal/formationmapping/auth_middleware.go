@@ -31,11 +31,6 @@ const (
 	FormationAssignmentIDParam = "ucl-assignment-id"
 )
 
-//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentConverter interface {
-	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
-}
-
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
 //
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string

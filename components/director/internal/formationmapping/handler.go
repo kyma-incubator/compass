@@ -47,17 +47,15 @@ type FormationRequestBody struct {
 // Handler is the base struct definition of the FormationMappingHandler
 type Handler struct {
 	transact              persistence.Transactioner
-	faConverter           formationAssignmentConverter
 	faService             FormationAssignmentService
 	faNotificationService FormationAssignmentNotificationService
 	formationService      formationService
 }
 
 // NewFormationMappingHandler creates a formation mapping Handler
-func NewFormationMappingHandler(transact persistence.Transactioner, faConverter formationAssignmentConverter, faService FormationAssignmentService, faNotificationService FormationAssignmentNotificationService, formationService formationService) *Handler {
+func NewFormationMappingHandler(transact persistence.Transactioner, faService FormationAssignmentService, faNotificationService FormationAssignmentNotificationService, formationService formationService) *Handler {
 	return &Handler{
 		transact:              transact,
-		faConverter:           faConverter,
 		faService:             faService,
 		faNotificationService: faNotificationService,
 		formationService:      formationService,
