@@ -2,8 +2,7 @@ package formationtemplate_test
 
 import (
 	"encoding/json"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
@@ -160,7 +159,7 @@ var (
 
 	constraintID1           = "constraintID1"
 	constraintID2           = "constraintID2"
-	operatorName            = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
+	operatorName            = operators.IsNotAssignedToAnyFormationOfTypeOperator
 	formationConstraintName = "constraint-name"
 	resourceSubtype         = "test subtype"
 	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
