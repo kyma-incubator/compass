@@ -113,6 +113,7 @@ type config struct {
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	ORDProxyBaseURL    string `envconfig:"APP_ORD_PROXY_BASE_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
@@ -314,7 +315,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, ordWebhookMapping, config.ORDProxyBaseURL)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)

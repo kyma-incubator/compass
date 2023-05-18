@@ -178,6 +178,7 @@ type config struct {
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
+	ORDProxyBaseURL          string `envconfig:"APP_ORD_PROXY_BASE_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
@@ -294,6 +295,7 @@ func main() {
 		cfg.SubscriptionConfig,
 		cfg.TenantOnDemandConfig,
 		ordWebhookMapping,
+		cfg.ORDProxyBaseURL,
 		tenantMappingConfig,
 		cfg.TenantMappingCallbackURL,
 		cfg.ApplicationTemplateProductLabel,
@@ -903,7 +905,7 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
-	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMapping, cfg.ORDProxyBaseURL)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {
