@@ -233,7 +233,7 @@ var (
 
 	resourceHashes = fixResourceHashes()
 
-	credentialExchangeStrategyType           = "sap.ucl:tenant_mapping:v1"
+	credentialExchangeStrategyType           = "sap.ucl:tenant-mapping:v1"
 	credentialExchangeStrategyVersion        = "v1"
 	credentialExchangeStrategyTenantMappings = map[string]ord.CredentialExchangeStrategyTenantMapping{
 		credentialExchangeStrategyType: {

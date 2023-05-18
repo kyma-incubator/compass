@@ -31,7 +31,7 @@ const (
 	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
 	MultiErrorSeparator string = "* "
 
-	tenantMappingCustomTypeIdentifier = "sap.ucl:tenant_mapping"
+	tenantMappingCustomTypeIdentifier = "sap.ucl:tenant-mapping"
 	customTypeProperty                = "customType"
 	callbackURLProperty               = "callbackUrl"
 )
