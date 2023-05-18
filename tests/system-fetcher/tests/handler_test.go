@@ -145,13 +145,14 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
-	description := "description"
+	description1 := "name1"
+	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
@@ -162,7 +163,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name2",
-				Description:  &description,
+				Description:  &description2,
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
@@ -228,13 +229,14 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
-	description := "description"
+	description1 := "name1"
+	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
@@ -245,7 +247,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name2",
-				Description:  &description,
+				Description:  &description2,
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
@@ -338,12 +340,13 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
-	description := "description"
+	description1 := "name1"
+	description2 := "description"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
@@ -353,7 +356,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name2",
-				Description:  &description,
+				Description:  &description2,
 				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", "", "", false, ""),
@@ -523,13 +526,14 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
-	description := "description"
+	description1 := "name1"
+	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
@@ -540,7 +544,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name2",
-				Description:  &description,
+				Description:  &description2,
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
@@ -638,12 +642,14 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
-	description := "description"
+	description1 := "name1"
+	description2 := "description"
+
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
@@ -653,7 +659,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name2",
-				Description:  &description,
+				Description:  &description2,
 				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", "", "", false, ""),
@@ -661,7 +667,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name1",
-				Description:  &description,
+				Description:  &description2,
 				SystemNumber: str.Ptr("3"),
 			},
 			Labels: applicationLabels("name1", "", "", false, ""),
@@ -775,12 +781,15 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	var resp directorSchema.ApplicationPageExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
 	require.NoError(t, err)
-	description := "description"
+
+	description1 := "name1"
+	description2 := "description"
+	description3 := "name3"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				ApplicationTemplateID: &template.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
@@ -789,14 +798,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:        "name2",
-				Description: &description,
+				Description: &description2,
 			},
 			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 		{
 			Application: directorSchema.Application{
 				Name:                  "name3",
-				Description:           &description,
+				Description:           &description3,
 				ApplicationTemplateID: &template2.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
@@ -897,7 +906,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:        "name2",
-				Description: &description,
+				Description: &description2,
 			},
 			Labels: applicationLabels("name2", "", "", false, ""),
 		},
@@ -966,13 +975,14 @@ func TestSystemFetcherUpdate(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
-	description := "description"
+	description1 := "name1"
+	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
-				Description:           &description,
+				Description:           &description1,
 				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
@@ -983,7 +993,7 @@ func TestSystemFetcherUpdate(t *testing.T) {
 		{
 			Application: directorSchema.Application{
 				Name:         "name2",
-				Description:  &description,
+				Description:  &description2,
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
