@@ -770,7 +770,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenantId, appTemplate2)
 	require.NoError(t, err)
 
-	first := 100
+	first := 199
 	after := ""
 
 	getApplicationTemplatesRequest := fixtures.FixGetApplicationTemplatesWithPagination(first, after)
