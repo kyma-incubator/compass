@@ -72,7 +72,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",
 		FilterCriteria:  "%s",
-		SelectCriteria:  "%s",
 		PageSize:        4,
 		PagingSkipParam: "$skip",
 		PagingSizeParam: "$top",
