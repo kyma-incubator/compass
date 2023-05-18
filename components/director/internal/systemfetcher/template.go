@@ -150,11 +150,10 @@ func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 		return "", errors.Wrapf(err, "while unmarshaling override application input")
 	}
 
-	if err := mergo.Merge(&overrideAppInput, originalAppInput); err != nil {
+	if err := mergo.Merge(&originalAppInput, overrideAppInput); err != nil {
 		return "", errors.Wrapf(err, "while merging original app input: %v into destination app input: %v", originalAppInput, overrideAppInputJSON)
 	}
-
-	merged, err := json.Marshal(overrideAppInput)
+	merged, err := json.Marshal(originalAppInput)
 	if err != nil {
 		return "", errors.Wrapf(err, "while marshalling merged app input")
 	}
