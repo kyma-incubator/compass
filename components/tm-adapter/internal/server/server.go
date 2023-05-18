@@ -60,19 +60,20 @@ func NewServerWithHandler(c *Config, handler http.Handler) *Server {
 		shutdownTimeout: c.ShutdownTimeout,
 	}
 
-	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, c.Timeout)
-	if err != nil {
-		wrappedError := errors.Wrap(err, "Could not create timeout handler")
-		log.D().Fatal(wrappedError)
-	}
+	//handlerWithTimeout, err := timeouthandler.WithTimeout(handler, c.Timeout)
+	//if err != nil {
+	//	wrappedError := errors.Wrap(err, "Could not create timeout handler")
+	//	log.D().Fatal(wrappedError)
+	//}
 
 	s.Server = &http.Server{
-		Addr:              ":" + strconv.Itoa(c.Port),
-		Handler:           handlerWithTimeout,
-		ReadTimeout:       c.ReadTimeout,
-		ReadHeaderTimeout: c.ReadHeaderTimeout,
-		WriteTimeout:      c.WriteTimeout,
-		IdleTimeout:       c.IdleTimeout,
+		Addr:    ":" + strconv.Itoa(c.Port),
+		Handler: handler,
+		//Handler:           handlerWithTimeout,
+		//ReadTimeout:       c.ReadTimeout,
+		//ReadHeaderTimeout: c.ReadHeaderTimeout,
+		//WriteTimeout:      c.WriteTimeout,
+		//IdleTimeout:       c.IdleTimeout,
 	}
 	return s
 }
