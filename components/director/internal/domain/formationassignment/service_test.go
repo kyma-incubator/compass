@@ -3815,6 +3815,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		FormationRepo                               func() *automock.FormationRepository
 		FormationTemplateRepo                       func() *automock.FormationTemplateRepository
 		ConstraintEngine                            func() *automock.ConstraintEngine
+		RuntimeContextRepo                          func() *automock.RuntimeContextRepository
 		FormationAssignmentMappingPairWithOperation *formationassignment.AssignmentMappingPairWithOperation
 		ExpectedErrorMsg                            string
 	}{
@@ -3975,6 +3976,66 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone().Clone(), req),
 			ExpectedErrorMsg: "Error while deleting assignment: config propagation is not supported on unassign notifications",
+		},
+		{
+			Name:                    "error when can't create extended formation assignment request - can't get runtime type label",
+			Context:                 ctxWithTenant,
+			FormationAssignmentRepo: unusedFormationAssignmentRepository,
+			NotificationService:     unusedNotificationService,
+			LabelService: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
+					Key:        rtmTypeLabelKey,
+					ObjectID:   target,
+					ObjectType: model.RuntimeLabelableObject,
+				}).Return(nil, testErr).Once()
+				return lblSvc
+			},
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, source, target, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, string(model.ReadyAssignmentState), []byte(config)), req),
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:                    "error when can't create extended formation assignment request - can't get runtime type label in runtime context flow",
+			Context:                 ctxWithTenant,
+			FormationAssignmentRepo: unusedFormationAssignmentRepository,
+			NotificationService:     unusedNotificationService,
+			LabelService: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
+					Key:        rtmTypeLabelKey,
+					ObjectID:   target,
+					ObjectType: model.RuntimeLabelableObject,
+				}).Return(nil, testErr).Once()
+				return lblSvc
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				rtmCtxRepo := &automock.RuntimeContextRepository{}
+				rtmCtxRepo.On("GetByID", ctxWithTenant, TestTenantID, target).Return(&model.RuntimeContext{ID: "123", RuntimeID: target}, nil).Once()
+				return rtmCtxRepo
+			},
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, source, target, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntimeContext, string(model.ReadyAssignmentState), []byte(config)), req),
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:                    "error when can't create extended formation assignment request - can't get runtime context by ID",
+			Context:                 ctxWithTenant,
+			FormationAssignmentRepo: unusedFormationAssignmentRepository,
+			NotificationService:     unusedNotificationService,
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				rtmCtxRepo := &automock.RuntimeContextRepository{}
+				rtmCtxRepo.On("GetByID", ctxWithTenant, TestTenantID, target).Return(nil, testErr).Once()
+				return rtmCtxRepo
+			},
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, source, target, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntimeContext, string(model.ReadyAssignmentState), []byte(config)), req),
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:                    "error when can't create extended formation assignment request - unknown formation type",
+			Context:                 ctxWithTenant,
+			FormationAssignmentRepo: unusedFormationAssignmentRepository,
+			NotificationService:     unusedNotificationService,
+			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, source, target, model.FormationAssignmentTypeApplication, "unknown", string(model.ReadyAssignmentState), []byte(config)), req),
+			ExpectedErrorMsg: "unknown formation type",
 		},
 		{
 			Name:    "error when update assignment to deleting state when webhook is async callback",
@@ -4468,8 +4529,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			if testCase.FormationTemplateRepo != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
+			rtmCtxRepo := &automock.RuntimeContextRepository{}
+			if testCase.RuntimeContextRepo != nil {
+				rtmCtxRepo = testCase.RuntimeContextRepo()
+			}
 
-			svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, lblSvc, constraintEngine, formationRepo, formationTemplateRepo, rtmTypeLabelKey, appTypeLabelKey)
+			svc := formationassignment.NewService(repo, nil, nil, nil, rtmCtxRepo, notificationSvc, lblSvc, constraintEngine, formationRepo, formationTemplateRepo, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
 			isReverseProcessed, err := svc.CleanupFormationAssignment(testCase.Context, testCase.FormationAssignmentMappingPairWithOperation)
@@ -4483,7 +4548,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			}
 
 			// THEN
-			mock.AssertExpectationsForObjects(t, repo, notificationSvc, lblSvc, constraintEngine, formationRepo, formationTemplateRepo)
+			mock.AssertExpectationsForObjects(t, repo, notificationSvc, lblSvc, constraintEngine, formationRepo, formationTemplateRepo, rtmCtxRepo)
 		})
 	}
 }

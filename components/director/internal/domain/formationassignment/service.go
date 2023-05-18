@@ -1113,9 +1113,7 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	}
 }
 
-//// Request is alias for FormationAssignmentNotificationRequest
-//type Request = *webhookclient.FormationAssignmentNotificationRequest
-
+// FormationAssignmentRequestExt is extended FormationAssignmentRequest with Operation, FA, ReverseFA, Formation and Target subtype.
 type FormationAssignmentRequestExt struct {
 	*webhookclient.FormationAssignmentNotificationRequest
 	Operation                  model.FormationOperation
@@ -1125,6 +1123,7 @@ type FormationAssignmentRequestExt struct {
 	TargetSubtype              string
 }
 
+// GetObjectType returns FormationAssignmentRequestExt object type
 func (f *FormationAssignmentRequestExt) GetObjectType() model.ResourceType {
 	switch f.FormationAssignment.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -1139,22 +1138,27 @@ func (f *FormationAssignmentRequestExt) GetObjectType() model.ResourceType {
 	return ""
 }
 
+// GetObjectSubtype returns FormationAssignmentRequestExt object subtype
 func (f *FormationAssignmentRequestExt) GetObjectSubtype() string {
 	return f.TargetSubtype
 }
 
+// GetOperation returns FormationAssignmentRequestExt operation
 func (f *FormationAssignmentRequestExt) GetOperation() model.FormationOperation {
 	return f.Operation
 }
 
+// GetFormationAssignment returns FormationAssignmentRequestExt formation assignment
 func (f *FormationAssignmentRequestExt) GetFormationAssignment() *model.FormationAssignment {
 	return f.FormationAssignment
 }
 
+// GetReverseFormationAssignment returns FormationAssignmentRequestExt reverse formation assignment
 func (f *FormationAssignmentRequestExt) GetReverseFormationAssignment() *model.FormationAssignment {
 	return f.ReverseFormationAssignment
 }
 
+// GetFormation returns FormationAssignmentRequestExt formation
 func (f *FormationAssignmentRequestExt) GetFormation() *model.Formation {
 	return f.Formation
 }
