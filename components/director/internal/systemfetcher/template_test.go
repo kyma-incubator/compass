@@ -125,7 +125,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
 				resultTemplate := *appTemplateWithOverrides
 				resultTemplate.ApplicationInputJSON = `{"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"legacy":"true","tenant":"123"},"name":"test1"}`
-        appTemplateFromDB := model.ApplicationTemplate{
+				appTemplateFromDB := model.ApplicationTemplate{
 					ID:                   appTemplateID,
 					ApplicationInputJSON: `{ "name": "testtest"}`,
 				}
@@ -150,7 +150,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 						{Name: "display-name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 						{Name: "name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 					},
-					ApplicationInputJSON: `{"display-name":"{{display-name}}","integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"tenant":"123"},"name":"{{name}}"}`,
+					ApplicationInputJSON: `{"display-name":"test2","integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"tenant":"123"},"name":"test1"}`,
 				}
 				appTemplateFromDB := model.ApplicationTemplate{
 					ID: appTemplateID,
