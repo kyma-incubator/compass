@@ -1,4 +1,4 @@
-FROM golang:1.20.3-alpine3.17 as builder
+FROM golang:1.20.4-alpine3.18 as builder
 
 WORKDIR /
 RUN apk --update --no-cache add bash git
@@ -15,7 +15,7 @@ RUN git checkout $VERSION
 
 RUN go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
-FROM alpine:3.17.3
+FROM alpine:3.18.0
 
 WORKDIR /migrate
 

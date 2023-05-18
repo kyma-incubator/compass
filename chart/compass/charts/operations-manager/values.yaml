@@ -1,0 +1,27 @@
+deployment:
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+  image:
+    pullPolicy: IfNotPresent
+  resources: {}
+  resourcesCloudsqlProxy: {}
+  resourcesIstioProxy:
+    requests: {}
+    limits: {}
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false
+  dbPool:
+    maxOpenConnections: 2
+    maxIdleConnections: 2
+  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  nodeSelector: {}
+readinessProbe:
+  initialDelaySeconds: 5
+  timeoutSeconds: 2
+  periodSeconds: 5
+timeouts:
+  requestHeaders: "30s"
+  server: "3600s"
+  client: "30s"

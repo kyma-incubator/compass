@@ -26,6 +26,7 @@ type APIClient interface {
 type APIConfig struct {
 	Endpoint        string        `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
 	FilterCriteria  string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
+	SelectCriteria  string        `envconfig:"optional,APP_SYSTEM_INFORMATION_SELECT_CRITERIA"`
 	Timeout         time.Duration `envconfig:"APP_SYSTEM_INFORMATION_FETCH_TIMEOUT"`
 	PageSize        uint64        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
 	PagingSkipParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
@@ -179,5 +180,14 @@ func (c *Client) buildFilter() map[string]string {
 		}
 	}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery()), "fetchAcrossZones": "true"}
+	result := map[string]string{"fetchAcrossZones": "true"}
+
+	if len(c.apiConfig.FilterCriteria) > 0 {
+		result["$filter"] = fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery())
+	}
+
+	if len(c.apiConfig.SelectCriteria) > 0 {
+		result["$select"] = c.apiConfig.SelectCriteria
+	}
+	return result
 }

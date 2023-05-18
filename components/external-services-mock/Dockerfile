@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.20.3-alpine3.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.20.4-alpine3.18 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/external-services-mock
 WORKDIR ${BASE_APP_DIR}
@@ -24,7 +24,7 @@ ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
-FROM alpine:3.17.3
+FROM alpine:3.18.0
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

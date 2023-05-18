@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.20.3-alpine3.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.20.4-alpine3.18 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/director
 WORKDIR ${BASE_APP_DIR}
@@ -23,6 +23,7 @@ COPY . .
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o director ./cmd/director/main.go \
   && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o ns-adapter ./cmd/ns-adapter/main.go \
+  && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o operations-manager ./cmd/operations-manager/main.go \
   && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go \
   && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o tenantloader ./cmd/tenantloader/main.go \
   && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
@@ -31,6 +32,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o director ./cmd/director/mai
   && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o destinationfetcher ./cmd/destinationfetcher-svc/main.go
 RUN mkdir /app && mv ./director /app/director \
   && mv ./ns-adapter /app/ns-adapter \
+  && mv ./operations-manager /app/operations-manager \
   && mv ./tenantfetcher-svc /app/tenantfetcher-svc \
   && mv ./tenantloader /app/tenantloader \
   && mv ./ordaggregator /app/ordaggregator \
@@ -38,7 +40,7 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./systemfetcher /app/systemfetcher \
   && mv ./destinationfetcher /app/destinationfetcher
 
-FROM alpine:3.17.3
+FROM alpine:3.18.0
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
