@@ -25,6 +25,7 @@ type FormationNotificationRequest struct {
 	*Request
 }
 
+// FormationNotificationRequestExt is extended FormationNotificationRequest with Operation, Formation and FormationType
 type FormationNotificationRequestExt struct {
 	*Request
 	Operation     model.FormationOperation
@@ -32,26 +33,32 @@ type FormationNotificationRequestExt struct {
 	FormationType string
 }
 
+// GetObjectType returns FormationNotificationRequestExt object type
 func (fnr *FormationNotificationRequestExt) GetObjectType() model.ResourceType {
 	return model.FormationResourceType
 }
 
+// GetObjectSubtype returns FormationNotificationRequestExt object subtype
 func (fnr *FormationNotificationRequestExt) GetObjectSubtype() string {
 	return fnr.FormationType
 }
 
+// GetOperation returns FormationNotificationRequestExt operation
 func (fnr *FormationNotificationRequestExt) GetOperation() model.FormationOperation {
 	return fnr.Operation
 }
 
+// GetFormationAssignment returns FormationNotificationRequestExt formation assignment
 func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *model.FormationAssignment {
 	return nil
 }
 
+// GetReverseFormationAssignment returns FormationNotificationRequestExt reverse formation assignment
 func (fnr *FormationNotificationRequestExt) GetReverseFormationAssignment() *model.FormationAssignment {
 	return nil
 }
 
+// GetFormation returns FormationNotificationRequestExt formation
 func (fnr *FormationNotificationRequestExt) GetFormation() *model.Formation {
 	return fnr.Formation
 }
