@@ -8,7 +8,8 @@ type TenantMapping struct {
 }
 
 type ReceiverTenant struct {
-	SubaccountID string `json:"subaccountId"`
+	ApplicationURL string `json:"applicationUrl"`
+	SubaccountID   string `json:"subaccountId"`
 }
 
 type Item struct {

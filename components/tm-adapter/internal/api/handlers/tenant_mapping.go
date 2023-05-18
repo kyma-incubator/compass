@@ -802,7 +802,7 @@ func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReq
 	//	return nil, errors.New("could not find 'certificateservice.apiurl' property")
 	//}
 
-	appURL := tmReqBody.Items[0].ApplicationURL
+	appURL := tmReqBody.ReceiverTenant.ApplicationURL
 
 	svcKeyClientID, ok := gjson.Get(string(serviceKeyCredentials), "clientid").Value().(string)
 	if !ok {
