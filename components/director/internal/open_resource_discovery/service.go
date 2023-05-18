@@ -1813,13 +1813,21 @@ func createWebhookInput(credentialExchangeStrategyJSON gjson.Result, tenantMappi
 }
 
 func isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels []*model.Webhook) (bool, error) {
-	appWhsFromDBMarshaled, _ := json.Marshal(tenantMappingRelatedWebhooksFromDB)
+	appWhsFromDBMarshaled, err := json.Marshal(tenantMappingRelatedWebhooksFromDB)
+	if err != nil {
+		return false, errors.Wrapf(err, "while marshalling webhooks from DB")
+	}
+
 	appWhsFromDBHash, err := HashObject(string(appWhsFromDBMarshaled))
 	if err != nil {
 		return false, errors.Wrapf(err, "while hashing webhooks from DB")
 	}
 
-	enrichedWhsMarshaled, _ := json.Marshal(enrichedWhModels)
+	enrichedWhsMarshaled, err := json.Marshal(enrichedWhModels)
+	if err != nil {
+		return false, errors.Wrapf(err, "while marshalling webhooks from DB")
+	}
+
 	enrichedHash, err := HashObject(string(enrichedWhsMarshaled))
 	if err != nil {
 		return false, errors.Wrapf(err, "while hashing webhooks from ORD document")

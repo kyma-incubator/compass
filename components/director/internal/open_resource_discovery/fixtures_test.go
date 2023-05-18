@@ -53,6 +53,7 @@ const (
 	event2ID         = "testEvent2"
 	tombstoneID      = "testTs"
 	localTenantID    = "localTenantID"
+	webhookID        = "webhookID"
 
 	api1spec1ID  = "api1spec1ID"
 	api1spec2ID  = "api1spec2ID"
@@ -703,6 +704,19 @@ func fixOrdWebhooksForAppTemplate() []*model.Webhook {
 			URL:        str.Ptr(baseURL),
 		},
 	}
+}
+func fixTenantMappingWebhooksForApplication() []*model.Webhook {
+	syncMode := model.WebhookModeSync
+	return []*model.Webhook{{
+		ID:  webhookID,
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &model.Auth{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:       &syncMode,
+		ObjectType: model.ApplicationWebhookReference,
+		ObjectID:   appID,
+	}}
 }
 
 func fixVendors() []*model.Vendor {
