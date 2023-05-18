@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
@@ -40,11 +41,6 @@ type FormationAssignmentRepository interface {
 	Delete(ctx context.Context, id, tenantID string) error
 	DeleteAssignmentsForObjectID(ctx context.Context, tnt, formationID, objectID string) error
 	Exists(ctx context.Context, id, tenantID string) (bool, error)
-}
-
-//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentConverter interface {
-	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
 }
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -110,43 +106,41 @@ type constraintEngine interface {
 	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error
 }
 
-//go:generate mockery --name=formationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 }
 
 type service struct {
-	repo                         FormationAssignmentRepository
-	uidSvc                       UIDService
-	applicationRepository        applicationRepository
-	runtimeRepo                  runtimeRepository
-	runtimeContextRepo           runtimeContextRepository
-	formationAssignmentConverter formationAssignmentConverter
-	notificationService          notificationService
-	labelService                 labelService
-	constraintEngine             constraintEngine
-	formationRepository          formationRepository
-	formationTemplateRepository  formationTemplateRepository
-	runtimeTypeLabelKey          string
-	applicationTypeLabelKey      string
+	repo                        FormationAssignmentRepository
+	uidSvc                      UIDService
+	applicationRepository       applicationRepository
+	runtimeRepo                 runtimeRepository
+	runtimeContextRepo          runtimeContextRepository
+	notificationService         notificationService
+	labelService                labelService
+	constraintEngine            constraintEngine
+	formationRepository         formationRepository
+	formationTemplateRepository formationTemplateRepository
+	runtimeTypeLabelKey         string
+	applicationTypeLabelKey     string
 }
 
 // NewService creates a FormationTemplate service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentConverter formationAssignmentConverter, notificationService notificationService, labelService labelService, constraintEngine constraintEngine, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, labelService labelService, constraintEngine constraintEngine, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		repo:                         repo,
-		uidSvc:                       uidSvc,
-		applicationRepository:        applicationRepository,
-		runtimeRepo:                  runtimeRepository,
-		runtimeContextRepo:           runtimeContextRepo,
-		formationAssignmentConverter: formationAssignmentConverter,
-		notificationService:          notificationService,
-		labelService:                 labelService,
-		constraintEngine:             constraintEngine,
-		formationRepository:          formationRepository,
-		formationTemplateRepository:  formationTemplateRepository,
-		runtimeTypeLabelKey:          runtimeTypeLabelKey,
-		applicationTypeLabelKey:      applicationTypeLabelKey,
+		repo:                        repo,
+		uidSvc:                      uidSvc,
+		applicationRepository:       applicationRepository,
+		runtimeRepo:                 runtimeRepository,
+		runtimeContextRepo:          runtimeContextRepo,
+		notificationService:         notificationService,
+		labelService:                labelService,
+		constraintEngine:            constraintEngine,
+		formationRepository:         formationRepository,
+		formationTemplateRepository: formationTemplateRepository,
+		runtimeTypeLabelKey:         runtimeTypeLabelKey,
+		applicationTypeLabelKey:     applicationTypeLabelKey,
 	}
 }
 

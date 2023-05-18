@@ -570,14 +570,14 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 	}
 
 	joinPointDetails := &formationconstraint.AssignFormationOperationDetails{
-		ResourceType:         model.ResourceType(objectType),
-		ResourceSubtype:      resourceSubtype,
-		ResourceID:           objectID,
-		FormationType:        formationTemplate.Name,
-		FormationTemplateID:  formationTemplate.ID,
-		FormationID:          formation.ID,
-		FormationName:        formation.Name,
-		TenantID:             tnt,
+		ResourceType:        model.ResourceType(objectType),
+		ResourceSubtype:     resourceSubtype,
+		ResourceID:          objectID,
+		FormationType:       formationTemplate.Name,
+		FormationTemplateID: formationTemplate.ID,
+		FormationID:         formation.ID,
+		FormationName:       formation.Name,
+		TenantID:            tnt,
 	}
 	return joinPointDetails, nil
 }

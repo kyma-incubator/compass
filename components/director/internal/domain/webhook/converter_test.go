@@ -3,9 +3,10 @@ package webhook_test
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
