@@ -166,10 +166,11 @@ type service struct {
 	selfRegisterDistinguishLabelKey string
 
 	ordWebhookMapping []ORDWebhookMapping
+	ordProxyBaseURL   string
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelService LabelService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string, ordWebhookMapping []ORDWebhookMapping) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelService LabelService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string, ordWebhookMapping []ORDWebhookMapping, ordProxyBaseURL string) *service {
 	return &service{
 		appNameNormalizer:               appNameNormalizer,
 		appHideCfgProvider:              appHideCfgProvider,
@@ -185,6 +186,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		formationService:                formationService,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		ordWebhookMapping:               ordWebhookMapping,
+		ordProxyBaseURL:                 ordProxyBaseURL,
 	}
 }
 
@@ -1452,13 +1454,31 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 		return nil
 	}
 
-	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdURLPath)
+	webhookInput, err := s.createORDWebhookInput(baseURL, mappingCfg)
 	if err != nil {
 		log.C(ctx).Infof("Creating ORD Webhook failed with error: %v", err)
 		return nil
 	}
 
 	return webhookInput
+}
+
+func (s *service) createORDWebhookInput(baseURL string, ordWebhookMapping ORDWebhookMapping) (*model.WebhookInput, error) {
+	webhookURL, err := buildWebhookURL(ordWebhookMapping.SubdomainSuffix, ordWebhookMapping.OrdURLPath, &baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	proxyURL := buildWebhookProxyURL(s.ordProxyBaseURL, ordWebhookMapping)
+
+	return &model.WebhookInput{
+		Type:     model.WebhookTypeOpenResourceDiscovery,
+		URL:      str.Ptr(webhookURL),
+		ProxyURL: str.Ptr(proxyURL),
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+	}, nil
 }
 
 func isPpmsProductVersionPresentInConfig(ppmsProductVersionID string, mappingCfg ORDWebhookMapping) bool {
@@ -1490,19 +1510,12 @@ func buildWebhookURL(suffix string, ordPath string, baseURL *string) (string, er
 	return fmt.Sprintf("%s%s", urlStr, ordPath), nil
 }
 
-func createORDWebhookInput(baseURL, suffix, ordPath string) (*model.WebhookInput, error) {
-	webhookURL, err := buildWebhookURL(suffix, ordPath, &baseURL)
-	if err != nil {
-		return nil, err
+func buildWebhookProxyURL(proxyBaseURL string, mappingCfg ORDWebhookMapping) string {
+	if !mappingCfg.UseProxy {
+		return ""
 	}
 
-	return &model.WebhookInput{
-		Type: model.WebhookTypeOpenResourceDiscovery,
-		URL:  str.Ptr(webhookURL),
-		Auth: &model.AuthInput{
-			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
-		},
-	}, nil
+	return fmt.Sprintf("%s%s", proxyBaseURL, mappingCfg.OrdURLPath)
 }
 
 func createMapFromFormationsSlice(formations []string) map[string]struct{} {
