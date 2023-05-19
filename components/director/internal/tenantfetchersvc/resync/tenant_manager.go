@@ -337,6 +337,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	}
 
 	for i := pageStart + 1; i <= totalPages; i++ {
+		time.Sleep(time.Second)
 		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
 		res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
 		if err != nil {
