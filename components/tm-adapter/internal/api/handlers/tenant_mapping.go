@@ -77,7 +77,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	h.tenantID = tm.ReceiverTenant.SubaccountID
 
-	if tm.Items[0].Configuration != nil && string(tm.Items[0].Configuration) != "{}" && string(tm.Items[0].Configuration) != "\"\"" {
+	if tm.Items[0].Configuration != nil && string(tm.Items[0].Configuration) != "{}" && string(tm.Items[0].Configuration) != "\"\"" && string(tm.Items[0].Configuration) != "null" {
 		log.C(ctx).Info("The configuration in the tenant mapping body is provided and no service instance/binding will be created. Returning...")
 		httputil.Respond(w, http.StatusOK)
 		return
@@ -125,7 +125,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mockURL := "https://uclmockapi.free.beeceptor.com/v1/tenantMappings/"
+	mockURL := "https://guidedbuyingmockapi.free.beeceptor.com/v1/tenantMappings"
 	req, err := http.NewRequest(http.MethodPatch, mockURL, nil)
 	if err != nil {
 		log.C(ctx).Error("An error occurred while creating request to the mock API")
