@@ -2417,56 +2417,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name: "Does not resync tenant mapping webhooks then the credential exchange strategy type is unknown",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(30)
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(15)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
-				return persistTx, transact
-			},
-			appSvcFn:    successfulAppGet,
-			tenantSvcFn: successfulTenantSvc,
-			webhookSvcFn: func() *automock.WebhookService {
-				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
-
-				return whSvc
-			},
-			webhookConvFn: successfulWebhookConversion,
-			productSvcFn:  successfulProductCreate,
-			vendorSvcFn:   successfulVendorCreate,
-			packageSvcFn:  successfulPackageCreate,
-			bundleSvcFn:   successfulListTwiceAndCeateBundle,
-			clientFn: func() *automock.Client {
-				client := &automock.Client{}
-				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, "sap.ucl:tenant-mapping:v999"))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, baseURL, nil)
-				return client
-			},
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				return apiSvc
-			},
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				return tombstoneSvc
-			},
-			eventSvcFn: func() *automock.EventService {
-				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				return eventSvc
-			},
-			specSvcFn: func() *automock.SpecService {
-				return &automock.SpecService{}
-			},
-			globalRegistrySvc: successfulGlobalRegistrySvc,
-		},
-		{
 			Name: "Does not resync resources if api list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}

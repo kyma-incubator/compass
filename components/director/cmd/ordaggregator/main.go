@@ -336,7 +336,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	ordClientWithTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 	ordClientWithoutTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor)
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
 	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter)

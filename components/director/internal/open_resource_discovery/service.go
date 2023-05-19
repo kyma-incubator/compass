@@ -30,10 +30,11 @@ import (
 const (
 	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
 	MultiErrorSeparator string = "* "
+	// TenantMappingCustomTypeIdentifier represents an identifier for tenant mapping webhooks in Credential exchange strategies
+	TenantMappingCustomTypeIdentifier = "sap.ucl:tenant-mapping"
 
-	tenantMappingCustomTypeIdentifier = "sap.ucl:tenant-mapping"
-	customTypeProperty                = "customType"
-	callbackURLProperty               = "callbackUrl"
+	customTypeProperty  = "customType"
+	callbackURLProperty = "callbackUrl"
 )
 
 // ServiceConfig contains configuration for the ORD aggregator service
@@ -351,7 +352,7 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs)
+	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
@@ -761,7 +762,7 @@ func (s *Service) processBundles(ctx context.Context, app *model.Application, bu
 
 		for _, credentialExchangeStrategy := range gjson.ParseBytes(credentialExchangeStrategies).Array() {
 			customType := credentialExchangeStrategy.Get(customTypeProperty).String()
-			isTenantMappingType := strings.Contains(customType, tenantMappingCustomTypeIdentifier)
+			isTenantMappingType := strings.Contains(customType, TenantMappingCustomTypeIdentifier)
 
 			if !isTenantMappingType {
 				continue
