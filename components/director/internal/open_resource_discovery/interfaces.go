@@ -3,6 +3,8 @@ package ord
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -14,7 +16,11 @@ import (
 type WebhookService interface {
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+	EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.WebhookInput) ([]*graphql.WebhookInput, error)
+	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
+	Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
@@ -151,4 +157,11 @@ type TombstoneService interface {
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
+// WebhookConverter is responsible for converting webhook structs
+//
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type WebhookConverter interface {
+	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
 }

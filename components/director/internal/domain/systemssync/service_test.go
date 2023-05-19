@@ -2,9 +2,10 @@ package systemssync_test
 
 import (
 	"context"
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync/automock"

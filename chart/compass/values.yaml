@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3071"
+      version: "PR-3064"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -887,6 +887,7 @@ global:
     ordWebhookPartialProcessMaxDays: 0
     ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
+    tenantMappingConfiguration: '{}'
   systemFetcher:
     enabled: false
     name: "system-fetcher"

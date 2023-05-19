@@ -91,6 +91,7 @@ type ApplicationService interface {
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+	EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.WebhookInput) ([]*graphql.WebhookInput, error)
 }
 
 // WebhookConverter missing godoc
@@ -115,34 +116,30 @@ type SelfRegisterManager interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc                   ApplicationService
-	appConverter             ApplicationConverter
-	appTemplateSvc           ApplicationTemplateService
-	appTemplateConverter     ApplicationTemplateConverter
-	webhookSvc               WebhookService
-	webhookConverter         WebhookConverter
-	selfRegManager           SelfRegisterManager
-	uidService               UIDService
-	tenantMappingConfig      map[string]interface{}
-	tenantMappingCallbackURL string
-	appTemplateProductLabel  string
+	appSvc                  ApplicationService
+	appConverter            ApplicationConverter
+	appTemplateSvc          ApplicationTemplateService
+	appTemplateConverter    ApplicationTemplateConverter
+	webhookSvc              WebhookService
+	webhookConverter        WebhookConverter
+	selfRegManager          SelfRegisterManager
+	uidService              UIDService
+	appTemplateProductLabel string
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, tenantMappingConfig map[string]interface{}, tenantMappingCallbackURL string, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, appTemplateProductLabel string) *Resolver {
 	return &Resolver{
-		transact:                 transact,
-		appSvc:                   appSvc,
-		appConverter:             appConverter,
-		appTemplateSvc:           appTemplateSvc,
-		appTemplateConverter:     appTemplateConverter,
-		webhookSvc:               webhookService,
-		webhookConverter:         webhookConverter,
-		selfRegManager:           selfRegisterManager,
-		uidService:               uidService,
-		tenantMappingConfig:      tenantMappingConfig,
-		tenantMappingCallbackURL: tenantMappingCallbackURL,
-		appTemplateProductLabel:  appTemplateProductLabel,
+		transact:                transact,
+		appSvc:                  appSvc,
+		appConverter:            appConverter,
+		appTemplateSvc:          appTemplateSvc,
+		appTemplateConverter:    appTemplateConverter,
+		webhookSvc:              webhookService,
+		webhookConverter:        webhookConverter,
+		selfRegManager:          selfRegisterManager,
+		uidService:              uidService,
+		appTemplateProductLabel: appTemplateProductLabel,
 	}
 }
 
@@ -232,7 +229,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	webhooks, err := r.enrichWebhooksWithTenantMappingWebhooks(in)
+	webhooks, err := r.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks(in.Webhooks)
 	if err != nil {
 		return nil, err
 	}
@@ -607,73 +604,6 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplat
 	}
 
 	return r.webhookConverter.MultipleToGraphQL(webhooks)
-}
-
-func (r *Resolver) enrichWebhooksWithTenantMappingWebhooks(in graphql.ApplicationTemplateInput) ([]*graphql.WebhookInput, error) {
-	webhooks := make([]*graphql.WebhookInput, 0)
-	for _, w := range in.Webhooks {
-		if w.Version == nil {
-			webhooks = append(webhooks, w)
-			continue
-		}
-
-		if w.URL == nil || w.Mode == nil {
-			return nil, errors.Errorf("url and mode are required fields when version is provided")
-		}
-		tenantMappingWebhooks, err := r.getTenantMappingWebhooks(w.Mode.String(), *w.Version)
-		if err != nil {
-			return nil, err
-		}
-		for _, tenantMappingWebhook := range tenantMappingWebhooks {
-			urlTemplate := *tenantMappingWebhook.URLTemplate
-			if strings.Contains(urlTemplate, "%s") {
-				urlTemplate = fmt.Sprintf(*tenantMappingWebhook.URLTemplate, *w.URL)
-			}
-
-			headerTemplate := *tenantMappingWebhook.HeaderTemplate
-			if *w.Mode == graphql.WebhookModeAsyncCallback && strings.Contains(headerTemplate, "%s") {
-				headerTemplate = fmt.Sprintf(*tenantMappingWebhook.HeaderTemplate, r.tenantMappingCallbackURL)
-			}
-			wh := &graphql.WebhookInput{
-				Type:           tenantMappingWebhook.Type,
-				Auth:           w.Auth,
-				Mode:           w.Mode,
-				URLTemplate:    &urlTemplate,
-				InputTemplate:  tenantMappingWebhook.InputTemplate,
-				HeaderTemplate: &headerTemplate,
-				OutputTemplate: tenantMappingWebhook.OutputTemplate,
-			}
-			webhooks = append(webhooks, wh)
-		}
-	}
-	return webhooks, nil
-}
-
-func (r *Resolver) getTenantMappingWebhooks(mode, version string) ([]graphql.WebhookInput, error) {
-	modeObj, ok := r.tenantMappingConfig[mode]
-	if !ok {
-		return nil, errors.Errorf("missing tenant mapping configuration for mode %s", mode)
-	}
-	modeMap, ok := modeObj.(map[string]interface{})
-	if !ok {
-		return nil, errors.Errorf("unexpected mode type, should be a map, but was %T", mode)
-	}
-	webhooks, ok := modeMap[version]
-	if !ok {
-		return nil, errors.Errorf("missing tenant mapping configuration for mode %s and version %s", mode, version)
-	}
-
-	webhooksJSON, err := json.Marshal(webhooks)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshaling webhooks")
-	}
-
-	var tenantMappingWebhooks []graphql.WebhookInput
-	if err := json.Unmarshal(webhooksJSON, &tenantMappingWebhooks); err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling webhooks")
-	}
-
-	return tenantMappingWebhooks, nil
 }
 
 func extractApplicationNameFromTemplateInput(applicationInputJSON string) (string, error) {

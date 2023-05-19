@@ -316,7 +316,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client)
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
 			globalIDs, err := svc.SyncGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -410,7 +410,7 @@ func TestService_ListGlobalResources(t *testing.T) {
 			}
 			client := &automock.Client{}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client)
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
 			globalIDs, err := svc.ListGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

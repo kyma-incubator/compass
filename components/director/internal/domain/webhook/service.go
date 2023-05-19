@@ -2,6 +2,11 @@ package webhook
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -55,19 +60,23 @@ type TenantService interface {
 type OwningResource string
 
 type service struct {
-	webhookRepo WebhookRepository
-	appRepo     ApplicationRepository
-	uidSvc      UIDService
-	tenantSvc   TenantService
+	webhookRepo              WebhookRepository
+	appRepo                  ApplicationRepository
+	uidSvc                   UIDService
+	tenantSvc                TenantService
+	tenantMappingConfig      map[string]interface{}
+	tenantMappingCallbackURL string
 }
 
 // NewService missing godoc
-func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UIDService, tenantSvc TenantService) *service {
+func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UIDService, tenantSvc TenantService, tenantMappingConfig map[string]interface{}, tenantMappingCallbackURL string) *service {
 	return &service{
-		webhookRepo: repo,
-		uidSvc:      uidSvc,
-		appRepo:     appRepo,
-		tenantSvc:   tenantSvc,
+		webhookRepo:              repo,
+		uidSvc:                   uidSvc,
+		appRepo:                  appRepo,
+		tenantSvc:                tenantSvc,
+		tenantMappingConfig:      tenantMappingConfig,
+		tenantMappingCallbackURL: tenantMappingCallbackURL,
 	}
 }
 
@@ -93,6 +102,11 @@ func (s *service) ListForApplication(ctx context.Context, applicationID string) 
 		return nil, err
 	}
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, applicationID, model.ApplicationWebhookReference)
+}
+
+// ListForApplicationGlobal lists all webhooks for application without tenant restrictions
+func (s *service) ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
+	return s.webhookRepo.ListByReferenceObjectIDGlobal(ctx, applicationID, model.ApplicationWebhookReference)
 }
 
 // ListByWebhookType lists all webhooks with given webhook type
@@ -186,6 +200,75 @@ func (s *service) Delete(ctx context.Context, id string, objectType model.Webhoo
 	}
 
 	return s.webhookRepo.Delete(ctx, webhook.ID)
+}
+
+// EnrichWebhooksWithTenantMappingWebhooks enriches webhook inputs with tenant mapping webhooks based on the tenant mapping
+// configuration. In order to be enriched, the input webhooks should contain Version, URL and Mode
+func (s *service) EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.WebhookInput) ([]*graphql.WebhookInput, error) {
+	webhooks := make([]*graphql.WebhookInput, 0)
+	for _, w := range in {
+		if w.Version == nil {
+			webhooks = append(webhooks, w)
+			continue
+		}
+
+		if w.URL == nil || w.Mode == nil {
+			return nil, errors.New("url and mode are required fields when version is provided")
+		}
+		tenantMappingWebhooks, err := s.getTenantMappingWebhooks(w.Mode.String(), *w.Version)
+		if err != nil {
+			return nil, err
+		}
+		for _, tenantMappingWebhook := range tenantMappingWebhooks {
+			urlTemplate := *tenantMappingWebhook.URLTemplate
+			if strings.Contains(urlTemplate, "%s") {
+				urlTemplate = fmt.Sprintf(*tenantMappingWebhook.URLTemplate, *w.URL)
+			}
+
+			headerTemplate := *tenantMappingWebhook.HeaderTemplate
+			if *w.Mode == graphql.WebhookModeAsyncCallback && strings.Contains(headerTemplate, "%s") {
+				headerTemplate = fmt.Sprintf(*tenantMappingWebhook.HeaderTemplate, s.tenantMappingCallbackURL)
+			}
+			wh := &graphql.WebhookInput{
+				Type:           tenantMappingWebhook.Type,
+				Auth:           w.Auth,
+				Mode:           w.Mode,
+				URLTemplate:    &urlTemplate,
+				InputTemplate:  tenantMappingWebhook.InputTemplate,
+				HeaderTemplate: &headerTemplate,
+				OutputTemplate: tenantMappingWebhook.OutputTemplate,
+			}
+			webhooks = append(webhooks, wh)
+		}
+	}
+	return webhooks, nil
+}
+
+func (s *service) getTenantMappingWebhooks(mode, version string) ([]graphql.WebhookInput, error) {
+	modeObj, ok := s.tenantMappingConfig[mode]
+	if !ok {
+		return nil, errors.Errorf("missing tenant mapping configuration for mode %s", mode)
+	}
+	modeMap, ok := modeObj.(map[string]interface{})
+	if !ok {
+		return nil, errors.Errorf("unexpected mode type, should be a map, but was %T", mode)
+	}
+	webhooks, ok := modeMap[version]
+	if !ok {
+		return nil, errors.Errorf("missing tenant mapping configuration for mode %s and version %s", mode, version)
+	}
+
+	webhooksJSON, err := json.Marshal(webhooks)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshaling webhooks")
+	}
+
+	var tenantMappingWebhooks []graphql.WebhookInput
+	if err := json.Unmarshal(webhooksJSON, &tenantMappingWebhooks); err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling webhooks")
+	}
+
+	return tenantMappingWebhooks, nil
 }
 
 func (s *service) retrieveWebhooks(ctx context.Context, application *model.Application) ([]*model.Webhook, error) {
