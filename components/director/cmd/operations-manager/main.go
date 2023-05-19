@@ -74,6 +74,7 @@ type config struct {
 	RuntimeTypeLabelKey             string        `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 	ApplicationTypeLabelKey         string        `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	ORDWebhookMappings              string        `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	TenantMappingCallbackURL        string        `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
@@ -285,7 +286,7 @@ func createOperationsManagerService(ctx context.Context, cfgProvider *configprov
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, conf.Features.RuntimeTypeLabelKey, conf.Features.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping, conf.TenantMappingCallbackURL)
 
 	ordOpCreator := operationsmanager.NewOperationCreator(operationsmanager.OrdCreatorType, transact, opSvc, webhookSvc, appSvc)
 	return operationsmanager.NewOperationService(transact, opSvc, ordOpCreator), nil

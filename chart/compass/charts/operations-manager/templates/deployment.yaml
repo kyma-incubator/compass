@@ -149,6 +149,8 @@ spec:
               value: {{ .Release.Namespace }}
             - name: APP_ELECTION_ENABLED
               value: {{ .Values.global.operations_manager.election.enabled | quote}}
+            - name: APP_TENANT_MAPPING_CALLBACK_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.operations_manager.external.port }}
