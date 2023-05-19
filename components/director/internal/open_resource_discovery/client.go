@@ -3,9 +3,11 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -21,6 +23,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	s4HanaDomain = "s4hana.ondemand"
+)
+
 // ClientConfig contains configuration for the ORD aggregator client
 type ClientConfig struct {
 	maxParallelDocumentsPerApplication int
@@ -34,6 +40,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 }
 
 // Client represents ORD documents client
+//
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error)
@@ -67,17 +74,17 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	config, err := c.fetchConfig(ctx, app, webhook, tenantValue)
-	if err != nil {
-		return nil, "", err
-	}
+	baseURL := str.PtrStrToStr(app.BaseURL)
+	systemTenantHeader := prepareS4SystemTenantHeader(baseURL)
 
-	baseURL, err := calculateBaseURL(*webhook.URL, *config)
+	config, err := c.fetchConfig(ctx, app, webhook, tenantValue, systemTenantHeader)
+
+	webhookURL, err := calculateBaseURL(webhook, *config)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while calculating baseURL")
 	}
 
-	err = config.Validate(baseURL)
+	err = config.Validate(webhookURL)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
@@ -108,7 +115,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 			if !ok {
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
-			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
+			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue, systemTenantHeader)
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
@@ -136,14 +143,14 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue, systemTenantHeader string) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue)
+	resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue, systemTenantHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +191,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue, systemTenantHeader string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
@@ -193,7 +200,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
-		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue)
+		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue, systemTenantHeader)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
@@ -243,12 +250,16 @@ func buildDocumentURL(docURL, baseURL string) (string, error) {
 
 // if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
 // if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
-func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error) {
+func calculateBaseURL(webhook *model.Webhook, config WellKnownConfig) (string, error) {
+	if webhook.ProxyURL != nil {
+		return str.PtrStrToStr(webhook.ProxyURL), nil
+	}
+
 	if config.BaseURL != "" {
 		return config.BaseURL, nil
 	}
 
-	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
+	parsedWebhookURL, err := url.ParseRequestURI(str.PtrStrToStr(webhook.URL))
 	if err != nil {
 		return "", errors.New("error while parsing input webhook url")
 	}
@@ -259,4 +270,13 @@ func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error)
 		return parsedWebhookURL.String(), nil
 	}
 	return "", nil
+}
+
+func prepareS4SystemTenantHeader(baseURL string) string {
+	if strings.Contains(baseURL, s4HanaDomain) {
+		baseURLRegexp := regexp.MustCompile(`^(http)(s)?[:\/]+`)
+		return baseURLRegexp.ReplaceAllLiteralString(baseURL, "")
+	}
+
+	return ""
 }

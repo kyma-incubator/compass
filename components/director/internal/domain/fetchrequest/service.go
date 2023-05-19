@@ -35,6 +35,7 @@ type service struct {
 }
 
 // FetchRequestRepository missing godoc
+//
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Update(ctx context.Context, tenant string, item *model.FetchRequest) error
@@ -119,7 +120,7 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(ctx, s.client, fr.URL, localTenantID)
+			return executor.Execute(ctx, s.client, fr.URL, localTenantID, fr.AdditionalHeader)
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {

@@ -403,10 +403,10 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 		return err
 	}
 
-	return s.processSpecs(ctx, fetchRequests)
+	return s.processSpecs(ctx, fetchRequests, prepareS4SystemTenantHeader(str.PtrStrToStr(app.BaseURL)))
 }
 
-func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest) error {
+func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest, systemTenantHeader string) error {
 	queue := make(chan *model.FetchRequest)
 
 	workers := s.config.maxParallelSpecificationProcessors
@@ -422,6 +422,7 @@ func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetch
 
 			for fetchRequest := range queue {
 				fr := *fetchRequest
+				fr.AdditionalHeader = systemTenantHeader
 				ctx = addFieldToLogger(ctx, "fetch_request_id", fr.ID)
 				log.C(ctx).Infof("Will attempt to execute spec fetch request for spec with id %q and spec entity type %q", fr.ObjectID, fr.ObjectType)
 				data, status := s.fetchReqSvc.FetchSpec(ctx, &fr)
