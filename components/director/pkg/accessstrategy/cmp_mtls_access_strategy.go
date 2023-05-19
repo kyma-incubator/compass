@@ -3,6 +3,7 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -62,6 +63,9 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		Timeout:   baseClient.Timeout,
 		Transport: tr,
 	}
+
+	fmt.Printf("\n documentURL: %s \n", documentURL)
+	fmt.Printf("\n systemTenantHeader: %s \n", systemTenantHeader)
 
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
