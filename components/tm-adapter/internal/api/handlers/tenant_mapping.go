@@ -24,6 +24,8 @@ import (
 const (
 	SubaccountKey     = "subaccount_id"
 	LocationHeaderKey = "Location"
+	AssignOperation   = "assign"
+	UnassignOperation = "unassign"
 )
 
 type Handler struct {
@@ -73,6 +75,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New(""))
 		return
 	}
+	h.tenantID = tm.ReceiverTenant.SubaccountID
 
 	if tm.Items[0].Configuration != nil && string(tm.Items[0].Configuration) != "{}" && string(tm.Items[0].Configuration) != "\"\"" {
 		log.C(ctx).Info("The configuration in the tenant mapping body is provided and no service instance/binding will be created. Returning...")
@@ -80,90 +83,30 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Info("Creating procurement service instance")
-
 	catalogNameProcurement := "procurement-service" // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
 	planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
-	h.tenantID = tm.ReceiverTenant.SubaccountID
-
-	offeringIDProcurement, err := h.retrieveServiceOffering(ctx, catalogNameProcurement)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	planIDProcurement, err := h.retrieveServicePlan(ctx, planNameProcurement, offeringIDProcurement)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
 	svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
-	_, err = h.createServiceInstance(ctx, planIDProcurement, svcInstanceNameProcurement)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	log.C(ctx).Info("Creating IAS service instance and key")
 
 	catalogNameIAS := "identity" // IAS
 	planNameIAS := "application"
-
-	offeringIDIAS, err := h.retrieveServiceOffering(ctx, catalogNameIAS)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	planIDIAS, err := h.retrieveServicePlan(ctx, planNameIAS, offeringIDIAS)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
 	svcInstanceNameIAS := catalogNameIAS + "-instance-" + formationID
-	svcInstanceIDIAS, err := h.createServiceInstance(ctx, planIDIAS, svcInstanceNameIAS)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+
+	var serviceKeyIAS *types.ServiceKey
+	if tm.Items[0].Operation == UnassignOperation {
+		if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
+			log.C(ctx).Error(err)
+			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		httputil.Respond(w, http.StatusOK)
 		return
-	}
-
-	// todo:: consider removing it
-	//svcInstanceIDIAS, err := h.retrieveServiceInstanceByName(ctx, svcInstanceNameIAS)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-
-	svcKeyNameIAS := svcInstanceNameIAS + "-key"
-	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	// todo:: consider removing it
-	//serviceKeyIAS, err = h.retrieveServiceKeyByName(ctx, svcKeyNameIAS)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
-
-	serviceKeyIAS, err := h.retrieveServiceKeyByID(ctx, serviceKeyIDIAS)
-	if err != nil {
-		log.C(ctx).Error(err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
+	} else {
+		serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS)
+		if err != nil {
+			log.C(ctx).Error(err)
+			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
 	}
 
 	//// old response body containing service key credentials
@@ -251,6 +194,107 @@ func validate(tm types.TenantMapping) error {
 
 	if tm.ReceiverTenant.SubaccountID == "" {
 		return errors.New("The subaccount ID in the tenant mapping request body should not be empty")
+	}
+
+	if tm.Items[0].Operation != AssignOperation && tm.Items[0].Operation != UnassignOperation {
+		return errors.New("The operation in the tenant mapping request body is invalid")
+	}
+
+	return nil
+}
+
+func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS string) (*types.ServiceKey, error) {
+	log.C(ctx).Info("Creating procurement service instance")
+
+	offeringIDProcurement, err := h.retrieveServiceOffering(ctx, catalogNameProcurement)
+	if err != nil {
+		return nil, err
+	}
+
+	planIDProcurement, err := h.retrieveServicePlan(ctx, planNameProcurement, offeringIDProcurement)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.createServiceInstance(ctx, svcInstanceNameProcurement, planIDProcurement)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Info("Creating IAS service instance and key")
+
+	offeringIDIAS, err := h.retrieveServiceOffering(ctx, catalogNameIAS)
+	if err != nil {
+		return nil, err
+	}
+
+	planIDIAS, err := h.retrieveServicePlan(ctx, planNameIAS, offeringIDIAS)
+	if err != nil {
+		return nil, err
+	}
+
+	svcInstanceIDIAS, err := h.createServiceInstance(ctx, svcInstanceNameIAS, planIDIAS)
+	if err != nil {
+		return nil, err
+	}
+
+	// todo:: consider removing it
+	//svcInstanceIDIAS, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameIAS)
+	//if err != nil {
+	//	log.C(ctx).Error(err)
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+
+	svcKeyNameIAS := svcInstanceNameIAS + "-key"
+	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement)
+	if err != nil {
+		return nil, err
+	}
+
+	// todo:: consider removing it
+	//serviceKeyIAS, err = h.retrieveServiceKeyByName(ctx, svcKeyNameIAS)
+	//if err != nil {
+	//	log.C(ctx).Error(err)
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+
+	serviceKeyIAS, err := h.retrieveServiceKeyByID(ctx, serviceKeyIDIAS)
+	if err != nil {
+		return nil, err
+	}
+
+	return serviceKeyIAS, nil
+}
+
+func (h *Handler) handleUnassignOperation(ctx context.Context, svcInstanceNameProcurement, svcInstanceNameIAS string) error {
+	svcInstanceIDProcurement, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameProcurement)
+	if err != nil {
+		return err
+	}
+
+	if svcInstanceIDProcurement != "" {
+		if err := h.deleteServiceKeys(ctx, svcInstanceIDProcurement, svcInstanceNameProcurement); err != nil {
+			return err
+		}
+		if err := h.deleteServiceInstance(ctx, svcInstanceIDProcurement, svcInstanceNameProcurement); err != nil {
+			return err
+		}
+	}
+
+	svcInstanceIDIAS, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameIAS)
+	if err != nil {
+		return err
+	}
+
+	if svcInstanceIDIAS != "" {
+		if err := h.deleteServiceKeys(ctx, svcInstanceIDIAS, svcInstanceNameIAS); err != nil {
+			return err
+		}
+		if err := h.deleteServiceInstance(ctx, svcInstanceIDIAS, svcInstanceNameIAS); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -349,7 +393,7 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	return planID, nil
 }
 
-func (h *Handler) createServiceInstance(ctx context.Context, planID, serviceInstanceName string) (string, error) {
+func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID string) (string, error) {
 	siReqBody := &types.ServiceInstanceReqBody{
 		Name:          serviceInstanceName,
 		ServicePlanId: planID,
@@ -468,8 +512,203 @@ func (h *Handler) createServiceInstance(ctx context.Context, planID, serviceInst
 	return serviceInstanceID, nil
 }
 
-// todo:: consider removing retrieveServiceInstanceByName
-func (h *Handler) retrieveServiceInstanceByName(ctx context.Context, serviceInstanceName string) (string, error) {
+func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serviceInstanceName string) error {
+	svcKeyIDs, err := h.retrieveServiceKeysIDByInstanceID(ctx, serviceInstanceID, serviceInstanceName)
+	if err != nil {
+		return err
+	}
+
+	for _, keyID := range svcKeyIDs {
+		svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", keyID)
+		strURL, err := buildURL(h.cfg.ServiceManagerURL, svcKeyPath, SubaccountKey, h.tenantID)
+		if err != nil {
+			return errors.Wrapf(err, "while building service binding URL")
+		}
+
+		req, err := http.NewRequest(http.MethodDelete, strURL, nil)
+		if err != nil {
+			return err
+		}
+
+		log.C(ctx).Infof("Deleting service binding with ID: %q", keyID)
+		resp, err := h.caller.Call(req)
+		if err != nil {
+			return err
+		}
+		defer closeResponseBody(ctx, resp)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Errorf("Failed to read response body from service binding deletion request: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+			return errors.Errorf("Failed to delete service binding, status: %d, body: %s", resp.StatusCode, body)
+		}
+
+		if resp.StatusCode == http.StatusAccepted {
+			log.C(ctx).Infof("Handle asynchronous service binding deletion...")
+			opStatusPath := resp.Header.Get(LocationHeaderKey)
+			if opStatusPath == "" {
+				return errors.Errorf("The service binding operation status path from %s header should not be empty", LocationHeaderKey)
+			}
+
+			opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+			if err != nil {
+				return errors.Wrapf(err, "while building asynchronous service binding operation URL")
+			}
+
+			opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
+			if err != nil {
+				return err
+			}
+
+			ticker := time.NewTicker(3 * time.Second)
+			timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+			for {
+				select {
+				case <-ticker.C:
+					log.C(ctx).Infof("Getting asynchronous operation status for service binding with ID: %q", keyID)
+					opResp, err := h.caller.Call(opReq)
+					if err != nil {
+						return err
+					}
+					defer closeResponseBody(ctx, opResp)
+
+					opBody, err := ioutil.ReadAll(opResp.Body)
+					if err != nil {
+						return errors.Errorf("Failed to read operation response body from asynchronous service binding deletion request: %v", err)
+					}
+
+					if opResp.StatusCode != http.StatusOK {
+						return errors.Errorf("Failed to get asynchronous service binding operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
+					}
+
+					var opStatus types.OperationStatus
+					err = json.Unmarshal(opBody, &opStatus)
+					if err != nil {
+						return errors.Errorf("Failed to unmarshal service binding operation status: %v", err)
+					}
+
+					if opStatus.State == types.OperationStateInProgress {
+						log.C(ctx).Infof("The asynchronous service binding operation state is still: %q", types.OperationStateInProgress)
+						continue
+					}
+
+					if opStatus.State != types.OperationStateSucceeded {
+						return errors.Errorf("The asynchronous service binding operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
+					}
+
+					log.C(ctx).Infof("The asynchronous operation status for service binding with ID: %q finished with state: %q", keyID, opStatus.State)
+					return nil
+				case <-timeout:
+					return errors.New("Timeout waiting for asynchronous operation status to finish")
+				}
+			}
+		}
+
+		log.C(ctx).Infof("Successfully deleted service binding with ID: %q synchronously", keyID)
+	}
+
+	return nil
+}
+
+func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, serviceInstanceName string) error {
+	svcInstancePath := paths.ServiceInstancesPath + fmt.Sprintf("/%s", serviceInstanceID)
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, svcInstancePath, SubaccountKey, h.tenantID)
+	if err != nil {
+		return errors.Wrapf(err, "while building service instances URL")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, strURL, nil)
+	if err != nil {
+		return err
+	}
+
+	log.C(ctx).Infof("Deleting service instance with ID: %q and name: %q", serviceInstanceID, serviceInstanceName)
+	resp, err := h.caller.Call(req)
+	if err != nil {
+		return err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Errorf("Failed to read response body from service instance deletion request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		return errors.Errorf("Failed to delete service instance, status: %d, body: %s", resp.StatusCode, body)
+	}
+
+	if resp.StatusCode == http.StatusAccepted {
+		log.C(ctx).Infof("Handle asynchronous service instance deletion...")
+		opStatusPath := resp.Header.Get(LocationHeaderKey)
+		if opStatusPath == "" {
+			return errors.Errorf("The service instance operation status path from %s header should not be empty", LocationHeaderKey)
+		}
+
+		opURL, err := buildURL(h.cfg.ServiceManagerURL, opStatusPath, SubaccountKey, h.tenantID)
+		if err != nil {
+			return errors.Wrapf(err, "while building asynchronous service instance operation URL")
+		}
+
+		opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
+		if err != nil {
+			return err
+		}
+
+		ticker := time.NewTicker(3 * time.Second)
+		timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+		for {
+			select {
+			case <-ticker.C:
+				log.C(ctx).Infof("Getting asynchronous operation status for service instance with ID: %q and name: %q", serviceInstanceID, serviceInstanceName)
+				opResp, err := h.caller.Call(opReq)
+				if err != nil {
+					return err
+				}
+				defer closeResponseBody(ctx, opResp)
+
+				opBody, err := ioutil.ReadAll(opResp.Body)
+				if err != nil {
+					return errors.Errorf("Failed to read operation response body from asynchronous service instance deletion request: %v", err)
+				}
+
+				if opResp.StatusCode != http.StatusOK {
+					return errors.Errorf("Failed to get asynchronous service instance operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
+				}
+
+				var opStatus types.OperationStatus
+				err = json.Unmarshal(opBody, &opStatus)
+				if err != nil {
+					return errors.Errorf("Failed to unmarshal service instance operation status: %v", err)
+				}
+
+				if opStatus.State == types.OperationStateInProgress {
+					log.C(ctx).Infof("The asynchronous service instance operation state is still: %q", types.OperationStateInProgress)
+					continue
+				}
+
+				if opStatus.State != types.OperationStateSucceeded {
+					return errors.Errorf("The asynchronous service instance operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
+				}
+
+				log.C(ctx).Infof("The asynchronous operation status for service instance with name: %q finished with state: %q", serviceInstanceName, opStatus.State)
+				return nil
+			case <-timeout:
+				return errors.New("Timeout waiting for asynchronous operation status to finish")
+			}
+		}
+	}
+
+	log.C(ctx).Infof("Successfully deleted service instance with ID: %q synchronously", serviceInstanceID)
+
+	return nil
+}
+
+// todo:: consider removing retrieveServiceInstanceIDByName
+func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceInstanceName string) (string, error) {
 	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building service instances URL")
@@ -480,7 +719,7 @@ func (h *Handler) retrieveServiceInstanceByName(ctx context.Context, serviceInst
 		return "", err
 	}
 
-	log.C(ctx).Infof("Listing service instances...")
+	log.C(ctx).Info("Listing service instances...")
 	resp, err := h.caller.Call(req)
 	if err != nil {
 		log.C(ctx).Error(err)
@@ -494,9 +733,9 @@ func (h *Handler) retrieveServiceInstanceByName(ctx context.Context, serviceInst
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("Failed to get service offerings, status: %d, body: %s", resp.StatusCode, body)
+		return "", errors.Errorf("Failed to get service instances, status: %d, body: %s", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("Successfully fetch service offerings")
+	log.C(ctx).Infof("Successfully fetch service instances")
 
 	var instances types.ServiceInstances
 	err = json.Unmarshal(body, &instances)
@@ -511,8 +750,12 @@ func (h *Handler) retrieveServiceInstanceByName(ctx context.Context, serviceInst
 			break
 		}
 	}
-	log.C(ctx).Infof("Service instance ID: %q", instanceID)
 
+	if instanceID == "" {
+		log.C(ctx).Warnf("No instance ID found by name: %q", serviceInstanceName)
+	}
+
+	log.C(ctx).Infof("Successfully find service instance ID: %q by instance name: %q", instanceID, serviceInstanceName)
 	return instanceID, nil
 }
 
@@ -737,6 +980,52 @@ func (h *Handler) retrieveServiceKeyByName(ctx context.Context, serviceKeyName s
 	log.C(ctx).Infof("Service key ID: %q", serviceKey.ID)
 
 	return &serviceKey, nil
+}
+
+func (h *Handler) retrieveServiceKeysIDByInstanceID(ctx context.Context, serviceInstanceID, serviceInstanceName string) ([]string, error) {
+	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceBindingsPath, SubaccountKey, h.tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building service binding URL")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Listing service bindings for instance with ID: %q and name: %q", serviceInstanceID, serviceInstanceName)
+	resp, err := h.caller.Call(req)
+	if err != nil {
+		log.C(ctx).Error(err)
+		return nil, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Errorf("Failed to read service binding response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("Failed to get service bindings, status: %d, body: %s", resp.StatusCode, body)
+	}
+	log.C(ctx).Infof("Successfully fetch service bindings for instance with ID: %q and name: %q", serviceInstanceID, serviceInstanceName)
+
+	var svcKeys types.ServiceKeys
+	err = json.Unmarshal(body, &svcKeys)
+	if err != nil {
+		return nil, errors.Errorf("Failed to unmarshal service keys: %v", err)
+	}
+
+	serviceKeysIDs := make([]string, 0, len(svcKeys.Items))
+	for _, key := range svcKeys.Items {
+		if key.ServiceInstanceId == serviceInstanceID {
+			serviceKeysIDs = append(serviceKeysIDs, key.ID)
+		}
+	}
+	log.C(ctx).Infof("Service instance with ID: %q and name: %q has/have %d keys(s)", serviceInstanceID, serviceInstanceName, len(serviceKeysIDs))
+
+	return serviceKeysIDs, nil
 }
 
 func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID string) (*types.ServiceKey, error) {
