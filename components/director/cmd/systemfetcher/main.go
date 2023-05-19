@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
 
@@ -273,10 +276,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, err
 	}
 
-	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc); err != nil {
-		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
-	}
-
 	if err := loadSystemsSynchronizationTimestamps(ctx, tx, systemsSyncSvc); err != nil {
 		return nil, errors.Wrap(err, "failed while loading systems synchronization timestamps")
 	}
@@ -284,6 +283,10 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
+	}
+
+	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc, placeholdersMapping); err != nil {
+		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
 	}
 
 	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
@@ -312,7 +315,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
 	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
 
 	tx, err := transact.Begin()
@@ -327,6 +330,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 		return errors.Wrapf(err, "while listing application templates by label filter %q", cfg.TemplateConfig.LabelFilter)
 	}
 
+	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
 		lbl, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
@@ -334,6 +338,8 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 		}
 
 		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: lbl})
+
+		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}
 
 	err = tx.Commit()
@@ -342,6 +348,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	}
 
 	systemfetcher.ApplicationTemplates = applicationTemplates
+	systemfetcher.SelectFilter = createSelectFilter(selectFilterProperties, placeholdersMapping)
 	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
 	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
 	return nil
@@ -384,4 +391,45 @@ func loadSystemsSynchronizationTimestamps(ctx context.Context, transact persiste
 	systemfetcher.SystemSynchronizationTimestamps = systemSynchronizationTimestamps
 
 	return nil
+}
+
+func getTopParentFromJSONPath(jsonPath string) string {
+	prefix := "$."
+	infix := "."
+
+	topParent := strings.TrimPrefix(jsonPath, prefix)
+	firstInfixIndex := strings.Index(topParent, infix)
+	if firstInfixIndex == -1 {
+		return topParent
+	}
+
+	return topParent[:firstInfixIndex]
+}
+
+func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {
+	for _, placeholder := range placeholders {
+		if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
+			topParent := getTopParentFromJSONPath(*placeholder.JSONPath)
+			if _, exists := selectFilterProperties[topParent]; !exists {
+				selectFilterProperties[topParent] = true
+			}
+		}
+	}
+}
+
+func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapping []systemfetcher.PlaceholderMapping) []string {
+	selectFilter := make([]string, 0)
+
+	for _, pm := range placeholdersMapping {
+		topParent := getTopParentFromJSONPath(pm.SystemKey)
+		if _, exists := selectFilterProperties[topParent]; !exists {
+			selectFilterProperties[topParent] = true
+		}
+	}
+
+	for property := range selectFilterProperties {
+		selectFilter = append(selectFilter, property)
+	}
+
+	return selectFilter
 }
