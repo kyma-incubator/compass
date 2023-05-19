@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
@@ -51,6 +53,7 @@ const (
 	event2ID         = "testEvent2"
 	tombstoneID      = "testTs"
 	localTenantID    = "localTenantID"
+	webhookID        = "webhookID"
 
 	api1spec1ID  = "api1spec1ID"
 	api1spec2ID  = "api1spec2ID"
@@ -139,6 +142,30 @@ var (
         "mass-extraction"
       ]`)
 
+	credentialExchangeStrategiesWithCustomTypeFormat = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        }
+      ]`)
+
+	credentialExchangeStrategiesWithMultipleSameTypesFormat = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials-fake",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        },
+        {
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        }
+      ]`)
+
 	credentialExchangeStrategiesFormat = removeWhitespace(`[
         {
 		  "callbackUrl": "%s/credentials/relative",
@@ -148,6 +175,11 @@ var (
 		{
 		  "callbackUrl": "http://example.com/credentials",
           "customType": "ns:credential-exchange2:v3",
+		  "type": "custom"
+        },
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
 		  "type": "custom"
         }
       ]`)
@@ -200,6 +232,15 @@ var (
 	hashPackage, _ = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
+
+	credentialExchangeStrategyType           = "sap.ucl:tenant-mapping:v1"
+	credentialExchangeStrategyVersion        = "v1"
+	credentialExchangeStrategyTenantMappings = map[string]ord.CredentialExchangeStrategyTenantMapping{
+		credentialExchangeStrategyType: {
+			Mode:    model.WebhookModeSync,
+			Version: credentialExchangeStrategyVersion,
+		},
+	}
 )
 
 func fixResourceHashes() map[string]uint64 {
@@ -311,7 +352,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                         json.RawMessage(tags),
 				Labels:                       json.RawMessage(labels),
 				DocumentationLabels:          json.RawMessage(documentLabels),
-				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
+				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL, credentialExchangeStrategyType)),
 				CorrelationIDs:               json.RawMessage(correlationIDs),
 			},
 		},
@@ -619,6 +660,29 @@ func fixApplications() []*model.Application {
 	}
 }
 
+func fixTenantMappingWebhookGraphQLInput() *graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+	return &graphql.WebhookInput{
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &graphql.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:    &syncMode,
+		Version: str.Ptr(credentialExchangeStrategyVersion),
+	}
+}
+
+func fixTenantMappingWebhookModelInput() *model.WebhookInput {
+	syncMode := model.WebhookModeSync
+	return &model.WebhookInput{
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode: &syncMode,
+	}
+}
+
 func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
 		{
@@ -640,6 +704,19 @@ func fixOrdWebhooksForAppTemplate() []*model.Webhook {
 			URL:        str.Ptr(baseURL),
 		},
 	}
+}
+func fixTenantMappingWebhooksForApplication() []*model.Webhook {
+	syncMode := model.WebhookModeSync
+	return []*model.Webhook{{
+		ID:  webhookID,
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &model.Auth{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:       &syncMode,
+		ObjectType: model.ApplicationWebhookReference,
+		ObjectID:   appID,
+	}}
 }
 
 func fixVendors() []*model.Vendor {

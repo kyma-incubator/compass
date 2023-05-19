@@ -305,7 +305,7 @@ func main() {
 	gqlCfg := graphql.Config{
 		Resolvers: rootResolver,
 		Directives: graphql.DirectiveRoot{
-			Async:                         getAsyncDirective(ctx, cfg, transact, appRepo),
+			Async:                         getAsyncDirective(ctx, cfg, transact, appRepo, tenantMappingConfig),
 			HasScenario:                   scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:                     scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
 			Sanitize:                      scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
@@ -315,7 +315,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, tenantMappingConfig, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -606,7 +606,7 @@ func applicationRepo() application.ApplicationRepository {
 	return application.NewRepository(appConverter)
 }
 
-func webhookService() webhook.WebhookService {
+func webhookService(tenantMappingConfig map[string]interface{}, callbackURL string) webhook.WebhookService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 
@@ -623,10 +623,10 @@ func webhookService() webhook.WebhookService {
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc, tenantSvc)
+	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc, tenantSvc, tenantMappingConfig, callbackURL)
 }
 
-func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
+func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository, tenantMappingConfig map[string]interface{}) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
 	resourceFetcherFunc := func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}
@@ -634,7 +634,7 @@ func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Tra
 	scheduler, err := buildScheduler(ctx, cfg)
 	exitOnError(err, "Error while creating operations scheduler")
 
-	return operation.NewDirective(transact, webhookService().ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler).HandleOperation
+	return operation.NewDirective(transact, webhookService(tenantMappingConfig, cfg.TenantMappingCallbackURL).ListAllApplicationWebhooks, resourceFetcherFunc, appUpdaterFunc(appRepo), tenant.LoadFromContext, scheduler).HandleOperation
 }
 
 func buildScheduler(ctx context.Context, config config) (operation.Scheduler, error) {
@@ -672,7 +672,7 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 	}
 }
 
-func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) claims.RuntimeService {
+func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingConfig map[string]interface{}, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) claims.RuntimeService {
 	asaConverter := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
@@ -731,7 +731,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClien
 	formationSvc := formation.NewService(transact, appRepo, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
-	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue, cfg.Features.KymaApplicationNamespaceValue)
+	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(tenantMappingConfig, cfg.TenantMappingCallbackURL), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue, cfg.Features.KymaApplicationNamespaceValue)
 }
 
 func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) claims.RuntimeCtxService {

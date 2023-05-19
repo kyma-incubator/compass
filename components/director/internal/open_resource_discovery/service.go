@@ -2,10 +2,15 @@ package ord
 
 import (
 	"context"
+	"encoding/json"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
@@ -22,8 +27,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
-const MultiErrorSeparator string = "* "
+const (
+	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
+	MultiErrorSeparator string = "* "
+	// TenantMappingCustomTypeIdentifier represents an identifier for tenant mapping webhooks in Credential exchange strategies
+	TenantMappingCustomTypeIdentifier = "sap.ucl:tenant-mapping"
+
+	customTypeProperty  = "customType"
+	callbackURLProperty = "callbackUrl"
+)
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
@@ -32,6 +44,14 @@ type ServiceConfig struct {
 	ordWebhookPartialProcessMaxDays    int
 	ordWebhookPartialProcessURL        string
 	ordWebhookPartialProcessing        bool
+
+	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
+}
+
+// CredentialExchangeStrategyTenantMapping contains tenant mappings configuration
+type CredentialExchangeStrategyTenantMapping struct {
+	Mode    model.WebhookMode
+	Version string
 }
 
 type ordFetchRequest struct {
@@ -53,13 +73,14 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
 	return ServiceConfig{
-		maxParallelWebhookProcessors:       maxParallelWebhookProcessors,
-		maxParallelSpecificationProcessors: maxParallelSpecificationProcessors,
-		ordWebhookPartialProcessMaxDays:    ordWebhookPartialProcessMaxDays,
-		ordWebhookPartialProcessURL:        ordWebhookPartialProcessURL,
-		ordWebhookPartialProcessing:        ordWebhookPartialProcessing,
+		maxParallelWebhookProcessors:             maxParallelWebhookProcessors,
+		maxParallelSpecificationProcessors:       maxParallelSpecificationProcessors,
+		ordWebhookPartialProcessMaxDays:          ordWebhookPartialProcessMaxDays,
+		ordWebhookPartialProcessURL:              ordWebhookPartialProcessURL,
+		ordWebhookPartialProcessing:              ordWebhookPartialProcessing,
+		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}
 }
 
@@ -83,12 +104,14 @@ type Service struct {
 	tombstoneSvc       TombstoneService
 	tenantSvc          TenantService
 
+	webhookConverter WebhookConverter
+
 	globalRegistrySvc GlobalRegistryService
 	ordClient         Client
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
@@ -107,6 +130,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		tenantSvc:          tenantSvc,
 		globalRegistrySvc:  globalRegistrySvc,
 		ordClient:          client,
+		webhookConverter:   webhookConverter,
 	}
 }
 
@@ -328,7 +352,7 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs)
+	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
@@ -377,7 +401,7 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 		return err
 	}
 
-	bundlesFromDB, err := s.processBundles(ctx, app.ID, bundlesInput, resourceHashes)
+	bundlesFromDB, err := s.processBundles(ctx, app, bundlesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
@@ -718,20 +742,52 @@ func (s *Service) resyncPackageInTx(ctx context.Context, appID string, packagesF
 	return tx.Commit()
 }
 
-func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput, resourceHashes map[string]uint64) ([]*model.Bundle, error) {
-	bundlesFromDB, err := s.listBundlesInTx(ctx, appID)
+func (s *Service) processBundles(ctx context.Context, app *model.Application, bundles []*model.BundleCreateInput, resourceHashes map[string]uint64) ([]*model.Bundle, error) {
+	bundlesFromDB, err := s.listBundlesInTx(ctx, app.ID)
 	if err != nil {
 		return nil, err
 	}
 
+	credentialExchangeStrategyHashCurrent := uint64(0)
+	var credentialExchangeStrategyJSON gjson.Result
 	for _, bndl := range bundles {
 		bndlHash := resourceHashes[str.PtrStrToStr(bndl.OrdID)]
-		if err := s.resyncBundleInTx(ctx, appID, bundlesFromDB, bndl, bndlHash); err != nil {
+		if err := s.resyncBundleInTx(ctx, app.ID, bundlesFromDB, bndl, bndlHash); err != nil {
 			return nil, err
+		}
+
+		credentialExchangeStrategies, err := bndl.CredentialExchangeStrategies.MarshalJSON()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while marshalling credential exchange strategies for application with ID %s", app.ID)
+		}
+
+		for _, credentialExchangeStrategy := range gjson.ParseBytes(credentialExchangeStrategies).Array() {
+			customType := credentialExchangeStrategy.Get(customTypeProperty).String()
+			isTenantMappingType := strings.Contains(customType, TenantMappingCustomTypeIdentifier)
+
+			if !isTenantMappingType {
+				continue
+			}
+
+			currentHash, err := HashObject(credentialExchangeStrategy)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hasing credential exchange strategy for application with ID %s", app.ID)
+			}
+
+			if credentialExchangeStrategyHashCurrent != 0 && currentHash != credentialExchangeStrategyHashCurrent {
+				return nil, errors.Errorf("There are differences in the Credential Exchange Strategies for Tenant Mappings for application with ID %s. They should be the same.", app.ID)
+			}
+
+			credentialExchangeStrategyHashCurrent = currentHash
+			credentialExchangeStrategyJSON = credentialExchangeStrategy
 		}
 	}
 
-	bundlesFromDB, err = s.listBundlesInTx(ctx, appID)
+	if err := s.resyncTenantMappingWebhooksInTx(ctx, credentialExchangeStrategyJSON, app.ID); err != nil {
+		return nil, err
+	}
+
+	bundlesFromDB, err = s.listBundlesInTx(ctx, app.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -767,6 +823,133 @@ func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFro
 		return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bundle.OrdID)
 	}
 	return tx.Commit()
+}
+
+func (s *Service) resyncTenantMappingWebhooksInTx(ctx context.Context, credentialExchangeStrategyJSON gjson.Result, appID string) error {
+	if !credentialExchangeStrategyJSON.IsObject() {
+		log.C(ctx).Debugf("There are no tenant mappings to resync")
+		return nil
+	}
+
+	tenantMappingData, err := s.getTenantMappingData(credentialExchangeStrategyJSON, appID)
+	if err != nil {
+		return err
+	}
+
+	log.C(ctx).Infof("Enriching tenant mapping webhooks for application with ID %s", appID)
+
+	enrichedWebhooks, err := s.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks([]*graphql.WebhookInput{createWebhookInput(credentialExchangeStrategyJSON, tenantMappingData)})
+	if err != nil {
+		return errors.Wrapf(err, "while enriching webhooks with tenant mapping webhooks for application with ID %s", appID)
+	}
+
+	ctxWithoutTenant := context.Background()
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctxWithoutTenant, tx)
+
+	ctxWithoutTenant = persistence.SaveToContext(ctxWithoutTenant, tx)
+	ctxWithoutTenant = tenant.SaveToContext(ctxWithoutTenant, "", "")
+
+	appWebhooksFromDB, err := s.webhookSvc.ListForApplicationGlobal(ctxWithoutTenant, appID)
+	if err != nil {
+		return errors.Wrapf(err, "while listing webhooks from application with ID %s", appID)
+	}
+
+	tenantMappingRelatedWebhooksFromDB, enrichedWhModels, enrichedWhModelInputs, err := s.processEnrichedWebhooks(enrichedWebhooks, appWebhooksFromDB)
+	if err != nil {
+		return err
+	}
+
+	isEqual, err := isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels)
+	if err != nil {
+		return err
+	}
+
+	if isEqual {
+		log.C(ctxWithoutTenant).Infof("There are no differences in tenant mapping webhooks from the DB and the ORD document")
+		return tx.Commit()
+	}
+
+	log.C(ctxWithoutTenant).Infof("There are differences in tenant mapping webhooks from the DB and the ORD document. Continuing the sync.")
+
+	if err := s.deleteWebhooks(ctxWithoutTenant, tenantMappingRelatedWebhooksFromDB, appID); err != nil {
+		return err
+	}
+
+	if err := s.createWebhooks(ctxWithoutTenant, enrichedWhModelInputs, appID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *Service) deleteWebhooks(ctx context.Context, webhooks []*model.Webhook, appID string) error {
+	for _, webhook := range webhooks {
+		log.C(ctx).Infof("Deleting webhook with ID %s for application %s", webhook.ID, appID)
+		if err := s.webhookSvc.Delete(ctx, webhook.ID, webhook.ObjectType); err != nil {
+			log.C(ctx).Errorf("error while deleting webhook with ID %s", webhook.ID)
+			return errors.Wrapf(err, "while deleting webhook with ID %s", webhook.ID)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) createWebhooks(ctx context.Context, webhooks []*model.WebhookInput, appID string) error {
+	for _, webhook := range webhooks {
+		log.C(ctx).Infof("Creating webhook with type %s for application %s", webhook.Type, appID)
+		if _, err := s.webhookSvc.Create(ctx, appID, *webhook, model.ApplicationWebhookReference); err != nil {
+			log.C(ctx).Errorf("error while creating webhook for app %s with type %s", appID, webhook.Type)
+			return errors.Wrapf(err, "error while creating webhook for app %s with type %s", appID, webhook.Type)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) getTenantMappingData(credentialExchangeStrategyJSON gjson.Result, appID string) (CredentialExchangeStrategyTenantMapping, error) {
+	tenantMappingType := credentialExchangeStrategyJSON.Get(customTypeProperty).String()
+	tenantMappingData, ok := s.config.credentialExchangeStrategyTenantMappings[tenantMappingType]
+	if !ok {
+		return CredentialExchangeStrategyTenantMapping{}, errors.Errorf("Credential Exchange Strategy has invalid %s value: %s for application with ID %s", customTypeProperty, tenantMappingType, appID)
+	}
+	return tenantMappingData, nil
+}
+
+func (s *Service) processEnrichedWebhooks(enrichedWebhooks []*graphql.WebhookInput, webhooksFromDB []*model.Webhook) ([]*model.Webhook, []*model.Webhook, []*model.WebhookInput, error) {
+	tenantMappingRelatedWebhooksFromDB := make([]*model.Webhook, 0)
+	enrichedWebhookModels := make([]*model.Webhook, 0)
+	enrichedWebhookModelInputs := make([]*model.WebhookInput, 0)
+
+	for _, wh := range enrichedWebhooks {
+		convertedIn, err := s.webhookConverter.InputFromGraphQL(wh)
+		if err != nil {
+			return nil, nil, nil, errors.Wrap(err, "while converting the WebhookInput")
+		}
+
+		enrichedWebhookModelInputs = append(enrichedWebhookModelInputs, convertedIn)
+
+		webhookModel := convertedIn.ToWebhook("", "", "")
+
+		for _, webhookFromDB := range webhooksFromDB {
+			if webhookFromDB.Type == convertedIn.Type {
+				webhookModel.ID = webhookFromDB.ID
+				webhookModel.ObjectType = webhookFromDB.ObjectType
+				webhookModel.ObjectID = webhookFromDB.ObjectID
+				webhookModel.CreatedAt = webhookFromDB.CreatedAt
+
+				tenantMappingRelatedWebhooksFromDB = append(tenantMappingRelatedWebhooksFromDB, webhookFromDB)
+				break
+			}
+		}
+
+		enrichedWebhookModels = append(enrichedWebhookModels, webhookModel)
+	}
+
+	return tenantMappingRelatedWebhooksFromDB, enrichedWebhookModels, enrichedWebhookModelInputs, nil
 }
 
 func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*ordFetchRequest, error) {
@@ -1617,4 +1800,44 @@ func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context
 	logger := log.LoggerFromContext(ctx)
 	logger = logger.WithField(fieldName, fieldValue)
 	return log.ContextWithLogger(ctx, logger)
+}
+
+func createWebhookInput(credentialExchangeStrategyJSON gjson.Result, tenantMappingData CredentialExchangeStrategyTenantMapping) *graphql.WebhookInput {
+	inputMode := graphql.WebhookMode(tenantMappingData.Mode)
+	return &graphql.WebhookInput{
+		URL: str.Ptr(credentialExchangeStrategyJSON.Get(callbackURLProperty).String()),
+		Auth: &graphql.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:    &inputMode,
+		Version: str.Ptr(tenantMappingData.Version),
+	}
+}
+
+func isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels []*model.Webhook) (bool, error) {
+	appWhsFromDBMarshaled, err := json.Marshal(tenantMappingRelatedWebhooksFromDB)
+	if err != nil {
+		return false, errors.Wrapf(err, "while marshalling webhooks from DB")
+	}
+
+	appWhsFromDBHash, err := HashObject(string(appWhsFromDBMarshaled))
+	if err != nil {
+		return false, errors.Wrapf(err, "while hashing webhooks from DB")
+	}
+
+	enrichedWhsMarshaled, err := json.Marshal(enrichedWhModels)
+	if err != nil {
+		return false, errors.Wrapf(err, "while marshalling webhooks from DB")
+	}
+
+	enrichedHash, err := HashObject(string(enrichedWhsMarshaled))
+	if err != nil {
+		return false, errors.Wrapf(err, "while hashing webhooks from ORD document")
+	}
+
+	if strconv.FormatUint(appWhsFromDBHash, 10) == strconv.FormatUint(enrichedHash, 10) {
+		return true, nil
+	}
+
+	return false, nil
 }

@@ -151,6 +151,8 @@ spec:
               value: {{ .Values.global.operations_manager.election.enabled | quote}}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_TENANT_MAPPING_CONFIG_PATH
+              value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.operations_manager.external.port }}
@@ -168,6 +170,9 @@ spec:
           volumeMounts:
             - name: director-config
               mountPath: /config
+            - name: tenant-mapping-config
+              mountPath: {{ .Values.global.director.tenantMappingsPath}}
+              readOnly: true
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -185,3 +190,6 @@ spec:
         - name: director-config
           configMap:
             name: compass-director-config
+        - name: tenant-mapping-config
+          configMap:
+            name: compass-director-tenant-mapping-config
