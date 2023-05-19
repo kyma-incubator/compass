@@ -16,6 +16,8 @@ var (
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
+	// SelectFilter represents the select filter that determines which properties of a system will be fetched
+	SelectFilter []string
 	// SystemSourceKey represents a key for filtering systems
 	SystemSourceKey string
 	// SystemSynchronizationTimestamps represents the systems last synchronization timestamps for each tenant
@@ -28,30 +30,9 @@ type TemplateMapping struct {
 	Labels      map[string]*model.Label
 }
 
-// AdditionalURLs missing godoc
-type AdditionalURLs map[string]string
-
-// AdditionalAttributes missing godoc
-type AdditionalAttributes map[string]string
-
-// SystemBase missing godoc
-type SystemBase struct {
-	SystemNumber            string               `json:"systemNumber"`
-	DisplayName             string               `json:"displayName"`
-	ProductID               string               `json:"productId"`
-	PpmsProductVersionID    string               `json:"ppmsProductVersionId"`
-	ProductDescription      string               `json:"productDescription"`
-	BaseURL                 string               `json:"baseUrl"`
-	InfrastructureProvider  string               `json:"infrastructureProvider"`
-	BusinessTypeID          string               `json:"businessTypeId"`
-	BusinessTypeDescription string               `json:"businessTypeDescription"`
-	AdditionalURLs          AdditionalURLs       `json:"additionalUrls"`
-	AdditionalAttributes    AdditionalAttributes `json:"additionalAttributes"`
-}
-
 // System missing godoc
 type System struct {
-	SystemBase
+	SystemPayload   map[string]interface{}
 	TemplateID      string                           `json:"-"`
 	StatusCondition model.ApplicationStatusCondition `json:"-"`
 }
@@ -64,7 +45,7 @@ type SystemSynchronizationTimestamp struct {
 
 // UnmarshalJSON missing godoc
 func (s *System) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &s.SystemBase); err != nil {
+	if err := json.Unmarshal(data, &s.SystemPayload); err != nil {
 		return err
 	}
 

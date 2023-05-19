@@ -56,8 +56,6 @@ spec:
                   value: {{ .Values.global.systemFetcher.systemsAPIEndpoint | quote }}
                 - name: APP_SYSTEM_INFORMATION_FILTER_CRITERIA
                   value: {{ .Values.global.systemFetcher.systemsAPIFilterCriteria | quote }}
-                - name: APP_SYSTEM_INFORMATION_SELECT_CRITERIA
-                  value: {{ .Values.global.systemFetcher.systemsAPISelectCriteria | quote }}
                 - name: APP_SYSTEM_INFORMATION_SOURCE_KEY
                   value: {{ .Values.global.systemFetcher.systemSourceKey }}
                 - name: APP_TEMPLATE_LABEL_FILTER

@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3081"
+      version: "PR-3071"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -910,11 +910,10 @@ global:
     systemsAPIEndpoint: ""
     # systemsAPIFilterCriteria - criteria for fetching systems
     systemsAPIFilterCriteria: ""
-    systemsAPISelectCriteria: ""
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
-    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "displayName" }, { "placeholder_name": "display-name", "system_key": "displayName" }, { "placeholder_name": "systemNumber", "system_key": "systemNumber" }, { "placeholder_name": "productId", "system_key": "productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "infrastructureProvider", "optional": true } ]'
+    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "$.displayName" }, { "placeholder_name": "display-name", "system_key": "$.displayName" }, { "placeholder_name": "systemNumber", "system_key": "$.systemNumber" }, { "placeholder_name": "productId", "system_key": "$.productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "$.ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "$.additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "$.productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "$.additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "$.infrastructureProvider", "optional": true } ]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}","region": "{{region}}"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:
