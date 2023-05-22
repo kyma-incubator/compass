@@ -317,7 +317,6 @@ global:
     ordWebhookMappings: '[]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
-    ordProxyURL: "https://proxy.com"
     tenantMappings:
       SYNC:
         v1.0:
