@@ -31,16 +31,19 @@ type globalRegistryService struct {
 	productService GlobalProductService
 
 	ordClient Client
+
+	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
 }
 
 // NewGlobalRegistryService creates new instance of GlobalRegistryService.
-func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client) *globalRegistryService {
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) *globalRegistryService {
 	return &globalRegistryService{
-		transact:       transact,
-		config:         config,
-		vendorService:  vendorService,
-		productService: productService,
-		ordClient:      ordClient,
+		transact:                                 transact,
+		config:                                   config,
+		vendorService:                            vendorService,
+		productService:                           productService,
+		ordClient:                                ordClient,
+		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}
 }
 
@@ -62,7 +65,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, nil, map[string]bool{}); err != nil {
+	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 

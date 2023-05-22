@@ -285,7 +285,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 	)
 }
 
-func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64) error {
+func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
@@ -306,7 +306,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string
 				"callbackUrl": {
 					is.RequestURI,
 				},
-			}, validateCustomType, validateCustomDescription)
+			}, validateCustomType(credentialExchangeStrategyTenantMappings), validateCustomDescription)
 		})),
 		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
@@ -1090,11 +1090,19 @@ func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validat
 	return nil
 }
 
-func validateCustomType(el gjson.Result) error {
-	if el.Get("customType").Exists() && el.Get("type").String() != custom {
-		return errors.New("if customType is provided, type should be set to 'custom'")
+func validateCustomType(credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) func(el gjson.Result) error {
+	return func(el gjson.Result) error {
+		if el.Get("customType").Exists() && el.Get("type").String() != custom {
+			return errors.New("if customType is provided, type should be set to 'custom'")
+		}
+
+		customType := el.Get("customType").String()
+		if _, ok := credentialExchangeStrategyTenantMappings[customType]; strings.Contains(customType, TenantMappingCustomTypeIdentifier) && !ok {
+			return errors.New("credential exchange strategy's tenant mapping customType is not valid")
+		}
+
+		return validation.Validate(customType, validation.Match(regexp.MustCompile(CustomTypeCredentialExchangeStrategyRegex)))
 	}
-	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomTypeCredentialExchangeStrategyRegex)))
 }
 
 func validateCustomDescription(el gjson.Result) error {

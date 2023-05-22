@@ -311,7 +311,7 @@ func fetchTenants(ctx context.Context, eventAPIClient EventAPIClient, eventsType
 }
 
 func fetchWithRetries(retryAttempts uint, applyFunc func() error) error {
-	return retry.Do(applyFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	return retry.Do(applyFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelaySeconds*time.Second))
 }
 
 func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), applyFunc func(*EventsPage) error) error {
@@ -337,6 +337,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	}
 
 	for i := pageStart + 1; i <= totalPages; i++ {
+		time.Sleep(time.Second)
 		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
 		res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
 		if err != nil {
