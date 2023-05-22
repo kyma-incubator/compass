@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -117,6 +118,10 @@ type config struct {
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 
+	TenantMappingConfigPath                  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
+	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
+	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
+
 	MetricsConfig ord.MetricsConfig
 }
 
@@ -142,6 +147,12 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
+
+	tenantMappingConfig, err := apptemplate.UnmarshalTenantMappingConfig(cfg.TenantMappingConfigPath)
+	exitOnError(err, "Error while loading Tenant mapping config")
+
+	credentialExchangeStrategyTenantMappings, err := unmarshalMappings(cfg.CredentialExchangeStrategyTenantMappings)
+	exitOnError(err, "Error while loading Credential Exchange Strategy Tenant Mappings")
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Error while configuring logger")
@@ -179,7 +190,7 @@ func main() {
 	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping)
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping, tenantMappingConfig, cfg.TenantMappingCallbackURL, credentialExchangeStrategyTenantMappings)
 
 	jwtHTTPClient := &http.Client{
 		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
@@ -233,7 +244,7 @@ func ctxTenantProvider(ctx context.Context) (string, error) {
 	return localTenantID, nil
 }
 
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, accessStrategyExecutorProviderWithTenant *accessstrategy.Provider, accessStrategyExecutorProviderWithoutTenant *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor, ordWebhookMapping []application.ORDWebhookMapping) *ord.Service {
+func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, accessStrategyExecutorProviderWithTenant *accessstrategy.Provider, accessStrategyExecutorProviderWithoutTenant *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor, ordWebhookMapping []application.ORDWebhookMapping, tenantMappingConfig map[string]interface{}, tenantMappingCallbackURL string, credentialExchangeStrategyTenantMappings map[string]ord.CredentialExchangeStrategyTenantMapping) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -297,7 +308,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, tenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
@@ -325,10 +336,10 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	ordClientWithTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 	ordClientWithoutTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor)
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
-	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing)
-	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor)
+	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
+	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -474,4 +485,13 @@ func tenantContextHandler(transact persistence.Transactioner, tenantSvc TenantSe
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func unmarshalMappings(tenantMappings string) (map[string]ord.CredentialExchangeStrategyTenantMapping, error) {
+	var mappingsFromEnv map[string]ord.CredentialExchangeStrategyTenantMapping
+	if err := json.Unmarshal([]byte(tenantMappings), &mappingsFromEnv); err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling tenant mappings")
+	}
+
+	return mappingsFromEnv, nil
 }

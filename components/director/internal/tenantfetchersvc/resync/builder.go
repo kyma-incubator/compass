@@ -154,7 +154,7 @@ func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (Te
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc, tenantStorageConverter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, nil, "")
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	formationAssignmentConv := formationassignment.NewConverter()

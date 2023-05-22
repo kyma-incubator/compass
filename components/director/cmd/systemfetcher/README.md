@@ -18,7 +18,6 @@ The External System Registry API uses either OAuth 2.0 client credentials author
 
 The endpoint must return a specific payload and must accept the following type of query parameters:
 - **global.systemFetcher.systemsAPIFilterCriteria** - Specifies the filtering criteria for the systems. For example, the system type (mapped to an application template in Compass).
-- **global.systemFetcher.systemsAPISelectCriteria** - Specifies the fields that are returned for the systems. Returns all fields if not provided or empty.
 - **global.systemFetcher.systemsAPIFilterTenantCriteriaPattern** - Specifies the filtering criteria for the systems, based on a tenant from Compass.
 
 #### Response

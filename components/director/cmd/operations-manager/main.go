@@ -73,7 +73,10 @@ type config struct {
 	SelfRegisterDistinguishLabelKey string        `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 	RuntimeTypeLabelKey             string        `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 	ApplicationTypeLabelKey         string        `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
-	ORDWebhookMappings              string        `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+
+	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
+	TenantMappingCallbackURL string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
@@ -127,7 +130,10 @@ func main() {
 	ordWebhookMapping, err := application.UnmarshalMappings(conf.ORDWebhookMappings)
 	exitOnError(err, "failed while unmarshalling ord webhook mappings")
 
-	svc, err := createOperationsManagerService(ctx, cfgProvider, transact, ordWebhookMapping, conf)
+	tenantMappingConfig, err := apptemplate.UnmarshalTenantMappingConfig(conf.TenantMappingConfigPath)
+	exitOnError(err, "Error while loading Tenant mapping config")
+
+	svc, err := createOperationsManagerService(ctx, cfgProvider, transact, ordWebhookMapping, conf, tenantMappingConfig, conf.TenantMappingCallbackURL)
 	if err != nil {
 		exitOnError(err, "failed while creating operations manager service")
 	}
@@ -188,7 +194,7 @@ func startDeleteOldORDOperationsJob(ctx context.Context, opManager *operationsma
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, job)
 }
 
-func createOperationsManagerService(ctx context.Context, cfgProvider *configprovider.Provider, transact persistence.Transactioner, ordWebhookMapping []application.ORDWebhookMapping, conf config) (*operationsmanager.Service, error) {
+func createOperationsManagerService(ctx context.Context, cfgProvider *configprovider.Provider, transact persistence.Transactioner, ordWebhookMapping []application.ORDWebhookMapping, conf config, tenantMappingConfig map[string]interface{}, callbackURL string) (*operationsmanager.Service, error) {
 	retryHTTPExecutor := retry.NewHTTPExecutor(&conf.RetryConfig)
 
 	httpClient := &http.Client{
@@ -264,7 +270,7 @@ func createOperationsManagerService(ctx context.Context, cfgProvider *configprov
 	uidSvc := uid.NewService()
 	opSvc := operation.NewService(opRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, callbackURL)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)

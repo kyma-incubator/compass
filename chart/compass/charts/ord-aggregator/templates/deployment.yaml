@@ -46,6 +46,9 @@ spec:
         - name: director-config
           configMap:
             name: compass-director-config
+        - name: tenant-mapping-config
+          configMap:
+            name: compass-director-tenant-mapping-config
       containers:
         - name: {{ .Values.global.ordAggregator.containerName }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -53,6 +56,9 @@ spec:
           volumeMounts:
             - name: director-config
               mountPath: /config
+            - name: tenant-mapping-config
+              mountPath: {{ .Values.global.director.tenantMappingsPath}}
+              readOnly: true
           env:
             - name: APP_DB_USER
               valueFrom:
@@ -150,6 +156,12 @@ spec:
               value: {{ .Values.global.ordAggregator.job.schedulePeriod | quote }}
             - name: APP_ORD_AGGREGATOR_JOB_IS_SCHEDULABLE
               value: {{ .Values.global.ordAggregator.job.isSchedulable | quote }}
+            - name: APP_TENANT_MAPPING_CALLBACK_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_TENANT_MAPPING_CONFIG_PATH
+              value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS
+              value: {{ .Values.global.ordAggregator.tenantMappingConfiguration | quote }}
           command:
             - "/bin/sh"
           args:

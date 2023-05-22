@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
@@ -19,7 +21,10 @@ import (
 
 var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
 
-var emptyTemplate = `{}`
+var (
+	emptyTemplate = `{}`
+	testURL       = "testURL"
+)
 
 func stringPtr(s string) *string {
 	return &s
@@ -308,4 +313,98 @@ func givenApplicationTemplateID() string {
 
 func givenError() error {
 	return errors.New("some error")
+}
+
+func fixEmptyTenantMappingConfig() map[string]interface{} {
+	tenantMappingJSON := "{}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixTenantMappingConfig() map[string]interface{} {
+	tenantMappingJSON := "{\"SYNC\": {\"v1.0\": [{ \"type\": \"CONFIGURATION_CHANGED\",\"urlTemplate\": \"%s\",\"inputTemplate\": \"input template\",\"headerTemplate\": \"header template\",\"outputTemplate\": \"output template\"}]}}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixTenantMappingConfigForAsyncCallback() map[string]interface{} {
+	tenantMappingJSON := "{\"ASYNC_CALLBACK\": {\"v1.0\": [{ \"type\": \"CONFIGURATION_CHANGED\",\"urlTemplate\": \"%s\",\"inputTemplate\": \"input template\",\"headerTemplate\": \"%s\",\"outputTemplate\": \"output template\"}]}}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixInvalidTenantMappingConfig() map[string]interface{} {
+	tenantMappingJSON := "{\"SYNC\": []}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixTenantMappedWebhooks() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			Auth:    nil,
+			Mode:    &syncMode,
+			URL:     &testURL,
+			Version: str.Ptr("v1.0"),
+		},
+	}
+}
+
+func fixTenantMappedWebhooksForAsyncCallbackMode() []*graphql.WebhookInput {
+	asyncMode := graphql.WebhookModeAsyncCallback
+
+	return []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			Auth:    nil,
+			Mode:    &asyncMode,
+			URL:     &testURL,
+			Version: str.Ptr("v1.0"),
+		},
+	}
+}
+
+func fixTenantMappedWebhooksWithInvalidVersion() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			Auth:    nil,
+			Mode:    &syncMode,
+			URL:     &testURL,
+			Version: str.Ptr("notfound"),
+		},
+	}
+}
+
+func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:           graphql.WebhookTypeConfigurationChanged,
+			Auth:           nil,
+			Mode:           &syncMode,
+			URLTemplate:    &testURL,
+			InputTemplate:  str.Ptr("input template"),
+			HeaderTemplate: str.Ptr("header template"),
+			OutputTemplate: str.Ptr("output template"),
+		},
+	}
+}
+
+func fixEnrichedTenantMappedWebhooksForAsyncCallbackMode(callbackURL string) []*graphql.WebhookInput {
+	asyncMode := graphql.WebhookModeAsyncCallback
+
+	return []*graphql.WebhookInput{
+		{
+			Type:           graphql.WebhookTypeConfigurationChanged,
+			Auth:           nil,
+			Mode:           &asyncMode,
+			URLTemplate:    &testURL,
+			InputTemplate:  str.Ptr("input template"),
+			HeaderTemplate: str.Ptr(callbackURL),
+			OutputTemplate: str.Ptr("output template"),
+		},
+	}
 }
