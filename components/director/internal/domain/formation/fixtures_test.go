@@ -590,12 +590,6 @@ var (
 		Formation:     fixFormationModelWithState(model.InitialFormationState),
 		FormationType: testFormationTemplateName,
 	}
-	formationNotificationSyncCreateExtRequestWithNoOperation = &webhookclient.FormationNotificationRequestExt{
-		Request:       formationNotificationSyncCreateRequest.Request,
-		Operation:     "",
-		Formation:     fixFormationModelWithState(model.InitialFormationState),
-		FormationType: testFormationTemplateName,
-	}
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
@@ -1394,7 +1388,7 @@ func fixFormationAssignmentModelWithParameters(id, formationID, source, target s
 }
 
 func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
+	res := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 			Assignment: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             request,
@@ -1405,8 +1399,16 @@ func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.Fo
 				FormationAssignment: nil,
 			},
 		},
-		Operation: "",
 	}
+
+	switch assignment.State {
+	case string(model.InitialAssignmentState), string(model.CreateErrorAssignmentState):
+		res.Operation = model.AssignFormation
+	case string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState):
+		res.Operation = model.UnassignFormation
+	}
+
+	return res
 }
 
 func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMessage, suffix string) *model.FormationAssignment {

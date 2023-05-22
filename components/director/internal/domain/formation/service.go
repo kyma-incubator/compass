@@ -1026,36 +1026,31 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 		}
 
-		faReqMapping := formationassignment.FormationAssignmentRequestMapping{
-			Request:             notificationForFA,
-			FormationAssignment: fa,
-		}
-
-		reverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
-			Request:             notificationForReverseFA,
-			FormationAssignment: reverseFA,
-		}
-
 		assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-				Assignment:        &faReqMapping,
-				ReverseAssignment: &reverseFAReqMapping,
+				Assignment: &formationassignment.FormationAssignmentRequestMapping{
+					Request:             notificationForFA,
+					FormationAssignment: fa,
+				},
+				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+					Request:             notificationForReverseFA,
+					FormationAssignment: reverseFA,
+				},
 			},
-			Operation: "",
 		}
 		switch fa.State {
-		case string(model.InitialFormationState), string(model.CreateErrorFormationState):
-			_, err = s.formationAssignmentService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
-			if err != nil {
+		case string(model.InitialAssignmentState), string(model.CreateErrorAssignmentState):
+			assignmentPair.Operation = model.AssignFormation
+			if _, err = s.formationAssignmentService.ProcessFormationAssignmentPair(ctx, &assignmentPair); err != nil {
 				errs = multierror.Append(errs, err)
 			}
-		case string(model.DeletingFormationState), string(model.DeleteErrorFormationState):
-			_, err = s.formationAssignmentService.CleanupFormationAssignment(ctx, &assignmentPair)
-			if err != nil {
+		case string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState):
+			assignmentPair.Operation = model.UnassignFormation
+			if _, err = s.formationAssignmentService.CleanupFormationAssignment(ctx, &assignmentPair); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		}
-		if fa.State == string(model.DeleteErrorFormationState) {
+		if fa.State == string(model.DeleteErrorAssignmentState) {
 			failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, fa)
 		}
 	}
@@ -1107,7 +1102,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, formation, formationTemplateName, "")
+		extendedFormationReq := createExtendedFormationReq(formationReq, formation, formationTemplateName, operation)
 		if err = s.processFormationNotifications(ctx, formation, extendedFormationReq, errorState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
 			log.C(ctx).Error(processErr)

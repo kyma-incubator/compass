@@ -190,7 +190,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
-	err = h.faService.Update(ctx, fa, "")
+	err = h.faService.Update(ctx, fa, model.AssignFormation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -246,7 +246,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
 			ReverseAssignment: &faReqMapping,
 		},
-		Operation: "",
+		Operation: model.AssignFormation,
 	}
 
 	log.C(ctx).Infof("Processing formation assignment pairs and their notifications")
