@@ -174,6 +174,8 @@ type config struct {
 
 	RetryConfig retry.Config
 
+	DestinationConfig operators.DestinationConfig // todo::: add env vars in the director deployment
+
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
@@ -314,7 +316,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, cfg.DestinationConfig), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -671,7 +673,7 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 	}
 }
 
-func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) claims.RuntimeService {
+func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, destinationCfg operators.DestinationConfig) claims.RuntimeService {
 	asaConverter := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
@@ -721,7 +723,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClien
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(formationConstraintSvc, tenantSvc, asaSvc, formationRepo, labelRepo, labelSvc, appRepo)
+	constraintEngine := operators.NewConstraintEngine(formationConstraintSvc, tenantSvc, asaSvc, formationRepo, labelRepo, labelSvc, appRepo, mtlsHTTPClient, destinationCfg)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator)

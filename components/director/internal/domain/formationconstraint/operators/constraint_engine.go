@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"net/http"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,11 +36,24 @@ type formationRepository interface {
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
+	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
+}
+
+//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type runtimeRepository interface {
+	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
+}
+
+//go:generate mockery --exported --name=runtimeCtxRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type runtimeCtxRepository interface {
+	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 //go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -68,12 +82,16 @@ type ConstraintEngine struct {
 	labelRepo                 labelRepository
 	labelService              labelService
 	applicationRepository     applicationRepository
+	runtimeRepository         runtimeRepository
+	runtimeCtxRepository      runtimeCtxRepository
+	mtlsHTTPClient            *http.Client
+	destinationCfg            DestinationConfig
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, mtlsHTTPClient *http.Client, destinationCfg DestinationConfig) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:         constraintSvc,
 		tenantSvc:             tenantSvc,
@@ -82,6 +100,10 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 		labelRepo:             labelRepo,
 		labelService:          labelService,
 		applicationRepository: applicationRepository,
+		runtimeRepository:     runtimeRepository,
+		runtimeCtxRepository:  runtimeCtxRepository,
+		mtlsHTTPClient:        mtlsHTTPClient,
+		destinationCfg:        destinationCfg,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
