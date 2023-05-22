@@ -1,6 +1,9 @@
 package graphql
 
 import (
+	"encoding/json"
+	"time"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -41,10 +44,10 @@ var JoinPointDetailsByLocation = map[formationconstraint.JoinPointLocation]forma
 	formationconstraint.PostGenerateFormationAssignmentNotifications: emptyGenerateFormationAssignmentNotificationOperationDetails(),
 	formationconstraint.PreGenerateFormationNotifications:            emptyGenerateFormationNotificationOperationDetails(),
 	formationconstraint.PostGenerateFormationNotifications:           emptyGenerateFormationNotificationOperationDetails(),
-	formationconstraint.PreSendNotification:                          &formationconstraint.SendNotificationOperationDetails{},
-	formationconstraint.PostSendNotification:                         &formationconstraint.SendNotificationOperationDetails{},
-	formationconstraint.PreNotificationStatusReturned:                &formationconstraint.NotificationStatusReturnedOperationDetails{},
-	formationconstraint.PostNotificationStatusReturned:               &formationconstraint.NotificationStatusReturnedOperationDetails{},
+	formationconstraint.PreSendNotification:                          emptySendNotificationOperationDetails(),
+	formationconstraint.PostSendNotification:                         emptySendNotificationOperationDetails(),
+	formationconstraint.PreNotificationStatusReturned:                emptyNotificationStatusReturnedOperationDetails(),
+	formationconstraint.PostNotificationStatusReturned:               emptyNotificationStatusReturnedOperationDetails(),
 }
 
 // Validate validates FormationConstraintInput
@@ -125,5 +128,57 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 func emptyGenerateFormationNotificationOperationDetails() *formationconstraint.GenerateFormationNotificationOperationDetails {
 	return &formationconstraint.GenerateFormationNotificationOperationDetails{
 		CustomerTenantContext: &webhook.CustomerTenantContext{},
+	}
+}
+
+func emptySendNotificationOperationDetails() *formationconstraint.SendNotificationOperationDetails {
+	return &formationconstraint.SendNotificationOperationDetails{
+		Location: formationconstraint.JoinPointLocation{},
+		Webhook: &model.Webhook{
+			Auth: &model.Auth{
+				Credential: model.CredentialData{},
+				RequestAuth: &model.CredentialRequestAuth{
+					Csrf: &model.CSRFTokenCredentialRequestAuth{
+						Credential: model.CredentialData{
+							Basic:            &model.BasicCredentialData{},
+							Oauth:            &model.OAuthCredentialData{},
+							CertificateOAuth: &model.CertificateOAuthCredentialData{},
+						},
+					},
+				},
+				OneTimeToken: &model.OneTimeToken{
+					CreatedAt: time.Time{},
+					ExpiresAt: time.Time{},
+					UsedAt:    time.Time{},
+				},
+			},
+			CreatedAt: &time.Time{},
+		},
+		TemplateInput: nil,
+		FormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
+		ReverseFormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
+		Formation: &model.Formation{
+			Error: json.RawMessage("\"\""),
+		},
+	}
+}
+
+func emptyNotificationStatusReturnedOperationDetails() *formationconstraint.NotificationStatusReturnedOperationDetails {
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		Location: formationconstraint.JoinPointLocation{},
+		FormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
+		ReverseFormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
+		Formation: &model.Formation{
+			Error: json.RawMessage("\"\""),
+		},
+		FormationTemplate: &model.FormationTemplate{},
 	}
 }
