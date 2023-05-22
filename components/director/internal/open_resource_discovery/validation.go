@@ -231,6 +231,8 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 }
 
 func validateDocumentInput(doc *Document) error {
+	fmt.Println("ALEX validation")
+	fmt.Printf("doc.OpenResourceDiscovery: %+v\n", doc.OpenResourceDiscovery)
 	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1.*$"))))
 }
 
