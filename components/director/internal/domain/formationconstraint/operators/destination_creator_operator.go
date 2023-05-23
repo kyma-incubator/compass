@@ -77,7 +77,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		// todo:: will be implemented with the second phase of the destination operator
 		//log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(confDetailsResp.Configuration.Destinations))
 		//for _, destination := range confDetailsResp.Configuration.Destinations {
-		//	statusCode, err := e.createDesignTimeDestination(ctx, destination, di.Assignment)
+		//	statusCode, err := e.createDesignTimeDestinations(ctx, destination, di.Assignment)
 		//	if err != nil {
 		//		return false, errors.Wrapf(err, "while creating destination with name: %q", destination.Name)
 		//	}
@@ -88,7 +88,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		//			return false, errors.Wrapf(err, "while deleting destination with name: %q", destination.Name)
 		//		}
 		//
-		//		if _, err = e.createDesignTimeDestination(ctx, destination, di.Assignment); err != nil {
+		//		if _, err = e.createDesignTimeDestinations(ctx, destination, di.Assignment); err != nil {
 		//			return false, errors.Wrapf(err, "while creating destination with name: %q", destination.Name)
 		//		}
 		//	}
@@ -120,11 +120,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		basicAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
 		basicAuthCreds := confCredentialsResp.Configuration.Credentials.InboundCommunicationCredentials.BasicAuthentication
 		if basicAuthDetails != nil && basicAuthCreds != nil {
-			// loop through dest details and build a req based on: dest details && returned basic inboundCommCreds from ext svc
-
 			for _, destination := range basicAuthDetails.Destinations {
-				// build request using 'destination details' --> send the request to destination creator -> create destination with the credentials from the reverseAssignment
-				log.C(ctx).Info(destination) // todo::: delete
+				// todo::: build request using 'destination details' --> send the request to destination creator -> create destination with the credentials from the reverseAssignment
+				if err := e.createCredentialDestinations(ctx, destination); err != nil {
+					return false, err
+				}
 			}
 		}
 
@@ -141,7 +141,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	return true, nil
 }
 
-func (e *ConstraintEngine) createDesignTimeDestination(ctx context.Context, destination Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error) {
+func (e *ConstraintEngine) createCredentialDestinations(ctx context.Context, destination Destination,) error {
+	return nil
+}
+
+func (e *ConstraintEngine) createDesignTimeDestinations(ctx context.Context, destination Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error) {
 	subaccountID, err := e.validateDestinationSubaccount(ctx, destination, formationAssignment)
 	if err != nil {
 		return statusCode, err
@@ -478,7 +482,6 @@ type NoAuthentication struct {
 
 // BasicAuthentication todo::: add godoc
 type BasicAuthentication struct {
-	Authentication string   `json:"authentication"`
 	Url            string   `json:"url"`
 	Username       string   `json:"username"`
 	Password       string   `json:"password"`
@@ -502,7 +505,6 @@ type ClientCertAuthentication struct {
 
 // SAMLAuthentication todo::: add godoc
 type SAMLAuthentication struct {
-	Authentication      string `json:"authentication"`
 	URL                 string `json:"url"`
 	Audience            string `json:"audience"`
 	TokenServiceURL     string `json:"tokenServiceURL"`
@@ -528,10 +530,10 @@ type InboundSamlBearerAuthenticationDetails struct {
 // Destination todo::: add godoc
 type Destination struct {
 	Name                 string               `json:"name"`
-	Type                 string               `json:"type"`
+	Type                 DestinationType      `json:"type"`
 	Description          string               `json:"description,omitempty"`
-	ProxyType            string               `json:"proxyType"`
-	Authentication       string               `json:"authentication"`
+	ProxyType            DestinationProxyType `json:"proxyType"`
+	Authentication       DestinationAuthType  `json:"authentication"`
 	Url                  string               `json:"url"`
 	SubaccountID         string               `json:"subaccountId,omitempty"`
 	AdditionalAttributes AdditionalAttributes `json:"additionalAttributes,omitempty"`
@@ -545,13 +547,13 @@ type AdditionalAttributes json.RawMessage
 
 // DestinationReqBody // todo::: add godoc
 type DestinationReqBody struct {
-	Name               string `json:"name"`
-	Url                string `json:"url"`
-	Type               string `json:"type"`
-	ProxyType          string `json:"proxyType"`
-	AuthenticationType string `json:"authenticationType"`
-	User               string `json:"user"`
-	Password           string `json:"password"`
+	Name               string               `json:"name"`
+	Url                string               `json:"url"`
+	Type               DestinationType      `json:"type"`
+	ProxyType          DestinationProxyType `json:"proxyType"`
+	AuthenticationType DestinationAuthType  `json:"authenticationType"`
+	User               string               `json:"user"`
+	Password           string               `json:"password"`
 }
 
 // DestinationErrorResponse // todo::: add godoc
