@@ -83,7 +83,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	catalogNameProcurement := "procurement-service" // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+	catalogNameProcurement := "procurement-service-test" // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
 	planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
 	svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
 
@@ -342,6 +342,11 @@ func (h *Handler) retrieveServiceOffering(ctx context.Context, catalogName strin
 			break
 		}
 	}
+
+	if offeringID == "" {
+		return "", errors.Errorf("Couldn't find service offering for catalog name: %q", catalogName)
+	}
+
 	log.C(ctx).Infof("Service offering ID: %q", offeringID)
 
 	return offeringID, nil
@@ -388,6 +393,11 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 			break
 		}
 	}
+
+	if planID == "" {
+		return "", errors.Errorf("Couldn't find service plan for catalog name: %q and offering ID: %q", planName, offeringID)
+	}
+
 	log.C(ctx).Infof("Service plan ID: %q", planID)
 
 	return planID, nil
