@@ -2,6 +2,8 @@ package formation_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -433,7 +435,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsGenerator = testCase.NotificationsGenerator()
 			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
@@ -519,7 +521,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, tenantRepo, notificationGenerator)
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil)
 
 			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
 
@@ -539,137 +541,166 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
+	subtype := "subtype"
+
+	fa := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
+	reverseFa := fixFormationAssignmentModelWithParameters("id2", FormationID, ApplicationID, RuntimeID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InitialFormationState)
+
+	templateInput := &webhook.FormationConfigurationChangeInput{
+		Operation:   model.AssignFormation,
+		FormationID: FormationID,
+		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+		Application: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		Runtime: &webhook.RuntimeWithLabels{
+			Runtime: fixRuntimeModel(RuntimeID),
+			Labels:  fixRuntimeLabelsMap(),
+		},
+		RuntimeContext: nil,
+		CustomerTenantContext: &webhook.CustomerTenantContext{
+			CustomerID: TntParentID,
+			AccountID:  str.Ptr(TntExternalID),
+			Path:       nil,
+		},
+		Assignment:        emptyFormationAssignment,
+		ReverseAssignment: emptyFormationAssignment,
+	}
+
+	preJoinPointDetails := &formationconstraint.SendNotificationOperationDetails{
+		ResourceType:               model.ApplicationResourceType,
+		ResourceSubtype:            subtype,
+		Location:                   formationconstraint.PreSendNotification,
+		Operation:                  model.AssignFormation,
+		Webhook:                    fixRuntimeWebhookModel(WebhookID, RuntimeID),
+		CorrelationID:              "",
+		TemplateInput:              templateInput,
+		FormationAssignment:        fa,
+		ReverseFormationAssignment: reverseFa,
+		Formation:                  formationModel,
+	}
+	postJoinPointDetails := &formationconstraint.SendNotificationOperationDetails{
+		ResourceType:               model.ApplicationResourceType,
+		ResourceSubtype:            subtype,
+		Location:                   formationconstraint.PostSendNotification,
+		Operation:                  model.AssignFormation,
+		Webhook:                    fixRuntimeWebhookModel(WebhookID, RuntimeID),
+		CorrelationID:              "",
+		TemplateInput:              templateInput,
+		FormationAssignment:        fa,
+		ReverseFormationAssignment: reverseFa,
+		Formation:                  formationModel,
+	}
+
+	faRequestExt := &formationassignment.FormationAssignmentRequestExt{
+		FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
+			Webhook:       *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+			Object:        templateInput,
+			CorrelationID: "",
+		},
+		Operation:                  model.AssignFormation,
+		FormationAssignment:        fa,
+		ReverseFormationAssignment: reverseFa,
+		Formation:                  formationModel,
+		TargetSubtype:              subtype,
+	}
+
 	testCases := []struct {
 		Name               string
 		WebhookClientFN    func() *automock.WebhookClient
-		InputRequest       *webhookclient.FormationAssignmentNotificationRequest
+		ConstraintEngine   func() *automock.ConstraintEngine
+		WebhookConverter   func() *automock.WebhookConverter
+		InputRequest       *formationassignment.FormationAssignmentRequestExt
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "success when webhook client call doesn't return error",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.FormationAssignmentNotificationRequest{
-					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: nil,
-						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: TntParentID,
-							AccountID:  str.Ptr(TntExternalID),
-							Path:       nil,
-						},
-						Assignment:        emptyFormationAssignment,
-						ReverseAssignment: emptyFormationAssignment,
-					},
-					CorrelationID: "",
-				}).Return(nil, nil)
+				client.On("Do", ctx, faRequestExt).Return(nil, nil)
 				return client
 			},
-			InputRequest: &webhookclient.FormationAssignmentNotificationRequest{
-				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-				Object: &webhook.FormationConfigurationChangeInput{
-					Operation:   model.AssignFormation,
-					FormationID: FormationID,
-					ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-						ApplicationTemplate: fixApplicationTemplateModel(),
-						Labels:              fixApplicationTemplateLabelsMap(),
-					},
-					Application: &webhook.ApplicationWithLabels{
-						Application: fixApplicationModel(ApplicationID),
-						Labels:      fixApplicationLabelsMap(),
-					},
-					Runtime: &webhook.RuntimeWithLabels{
-						Runtime: fixRuntimeModel(RuntimeID),
-						Labels:  fixRuntimeLabelsMap(),
-					},
-					RuntimeContext: nil,
-					CustomerTenantContext: &webhook.CustomerTenantContext{
-						CustomerID: TntParentID,
-						AccountID:  str.Ptr(TntExternalID),
-						Path:       nil,
-					},
-					Assignment:        emptyFormationAssignment,
-					ReverseAssignment: emptyFormationAssignment,
-				},
-				CorrelationID: "",
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postJoinPointDetails, FormationTemplateID).Return(nil).Once()
+				return engine
 			},
+			WebhookConverter: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
+				return conv
+			},
+			InputRequest: faRequestExt,
 		},
 		{
 			Name: "fail when webhook client call fails",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.FormationAssignmentNotificationRequest{
-					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: nil,
-						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: TntParentID,
-							AccountID:  str.Ptr(TntExternalID),
-							Path:       nil,
-						},
-						Assignment:        emptyFormationAssignment,
-						ReverseAssignment: emptyFormationAssignment,
-					},
-					CorrelationID: "",
-				}).Return(nil, testErr)
+				client.On("Do", ctx, faRequestExt).Return(nil, testErr)
 				return client
 			},
-			InputRequest: &webhookclient.FormationAssignmentNotificationRequest{
-				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-				Object: &webhook.FormationConfigurationChangeInput{
-					Operation:   model.AssignFormation,
-					FormationID: FormationID,
-					ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-						ApplicationTemplate: fixApplicationTemplateModel(),
-						Labels:              fixApplicationTemplateLabelsMap(),
-					},
-					Application: &webhook.ApplicationWithLabels{
-						Application: fixApplicationModel(ApplicationID),
-						Labels:      fixApplicationLabelsMap(),
-					},
-					Runtime: &webhook.RuntimeWithLabels{
-						Runtime: fixRuntimeModel(RuntimeID),
-						Labels:  fixRuntimeLabelsMap(),
-					},
-					RuntimeContext: nil,
-					CustomerTenantContext: &webhook.CustomerTenantContext{
-						CustomerID: TntParentID,
-						AccountID:  str.Ptr(TntExternalID),
-						Path:       nil,
-					},
-					Assignment:        emptyFormationAssignment,
-					ReverseAssignment: emptyFormationAssignment,
-				},
-				CorrelationID: "",
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
+				return engine
 			},
+			WebhookConverter: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
+				return conv
+			},
+			InputRequest:       faRequestExt,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "fail when enforcing POST constraints returns error",
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, faRequestExt).Return(nil, nil)
+				return client
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostSendNotification, postJoinPointDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			WebhookConverter: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
+				return conv
+			},
+			InputRequest:       faRequestExt,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "fail when enforcing PRE constraints returns error",
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreSendNotification, preJoinPointDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			WebhookConverter: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(fixRuntimeWebhookModel(WebhookID, RuntimeID), nil).Once()
+				return conv
+			},
+			InputRequest:       faRequestExt,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "fail when converting gql webhook to model returns error",
+			WebhookConverter: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToModel", fixRuntimeWebhookGQLModel(WebhookID, RuntimeID)).Return(nil, testErr).Once()
+				return conv
+			},
+			InputRequest:       faRequestExt,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -680,8 +711,16 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			if testCase.WebhookClientFN != nil {
 				webhookClient = testCase.WebhookClientFN()
 			}
+			constraintEngine := &automock.ConstraintEngine{}
+			if testCase.ConstraintEngine != nil {
+				constraintEngine = testCase.ConstraintEngine()
+			}
+			webhookConverter := &automock.WebhookConverter{}
+			if testCase.WebhookConverter != nil {
+				webhookConverter = testCase.WebhookConverter()
+			}
 
-			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil)
+			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter)
 
 			// WHEN
 			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)
@@ -693,6 +732,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
+			mock.AssertExpectationsForObjects(t, webhookClient, constraintEngine, webhookConverter)
 		})
 	}
 }

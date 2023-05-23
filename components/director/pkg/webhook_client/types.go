@@ -3,6 +3,8 @@ package webhookclient
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
@@ -21,6 +23,44 @@ func NewWebhookStatusGoneErr(goneStatusCode int) WebhookStatusGoneErr {
 // FormationNotificationRequest represents a formation webhook request to be executed
 type FormationNotificationRequest struct {
 	*Request
+}
+
+// FormationNotificationRequestExt is extended FormationNotificationRequest with Operation, Formation and FormationType
+type FormationNotificationRequestExt struct {
+	*Request
+	Operation     model.FormationOperation
+	Formation     *model.Formation
+	FormationType string
+}
+
+// GetObjectType returns FormationNotificationRequestExt object type
+func (fnr *FormationNotificationRequestExt) GetObjectType() model.ResourceType {
+	return model.FormationResourceType
+}
+
+// GetObjectSubtype returns FormationNotificationRequestExt object subtype
+func (fnr *FormationNotificationRequestExt) GetObjectSubtype() string {
+	return fnr.FormationType
+}
+
+// GetOperation returns FormationNotificationRequestExt operation
+func (fnr *FormationNotificationRequestExt) GetOperation() model.FormationOperation {
+	return fnr.Operation
+}
+
+// GetFormationAssignment returns FormationNotificationRequestExt formation assignment
+func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *model.FormationAssignment {
+	return nil
+}
+
+// GetReverseFormationAssignment returns FormationNotificationRequestExt reverse formation assignment
+func (fnr *FormationNotificationRequestExt) GetReverseFormationAssignment() *model.FormationAssignment {
+	return nil
+}
+
+// GetFormation returns FormationNotificationRequestExt formation
+func (fnr *FormationNotificationRequestExt) GetFormation() *model.Formation {
+	return fnr.Formation
 }
 
 // FormationAssignmentNotificationRequest represents a formation assignment webhook request to be executed
@@ -104,4 +144,15 @@ func NewPollRequest(webhook graphql.Webhook, requestObject webhook.TemplateInput
 		Request: NewRequest(webhook, requestObject, correlationID),
 		PollURL: pollURL,
 	}
+}
+
+// WebhookExtRequest represent an extended request associated with registered webhook
+type WebhookExtRequest interface {
+	WebhookRequest
+	GetObjectType() model.ResourceType
+	GetObjectSubtype() string
+	GetOperation() model.FormationOperation
+	GetFormationAssignment() *model.FormationAssignment
+	GetReverseFormationAssignment() *model.FormationAssignment
+	GetFormation() *model.Formation
 }
