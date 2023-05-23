@@ -126,7 +126,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			labelSvc := testCase.LabelSvc()
 			appRepo := testCase.ApplicationRepo()
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo, nil, nil, nil, nil)
 
 			result, err := engine.DoesNotContainResourceOfSubtype(ctx, testCase.Input)
 

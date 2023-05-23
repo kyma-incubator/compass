@@ -3,31 +3,25 @@ package operators
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 const (
 	// DestinationCreatorOperator represents the destination creator operator
 	DestinationCreatorOperator = "DestinationCreatorOperator"
 	ClientUserHeaderKey        = "CLIENT_USER"
+	GlobalSubaccountLabelKey   = "global_subaccount_id"
+	regionLabelKey             = "region"
 
 	DestinationTypeHTTP DestinationType = "HTTP"
 	DestinationTypeRFC  DestinationType = "RFC"
@@ -80,39 +74,33 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.Assignment.ID)
 		}
 
-		designTimeDestLength := len(confDetailsResp.Configuration.Destinations)
-		if designTimeDestLength > 0 {
-			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", designTimeDestLength)
-			// todo::: create design time destination
-			for _, destination := range confDetailsResp.Configuration.Destinations {
-				statusCode, err := e.createDesignTimeDestination(ctx, destination, di.Assignment)
-				if err != nil {
-					return false, errors.Wrapf(err, "while creating destination with name: %q", destination.Name)
-				}
-
-				if statusCode == http.StatusConflict {
-					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...")
-					err := e.deleteDesignTimeDestination(ctx, destination)
-					if err != nil {
-						return false, errors.Wrapf(err, "while deleting destination with name: %q", destination.Name)
-					}
-
-					_, err = e.createDesignTimeDestination(ctx, destination, di.Assignment)
-					if err != nil {
-						return false, errors.Wrapf(err, "while creating destination with name: %q", destination.Name)
-					}
-				}
-			}
-		}
-
 		// todo:: will be implemented with the second phase of the destination operator
-		samlAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.SAMLBearerAuthenticationDetails
-		if isSAMLDetailsExists := samlAuthDetails; isSAMLDetailsExists != nil {
-			log.C(ctx).Infof("There is/are %d SAML Bearer destination details in the configuration response", designTimeDestLength)
-			for _, _ = range samlAuthDetails.Destinations {
-				// todo:: (for phase 2) create KeyStore for every destination elements and enrich the destination before sending it to the Destination Creator component
-			}
-		}
+		//log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(confDetailsResp.Configuration.Destinations))
+		//for _, destination := range confDetailsResp.Configuration.Destinations {
+		//	statusCode, err := e.createDesignTimeDestination(ctx, destination, di.Assignment)
+		//	if err != nil {
+		//		return false, errors.Wrapf(err, "while creating destination with name: %q", destination.Name)
+		//	}
+		//
+		//	if statusCode == http.StatusConflict {
+		//		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...")
+		//		if err := e.deleteDestinations(ctx); err != nil {
+		//			return false, errors.Wrapf(err, "while deleting destination with name: %q", destination.Name)
+		//		}
+		//
+		//		if _, err = e.createDesignTimeDestination(ctx, destination, di.Assignment); err != nil {
+		//			return false, errors.Wrapf(err, "while creating destination with name: %q", destination.Name)
+		//		}
+		//	}
+		//}
+		//
+		//samlAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.SAMLBearerAuthenticationDetails
+		//if isSAMLDetailsExists := samlAuthDetails; isSAMLDetailsExists != nil {
+		//	log.C(ctx).Infof("There is/are %d SAML Bearer destination details in the configuration response", len(samlAuthDetails.Destinations))
+		//	for _, _ = range samlAuthDetails.Destinations {
+		//		// todo:: (for phase 2) create KeyStore for every destination elements and enrich the destination before sending it to the Destination Creator component
+		//	}
+		//}
 
 		return true, nil
 	}
@@ -153,13 +141,242 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	return true, nil
 }
 
-func closeResponseBody(ctx context.Context, resp *http.Response) {
-	if err := resp.Body.Close(); err != nil {
-		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
+func (e *ConstraintEngine) createDesignTimeDestination(ctx context.Context, destination Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error) {
+	subaccountID, err := e.validateDestinationSubaccount(ctx, destination, formationAssignment)
+	if err != nil {
+		return statusCode, err
+	}
+
+	region, err := e.getRegionLabel(ctx, subaccountID)
+	if err != nil {
+		return statusCode, err
+	}
+
+	strURL, err := buildURL(e.destinationCfg, region, subaccountID, "", false)
+	if err != nil {
+		return statusCode, errors.Wrapf(err, "while building destination URL")
+	}
+
+	destReqBody := &DestinationReqBody{
+		Name:               destination.Name,
+		Url:                destination.Url,
+		Type:               destination.Type,
+		ProxyType:          destination.ProxyType,
+		AuthenticationType: destination.Authentication,
+		User:               "dummyValue?", // todo::: TBD in case of generic auth? since it's a required field
+	}
+
+	if err := validateDestinationReqBody(destReqBody); err != nil {
+		return statusCode, err
+	}
+
+	destReqbodyBytes, err := json.Marshal(destReqBody)
+	if err != nil {
+		return statusCode, errors.Wrapf(err, "while marshalling destination request body")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(destReqbodyBytes))
+	req.Header.Set(ClientUserHeaderKey, "dummyValue?") // todo::: double check what should be the value of the header??
+
+	log.C(ctx).Infof("Creating destination with name: %q", destination.Name)
+	resp, err := e.mtlsHTTPClient.Do(req)
+	if err != nil {
+		return statusCode, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return statusCode, errors.Errorf("Failed to read destination response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
+		return statusCode, errors.Errorf("Failed to create destination, status: %d, body: %s", resp.StatusCode, body)
+	}
+
+	if resp.StatusCode == http.StatusConflict {
+		log.C(ctx).Infof("The destination with name: %q already exists, continue with the next one.", destination.Name)
+		return http.StatusConflict, nil
+	}
+	log.C(ctx).Infof("Successfully create destination with name: %q", destination.Name)
+
+	return statusCode, nil
+}
+
+func (e *ConstraintEngine) validateDestinationSubaccount(ctx context.Context, destination Destination, formationAssignment *webhook.FormationAssignment) (string, error) {
+	consumerSubaccountID, err := e.getConsumerTenant(ctx, formationAssignment)
+	if err != nil {
+		return "", err
+	}
+
+	var subaccountID string
+	subaccountID = consumerSubaccountID
+
+	if destination.SubaccountID != "" && destination.SubaccountID != consumerSubaccountID {
+		switch formationAssignment.TargetType {
+		case model.FormationAssignmentTypeApplication:
+			if err := e.validateAppTemplateProviderSubaccount(ctx, formationAssignment, destination.SubaccountID); err != nil {
+				return "", err
+			}
+		case model.FormationAssignmentTypeRuntime:
+			if err := e.validateRuntimeProviderSubaccount(ctx, formationAssignment.Target, destination.SubaccountID); err != nil {
+				return "", err
+			}
+		case model.FormationAssignmentTypeRuntimeContext:
+			if err := e.validateRuntimeContextProviderSubaccount(ctx, formationAssignment, destination.SubaccountID); err != nil {
+				return "", err
+			}
+		default:
+			return "", errors.Errorf("Unknown formation assignment type: %q", formationAssignment.TargetType)
+		}
+
+		subaccountID = destination.SubaccountID
+	}
+
+	return subaccountID, nil
+}
+
+func (e *ConstraintEngine) getConsumerTenant(ctx context.Context, formationAssignment *webhook.FormationAssignment) (string, error) {
+	labelableObjType, err := determineLabelableObjectType(formationAssignment.TargetType)
+	if err != nil {
+		return "", err
+	}
+
+	labels, err := e.labelRepo.ListForObject(ctx, formationAssignment.TenantID, labelableObjType, formationAssignment.Target)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting labels for %s with ID: %q", formationAssignment.TargetType, formationAssignment.Target)
+	}
+
+	globalSubaccIDLbl, globalSubaccIDExists := labels[GlobalSubaccountLabelKey]
+	if !globalSubaccIDExists {
+		return "", errors.Errorf("%q label does not exists for: %q with ID: %q", GlobalSubaccountLabelKey, formationAssignment.TargetType, formationAssignment.Target)
+	}
+
+	globalSubaccIDLblValue, ok := globalSubaccIDLbl.Value.(string)
+	if !ok {
+		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", GlobalSubaccountLabelKey, globalSubaccIDLbl.Value)
+	}
+
+	return globalSubaccIDLblValue, nil
+}
+
+func determineLabelableObjectType(assignmentType model.FormationAssignmentType) (model.LabelableObject, error) {
+	switch assignmentType {
+	case model.FormationAssignmentTypeApplication:
+		return model.ApplicationLabelableObject, nil
+	case model.FormationAssignmentTypeRuntime:
+		return model.RuntimeLabelableObject, nil
+	case model.FormationAssignmentTypeRuntimeContext:
+		return model.RuntimeContextLabelableObject, nil
+	default:
+		return "", errors.Errorf("Couldn't determine the label-able object type from assignment type: %q", assignmentType)
 	}
 }
 
-func buildURL(destinationCfg DestinationConfig, region, subaccountID, destinationName string, isDeleteRequest bool) (string, error) {
+func (e *ConstraintEngine) getRegionLabel(ctx context.Context, tenantID string) (string, error) {
+	regionLbl, err := e.labelRepo.GetByKey(ctx, tenantID, model.TenantLabelableObject, tenantID, regionLabelKey)
+	if err != nil {
+		return "", err
+	}
+
+	region, ok := regionLbl.Value.(string)
+	if !ok {
+		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", regionLabelKey, regionLbl.Value)
+	}
+	return region, nil
+}
+
+func (e *ConstraintEngine) validateAppTemplateProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, destinationSubaccountID string) error {
+	app, err := e.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return err
+	}
+
+	if app.ApplicationTemplateID != nil && *app.ApplicationTemplateID != "" {
+		labels, err := e.labelRepo.ListForGlobalObject(ctx, model.AppTemplateLabelableObject, *app.ApplicationTemplateID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting labels for application template with ID: %q", *app.ApplicationTemplateID)
+		}
+
+		subaccountLbl, subaccountLblExists := labels[GlobalSubaccountLabelKey]
+
+		if !subaccountLblExists {
+			return errors.Errorf("%q label should exist as part of the provider application template with ID: %q", GlobalSubaccountLabelKey, *app.ApplicationTemplateID)
+		}
+
+		subaccountLblValue, ok := subaccountLbl.Value.(string)
+		if !ok {
+			return errors.Errorf("unexpected type of %q label, expect: string, got: %T", GlobalSubaccountLabelKey, subaccountLbl.Value)
+		}
+
+		if destinationSubaccountID != subaccountLblValue {
+			return errors.Errorf("The provided destination subaccount is different from the owner subaccount of the application template with ID: %q", *app.ApplicationTemplateID)
+		}
+	}
+
+	return nil
+}
+
+func (e *ConstraintEngine) validateRuntimeProviderSubaccount(ctx context.Context, runtimeID, destinationSubaccountID string) error {
+	exists, err := e.runtimeRepository.OwnerExists(ctx, destinationSubaccountID, runtimeID)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errors.Errorf("The provided destination subaccount: %q is not provider of the runtime with ID: %q", destinationSubaccountID, runtimeID)
+	}
+
+	return nil
+}
+
+func (e *ConstraintEngine) validateRuntimeContextProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, destinationSubaccountID string) error {
+	rtmCtxID, err := e.runtimeCtxRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
+	if err != nil {
+		return err
+	}
+
+	return e.validateRuntimeProviderSubaccount(ctx, rtmCtxID.RuntimeID, destinationSubaccountID)
+}
+
+func (e *ConstraintEngine) deleteDestinations(ctx context.Context) error { // todo::: propagate the assignmentID as parameter
+	// todo::: extract the destination from the DB by assignment ID with the associated destination name and tenantID(subaccountID)
+	// todo::: get subaccountID region label
+
+	strURL, err := buildURL(e.destinationCfg, "region", "subaccountID", "destinationName", true)
+	if err != nil {
+		return errors.Wrapf(err, "while building destination URL")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, strURL, nil)
+	req.Header.Set(ClientUserHeaderKey, "dummyValue?") // todo::: double check what should be the value of the header??
+
+	log.C(ctx).Infof("Deleting destination with name: %q", "destinationName")
+	resp, err := e.mtlsHTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Errorf("Failed to read destination response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.Errorf("Failed to delete destination, status: %d, body: %s", resp.StatusCode, body)
+	}
+
+	log.C(ctx).Infof("Successfully delete destination with name: %q", "destinationName")
+
+	return nil
+}
+
+func buildURL(destinationCfg *DestinationConfig, region, subaccountID, destinationName string, isDeleteRequest bool) (string, error) {
+	if region == "" || subaccountID == "" {
+		return "", errors.Errorf("The provided region and/or subaccount for the URL couldn't be empty")
+	}
+
 	base, err := url.Parse(destinationCfg.BaseURL)
 	if err != nil {
 		return "", err
@@ -181,220 +398,13 @@ func buildURL(destinationCfg DestinationConfig, region, subaccountID, destinatio
 	// Path params
 	base.Path += regionalEndpoint
 
-	// todo::: remove
-	//// Query params
-	//params := url.Values{}
-	//params.Add(tenantKey, tenantValue)
-	//base.RawQuery = params.Encode()
-
 	return base.String(), nil
 }
 
-func determineLabelableObjectType(assignmentType model.FormationAssignmentType) (model.LabelableObject, error) {
-	switch assignmentType {
-	case model.FormationAssignmentTypeApplication:
-		return model.ApplicationLabelableObject, nil
-	case model.FormationAssignmentTypeRuntime:
-		return model.RuntimeLabelableObject, nil
-	default:
-		return "", errors.New("Couldn't determine the label-able object type")
+func closeResponseBody(ctx context.Context, resp *http.Response) {
+	if err := resp.Body.Close(); err != nil {
+		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
 	}
-}
-
-// todo::: consider removing it
-func determineObjectTypeFromFormationAssignmentType(assignmentType model.FormationAssignmentType) (string, error) {
-	switch assignmentType {
-	case model.FormationAssignmentTypeApplication:
-		return resource.Application, nil
-	case model.FormationAssignmentTypeRuntime:
-		return resource.Runtime, nil
-	default:
-		return "", errors.New("Couldn't determine the resource type")
-	}
-}
-
-func (e *ConstraintEngine) getConsumerTenant(ctx context.Context, formationAssignment *webhook.FormationAssignment) (string, error) {
-	labelableObjType, err := determineLabelableObjectType(formationAssignment.TargetType)
-	if err != nil {
-		return "", err
-	}
-
-	globalSubaccoundLabelKey := "global_subaccount_id" // todo::: consider extracting it as config?
-	labels, err := e.labelRepo.ListForObject(ctx, formationAssignment.TenantID, labelableObjType, formationAssignment.Target)
-	if err != nil {
-		return "", errors.Wrapf(err, "while getting labels for %s with ID: %q", formationAssignment.TargetType, formationAssignment.Target)
-	}
-
-	globalSubaccIDLbl, globalSubaccIDExists := labels[globalSubaccoundLabelKey]
-	if !globalSubaccIDExists {
-		return "", errors.Errorf("%s label does not exists for: %s with ID: %q", globalSubaccoundLabelKey, formationAssignment.TargetType, formationAssignment.Target)
-	}
-
-	globalSubaccIDLblValue, ok := globalSubaccIDLbl.Value.(string)
-	if !ok {
-		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", globalSubaccoundLabelKey, globalSubaccIDLbl.Value)
-	}
-
-	return globalSubaccIDLblValue, nil
-}
-
-func (e *ConstraintEngine) createDesignTimeDestination(ctx context.Context, destination Destination, formationAssignment *webhook.FormationAssignment) (int, error) {
-	// todo::: move the URL build func outside the for cycle? from where will we get the region/subaccount? - subaccount from the context? and then region label of that subacc?
-	var subaccountID string
-	if destination.SubaccountId != "" {
-		// todo::: func checkEitherConsumerOrProvider?
-
-		subaccountID, err := e.getConsumerTenant(ctx, formationAssignment)
-		if err != nil {
-			return 0, err
-		}
-
-		if destination.SubaccountId != subaccountID { // todo::: "provider subaccount" check
-			if formationAssignment.TargetType == model.FormationAssignmentTypeApplication {
-				app, err := e.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
-				if err != nil {
-					return 0, err
-				}
-
-				if app.ApplicationTemplateID != nil && *app.ApplicationTemplateID != "" {
-					exists, err := e.applicationRepository.OwnerExists(ctx, destination.SubaccountId, *app.ApplicationTemplateID)
-					if err != nil {
-						return 0, err
-					}
-
-					if !exists {
-						log.C(ctx).Errorf("The provided subaccount: %q is not either to the consumer or the provider", destination.SubaccountId)
-						return 0, errors.Errorf("The provided subaccount: %q is not either to the consumer or the provider", destination.SubaccountId)
-					}
-				}
-			} else if formationAssignment.TargetType == model.FormationAssignmentTypeRuntime {
-				exists, err := e.runtimeRepository.OwnerExists(ctx, destination.SubaccountId, formationAssignment.Target)
-				if err != nil {
-					return 0, err
-				}
-
-				if !exists {
-					log.C(ctx).Errorf("The provided subaccount: %q is not either to the consumer or the provider", destination.SubaccountId)
-					return 0, errors.Errorf("The provided subaccount: %q is not either to the consumer or the provider", destination.SubaccountId)
-				}
-			} else if formationAssignment.TargetType == model.FormationAssignmentTypeRuntimeContext { // from subscription
-				rtmCtxID, err := e.runtimeCtxRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
-				if err != nil {
-					return 0, err
-				}
-
-				exists, err := e.runtimeRepository.OwnerExists(ctx, destination.SubaccountId, rtmCtxID.RuntimeID)
-				if err != nil {
-					return 0, err
-				}
-
-				if !exists {
-					log.C(ctx).Errorf("The provided subaccount: %q is not either to the consumer or the provider", destination.SubaccountId)
-					return 0, errors.Errorf("The provided subaccount: %q is not either to the consumer or the provider", destination.SubaccountId)
-				}
-			} else {
-				// todo::: error?
-			}
-		}
-
-	} else { // not provided
-		subaccID, err := e.getConsumerTenant(ctx, formationAssignment)
-		if err != nil {
-			return 0, err
-		}
-
-		subaccountID = subaccID
-	}
-
-	var region string
-	// todo::: get subaccount region label
-
-	strURL, err := buildURL(e.destinationCfg, region, subaccountID, "", false)
-	if err != nil {
-		return 0, errors.Wrapf(err, "while building destination URL")
-	}
-
-	destReqBody := &DestinationReqBody{
-		Name:               destination.Name,
-		Url:                destination.Url,
-		Type:               destination.Type,
-		ProxyType:          destination.ProxyType,
-		AuthenticationType: destination.Authentication,
-		User:               "dummyValue?", // todo::: TBD in case of generic auth? since it's a required field
-	}
-
-	if err := validateDestinationReqBody(destReqBody); err != nil {
-		return 0, err
-	}
-
-	destReqbodyBytes, err := json.Marshal(destReqBody)
-	if err != nil {
-		return 0, errors.Wrapf(err, "while marshalling destination request body")
-	}
-
-	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(destReqbodyBytes))
-	req.Header.Set(ClientUserHeaderKey, "dummyValue?") // todo::: double check what should be the value of the header??
-
-	resp, err := e.mtlsHTTPClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, errors.Errorf("Failed to read destination response body: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
-		return 0, errors.Errorf("Failed to create destination, status: %d, body: %s", resp.StatusCode, body)
-	}
-
-	if resp.StatusCode == http.StatusConflict {
-		log.C(ctx).Infof("The destination with name: %q already exists, continue with the next one.", destination.Name)
-		return http.StatusConflict, nil
-	}
-	log.C(ctx).Infof("Successfully create destination with name: %q", destination.Name)
-
-	return 0, nil
-}
-
-func (e *ConstraintEngine) deleteDesignTimeDestination(ctx context.Context, destination Destination) error {
-	var subaccountID string
-	if destination.SubaccountId != "" {
-		subaccountID = destination.SubaccountId // todo::: check subaccountID value
-	}
-
-	var region string
-	// todo::: get subaccount region label
-
-	strURL, err := buildURL(e.destinationCfg, region, subaccountID, destination.Name, true)
-	if err != nil {
-		return errors.Wrapf(err, "while building destination URL")
-	}
-
-	req, err := http.NewRequest(http.MethodPost, strURL, nil)
-	req.Header.Set(ClientUserHeaderKey, "dummyValue?") // todo::: double check what should be the value of the header??
-
-	log.C(ctx).Infof("Deleting destination with name: %q", destination.Name)
-	resp, err := e.mtlsHTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Errorf("Failed to read destination response body: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusNoContent {
-		return errors.Errorf("Failed to delete destination, status: %d, body: %s", resp.StatusCode, body)
-	}
-
-	log.C(ctx).Infof("Successfully delete destination with name: %q", destination.Name)
-
-	return nil
 }
 
 func validateDestinationReqBody(destinationReqBody *DestinationReqBody) error {
@@ -419,50 +429,6 @@ func validateDestinationReqBody(destinationReqBody *DestinationReqBody) error {
 	}
 
 	return nil
-}
-
-// todo::: consider removing it + the certConfig from the engine
-func prepareMTLSClient(ctx context.Context, certConfig certloader.Config) (*http.Client, error) {
-	kubeConfig := kubernetes.Config{}
-	k8sClient, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
-	if err != nil {
-		return nil, err
-	}
-
-	parsedCertSecret, err := namespacedname.Parse(certConfig.ExternalClientCertSecret)
-	if err != nil {
-		return nil, err
-	}
-
-	secret, err := k8sClient.CoreV1().Secrets(parsedCertSecret.Namespace).Get(ctx, parsedCertSecret.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting %q secret from the cluster", parsedCertSecret.Name) // todo::: extract the name as config, p.s. above as well
-	}
-
-	certDataBytes, existsCertKey := secret.Data[certConfig.ExternalClientCertCertKey]
-	keyDataBytes, existsKeyKey := secret.Data[certConfig.ExternalClientCertKeyKey]
-	if !existsCertKey || !existsKeyKey {
-		return nil, errors.Errorf("The %q secret should contain %q and %q keys", parsedCertSecret.Name, certConfig.ExternalClientCertCertKey, certConfig.ExtSvcClientCertKeyKey)
-	}
-
-	tlsCert, err := cert.ParseCertificateBytes(certDataBytes, keyDataBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{*tlsCert},
-		InsecureSkipVerify: false, // todo::: make it configurable
-	}
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-		Timeout: time.Second * 30,
-	}
-
-	return httpClient, nil
 }
 
 // Destination Creator Operator types
@@ -567,7 +533,7 @@ type Destination struct {
 	ProxyType            string               `json:"proxyType"`
 	Authentication       string               `json:"authentication"`
 	Url                  string               `json:"url"`
-	SubaccountId         string               `json:"subaccountId,omitempty"`
+	SubaccountID         string               `json:"subaccountId,omitempty"`
 	AdditionalAttributes AdditionalAttributes `json:"additionalAttributes,omitempty"`
 	// todo::: additional fields for KeyStore(phase 2)
 }
