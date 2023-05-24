@@ -21,6 +21,13 @@ import (
 // WellKnownEndpoint is the single entry point for the discovery.
 const WellKnownEndpoint = "/.well-known/open-resource-discovery"
 
+type DocumentPerspective string
+
+const (
+	SystemVersionPerspective  DocumentPerspective = "system-version"
+	SystemInstancePerspective DocumentPerspective = "system-instance"
+)
+
 // WellKnownConfig represents the whole config object
 type WellKnownConfig struct {
 	Schema                  string                  `json:"$schema"`
@@ -41,6 +48,7 @@ type DocumentDetails struct {
 	//  Therefore we treat every resource as SystemInstanceAware = true
 	SystemInstanceAware bool                            `json:"systemInstanceAware"`
 	AccessStrategies    accessstrategy.AccessStrategies `json:"accessStrategies"`
+	Perspective         DocumentPerspective             `json:"perspective"`
 }
 
 // Document represents an ORD Document
@@ -52,6 +60,8 @@ type Document struct {
 	// TODO: In the current state of ORD and it's implementation we are missing system landscape discovery and an id correlation in the system instances. Because of that in the first phase we will rely on:
 	//  - DescribedSystemInstance is the application in our DB and it's baseURL should match with the one in the webhook.
 	DescribedSystemInstance *model.Application `json:"describedSystemInstance"`
+
+	DescribedSystemVersion *model.ApplicationTemplateVersionInput `json:"describedSystemVersion"`
 
 	Packages           []*model.PackageInput         `json:"packages"`
 	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
@@ -113,6 +123,12 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		if doc.DescribedSystemInstance != nil {
 			if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
 				errs = multierror.Append(errs, errors.Wrap(err, "error validating system instance"))
+			}
+		}
+
+		if doc.DescribedSystemVersion != nil {
+			if err := ValidateSystemVersionInput(doc.DescribedSystemVersion); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating system instance"))
 			}
 		}
 		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
