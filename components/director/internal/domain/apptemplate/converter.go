@@ -135,6 +135,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
+		Labels:               in.Labels,
 	}, nil
 }
 

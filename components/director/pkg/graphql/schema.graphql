@@ -399,6 +399,7 @@ input ApplicationTemplateUpdateInput {
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
+	labels: Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
 }
