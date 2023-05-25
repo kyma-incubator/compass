@@ -101,18 +101,18 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 }
 
 // ProcessFormationAssignmentPair provides a mock function with given fields: ctx, mappingPair
-func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error) {
+func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error) {
 	ret := _m.Called(ctx, mappingPair)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) bool); ok {
 		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) error); ok {
 		r1 = rf(ctx, mappingPair)
 	} else {
 		r1 = ret.Error(1)
@@ -121,13 +121,13 @@ func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context
 	return r0, r1
 }
 
-// SetAssignmentToErrorState provides a mock function with given fields: ctx, assignment, errorMessage, errorCode, state
-func (_m *FormationAssignmentService) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error {
-	ret := _m.Called(ctx, assignment, errorMessage, errorCode, state)
+// SetAssignmentToErrorState provides a mock function with given fields: ctx, assignment, errorMessage, errorCode, state, operation
+func (_m *FormationAssignmentService) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
+	ret := _m.Called(ctx, assignment, errorMessage, errorCode, state, operation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, string, formationassignment.AssignmentErrorCode, model.FormationAssignmentState) error); ok {
-		r0 = rf(ctx, assignment, errorMessage, errorCode, state)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, string, formationassignment.AssignmentErrorCode, model.FormationAssignmentState, model.FormationOperation) error); ok {
+		r0 = rf(ctx, assignment, errorMessage, errorCode, state, operation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -135,13 +135,13 @@ func (_m *FormationAssignmentService) SetAssignmentToErrorState(ctx context.Cont
 	return r0
 }
 
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *FormationAssignmentService) Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error {
-	ret := _m.Called(ctx, id, in)
+// Update provides a mock function with given fields: ctx, fa, operation
+func (_m *FormationAssignmentService) Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error {
+	ret := _m.Called(ctx, fa, operation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignmentInput) error); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, model.FormationOperation) error); ok {
+		r0 = rf(ctx, fa, operation)
 	} else {
 		r0 = ret.Error(0)
 	}

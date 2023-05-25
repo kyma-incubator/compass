@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -34,7 +36,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "All properties given",
 			Input:    fixApplicationModelWebhook("1", "foo", "", "bar", time.Time{}),
-			Expected: fixGQLWebhook("1", "foo", "bar"),
+			Expected: fixApplicationGQLWebhook("1", "foo", "bar"),
 		},
 		{
 			Name:     "Empty",
@@ -67,6 +69,96 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}
 }
 
+func TestConverter_ToModel(t *testing.T) {
+	id := "id"
+	objectID := "objectID"
+	url := "url"
+
+	appInput := fixApplicationGQLWebhook(id, objectID, url)
+	expectedApp := fixApplicationModelWebhook(id, objectID, "", url, time.Time{})
+	var err error
+	expectedApp.Auth, err = auth.ToModel(appInput.Auth)
+	assert.NoError(t, err)
+
+	runtimeInput := fixRuntimeGQLWebhook(id, objectID, url)
+	expectedRuntime := fixRuntimeModelWebhook(id, objectID, url)
+	expectedRuntime.Auth, err = auth.ToModel(runtimeInput.Auth)
+	assert.NoError(t, err)
+
+	appTmplInput := fixApplicationTemplateGQLWebhook(id, objectID, url)
+	expectedAppTmpl := fixApplicationTemplateModelWebhook(id, objectID, url)
+	expectedAppTmpl.Auth, err = auth.ToModel(appTmplInput.Auth)
+	assert.NoError(t, err)
+
+	formationTmplInput := fixFormationTemplateGQLWebhook(id, objectID, url)
+	expectedFormationTmpl := fixFormationTemplateModelWebhook(id, objectID, url)
+	expectedFormationTmpl.Auth, err = auth.ToModel(formationTmplInput.Auth)
+	assert.NoError(t, err)
+
+	intSysInput := fixIntegrationSystemGQLWebhook(id, objectID, url)
+	expectedIntSys := fixIntegrationSystemModelWebhook(id, objectID, url)
+	expectedIntSys.Auth, err = auth.ToModel(intSysInput.Auth)
+	assert.NoError(t, err)
+
+	unknownInput := fixGenericGQLWebhook(id, url)
+	expectedUnknown := fixGenericModelWebhook(id, "", url)
+	expectedUnknown.Auth, err = auth.ToModel(unknownInput.Auth)
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		Name     string
+		Input    *graphql.Webhook
+		Expected *model.Webhook
+	}{
+		{
+			Name:     "Success when object type is application",
+			Input:    appInput,
+			Expected: expectedApp,
+		},
+		{
+			Name:     "Success when object type is runtime",
+			Input:    runtimeInput,
+			Expected: expectedRuntime,
+		},
+		{
+			Name:     "Success when object type is application template",
+			Input:    appTmplInput,
+			Expected: expectedAppTmpl,
+		},
+		{
+			Name:     "Success when object type is formation template",
+			Input:    formationTmplInput,
+			Expected: expectedFormationTmpl,
+		},
+		{
+			Name:     "Success when object type is integration system",
+			Input:    intSysInput,
+			Expected: expectedIntSys,
+		},
+		{
+			Name:     "Success when object type is unknown",
+			Input:    unknownInput,
+			Expected: expectedUnknown,
+		},
+		{
+			Name: "Success when input is nil",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := webhook.NewConverter(&automock.AuthConverter{})
+
+			// WHEN
+			res, err := converter.ToModel(testCase.Input)
+
+			// THEN
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.Expected, res)
+		})
+	}
+}
+
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
 	input := []*model.Webhook{
@@ -76,8 +168,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		nil,
 	}
 	expected := []*graphql.Webhook{
-		fixGQLWebhook("1", "foo", "baz"),
-		fixGQLWebhook("2", "bar", "bez"),
+		fixApplicationGQLWebhook("1", "foo", "baz"),
+		fixApplicationGQLWebhook("2", "bar", "bez"),
 		{},
 	}
 	authConv := &automock.AuthConverter{}

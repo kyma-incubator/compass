@@ -113,18 +113,6 @@ func fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, te
 	}
 }
 
-func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, state model.FormationAssignmentState, config string) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: testFormationID,
-		Source:      sourceID,
-		SourceType:  sourceFAType,
-		Target:      targetID,
-		TargetType:  targetFAType,
-		State:       string(state),
-		Value:       json.RawMessage(config),
-	}
-}
-
 func fixBusinessTenantMapping() *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             internalTntID,
@@ -184,10 +172,6 @@ func fixUnusedTransactioner() (*persistenceautomock.PersistenceTx, *persistencea
 
 func fixUnusedFormationAssignmentSvc() *automock.FormationAssignmentService {
 	return &automock.FormationAssignmentService{}
-}
-
-func fixUnusedFormationAssignmentConverter() *automock.FormationAssignmentConverter {
-	return &automock.FormationAssignmentConverter{}
 }
 
 func fixUnusedFormationAssignmentNotificationSvc() *automock.FormationAssignmentNotificationService {
