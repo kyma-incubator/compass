@@ -20,6 +20,7 @@ type formationAssignmentUpdaterService struct {
 	formationTemplateRepository formationTemplateRepository
 }
 
+// NewFormationAssignmentUpdaterService creates formation assignment updater service
 func NewFormationAssignmentUpdaterService(repo FormationAssignmentRepository, constraintEngine constraintEngine, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository) *formationAssignmentUpdaterService {
 	return &formationAssignmentUpdaterService{
 		repo:                        repo,
@@ -29,6 +30,7 @@ func NewFormationAssignmentUpdaterService(repo FormationAssignmentRepository, co
 	}
 }
 
+// Update updates a Formation Assignment and enforces PreNotificationStatusReturned constraints before and after the update
 func (fau *formationAssignmentUpdaterService) Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
 
@@ -66,6 +68,7 @@ func (fau *formationAssignmentUpdaterService) Update(ctx context.Context, fa *mo
 	return nil
 }
 
+// SetAssignmentToErrorState updates Formation Assignment state to error state using the errorMessage, errorCode and state parameters
 func (fau *formationAssignmentUpdaterService) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
 	assignment.State = string(state)
 	assignmentError := AssignmentErrorWrapper{AssignmentError{
