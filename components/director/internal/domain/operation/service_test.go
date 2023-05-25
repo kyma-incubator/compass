@@ -2,6 +2,8 @@ package operation_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -9,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
