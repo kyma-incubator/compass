@@ -16,29 +16,32 @@ type Client struct {
 	mock.Mock
 }
 
-// FetchOpenResourceDiscoveryDocuments provides a mock function with given fields: ctx, app, webhook
-func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (ord.Documents, string, error) {
-	ret := _m.Called(ctx, app, webhook)
+// FetchOpenResourceDiscoveryDocuments provides a mock function with given fields: ctx, resource, webhook, constraints
+func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource ord.Resource, webhook *model.Webhook, constraints map[string]interface{}) (ord.Documents, string, error) {
+	ret := _m.Called(ctx, resource, webhook, constraints)
 
 	var r0 ord.Documents
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Application, *model.Webhook) ord.Documents); ok {
-		r0 = rf(ctx, app, webhook)
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) (ord.Documents, string, error)); ok {
+		return rf(ctx, resource, webhook, constraints)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) ord.Documents); ok {
+		r0 = rf(ctx, resource, webhook, constraints)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ord.Documents)
 		}
 	}
 
-	var r1 string
-	if rf, ok := ret.Get(1).(func(context.Context, *model.Application, *model.Webhook) string); ok {
-		r1 = rf(ctx, app, webhook)
+	if rf, ok := ret.Get(1).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) string); ok {
+		r1 = rf(ctx, resource, webhook, constraints)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *model.Application, *model.Webhook) error); ok {
-		r2 = rf(ctx, app, webhook)
+	if rf, ok := ret.Get(2).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) error); ok {
+		r2 = rf(ctx, resource, webhook, constraints)
 	} else {
 		r2 = ret.Error(2)
 	}

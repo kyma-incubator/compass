@@ -65,19 +65,31 @@ func (r *repository) Create(ctx context.Context, item model.ApplicationTemplateV
 	return r.creator.Create(ctx, entity)
 }
 
-// Get missing godoc
-func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemplateVersion, error) {
+// GetByAppTemplateIDAndVersion missing godoc
+func (r *repository) GetByAppTemplateIDAndVersion(ctx context.Context, appTemplateID, version string) (*model.ApplicationTemplateVersion, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{
+		repo.NewEqualCondition("app_template_id", appTemplateID),
+		repo.NewEqualCondition("version", version),
+	}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
 	result, err := r.conv.FromEntity(&entity)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Application Template with ID %s", id)
+		return nil, errors.Wrapf(err, "while converting")
 	}
 
 	return result, nil
+}
+
+func (r *repository) ListByAppTemplateID(ctx context.Context, appTemplateID string) ([]*model.ApplicationTemplateVersion, error) {
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("app_template_id", appTemplateID)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
 }
 
 func (r *repository) ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplateVersion, error) {

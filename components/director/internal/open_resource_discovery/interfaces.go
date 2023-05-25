@@ -159,6 +159,19 @@ type TenantService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
+//go:generate mockery --name=ApplicationTemplateVersionService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateVersionService interface {
+	GetByAppTemplateIDAndVersion(ctx context.Context, id, version string) (*model.ApplicationTemplateVersion, error)
+	ListByAppTemplateID(ctx context.Context, appTemplateID string) ([]*model.ApplicationTemplateVersion, error)
+	Create(ctx context.Context, appTemplateID string, item *model.ApplicationTemplateVersionInput) (string, error)
+	Update(ctx context.Context, id, appTemplateID string, in *model.ApplicationTemplateVersionInput) error
+}
+
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+}
+
 // WebhookConverter is responsible for converting webhook structs
 //
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string

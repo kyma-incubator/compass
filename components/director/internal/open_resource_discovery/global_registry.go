@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	resource2 "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -50,17 +51,15 @@ func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalR
 // SyncGlobalResources syncs global resources (products and vendors) provided via global registry.
 func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[string]bool, error) {
 	// dummy app used only for logging
-	app := &model.Application{
+	resource := Resource{
+		Type: resource2.Application,
+		ID:   "global-registry",
 		Name: "global-registry",
-		Type: "global-registry",
-		BaseEntity: &model.BaseEntity{
-			ID: "global-registry",
-		},
 	}
-	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, &model.Webhook{
+	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  &s.config.URL,
-	})
+	}, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}

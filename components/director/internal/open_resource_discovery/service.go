@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/imdario/mergo"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,7 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -90,19 +91,21 @@ type Service struct {
 
 	transact persistence.Transactioner
 
-	appSvc             ApplicationService
-	webhookSvc         WebhookService
-	bundleSvc          BundleService
-	bundleReferenceSvc BundleReferenceService
-	apiSvc             APIService
-	eventSvc           EventService
-	specSvc            SpecService
-	fetchReqSvc        FetchRequestService
-	packageSvc         PackageService
-	productSvc         ProductService
-	vendorSvc          VendorService
-	tombstoneSvc       TombstoneService
-	tenantSvc          TenantService
+	appSvc                ApplicationService
+	webhookSvc            WebhookService
+	bundleSvc             BundleService
+	bundleReferenceSvc    BundleReferenceService
+	apiSvc                APIService
+	eventSvc              EventService
+	specSvc               SpecService
+	fetchReqSvc           FetchRequestService
+	packageSvc            PackageService
+	productSvc            ProductService
+	vendorSvc             VendorService
+	tombstoneSvc          TombstoneService
+	tenantSvc             TenantService
+	appTemplateVersionSvc ApplicationTemplateVersionService
+	appTemplateSvc        ApplicationTemplateService
 
 	webhookConverter WebhookConverter
 
@@ -111,26 +114,27 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService) *Service {
 	return &Service{
-		config:             config,
-		transact:           transact,
-		appSvc:             appSvc,
-		webhookSvc:         webhookSvc,
-		bundleSvc:          bundleSvc,
-		bundleReferenceSvc: bundleReferenceSvc,
-		apiSvc:             apiSvc,
-		eventSvc:           eventSvc,
-		specSvc:            specSvc,
-		fetchReqSvc:        fetchReqSvc,
-		packageSvc:         packageSvc,
-		productSvc:         productSvc,
-		vendorSvc:          vendorSvc,
-		tombstoneSvc:       tombstoneSvc,
-		tenantSvc:          tenantSvc,
-		globalRegistrySvc:  globalRegistrySvc,
-		ordClient:          client,
-		webhookConverter:   webhookConverter,
+		config:                config,
+		transact:              transact,
+		appSvc:                appSvc,
+		webhookSvc:            webhookSvc,
+		bundleSvc:             bundleSvc,
+		bundleReferenceSvc:    bundleReferenceSvc,
+		apiSvc:                apiSvc,
+		eventSvc:              eventSvc,
+		specSvc:               specSvc,
+		fetchReqSvc:           fetchReqSvc,
+		packageSvc:            packageSvc,
+		productSvc:            productSvc,
+		vendorSvc:             vendorSvc,
+		tombstoneSvc:          tombstoneSvc,
+		tenantSvc:             tenantSvc,
+		globalRegistrySvc:     globalRegistrySvc,
+		ordClient:             client,
+		webhookConverter:      webhookConverter,
+		appTemplateVersionSvc: appTemplateVersionSvc,
 	}
 }
 
@@ -263,6 +267,11 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
+
+		//if err := s.processApplicationTemplateWebhook(ctx, cfg, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
+		//	return err
+		//}
+
 		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
 		if err != nil {
 			return err
@@ -341,10 +350,38 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, app *model.Application, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, err := s.fetchResources(ctx, app.ID)
+func (s *Service) processDocuments(ctx context.Context, resource Resource, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+	err := s.processDescribedSystemVersions(ctx, resource.ID, documents)
 	if err != nil {
 		return err
+	}
+
+	apiDataFromDB := make(map[string]*model.APIDefinition, 0)
+	eventDataFromDB := make(map[string]*model.EventDefinition, 0)
+	packageDataFromDB := make(map[string]*model.Package, 0)
+	bundleDataFromDB := make(map[string]*model.Bundle, 0)
+	if resource.Type == directorresource.ApplicationTemplateVersion {
+		for _, document := range documents {
+			systemVersion, err := s.appTemplateVersionSvc.GetByAppTemplateIDAndVersion(ctx, resource.ID, document.DescribedSystemVersion.Version)
+			if err != nil {
+				return err
+			}
+
+			apiData, eventData, packageData, bundleData, err := s.fetchResources(ctx, systemVersion.ID)
+			if err != nil {
+				return err
+			}
+
+			mergo.Merge(apiDataFromDB, apiData)
+			mergo.Merge(eventDataFromDB, eventData)
+			mergo.Merge(packageDataFromDB, packageData)
+			mergo.Merge(bundleDataFromDB, bundleData)
+		}
+	} else {
+		apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, err = s.fetchResources(ctx, resource.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	resourceHashes, err := hashResources(documents)
@@ -380,43 +417,43 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 	}
 
 	ordLocalID := s.getUniqueLocalTenantID(documents)
-	if ordLocalID != "" && app.LocalTenantID == nil {
-		if err := s.appSvc.Update(ctx, app.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {
+	if ordLocalID != "" && resource.LocalTenantID == nil {
+		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {
 			return err
 		}
 	}
 
-	vendorsFromDB, err := s.processVendors(ctx, app.ID, vendorsInput)
+	vendorsFromDB, err := s.processVendors(ctx, resource.ID, vendorsInput)
 	if err != nil {
 		return err
 	}
 
-	productsFromDB, err := s.processProducts(ctx, app.ID, productsInput)
+	productsFromDB, err := s.processProducts(ctx, resource.ID, productsInput)
 	if err != nil {
 		return err
 	}
 
-	packagesFromDB, err := s.processPackages(ctx, app.ID, packagesInput, resourceHashes)
+	packagesFromDB, err := s.processPackages(ctx, resource.ID, packagesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	bundlesFromDB, err := s.processBundles(ctx, app, bundlesInput, resourceHashes)
+	bundlesFromDB, err := s.processBundles(ctx, resource.ID, bundlesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, app.ID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
+	apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resource.ID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, app.ID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
+	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resource.ID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	tombstonesFromDB, err := s.processTombstones(ctx, app.ID, tombstonesInput)
+	tombstonesFromDB, err := s.processTombstones(ctx, resource.ID, tombstonesInput)
 	if err != nil {
 		return err
 	}
@@ -593,6 +630,25 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 	return excludeUnnecessaryFetchRequests(fetchRequests, frIdxToExclude), tx.Commit()
 }
 
+func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplateID string, documents Documents) error {
+	appTemplateVersions, err := s.appTemplateVersionSvc.ListByAppTemplateID(ctx, appTemplateID)
+	if err != nil {
+		return err
+	}
+
+	for _, document := range documents {
+		if document.DescribedSystemVersion == nil {
+			continue
+		}
+
+		if err := s.resyncApplicationTemplateVersionInTx(ctx, appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
 	vendorsFromDB, err := s.listVendorsInTx(ctx, appID)
 	if err != nil {
@@ -638,6 +694,20 @@ func (s *Service) resyncVendorInTx(ctx context.Context, appID string, vendorsFro
 
 	if err := s.resyncVendor(ctx, appID, vendorsFromDB, *vendor); err != nil {
 		return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+	}
+	return tx.Commit()
+}
+
+func (s *Service) resyncApplicationTemplateVersionInTx(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncAppTemplateVersion(ctx, appTemplateID, appTemplateVersionsFromDB, appTemplateVersion); err != nil {
+		return errors.Wrapf(err, "error while resyncing App Template Version for App template %q", appTemplateID)
 	}
 	return tx.Commit()
 }
@@ -741,8 +811,8 @@ func (s *Service) resyncPackageInTx(ctx context.Context, appID string, packagesF
 	return tx.Commit()
 }
 
-func (s *Service) processBundles(ctx context.Context, app *model.Application, bundles []*model.BundleCreateInput, resourceHashes map[string]uint64) ([]*model.Bundle, error) {
-	bundlesFromDB, err := s.listBundlesInTx(ctx, app.ID)
+func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput, resourceHashes map[string]uint64) ([]*model.Bundle, error) {
+	bundlesFromDB, err := s.listBundlesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -751,13 +821,13 @@ func (s *Service) processBundles(ctx context.Context, app *model.Application, bu
 	var credentialExchangeStrategyJSON gjson.Result
 	for _, bndl := range bundles {
 		bndlHash := resourceHashes[str.PtrStrToStr(bndl.OrdID)]
-		if err := s.resyncBundleInTx(ctx, app.ID, bundlesFromDB, bndl, bndlHash); err != nil {
+		if err := s.resyncBundleInTx(ctx, appID, bundlesFromDB, bndl, bndlHash); err != nil {
 			return nil, err
 		}
 
 		credentialExchangeStrategies, err := bndl.CredentialExchangeStrategies.MarshalJSON()
 		if err != nil {
-			return nil, errors.Wrapf(err, "while marshalling credential exchange strategies for application with ID %s", app.ID)
+			return nil, errors.Wrapf(err, "while marshalling credential exchange strategies for application with ID %s", appID)
 		}
 
 		for _, credentialExchangeStrategy := range gjson.ParseBytes(credentialExchangeStrategies).Array() {
@@ -770,11 +840,11 @@ func (s *Service) processBundles(ctx context.Context, app *model.Application, bu
 
 			currentHash, err := HashObject(credentialExchangeStrategy)
 			if err != nil {
-				return nil, errors.Wrapf(err, "while hasing credential exchange strategy for application with ID %s", app.ID)
+				return nil, errors.Wrapf(err, "while hasing credential exchange strategy for application with ID %s", appID)
 			}
 
 			if credentialExchangeStrategyHashCurrent != 0 && currentHash != credentialExchangeStrategyHashCurrent {
-				return nil, errors.Errorf("There are differences in the Credential Exchange Strategies for Tenant Mappings for application with ID %s. They should be the same.", app.ID)
+				return nil, errors.Errorf("There are differences in the Credential Exchange Strategies for Tenant Mappings for application with ID %s. They should be the same.", appID)
 			}
 
 			credentialExchangeStrategyHashCurrent = currentHash
@@ -782,11 +852,11 @@ func (s *Service) processBundles(ctx context.Context, app *model.Application, bu
 		}
 	}
 
-	if err := s.resyncTenantMappingWebhooksInTx(ctx, credentialExchangeStrategyJSON, app.ID); err != nil {
+	if err := s.resyncTenantMappingWebhooksInTx(ctx, credentialExchangeStrategyJSON, appID); err != nil {
 		return nil, err
 	}
 
-	bundlesFromDB, err = s.listBundlesInTx(ctx, app.ID)
+	bundlesFromDB, err = s.listBundlesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -1164,6 +1234,17 @@ func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB 
 	return err
 }
 
+func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
+	ctx = addFieldToLogger(ctx, "app_template_version_id", appTemplateID)
+	if i, found := searchInSlice(len(appTemplateVersionsFromDB), func(i int) bool {
+		return appTemplateVersionsFromDB[i].Version == appTemplateVersion.Version
+	}); found {
+		return s.appTemplateVersionSvc.Update(ctx, appTemplateID, appTemplateVersionsFromDB[i].ID, appTemplateVersion)
+	}
+	_, err := s.appTemplateVersionSvc.Create(ctx, appTemplateID, appTemplateVersion)
+	return err
+}
+
 func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput, apiHash uint64) ([]*model.FetchRequest, error) {
 	ctx = addFieldToLogger(ctx, "api_ord_id", *api.OrdID)
 	i, isAPIFound := searchInSlice(len(apisFromDB), func(i int) bool {
@@ -1457,7 +1538,7 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, bundlDataFromDB, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, constraints map[string]interface{}) error {
 	var documents Documents
 	var baseURL string
 	var err error
@@ -1471,9 +1552,14 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		Labels:     []string{metrics.ErrorMetricLabel, metrics.AppIDMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
+	if resource.Type == directorresource.ApplicationTemplateVersion {
+		ctx = addFieldToLogger(ctx, "app_template_id", resource.ID)
+	} else {
+		ctx = addFieldToLogger(ctx, "app_id", resource.ID)
+	}
+
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
-		ctx = addFieldToLogger(ctx, "app_id", app.ID)
-		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
+		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, constraints)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1485,7 +1571,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		var validationErrors error
-		if err = s.processDocuments(ctx, app, baseURL, documents, globalResourcesOrdIDs, &validationErrors); err != nil {
+		if err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors); err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
@@ -1578,7 +1664,7 @@ func (s *Service) getUniqueLocalTenantID(documents Documents) string {
 }
 
 func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID string) (context.Context, error) {
-	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
+	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, directorresource.Application, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -1618,7 +1704,46 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		return err
 	}
 
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, app, globalResourcesOrdIDs); err != nil {
+	resource := Resource{
+		Type:          directorresource.Application,
+		ID:            app.ID,
+		Name:          app.Name,
+		LocalTenantID: app.LocalTenantID,
+	}
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplate, err := s.appTemplateSvc.Get(ctx, appTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "error while retrieving app template with id %q", appTemplateID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	resource := Resource{
+		Type: directorresource.ApplicationTemplate,
+		ID:   appTemplate.ID,
+		Name: appTemplate.Name,
+	}
+	constraints := map[string]interface{}{
+		"perspective": SystemVersionPerspective,
+	}
+	if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, constraints); err != nil {
 		return err
 	}
 
