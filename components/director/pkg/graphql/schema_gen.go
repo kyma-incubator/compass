@@ -5358,7 +5358,7 @@ input ApplicationTemplateUpdateInput {
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
-	labels: Labels
+	labels: Labels @hasScopes(path: "graphql.input.application_template.labels")
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
 }
@@ -31029,9 +31029,30 @@ func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx con
 			}
 		case "labels":
 			var err error
-			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			directive0 := func(ctx context.Context) (interface{}, error) {
+				return ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			}
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				path, err := ec.unmarshalNString2string(ctx, "graphql.input.application_template.labels")
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.HasScopes == nil {
+					return nil, errors.New("directive hasScopes is not implemented")
+				}
+				return ec.directives.HasScopes(ctx, obj, directive0, path)
+			}
+
+			tmp, err := directive1(ctx)
 			if err != nil {
 				return it, err
+			}
+			if data, ok := tmp.(Labels); ok {
+				it.Labels = data
+			} else if tmp == nil {
+				it.Labels = nil
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.Labels`, tmp)
 			}
 		case "accessLevel":
 			var err error
