@@ -49,10 +49,10 @@ type formationAssignmentService interface {
 	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
-	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) (bool, error)) error
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
+	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 }

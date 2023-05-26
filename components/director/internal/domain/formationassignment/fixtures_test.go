@@ -3,6 +3,8 @@ package formationassignment_test
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
@@ -42,6 +44,8 @@ var (
 
 	faModel  = fixFormationAssignmentModel(TestConfigValueRawJSON)
 	faEntity = fixFormationAssignmentEntity(TestConfigValueStr)
+
+	appSubtype = "subtype"
 )
 
 func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssignment {
@@ -196,33 +200,52 @@ func fixFormationAssignmentOnlyWithSourceAndTarget() *model.FormationAssignment 
 	return &model.FormationAssignment{Source: "source", Target: "target"}
 }
 
-func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPair {
-	return &formationassignment.AssignmentMappingPair{
-		Assignment: &formationassignment.FormationAssignmentRequestMapping{
-			Request:             nil,
-			FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
+func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             nil,
+				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
+			},
+			ReverseAssignment: nil,
 		},
-		ReverseAssignment: nil,
+		Operation: model.AssignFormation,
 	}
 }
 
-func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPair {
-	return &formationassignment.AssignmentMappingPair{
-		Assignment: &formationassignment.FormationAssignmentRequestMapping{
-			Request:             req,
-			FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
+func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             req,
+				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
+			},
+			ReverseAssignment: nil,
 		},
-		ReverseAssignment: nil,
+		Operation: model.AssignFormation,
 	}
 }
 
-func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPair {
-	return &formationassignment.AssignmentMappingPair{
-		Assignment: &formationassignment.FormationAssignmentRequestMapping{
-			Request:             req,
-			FormationAssignment: assignment,
+func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             req,
+				FormationAssignment: assignment,
+			},
+			ReverseAssignment: nil,
 		},
-		ReverseAssignment: nil,
+		Operation: model.AssignFormation,
+	}
+}
+
+func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.FormationAssignmentNotificationRequest, fa *model.FormationAssignment) *formationassignment.FormationAssignmentRequestExt {
+	return &formationassignment.FormationAssignmentRequestExt{
+		FormationAssignmentNotificationRequest: reqWebhook,
+		Operation:                              assignOperation,
+		FormationAssignment:                    fa,
+		Formation:                              formation,
+		TargetSubtype:                          appSubtype,
 	}
 }
 
@@ -503,6 +526,19 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
+func fixNotificationStatusReturnedDetails(fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		ResourceType:               model.FormationResourceType,
+		ResourceSubtype:            formationTemplate.Name,
+		Location:                   location,
+		Operation:                  assignOperation,
+		FormationAssignment:        fa,
+		ReverseFormationAssignment: reverseFa,
+		Formation:                  formation,
+		FormationTemplate:          formationTemplate,
+	}
+}
+
 func fixUUIDService() *automock.UIDService {
 	uidSvc := &automock.UIDService{}
 	uidSvc.On("Generate").Return(TestID)
@@ -511,10 +547,6 @@ func fixUUIDService() *automock.UIDService {
 
 func unusedFormationAssignmentRepository() *automock.FormationAssignmentRepository {
 	return &automock.FormationAssignmentRepository{}
-}
-
-func unusedFormationAssignmentConverter() *automock.FormationAssignmentConverter {
-	return &automock.FormationAssignmentConverter{}
 }
 
 func unusedUIDService() *automock.UIDService {
