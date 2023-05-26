@@ -451,6 +451,52 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	saveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
+func TestUpdateLabelsOfApplicationTemplate(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := createAppTemplateName("app-template")
+	newName := createAppTemplateName("new-app-template")
+	newDescription := "new description"
+	newAppCreateInput := &graphql.ApplicationRegisterInput{
+		Name:           "new-app-create-input",
+		Description:    ptr.String("{{name}} {{display-name}}"),
+		HealthCheckURL: ptr.String("http://url.valid"),
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log("Create application template")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, Labels: map[string]interface{}{"label1": "test"}, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name: "name",
+		},
+		{
+			Name: "display-name",
+		},
+	}
+	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+
+	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
+	updateOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Log("Update application template")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
+
+	t.Log("Should return error because there is no application_template.labels:write scope")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "insufficient scopes provided")
+}
+
 func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	ctx := context.Background()
 	appTemplateRegion := conf.SubscriptionConfig.SelfRegRegion
