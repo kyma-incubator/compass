@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,6 +11,7 @@ import (
 )
 
 // ProductRepository missing godoc
+//
 //go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ProductRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Product) error
@@ -21,11 +23,12 @@ type ProductRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Product, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Product, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error)
+	ListByResourceID(ctx context.Context, tenantID, appID string, resourceType resource.Type) ([]*model.Product, error)
 	ListGlobal(ctx context.Context) ([]*model.Product, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -45,19 +48,19 @@ func NewService(productRepo ProductRepository, uidService UIDService) *service {
 }
 
 // Create creates a new product.
-func (s *service) Create(ctx context.Context, applicationID string, in model.ProductInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	product := in.ToProduct(id, &applicationID)
+	product := in.ToProduct(id, resourceType, resourceID)
 
 	if err = s.productRepo.Create(ctx, tnt, product); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for %s with id %s", id, product.Title, resourceType, resourceID)
 	}
-	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
+	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for %s with id %s", id, product.Title, resourceType, resourceID)
 
 	return product.OrdID, nil
 }
@@ -65,7 +68,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pro
 // CreateGlobal creates a new global product (with NULL app_id).
 func (s *service) CreateGlobal(ctx context.Context, in model.ProductInput) (string, error) {
 	id := s.uidService.Generate()
-	product := in.ToProduct(id, nil)
+	product := in.ToProduct(id, "", "")
 
 	if err := s.productRepo.CreateGlobal(ctx, product); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating Global Product with id %s and title %s", id, product.Title)
@@ -171,7 +174,17 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.productRepo.ListByApplicationID(ctx, tnt, appID)
+	return s.productRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionID returns a list of products for a given application ID.
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.productRepo.ListByResourceID(ctx, tnt, appID, resource.ApplicationTemplateVersion)
 }
 
 // ListGlobal returns a list of global products (with NULL app_id).

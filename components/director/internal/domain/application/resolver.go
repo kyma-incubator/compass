@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -125,7 +126,7 @@ type RuntimeService interface {
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
-	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
+	CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error
 }
 
 // BundleConverter missing godoc

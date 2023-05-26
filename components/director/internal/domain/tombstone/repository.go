@@ -19,6 +19,7 @@ var (
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Tombstone) *Entity
@@ -95,9 +96,16 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.T
 }
 
 // ListByApplicationID missing godoc
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error) {
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Tombstone, error) {
 	tombstoneCollection := tombstoneCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Tombstone, tenantID, &tombstoneCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	var condition repo.Condition
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", resourceID)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+	}
+
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Tombstone, tenantID, &tombstoneCollection, condition); err != nil {
 		return nil, err
 	}
 	tombstones := make([]*model.Tombstone, 0, tombstoneCollection.Len())

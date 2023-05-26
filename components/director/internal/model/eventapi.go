@@ -17,35 +17,36 @@ import (
 
 // EventDefinition missing godoc
 type EventDefinition struct {
-	ApplicationID       string
-	PackageID           *string
-	Name                string
-	Description         *string
-	Group               *string
-	OrdID               *string
-	LocalTenantID       *string
-	ShortDescription    *string
-	SystemInstanceAware *bool
-	PolicyLevel         *string
-	CustomPolicyLevel   *string
-	ChangeLogEntries    json.RawMessage
-	Links               json.RawMessage
-	Tags                json.RawMessage
-	Countries           json.RawMessage
-	ReleaseStatus       *string
-	SunsetDate          *string
-	Successors          json.RawMessage
-	Labels              json.RawMessage
-	Visibility          *string
-	Disabled            *bool
-	PartOfProducts      json.RawMessage
-	LineOfBusiness      json.RawMessage
-	Industry            json.RawMessage
-	Extensible          json.RawMessage
-	ResourceHash        *string
-	Version             *Version
-	Hierarchy           json.RawMessage
-	DocumentationLabels json.RawMessage
+	ApplicationID                *string
+	ApplicationTemplateVersionID *string
+	PackageID                    *string
+	Name                         string
+	Description                  *string
+	Group                        *string
+	OrdID                        *string
+	LocalTenantID                *string
+	ShortDescription             *string
+	SystemInstanceAware          *bool
+	PolicyLevel                  *string
+	CustomPolicyLevel            *string
+	ChangeLogEntries             json.RawMessage
+	Links                        json.RawMessage
+	Tags                         json.RawMessage
+	Countries                    json.RawMessage
+	ReleaseStatus                *string
+	SunsetDate                   *string
+	Successors                   json.RawMessage
+	Labels                       json.RawMessage
+	Visibility                   *string
+	Disabled                     *bool
+	PartOfProducts               json.RawMessage
+	LineOfBusiness               json.RawMessage
+	Industry                     json.RawMessage
+	Extensible                   json.RawMessage
+	ResourceHash                 *string
+	Version                      *Version
+	Hierarchy                    json.RawMessage
+	DocumentationLabels          json.RawMessage
 	*BaseEntity
 }
 
@@ -143,12 +144,12 @@ func (rd *EventResourceDefinition) ToSpec() *SpecInput {
 }
 
 // ToEventDefinitionWithinBundle missing godoc
-func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID string, eventHash uint64) *EventDefinition {
-	return e.ToEventDefinition(id, appID, nil, eventHash)
+func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, resourceType resource.Type, resourceID string, appTemplateVersionID *string, bndlID string, eventHash uint64) *EventDefinition {
+	return e.ToEventDefinition(id, resourceType, resourceID, nil, eventHash)
 }
 
 // ToEventDefinition missing godoc
-func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, eventHash uint64) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resource.Type, resourceID string, packageID *string, eventHash uint64) *EventDefinition {
 	if e == nil {
 		return nil
 	}
@@ -158,8 +159,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		hash = str.Ptr(strconv.FormatUint(eventHash, 10))
 	}
 
-	return &EventDefinition{
-		ApplicationID:       appID,
+	event := &EventDefinition{
 		PackageID:           packageID,
 		Name:                e.Name,
 		Description:         e.Description,
@@ -193,4 +193,12 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 			Ready: true,
 		},
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		event.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		event.ApplicationID = &resourceID
+	}
+
+	return event
 }

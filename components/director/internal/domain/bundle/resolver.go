@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -18,15 +19,17 @@ import (
 )
 
 // BundleService missing godoc
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
-	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput) (string, error)
 	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 // BundleConverter missing godoc
+//
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
@@ -35,6 +38,7 @@ type BundleConverter interface {
 }
 
 // BundleInstanceAuthService missing godoc
+//
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleInstanceAuthService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.BundleInstanceAuth, error)
@@ -42,6 +46,7 @@ type BundleInstanceAuthService interface {
 }
 
 // BundleInstanceAuthConverter missing godoc
+//
 //go:generate mockery --name=BundleInstanceAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleInstanceAuthConverter interface {
 	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
@@ -49,15 +54,17 @@ type BundleInstanceAuthConverter interface {
 }
 
 // APIService missing godoc
+//
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
 // APIConverter missing godoc
+//
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
@@ -66,15 +73,17 @@ type APIConverter interface {
 }
 
 // EventService missing godoc
+//
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventService interface {
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	DeleteAllByBundleID(ctx context.Context, bundleID string) error
 }
 
 // EventConverter missing godoc
+//
 //go:generate mockery --name=EventConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
@@ -83,14 +92,16 @@ type EventConverter interface {
 }
 
 // DocumentService missing godoc
+//
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error)
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.DocumentInput) (string, error)
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 }
 
 // DocumentConverter missing godoc
+//
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
@@ -99,6 +110,7 @@ type DocumentConverter interface {
 }
 
 // SpecService missing godoc
+//
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
@@ -106,6 +118,7 @@ type SpecService interface {
 }
 
 // BundleReferenceService missing godoc
+//
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
@@ -113,6 +126,7 @@ type BundleReferenceService interface {
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
@@ -190,7 +204,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 		return nil, errors.Wrap(err, "while converting input from GraphQL")
 	}
 
-	id, err := r.bundleSvc.Create(ctx, applicationID, convertedIn)
+	id, err := r.bundleSvc.Create(ctx, resource.Application, applicationID, convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +215,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 	}
 
 	if len(in.APIDefinitions) > 0 {
-		if err = r.appSvc.UpdateBaseURL(ctx, bndl.ApplicationID, in.APIDefinitions[0].TargetURL); err != nil {
+		if err = r.appSvc.UpdateBaseURL(ctx, *bndl.ApplicationID, in.APIDefinitions[0].TargetURL); err != nil {
 			return nil, errors.Wrapf(err, "while trying to update baseURL")
 		}
 	}

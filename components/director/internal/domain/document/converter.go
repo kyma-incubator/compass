@@ -117,14 +117,15 @@ func (c *converter) ToEntity(in *model.Document) (*Entity, error) {
 	data := repo.NewNullableString(in.Data)
 
 	out := &Entity{
-		BndlID:      in.BundleID,
-		AppID:       in.AppID,
-		Title:       in.Title,
-		DisplayName: in.DisplayName,
-		Description: in.Description,
-		Format:      string(in.Format),
-		Kind:        kind,
-		Data:        data,
+		BndlID:                       in.BundleID,
+		AppID:                        repo.NewNullableString(in.AppID),
+		ApplicationTemplateVersionID: repo.NewNullableString(in.ApplicationTemplateVersionID),
+		Title:                        in.Title,
+		DisplayName:                  in.DisplayName,
+		Description:                  in.Description,
+		Format:                       string(in.Format),
+		Kind:                         kind,
+		Data:                         data,
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -144,14 +145,15 @@ func (c *converter) FromEntity(in *Entity) (*model.Document, error) {
 	data := repo.StringPtrFromNullableString(in.Data)
 
 	out := &model.Document{
-		BundleID:    in.BndlID,
-		AppID:       in.AppID,
-		Title:       in.Title,
-		DisplayName: in.DisplayName,
-		Description: in.Description,
-		Format:      model.DocumentFormat(in.Format),
-		Kind:        kind,
-		Data:        data,
+		BundleID:                     in.BndlID,
+		AppID:                        repo.StringPtrFromNullableString(in.AppID),
+		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(in.ApplicationTemplateVersionID),
+		Title:                        in.Title,
+		DisplayName:                  in.DisplayName,
+		Description:                  in.Description,
+		Format:                       model.DocumentFormat(in.Format),
+		Kind:                         kind,
+		Data:                         data,
 		BaseEntity: &model.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,

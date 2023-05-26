@@ -2,6 +2,7 @@ package ordpackage
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,6 +11,7 @@ import (
 )
 
 // PackageRepository missing godoc
+//
 //go:generate mockery --name=PackageRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PackageRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Package) error
@@ -17,10 +19,11 @@ type PackageRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error)
+	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Package, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -41,19 +44,19 @@ func NewService(pkgRepo PackageRepository, uidService UIDService) *service {
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, applicationID string, in model.PackageInput, pkgHash uint64) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	pkg := in.ToPackage(id, applicationID, pkgHash)
+	pkg := in.ToPackage(id, resourceType, resourceID, pkgHash)
 
 	if err = s.pkgRepo.Create(ctx, tnt, pkg); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for %s with id %s", id, pkg.Title, resourceType, resourceID)
 	}
-	log.C(ctx).Debugf("Successfully created a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
+	log.C(ctx).Debugf("Successfully created a Package with id %s and title %s for %s with id %s", id, pkg.Title, resourceType, resourceID)
 
 	return id, nil
 }
@@ -130,5 +133,15 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.pkgRepo.ListByApplicationID(ctx, tnt, appID)
+	return s.pkgRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionID missing godoc
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.pkgRepo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
 }

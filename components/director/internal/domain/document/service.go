@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -13,6 +14,7 @@ import (
 )
 
 // DocumentRepository missing godoc
+//
 //go:generate mockery --name=DocumentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -24,6 +26,7 @@ type DocumentRepository interface {
 }
 
 // FetchRequestRepository missing godoc
+//
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
@@ -32,6 +35,7 @@ type FetchRequestRepository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -85,7 +89,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 // CreateInBundle missing godoc
-func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -93,7 +97,7 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinBundle(id, bundleID, appID)
+	document := in.ToDocumentWithinBundle(id, bundleID, resourceType, resourceID)
 	if err = s.repo.Create(ctx, tnt, document); err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}

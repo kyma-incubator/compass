@@ -2,6 +2,7 @@ package ordvendor
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,6 +11,7 @@ import (
 )
 
 // VendorRepository missing godoc
+//
 //go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VendorRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Vendor) error
@@ -21,11 +23,12 @@ type VendorRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Vendor, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error)
+	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Vendor, error)
 	ListGlobal(ctx context.Context) ([]*model.Vendor, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -45,19 +48,19 @@ func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 }
 
 // Create creates a new Vendor.
-func (s *service) Create(ctx context.Context, applicationID string, in model.VendorInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	vendor := in.ToVendor(id, &applicationID)
+	vendor := in.ToVendor(id, resourceType, resourceID)
 
 	if err = s.vendorRepo.Create(ctx, tnt, vendor); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s", id, vendor.Title)
 	}
-	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
+	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s", id, vendor.Title)
 
 	return vendor.OrdID, nil
 }
@@ -65,7 +68,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Ven
 // CreateGlobal creates a new Global Vendor (with NULL app_id).
 func (s *service) CreateGlobal(ctx context.Context, in model.VendorInput) (string, error) {
 	id := s.uidService.Generate()
-	vendor := in.ToVendor(id, nil)
+	vendor := in.ToVendor(id, "", "")
 
 	if err := s.vendorRepo.CreateGlobal(ctx, vendor); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating Global Vendor with id %s and title %s", id, vendor.Title)
@@ -172,7 +175,16 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.vendorRepo.ListByApplicationID(ctx, tnt, appID)
+	return s.vendorRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.vendorRepo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // ListGlobal returns a list of Global Vendors (with NULL app_id).

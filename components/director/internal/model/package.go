@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -9,28 +10,29 @@ import (
 
 // Package missing godoc
 type Package struct {
-	ID                  string
-	ApplicationID       string
-	OrdID               string
-	Vendor              *string
-	Title               string
-	ShortDescription    string
-	Description         string
-	Version             string
-	PackageLinks        json.RawMessage
-	Links               json.RawMessage
-	LicenseType         *string
-	SupportInfo         *string
-	Tags                json.RawMessage
-	Countries           json.RawMessage
-	Labels              json.RawMessage
-	PolicyLevel         string
-	CustomPolicyLevel   *string
-	PartOfProducts      json.RawMessage
-	LineOfBusiness      json.RawMessage
-	Industry            json.RawMessage
-	ResourceHash        *string
-	DocumentationLabels json.RawMessage
+	ID                           string
+	ApplicationID                *string
+	ApplicationTemplateVersionID *string
+	OrdID                        string
+	Vendor                       *string
+	Title                        string
+	ShortDescription             string
+	Description                  string
+	Version                      string
+	PackageLinks                 json.RawMessage
+	Links                        json.RawMessage
+	LicenseType                  *string
+	SupportInfo                  *string
+	Tags                         json.RawMessage
+	Countries                    json.RawMessage
+	Labels                       json.RawMessage
+	PolicyLevel                  string
+	CustomPolicyLevel            *string
+	PartOfProducts               json.RawMessage
+	LineOfBusiness               json.RawMessage
+	Industry                     json.RawMessage
+	ResourceHash                 *string
+	DocumentationLabels          json.RawMessage
 }
 
 // PackageInput missing godoc
@@ -57,7 +59,7 @@ type PackageInput struct {
 }
 
 // ToPackage missing godoc
-func (i *PackageInput) ToPackage(id, appID string, pkgHash uint64) *Package {
+func (i *PackageInput) ToPackage(id string, resourceType resource.Type, resourceID string, pkgHash uint64) *Package {
 	if i == nil {
 		return nil
 	}
@@ -67,9 +69,8 @@ func (i *PackageInput) ToPackage(id, appID string, pkgHash uint64) *Package {
 		hash = str.Ptr(strconv.FormatUint(pkgHash, 10))
 	}
 
-	return &Package{
+	pkg := &Package{
 		ID:                  id,
-		ApplicationID:       appID,
 		OrdID:               i.OrdID,
 		Vendor:              i.Vendor,
 		Title:               i.Title,
@@ -91,6 +92,14 @@ func (i *PackageInput) ToPackage(id, appID string, pkgHash uint64) *Package {
 		DocumentationLabels: i.DocumentationLabels,
 		ResourceHash:        hash,
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		pkg.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		pkg.ApplicationID = &resourceID
+	}
+
+	return pkg
 }
 
 // SetFromUpdateInput missing godoc

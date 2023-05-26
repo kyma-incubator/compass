@@ -7,12 +7,13 @@ import (
 
 // Document missing godoc
 type Document struct {
-	BundleID    string
-	AppID       string
-	Title       string
-	DisplayName string
-	Description string
-	Format      DocumentFormat
+	BundleID                     string
+	AppID                        *string
+	ApplicationTemplateVersionID *string
+	Title                        string
+	DisplayName                  string
+	Description                  string
+	Format                       DocumentFormat
 	// for example Service Class, API etc
 	Kind *string
 	Data *string
@@ -51,14 +52,13 @@ type DocumentPage struct {
 }
 
 // ToDocumentWithinBundle missing godoc
-func (d *DocumentInput) ToDocumentWithinBundle(id, bundleID, appID string) *Document {
+func (d *DocumentInput) ToDocumentWithinBundle(id, bundleID string, resourceType resource.Type, resourceID string) *Document {
 	if d == nil {
 		return nil
 	}
 
-	return &Document{
+	doc := &Document{
 		BundleID:    bundleID,
-		AppID:       appID,
 		Title:       d.Title,
 		DisplayName: d.DisplayName,
 		Description: d.Description,
@@ -70,4 +70,12 @@ func (d *DocumentInput) ToDocumentWithinBundle(id, bundleID, appID string) *Docu
 			Ready: true,
 		},
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		doc.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		doc.AppID = &resourceID
+	}
+
+	return doc
 }

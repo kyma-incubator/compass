@@ -12,7 +12,8 @@ import (
 
 // Bundle missing godoc
 type Bundle struct {
-	ApplicationID                  string
+	ApplicationID                  *string
+	ApplicationTemplateVersionID   *string
 	Name                           string
 	Description                    *string
 	Version                        *string
@@ -112,7 +113,7 @@ type BundlePage struct {
 func (BundlePage) IsPageable() {}
 
 // ToBundle missing godoc
-func (i *BundleCreateInput) ToBundle(id, applicationID string, bndlHash uint64) *Bundle {
+func (i *BundleCreateInput) ToBundle(id string, resourceType resource.Type, resourceID string, bndlHash uint64) *Bundle {
 	if i == nil {
 		return nil
 	}
@@ -122,8 +123,7 @@ func (i *BundleCreateInput) ToBundle(id, applicationID string, bndlHash uint64) 
 		hash = str.Ptr(strconv.FormatUint(bndlHash, 10))
 	}
 
-	return &Bundle{
-		ApplicationID:                  applicationID,
+	bundle := &Bundle{
 		Name:                           i.Name,
 		Description:                    i.Description,
 		Version:                        i.Version,
@@ -144,4 +144,12 @@ func (i *BundleCreateInput) ToBundle(id, applicationID string, bndlHash uint64) 
 			Ready: true,
 		},
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		bundle.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		bundle.ApplicationID = &resourceID
+	}
+
+	return bundle
 }

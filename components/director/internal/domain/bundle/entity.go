@@ -10,7 +10,8 @@ import (
 
 // Entity is a bundle entity
 type Entity struct {
-	ApplicationID                 string         `db:"app_id"`
+	ApplicationID                 sql.NullString `db:"app_id"`
+	ApplicationTemplateVersionID  sql.NullString `db:"app_template_version_id"`
 	Name                          string         `db:"name"`
 	Description                   sql.NullString `db:"description"`
 	InstanceAuthRequestJSONSchema sql.NullString `db:"instance_auth_request_json_schema"`
@@ -31,7 +32,11 @@ type Entity struct {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	return resource.Application, e.ApplicationID
+	if e.ApplicationID.String != "" {
+		return resource.Application, e.ApplicationID.String
+	} else {
+		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
+	}
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

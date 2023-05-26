@@ -8,17 +8,18 @@ import (
 
 // Entity represents a product entity.
 type Entity struct {
-	ID                  string         `db:"id"`
-	OrdID               string         `db:"ord_id"`
-	ApplicationID       sql.NullString `db:"app_id"`
-	Title               string         `db:"title"`
-	ShortDescription    string         `db:"short_description"`
-	Vendor              string         `db:"vendor"`
-	Parent              sql.NullString `db:"parent"`
-	CorrelationIDs      sql.NullString `db:"correlation_ids"`
-	Tags                sql.NullString `db:"tags"`
-	Labels              sql.NullString `db:"labels"`
-	DocumentationLabels sql.NullString `db:"documentation_labels"`
+	ID                           string         `db:"id"`
+	OrdID                        string         `db:"ord_id"`
+	ApplicationID                sql.NullString `db:"app_id"`
+	ApplicationTemplateVersionID sql.NullString `json:"app_template_version_id"`
+	Title                        string         `db:"title"`
+	ShortDescription             string         `db:"short_description"`
+	Vendor                       string         `db:"vendor"`
+	Parent                       sql.NullString `db:"parent"`
+	CorrelationIDs               sql.NullString `db:"correlation_ids"`
+	Tags                         sql.NullString `db:"tags"`
+	Labels                       sql.NullString `db:"labels"`
+	DocumentationLabels          sql.NullString `db:"documentation_labels"`
 }
 
 // GetID returns the product ID.
@@ -28,7 +29,11 @@ func (e *Entity) GetID() string {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	return resource.Application, e.ApplicationID.String
+	if e.ApplicationID.String != "" {
+		return resource.Application, e.ApplicationID.String
+	} else {
+		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
+	}
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

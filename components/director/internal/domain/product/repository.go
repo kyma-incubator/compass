@@ -147,9 +147,16 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Pro
 }
 
 // ListByApplicationID gets all products for a given application id
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error) {
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Product, error) {
+	var condition repo.Condition
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", resourceID)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+	}
+
 	productCollection := productCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, condition); err != nil {
 		return nil, err
 	}
 	products := make([]*model.Product, 0, productCollection.Len())

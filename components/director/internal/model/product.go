@@ -2,21 +2,23 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Product missing godoc
 type Product struct {
-	ID                  string
-	OrdID               string
-	ApplicationID       *string
-	Title               string
-	ShortDescription    string
-	Vendor              string
-	Parent              *string
-	CorrelationIDs      json.RawMessage
-	Tags                json.RawMessage
-	Labels              json.RawMessage
-	DocumentationLabels json.RawMessage
+	ID                           string
+	OrdID                        string
+	ApplicationID                *string
+	ApplicationTemplateVersionID *string
+	Title                        string
+	ShortDescription             string
+	Vendor                       string
+	Parent                       *string
+	CorrelationIDs               json.RawMessage
+	Tags                         json.RawMessage
+	Labels                       json.RawMessage
+	DocumentationLabels          json.RawMessage
 }
 
 // ProductInput missing godoc
@@ -33,15 +35,14 @@ type ProductInput struct {
 }
 
 // ToProduct missing godoc
-func (i *ProductInput) ToProduct(id string, appID *string) *Product {
+func (i *ProductInput) ToProduct(id string, resourceType resource.Type, resourceID string) *Product {
 	if i == nil {
 		return nil
 	}
 
-	return &Product{
+	product := &Product{
 		ID:                  id,
 		OrdID:               i.OrdID,
-		ApplicationID:       appID,
 		Title:               i.Title,
 		ShortDescription:    i.ShortDescription,
 		Vendor:              i.Vendor,
@@ -51,6 +52,14 @@ func (i *ProductInput) ToProduct(id string, appID *string) *Product {
 		Labels:              i.Labels,
 		DocumentationLabels: i.DocumentationLabels,
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		product.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		product.ApplicationID = &resourceID
+	}
+
+	return product
 }
 
 // SetFromUpdateInput missing godoc

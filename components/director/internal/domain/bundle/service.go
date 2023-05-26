@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -22,7 +23,7 @@ type BundleRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
-	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
+	ListByResourceIDNoPaging(ctx context.Context, tenantID, appID string, resourceType resource.Type) ([]*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
 }
 
@@ -54,36 +55,36 @@ func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventServ
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error) {
-	return s.CreateBundle(ctx, applicationID, in, 0)
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput) (string, error) {
+	return s.CreateBundle(ctx, resourceType, resourceID, in, 0)
 }
 
 // CreateBundle Creates bundle for an application with given id
-func (s *service) CreateBundle(ctx context.Context, applicationID string, in model.BundleCreateInput, bndlHash uint64) (string, error) {
+func (s *service) CreateBundle(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput, bndlHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	bndl := in.ToBundle(id, applicationID, bndlHash)
+	bndl := in.ToBundle(id, resourceType, resourceID, bndlHash)
 
 	if err = s.bndlRepo.Create(ctx, tnt, bndl); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
 	}
-	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
+	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
 
-	log.C(ctx).Infof("Creating related resources in Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
-	err = s.createRelatedResources(ctx, in, id, applicationID)
+	log.C(ctx).Infof("Creating related resources in Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
+	err = s.createRelatedResources(ctx, in, id, resourceType, resourceID)
 	if err != nil {
-		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", applicationID)
+		return "", errors.Wrapf(err, "while creating related resources for %s with id %s", resourceType, resourceID)
 	}
 
 	return id, nil
 }
 
 // CreateMultiple missing godoc
-func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error {
+func (s *service) CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error {
 	if in == nil {
 		return nil
 	}
@@ -93,9 +94,9 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 			continue
 		}
 
-		_, err := s.Create(ctx, applicationID, *bndl)
+		_, err := s.Create(ctx, resourceType, resourceID, *bndl)
 		if err != nil {
-			return errors.Wrapf(err, "while creating Bundle for Application with id %s", applicationID)
+			return errors.Wrapf(err, "while creating Bundle for %s with id %s", resourceType, resourceID)
 		}
 	}
 
@@ -194,7 +195,17 @@ func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string)
 		return nil, err
 	}
 
-	return s.bndlRepo.ListByApplicationIDNoPaging(ctx, tnt, appID)
+	return s.bndlRepo.ListByResourceIDNoPaging(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionIDNoPaging missing godoc
+func (s *service) ListByApplicationTemplateVersionIDNoPaging(ctx context.Context, appTemplateVersionID string) ([]*model.Bundle, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.bndlRepo.ListByResourceIDNoPaging(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // ListByApplicationIDs missing godoc
@@ -211,21 +222,21 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 	return s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID, appID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID string, resourceType resource.Type, resourceID string) error {
 	for i := range in.APIDefinitions {
-		if _, err := s.apiSvc.CreateInBundle(ctx, appID, bundleID, *in.APIDefinitions[i], in.APISpecs[i]); err != nil {
+		if _, err := s.apiSvc.CreateInBundle(ctx, resourceType, resourceID, bundleID, *in.APIDefinitions[i], in.APISpecs[i]); err != nil {
 			return errors.Wrapf(err, "while creating APIs for bundle with id %q", bundleID)
 		}
 	}
 
 	for i := range in.EventDefinitions {
-		if _, err := s.eventSvc.CreateInBundle(ctx, appID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i]); err != nil {
+		if _, err := s.eventSvc.CreateInBundle(ctx, resourceType, resourceID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i]); err != nil {
 			return errors.Wrapf(err, "while creating Event for bundle with id %q", bundleID)
 		}
 	}
 
 	for _, document := range in.Documents {
-		if _, err := s.documentSvc.CreateInBundle(ctx, appID, bundleID, *document); err != nil {
+		if _, err := s.documentSvc.CreateInBundle(ctx, resourceType, resourceID, bundleID, *document); err != nil {
 			return errors.Wrapf(err, "while creating Document for bundle with id %q", bundleID)
 		}
 	}

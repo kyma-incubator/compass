@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -16,9 +18,10 @@ import (
 )
 
 // APIService is responsible for the service-layer APIDefinition operations.
+//
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -26,12 +29,14 @@ type APIService interface {
 }
 
 // RuntimeService is responsible for the service-layer Runtime operations.
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
 // APIConverter converts EventDefinitions between the model.APIDefinition service-layer representation and the graphql-layer representation.
+//
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
@@ -41,6 +46,7 @@ type APIConverter interface {
 }
 
 // FetchRequestConverter converts FetchRequest between the model.FetchRequest service-layer representation and the graphql-layer one.
+//
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
@@ -48,12 +54,14 @@ type FetchRequestConverter interface {
 }
 
 // BundleService is responsible for the service-layer Bundle operations.
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
@@ -114,7 +122,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, errors.Wrapf(err, "while getting Bundle with id %s when adding APIDefinition", bundleID)
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, resource.Application, str.PtrStrToStr(bndl.ApplicationID), bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Bundle with id %s", bundleID)
 	}
@@ -124,7 +132,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, err
 	}
 
-	if err = r.appSvc.UpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
+	if err = r.appSvc.UpdateBaseURL(ctx, str.PtrStrToStr(api.ApplicationID), in.TargetURL); err != nil {
 		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 

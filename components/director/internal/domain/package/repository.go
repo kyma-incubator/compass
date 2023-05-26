@@ -22,6 +22,7 @@ var (
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Package) *Entity
@@ -97,10 +98,17 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 	return pkgModel, nil
 }
 
-// ListByApplicationID missing godoc
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error) {
+// ListByResourceID missing godoc
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Package, error) {
+	var condition repo.Condition
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", resourceID)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+	}
+
 	pkgCollection := pkgCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, condition); err != nil {
 		return nil, err
 	}
 	pkgs := make([]*model.Package, 0, pkgCollection.Len())

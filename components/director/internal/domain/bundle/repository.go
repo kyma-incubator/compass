@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -165,7 +166,8 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating Bundle model from entity")
 		}
-		bundleByID[bundleEnt.ApplicationID] = append(bundleByID[bundleEnt.ApplicationID], m)
+		applicationID := str.PtrStrToStr(repo.StringPtrFromNullableString(bundleEnt.ApplicationID))
+		bundleByID[applicationID] = append(bundleByID[applicationID], m)
 	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
@@ -195,10 +197,17 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 	return bundlePages, nil
 }
 
-// ListByApplicationIDNoPaging missing godoc
-func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
+// ListByResourceIDNoPaging missing godoc
+func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Bundle, error) {
+	var condition repo.Condition
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", resourceID)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+	}
+
 	bundleCollection := BundleCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, repo.NewEqualCondition(appIDColumn, appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, condition); err != nil {
 		return nil, err
 	}
 	bundles := make([]*model.Bundle, 0, bundleCollection.Len())

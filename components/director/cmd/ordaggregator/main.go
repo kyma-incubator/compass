@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"net/http"
 	"os"
 	"time"
@@ -272,6 +273,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 	assignmentConv := scenarioassignment.NewConverter()
 	tenantConverter := tenant.NewConverter()
+	appTemplateVersionConv := apptemplateversion.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -298,6 +300,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	tenantRepo := tenant.NewRepository(tenantConverter)
+	appTemplateVersionRepo := apptemplateversion.NewRepository(appTemplateVersionConv)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -330,6 +333,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
+	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, uidSvc)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 
@@ -339,7 +343,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
-	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter)
+	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

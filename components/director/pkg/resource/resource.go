@@ -158,9 +158,10 @@ func (t Type) EmbeddedTenantTable() (string, bool) {
 
 // TopLevelEntities is a map of entities that has a many-to-many relationship with the tenants along with their table names.
 var TopLevelEntities = map[Type]string{
-	Application:    "public.applications",
-	Runtime:        "public.runtimes",
-	RuntimeContext: "public.runtime_contexts",
+	Application:                "public.applications",
+	ApplicationTemplateVersion: "public.application_template_versions",
+	Runtime:                    "public.runtimes",
+	RuntimeContext:             "public.runtime_contexts",
 }
 
 // IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.

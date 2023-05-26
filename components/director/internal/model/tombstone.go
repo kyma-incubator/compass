@@ -1,11 +1,14 @@
 package model
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 // Tombstone missing godoc
 type Tombstone struct {
-	ID            string
-	OrdID         string
-	ApplicationID string
-	RemovalDate   string
+	ID                           string
+	OrdID                        string
+	ApplicationID                *string
+	ApplicationTemplateVersionID *string
+	RemovalDate                  string
 }
 
 // TombstoneInput missing godoc
@@ -15,17 +18,24 @@ type TombstoneInput struct {
 }
 
 // ToTombstone missing godoc
-func (i *TombstoneInput) ToTombstone(id, appID string) *Tombstone {
+func (i *TombstoneInput) ToTombstone(id string, resourceType resource.Type, resourceID string) *Tombstone {
 	if i == nil {
 		return nil
 	}
 
-	return &Tombstone{
-		ID:            id,
-		OrdID:         i.OrdID,
-		ApplicationID: appID,
-		RemovalDate:   i.RemovalDate,
+	tombstone := &Tombstone{
+		ID:          id,
+		OrdID:       i.OrdID,
+		RemovalDate: i.RemovalDate,
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		tombstone.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		tombstone.ApplicationID = &resourceID
+	}
+
+	return tombstone
 }
 
 // SetFromUpdateInput missing godoc

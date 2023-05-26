@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -15,13 +16,14 @@ import (
 )
 
 // APIRepository is responsible for the repo-layer APIDefinition operations.
+//
 //go:generate mockery --name=APIRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
+	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
@@ -30,12 +32,14 @@ type APIRepository interface {
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal apiDefinition IDs when they are created.
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // SpecService is responsible for the service-layer Specification operations.
+//
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -46,6 +50,7 @@ type SpecService interface {
 }
 
 // BundleReferenceService is responsible for the service-layer BundleReference operations.
+//
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
@@ -100,7 +105,17 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.repo.ListByApplicationID(ctx, tnt, appID)
+	return s.repo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionID lists all APIDefinitions for a given application ID.
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.APIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // Get returns the APIDefinition by its ID.
@@ -134,19 +149,19 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 // CreateInBundle creates an APIDefinition. This function is used in the graphQL flow.
-func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
+func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, resourceType, resourceID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
 // Create creates APIDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
-func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinition(id, appID, packageID, apiHash)
+	api := in.ToAPIDefinition(id, resourceType, resourceID, packageID, apiHash)
 
 	if len(specs) > 0 && specs[0] != nil && specs[0].APIType != nil {
 		switch *specs[0].APIType {
@@ -216,7 +231,17 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return err
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, apiHash)
+	var resourceType resource.Type
+	var resourceID string
+	if api.ApplicationTemplateVersionID != nil {
+		resourceType = resource.ApplicationTemplateVersion
+		resourceID = *api.ApplicationTemplateVersionID
+	} else if api.ApplicationID != nil {
+		resourceType = resource.Application
+		resourceID = *api.ApplicationID
+	}
+
+	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
 
 	if err = s.repo.Update(ctx, tnt, api); err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)

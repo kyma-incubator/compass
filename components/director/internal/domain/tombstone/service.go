@@ -2,6 +2,7 @@ package tombstone
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,6 +11,7 @@ import (
 )
 
 // TombstoneRepository missing godoc
+//
 //go:generate mockery --name=TombstoneRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TombstoneRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Tombstone) error
@@ -17,10 +19,11 @@ type TombstoneRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Tombstone, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error)
+	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Tombstone, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -40,19 +43,19 @@ func NewService(tombstoneRepo TombstoneRepository, uidService UIDService) *servi
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, applicationID string, in model.TombstoneInput) (string, error) {
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	tombstone := in.ToTombstone(id, applicationID)
+	tombstone := in.ToTombstone(id, resourceType, resourceID)
 
 	if err = s.tombstoneRepo.Create(ctx, tnt, tombstone); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for Application with id %s", id, applicationID)
+		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for %s with id %s", id, resourceType, resourceID)
 	}
-	log.C(ctx).Debugf("Successfully created a Tombstone with id %s for Application with id %s", id, applicationID)
+	log.C(ctx).Debugf("Successfully created a Tombstone with id %s for %s with id %s", id, resourceType, resourceID)
 
 	return tombstone.OrdID, nil
 }
@@ -129,5 +132,15 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.tombstoneRepo.ListByApplicationID(ctx, tnt, appID)
+	return s.tombstoneRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionID missing godoc
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.tombstoneRepo.ListByResourceID(ctx, tnt, appID, resource.ApplicationTemplateVersion)
 }

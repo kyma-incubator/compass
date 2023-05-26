@@ -123,10 +123,18 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return apiDefPages, nil
 }
 
-// ListByApplicationID lists all APIDefinitions for a given application ID.
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
+// ListByResourceID lists all APIDefinitions for a given application ID.
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, appID string, resourceType resource.Type) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+
+	var condition repo.Condition
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", appID)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", appID)
+	}
+
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, condition); err != nil {
 		return nil, err
 	}
 	apis := make([]*model.APIDefinition, 0, apiCollection.Len())

@@ -20,12 +20,13 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "bundle_id", "app_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	documentColumns = []string{"id", "bundle_id", "app_id", "app_template_version_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	bundleIDColumn  = "bundle_id"
 	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.Document) (*Entity, error)
