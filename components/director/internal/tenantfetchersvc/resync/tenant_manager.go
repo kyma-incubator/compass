@@ -345,8 +345,9 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		if res == nil {
 			return apperrors.NewInternalError("next page was expected but response was empty")
 		}
-		if initialCount != gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int() {
-			return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
+		totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
+		if initialCount != totalResults {
+			return apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count [%d] current count [%d]", initialCount, totalResults)
 		}
 
 		if err = applyFunc(res); err != nil {
