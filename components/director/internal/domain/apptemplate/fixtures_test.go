@@ -172,7 +172,7 @@ func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.A
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputString,
 		Placeholders:         fixModelPlaceholders(),
-		Labels:               map[string]interface{}{},
+		Labels:               map[string]interface{}{"label1": "test"},
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
@@ -268,7 +268,7 @@ func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdat
 			Description: &desc,
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
-		Labels:       map[string]interface{}{},
+		Labels:       map[string]interface{}{"label1": "test"},
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
