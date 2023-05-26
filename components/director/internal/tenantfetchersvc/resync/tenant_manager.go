@@ -336,6 +336,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		return err
 	}
 
+	eventPages := make([]*EventsPage, 0)
 	for i := pageStart + 1; i <= totalPages; i++ {
 		time.Sleep(time.Second)
 		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
@@ -351,6 +352,15 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 			return apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count [%d] current count [%d]", initialCount, totalResults)
 		}
 
+		eventPages = append(eventPages, &EventsPage{
+			FieldMapping:                 res.FieldMapping,
+			MovedSubaccountsFieldMapping: res.MovedSubaccountsFieldMapping,
+			ProviderName:                 res.ProviderName,
+			Payload:                      res.Payload,
+		})
+	}
+
+	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
 			return err
 		}
