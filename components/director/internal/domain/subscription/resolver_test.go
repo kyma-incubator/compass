@@ -18,7 +18,7 @@ import (
 var (
 	testErr = errors.New("new-error")
 	txGen   = txtest.NewTransactionContextGenerator(testErr)
-	payload = fmt.Sprintf("{\"%s\":\"%s\",\"dependentServiceInstancesInfo\":[{\"appId\":\"%s\",\"appName\":\"%s\",\"providerSubaccountID\":\"%s\"}]}", subscription.SubscriptionIDKey, subscriptionID, subscriptionProviderID, subscriptionAppName, providerSubaccountID)
+	payload = fmt.Sprintf("{\"subscriptionGUID\":\"%s\",\"dependentServiceInstancesInfo\":[{\"appId\":\"%s\",\"appName\":\"%s\",\"providerSubaccountID\":\"%s\"}]}", subscriptionID, subscriptionProviderID, subscriptionAppName, providerSubaccountID)
 )
 
 func TestResolver_SubscribeTenant(t *testing.T) {
