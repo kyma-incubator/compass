@@ -540,10 +540,9 @@ func (s *service) manageSubscriptionsLabelOnSubscribe(ctx context.Context, tenan
 			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", SubscriptionsLabelKey, objectType, objectID)
 			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", SubscriptionsLabelKey, objectType, objectID)
 		}
-		//already subscribed but doesnt has subscription label
 		if err := s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
 			Key:        SubscriptionsLabelKey,
-			Value:      []string{subscriptionID}, //add the previous app subscriptionID too // this was instances = 2
+			Value:      []string{subscriptionID},
 			ObjectID:   objectID,
 			ObjectType: objectType,
 		}); err != nil {
