@@ -11,15 +11,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-const SubscriptionIDKey = "subscriptionGUID"
+const subscriptionIDKey = "subscriptionGUID"
 
-// DependentServiceInstanceInfo represents the dependent service instance info field in a subscription payload.
+// DependentServiceInstanceInfo represents the dependent service instance info object in a subscription payload.
 type DependentServiceInstanceInfo struct {
 	AppID                string `json:"appId"` //check the json
 	AppName              string `json:"appName"`
 	ProviderSubaccountID string `json:"providerSubaccountId"`
 }
 
+// DependentServiceInstancesInfo represents collection of all dependent service instance info objects in a subscription payload.
 type DependentServiceInstancesInfo struct {
 	Instances []DependentServiceInstanceInfo `json:"dependentServiceInstancesInfo"`
 }
@@ -50,9 +51,6 @@ func NewResolver(transact persistence.Transactioner, subscriptionSvc Subscriptio
 }
 
 // SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
-// providerId = appId (xsappname)
-// providerSubaccountID=providerSubaccountID = къде е deploynat
-// subscriptionAppName=appName
 func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string, subscriptionPayload string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -77,7 +75,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		providerID = instance.AppID
 		providerSubaccountID = instance.ProviderSubaccountID
 		subscriptionAppName = instance.AppName
-		subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), SubscriptionIDKey).String()
+		subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), subscriptionIDKey).String()
 		switch flowType {
 		case resource.ApplicationTemplate:
 			log.C(ctx).Infof("Entering application subscription flow")
@@ -118,7 +116,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 		return false, errors.Wrap(err, "while determining subscription flow")
 	}
 
-	subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), SubscriptionIDKey).String()
+	subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), subscriptionIDKey).String()
 	var success bool
 
 	switch flowType {
