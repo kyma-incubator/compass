@@ -3,6 +3,7 @@ package claims
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -21,7 +22,7 @@ func NewScopesValidator(requiredScopes []string) *scopeBasedClaimsValidator {
 }
 
 // Validate validates the scopes in given token claims.
-func (v *scopeBasedClaimsValidator) Validate(_ context.Context, claims Claims) error {
+func (v *scopeBasedClaimsValidator) Validate(_ context.Context, claims token_claims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

@@ -5,13 +5,12 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"net/http"
 	"strings"
 	"sync"
 
 	authenticator_director "github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
@@ -45,7 +44,7 @@ const (
 //
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClaimsValidator interface {
-	Validate(context.Context, claims.Claims) error
+	Validate(context.Context, token_claims.Claims) error
 }
 
 // Authenticator missing godoc
@@ -187,7 +186,7 @@ func (a *Authenticator) NSAdapterHandler() func(next http.Handler) http.Handler 
 	}
 }
 
-func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (*claims.Claims, error) {
+func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (*token_claims.Claims, error) {
 	parsedClaims, err := a.parseClaims(ctx, bearerToken)
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
@@ -219,8 +218,8 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	return reqToken, nil
 }
 
-func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*claims.Claims, error) {
-	parsed := claims.Claims{}
+func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*token_claims.Claims, error) {
+	parsed := token_claims.Claims{}
 
 	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
 		return &parsed, err

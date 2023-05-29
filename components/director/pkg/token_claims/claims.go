@@ -1,4 +1,4 @@
-package claims
+package token_claims
 
 import (
 	"context"

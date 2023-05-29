@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -81,7 +82,7 @@ func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService
 }
 
 // Validate validates given id_token claims
-func (v *validator) Validate(ctx context.Context, claims Claims) error {
+func (v *validator) Validate(ctx context.Context, claims token_claims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}
@@ -113,7 +114,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 	}
 }
 
-func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) error {
+func (v *validator) validateRuntimeConsumer(ctx context.Context, claims token_claims.Claims) error {
 	tx, err := v.transact.Begin()
 	if err != nil {
 		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
@@ -174,7 +175,7 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	return tx.Commit()
 }
 
-func (v *validator) validateApplicationProvider(ctx context.Context, claims Claims) error {
+func (v *validator) validateApplicationProvider(ctx context.Context, claims token_claims.Claims) error {
 	tx, err := v.transact.Begin()
 	if err != nil {
 		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
@@ -242,7 +243,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	return tx.Commit()
 }
 
-func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims Claims) error {
+func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims token_claims.Claims) error {
 	if claims.Tenant[tenantmapping.ProviderExternalTenantKey] == claims.ConsumerID {
 		return nil // consumer ID is a subaccount tenant
 	}
