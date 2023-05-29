@@ -1,10 +1,11 @@
 package operationsmanager_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/operations_manager"
+	"testing"
+
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestOrdOperationData_GetData(t *testing.T) {
