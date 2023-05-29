@@ -3464,7 +3464,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			FAUpdater: func() *automock.FormationAssignmentUpdater {
 				updater := &automock.FormationAssignmentUpdater{}
-				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "while deleting formation assignment with ID: \"c861c3db-1265-4143-a05c-1ced1291d816\": Test Error", formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
+				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), fmt.Sprintf("while deleting formation assignment with ID: %q: Test Error", TestID), formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), nil),
@@ -3480,7 +3480,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			FAUpdater: func() *automock.FormationAssignmentUpdater {
 				updater := &automock.FormationAssignmentUpdater{}
-				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "while deleting formation assignment with ID: \"c861c3db-1265-4143-a05c-1ced1291d816\": Test Error", formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
+				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), fmt.Sprintf("while deleting formation assignment with ID: %q: Test Error", TestID), formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), nil),
