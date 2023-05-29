@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 
@@ -25,8 +28,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/methodnotallowed"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -202,7 +203,7 @@ func main() {
 	router.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	subrouter := router.PathPrefix("/api").Subrouter()
-	subrouter.Use(authenticator.New(http.DefaultClient, conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
+	subrouter.Use(authmiddleware.New(http.DefaultClient, conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
 	subrouter.MethodNotAllowedHandler = methodnotallowed.CreateMethodNotAllowedHandler()
 	subrouter.Methods(http.MethodPut).
 		Path("/v1/notifications").

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -14,14 +17,12 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/stretchr/testify/assert"
 )

@@ -25,10 +25,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	auth "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"

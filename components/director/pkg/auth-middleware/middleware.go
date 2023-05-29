@@ -1,4 +1,4 @@
-package authenticator
+package auth_middleware
 
 import (
 	"context"
@@ -9,12 +9,14 @@ import (
 	"strings"
 	"sync"
 
+	authenticator_director "github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -74,7 +76,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	jwks, err := FetchJWK(ctx, a.jwksEndpoint, jwk.WithHTTPClient(a.httpClient))
+	jwks, err := authenticator_director.FetchJWK(ctx, a.jwksEndpoint, jwk.WithHTTPClient(a.httpClient))
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
