@@ -73,6 +73,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	var success bool
 
 	for _, instance := range dependentSvcInstancesInfo.Instances {
+		log.C(ctx).Infof("Subscription flow will be entered. Changing provider ID from %q to %q, provider subaccount id from %q to %q and subscription app name from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID, subscriptionAppName, instance.AppName)
 		providerID = instance.AppID
 		providerSubaccountID = instance.ProviderSubaccountID
 		subscriptionAppName = instance.AppName
