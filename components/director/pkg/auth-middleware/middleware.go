@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"net/http"
 	"strings"
@@ -291,4 +292,8 @@ func (a *Authenticator) getKeyID(token jwt.Token) (string, error) {
 	}
 
 	return keyIDStr, nil
+}
+
+func LoadTenantFromContext(ctx context.Context) (string, error) {
+	return tenant.LoadFromContext(ctx)
 }
