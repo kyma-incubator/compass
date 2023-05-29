@@ -1,6 +1,9 @@
 package model
 
-import "errors"
+import (
+	"errors"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
+)
 
 // DestinationInput missing godoc
 type DestinationInput struct {
@@ -13,6 +16,17 @@ type DestinationInput struct {
 	XSystemTenantName string `json:"x-system-name"`
 	XSystemType       string `json:"x-system-type"`
 	XSystemBaseURL    string `json:"x-system-base-url"`
+}
+
+type Destination struct {
+	ID                    string                      `json:"id"`
+	Name                  string                      `json:"name"`
+	Type                  destinationcreator.Type     `json:"type"`
+	Url                   string                      `json:"url"`
+	Authentication        destinationcreator.AuthType `json:"authentication"`
+	SubaccountID          string                      `json:"subaccount_id"`
+	Revision              string                      `json:"revision"`
+	FormationAssignmentID *string                     `json:"formationAssignmentID"`
 }
 
 // Validate returns error if system doesn't have the required properties

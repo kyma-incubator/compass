@@ -3,13 +3,12 @@ package operators
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
-	"net/http"
-
 	"github.com/hashicorp/go-multierror"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 )
 
@@ -26,6 +25,13 @@ type tenantService interface {
 //go:generate mockery --exported --name=automaticScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type automaticScenarioAssignmentService interface {
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
+}
+
+//go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DestinationService interface {
+	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
+	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
+	DeleteDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) error
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -45,16 +51,6 @@ type applicationRepository interface {
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
-}
-
-//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type runtimeRepository interface {
-	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
-}
-
-//go:generate mockery --exported --name=runtimeCtxRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type runtimeCtxRepository interface {
-	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 //go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -79,32 +75,26 @@ type ConstraintEngine struct {
 	constraintSvc             formationConstraintSvc
 	tenantSvc                 tenantService
 	asaSvc                    automaticScenarioAssignmentService
+	destinationSvc            DestinationService
 	formationRepo             formationRepository
 	labelRepo                 labelRepository
 	labelService              labelService
 	applicationRepository     applicationRepository
-	runtimeRepository         runtimeRepository
-	runtimeCtxRepository      runtimeCtxRepository
-	mtlsHTTPClient            *http.Client
-	destinationCfg            *DestinationConfig
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, mtlsHTTPClient *http.Client, destinationCfg *DestinationConfig) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc DestinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:         constraintSvc,
 		tenantSvc:             tenantSvc,
 		asaSvc:                asaSvc,
+		destinationSvc:        destinationSvc,
 		formationRepo:         formationRepo,
 		labelRepo:             labelRepo,
 		labelService:          labelService,
 		applicationRepository: applicationRepository,
-		runtimeRepository:     runtimeRepository,
-		runtimeCtxRepository:  runtimeCtxRepository,
-		mtlsHTTPClient:        mtlsHTTPClient,
-		destinationCfg:        destinationCfg,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,

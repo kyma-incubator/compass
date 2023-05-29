@@ -237,7 +237,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
 
-			engine := operators.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil, nil, nil, nil, nil)
+			engine := operators.NewConstraintEngine(nil, tenantSvc, asaSvc, nil, formationRepo, labelRepo, nil, nil)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 

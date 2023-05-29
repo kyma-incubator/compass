@@ -160,7 +160,8 @@ func exitOnError(err error, context string) {
 
 func getDestinationService(cfg config, transact persistence.Transactioner) *destinationfetcher.DestinationService {
 	uuidSvc := uuid.NewService()
-	destRepo := destination.NewRepository()
+	destConv := destination.NewConverter()
+	destRepo := destination.NewRepository(destConv)
 	bundleRepo := bundleRepo()
 
 	labelConverter := label.NewConverter()
