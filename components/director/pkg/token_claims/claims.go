@@ -3,6 +3,7 @@ package token_claims
 import (
 	"context"
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -72,6 +73,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 
 // ContextWithClaims missing godoc
 func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
+	spew.Dump("CLAIMS", c)
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant[tenantmapping.ConsumerTenantKey], c.Tenant[tenantmapping.ExternalTenantKey])
 	scopesArray := strings.Split(c.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
