@@ -312,9 +312,6 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-// providerId = appId (xsappname)
-// conusmerTenantID=providerSubaccountID
-// subscriptionAppName=appName
 func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)

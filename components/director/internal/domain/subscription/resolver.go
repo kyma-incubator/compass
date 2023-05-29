@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -15,7 +16,7 @@ const subscriptionIDKey = "subscriptionGUID"
 
 // DependentServiceInstanceInfo represents the dependent service instance info object in a subscription payload.
 type DependentServiceInstanceInfo struct {
-	AppID                string `json:"appId"` //check the json
+	AppID                string `json:"appId"`
 	AppName              string `json:"appName"`
 	ProviderSubaccountID string `json:"providerSubaccountId"`
 }
