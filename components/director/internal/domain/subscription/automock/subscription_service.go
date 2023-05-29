@@ -35,83 +35,83 @@ func (_m *SubscriptionService) DetermineSubscriptionFlow(ctx context.Context, pr
 	return r0, r1
 }
 
-// SubscribeTenantToApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload
-func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, region string, subscribedAppName string, subscriptionPayload string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload)
+// SubscribeTenantToApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionID, subscriptionPayload
+func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, region string, subscribedAppName string, subscriptionID string, subscriptionPayload string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionID, subscriptionPayload)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) bool); ok {
+		r0 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionID, subscriptionPayload)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string) error); ok {
+		r1 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionID, subscriptionPayload)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID
+func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionID string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) bool); ok {
+		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string) error); ok {
+		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UnsubscribeTenantFromApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, region, subscriptionID
+func (_m *SubscriptionService) UnsubscribeTenantFromApplication(ctx context.Context, providerID string, subaccountTenantID string, region string, subscriptionID string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, region, subscriptionID)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) bool); ok {
+		r0 = rf(ctx, providerID, subaccountTenantID, region, subscriptionID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
+		r1 = rf(ctx, providerID, subaccountTenantID, region, subscriptionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID
+func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionID string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload)
+		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName
-func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// UnsubscribeTenantFromApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, region
-func (_m *SubscriptionService) UnsubscribeTenantFromApplication(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, region)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, region)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, region)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region
-func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
+		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 	} else {
 		r1 = ret.Error(1)
 	}
