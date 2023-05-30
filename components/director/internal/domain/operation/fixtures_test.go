@@ -3,6 +3,7 @@ package operation_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 
 	"time"

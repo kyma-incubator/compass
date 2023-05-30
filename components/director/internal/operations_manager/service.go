@@ -2,6 +2,7 @@ package operationsmanager
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
