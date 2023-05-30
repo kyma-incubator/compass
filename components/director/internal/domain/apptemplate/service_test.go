@@ -1259,7 +1259,6 @@ func TestService_Update(t *testing.T) {
 				appSvc := &automock.ApplicationRepository{}
 				appSvc.On("ListAllByApplicationTemplateID", ctx, testID).Return(nil, nil).Once()
 				return appSvc
-
 			},
 			ExpectedError: nil,
 		},
@@ -1351,8 +1350,8 @@ func TestService_Update(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			appSvc := testCase.AppRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, labelRepo, appSvc)
+			appRepo := testCase.AppRepoFn()
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, labelRepo, appRepo)
 
 			// WHEN
 			err := svc.Update(ctx, testID, *testCase.Input())
