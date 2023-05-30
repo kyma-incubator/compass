@@ -770,7 +770,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenantId, appTemplate2)
 	require.NoError(t, err)
 
-	first := 100
+	first := 199
 	after := ""
 
 	getApplicationTemplatesRequest := fixtures.FixGetApplicationTemplatesWithPagination(first, after)
@@ -784,8 +784,10 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	//THEN
 	t.Log("Check if application templates were received")
 	appTemplateIDs := []string{appTemplate1.ID, appTemplate2.ID}
+	t.Logf("Created templates are with IDs: %v ", appTemplateIDs)
 	found := 0
 	for _, tmpl := range output.Data {
+		t.Logf("Checked template from query response is: %s ", tmpl.ID)
 		if str.ContainsInSlice(appTemplateIDs, tmpl.ID) {
 			found++
 		}

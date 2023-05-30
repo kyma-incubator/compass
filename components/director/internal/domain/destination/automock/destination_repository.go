@@ -29,18 +29,41 @@ func (_m *DestinationRepository) CreateDestination(ctx context.Context, _a1 *mod
 	return r0
 }
 
-// DeleteByAssignmentID provides a mock function with given fields: ctx, destinationName, tenantID, formationAssignmentID
-func (_m *DestinationRepository) DeleteByAssignmentID(ctx context.Context, destinationName string, tenantID string, formationAssignmentID string) error {
-	ret := _m.Called(ctx, destinationName, tenantID, formationAssignmentID)
+// DeleteByTenantIDAndAssignmentID provides a mock function with given fields: ctx, tenantID, formationAssignmentID
+func (_m *DestinationRepository) DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID string, formationAssignmentID string) error {
+	ret := _m.Called(ctx, tenantID, formationAssignmentID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, destinationName, tenantID, formationAssignmentID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, formationAssignmentID)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// ListByTenantIDAndAssignmentID provides a mock function with given fields: ctx, tenantID, formationAssignmentID
+func (_m *DestinationRepository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID string, formationAssignmentID string) ([]*model.Destination, error) {
+	ret := _m.Called(ctx, tenantID, formationAssignmentID)
+
+	var r0 []*model.Destination
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Destination); ok {
+		r0 = rf(ctx, tenantID, formationAssignmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Destination)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantID, formationAssignmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 type mockConstructorTestingTNewDestinationRepository interface {

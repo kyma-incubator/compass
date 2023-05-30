@@ -1,0 +1,8 @@
+reviewers:
+  - team-falcon
+approvers:
+  - team-falcon
+labels:
+  - ":eagle: team-falcon"
+options:
+  no_parent_owners: true

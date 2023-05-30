@@ -127,47 +127,47 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3086"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3047"
+      version: "PR-3070"
       name: compass-ias-adapter
     gateway:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-92"
+      version: "PR-94"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3057"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -176,7 +176,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3070"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3077"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -202,6 +202,20 @@ global:
   portieris:
     isEnabled: false
     imagePullSecretName: "portieris-dummy-image-pull-secret"
+  operations_manager:
+    election:
+      enabled: false
+    lease:
+      lockname: opmanagerlease
+    job:
+      ordCreation:
+        schedulePeriod: 168h
+      ordDeletion:
+        schedulePeriod: 24h
+        completedOpsOlderThanDays: 5
+        failedOpsOlderThanDays: 10
+    external:
+      port: 3009
   nsAdapter:
     external:
       port: 3005
@@ -879,6 +893,7 @@ global:
     ordWebhookPartialProcessMaxDays: 0
     ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
+    tenantMappingConfiguration: '{}'
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -905,7 +920,7 @@ global:
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
-    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "displayName" }, { "placeholder_name": "display-name", "system_key": "displayName" }, { "placeholder_name": "systemNumber", "system_key": "systemNumber" }, { "placeholder_name": "productId", "system_key": "productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "infrastructureProvider", "optional": true } ]'
+    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "$.displayName" }, { "placeholder_name": "display-name", "system_key": "$.displayName" }, { "placeholder_name": "systemNumber", "system_key": "$.systemNumber" }, { "placeholder_name": "productId", "system_key": "$.productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "$.ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "$.additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "$.productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "$.additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "$.infrastructureProvider", "optional": true } ]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}","region": "{{region}}"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:

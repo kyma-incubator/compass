@@ -577,3 +577,24 @@ func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
 func fixColumns() []string {
 	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
 }
+
+func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:           graphql.WebhookTypeConfigurationChanged,
+			Auth:           nil,
+			Mode:           &syncMode,
+			URLTemplate:    &testURL,
+			InputTemplate:  str.Ptr("input template"),
+			HeaderTemplate: str.Ptr("header template"),
+			OutputTemplate: str.Ptr("output template"),
+		},
+		{
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  &testURL,
+			Auth: nil,
+		},
+	}
+}

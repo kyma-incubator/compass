@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
@@ -19,66 +21,53 @@ import (
 
 var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
 
-var emptyTemplate = `{}`
+var (
+	emptyTemplate = `{}`
+	testURL       = "testURL"
+)
 
 func stringPtr(s string) *string {
 	return &s
 }
 
 func fixApplicationModelWebhook(id, appID, tenant, url string, createdAt time.Time) *model.Webhook {
-	return &model.Webhook{
-		ID:             id,
-		ObjectID:       appID,
-		ObjectType:     model.ApplicationWebhookReference,
-		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            &url,
-		Auth:           fixBasicAuth(),
-		Mode:           &modelWebhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
-		CreatedAt:      &createdAt,
-	}
+	appWebhook := fixGenericModelWebhook(id, appID, url)
+	appWebhook.ObjectType = model.ApplicationWebhookReference
+	appWebhook.CreatedAt = &createdAt
+	return appWebhook
 }
 
 func fixRuntimeModelWebhook(id, runtimeID, url string) *model.Webhook {
-	return &model.Webhook{
-		ID:             id,
-		ObjectID:       runtimeID,
-		ObjectType:     model.RuntimeWebhookReference,
-		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            &url,
-		Auth:           fixBasicAuth(),
-		Mode:           &modelWebhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
-	}
+	runtimeWebhook := fixGenericModelWebhook(id, runtimeID, url)
+	runtimeWebhook.ObjectType = model.RuntimeWebhookReference
+	return runtimeWebhook
 }
 
 func fixFormationTemplateModelWebhook(id, formationTemplateID, url string) *model.Webhook {
-	return &model.Webhook{
-		ID:             id,
-		ObjectID:       formationTemplateID,
-		ObjectType:     model.FormationTemplateWebhookReference,
-		Type:           model.WebhookTypeFormationLifecycle,
-		URL:            &url,
-		Auth:           fixBasicAuth(),
-		Mode:           &modelWebhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
-	}
+	formationTmplWebhook := fixGenericModelWebhook(id, formationTemplateID, url)
+	formationTmplWebhook.ObjectType = model.FormationTemplateWebhookReference
+	formationTmplWebhook.Type = model.WebhookTypeFormationLifecycle
+	return formationTmplWebhook
 }
 
 func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.Webhook {
+	appTmplWebhook := fixGenericModelWebhook(id, appTemplateID, url)
+	appTmplWebhook.ObjectType = model.ApplicationTemplateWebhookReference
+	return appTmplWebhook
+}
+
+func fixIntegrationSystemModelWebhook(id, intSysID, url string) *model.Webhook {
+	intSysWebhook := fixGenericModelWebhook(id, intSysID, url)
+	intSysWebhook.ObjectType = model.IntegrationSystemWebhookReference
+	intSysWebhook.Type = ""
+	return intSysWebhook
+}
+
+func fixGenericModelWebhook(id, objectID, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
-		ObjectID:       appTemplateID,
-		ObjectType:     model.ApplicationTemplateWebhookReference,
+		ObjectID:       objectID,
+		ObjectType:     model.UnknownWebhookReference,
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           fixBasicAuth(),
@@ -90,10 +79,42 @@ func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.We
 	}
 }
 
-func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
+func fixApplicationGQLWebhook(id, appID, url string) *graphql.Webhook {
+	appWebhook := fixGenericGQLWebhook(id, url)
+	appWebhook.ApplicationID = &appID
+	appWebhook.CreatedAt = &graphql.Timestamp{}
+	return appWebhook
+}
+
+func fixRuntimeGQLWebhook(id, rtmID, url string) *graphql.Webhook {
+	rtmWebhook := fixGenericGQLWebhook(id, url)
+	rtmWebhook.RuntimeID = &rtmID
+	return rtmWebhook
+}
+
+func fixApplicationTemplateGQLWebhook(id, appTmplID, url string) *graphql.Webhook {
+	appTmplWebhook := fixGenericGQLWebhook(id, url)
+	appTmplWebhook.ApplicationTemplateID = &appTmplID
+	return appTmplWebhook
+}
+
+func fixFormationTemplateGQLWebhook(id, formationTmplID, url string) *graphql.Webhook {
+	formationTmplWebhook := fixGenericGQLWebhook(id, url)
+	formationTmplWebhook.FormationTemplateID = &formationTmplID
+	formationTmplWebhook.Type = graphql.WebhookTypeFormationLifecycle
+	return formationTmplWebhook
+}
+
+func fixIntegrationSystemGQLWebhook(id, intSysID, url string) *graphql.Webhook {
+	intSysWebhook := fixGenericGQLWebhook(id, url)
+	intSysWebhook.IntegrationSystemID = &intSysID
+	intSysWebhook.Type = ""
+	return intSysWebhook
+}
+
+func fixGenericGQLWebhook(id, url string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:             id,
-		ApplicationID:  &appID,
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &graphql.Auth{},
@@ -102,7 +123,6 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		CreatedAt:      &graphql.Timestamp{},
 	}
 }
 
@@ -293,4 +313,98 @@ func givenApplicationTemplateID() string {
 
 func givenError() error {
 	return errors.New("some error")
+}
+
+func fixEmptyTenantMappingConfig() map[string]interface{} {
+	tenantMappingJSON := "{}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixTenantMappingConfig() map[string]interface{} {
+	tenantMappingJSON := "{\"SYNC\": {\"v1.0\": [{ \"type\": \"CONFIGURATION_CHANGED\",\"urlTemplate\": \"%s\",\"inputTemplate\": \"input template\",\"headerTemplate\": \"header template\",\"outputTemplate\": \"output template\"}]}}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixTenantMappingConfigForAsyncCallback() map[string]interface{} {
+	tenantMappingJSON := "{\"ASYNC_CALLBACK\": {\"v1.0\": [{ \"type\": \"CONFIGURATION_CHANGED\",\"urlTemplate\": \"%s\",\"inputTemplate\": \"input template\",\"headerTemplate\": \"%s\",\"outputTemplate\": \"output template\"}]}}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixInvalidTenantMappingConfig() map[string]interface{} {
+	tenantMappingJSON := "{\"SYNC\": []}"
+	return GetTenantMappingConfig(tenantMappingJSON)
+}
+
+func fixTenantMappedWebhooks() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			Auth:    nil,
+			Mode:    &syncMode,
+			URL:     &testURL,
+			Version: str.Ptr("v1.0"),
+		},
+	}
+}
+
+func fixTenantMappedWebhooksForAsyncCallbackMode() []*graphql.WebhookInput {
+	asyncMode := graphql.WebhookModeAsyncCallback
+
+	return []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			Auth:    nil,
+			Mode:    &asyncMode,
+			URL:     &testURL,
+			Version: str.Ptr("v1.0"),
+		},
+	}
+}
+
+func fixTenantMappedWebhooksWithInvalidVersion() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			Auth:    nil,
+			Mode:    &syncMode,
+			URL:     &testURL,
+			Version: str.Ptr("notfound"),
+		},
+	}
+}
+
+func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+
+	return []*graphql.WebhookInput{
+		{
+			Type:           graphql.WebhookTypeConfigurationChanged,
+			Auth:           nil,
+			Mode:           &syncMode,
+			URLTemplate:    &testURL,
+			InputTemplate:  str.Ptr("input template"),
+			HeaderTemplate: str.Ptr("header template"),
+			OutputTemplate: str.Ptr("output template"),
+		},
+	}
+}
+
+func fixEnrichedTenantMappedWebhooksForAsyncCallbackMode(callbackURL string) []*graphql.WebhookInput {
+	asyncMode := graphql.WebhookModeAsyncCallback
+
+	return []*graphql.WebhookInput{
+		{
+			Type:           graphql.WebhookTypeConfigurationChanged,
+			Auth:           nil,
+			Mode:           &asyncMode,
+			URLTemplate:    &testURL,
+			InputTemplate:  str.Ptr("input template"),
+			HeaderTemplate: str.Ptr(callbackURL),
+			OutputTemplate: str.Ptr("output template"),
+		},
+	}
 }

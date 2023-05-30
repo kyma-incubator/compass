@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -178,6 +179,15 @@ func (c *Client) buildFilter() map[string]string {
 			filterBuilder.addFilter(expr1)
 		}
 	}
+	result := map[string]string{"fetchAcrossZones": "true"}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery()), "fetchAcrossZones": "true"}
+	if len(c.apiConfig.FilterCriteria) > 0 {
+		result["$filter"] = fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery())
+	}
+
+	selectFilter := strings.Join(SelectFilter, ",")
+	if len(selectFilter) > 0 {
+		result["$select"] = selectFilter
+	}
+	return result
 }

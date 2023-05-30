@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -16,10 +15,6 @@ import (
 
 func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	testCases := []struct {
 		Name                         string
 		Location                     formationconstraintpkg.JoinPointLocation
@@ -128,7 +123,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			formationConstraintSvc := testCase.FormationConstraintService()
 
-			engine := operators.NewConstraintEngine(formationConstraintSvc, nil, nil, nil, nil, nil, nil, nil)
+			engine := operators.NewConstraintEngine(formationConstraintSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 			if testCase.OperatorFunc != nil {
 				engine.SetOperator(testCase.OperatorFunc)
 			} else {

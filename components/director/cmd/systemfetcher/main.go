@@ -7,7 +7,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"net/http"
 	"os"
+	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
 
@@ -231,12 +234,13 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, formationRepo, labelRepo, labelSvc, applicationRepo)
+	constraintEngine := operators.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConverter, notificationSvc)
+	formationAssignmentUpdater := formationassignment.NewFormationAssignmentUpdaterService(formationAssignmentRepo, constraintEngine, formationRepo, formationTemplateRepo)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, labelSvc, formationRepo, formationAssignmentUpdater, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
@@ -273,10 +277,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, err
 	}
 
-	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc); err != nil {
-		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
-	}
-
 	if err := loadSystemsSynchronizationTimestamps(ctx, tx, systemsSyncSvc); err != nil {
 		return nil, errors.Wrap(err, "failed while loading systems synchronization timestamps")
 	}
@@ -284,6 +284,10 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
+	}
+
+	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc, placeholdersMapping); err != nil {
+		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
 	}
 
 	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
@@ -312,7 +316,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
 	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
 
 	tx, err := transact.Begin()
@@ -327,6 +331,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 		return errors.Wrapf(err, "while listing application templates by label filter %q", cfg.TemplateConfig.LabelFilter)
 	}
 
+	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
 		lbl, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
@@ -334,6 +339,8 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 		}
 
 		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: lbl})
+
+		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}
 
 	err = tx.Commit()
@@ -342,6 +349,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	}
 
 	systemfetcher.ApplicationTemplates = applicationTemplates
+	systemfetcher.SelectFilter = createSelectFilter(selectFilterProperties, placeholdersMapping)
 	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
 	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
 	return nil
@@ -384,4 +392,45 @@ func loadSystemsSynchronizationTimestamps(ctx context.Context, transact persiste
 	systemfetcher.SystemSynchronizationTimestamps = systemSynchronizationTimestamps
 
 	return nil
+}
+
+func getTopParentFromJSONPath(jsonPath string) string {
+	prefix := "$."
+	infix := "."
+
+	topParent := strings.TrimPrefix(jsonPath, prefix)
+	firstInfixIndex := strings.Index(topParent, infix)
+	if firstInfixIndex == -1 {
+		return topParent
+	}
+
+	return topParent[:firstInfixIndex]
+}
+
+func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {
+	for _, placeholder := range placeholders {
+		if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
+			topParent := getTopParentFromJSONPath(*placeholder.JSONPath)
+			if _, exists := selectFilterProperties[topParent]; !exists {
+				selectFilterProperties[topParent] = true
+			}
+		}
+	}
+}
+
+func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapping []systemfetcher.PlaceholderMapping) []string {
+	selectFilter := make([]string, 0)
+
+	for _, pm := range placeholdersMapping {
+		topParent := getTopParentFromJSONPath(pm.SystemKey)
+		if _, exists := selectFilterProperties[topParent]; !exists {
+			selectFilterProperties[topParent] = true
+		}
+	}
+
+	for property := range selectFilterProperties {
+		selectFilter = append(selectFilter, property)
+	}
+
+	return selectFilter
 }

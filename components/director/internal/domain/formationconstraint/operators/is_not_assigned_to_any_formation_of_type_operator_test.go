@@ -1,12 +1,10 @@
 package operators_test
 
 import (
-	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -14,11 +12,6 @@ import (
 )
 
 func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	testCases := []struct {
 		Name                  string
 		Input                 operators.OperatorInput
@@ -237,7 +230,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
 
-			engine := operators.NewConstraintEngine(nil, tenantSvc, asaSvc, nil, formationRepo, labelRepo, nil, nil)
+			engine := operators.NewConstraintEngine(nil, tenantSvc, asaSvc, nil, formationRepo, labelRepo, nil, nil, nil, nil, runtimeType, applicationType)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 

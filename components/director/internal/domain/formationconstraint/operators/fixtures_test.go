@@ -1,10 +1,12 @@
 package operators_test
 
 import (
+	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -19,10 +21,15 @@ const (
 	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testInternalTenantID     = "aaaddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	scenario                 = "test-scenario"
+	runtimeType              = "runtimeType"
+	applicationType          = "applicationType"
 )
 
 // todo::: refactor the names, exported/unexported vars, etc..
 var (
+	ctx = context.TODO()
+	testErr = errors.New("test error")
+
 	inputTenantResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{
 		FormationTemplateID: formationTemplateID,
 		ResourceType:        model.TenantResourceType,

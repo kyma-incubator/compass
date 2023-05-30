@@ -246,6 +246,12 @@ var (
 		  "customType": "wrongCustomType"
         }
       ]`
+	invalidCredentialsExchangeStrategyDueToWrongTenantMappingCustomType = `[
+        {
+          "type": "custom",
+		  "customType": "%s.v1000"
+        }
+      ]`
 	invalidCredentialsExchangeStrategyDueToWrongCallbackURL = `[
         {
           "type": "custom",
@@ -770,7 +776,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				url = baseURL
 			}
 
-			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -818,7 +824,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1616,7 +1622,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -1974,6 +1980,15 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Invalid `customType` field when `type` field is set to `custom` for `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToWrongTenantMappingCustomType, ord.TenantMappingCustomTypeIdentifier))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `customType` tenant mapping field when `type` field is set to `custom` for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToWrongCustomType)
 
 				return []*ord.Document{doc}
@@ -2101,7 +2116,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -3967,7 +3982,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -5136,7 +5151,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -5403,7 +5418,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5570,7 +5585,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5624,7 +5639,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5668,7 +5683,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents(test.DocumentProvider())
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, map[string]bool{})
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, map[string]bool{}, credentialExchangeStrategyTenantMappings)
 			if len(test.ExpectedStringsInError) != 0 {
 				require.Error(t, err)
 				for _, expectedStr := range test.ExpectedStringsInError {

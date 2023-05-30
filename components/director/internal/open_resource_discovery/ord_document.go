@@ -94,7 +94,7 @@ func (c WellKnownConfig) Validate(baseURL string) error {
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool) error {
+func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	var (
 		errs                *multierror.Error
 		baseURL             = calculatedBaseURL
@@ -162,7 +162,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		}
 
 		for i, bndl := range doc.ConsumptionBundles {
-			if err := validateBundleInput(bndl, bundlesFromDB, resourceHashes); err != nil {
+			if err := validateBundleInput(bndl, bundlesFromDB, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 				invalidBundlesIndices = append(invalidBundlesIndices, i)
 				continue

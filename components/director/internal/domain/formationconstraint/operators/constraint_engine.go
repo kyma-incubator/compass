@@ -27,7 +27,7 @@ type automaticScenarioAssignmentService interface {
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
-//go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=DestinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DestinationService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
@@ -59,6 +59,16 @@ type labelService interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+//go:generate mockery --exported --name=runtimeContextRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
+type runtimeContextRepo interface {
+	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
+}
+
+//go:generate mockery --exported --name=formationTemplateRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationTemplateRepo interface {
+	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
+}
+
 // OperatorInput represents the input needed by the constraint operator
 type OperatorInput interface{}
 
@@ -81,12 +91,16 @@ type ConstraintEngine struct {
 	labelRepo                 labelRepository
 	labelService              labelService
 	applicationRepository     applicationRepository
+	runtimeContextRepo        runtimeContextRepo
+	formationTemplateRepo     formationTemplateRepo
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
+	runtimeTypeLabelKey       string
+	applicationTypeLabelKey   string
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc DestinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc DestinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:         constraintSvc,
 		tenantSvc:             tenantSvc,
@@ -96,16 +110,22 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 		labelRepo:             labelRepo,
 		labelService:          labelService,
 		applicationRepository: applicationRepository,
+		runtimeContextRepo:    runtimeContextRepo,
+		formationTemplateRepo: formationTemplateRepo,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
-			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
-			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
-			DestinationCreatorOperator:                NewDestinationCreatorInput,
+			IsNotAssignedToAnyFormationOfTypeOperator:            NewIsNotAssignedToAnyFormationOfTypeInput,
+			DoesNotContainResourceOfSubtypeOperator:              NewDoesNotContainResourceOfSubtypeInput,
+			DoNotGenerateFormationAssignmentNotificationOperator: NewDoNotGenerateFormationAssignmentNotificationInput,
+			DestinationCreatorOperator:                           NewDestinationCreatorInput,
 		},
+		runtimeTypeLabelKey:     runtimeTypeLabelKey,
+		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 	c.operators = map[OperatorName]OperatorFunc{
-		IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType,
-		DoesNotContainResourceOfSubtypeOperator:   c.DoesNotContainResourceOfSubtype,
-		DestinationCreatorOperator:                c.DestinationCreator,
+		IsNotAssignedToAnyFormationOfTypeOperator:            c.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:              c.DoesNotContainResourceOfSubtype,
+		DoNotGenerateFormationAssignmentNotificationOperator: c.DoNotGenerateFormationAssignmentNotification,
+		DestinationCreatorOperator:                           c.DestinationCreator,
 	}
 	return c
 }

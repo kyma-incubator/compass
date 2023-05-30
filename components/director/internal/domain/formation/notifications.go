@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -41,6 +42,8 @@ type notificationsService struct {
 	tenantRepository       tenantRepository
 	webhookClient          webhookClient
 	notificationsGenerator notificationsGenerator
+	constraintEngine       constraintEngine
+	webhookConverter       webhookConverter
 }
 
 // NewNotificationService creates notifications service for formation assignment and unassignment
@@ -48,11 +51,15 @@ func NewNotificationService(
 	tenantRepository tenantRepository,
 	webhookClient webhookClient,
 	notificationsGenerator notificationsGenerator,
+	constraintEngine constraintEngine,
+	webhookConverter webhookConverter,
 ) *notificationsService {
 	return &notificationsService{
 		tenantRepository:       tenantRepository,
 		webhookClient:          webhookClient,
 		notificationsGenerator: notificationsGenerator,
+		constraintEngine:       constraintEngine,
+		webhookConverter:       webhookConverter,
 	}
 }
 
@@ -120,13 +127,51 @@ func (ns *notificationsService) GenerateFormationNotifications(ctx context.Conte
 	return ns.notificationsGenerator.GenerateFormationLifecycleNotifications(ctx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
 }
 
-func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error) {
+func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error) {
+	joinPointDetails, err := ns.prepareDetailsForSendNotification(webhookNotificationReq)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing details for send notification")
+	}
+	joinPointDetails.Location = formationconstraint.PreSendNotification
+	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PreOperation)
+	}
+
 	resp, err := ns.webhookClient.Do(ctx, webhookNotificationReq)
 	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
 		return resp, nil
+	} else if err != nil {
+		return resp, err
+	}
+
+	joinPointDetails.Location = formationconstraint.PostSendNotification
+	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PostOperation)
 	}
 
 	return resp, err
+}
+
+func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotificationReq webhookclient.WebhookExtRequest) (*formationconstraint.SendNotificationOperationDetails, error) {
+	webhookGql := webhookNotificationReq.GetWebhook()
+	webhookModel, err := ns.webhookConverter.ToModel(&webhookGql)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting webhook to model")
+	}
+
+	joinPointDetails := &formationconstraint.SendNotificationOperationDetails{
+		ResourceType:               webhookNotificationReq.GetObjectType(),
+		ResourceSubtype:            webhookNotificationReq.GetObjectSubtype(),
+		Operation:                  webhookNotificationReq.GetOperation(),
+		Webhook:                    webhookModel,
+		CorrelationID:              webhookNotificationReq.GetCorrelationID(),
+		TemplateInput:              webhookNotificationReq.GetObject(),
+		FormationAssignment:        webhookNotificationReq.GetFormationAssignment(),
+		ReverseFormationAssignment: webhookNotificationReq.GetReverseFormationAssignment(),
+		Formation:                  webhookNotificationReq.GetFormation(),
+	}
+
+	return joinPointDetails, nil
 }
 
 func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context, internalTenantID string) (*webhookdir.CustomerTenantContext, error) {

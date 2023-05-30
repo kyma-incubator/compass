@@ -1,12 +1,10 @@
 package operators_test
 
 import (
-	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -14,21 +12,17 @@ import (
 )
 
 func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
-	ctx := context.TODO()
-	testErr := errors.New("test error")
-
 	applicationTypeLabel := "applicationType"
 	inputAppType := "input-type"
 	inputAppID := "eb2d5110-ca3a-11ed-afa1-0242ac120002"
 	appID := "b55131c4-ca3a-11ed-afa1-0242ac120002"
 
 	in := &formationconstraintpkg.DoesNotContainResourceOfSubtypeInput{
-		FormationName:        scenario,
-		ResourceType:         model.ApplicationResourceType,
-		ResourceSubtype:      inputAppType,
-		ResourceID:           inputAppID,
-		Tenant:               testTenantID,
-		ResourceTypeLabelKey: applicationTypeLabel,
+		FormationName:   scenario,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: inputAppType,
+		ResourceID:      inputAppID,
+		Tenant:          testTenantID,
 	}
 
 	testCases := []struct {
@@ -126,7 +120,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			labelSvc := testCase.LabelSvc()
 			appRepo := testCase.ApplicationRepo()
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, labelSvc, appRepo)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, labelSvc, appRepo, nil, nil, runtimeType, applicationType)
 
 			result, err := engine.DoesNotContainResourceOfSubtype(ctx, testCase.Input)
 
