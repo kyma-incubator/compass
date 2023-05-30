@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims/automock"
@@ -99,7 +99,7 @@ func TestValidator_Validate(t *testing.T) {
 		ApplicationServiceFn         func() *automock.ApplicationService
 		RuntimeCtxSvcFn              func() *automock.RuntimeCtxService
 		IntegrationSystemServiceFn   func() *automock.IntegrationSystemService
-		Claims                       token_claims.Claims
+		Claims                       idtokenclaims.Claims
 		PersistenceFn                func() *persistenceautomock.PersistenceTx
 		TransactionerFn              func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ExpectedErr                  string
@@ -124,7 +124,7 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name: "Fails when inner validation fails",
-			Claims: token_claims.Claims{
+			Claims: idtokenclaims.Claims{
 				Tenant: map[string]string{
 					"consumerTenant": consumerTenantID,
 					"externalTenant": consumerExtTenantID,
@@ -461,16 +461,16 @@ func TestScopesValidator_Validate(t *testing.T) {
 	})
 }
 
-func getClaimsForRuntimeConsumerProviderFlow(consumerTenant, consumerExternalTenant, providerTenant, providerExtTenant, scopes, region, clientID string) token_claims.Claims {
+func getClaimsForRuntimeConsumerProviderFlow(consumerTenant, consumerExternalTenant, providerTenant, providerExtTenant, scopes, region, clientID string) idtokenclaims.Claims {
 	return getClaimsForConsumerProviderFlow(consumer.Runtime, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID)
 }
 
-func getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) token_claims.Claims {
+func getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) idtokenclaims.Claims {
 	return getClaimsForConsumerProviderFlow(consumer.IntegrationSystem, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID)
 }
 
-func getClaimsForConsumerProviderFlow(consumerType consumer.ConsumerType, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) token_claims.Claims {
-	return token_claims.Claims{
+func getClaimsForConsumerProviderFlow(consumerType consumer.ConsumerType, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) idtokenclaims.Claims {
+	return idtokenclaims.Claims{
 		Tenant: map[string]string{
 			tenantmapping.ConsumerTenantKey:         consumerTenant,
 			tenantmapping.ExternalTenantKey:         consumerExternalTenant,
@@ -486,8 +486,8 @@ func getClaimsForConsumerProviderFlow(consumerType consumer.ConsumerType, consum
 	}
 }
 
-func getClaims(intTenantID, extTenantID, scopes string) token_claims.Claims {
-	return token_claims.Claims{
+func getClaims(intTenantID, extTenantID, scopes string) idtokenclaims.Claims {
+	return idtokenclaims.Claims{
 		Tenant: map[string]string{
 			tenantmapping.ConsumerTenantKey: intTenantID,
 			tenantmapping.ExternalTenantKey: extTenantID,

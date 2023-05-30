@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
@@ -23,7 +23,7 @@ func NewScopesValidator(requiredScopes []string) *scopeBasedClaimsValidator {
 }
 
 // Validate validates the scopes in given token claims.
-func (v *scopeBasedClaimsValidator) Validate(_ context.Context, claims token_claims.Claims) error {
+func (v *scopeBasedClaimsValidator) Validate(_ context.Context, claims idtokenclaims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

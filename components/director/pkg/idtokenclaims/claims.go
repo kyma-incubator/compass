@@ -1,4 +1,4 @@
-package token_claims
+package idtokenclaims
 
 import (
 	"context"

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -83,7 +83,7 @@ func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService
 }
 
 // Validate validates given id_token claims
-func (v *validator) Validate(ctx context.Context, claims token_claims.Claims) error {
+func (v *validator) Validate(ctx context.Context, claims idtokenclaims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}
@@ -115,7 +115,7 @@ func (v *validator) Validate(ctx context.Context, claims token_claims.Claims) er
 	}
 }
 
-func (v *validator) validateRuntimeConsumer(ctx context.Context, claims token_claims.Claims) error {
+func (v *validator) validateRuntimeConsumer(ctx context.Context, claims idtokenclaims.Claims) error {
 	tx, err := v.transact.Begin()
 	if err != nil {
 		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
@@ -176,7 +176,7 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims token_cl
 	return tx.Commit()
 }
 
-func (v *validator) validateApplicationProvider(ctx context.Context, claims token_claims.Claims) error {
+func (v *validator) validateApplicationProvider(ctx context.Context, claims idtokenclaims.Claims) error {
 	tx, err := v.transact.Begin()
 	if err != nil {
 		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
@@ -244,7 +244,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims toke
 	return tx.Commit()
 }
 
-func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims token_claims.Claims) error {
+func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims idtokenclaims.Claims) error {
 	if claims.Tenant[tenantmapping.ProviderExternalTenantKey] == claims.ConsumerID {
 		return nil // consumer ID is a subaccount tenant
 	}

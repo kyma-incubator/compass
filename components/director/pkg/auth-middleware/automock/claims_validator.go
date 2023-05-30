@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	token_claims "github.com/kyma-incubator/compass/components/director/pkg/token_claims"
+	token_claims "github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 	mock "github.com/stretchr/testify/mock"
 )
 

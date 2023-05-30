@@ -1,4 +1,4 @@
-package auth_middleware
+package authmiddleware
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 
 	authenticator_director "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
@@ -36,7 +36,6 @@ const (
 
 const (
 	logKeyConsumerType   = "consumer-type"
-	logKeyConsumerID     = "consumer-id"
 	logKeyTokenClientID  = "token-client-id"
 	logKeyFlow           = "flow"
 	ctxScenarioGroupsKey = "scenario_groups"
@@ -46,7 +45,7 @@ const (
 //
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClaimsValidator interface {
-	Validate(context.Context, token_claims.Claims) error
+	Validate(context.Context, idtokenclaims.Claims) error
 }
 
 // Authenticator missing godoc
@@ -171,7 +170,7 @@ func (a *Authenticator) NSAdapterHandler() func(next http.Handler) http.Handler 
 	}
 }
 
-func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (*token_claims.Claims, error) {
+func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (*idtokenclaims.Claims, error) {
 	parsedClaims, err := a.parseClaims(ctx, bearerToken)
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
@@ -203,8 +202,8 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	return reqToken, nil
 }
 
-func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*token_claims.Claims, error) {
-	parsed := token_claims.Claims{}
+func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*idtokenclaims.Claims, error) {
+	parsed := idtokenclaims.Claims{}
 
 	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
 		return &parsed, err
@@ -278,7 +277,7 @@ func (a *Authenticator) getKeyID(token jwt.Token) (string, error) {
 	return keyIDStr, nil
 }
 
-func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*token_claims.Claims, int, error) {
+func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*idtokenclaims.Claims, int, error) {
 	bearerToken, err := a.getBearerToken(r)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
@@ -326,6 +325,7 @@ func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.R
 	return ctx
 }
 
+// LoadExternalTenantFromContext extracts the external tenant ID stored in the context object
 func LoadExternalTenantFromContext(ctx context.Context) (string, error) {
 	tenantFromContext, err := tenant.LoadTenantPairFromContext(ctx)
 	if err != nil {
