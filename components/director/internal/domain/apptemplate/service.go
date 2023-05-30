@@ -62,6 +62,7 @@ type WebhookRepository interface {
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // LabelRepository missing godoc
@@ -72,22 +73,29 @@ type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationRepository interface {
+	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
+}
+
 type service struct {
 	appTemplateRepo    ApplicationTemplateRepository
 	webhookRepo        WebhookRepository
 	uidService         UIDService
 	labelUpsertService LabelUpsertService
 	labelRepo          LabelRepository
+	appRepo            ApplicationRepository
 }
 
 // NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository) *service {
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository, appRepo ApplicationRepository) *service {
 	return &service{
 		appTemplateRepo:    appTemplateRepo,
 		webhookRepo:        webhookRepo,
 		uidService:         uidService,
 		labelUpsertService: labelUpsertService,
 		labelRepo:          labelRepo,
+		appRepo:            appRepo,
 	}
 }
 
@@ -273,6 +281,11 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	oldAppTemplate, err := s.Get(ctx, id)
 	if err != nil {
 		return err
@@ -303,6 +316,25 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
+	}
+
+	if oldAppTemplate.Name != appTemplate.Name {
+		appsByAppTemplate, err := s.appRepo.ListAllByApplicationTemplateID(ctx, id)
+		if err != nil {
+			return errors.Wrapf(err, "while listing applications for app template with id %s", id)
+		}
+
+		for _, app := range appsByAppTemplate {
+			err = s.labelUpsertService.UpsertLabel(ctx, appTenant, &model.LabelInput{
+				Key:        applicationTypeLabelKey,
+				Value:      appTemplate.Name,
+				ObjectID:   app.ID,
+				ObjectType: model.ApplicationLabelableObject,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "while updating applicationType label of application with id %s", app.ID)
+			}
+		}
 	}
 
 	return nil
