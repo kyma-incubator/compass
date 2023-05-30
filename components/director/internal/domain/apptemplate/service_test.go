@@ -1342,6 +1342,30 @@ func TestService_Update(t *testing.T) {
 			},
 			ExpectedError: testError,
 		},
+		{
+			Name: "Error when updating labels of application template - upsert failed",
+			Input: func() *model.ApplicationTemplateUpdateInput {
+				return modelAppTemplateUpdateInput
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Get", ctx, modelAppTemplateWithLabels.ID).Return(modelAppTemplateWithLabels, nil).Once()
+				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithLabels).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: UnusedWebhookRepo,
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertService := &automock.LabelUpsertService{}
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, modelAppTemplateUpdateInput.Labels).Return(testError).Once()
+				return labelUpsertService
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
+				return labelRepo
+			},
+			ExpectedError: testError,
+		},
 	}
 
 	for _, testCase := range testCases {

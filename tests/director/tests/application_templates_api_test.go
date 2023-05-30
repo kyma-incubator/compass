@@ -451,7 +451,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	saveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
-func TestUpdateLabelsOfApplicationTemplate(t *testing.T) {
+func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	appTemplateName := createAppTemplateName("app-template")
