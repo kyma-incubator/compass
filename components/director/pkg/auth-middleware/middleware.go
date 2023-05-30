@@ -100,6 +100,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			tokenClaims, statusCode, err := a.processToken(ctx, r)
 			if err != nil {
 				apperrors.WriteAppError(ctx, w, err, statusCode)
+				return
 			}
 
 			ctx = tokenClaims.ContextWithClaims(ctx)
@@ -119,6 +120,7 @@ func (a *Authenticator) KymaAdapterHandler() func(next http.Handler) http.Handle
 			tokenClaims, statusCode, err := a.processToken(ctx, r)
 			if err != nil {
 				apperrors.WriteAppError(ctx, w, err, statusCode)
+				return
 			}
 
 			ctx = tokenClaims.ContextWithClaimsAndProviderTenant(ctx)
