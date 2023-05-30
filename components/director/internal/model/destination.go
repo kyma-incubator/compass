@@ -25,7 +25,6 @@ type Destination struct {
 	Url                   string                      `json:"url"`
 	Authentication        destinationcreator.AuthType `json:"authentication"`
 	SubaccountID          string                      `json:"subaccount_id"`
-	Revision              string                      `json:"revision"`
 	FormationAssignmentID *string                     `json:"formationAssignmentID"`
 }
 

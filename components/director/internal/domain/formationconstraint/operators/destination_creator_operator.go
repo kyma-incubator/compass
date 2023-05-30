@@ -37,7 +37,9 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q, subtype: %q and ID: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.ResourceID, di.Operation)
 
 	if di.Operation == model.UnassignFormation {
-		// todo::: specific logic for unassign
+		if err := e.destinationSvc.DeleteDestinations(ctx, di.Assignment); err != nil {
+			return false, err
+		}
 		return true, nil
 	}
 
@@ -93,7 +95,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		}
 
 		if confDetailsResp.Configuration.Credentials.InboundCommunicationDetails == nil {
-			return false, errors.New("The inbound communication details could not be empty")
+			return false, errors.New("The inbound communication destination details could not be empty")
 		}
 
 		if confCredentialsResp.Configuration.Credentials.InboundCommunicationCredentials == nil {
@@ -103,7 +105,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		basicAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
 		basicAuthCreds := confCredentialsResp.Configuration.Credentials.InboundCommunicationCredentials.BasicAuthentication
 		if basicAuthDetails != nil && basicAuthCreds != nil {
-			log.C(ctx).Infof("There is/are %d inbound basic destination(s) available in the configuration response", len(basicAuthDetails.Destinations))
+			log.C(ctx).Infof("There is/are %d inbound basic destination(s) available in the configuration", len(basicAuthDetails.Destinations))
 			for _, destDetails := range basicAuthDetails.Destinations {
 				statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.Assignment)
 				if err != nil {
@@ -112,7 +114,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 				if statusCode == http.StatusConflict {
 					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-					if err := e.destinationSvc.DeleteDestinations(ctx, destDetails, di.Assignment); err != nil {
+					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, di.Assignment); err != nil {
 						return false, errors.Wrapf(err, "while deleting destination with name: %q", destDetails.Name)
 					}
 
@@ -127,6 +129,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		samlAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.SAMLBearerAuthenticationDetails
 		samlAuthCreds := confCredentialsResp.Configuration.Credentials.InboundCommunicationCredentials.SAMLBearerAuthentication
 		if samlAuthDetails != nil && samlAuthCreds != nil {
+			log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
 			// todo:: (for phase 2) create SAML destination with the data from the "SAML details" and credentials response
 		}
 
@@ -260,7 +263,7 @@ type Destination struct {
 	Url                  string                       `json:"url"`
 	SubaccountID         string                       `json:"subaccountId,omitempty"`
 	AdditionalAttributes AdditionalAttributes         `json:"additionalAttributes,omitempty"`
-	// todo::: additional fields for KeyStore(phase 2)
+	// todo:: additional fields for KeyStore(phase 2)
 }
 
 // AdditionalAttributes todo::: add godoc

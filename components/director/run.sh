@@ -297,6 +297,13 @@ export APP_PAIRING_ADAPTER_CM_NAMESPACE="default"
 export APP_PAIRING_ADAPTER_CM_KEY="config.json"
 export APP_PAIRING_ADAPTER_WATCHER_ID="pairing-adapter-watcher-id"
 
+# Destination Properties
+export APP_DESTINATION_BASE_URL="http://base-url.com"
+export APP_DESTINATION_PATH="/regions/{region}/subaccounts/{subaccountId}/destinations/{destinationName}"
+export APP_DESTINATION_REGION_PARAMETER="region"
+export APP_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
+export APP_DESTINATION_NAME_PARAMETER="destinationName"
+
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig
 {

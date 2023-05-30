@@ -53,8 +53,9 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=destinationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationRepository interface {
-	DeleteByAssignmentID(ctx context.Context, destinationName, tenantID, formationAssignmentID string) error
 	CreateDestination(ctx context.Context, destination *model.Destination) error
+	DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) error
+	ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error)
 }
 
 // UIDService generates UUIDs for new entities
@@ -90,32 +91,32 @@ func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationc
 	}
 }
 
-func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment) (statusCode int, err error) {
+func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
-		return statusCode, err
+		return defaultStatusCode, err
 	}
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return statusCode, err
+		return defaultStatusCode, err
 	}
 
 	strURL, err := buildURL(s.destinationCreatorCfg, region, subaccountID, "", false)
 	if err != nil {
-		return statusCode, errors.Wrapf(err, "while building destination URL")
+		return defaultStatusCode, errors.Wrapf(err, "while building destination URL")
 	}
 
 	reqBody, err := s.prepareRequestBody(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment)
 	if err != nil {
-		return statusCode, err
+		return defaultStatusCode, err
 	}
 
 	destinationName := destinationDetails.Name
-	log.C(ctx).Infof("Creating inbound basic destination with name: %q in the destination service", destinationName)
-	statusCode, err = s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
+	log.C(ctx).Infof("Creating inbound basic destination with name: %q and subaccount ID: %q in the destination service", destinationName, subaccountID)
+	statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
 	if err != nil {
-		return statusCode, errors.Wrapf(err, "while creating inbound basic destination with name: %q in the destination service", destinationName)
+		return defaultStatusCode, errors.Wrapf(err, "while creating inbound basic destination with name: %q in the destination service", destinationName)
 	}
 
 	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
@@ -127,7 +128,6 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 			Authentication:        reqBody.AuthenticationType,
 			SubaccountID:          subaccountID,
 			FormationAssignmentID: &formationAssignment.ID,
-			Revision:              s.uidSvc.Generate(),
 		}
 
 		if err = s.destinationRepo.CreateDestination(ctx, destModel); err != nil {
@@ -135,29 +135,27 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		}
 		return nil
 	}); transactionErr != nil {
-		return statusCode, transactionErr
+		return defaultStatusCode, transactionErr
 	}
-
-	log.C(ctx).Infof("Successfully create inbound basic destination with name: %q and assignment ID: %q in the DB", destinationName, formationAssignment.ID)
 
 	return statusCode, nil
 }
 
 // todo:: will be implemented with the second phase of the destination operator. Uncomment and make the needed adaptation
-func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error) {
+func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
-		return statusCode, err
+		return defaultStatusCode, err
 	}
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return statusCode, err
+		return defaultStatusCode, err
 	}
 
 	strURL, err := buildURL(s.destinationCreatorCfg, region, subaccountID, "", false)
 	if err != nil {
-		return statusCode, errors.Wrapf(err, "while building destination URL")
+		return defaultStatusCode, errors.Wrapf(err, "while building destination URL")
 	}
 
 	destinationName := destinationDetails.Name
@@ -166,13 +164,13 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	}
 
 	if err := validate(destReqBody); err != nil {
-		return statusCode, errors.Wrapf(err, "while validating destination request body")
+		return defaultStatusCode, errors.Wrapf(err, "while validating destination request body")
 	}
 
 	log.C(ctx).Infof("Creating design time destination with name: %q in the destination service", destinationName)
-	statusCode, err = s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
+	statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
 	if err != nil {
-		return statusCode, errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
+		return defaultStatusCode, errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
 	}
 
 	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
@@ -181,15 +179,46 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		}
 		return nil
 	}); transactionErr != nil {
-		return statusCode, transactionErr
+		return defaultStatusCode, transactionErr
 	}
-	log.C(ctx).Infof("Successfully create design time destination with name: %q and assignment ID: %q in the DB", destinationName, formationAssignment.ID)
 
 	return statusCode, nil
 }
 
-func (s *Service) DeleteDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) error {
-	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
+// todo::: go doc
+func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error {
+	subaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
+	if err != nil {
+		return err
+	}
+
+	formationAssignmentID := formationAssignment.ID
+	destinations, err := s.destinationRepo.ListByTenantIDAndAssignmentID(ctx, subaccountID, formationAssignmentID)
+	if err != nil {
+		return err
+	}
+
+	for _, destination := range destinations {
+		if err := s.DeleteDestinationFromDestinationService(ctx, destination.Name, destination.SubaccountID, formationAssignment); err != nil {
+			return err
+		}
+	}
+
+	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
+		if err := s.destinationRepo.DeleteByTenantIDAndAssignmentID(ctx, subaccountID, formationAssignmentID); err != nil {
+			return errors.Wrapf(err, "while deleting destination(s) by tenant ID: %q and assignment ID: %q from the DB", subaccountID, formationAssignmentID)
+		}
+		return nil
+	}); transactionErr != nil {
+		return transactionErr
+	}
+
+	return nil
+}
+
+// todo::: go doc
+func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error {
+	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationSubaccount, formationAssignment)
 	if err != nil {
 		return err
 	}
@@ -199,7 +228,6 @@ func (s *Service) DeleteDestinations(ctx context.Context, destinationDetails ope
 		return err
 	}
 
-	destinationName := destinationDetails.Name
 	strURL, err := buildURL(s.destinationCreatorCfg, region, subaccountID, destinationName, true)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
@@ -214,7 +242,7 @@ func (s *Service) DeleteDestinations(ctx context.Context, destinationDetails ope
 	req, err := http.NewRequest(http.MethodDelete, strURL, nil)
 	req.Header.Set(clientUserHeaderKey, clientUser)
 
-	log.C(ctx).Infof("Deleting destination with name: %q from destination service", destinationName)
+	log.C(ctx).Infof("Deleting destination with name: %q and subaccount ID: %q from destination service", destinationName, subaccountID)
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
 		return err
@@ -229,17 +257,6 @@ func (s *Service) DeleteDestinations(ctx context.Context, destinationDetails ope
 	if resp.StatusCode != http.StatusNoContent {
 		return errors.Errorf("Failed to delete destination from destination service, status: %d, body: %s", resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("Successfully delete destination with name: %q from destination service", destinationName)
-
-	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err = s.destinationRepo.DeleteByAssignmentID(ctxWithTransact, destinationName, subaccountID, formationAssignment.ID); err != nil {
-			return errors.Wrapf(err, "while deleting destination with name: %q from the DB", destinationName)
-		}
-		return nil
-	}); transactionErr != nil {
-		return transactionErr
-	}
-	log.C(ctx).Infof("Successfully delete destination with name: %q and assignment ID: %q from the DB", destinationName, formationAssignment.ID)
 
 	return nil
 }
@@ -340,6 +357,8 @@ func (s *Service) validateAppTemplateProviderSubaccount(ctx context.Context, for
 		if destinationSubaccountID != subaccountLblValue {
 			return errors.Errorf("The provided destination subaccount is different from the owner subaccount of the application template with ID: %q", *app.ApplicationTemplateID)
 		}
+
+		log.C(ctx).Infof("Successfully validated that the provided destination subaccount: %q is a provider one - the owner of the application template", destinationSubaccountID)
 	}
 
 	return nil
@@ -354,6 +373,8 @@ func (s *Service) validateRuntimeProviderSubaccount(ctx context.Context, runtime
 	if !exists {
 		return errors.Errorf("The provided destination subaccount: %q is not provider of the runtime with ID: %q", destinationSubaccountID, runtimeID)
 	}
+
+	log.C(ctx).Infof("Successfully validated that the provided destination subaccount: %q is a provider one - the owner of the runtime", destinationSubaccountID)
 
 	return nil
 }
@@ -388,10 +409,10 @@ func (s *Service) transaction(ctx context.Context, dbCall func(ctxWithTransact c
 	return nil
 }
 
-func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody *destinationcreator.RequestBody, destinationName string) (statusCode int, err error) {
+func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody *destinationcreator.RequestBody, destinationName string) (defaultStatusCode int, err error) {
 	reqBodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
-		return statusCode, errors.Wrapf(err, "while marshalling destination request body")
+		return defaultStatusCode, errors.Wrapf(err, "while marshalling destination request body")
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)
@@ -405,23 +426,23 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
-		return statusCode, err
+		return defaultStatusCode, err
 	}
 	defer closeResponseBody(ctx, resp)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return statusCode, errors.Errorf("Failed to read destination response body: %v", err)
+		return defaultStatusCode, errors.Errorf("Failed to read destination response body: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
-		return statusCode, errors.Errorf("Failed to create destination with name: %q, status: %d, body: %s", destinationName, resp.StatusCode, body)
+		return defaultStatusCode, errors.Errorf("Failed to create destination with name: %q, status: %d, body: %s", destinationName, resp.StatusCode, body)
 	}
 
 	if resp.StatusCode == http.StatusConflict {
 		return http.StatusConflict, nil
 	}
-	log.C(ctx).Infof("Successfully create destination with name: %q in the destination service", destinationName)
+	log.C(ctx).Infof("Successfully created destination with name: %q in the destination service", destinationName)
 
 	return http.StatusCreated, nil
 }
@@ -496,18 +517,6 @@ func determineLabelableObjectType(assignmentType model.FormationAssignmentType) 
 		return "", errors.Errorf("Couldn't determine the label-able object type from assignment type: %q", assignmentType)
 	}
 }
-
-// todo::: delete
-//func (reqBody *destinationcreator.RequestBody) validate() error {
-//	return validation.ValidateStruct(reqBody,
-//		validation.Field(&reqBody.Name, validation.Required, validation.Length(1, 200)),
-//		validation.Field(&reqBody.Url, validation.Required),
-//		validation.Field(&reqBody.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
-//		validation.Field(&reqBody.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
-//		validation.Field(&reqBody.AuthenticationType, validation.In(AuthTypeNoAuth, AuthTypeBasic, AuthTypeSAMLBearer)),
-//		validation.Field(&reqBody.User, validation.Required, validation.Length(1, 256)),
-//	)
-//}
 
 func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if err := resp.Body.Close(); err != nil {

@@ -31,7 +31,8 @@ type automaticScenarioAssignmentService interface {
 type DestinationService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
-	DeleteDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) error
+	DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error
+	DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string

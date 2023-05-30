@@ -26,7 +26,7 @@ type DoesNotContainResourceOfSubtypeInput struct {
 }
 
 // DestinationCreatorInput input for DestinationCreator operator
-type DestinationCreatorInput struct { // todo::: delete after prerequisite PR is merged
+type DestinationCreatorInput struct { // todo::: double check the details properties have all of the needed fields from DestinationCreatorInput
 	Operation                model.FormationOperation     `json:"operation"`
 	Name                     string                       `json:"name"`
 	ResourceType             model.ResourceType           `json:"resource_type"`

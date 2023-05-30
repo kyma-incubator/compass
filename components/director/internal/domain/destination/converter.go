@@ -26,8 +26,6 @@ func (c *converter) ToEntity(in *model.Destination) *Entity {
 		URL:                   in.Url,
 		Authentication:        string(in.Authentication),
 		TenantID:              in.SubaccountID,
-		BundleID:              "", // todo::: should be nil in this case
-		Revision:              in.Revision,
 		FormationAssignmentID: repo.NewNullableString(in.FormationAssignmentID),
 	}
 }
@@ -46,6 +44,5 @@ func (c *converter) FromEntity(e *Entity) *model.Destination {
 		Authentication:        destinationcreator.AuthType(e.Authentication),
 		SubaccountID:          e.TenantID,
 		FormationAssignmentID: repo.StringPtrFromNullableString(e.FormationAssignmentID),
-		Revision:              e.Revision,
 	}
 }
