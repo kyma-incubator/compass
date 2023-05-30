@@ -2,6 +2,7 @@ package apptemplateversion
 
 import (
 	"context"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -47,6 +48,9 @@ func (s *service) Create(ctx context.Context, applicationTemplateID string, in *
 	id := s.uidService.Generate()
 	applicationTemplateVersion := in.ToApplicationTemplateVersion(id, applicationTemplateID)
 
+	fmt.Println("applicationTemplateVersion")
+	fmt.Printf("%+v \n", applicationTemplateVersion)
+
 	if err := s.appTemplateVersionRepo.Create(ctx, applicationTemplateVersion); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Application Template Version with id %s", id)
 	}
@@ -62,7 +66,7 @@ func (s *service) Update(ctx context.Context, id, appTemplateID string, in *mode
 	}
 
 	if !exists {
-		return errors.New("cannot be null")
+		return errors.Errorf("Application Template Version with ID %s does not exist", id)
 	}
 
 	appTemplateVersion := in.ToApplicationTemplateVersion(id, appTemplateID)
@@ -78,7 +82,7 @@ func (s *service) Update(ctx context.Context, id, appTemplateID string, in *mode
 func (s *service) GetByAppTemplateIDAndVersion(ctx context.Context, appTemplateID, version string) (*model.ApplicationTemplateVersion, error) {
 	applicationTemplateVersion, err := s.appTemplateVersionRepo.GetByAppTemplateIDAndVersion(ctx, appTemplateID, version)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Tombstone with ID: %q", appTemplateID)
+		return nil, errors.Wrapf(err, "while getting Application Template Version with Version %q and Application Template ID: %q", version, appTemplateID)
 	}
 
 	return applicationTemplateVersion, nil
@@ -88,7 +92,7 @@ func (s *service) GetByAppTemplateIDAndVersion(ctx context.Context, appTemplateI
 func (s *service) ListByAppTemplateID(ctx context.Context, appTemplateID string) ([]*model.ApplicationTemplateVersion, error) {
 	applicationTemplateVersion, err := s.appTemplateVersionRepo.ListByAppTemplateID(ctx, appTemplateID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Tombstone with ID: %q", appTemplateID)
+		return nil, errors.Wrapf(err, "while getting Application Template Version with Application Template ID: %q", appTemplateID)
 	}
 
 	return applicationTemplateVersion, nil

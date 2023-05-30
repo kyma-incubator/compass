@@ -128,12 +128,16 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 		if doc.DescribedSystemVersion != nil {
 			if err := ValidateSystemVersionInput(doc.DescribedSystemVersion); err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "error validating system instance"))
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating system version"))
 			}
 		}
-		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
-			errs = multierror.Append(errs, errors.New("describedSystemInstance should be the same as the one providing the documents"))
-		}
+		//if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
+		//	fmt.Println(doc.DescribedSystemInstance.BaseURL)
+		//	fmt.Println(baseURL)
+		//	fmt.Println("BASE URLS")
+		//
+		//	errs = multierror.Append(errs, errors.Errorf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL))
+		//}
 	}
 
 	packageIDs := make(map[string]bool)

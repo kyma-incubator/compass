@@ -334,6 +334,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 
@@ -343,7 +344,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
-	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc)
+	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

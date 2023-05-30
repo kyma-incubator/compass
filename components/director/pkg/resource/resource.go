@@ -102,6 +102,10 @@ const (
 	SystemsSync Type = "systemsSync"
 )
 
+var ignoredTenantAccessTable = map[Type]string{
+	ApplicationTemplateVersion: "application_template_versions",
+}
+
 var tenantAccessTable = map[Type]string{
 	// Tables
 
@@ -142,6 +146,12 @@ var tablesWithEmbeddedTenant = map[Type]string{
 	LabelDefinition:            "label_definitions",
 	Label:                      "labels",
 	SystemAuth:                 "system_auths",
+}
+
+// IgnoredTenantAccessTable returns the table / view with tenant accesses of the given type.
+func (t Type) IgnoredTenantAccessTable() (string, bool) {
+	tbl, ok := ignoredTenantAccessTable[t]
+	return tbl, ok
 }
 
 // TenantAccessTable returns the table / view with tenant accesses of the given type.

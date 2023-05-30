@@ -58,7 +58,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	product := in.ToProduct(id, resourceType, resourceID)
 
 	if err = s.productRepo.Create(ctx, tnt, product); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for %s with id %s", id, product.Title, resourceType, resourceID)
+		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for %v with id %s", id, product.Title, resourceType, resourceID)
 	}
 	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for %s with id %s", id, product.Title, resourceType, resourceID)
 

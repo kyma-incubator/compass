@@ -82,8 +82,10 @@ type SpecService interface {
 	GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 	UpdateSpecOnly(ctx context.Context, spec model.Spec) error
+	UpdateSpecOnlyGlobal(ctx context.Context, spec model.Spec) error
 	ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error)
 }
 
 // FetchRequestService is responsible for executing specification fetch requests.
@@ -92,6 +94,7 @@ type SpecService interface {
 type FetchRequestService interface {
 	FetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus)
 	Update(ctx context.Context, fr *model.FetchRequest) error
+	UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error
 }
 
 // PackageService is responsible for the service-layer Package operations.

@@ -2,6 +2,7 @@ package spec
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -24,6 +25,7 @@ var (
 )
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.Spec) *Entity
@@ -31,22 +33,27 @@ type Converter interface {
 }
 
 type repository struct {
-	creator      repo.Creator
-	lister       repo.Lister
-	idLister     repo.Lister
-	unionLister  repo.UnionLister
-	getter       repo.SingleGetter
-	deleter      repo.Deleter
-	updater      repo.Updater
-	existQuerier repo.ExistQuerier
-	conv         Converter
+	creator       repo.Creator
+	creatorGlobal repo.CreatorGlobal
+	lister        repo.Lister
+	idLister      repo.Lister
+	unionLister   repo.UnionLister
+	getter        repo.SingleGetter
+	getterGlobal  repo.SingleGetterGlobal
+	deleter       repo.Deleter
+	updater       repo.Updater
+	updaterGlobal repo.UpdaterGlobal
+	existQuerier  repo.ExistQuerier
+	conv          Converter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator: repo.NewCreator(specificationsTable, specificationsColumns),
-		getter:  repo.NewSingleGetter(specificationsTable, specificationsColumns),
+		creator:       repo.NewCreator(specificationsTable, specificationsColumns),
+		creatorGlobal: repo.NewCreatorGlobal(resource.Specification, specificationsTable, specificationsColumns),
+		getter:        repo.NewSingleGetter(specificationsTable, specificationsColumns),
+		getterGlobal:  repo.NewSingleGetterGlobal(resource.Specification, specificationsTable, specificationsColumns),
 		lister: repo.NewListerWithOrderBy(specificationsTable, specificationsColumns, repo.OrderByParams{
 			{
 				Field: "created_at",
@@ -59,11 +66,12 @@ func NewRepository(conv Converter) *repository {
 				Dir:   repo.AscOrderBy,
 			},
 		}),
-		unionLister:  repo.NewUnionLister(specificationsTable, specificationsColumns),
-		deleter:      repo.NewDeleter(specificationsTable),
-		updater:      repo.NewUpdater(specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
-		existQuerier: repo.NewExistQuerier(specificationsTable),
-		conv:         conv,
+		unionLister:   repo.NewUnionLister(specificationsTable, specificationsColumns),
+		deleter:       repo.NewDeleter(specificationsTable),
+		updater:       repo.NewUpdater(specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
+		updaterGlobal: repo.NewUpdaterGlobal(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
+		existQuerier:  repo.NewExistQuerier(specificationsTable),
+		conv:          conv,
 	}
 }
 
@@ -71,6 +79,21 @@ func NewRepository(conv Converter) *repository {
 func (r *repository) GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error) {
 	var specEntity Entity
 	err := r.getter.Get(ctx, objectType.GetResourceType(), tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &specEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Specification with id %q", id)
+	}
+
+	specModel, err := r.conv.FromEntity(&specEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	return specModel, nil
+}
+
+func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error) {
+	var specEntity Entity
+	err := r.getterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &specEntity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Specification with id %q", id)
 	}
@@ -91,7 +114,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Spec
 
 	entity := r.conv.ToEntity(item)
 
-	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+	return r.creatorGlobal.Create(ctx, entity)
 }
 
 // ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
@@ -201,6 +224,16 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Spec
 	entity := r.conv.ToEntity(item)
 
 	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+}
+
+func (r *repository) UpdateGlobal(ctx context.Context, item *model.Spec) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
 // Exists missing godoc

@@ -2,6 +2,7 @@ package fetchrequest
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -20,6 +21,7 @@ var (
 )
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.FetchRequest) (*Entity, error)
@@ -27,23 +29,27 @@ type Converter interface {
 }
 
 type repository struct {
-	creator      repo.Creator
-	singleGetter repo.SingleGetter
-	lister       repo.Lister
-	deleter      repo.Deleter
-	updater      repo.Updater
-	conv         Converter
+	creator       repo.Creator
+	creatorGlobal repo.CreatorGlobal
+	singleGetter  repo.SingleGetter
+	lister        repo.Lister
+	deleter       repo.Deleter
+	updater       repo.Updater
+	updaterGlobal repo.UpdaterGlobal
+	conv          Converter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
-		singleGetter: repo.NewSingleGetter(fetchRequestTable, fetchRequestColumns),
-		lister:       repo.NewLister(fetchRequestTable, fetchRequestColumns),
-		deleter:      repo.NewDeleter(fetchRequestTable),
-		updater:      repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
-		conv:         conv,
+		creator:       repo.NewCreator(fetchRequestTable, fetchRequestColumns),
+		creatorGlobal: repo.NewCreatorGlobal(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
+		singleGetter:  repo.NewSingleGetter(fetchRequestTable, fetchRequestColumns),
+		lister:        repo.NewLister(fetchRequestTable, fetchRequestColumns),
+		deleter:       repo.NewDeleter(fetchRequestTable),
+		updater:       repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
+		updaterGlobal: repo.NewUpdaterGlobal(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
+		conv:          conv,
 	}
 }
 
@@ -58,7 +64,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Fetc
 		return errors.Wrap(err, "while creating FetchRequest entity from model")
 	}
 
-	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+	return r.creatorGlobal.Create(ctx, entity)
 }
 
 // GetByReferenceObjectID missing godoc
@@ -106,6 +112,18 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Fetc
 		return err
 	}
 	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+}
+
+// Update missing godoc
+func (r *repository) UpdateGlobal(ctx context.Context, item *model.FetchRequest) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+	entity, err := r.conv.ToEntity(item)
+	if err != nil {
+		return err
+	}
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
 func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {

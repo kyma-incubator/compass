@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/tidwall/gjson"
 	"io"
@@ -46,7 +47,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, constraints map[string]interface{}) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, constraints map[string]string) (Documents, string, error)
 }
 
 type client struct {
@@ -65,7 +66,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, constraints map[string]interface{}) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, constraints map[string]string) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
@@ -106,6 +107,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 		}
 
 		if !isCompliant {
+			log.C(ctx).Infof("Doc is not compliant to constraint: %+v", constraints)
 			continue
 		}
 
@@ -134,6 +136,9 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 				return
 			}
 
+			if docDetails.Perspective == SystemVersionPerspective {
+				//
+			}
 			addDocument(&docs, doc, &docMutex)
 		}(docDetails)
 	}
@@ -148,7 +153,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 	return docs, baseURL, fetchDocErr
 }
 
-func isDocumentCompliantToConstraints(doc DocumentDetails, constraints map[string]interface{}) (bool, error) {
+func isDocumentCompliantToConstraints(doc DocumentDetails, constraints map[string]string) (bool, error) {
 	configBytes, err := json.Marshal(doc)
 	if err != nil {
 		return false, err
@@ -156,8 +161,15 @@ func isDocumentCompliantToConstraints(doc DocumentDetails, constraints map[strin
 
 	isCompliant := true
 	for path, value := range constraints {
-		result := gjson.GetBytes(configBytes, path)
-		if result.Value() != value {
+		result := gjson.GetBytes(configBytes, path).String()
+		if result == "" {
+			result = string(SystemInstancePerspective)
+		}
+
+		fmt.Println("Result:")
+		fmt.Println(value)
+
+		if result != value {
 			isCompliant = false
 			break
 		}
@@ -258,6 +270,8 @@ func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *mo
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
+
+	fmt.Println(string(bodyBytes))
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {

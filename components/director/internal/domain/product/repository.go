@@ -65,7 +65,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.P
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	log.C(ctx).Debugf("Persisting Product entity with id %q", model.ID)
+	log.C(ctx).Infof("Persisting Product entity with id %q", model.ID)
 	return r.creator.Create(ctx, resource.Product, tenant, r.conv.ToEntity(model))
 }
 

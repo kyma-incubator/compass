@@ -13,20 +13,24 @@ import (
 )
 
 // SpecRepository missing godoc
+//
 //go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error)
 	ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
 	Update(ctx context.Context, tenant string, item *model.Spec) error
+	UpdateGlobal(ctx context.Context, item *model.Spec) error
 	Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType) (bool, error)
 }
 
 // FetchRequestRepository missing godoc
+//
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
@@ -36,12 +40,14 @@ type FetchRequestRepository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // FetchRequestService missing godoc
+//
 //go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestService interface {
 	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
@@ -74,6 +80,10 @@ func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecR
 	}
 
 	return s.repo.GetByID(ctx, tnt, id, objectType)
+}
+
+func (s *service) GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error) {
+	return s.repo.GetByIDGlobal(ctx, id)
 }
 
 // ListByReferenceObjectID missing godoc
@@ -233,6 +243,15 @@ func (s *service) UpdateSpecOnly(ctx context.Context, spec model.Spec) error {
 	}
 
 	if err = s.repo.Update(ctx, tnt, &spec); err != nil {
+		return errors.Wrapf(err, "while updating %s Specification with id %q", spec.ObjectType, spec.ID)
+	}
+
+	return nil
+}
+
+// UpdateSpecOnlyGlobal takes care of simply updating a single spec entity in db without looking and executing corresponding fetch requests that may be related to it
+func (s *service) UpdateSpecOnlyGlobal(ctx context.Context, spec model.Spec) error {
+	if err := s.repo.UpdateGlobal(ctx, &spec); err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", spec.ObjectType, spec.ID)
 	}
 

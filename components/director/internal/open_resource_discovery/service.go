@@ -3,7 +3,9 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/imdario/mergo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strconv"
 	"strings"
 	"sync"
@@ -114,7 +116,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService) *Service {
 	return &Service{
 		config:                config,
 		transact:              transact,
@@ -135,6 +137,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		ordClient:             client,
 		webhookConverter:      webhookConverter,
 		appTemplateVersionSvc: appTemplateVersionSvc,
+		appTemplateSvc:        appTemplateSvc,
 	}
 }
 
@@ -249,6 +252,10 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			if err := s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+				return err
+			}
+
 			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
 			if err != nil {
 				return errors.Wrapf(err, "retrieving of applications for application template with id %q failed", appTemplateID)
@@ -268,9 +275,9 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
 
-		//if err := s.processApplicationTemplateWebhook(ctx, cfg, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
-		//	return err
-		//}
+		if err := s.processApplicationTemplateWebhook(ctx, cfg, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
+			return err
+		}
 
 		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
 		if err != nil {
@@ -450,7 +457,7 @@ func (s *Service) processDocumentsForApplicationTemplate(ctx context.Context, re
 	packageDataFromDB := make(map[string]*model.Package, 0)
 	bundleDataFromDB := make(map[string]*model.Bundle, 0)
 	for _, document := range documents {
-		systemVersion, err := s.appTemplateVersionSvc.GetByAppTemplateIDAndVersion(ctx, resource.ID, document.DescribedSystemVersion.Version)
+		systemVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, resource.ID, document.DescribedSystemVersion.Version)
 		if err != nil {
 			return err
 		}
@@ -482,35 +489,47 @@ func (s *Service) processDocumentsForApplicationTemplate(ctx context.Context, re
 	}
 
 	for _, doc := range documents {
-		appTemplateVersion, err := s.appTemplateVersionSvc.GetByAppTemplateIDAndVersion(ctx, resource.ID, doc.DescribedSystemVersion.Version)
+		appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, resource.ID, doc.DescribedSystemVersion.Version)
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("processVendors")
 
 		vendorsFromDB, err := s.processVendors(ctx, resource.Type, appTemplateVersion.ID, doc.Vendors)
 		if err != nil {
 			return err
 		}
 
+		fmt.Println("processProducts")
+
 		productsFromDB, err := s.processProducts(ctx, resource.Type, appTemplateVersion.ID, doc.Products)
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("processPackages")
 
 		packagesFromDB, err := s.processPackages(ctx, resource.Type, appTemplateVersion.ID, doc.Packages, resourceHashes)
 		if err != nil {
 			return err
 		}
 
+		fmt.Println("processBundles")
+
 		bundlesFromDB, err := s.processBundles(ctx, resource.Type, appTemplateVersion.ID, doc.ConsumptionBundles, resourceHashes)
 		if err != nil {
 			return err
 		}
 
+		fmt.Println("processAPIs")
+
 		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resource.Type, appTemplateVersion.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("processEvents")
 
 		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resource.Type, appTemplateVersion.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
 		if err != nil {
@@ -609,26 +628,26 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, result := range results {
-		specReferenceType := model.APISpecReference
-		if result.fetchRequest.ObjectType == model.EventSpecFetchRequestReference {
-			specReferenceType = model.EventSpecReference
-		}
+		//specReferenceType := model.APISpecReference
+		//if result.fetchRequest.ObjectType == model.EventSpecFetchRequestReference {
+		//	specReferenceType = model.EventSpecReference
+		//}
 
 		if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
-			spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
+			spec, err := s.specSvc.GetByIDGlobal(ctx, result.fetchRequest.ObjectID)
 			if err != nil {
 				return err
 			}
 
 			spec.Data = result.data
 
-			if err = s.specSvc.UpdateSpecOnly(ctx, *spec); err != nil {
+			if err = s.specSvc.UpdateSpecOnlyGlobal(ctx, *spec); err != nil {
 				return err
 			}
 		}
 
 		result.fetchRequest.Status = result.status
-		if err = s.fetchReqSvc.Update(ctx, result.fetchRequest); err != nil {
+		if err = s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest); err != nil {
 			return err
 		}
 	}
@@ -700,8 +719,8 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 }
 
 func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplateID string, documents Documents) error {
-	appTemplateVersions, err := s.appTemplateVersionSvc.ListByAppTemplateID(ctx, appTemplateID)
-	if err != nil {
+	appTemplateVersions, err := s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, appTemplateID)
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		return err
 	}
 
@@ -716,6 +735,39 @@ func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplat
 	}
 
 	return nil
+}
+
+func (s *Service) listApplicationTemplateVersionByAppTemplateIDInTx(ctx context.Context, applicationTemplateID string) ([]*model.ApplicationTemplateVersion, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplateVersions, err := s.appTemplateVersionSvc.ListByAppTemplateID(ctx, applicationTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	return appTemplateVersions, tx.Commit()
+}
+
+func (s *Service) getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx context.Context, applicationTemplateID, version string) (*model.ApplicationTemplateVersion, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	systemVersion, err := s.appTemplateVersionSvc.GetByAppTemplateIDAndVersion(ctx, applicationTemplateID, version)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return systemVersion, tx.Commit()
 }
 
 func (s *Service) processVendors(ctx context.Context, resourceType directorresource.Type, resourceID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
@@ -748,7 +800,7 @@ func (s *Service) listVendorsInTx(ctx context.Context, resourceType directorreso
 	var vendorsFromDB []*model.Vendor
 	if resourceType == directorresource.Application {
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 
@@ -817,7 +869,7 @@ func (s *Service) listProductsInTx(ctx context.Context, resourceType directorres
 	var productsFromDB []*model.Product
 	if resourceType == directorresource.Application {
 		productsFromDB, err = s.productSvc.ListByApplicationID(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		productsFromDB, err = s.productSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -872,7 +924,7 @@ func (s *Service) listPackagesInTx(ctx context.Context, resourceType directorres
 	var packagesFromDB []*model.Package
 	if resourceType == directorresource.Application {
 		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -960,7 +1012,7 @@ func (s *Service) listBundlesInTx(ctx context.Context, resourceType directorreso
 	var bundlesFromDB []*model.Bundle
 	if resourceType == directorresource.Application {
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
 	}
 
@@ -1118,8 +1170,11 @@ func (s *Service) processAPIs(ctx context.Context, resourceType directorresource
 		return nil, nil, err
 	}
 
+	fmt.Printf("apisFromDB: %v, resourceType: %s, resourceID: %s \n", len(apisFromDB), resourceType, resourceID)
+
 	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, api := range apis {
+		fmt.Printf("ALEX processAPIs: %s for resource: %s\n\n", str.PtrStrToStr(api.OrdID), resourceType)
 		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
 		apiFetchRequests, err := s.resyncAPIInTx(ctx, resourceType, resourceID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash)
 		if err != nil {
@@ -1153,7 +1208,7 @@ func (s *Service) listAPIsInTx(ctx context.Context, resourceType directorresourc
 
 	if resourceType == directorresource.Application {
 		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 
@@ -1219,7 +1274,7 @@ func (s *Service) listEventsInTx(ctx context.Context, resourceType directorresou
 	var eventsFromDB []*model.EventDefinition
 	if resourceType == directorresource.Application {
 		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1274,7 +1329,7 @@ func (s *Service) listTombstonesInTx(ctx context.Context, resourceType directorr
 	var tombstonesFromDB []*model.Tombstone
 	if resourceType == directorresource.Application {
 		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, resourceID)
-	} else {
+	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1348,7 +1403,7 @@ func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID st
 	if i, found := searchInSlice(len(appTemplateVersionsFromDB), func(i int) bool {
 		return appTemplateVersionsFromDB[i].Version == appTemplateVersion.Version
 	}); found {
-		return s.appTemplateVersionSvc.Update(ctx, appTemplateID, appTemplateVersionsFromDB[i].ID, appTemplateVersion)
+		return s.appTemplateVersionSvc.Update(ctx, appTemplateVersionsFromDB[i].ID, appTemplateID, appTemplateVersion)
 	}
 	_, err := s.appTemplateVersionSvc.Create(ctx, appTemplateID, appTemplateVersion)
 	return err
@@ -1375,13 +1430,25 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 		specs = append(specs, resourceDef.ToSpec())
 	}
 
+	fmt.Printf("API TO BE CREATED - %v\n", isAPIFound)
+
 	if !isAPIFound {
 		apiID, err := s.apiSvc.Create(ctx, resourceType, resourceID, nil, packageID, api, nil, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
 		}
-		return s.createSpecs(ctx, model.APISpecReference, apiID, specs)
+
+		fr, err := s.createSpecs(ctx, model.APISpecReference, apiID, specs)
+		if err != nil {
+			fmt.Println("CREATE createSpecs")
+			fmt.Println(err)
+			return nil, err
+		}
+
+		return fr, nil
 	}
+
+	fmt.Println("API CREATED")
 
 	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
 	if err != nil {
@@ -1501,6 +1568,8 @@ func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenc
 		if spec == nil {
 			continue
 		}
+
+		fmt.Println("CREATE SPEC")
 		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, objectType, objectID)
 		if err != nil {
 			return nil, err
@@ -1647,7 +1716,7 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, bundlDataFromDB, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, constraints map[string]interface{}) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, constraints map[string]string) error {
 	var documents Documents
 	var baseURL string
 	var err error
@@ -1658,14 +1727,11 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		MetricName: strings.ReplaceAll(strings.ToLower(cfg.JobName), "-", "_") + "_job_sync_failure_number",
 		Timeout:    cfg.ClientTimeout,
 		Subsystem:  metrics.OrdAggregatorSubsystem,
-		Labels:     []string{metrics.ErrorMetricLabel, metrics.AppIDMetricLabel, metrics.CorrelationIDMetricLabel},
+		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
-	if resource.Type == directorresource.ApplicationTemplateVersion {
-		ctx = addFieldToLogger(ctx, "app_template_id", resource.ID)
-	} else {
-		ctx = addFieldToLogger(ctx, "app_id", resource.ID)
-	}
+	ctx = addFieldToLogger(ctx, "resource_id", resource.ID)
+	ctx = addFieldToLogger(ctx, "resource_type", string(webhook.ObjectType))
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
 		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, constraints)
@@ -1680,7 +1746,17 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		var validationErrors error
-		if err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors); err != nil {
+
+		var err error
+		if constraints != nil {
+			err = s.processDocumentsForApplicationTemplate(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
+		} else {
+			err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
+		}
+
+		fmt.Println("ALEX ERRORRRR")
+
+		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
@@ -1845,12 +1921,12 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 	}
 
 	resource := Resource{
-		Type: directorresource.ApplicationTemplate,
+		Type: directorresource.ApplicationTemplateVersion,
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-	constraints := map[string]interface{}{
-		"perspective": SystemVersionPerspective,
+	constraints := map[string]string{
+		"perspective": string(SystemVersionPerspective),
 	}
 	if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, constraints); err != nil {
 		return err

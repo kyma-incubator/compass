@@ -15,8 +15,9 @@ const (
 	OrdAggregatorSubsystem = "ordaggregator"
 	// ErrorMetricLabel is the error label used by metrics config for creating CounterVec for Prometheus
 	ErrorMetricLabel = "error"
-	// AppIDMetricLabel is an additional label used by ord aggregator for creating CounterVec for Prometheus
-	AppIDMetricLabel = "app_id"
+	// ResourceIDMetricLabel is an additional label used by ord aggregator for creating CounterVec for Prometheus
+	ResourceIDMetricLabel   = "resource_id"
+	ResourceTypeMetricLabel = "resource_type"
 	// CorrelationIDMetricLabel is an additional label used by ord aggregator for creating CounterVec for Prometheus
 	CorrelationIDMetricLabel = "x_request_id"
 )
