@@ -553,10 +553,6 @@ func unusedUIDService() *automock.UIDService {
 	return &automock.UIDService{}
 }
 
-func unusedNotificationService() *automock.NotificationService {
-	return &automock.NotificationService{}
-}
-
 func unusedRuntimeRepository() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
 }
@@ -571,10 +567,6 @@ func unusedWebhookDataInputBuilder() *databuilderautomock.DataInputBuilder {
 
 func unusedWebhookRepo() *automock.WebhookRepository {
 	return &automock.WebhookRepository{}
-}
-
-func unusedWebhookConverter() *automock.WebhookConverter {
-	return &automock.WebhookConverter{}
 }
 
 func unusedFormationRepo() *automock.FormationRepository {

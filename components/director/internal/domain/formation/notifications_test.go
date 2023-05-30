@@ -2,9 +2,10 @@ package formation_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
