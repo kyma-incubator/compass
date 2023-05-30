@@ -5,11 +5,12 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 
 	authenticator_director "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
@@ -97,50 +98,33 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			bearerToken, err := a.getBearerToken(r)
+			tokenClaims, statusCode, err := a.processToken(ctx, r)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
-				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
-				return
-			}
-
-			tokenClaims, err := a.parseClaimsWithRetry(ctx, bearerToken)
-			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
-				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
-				return
-			}
-
-			if mdc := log.MdcFromContext(ctx); nil != mdc {
-				mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
-				mdc.Set(logKeyFlow, tokenClaims.Flow)
-				mdc.SetIfNotEmpty(logKeyTokenClientID, tokenClaims.TokenClientID)
-			}
-
-			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
-				switch apperrors.ErrorCode(err) {
-				case apperrors.TenantNotFound:
-					apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
-				default:
-					apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
-				}
-				return
+				apperrors.WriteAppError(ctx, w, err, statusCode)
 			}
 
 			ctx = tokenClaims.ContextWithClaims(ctx)
 
-			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
-				log.C(ctx).Infof("Found %s header in request with value: REDACTED_%x", a.clientIDHeaderKey, sha256.Sum256([]byte(clientUser)))
-				ctx = client.SaveToContext(ctx, clientUser)
+			ctx = a.storeHeadersDataInContext(ctx, r)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// KymaAdapterHandler performs authorization checks on requests to the Kyma adapter
+func (a *Authenticator) KymaAdapterHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			tokenClaims, statusCode, err := a.processToken(ctx, r)
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, statusCode)
 			}
 
-			if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
-				log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
-				groups := strings.Split(strings.ToUpper(scenarioGroupsValue), ",")
+			ctx = tokenClaims.ContextWithClaimsAndProviderTenant(ctx)
 
-				ctx = scenariogroups.SaveToContext(ctx, groups)
-			}
+			ctx = a.storeHeadersDataInContext(ctx, r)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -292,6 +276,54 @@ func (a *Authenticator) getKeyID(token jwt.Token) (string, error) {
 	}
 
 	return keyIDStr, nil
+}
+
+func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*token_claims.Claims, int, error) {
+	bearerToken, err := a.getBearerToken(r)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
+		return nil, http.StatusBadRequest, err
+	}
+
+	tokenClaims, err := a.parseClaimsWithRetry(ctx, bearerToken)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
+		return nil, http.StatusUnauthorized, err
+	}
+
+	if mdc := log.MdcFromContext(ctx); nil != mdc {
+		mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
+		mdc.Set(logKeyFlow, tokenClaims.Flow)
+		mdc.SetIfNotEmpty(logKeyTokenClientID, tokenClaims.TokenClientID)
+	}
+
+	if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
+		switch apperrors.ErrorCode(err) {
+		case apperrors.TenantNotFound:
+			return nil, http.StatusBadRequest, err
+		default:
+			return nil, http.StatusUnauthorized, err
+		}
+	}
+
+	return tokenClaims, 0, nil
+}
+
+func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.Request) context.Context {
+	if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
+		log.C(ctx).Infof("Found %s header in request with value: REDACTED_%x", a.clientIDHeaderKey, sha256.Sum256([]byte(clientUser)))
+		ctx = client.SaveToContext(ctx, clientUser)
+	}
+
+	if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
+		log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
+		groups := strings.Split(strings.ToUpper(scenarioGroupsValue), ",")
+
+		ctx = scenariogroups.SaveToContext(ctx, groups)
+	}
+
+	return ctx
 }
 
 func LoadTenantFromContext(ctx context.Context) (string, error) {

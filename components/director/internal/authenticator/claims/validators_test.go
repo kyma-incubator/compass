@@ -3,8 +3,9 @@ package claims_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims/automock"

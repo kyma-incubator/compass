@@ -3,8 +3,9 @@ package claims
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"

@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

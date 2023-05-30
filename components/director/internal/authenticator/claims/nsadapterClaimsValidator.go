@@ -2,6 +2,7 @@ package claims
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
