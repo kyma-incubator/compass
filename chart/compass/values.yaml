@@ -149,6 +149,10 @@ global:
       dir: dev/incubator/
       version: "PR-3070"
       name: compass-ias-adapter
+    kyma_adapter:
+      dir: dev/incubator/
+      version: "PR-3070"
+      name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
       version: "PR-3070"
@@ -517,6 +521,11 @@ global:
       requestTimeout: 30s
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+  kymaAdapter:
+    port: 8080
+    apiRootPath: "/kyma-adapter"
+    tenantInfo:
+      requestTimeout: 30s
   operations_controller:
     enabled: true
   connectivity_adapter:
