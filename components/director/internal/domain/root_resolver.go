@@ -3,11 +3,12 @@ package domain
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
-	"net/http"
-	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
 

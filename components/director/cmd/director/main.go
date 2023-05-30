@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -175,7 +176,7 @@ type config struct {
 
 	RetryConfig retry.Config
 
-	DestinationCreatorConfig *destinationcreator.Config // todo::: add env vars in the director deployment
+	DestinationCreatorConfig *destinationcreator.Config
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 

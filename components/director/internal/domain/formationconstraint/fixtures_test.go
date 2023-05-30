@@ -10,16 +10,16 @@ import (
 )
 
 const (
-	testID                   = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	formationTemplateID      = "id"
-	formationConstraintName  = "test constraint"
-	operatorName             = operators.IsNotAssignedToAnyFormationOfTypeOperator
-	resourceSubtype          = "test subtype"
-	resourceSubtypeANY       = "ANY"
-	inputTemplate            = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
-	inputTemplateUpdated     = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}", "newField": "value"}`
-	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	testName                 = "test"
+	testID                  = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	formationTemplateID     = "id"
+	formationConstraintName = "test constraint"
+	operatorName            = operators.IsNotAssignedToAnyFormationOfTypeOperator
+	resourceSubtype         = "test subtype"
+	resourceSubtypeANY      = "ANY"
+	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
+	inputTemplateUpdated    = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}", "newField": "value"}`
+	testTenantID            = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testName                = "test"
 )
 
 var (

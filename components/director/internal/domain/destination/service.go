@@ -5,6 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
@@ -15,10 +20,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 const (

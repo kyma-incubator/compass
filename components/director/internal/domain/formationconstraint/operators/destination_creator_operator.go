@@ -3,12 +3,13 @@ package operators
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 const (
@@ -34,38 +35,38 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return false, errors.Errorf("The formation operation is invalid: %q. It should be either %q or %q", di.Operation, model.AssignFormation, model.UnassignFormation)
 	}
 
-	log.C(ctx).Infof("Enforcing constraint on resource of type: %q, subtype: %q and ID: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.ResourceID, di.Operation)
+	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Operation)
 
 	if di.Operation == model.UnassignFormation {
-		if err := e.destinationSvc.DeleteDestinations(ctx, di.Assignment); err != nil {
+		if err := e.destinationSvc.DeleteDestinations(ctx, di.FormationAssignment); err != nil {
 			return false, err
 		}
 		return true, nil
 	}
 
-	if di.Assignment.Value != "" && di.JoinPointLocation == formationconstraint.PostNotificationStatusReturned {
+	if di.FormationAssignment.Value != "" && di.Location == formationconstraint.PostNotificationStatusReturned {
 		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", model.NotificationStatusReturned, model.PostOperation)
 
 		var confDetailsResp ConfigurationResponse
-		if err := json.Unmarshal([]byte(di.Assignment.Value), &confDetailsResp); err != nil {
-			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.Assignment.ID)
+		if err := json.Unmarshal([]byte(di.FormationAssignment.Value), &confDetailsResp); err != nil {
+			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
 		}
 
 		// todo:: will be implemented with the second phase of the destination operator
 		//log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(confDetailsResp.Configuration.Destinations))
 		//for _, destDetails := range confDetailsResp.Configuration.Destinations {
-		//	statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, di.Assignment)
+		//	statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, di.FormationAssignment)
 		//	if err != nil {
 		//		return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
 		//	}
 		//
 		//	if statusCode == http.StatusConflict {
 		//		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-		//		if err := e.destinationSvc.DeleteDestinations(ctx, destDetails, di.Assignment); err != nil {
+		//		if err := e.destinationSvc.DeleteDestinations(ctx, di.FormationAssignment); err != nil {
 		//			return false, errors.Wrapf(err, "while deleting destination with name: %q", destDetails.Name)
 		//		}
 		//
-		//		if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, di.Assignment); err != nil {
+		//		if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, di.FormationAssignment); err != nil {
 		//			return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
 		//		}
 		//	}
@@ -82,16 +83,16 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	if di.Assignment.Value != "" && di.ReverseAssignment.Value != "" && di.JoinPointLocation == formationconstraint.PreSendNotification {
+	if di.FormationAssignment.Value != "" && di.ReverseFormationAssignment.Value != "" && di.Location == formationconstraint.PreSendNotification {
 		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", model.SendNotificationOperation, model.PreOperation)
 		var confDetailsResp ConfigurationResponse
-		if err := json.Unmarshal([]byte(di.Assignment.Value), &confDetailsResp); err != nil {
-			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.Assignment.ID)
+		if err := json.Unmarshal([]byte(di.FormationAssignment.Value), &confDetailsResp); err != nil {
+			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
 		}
 
 		var confCredentialsResp ConfigurationResponse
-		if err := json.Unmarshal([]byte(di.ReverseAssignment.Value), &confCredentialsResp); err != nil {
-			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseAssignment.ID)
+		if err := json.Unmarshal([]byte(di.ReverseFormationAssignment.Value), &confCredentialsResp); err != nil {
+			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
 		}
 
 		if confDetailsResp.Configuration.Credentials.InboundCommunicationDetails == nil {
@@ -107,18 +108,18 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		if basicAuthDetails != nil && basicAuthCreds != nil {
 			log.C(ctx).Infof("There is/are %d inbound basic destination(s) available in the configuration", len(basicAuthDetails.Destinations))
 			for _, destDetails := range basicAuthDetails.Destinations {
-				statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.Assignment)
+				statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.FormationAssignment)
 				if err != nil {
 					return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
 				}
 
 				if statusCode == http.StatusConflict {
 					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, di.Assignment); err != nil {
+					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, di.FormationAssignment); err != nil {
 						return false, errors.Wrapf(err, "while deleting destination with name: %q", destDetails.Name)
 					}
 
-					if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.Assignment); err != nil {
+					if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.FormationAssignment); err != nil {
 						return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
 					}
 				}
@@ -137,7 +138,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		if err != nil {
 			return false, errors.Wrapf(err, "while preparing configuration response")
 		}
-		di.Assignment.Value = newConfig
+		di.FormationAssignment.Value = newConfig
 
 		return true, nil
 	}

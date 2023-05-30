@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"

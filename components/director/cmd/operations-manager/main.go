@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"

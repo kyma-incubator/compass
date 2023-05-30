@@ -1,6 +1,8 @@
 package operators_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -8,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *testing.T) {

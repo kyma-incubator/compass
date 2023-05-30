@@ -38,15 +38,12 @@ type DoNotGenerateFormationAssignmentNotificationInput struct {
 }
 
 // DestinationCreatorInput input for DestinationCreator operator
-type DestinationCreatorInput struct { // todo::: double check the details properties have all of the needed fields from DestinationCreatorInput
-	Operation                model.FormationOperation     `json:"operation"`
-	Name                     string                       `json:"name"`
-	ResourceType             model.ResourceType           `json:"resource_type"`
-	ResourceSubtype          string                       `json:"resource_subtype"`
-	ResourceID               string                       `json:"resource_id"`
-	Tenant                   string                       `json:"tenant"`
-	Assignment               *webhook.FormationAssignment `json:"assignment"`
-	ReverseAssignment        *webhook.FormationAssignment `json:"reverseAssignment"`
-	JoinPointLocation        JoinPointLocation            `json:"joinPointLocation"`
-	ShouldRewriteCredentials bool                         `json:"shouldRewriteCredentials"`
+type DestinationCreatorInput struct {
+	Operation                  model.FormationOperation     `json:"operation"`
+	ResourceType               model.ResourceType           `json:"resource_type"`
+	ResourceSubtype            string                       `json:"resource_subtype"`
+	FormationAssignment        *webhook.FormationAssignment `json:"assignment"`
+	ReverseFormationAssignment *webhook.FormationAssignment `json:"reverseAssignment"`
+	Location                   JoinPointLocation            `json:"joinPointLocation"`
+	ShouldRewriteCredentials   bool                         `json:"shouldRewriteCredentials"`
 }

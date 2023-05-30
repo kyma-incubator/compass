@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 )
 

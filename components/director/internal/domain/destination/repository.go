@@ -2,6 +2,7 @@ package destination
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -10,10 +11,10 @@ import (
 )
 
 const (
-	destinationTable          = "public.destinations"
-	revisionColumn            = "revision"
-	tenantIDColumn            = "tenant_id"
-	nameColumn                = "name"
+	destinationTable            = "public.destinations"
+	revisionColumn              = "revision"
+	tenantIDColumn              = "tenant_id"
+	nameColumn                  = "name"
 	formationAssignmentIDColumn = "formation_assignment_id"
 )
 
@@ -83,7 +84,7 @@ func (r *repository) CreateDestination(ctx context.Context, destination *model.D
 }
 
 func (r *repository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error) {
-	log.C(ctx).Infof("Listing destinations by tenant ID: %q and assignment ID: %q from the DB", tenantID,  formationAssignmentID)
+	log.C(ctx).Infof("Listing destinations by tenant ID: %q and assignment ID: %q from the DB", tenantID, formationAssignmentID)
 	var destCollection EntityCollection
 	conditions := repo.Conditions{repo.NewEqualCondition(formationAssignmentIDColumn, formationAssignmentID)}
 	if err := r.lister.List(ctx, resource.Destination, tenantID, &destCollection, conditions...); err != nil {

@@ -2,6 +2,7 @@ package operators_test
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -27,7 +28,7 @@ const (
 
 // todo::: refactor the names, exported/unexported vars, etc..
 var (
-	ctx = context.TODO()
+	ctx     = context.TODO()
 	testErr = errors.New("test error")
 
 	inputTenantResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{

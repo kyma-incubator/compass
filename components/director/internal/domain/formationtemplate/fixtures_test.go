@@ -2,6 +2,7 @@ package formationtemplate_test
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
