@@ -460,6 +460,7 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 	newAppCreateInput := &graphql.ApplicationRegisterInput{
 		Name:           "new-app-create-input",
 		Description:    ptr.String("{{name}} {{display-name}}"),
+		Labels:         map[string]interface{}{"displayName": "{{display-name}}"},
 		HealthCheckURL: ptr.String("http://url.valid"),
 	}
 
@@ -472,7 +473,6 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 
-	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
 	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, Labels: map[string]interface{}{"label1": "test"}, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
