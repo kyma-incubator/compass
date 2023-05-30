@@ -14,7 +14,7 @@ import (
 const packageTable string = `public.packages`
 
 var (
-	packageColumns = []string{"id", "app_id", "ord_id", "vendor", "title", "short_description",
+	packageColumns = []string{"id", "app_id", "app_template_version_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
 		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 	updatableColumns = []string{"vendor", "title", "short_description", "description", "version", "package_links", "links",
@@ -33,6 +33,7 @@ type pgRepository struct {
 	conv         EntityConverter
 	existQuerier repo.ExistQuerier
 	lister       repo.Lister
+	listerGlobal repo.ListerGlobal
 	singleGetter repo.SingleGetter
 	deleter      repo.Deleter
 	creator      repo.Creator
@@ -45,6 +46,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		conv:         conv,
 		existQuerier: repo.NewExistQuerier(packageTable),
 		lister:       repo.NewLister(packageTable, packageColumns),
+		listerGlobal: repo.NewListerGlobal(resource.Package, packageTable, packageColumns),
 		singleGetter: repo.NewSingleGetter(packageTable, packageColumns),
 		deleter:      repo.NewDeleter(packageTable),
 		creator:      repo.NewCreator(packageTable, packageColumns),
@@ -100,17 +102,21 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 
 // ListByResourceID missing godoc
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Package, error) {
+	pkgCollection := pkgCollection{}
+
 	var condition repo.Condition
+	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &pkgCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &pkgCollection, condition)
 	}
-
-	pkgCollection := pkgCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, condition); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	pkgs := make([]*model.Package, 0, pkgCollection.Len())
 	for _, pkg := range pkgCollection {
 		pkgModel, err := r.conv.FromEntity(&pkg)

@@ -14,7 +14,7 @@ import (
 const productTable string = `public.products`
 
 var (
-	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
+	productColumns   = []string{"ord_id", "app_id", "app_template_version_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
 	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids", "tags", "documentation_labels"}
 )
 
@@ -148,17 +148,21 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Pro
 
 // ListByApplicationID gets all products for a given application id
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Product, error) {
+	productCollection := productCollection{}
+
 	var condition repo.Condition
+	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &productCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &productCollection, condition)
 	}
-
-	productCollection := productCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, condition); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	products := make([]*model.Product, 0, productCollection.Len())
 	for _, product := range productCollection {
 		productModel, err := r.conv.FromEntity(&product)

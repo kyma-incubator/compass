@@ -357,8 +357,12 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, err := s.fetchResources(ctx, resource.ID)
+func (s *Service) processDocuments(ctx context.Context, resource model.Application, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+	if _, err := s.processDescribedSystemVersions(ctx, resource.ApplicationTemplateID, documents); err != nil {
+		return err
+	}
+
+	resourcesFromDB, err := s.fetchResources(ctx, resource.ID)
 	if err != nil {
 		return err
 	}
@@ -368,11 +372,23 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
+	canHaveCrossDocDuplications := true
+	docType := documents[0].Perspective
+	for _, doc := range documents {
+		if doc.Perspective != docType {
+			canHaveCrossDocDuplications = false
+			break
+		}
+	}
+
+	fmt.Println("canHaveCrossDocDuplications", canHaveCrossDocDuplications)
+
+	validationResult := documents.Validate(baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
 	}
+	fmt.Println("ALEX 1")
 
 	if err := documents.Sanitize(baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
@@ -394,6 +410,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 		eventsInput = append(eventsInput, doc.EventResources...)
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
+	fmt.Println("ALEX 2")
 
 	ordLocalID := s.getUniqueLocalTenantID(documents)
 	if ordLocalID != "" && resource.LocalTenantID == nil {
@@ -401,53 +418,98 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 			return err
 		}
 	}
+	fmt.Println("ALEX 3")
 
-	vendorsFromDB, err := s.processVendors(ctx, resource.Type, resource.ID, vendorsInput)
-	if err != nil {
-		return err
+	for _, doc := range documents {
+		fmt.Println("ALEX 4")
+
+		r := Resource{
+			ID:   resource.ID,
+			Type: directorresource.Application,
+		}
+		fmt.Println("ALEX 5")
+
+		if resource.ApplicationTemplateID != nil && doc.DescribedSystemVersion != nil {
+			fmt.Println("ALEX 5.1")
+
+			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, *resource.ApplicationTemplateID, doc.DescribedSystemVersion.Version)
+			if err != nil {
+				return err
+			}
+			fmt.Println("ALEX 5.2")
+
+			r = Resource{
+				ID:   appTemplateVersion.ID,
+				Type: directorresource.ApplicationTemplateVersion,
+			}
+
+			fmt.Println("ALEX 5.3")
+
+		}
+
+		fmt.Println("processVendors")
+
+		vendorsFromDB, err := s.processVendors(ctx, r.Type, r.ID, doc.Vendors)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("processProducts")
+
+		productsFromDB, err := s.processProducts(ctx, r.Type, r.ID, doc.Products)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("processPackages")
+
+		packagesFromDB, err := s.processPackages(ctx, r.Type, r.ID, doc.Packages, resourceHashes)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("processBundles")
+
+		bundlesFromDB, err := s.processBundles(ctx, r.Type, r.ID, doc.ConsumptionBundles, resourceHashes)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("processAPIs")
+
+		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, r.Type, r.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("processEvents")
+
+		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, r.Type, r.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
+		if err != nil {
+			return err
+		}
+
+		tombstonesFromDB, err := s.processTombstones(ctx, r.Type, r.ID, doc.Tombstones)
+		if err != nil {
+			return err
+		}
+
+		fetchRequests := append(apiFetchRequests, eventFetchRequests...)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
+		if err != nil {
+			return err
+		}
+
+		if err := s.processSpecs(ctx, fetchRequests); err != nil {
+			return err
+		}
 	}
 
-	productsFromDB, err := s.processProducts(ctx, resource.Type, resource.ID, productsInput)
-	if err != nil {
-		return err
-	}
-
-	packagesFromDB, err := s.processPackages(ctx, resource.Type, resource.ID, packagesInput, resourceHashes)
-	if err != nil {
-		return err
-	}
-
-	bundlesFromDB, err := s.processBundles(ctx, resource.Type, resource.ID, bundlesInput, resourceHashes)
-	if err != nil {
-		return err
-	}
-
-	apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resource.Type, resource.ID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
-	if err != nil {
-		return err
-	}
-
-	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resource.Type, resource.ID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
-	if err != nil {
-		return err
-	}
-
-	tombstonesFromDB, err := s.processTombstones(ctx, resource.Type, resource.ID, tombstonesInput)
-	if err != nil {
-		return err
-	}
-
-	fetchRequests := append(apiFetchRequests, eventFetchRequests...)
-	fetchRequests, err = s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
-	if err != nil {
-		return err
-	}
-
-	return s.processSpecs(ctx, fetchRequests)
+	return nil
 }
 
 func (s *Service) processDocumentsForApplicationTemplate(ctx context.Context, resource Resource, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	err := s.processDescribedSystemVersions(ctx, resource.ID, documents)
+	_, err := s.processDescribedSystemVersions(ctx, &resource.ID, documents)
 	if err != nil {
 		return err
 	}
@@ -462,15 +524,15 @@ func (s *Service) processDocumentsForApplicationTemplate(ctx context.Context, re
 			return err
 		}
 
-		apiData, eventData, packageData, bundleData, err := s.fetchResources(ctx, systemVersion.ID)
+		resourcesFromDB, err := s.fetchResources(ctx, systemVersion.ID)
 		if err != nil {
 			return err
 		}
 
-		mergo.Merge(apiDataFromDB, apiData)
-		mergo.Merge(eventDataFromDB, eventData)
-		mergo.Merge(packageDataFromDB, packageData)
-		mergo.Merge(bundleDataFromDB, bundleData)
+		mergo.Merge(apiDataFromDB, resourcesFromDB.APIs)
+		mergo.Merge(eventDataFromDB, resourcesFromDB.Events)
+		mergo.Merge(packageDataFromDB, resourcesFromDB.Packages)
+		mergo.Merge(bundleDataFromDB, resourcesFromDB.Bundles)
 	}
 
 	resourceHashes, err := hashResources(documents)
@@ -478,7 +540,13 @@ func (s *Service) processDocumentsForApplicationTemplate(ctx context.Context, re
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
+	resourcesFromDB := ResourcesFromDB{
+		APIs:     apiDataFromDB,
+		Events:   eventDataFromDB,
+		Packages: packageDataFromDB,
+		Bundles:  bundleDataFromDB,
+	}
+	validationResult := documents.Validate(baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
@@ -718,10 +786,14 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 	return excludeUnnecessaryFetchRequests(fetchRequests, frIdxToExclude), tx.Commit()
 }
 
-func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplateID string, documents Documents) error {
-	appTemplateVersions, err := s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, appTemplateID)
+func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplateID *string, documents Documents) ([]*model.ApplicationTemplateVersion, error) {
+	if appTemplateID == nil {
+		return nil, nil
+	}
+
+	appTemplateVersions, err := s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, *appTemplateID)
 	if err != nil && !apperrors.IsNotFoundError(err) {
-		return err
+		return nil, err
 	}
 
 	for _, document := range documents {
@@ -729,12 +801,12 @@ func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplat
 			continue
 		}
 
-		if err := s.resyncApplicationTemplateVersionInTx(ctx, appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
-			return err
+		if err := s.resyncApplicationTemplateVersionInTx(ctx, *appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
+			return nil, err
 		}
 	}
 
-	return nil
+	return s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, *appTemplateID)
 }
 
 func (s *Service) listApplicationTemplateVersionByAppTemplateIDInTx(ctx context.Context, applicationTemplateID string) ([]*model.ApplicationTemplateVersion, error) {
@@ -1684,10 +1756,10 @@ func (s *Service) fetchBundlesFromDB(ctx context.Context, appID string) (map[str
 	return bundleDataFromDB, nil
 }
 
-func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string]*model.EventDefinition, map[string]*model.Package, map[string]*model.Bundle, error) {
+func (s *Service) fetchResources(ctx context.Context, appID string) (ResourcesFromDB, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return ResourcesFromDB{}, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
@@ -1695,28 +1767,33 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 
 	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
+		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
 	}
 
 	eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching events for app with id %s", appID)
+		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching events for app with id %s", appID)
 	}
 
 	packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
+		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
 	}
 
 	bundlDataFromDB, err := s.fetchBundlesFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching bundles for app with id %s", appID)
+		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for app with id %s", appID)
 	}
 
-	return apiDataFromDB, eventDataFromDB, packageDataFromDB, bundlDataFromDB, tx.Commit()
+	return ResourcesFromDB{
+		APIs:     apiDataFromDB,
+		Events:   eventDataFromDB,
+		Packages: packageDataFromDB,
+		Bundles:  bundlDataFromDB,
+	}, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, constraints map[string]string) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app model.Application, globalResourcesOrdIDs map[string]bool, constraints map[string]string) error {
 	var documents Documents
 	var baseURL string
 	var err error
@@ -1730,11 +1807,11 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
-	ctx = addFieldToLogger(ctx, "resource_id", resource.ID)
+	ctx = addFieldToLogger(ctx, "resource_id", app.ID)
 	ctx = addFieldToLogger(ctx, "resource_type", string(webhook.ObjectType))
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
-		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, constraints)
+		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook, constraints)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1747,12 +1824,14 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		log.C(ctx).Info("Processing ORD documents")
 		var validationErrors error
 
-		var err error
-		if constraints != nil {
-			err = s.processDocumentsForApplicationTemplate(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
-		} else {
-			err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
-		}
+		//var err error
+		//if constraints != nil {
+		//	err = s.processDocumentsForApplicationTemplate(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
+		//} else {
+		//	err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
+		//}
+
+		err = s.processDocuments(ctx, app, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
 
 		fmt.Println("ALEX ERRORRRR")
 
@@ -1889,13 +1968,13 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		return err
 	}
 
-	resource := Resource{
-		Type:          directorresource.Application,
-		ID:            app.ID,
-		Name:          app.Name,
-		LocalTenantID: app.LocalTenantID,
-	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, nil); err != nil {
+	//resource := Resource{
+	//	Type:          directorresource.Application,
+	//	ID:            app.ID,
+	//	Name:          app.Name,
+	//	LocalTenantID: app.LocalTenantID,
+	//}
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, *app, globalResourcesOrdIDs, nil); err != nil {
 		return err
 	}
 
@@ -1911,26 +1990,26 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appTemplate, err := s.appTemplateSvc.Get(ctx, appTemplateID)
-	if err != nil {
-		return errors.Wrapf(err, "error while retrieving app template with id %q", appTemplateID)
-	}
+	//appTemplate, err := s.appTemplateSvc.Get(ctx, appTemplateID)
+	//if err != nil {
+	//	return errors.Wrapf(err, "error while retrieving app template with id %q", appTemplateID)
+	//}
+	//
+	//if err = tx.Commit(); err != nil {
+	//	return err
+	//}
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	resource := Resource{
-		Type: directorresource.ApplicationTemplateVersion,
-		ID:   appTemplate.ID,
-		Name: appTemplate.Name,
-	}
-	constraints := map[string]string{
-		"perspective": string(SystemVersionPerspective),
-	}
-	if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, constraints); err != nil {
-		return err
-	}
+	//resource := Resource{
+	//	Type: directorresource.ApplicationTemplateVersion,
+	//	ID:   appTemplate.ID,
+	//	Name: appTemplate.Name,
+	//}
+	//constraints := map[string]string{
+	//	"perspective": string(SystemVersionPerspective),
+	//}
+	//if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, constraints); err != nil {
+	//	return err
+	//}
 
 	return nil
 }

@@ -2,6 +2,7 @@ package ord
 
 import (
 	"encoding/json"
+	"github.com/imdario/mergo"
 	"net/url"
 	"path"
 	"regexp"
@@ -63,6 +64,8 @@ type Document struct {
 
 	DescribedSystemVersion *model.ApplicationTemplateVersionInput `json:"describedSystemVersion"`
 
+	Perspective DocumentPerspective `json:"-"`
+
 	Packages           []*model.PackageInput         `json:"packages"`
 	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
 	Products           []*model.ProductInput         `json:"products"`
@@ -103,13 +106,31 @@ func (c WellKnownConfig) Validate(baseURL string) error {
 // Documents is a slice of Document objects
 type Documents []*Document
 
+type ResourcesFromDB struct {
+	APIs     map[string]*model.APIDefinition
+	Events   map[string]*model.EventDefinition
+	Packages map[string]*model.Package
+	Bundles  map[string]*model.Bundle
+}
+
+type ResourceIDs struct {
+	PackageIDs          map[string]bool
+	PackagePolicyLevels map[string]string
+	BundleIDs           map[string]bool
+	ProductIDs          map[string]bool
+	ApiIDs              map[string]bool
+	EventIDs            map[string]bool
+	VendorIDs           map[string]bool
+}
+
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
+func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB ResourcesFromDB, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	var (
 		errs                *multierror.Error
 		baseURL             = calculatedBaseURL
 		isBaseURLConfigured = len(calculatedBaseURL) > 0
 	)
+
 	for _, doc := range docs {
 		if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
 			errs = multierror.Append(errs, errors.New("no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"))
@@ -140,58 +161,269 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		//}
 	}
 
-	packageIDs := make(map[string]bool)
-	packagePolicyLevels := make(map[string]string)
-	bundleIDs := make(map[string]bool)
-	productIDs := make(map[string]bool)
-	apiIDs := make(map[string]bool)
-	eventIDs := make(map[string]bool)
-	vendorIDs := make(map[string]bool)
+	resourceIDs := ResourceIDs{
+		PackageIDs:          make(map[string]bool),
+		PackagePolicyLevels: make(map[string]string),
+		BundleIDs:           make(map[string]bool),
+		ProductIDs:          make(map[string]bool),
+		ApiIDs:              make(map[string]bool),
+		EventIDs:            make(map[string]bool),
+		VendorIDs:           make(map[string]bool),
+	}
 
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if _, ok := packageIDs[pkg.OrdID]; ok {
+			if _, ok := resourceIDs.PackageIDs[pkg.OrdID]; ok {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate package with ord id %q", pkg.OrdID))
 				continue
 			}
-			packageIDs[pkg.OrdID] = true
-			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
+			resourceIDs.PackageIDs[pkg.OrdID] = true
+			resourceIDs.PackagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
 		}
 	}
 
 	invalidApisIndices := make([]int, 0)
 	invalidEventsIndices := make([]int, 0)
 
+	r1, e1 := docs.validateAndCheckForDuplications(SystemVersionPerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
+	r2, e2 := docs.validateAndCheckForDuplications(SystemInstancePerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
+	r3, e3 := docs.validateAndCheckForDuplications("", false, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
+	errs = multierror.Append(errs, e1)
+	errs = multierror.Append(errs, e2)
+	errs = multierror.Append(errs, e3)
+
+	err := mergo.Merge(&resourceIDs, r1)
+	err = mergo.Merge(&resourceIDs, r2)
+	err = mergo.Merge(&resourceIDs, r3)
+	if err != nil {
+		return err
+	}
+	// Execute Validation functions on entities and check for duplicate IDs
+	//for _, doc := range docs {
+	//	if doc.Perspective == SystemInstancePerspective {
+	//		continue
+	//	}
+	//	invalidPackagesIndices := make([]int, 0)
+	//	invalidBundlesIndices := make([]int, 0)
+	//	invalidProductsIndices := make([]int, 0)
+	//	invalidVendorsIndices := make([]int, 0)
+	//	invalidTombstonesIndices := make([]int, 0)
+	//
+	//	if err := validateDocumentInput(doc); err != nil {
+	//		errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
+	//	}
+	//
+	//	for i, pkg := range doc.Packages {
+	//		if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
+	//			invalidPackagesIndices = append(invalidPackagesIndices, i)
+	//			packageIDs[pkg.OrdID] = false
+	//		}
+	//	}
+	//
+	//	for i, bndl := range doc.ConsumptionBundles {
+	//		if err := validateBundleInput(bndl, bundlesFromDB, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
+	//			invalidBundlesIndices = append(invalidBundlesIndices, i)
+	//			continue
+	//		}
+	//		if bndl.OrdID != nil {
+	//			if _, ok := bundleIDs[*bndl.OrdID]; ok {
+	//				errs = multierror.Append(errs, errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID))
+	//			}
+	//			bundleIDs[*bndl.OrdID] = true
+	//		}
+	//	}
+	//
+	//	for i, product := range doc.Products {
+	//		if err := validateProductInput(product); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
+	//			invalidProductsIndices = append(invalidProductsIndices, i)
+	//			continue
+	//		}
+	//		if _, ok := productIDs[product.OrdID]; ok {
+	//			errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
+	//		}
+	//		productIDs[product.OrdID] = true
+	//	}
+	//
+	//	for i, api := range doc.APIResources {
+	//		if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
+	//			invalidApisIndices = append(invalidApisIndices, i)
+	//			continue
+	//		}
+	//		if api.OrdID != nil {
+	//			if _, ok := apiIDs[*api.OrdID]; ok {
+	//				errs = multierror.Append(errs, errors.Errorf("found duplicate api with ord id %q", *api.OrdID))
+	//			}
+	//			apiIDs[*api.OrdID] = true
+	//		}
+	//	}
+	//
+	//	for i, event := range doc.EventResources {
+	//		if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
+	//			invalidEventsIndices = append(invalidEventsIndices, i)
+	//			continue
+	//		}
+	//
+	//		if event.OrdID != nil {
+	//			if _, ok := eventIDs[*event.OrdID]; ok {
+	//				errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
+	//			}
+	//
+	//			eventIDs[*event.OrdID] = true
+	//		}
+	//	}
+	//
+	//	for i, vendor := range doc.Vendors {
+	//		if err := validateVendorInput(vendor); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
+	//			invalidVendorsIndices = append(invalidVendorsIndices, i)
+	//			continue
+	//		}
+	//		if _, ok := vendorIDs[vendor.OrdID]; ok {
+	//			errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
+	//		}
+	//		vendorIDs[vendor.OrdID] = true
+	//	}
+	//
+	//	for i, tombstone := range doc.Tombstones {
+	//		if err := validateTombstoneInput(tombstone); err != nil {
+	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
+	//			invalidTombstonesIndices = append(invalidTombstonesIndices, i)
+	//		}
+	//	}
+	//
+	//	doc.Packages = deleteInvalidInputObjects(invalidPackagesIndices, doc.Packages)
+	//	doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundlesIndices, doc.ConsumptionBundles)
+	//	doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
+	//	doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
+	//	doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+	//	doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
+	//	doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
+	//
+	//	invalidApisIndices = nil
+	//	invalidEventsIndices = nil
+	//}
+
+	// Validate entity relations
 	for _, doc := range docs {
+		for _, pkg := range doc.Packages {
+			if pkg.Vendor != nil && !resourceIDs.VendorIDs[*pkg.Vendor] && !globalResourcesOrdIDs[*pkg.Vendor] {
+				errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor))
+			}
+			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
+			for _, productID := range ordIDs {
+				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
+					errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String()))
+				}
+			}
+		}
+		for _, product := range doc.Products {
+			if !resourceIDs.VendorIDs[product.Vendor] && !globalResourcesOrdIDs[product.Vendor] {
+				errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
+			}
+		}
+		for i, api := range doc.APIResources {
+			if api.OrdPackageID != nil && !resourceIDs.PackageIDs[*api.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("api with id %q has a REFERENCEe to unknown package %q", *api.OrdID, *api.OrdPackageID))
+				invalidApisIndices = append(invalidApisIndices, i)
+			}
+			if api.PartOfConsumptionBundles != nil {
+				for _, apiBndlRef := range api.PartOfConsumptionBundles {
+					if !resourceIDs.BundleIDs[apiBndlRef.BundleOrdID] {
+						errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID))
+					}
+				}
+			}
+
+			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
+			for _, productID := range ordIDs {
+				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
+					errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String()))
+				}
+			}
+		}
+
+		for i, event := range doc.EventResources {
+			if event.OrdPackageID != nil && !resourceIDs.PackageIDs[*event.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
+				invalidEventsIndices = append(invalidEventsIndices, i)
+			}
+			if event.PartOfConsumptionBundles != nil {
+				for _, eventBndlRef := range event.PartOfConsumptionBundles {
+					if !resourceIDs.BundleIDs[eventBndlRef.BundleOrdID] {
+						errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID))
+					}
+				}
+			}
+
+			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
+			for _, productID := range ordIDs {
+				if !resourceIDs.ProductIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
+					errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String()))
+				}
+			}
+		}
+
+		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
+		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+		invalidApisIndices = nil
+		invalidEventsIndices = nil
+	}
+
+	return errs.ErrorOrNil()
+}
+
+func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
+	errs := &multierror.Error{}
+
+	resourceIDs := ResourceIDs{
+		PackageIDs:          make(map[string]bool),
+		PackagePolicyLevels: resourceID.PackagePolicyLevels,
+		BundleIDs:           make(map[string]bool),
+		ProductIDs:          make(map[string]bool),
+		ApiIDs:              make(map[string]bool),
+		EventIDs:            make(map[string]bool),
+		VendorIDs:           make(map[string]bool),
+	}
+	for _, doc := range docs {
+		if doc.Perspective == perspectiveConstraint {
+			continue
+		}
 		invalidPackagesIndices := make([]int, 0)
 		invalidBundlesIndices := make([]int, 0)
 		invalidProductsIndices := make([]int, 0)
 		invalidVendorsIndices := make([]int, 0)
 		invalidTombstonesIndices := make([]int, 0)
+		invalidApisIndices := make([]int, 0)
+		invalidEventsIndices := make([]int, 0)
 
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
 		}
 
 		for i, pkg := range doc.Packages {
-			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
+			if err := validatePackageInput(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 				invalidPackagesIndices = append(invalidPackagesIndices, i)
-				packageIDs[pkg.OrdID] = false
+				resourceIDs.PackageIDs[pkg.OrdID] = false
 			}
 		}
 
 		for i, bndl := range doc.ConsumptionBundles {
-			if err := validateBundleInput(bndl, bundlesFromDB, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
+			if err := validateBundleInput(bndl, resourcesFromDB.Bundles, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 				invalidBundlesIndices = append(invalidBundlesIndices, i)
 				continue
 			}
 			if bndl.OrdID != nil {
-				if _, ok := bundleIDs[*bndl.OrdID]; ok {
+				if _, ok := resourceIDs.BundleIDs[*bndl.OrdID]; ok && forbidDuplications {
 					errs = multierror.Append(errs, errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID))
 				}
-				bundleIDs[*bndl.OrdID] = true
+				resourceIDs.BundleIDs[*bndl.OrdID] = true
 			}
 		}
 
@@ -201,39 +433,39 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				invalidProductsIndices = append(invalidProductsIndices, i)
 				continue
 			}
-			if _, ok := productIDs[product.OrdID]; ok {
+			if _, ok := resourceIDs.ProductIDs[product.OrdID]; ok && forbidDuplications {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
 			}
-			productIDs[product.OrdID] = true
+			resourceIDs.ProductIDs[product.OrdID] = true
 		}
 
 		for i, api := range doc.APIResources {
-			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
+			if err := validateAPIInput(api, resourceIDs.PackagePolicyLevels, resourcesFromDB.APIs, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 				invalidApisIndices = append(invalidApisIndices, i)
 				continue
 			}
 			if api.OrdID != nil {
-				if _, ok := apiIDs[*api.OrdID]; ok {
+				if _, ok := resourceIDs.ApiIDs[*api.OrdID]; ok && forbidDuplications {
 					errs = multierror.Append(errs, errors.Errorf("found duplicate api with ord id %q", *api.OrdID))
 				}
-				apiIDs[*api.OrdID] = true
+				resourceIDs.ApiIDs[*api.OrdID] = true
 			}
 		}
 
 		for i, event := range doc.EventResources {
-			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
+			if err := validateEventInput(event, resourceIDs.PackagePolicyLevels, resourcesFromDB.Events, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventsIndices = append(invalidEventsIndices, i)
 				continue
 			}
 
 			if event.OrdID != nil {
-				if _, ok := eventIDs[*event.OrdID]; ok {
+				if _, ok := resourceIDs.EventIDs[*event.OrdID]; ok && forbidDuplications {
 					errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
 				}
 
-				eventIDs[*event.OrdID] = true
+				resourceIDs.EventIDs[*event.OrdID] = true
 			}
 		}
 
@@ -243,10 +475,10 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				invalidVendorsIndices = append(invalidVendorsIndices, i)
 				continue
 			}
-			if _, ok := vendorIDs[vendor.OrdID]; ok {
+			if _, ok := resourceIDs.VendorIDs[vendor.OrdID]; ok && forbidDuplications {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
 			}
-			vendorIDs[vendor.OrdID] = true
+			resourceIDs.VendorIDs[vendor.OrdID] = true
 		}
 
 		for i, tombstone := range doc.Tombstones {
@@ -263,78 +495,17 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
 		doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
 		doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
-
-		invalidApisIndices = nil
-		invalidEventsIndices = nil
 	}
 
-	// Validate entity relations
-	for _, doc := range docs {
-		for _, pkg := range doc.Packages {
-			if pkg.Vendor != nil && !vendorIDs[*pkg.Vendor] && !globalResourcesOrdIDs[*pkg.Vendor] {
-				errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor))
-			}
-			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
-			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String()))
-				}
-			}
-		}
-		for _, product := range doc.Products {
-			if !vendorIDs[product.Vendor] && !globalResourcesOrdIDs[product.Vendor] {
-				errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
-			}
-		}
-		for i, api := range doc.APIResources {
-			if api.OrdPackageID != nil && !packageIDs[*api.OrdPackageID] {
-				errs = multierror.Append(errs, errors.Errorf("api with id %q has a REFERENCEe to unknown package %q", *api.OrdID, *api.OrdPackageID))
-				invalidApisIndices = append(invalidApisIndices, i)
-			}
-			if api.PartOfConsumptionBundles != nil {
-				for _, apiBndlRef := range api.PartOfConsumptionBundles {
-					if !bundleIDs[apiBndlRef.BundleOrdID] {
-						errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID))
-					}
-				}
-			}
-
-			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
-			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String()))
-				}
-			}
-		}
-
-		for i, event := range doc.EventResources {
-			if event.OrdPackageID != nil && !packageIDs[*event.OrdPackageID] {
-				errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
-				invalidEventsIndices = append(invalidEventsIndices, i)
-			}
-			if event.PartOfConsumptionBundles != nil {
-				for _, eventBndlRef := range event.PartOfConsumptionBundles {
-					if !bundleIDs[eventBndlRef.BundleOrdID] {
-						errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID))
-					}
-				}
-			}
-
-			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
-			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String()))
-				}
-			}
-		}
-
-		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
-		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
-		invalidApisIndices = nil
-		invalidEventsIndices = nil
-	}
-
-	return errs.ErrorOrNil()
+	return ResourceIDs{
+		PackageIDs:          resourceIDs.PackageIDs,
+		ProductIDs:          resourceIDs.ProductIDs,
+		ApiIDs:              resourceIDs.ApiIDs,
+		EventIDs:            resourceIDs.EventIDs,
+		VendorIDs:           resourceIDs.VendorIDs,
+		BundleIDs:           resourceIDs.BundleIDs,
+		PackagePolicyLevels: resourceIDs.PackagePolicyLevels,
+	}, errs
 }
 
 // Sanitize performs all the merging and rewriting rules defined in ORD. This method should be invoked after Documents are validated with the Validate method.

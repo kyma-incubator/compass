@@ -14,7 +14,7 @@ import (
 const tombstoneTable string = `public.tombstones`
 
 var (
-	tombstoneColumns = []string{"ord_id", "app_id", "removal_date", "id"}
+	tombstoneColumns = []string{"ord_id", "app_id", "app_template_version_id", "removal_date", "id"}
 	updatableColumns = []string{"removal_date"}
 )
 
@@ -31,6 +31,7 @@ type pgRepository struct {
 	existQuerier repo.ExistQuerier
 	singleGetter repo.SingleGetter
 	lister       repo.Lister
+	listerGlobal repo.ListerGlobal
 	deleter      repo.Deleter
 	creator      repo.Creator
 	updater      repo.Updater
@@ -43,6 +44,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		existQuerier: repo.NewExistQuerier(tombstoneTable),
 		singleGetter: repo.NewSingleGetter(tombstoneTable, tombstoneColumns),
 		lister:       repo.NewLister(tombstoneTable, tombstoneColumns),
+		listerGlobal: repo.NewListerGlobal(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		deleter:      repo.NewDeleter(tombstoneTable),
 		creator:      repo.NewCreator(tombstoneTable, tombstoneColumns),
 		updater:      repo.NewUpdater(tombstoneTable, updatableColumns, []string{"id"}),
@@ -98,16 +100,20 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.T
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Tombstone, error) {
 	tombstoneCollection := tombstoneCollection{}
+
 	var condition repo.Condition
+	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &tombstoneCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &tombstoneCollection, condition)
 	}
-
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Tombstone, tenantID, &tombstoneCollection, condition); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	tombstones := make([]*model.Tombstone, 0, tombstoneCollection.Len())
 	for _, tombstone := range tombstoneCollection {
 		tombstoneModel, err := r.conv.FromEntity(&tombstone)

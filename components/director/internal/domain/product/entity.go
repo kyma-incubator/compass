@@ -11,7 +11,7 @@ type Entity struct {
 	ID                           string         `db:"id"`
 	OrdID                        string         `db:"ord_id"`
 	ApplicationID                sql.NullString `db:"app_id"`
-	ApplicationTemplateVersionID sql.NullString `json:"app_template_version_id"`
+	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`
 	Title                        string         `db:"title"`
 	ShortDescription             string         `db:"short_description"`
 	Vendor                       string         `db:"vendor"`

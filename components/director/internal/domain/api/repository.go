@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -18,7 +17,7 @@ const apiDefTable string = `"public"."api_definitions"`
 var (
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
-	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	apiDefColumns = []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}
@@ -43,6 +42,7 @@ type pgRepository struct {
 	pageableQuerier       repo.PageableQuerier
 	bundleRefQueryBuilder repo.QueryBuilderGlobal
 	lister                repo.Lister
+	listerGlobal          repo.ListerGlobal
 	updater               repo.Updater
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
@@ -56,6 +56,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 		pageableQuerier:       repo.NewPageableQuerier(apiDefTable, apiDefColumns),
 		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.APIDefIDColumn}),
 		lister:                repo.NewLister(apiDefTable, apiDefColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.API, apiDefTable, apiDefColumns),
 		creator:               repo.NewCreator(apiDefTable, apiDefColumns),
 		updater:               repo.NewUpdater(apiDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(apiDefTable),
@@ -128,20 +129,24 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, appID str
 	apiCollection := APIDefCollection{}
 
 	var condition repo.Condition
+	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", appID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", appID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &apiCollection, condition)
 	}
-
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, condition); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	apis := make([]*model.APIDefinition, 0, apiCollection.Len())
 	for _, api := range apiCollection {
 		apiModel := r.conv.FromEntity(&api)
 		apis = append(apis, apiModel)
 	}
+
 	return apis, nil
 }
 

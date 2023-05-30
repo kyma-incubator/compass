@@ -47,7 +47,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, constraints map[string]string) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource model.Application, webhook *model.Webhook, constraints map[string]string) (Documents, string, error)
 }
 
 type client struct {
@@ -66,7 +66,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, constraints map[string]string) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource model.Application, webhook *model.Webhook, constraints map[string]string) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
@@ -137,7 +137,9 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 			}
 
 			if docDetails.Perspective == SystemVersionPerspective {
-				//
+				doc.Perspective = SystemVersionPerspective
+			} else {
+				doc.Perspective = SystemInstancePerspective
 			}
 			addDocument(&docs, doc, &docMutex)
 		}(docDetails)
@@ -233,7 +235,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, resource model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {

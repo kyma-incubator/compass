@@ -2,6 +2,8 @@ package bundle
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -23,7 +25,7 @@ const (
 )
 
 var (
-	bundleColumns    = []string{"id", appIDColumn, "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", correlationIDs, "tags", "resource_hash", "documentation_labels"}
+	bundleColumns    = []string{"id", appIDColumn, "app_template_version_id", "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", correlationIDs, "tags", "resource_hash", "documentation_labels"}
 	updatableColumns = []string{"name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "resource_hash", "documentation_labels"}
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy(appIDColumn), repo.NewAscOrderBy("id")}
 )
@@ -200,16 +202,20 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 // ListByResourceIDNoPaging missing godoc
 func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Bundle, error) {
 	var condition repo.Condition
+	var err error
+	bundleCollection := BundleCollection{}
+
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &bundleCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.globalLister.ListGlobalWithSelectForUpdate(ctx, &bundleCollection, condition)
 	}
-
-	bundleCollection := BundleCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, condition); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	bundles := make([]*model.Bundle, 0, bundleCollection.Len())
 	for _, bundle := range bundleCollection {
 		bundleModel, err := r.conv.FromEntity(&bundle)
@@ -218,6 +224,12 @@ func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, r
 		}
 		bundles = append(bundles, bundleModel)
 	}
+
+	fmt.Println("ListByResourceID")
+	fmt.Println("Type", resourceType, resourceID)
+	v, _ := json.MarshalIndent(bundles, "", "  ")
+	fmt.Println(string(v))
+
 	return bundles, nil
 }
 

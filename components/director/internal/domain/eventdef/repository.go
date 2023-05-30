@@ -23,7 +23,7 @@ var (
 	idColumn        = "id"
 	appColumn       = "app_id"
 	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	eventDefColumns = []string{idColumn, appColumn, "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels"}
@@ -46,6 +46,7 @@ type pgRepository struct {
 	singleGetter          repo.SingleGetter
 	bundleRefQueryBuilder repo.QueryBuilderGlobal
 	lister                repo.Lister
+	listerGlobal          repo.ListerGlobal
 	creator               repo.Creator
 	updater               repo.Updater
 	deleter               repo.Deleter
@@ -59,6 +60,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		singleGetter:          repo.NewSingleGetter(eventAPIDefTable, eventDefColumns),
 		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.EventDefIDColumn}),
 		lister:                repo.NewLister(eventAPIDefTable, eventDefColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		creator:               repo.NewCreator(eventAPIDefTable, eventDefColumns),
 		updater:               repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(eventAPIDefTable),
@@ -145,17 +147,21 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 
 // ListByResourceID lists all EventDefinitions for a given application ID.
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EventDefinition, error) {
+	eventCollection := EventAPIDefCollection{}
+
 	var condition repo.Condition
+	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &eventCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &eventCollection, condition)
 	}
-
-	eventCollection := EventAPIDefCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.EventDefinition, tenantID, &eventCollection, condition); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	events := make([]*model.EventDefinition, 0, eventCollection.Len())
 	for _, event := range eventCollection {
 		eventModel := r.conv.FromEntity(&event)
