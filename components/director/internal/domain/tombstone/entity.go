@@ -21,7 +21,7 @@ func (e *Entity) GetID() string {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	if e.ApplicationID.String != "" {
+	if e.ApplicationID.Valid {
 		return resource.Application, e.ApplicationID.String
 	} else {
 		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
