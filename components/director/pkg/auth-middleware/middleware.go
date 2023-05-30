@@ -326,6 +326,10 @@ func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.R
 	return ctx
 }
 
-func LoadTenantFromContext(ctx context.Context) (string, error) {
-	return tenant.LoadFromContext(ctx)
+func LoadExternalTenantFromContext(ctx context.Context) (string, error) {
+	tenantFromContext, err := tenant.LoadTenantPairFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	return tenantFromContext.ExternalID, nil
 }
