@@ -14,7 +14,6 @@ const (
 	destinationTable            = "public.destinations"
 	revisionColumn              = "revision"
 	tenantIDColumn              = "tenant_id"
-	nameColumn                  = "name"
 	formationAssignmentIDColumn = "formation_assignment_id"
 )
 
