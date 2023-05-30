@@ -36,6 +36,8 @@ const (
 	RegionPrefix = "cf-"
 	// SubscriptionsLabelKey is the key of the subscriptions label, that stores the ids of created instances.
 	SubscriptionsLabelKey = "subscriptions"
+	// PreviousSubscriptionID represents a previous subscription id
+	PreviousSubscriptionID = "00000000-0000-0000-0000-000000000000"
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -539,7 +541,7 @@ func (s *service) manageSubscriptionsLabelOnSubscribe(ctx context.Context, tenan
 		}
 		if err := s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
 			Key:        SubscriptionsLabelKey,
-			Value:      []string{subscriptionID},
+			Value:      []string{PreviousSubscriptionID, subscriptionID},
 			ObjectID:   objectID,
 			ObjectType: objectType,
 		}); err != nil {
@@ -609,7 +611,11 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 		return nil
 	}
 
-	subscriptions = removeSubscription(subscriptions, subscriptionID)
+	subscriptions, removed := removeSubscription(subscriptions, subscriptionID)
+	if !removed {
+		log.C(ctx).Infof("Subscription with id %q does not exist. No need to update %q label value", subscriptionID, SubscriptionsLabelKey)
+		return nil
+	}
 	if err := s.labelSvc.UpdateLabel(ctx, tenant, subscriptionsLabel.ID, &model.LabelInput{
 		Key:        subscriptionsLabel.Key,
 		Value:      subscriptions,
@@ -641,8 +647,19 @@ func subscriptionExists(subscriptions []interface{}, subscriptionID string) bool
 	return false
 }
 
-func removeSubscription(subscriptions []interface{}, subscriptionID string) []interface{} {
+func removeSubscription(subscriptions []interface{}, subscriptionID string) ([]interface{}, bool) {
+	if subscriptionExists(subscriptions, subscriptionID) {
+		return remove(subscriptions, subscriptionID), true
+	}
+	if subscriptionExists(subscriptions, PreviousSubscriptionID) {
+		return remove(subscriptions, PreviousSubscriptionID), true
+	}
+	return subscriptions, false
+}
+
+func remove(subscriptions []interface{}, subscriptionID string) []interface{} {
 	writeIdx := 0
+
 	for _, id := range subscriptions {
 		if id != subscriptionID {
 			subscriptions[writeIdx] = id

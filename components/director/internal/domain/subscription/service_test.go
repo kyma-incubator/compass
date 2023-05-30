@@ -38,6 +38,7 @@ const (
 	subscriptionProviderID     = "id-value!t12345"
 	subscriptionID             = "320e9b8b-41b2-4492-b429-b570873f3041"
 	subscriptionID2            = "2c606605-ed29-4840-b307-659f21dcba41"
+	subscriptionID3            = "a436829f-e3cd-431b-847c-f4b792f55a14"
 	providerSubaccountID       = "9cdbe10c-778c-432e-bf0e-e9686d04c679"
 	providerInternalID         = "aa6301aa-7cf5-4335-82ae-35d078f8a2ed"
 	consumerTenantID           = "ddf290d5-31c2-457e-a14d-461d3df95ac9"
@@ -256,7 +257,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 					Key:        subscription.SubscriptionsLabelKey,
 					ObjectID:   "id",
 					ObjectType: model.RuntimeContextLabelableObject,
-					Value:      []string{subscriptionID2},
+					Value:      []string{subscription.PreviousSubscriptionID, subscriptionID2},
 				}
 				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, "id", subscription.SubscriptionsLabelKey).Return(nil, notFoundLabelErr)
 				lblSvc.On("CreateLabel", mock.Anything, subaccountTenantInternalID, uuid, labelInput).Return(nil)
@@ -608,7 +609,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 					Key:        subscription.SubscriptionsLabelKey,
 					ObjectID:   "id",
 					ObjectType: model.RuntimeContextLabelableObject,
-					Value:      []string{subscriptionID2},
+					Value:      []string{subscription.PreviousSubscriptionID, subscriptionID2},
 				}
 				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, "id", subscription.SubscriptionsLabelKey).Return(nil, notFoundLabelErr)
 				lblSvc.On("CreateLabel", mock.Anything, subaccountTenantInternalID, uuid, labelInput).Return(testError)
@@ -1745,7 +1746,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:             1,
 		},
 		{
-			Name:                "Succeeds on on multiple calls",
+			Name:                "Succeeds on multiple calls",
 			Region:              tenantRegion,
 			SubscriptionPayload: subscriptionPayload,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
@@ -1792,7 +1793,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:      repeats,
 		},
 		{
-			Name:                "Succeeds on on multiple calls - subscription already exists",
+			Name:                "Succeeds on multiple calls - subscription already exists",
 			Region:              tenantRegion,
 			SubscriptionPayload: subscriptionPayload,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
@@ -1842,7 +1843,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:      repeats,
 		},
 		{
-			Name:                "Succeeds on on multiple calls - subscriptions label not found",
+			Name:                "Succeeds on multiple calls - subscriptions label not found",
 			Region:              tenantRegion,
 			SubscriptionPayload: subscriptionPayload,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
@@ -1882,7 +1883,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 					Key:        subscription.SubscriptionsLabelKey,
 					ObjectID:   appTmplID,
 					ObjectType: model.ApplicationLabelableObject,
-					Value:      []string{subscriptionID2},
+					Value:      []string{subscription.PreviousSubscriptionID, subscriptionID2},
 				}
 				lblSvc := &automock.LabelService{}
 				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.ApplicationLabelableObject, appTmplID, subscription.SubscriptionsLabelKey).Return(nil, notFoundLabelErr)
@@ -1985,7 +1986,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 					Key:        subscription.SubscriptionsLabelKey,
 					ObjectID:   appTmplID,
 					ObjectType: model.ApplicationLabelableObject,
-					Value:      []string{subscriptionID2},
+					Value:      []string{subscription.PreviousSubscriptionID, subscriptionID2},
 				}
 				lblSvc := &automock.LabelService{}
 				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.ApplicationLabelableObject, appTmplID, subscription.SubscriptionsLabelKey).Return(nil, notFoundLabelErr)
@@ -2236,6 +2237,73 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.SubscriptionsLabelKey).Return(subscriptionsLabelWithTwoSubscriptions, nil)
 				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.SubscriptionsLabelKey).Return(subscriptionsLabelWithTwoSubscriptions, nil)
 				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, subscriptionsLabelID, subscriptionsLabelInputWithOneSubscription).Return(nil).Twice()
+				return lblSvc
+			},
+			IsSuccessful: true,
+		},
+		{
+			Name: "Success - skipping deletion because of more than one subscriptions and provided subscriptionID does not exist, but previous subscription id exists",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFilters).Return(modelAppTemplate, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return(modelApps, nil).Once()
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.SubscriptionsLabelKey).Return(&model.Label{
+					ID:    subscriptionsLabelID,
+					Key:   subscription.SubscriptionsLabelKey,
+					Value: []interface{}{subscription.PreviousSubscriptionID, subscriptionID},
+				}, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.SubscriptionsLabelKey).Return(&model.Label{
+					ID:    subscriptionsLabelID,
+					Key:   subscription.SubscriptionsLabelKey,
+					Value: []interface{}{subscription.PreviousSubscriptionID, subscriptionID},
+				}, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, subscriptionsLabelID, subscriptionsLabelInputWithOneSubscription).Return(nil).Twice()
+				return lblSvc
+			},
+			IsSuccessful: true,
+		},
+		{
+			Name: "Success - skipping deletion because of more than one subscriptions and provided subscriptionID and previous subscription do not exist",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFilters).Return(modelAppTemplate, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return(modelApps, nil).Once()
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.SubscriptionsLabelKey).Return(&model.Label{
+					ID:    subscriptionsLabelID,
+					Key:   subscription.SubscriptionsLabelKey,
+					Value: []interface{}{subscriptionID, subscriptionID3},
+				}, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.SubscriptionsLabelKey).Return(&model.Label{
+					ID:    subscriptionsLabelID,
+					Key:   subscription.SubscriptionsLabelKey,
+					Value: []interface{}{subscriptionID, subscriptionID3},
+				}, nil)
 				return lblSvc
 			},
 			IsSuccessful: true,
