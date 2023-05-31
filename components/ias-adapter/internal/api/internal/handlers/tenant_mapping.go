@@ -48,7 +48,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	}
 
 	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
-	if reverseAssignmentState != "" || tenantMapping.assignedTenants[0].Operation == types.OperationAssign {
+	if tenantMapping.AssignedTenants[0].Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
 			errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
 			err := errors.Newf(errMsgf, reverseAssignmentState)
