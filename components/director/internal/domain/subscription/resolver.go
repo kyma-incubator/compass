@@ -68,7 +68,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	var success bool
 
 	for _, instance := range dependentSvcInstancesInfo.Instances {
-		log.C(ctx).Infof("Subscription flow will be entered. Changing provider ID from %q to %q, provider subaccount id from %q to %q and subscription app name from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID, subscriptionAppName, instance.AppName)
+		log.C(ctx).Infof("Subscription flow for subscribe will be entered. Changing provider ID from %q to %q, provider subaccount id from %q to %q and subscription app name from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID, subscriptionAppName, instance.AppName)
 		providerID = instance.AppID
 		providerSubaccountID = instance.ProviderSubaccountID
 		subscriptionAppName = instance.AppName
@@ -114,29 +114,40 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
-	if err != nil {
-		return false, errors.Wrap(err, "while determining subscription flow")
+	var dependentSvcInstancesInfo DependentServiceInstancesInfo
+	if err = json.Unmarshal([]byte(subscriptionPayload), &dependentSvcInstancesInfo); err != nil {
+		return false, errors.Wrapf(err, "while unmarshaling dependent service instances info")
 	}
 
-	subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), subscriptionIDKey).String()
 	var success bool
 
-	switch flowType {
-	case resource.ApplicationTemplate:
-		log.C(ctx).Infof("Entering application subscription flow")
-		success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, subaccountTenantID, region, subscriptionID)
+	for _, instance := range dependentSvcInstancesInfo.Instances {
+		log.C(ctx).Infof("Subscription flow for unsubscribe will be entered. Changing provider ID from %q to %q and provider subaccount id from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID)
+		providerID = instance.AppID
+		providerSubaccountID = instance.ProviderSubaccountID
+		subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), subscriptionIDKey).String()
+
+		flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
 		if err != nil {
-			return false, err
+			return false, errors.Wrap(err, "while determining subscription flow")
 		}
-	case resource.Runtime:
-		log.C(ctx).Infof("Entering runtime subscription flow")
-		success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
-		if err != nil {
-			return false, err
+
+		switch flowType {
+		case resource.ApplicationTemplate:
+			log.C(ctx).Infof("Entering application subscription flow")
+			success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, subaccountTenantID, region, subscriptionID)
+			if err != nil {
+				return false, err
+			}
+		case resource.Runtime:
+			log.C(ctx).Infof("Entering runtime subscription flow")
+			success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
+			if err != nil {
+				return false, err
+			}
+		default:
+			log.C(ctx).Infof("Nothing to unsubscribe from provider(%q) with subaccount: %q in region (%q)", providerID, providerSubaccountID, region)
 		}
-	default:
-		log.C(ctx).Infof("Nothing to unsubscribe from provider(%q) with subaccount: %q in region (%q)", providerID, providerSubaccountID, region)
 	}
 
 	if err = tx.Commit(); err != nil {
