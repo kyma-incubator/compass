@@ -3,6 +3,7 @@ package idtokenclaims
 import (
 	"context"
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -82,6 +83,7 @@ func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
 
 // ContextWithClaimsAndProviderTenant stores token data in context. Stores the provider tenant into the context
 func (c *Claims) ContextWithClaimsAndProviderTenant(ctx context.Context) context.Context {
+	spew.Dump(c.Tenant)
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant[tenantmapping.ProviderTenantKey], c.Tenant[tenantmapping.ProviderExternalTenantKey])
 	scopesArray := strings.Split(c.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
