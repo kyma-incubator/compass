@@ -1518,7 +1518,6 @@ func testHandlerWithClientUserAndExternalTenant(t *testing.T, expectedTenant, ex
 		if !apperrors.IsTenantRequired(err) {
 			require.NoError(t, err)
 		}
-		fmt.Println("HOHO", tenantPairFromContext.ExternalID, tenantPairFromContext.InternalID)
 		tenantFromContext := tenantPairFromContext.ExternalID
 		clientUserFromContext, err := client.LoadFromContext(r.Context())
 		if expectedClientUser == "" {

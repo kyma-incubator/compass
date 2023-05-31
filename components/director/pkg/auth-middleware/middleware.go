@@ -335,3 +335,8 @@ func LoadExternalTenantFromContext(ctx context.Context) (string, error) {
 	}
 	return tenantFromContext.ExternalID, nil
 }
+
+// SaveToContext stores the tenant in the context object
+func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
+	return tenant.SaveToContext(ctx, internalID, externalID)
+}
