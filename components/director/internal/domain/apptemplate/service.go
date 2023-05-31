@@ -320,6 +320,11 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
 
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, id, in.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "while upserting labels for Application Template with id %s", id)
+	}
+
 	if oldAppTemplate.Name != appTemplate.Name {
 		log.C(ctx).Infof("Listing applications registered from application template with id %s", id)
 		appsByAppTemplate, err := s.appRepo.ListAllByApplicationTemplateID(ctx, id)
