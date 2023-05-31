@@ -47,11 +47,6 @@ spec:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.kyma_adapter.dir }}compass-kyma-adapter:{{ $.Values.global.images.kyma_adapter.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
-{{/*          command:*/}}
-{{/*            - "/bin/sh"*/}}
-{{/*          args:*/}}
-{{/*              - "-c"*/}}
-{{/*              - "./main; exit_code=$?; echo '# KILLING PILOT-AGENT #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"*/}}
           ports:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
