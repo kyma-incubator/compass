@@ -306,7 +306,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	// GIVEN
 	appTemplateInputGQL := fixGQLAppTemplateUpdateInput(testName)
-	appTemplateInputModel := fixModelAppTemplateUpdateInput(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\"}")
+	appTemplateInputModel := fixModelAppTemplateUpdateInputWithLabels(testName, "{\"name\":\"foo\",\"description\":\"Lorem ipsum\"}", newTestLabels)
 
 	testCases := []struct {
 		Name           string

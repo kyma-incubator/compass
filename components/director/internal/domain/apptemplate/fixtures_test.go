@@ -51,6 +51,7 @@ var (
 	testURL                        = "http://valid.url"
 	testError                      = errors.New("test error")
 	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	newTestLabels                  = map[string]interface{}{"label1": "test"}
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -176,7 +177,6 @@ func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.A
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputString,
 		Placeholders:         fixModelPlaceholders(),
-		Labels:               map[string]interface{}{"label1": "test"},
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
@@ -184,6 +184,13 @@ func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.A
 func fixModelAppTemplateUpdateInputWithPlaceholders(name string, appInputString string, placeholders []model.ApplicationTemplatePlaceholder) *model.ApplicationTemplateUpdateInput {
 	out := fixModelAppTemplateUpdateInput(name, appInputString)
 	out.Placeholders = placeholders
+
+	return out
+}
+
+func fixModelAppTemplateUpdateInputWithLabels(name string, appInputString string, labels map[string]interface{}) *model.ApplicationTemplateUpdateInput {
+	out := fixModelAppTemplateUpdateInput(name, appInputString)
+	out.Labels = labels
 
 	return out
 }

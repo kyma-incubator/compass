@@ -1209,6 +1209,7 @@ global:
         - "application_template:write"
         - "application_template:read"
         - "application_template.webhooks:read"
+        - "application_template.labels:write"
         - "internal_visibility:read"
         - "webhook:write"
         - "webhooks.auth:read"
