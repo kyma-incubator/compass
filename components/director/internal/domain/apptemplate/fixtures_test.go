@@ -88,6 +88,14 @@ func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string, webhooks
 	return out
 }
 
+func fixModelAppTemplateWithAppInputJSONAndLabels(id, name, appInputJSON string, webhooks []*model.Webhook, labels map[string]interface{}) *model.ApplicationTemplate {
+	out := fixModelApplicationTemplate(id, name, webhooks)
+	out.Labels = labels
+	out.ApplicationInputJSON = appInputJSON
+
+	return out
+}
+
 func fixModelAppTemplateWithAppInputJSONAndPlaceholders(id, name, appInputJSON string, webhooks []*model.Webhook, placeholders []model.ApplicationTemplatePlaceholder) *model.ApplicationTemplate {
 	out := fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON, webhooks)
 	out.Placeholders = placeholders
@@ -164,6 +172,7 @@ func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.A
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputString,
 		Placeholders:         fixModelPlaceholders(),
+		Labels:               map[string]interface{}{"label1": "test"},
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
@@ -259,6 +268,7 @@ func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdat
 			Description: &desc,
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		Labels:       map[string]interface{}{"label1": "test"},
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
