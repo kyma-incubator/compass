@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/avast/retry-go/v4 v4.3.3
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -20,9 +21,9 @@ require (
 	github.com/imdario/mergo v0.3.14
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230607082115-977757624f7e
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230607082115-977757624f7e
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230607082115-977757624f7e
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230531080254-60fe1df7da9f
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230531080254-60fe1df7da9f
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230531080254-60fe1df7da9f
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lib/pq v1.10.7
@@ -58,7 +59,6 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210825215144-46a420572a7c // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
