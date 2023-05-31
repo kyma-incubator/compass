@@ -265,6 +265,8 @@ spec:
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_TENANT_MAPPING_CONFIG_PATH
+              value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
             - name: APP_DESTINATION_BASE_URL
               value: "{{ .Values.global.director.destination.baseURL}}"
             - name: APP_DESTINATION_PATH

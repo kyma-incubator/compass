@@ -42,8 +42,7 @@ type DestinationCreatorInput struct {
 	Operation                  model.FormationOperation     `json:"operation"`
 	ResourceType               model.ResourceType           `json:"resource_type"`
 	ResourceSubtype            string                       `json:"resource_subtype"`
-	FormationAssignment        *webhook.FormationAssignment `json:"assignment"`
-	ReverseFormationAssignment *webhook.FormationAssignment `json:"reverseAssignment"`
-	Location                   JoinPointLocation            `json:"joinPointLocation"`
-	ShouldRewriteCredentials   bool                         `json:"shouldRewriteCredentials"`
+	FormationAssignment        *webhook.FormationAssignment `json:"formation_assignment"`
+	ReverseFormationAssignment *webhook.FormationAssignment `json:"reverse_formation_assignment"`
+	Location                   JoinPointLocation            `json:"join_point_location"`
 }

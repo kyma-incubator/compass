@@ -110,17 +110,17 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			for _, destDetails := range basicAuthDetails.Destinations {
 				statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.FormationAssignment)
 				if err != nil {
-					return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
+					return false, errors.Wrapf(err, "while creating inbound basic destination with name: %q", destDetails.Name)
 				}
 
 				if statusCode == http.StatusConflict {
 					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
 					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, di.FormationAssignment); err != nil {
-						return false, errors.Wrapf(err, "while deleting destination with name: %q", destDetails.Name)
+						return false, errors.Wrapf(err, "while deleting inbound basic destination with name: %q", destDetails.Name)
 					}
 
 					if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, di.FormationAssignment); err != nil {
-						return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
+						return false, errors.Wrapf(err, "while creating inbound basic destination with name: %q", destDetails.Name)
 					}
 				}
 			}
@@ -134,32 +134,10 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			// todo:: (for phase 2) create SAML destination with the data from the "SAML details" and credentials response
 		}
 
-		newConfig, err := prepareConfigurationResponse(confCredentialsResp, confDetailsResp, di.ShouldRewriteCredentials)
-		if err != nil {
-			return false, errors.Wrapf(err, "while preparing configuration response")
-		}
-		di.FormationAssignment.Value = newConfig
-
 		return true, nil
 	}
 
 	return true, nil
-}
-
-func prepareConfigurationResponse(confCredentialsResp, confDetailsResp ConfigurationResponse, shouldRewriteCredentials bool) (string, error) {
-	if shouldRewriteCredentials {
-		confDetailsRespBytes, err := json.Marshal(confDetailsResp)
-		if err != nil {
-			return "", err
-		}
-		return string(confDetailsRespBytes), nil
-	} else {
-		confCredentialsRespBytes, err := json.Marshal(confCredentialsResp)
-		if err != nil {
-			return "", err
-		}
-		return string(confCredentialsRespBytes), nil
-	}
 }
 
 // Destination Creator Operator types
