@@ -1751,7 +1751,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		notificationsForApp2 := gjson.GetBytes(body, app2.ID)
 		assignNotificationAboutApp1 := notificationsForApp2.Array()[0]
-		assertFormationAssignmentsNotificationWithConfig(t, assignNotificationAboutApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, expectedConfig)
+		assertFormationAssignmentsNotification(t, assignNotificationAboutApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer)
 	})
 
 	t.Run("Test only formation lifecycle synchronous notifications", func(t *testing.T) {
@@ -4698,7 +4698,7 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 }
 
 func assertFormationAssignmentsNotification(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
-	assertFormationAssignmentsNotificationWithConfig(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, str.Ptr(""))
+	assertFormationAssignmentsNotificationWithConfig(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, nil)
 }
 
 func assertFormationAssignmentsNotificationWithConfig(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string, expectedConfig *string) {
