@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -21,6 +22,7 @@ import (
 //go:generate mockery --name=APIRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
@@ -28,6 +30,7 @@ type APIRepository interface {
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
+	UpdateGlobal(ctx context.Context, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
@@ -234,15 +237,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return err
 	}
 
-	var resourceType resource.Type
-	var resourceID string
-	if api.ApplicationTemplateVersionID != nil {
-		resourceType = resource.ApplicationTemplateVersion
-		resourceID = *api.ApplicationTemplateVersionID
-	} else if api.ApplicationID != nil {
-		resourceType = resource.Application
-		resourceID = *api.ApplicationID
-	}
+	resourceType, resourceID := getParentResource(api)
 
 	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
 
@@ -250,44 +245,53 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}
 
-	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
-	if defaultTargetURLPerBundleForUpdate == nil {
-		bundleRefInput := &model.BundleReferenceInput{
-			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
-		}
-		err = s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = s.updateBundleReferences(ctx, api, defaultTargetURLPerBundleForUpdate, defaultBundleID)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = s.createBundleReferences(ctx, api, defaultTargetURLPerBundleForCreation, defaultBundleID)
-	if err != nil {
+	if err = s.updateReferences(ctx, api, in.TargetURLs, defaultTargetURLPerBundleForUpdate, defaultBundleID); err != nil {
 		return err
 	}
 
-	err = s.deleteBundleIDs(ctx, &api.ID, bundleIDsForDeletion)
-	if err != nil {
+	if err = s.createBundleReferences(ctx, api, defaultTargetURLPerBundleForCreation, defaultBundleID); err != nil {
+		return err
+	}
+
+	if err = s.deleteBundleIDs(ctx, &api.ID, bundleIDsForDeletion); err != nil {
 		return err
 	}
 
 	if specIn != nil {
-		dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
-		}
+		return s.handleSpecsInAPI(ctx, api.ID, specIn)
+	}
 
-		if dbSpec == nil {
-			_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, api.ID)
-			return err
-		}
+	return nil
+}
 
-		return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, api.ID)
+func (s *service) UpdateInManyBundlesGlobal(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
+	api, err := s.repo.GetByIDGlobal(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	resourceType, resourceID := getParentResource(api)
+
+	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
+
+	if err = s.repo.UpdateGlobal(ctx, api); err != nil {
+		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
+	}
+
+	if err = s.updateReferences(ctx, api, in.TargetURLs, defaultTargetURLPerBundleForUpdate, defaultBundleID); err != nil {
+		return err
+	}
+
+	if err = s.createBundleReferences(ctx, api, defaultTargetURLPerBundleForCreation, defaultBundleID); err != nil {
+		return err
+	}
+
+	if err = s.deleteBundleIDs(ctx, &api.ID, bundleIDsForDeletion); err != nil {
+		return err
+	}
+
+	if specIn != nil {
+		return s.handleSpecsInAPI(ctx, api.ID, specIn)
 	}
 
 	return nil
@@ -385,4 +389,41 @@ func (s *service) deleteBundleIDs(ctx context.Context, apiID *string, bundleIDsF
 		}
 	}
 	return nil
+}
+
+func (s *service) handleSpecsInAPI(ctx context.Context, id string, specIn *model.SpecInput) error {
+	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", id)
+	}
+
+	if dbSpec == nil {
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, id)
+		return err
+	}
+
+	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, id)
+}
+
+func (s *service) updateReferences(ctx context.Context, api *model.APIDefinition, targetURLs json.RawMessage, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
+	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
+	if defaultTargetURLPerBundleForUpdate == nil {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(targetURLs)),
+		}
+		return s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, nil)
+
+	}
+
+	return s.updateBundleReferences(ctx, api, defaultTargetURLPerBundleForUpdate, defaultBundleID)
+}
+
+func getParentResource(api *model.APIDefinition) (resource.Type, string) {
+	if api.ApplicationTemplateVersionID != nil {
+		return resource.ApplicationTemplateVersion, *api.ApplicationTemplateVersionID
+	} else if api.ApplicationID != nil {
+		return resource.Application, *api.ApplicationID
+	}
+
+	return "", ""
 }

@@ -19,9 +19,11 @@ import (
 type BundleRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Bundle) error
 	Update(ctx context.Context, tenant string, item *model.Bundle) error
+	UpdateGlobal(ctx context.Context, model *model.Bundle) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Bundle, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	ListByResourceIDNoPaging(ctx context.Context, tenantID, appID string, resourceType resource.Type) ([]*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
@@ -123,6 +125,20 @@ func (s *service) UpdateBundle(ctx context.Context, id string, in model.BundleUp
 	bndl.SetFromUpdateInput(in, bndlHash)
 
 	if err = s.bndlRepo.Update(ctx, tnt, bndl); err != nil {
+		return errors.Wrapf(err, "while updating Bundle with id %s", id)
+	}
+	return nil
+}
+
+func (s *service) UpdateBundleGlobal(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
+	bndl, err := s.bndlRepo.GetByIDGlobal(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting Bundle with id %s", id)
+	}
+
+	bndl.SetFromUpdateInput(in, bndlHash)
+
+	if err = s.bndlRepo.UpdateGlobal(ctx, bndl); err != nil {
 		return errors.Wrapf(err, "while updating Bundle with id %s", id)
 	}
 	return nil

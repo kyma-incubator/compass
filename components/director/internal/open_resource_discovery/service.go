@@ -388,7 +388,6 @@ func (s *Service) processDocuments(ctx context.Context, resource model.Applicati
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
 	}
-	fmt.Println("ALEX 1")
 
 	if err := documents.Sanitize(baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
@@ -410,7 +409,6 @@ func (s *Service) processDocuments(ctx context.Context, resource model.Applicati
 		eventsInput = append(eventsInput, doc.EventResources...)
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
-	fmt.Println("ALEX 2")
 
 	ordLocalID := s.getUniqueLocalTenantID(documents)
 	if ordLocalID != "" && resource.LocalTenantID == nil {
@@ -418,32 +416,23 @@ func (s *Service) processDocuments(ctx context.Context, resource model.Applicati
 			return err
 		}
 	}
-	fmt.Println("ALEX 3")
-
 	for _, doc := range documents {
-		fmt.Println("ALEX 4")
-
 		r := Resource{
 			ID:   resource.ID,
 			Type: directorresource.Application,
 		}
-		fmt.Println("ALEX 5")
 
 		if resource.ApplicationTemplateID != nil && doc.DescribedSystemVersion != nil {
-			fmt.Println("ALEX 5.1")
 
 			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, *resource.ApplicationTemplateID, doc.DescribedSystemVersion.Version)
 			if err != nil {
 				return err
 			}
-			fmt.Println("ALEX 5.2")
 
 			r = Resource{
 				ID:   appTemplateVersion.ID,
 				Type: directorresource.ApplicationTemplateVersion,
 			}
-
-			fmt.Println("ALEX 5.3")
 
 		}
 
@@ -1246,7 +1235,6 @@ func (s *Service) processAPIs(ctx context.Context, resourceType directorresource
 
 	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, api := range apis {
-		fmt.Printf("ALEX processAPIs: %s for resource: %s\n\n", str.PtrStrToStr(api.OrdID), resourceType)
 		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
 		apiFetchRequests, err := s.resyncAPIInTx(ctx, resourceType, resourceID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash)
 		if err != nil {
@@ -1426,51 +1414,80 @@ func (s *Service) resyncTombstoneInTx(ctx context.Context, resourceType director
 }
 
 func (s *Service) resyncPackage(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
+	fmt.Println("Len packageFromDB", len(packagesFromDB))
+
 	ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return packagesFromDB[i].OrdID == pkg.OrdID
 	}); found {
-		return s.packageSvc.Update(ctx, packagesFromDB[i].ID, pkg, pkgHash)
+		fmt.Println("Update Package for resource", resourceType)
+		return s.packageSvc.Update(ctx, resourceType, packagesFromDB[i].ID, pkg, pkgHash)
 	}
+	fmt.Println("Create Package for resource", resourceType)
 	_, err := s.packageSvc.Create(ctx, resourceType, resourceID, pkg, pkgHash)
 	return err
 }
 
 func (s *Service) resyncBundle(ctx context.Context, resourceType directorresource.Type, resourceID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput, bndlHash uint64) error {
+	fmt.Println("Len bundlesFromDB", len(bundlesFromDB))
 	ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
-		return s.bundleSvc.UpdateBundle(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
+		fmt.Println("Update Bundle for resource", resourceType)
+		if resourceType == directorresource.ApplicationTemplateVersion {
+			return s.bundleSvc.UpdateBundleGlobal(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
+		} else {
+			return s.bundleSvc.UpdateBundle(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
+		}
 	}
+	fmt.Println("Create Bundles for resource", resourceType)
 	_, err := s.bundleSvc.CreateBundle(ctx, resourceType, resourceID, bndl, bndlHash)
 	return err
 }
 
 func (s *Service) resyncProduct(ctx context.Context, resourceType directorresource.Type, resourceID string, productsFromDB []*model.Product, product model.ProductInput) error {
+	fmt.Println("Len productsFromDB", len(productsFromDB))
+
 	ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
 	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 		return productsFromDB[i].OrdID == product.OrdID
 	}); found {
+		fmt.Println("Update Products for resource", resourceType)
 		return s.productSvc.Update(ctx, productsFromDB[i].ID, product)
 	}
+	fmt.Println("Create Products for resource", resourceType)
+
 	_, err := s.productSvc.Create(ctx, resourceType, resourceID, product)
 	return err
 }
 
 func (s *Service) resyncVendor(ctx context.Context, resourceType directorresource.Type, resourceID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error {
+	fmt.Println("Len vendorsFromDB", len(vendorsFromDB))
 	ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
 	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 		return vendorsFromDB[i].OrdID == vendor.OrdID
 	}); found {
+		fmt.Println("Update Vendor for resource", resourceType)
+
+		if resourceType == directorresource.ApplicationTemplateVersion {
+			return s.vendorSvc.UpdateGlobal(ctx, vendorsFromDB[i].ID, vendor)
+		}
 		return s.vendorSvc.Update(ctx, vendorsFromDB[i].ID, vendor)
 	}
 
+	fmt.Println("Create Vendor for resource", resourceType)
 	_, err := s.vendorSvc.Create(ctx, resourceType, resourceID, vendor)
 	return err
 }
 
 func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
+	fmt.Println("resyncAppTemplateVersion; appTemplateID: ", appTemplateID)
+	fmt.Println("appTemplateVersionsFromDB; len: ", len(appTemplateVersionsFromDB))
+
+	r, _ := json.MarshalIndent(appTemplateVersion, "", "  ")
+	fmt.Printf("%+v \n", string(r))
+
 	ctx = addFieldToLogger(ctx, "app_template_version_id", appTemplateID)
 	if i, found := searchInSlice(len(appTemplateVersionsFromDB), func(i int) bool {
 		return appTemplateVersionsFromDB[i].Version == appTemplateVersion.Version
@@ -1502,9 +1519,10 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 		specs = append(specs, resourceDef.ToSpec())
 	}
 
-	fmt.Printf("API TO BE CREATED - %v\n", isAPIFound)
+	fmt.Printf("API TO BE CREATED - %v\n", !isAPIFound)
 
 	if !isAPIFound {
+		fmt.Println("Create API for resource", resourceType)
 		apiID, err := s.apiSvc.Create(ctx, resourceType, resourceID, nil, packageID, api, nil, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -1512,15 +1530,11 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 
 		fr, err := s.createSpecs(ctx, model.APISpecReference, apiID, specs)
 		if err != nil {
-			fmt.Println("CREATE createSpecs")
-			fmt.Println(err)
 			return nil, err
 		}
 
 		return fr, nil
 	}
-
-	fmt.Println("API CREATED")
 
 	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
 	if err != nil {
@@ -1533,7 +1547,13 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
+	fmt.Println("Update API for resource", resourceType)
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		err = s.apiSvc.UpdateInManyBundlesGlobal(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID)
+	} else {
+		err = s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID)
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -1582,6 +1602,7 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	}
 
 	if !isEventFound {
+		fmt.Println("Create Events for resource", resourceType)
 		eventID, err := s.eventSvc.Create(ctx, resourceType, resourceID, nil, packageID, event, nil, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -1613,8 +1634,13 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 			bundleIDsForCreation = append(bundleIDsForCreation, id)
 		}
 	}
-
-	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID); err != nil {
+	fmt.Println("Update Events for resource", resourceType)
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		err = s.eventSvc.UpdateInManyBundlesGlobal(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID)
+	} else {
+		err = s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID)
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -1641,7 +1667,6 @@ func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenc
 			continue
 		}
 
-		fmt.Println("CREATE SPEC")
 		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, objectType, objectID)
 		if err != nil {
 			return nil, err
@@ -1684,11 +1709,18 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecR
 }
 
 func (s *Service) resyncTombstone(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstonesFromDB []*model.Tombstone, tombstone model.TombstoneInput) error {
+	fmt.Println("Len tombostoneFromDB", len(tombstonesFromDB))
 	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
 		return tombstonesFromDB[i].OrdID == tombstone.OrdID
 	}); found {
+		fmt.Println("Update Tombsone for resource", resourceType)
+		if resourceType == directorresource.ApplicationTemplateVersion {
+			return s.tombstoneSvc.UpdateGlobal(ctx, tombstonesFromDB[i].ID, tombstone)
+		}
+
 		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].ID, tombstone)
 	}
+	fmt.Println("Create Tombstone for resource", resourceType)
 	_, err := s.tombstoneSvc.Create(ctx, resourceType, resourceID, tombstone)
 	return err
 }

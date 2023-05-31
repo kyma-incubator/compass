@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -154,7 +155,7 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
-		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &productCollection, condition)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &productCollection, condition)
@@ -162,6 +163,8 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("ListByResourceID in Product with type", resourceType, productCollection.Len())
 
 	products := make([]*model.Product, 0, productCollection.Len())
 	for _, product := range productCollection {

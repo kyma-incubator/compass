@@ -154,7 +154,7 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
-		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &vendorCollection, condition)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Vendor, tenantID, &vendorCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &vendorCollection, condition)

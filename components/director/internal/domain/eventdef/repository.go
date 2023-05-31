@@ -44,11 +44,13 @@ type EventAPIDefinitionConverter interface {
 
 type pgRepository struct {
 	singleGetter          repo.SingleGetter
+	singleGetterGlobal    repo.SingleGetterGlobal
 	bundleRefQueryBuilder repo.QueryBuilderGlobal
 	lister                repo.Lister
 	listerGlobal          repo.ListerGlobal
 	creator               repo.Creator
 	updater               repo.Updater
+	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
 	conv                  EventAPIDefinitionConverter
@@ -58,11 +60,13 @@ type pgRepository struct {
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:          repo.NewSingleGetter(eventAPIDefTable, eventDefColumns),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.EventDefIDColumn}),
 		lister:                repo.NewLister(eventAPIDefTable, eventDefColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		creator:               repo.NewCreator(eventAPIDefTable, eventDefColumns),
 		updater:               repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(eventAPIDefTable),
 		existQuerier:          repo.NewExistQuerier(eventAPIDefTable),
 		conv:                  conv,
@@ -81,6 +85,18 @@ func (r EventAPIDefCollection) Len() int {
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
+	}
+
+	eventAPIDefModel := r.conv.FromEntity(&eventAPIDefEntity)
+	return eventAPIDefModel, nil
+}
+
+// GetByIDGlobal retrieves the EventDefinition with matching ID from the Compass storage.
+func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EventDefinition, error) {
+	var eventAPIDefEntity Entity
+	err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
 	}
@@ -153,7 +169,7 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
-		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &eventCollection, condition)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.EventDefinition, tenantID, &eventCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &eventCollection, condition)
@@ -209,6 +225,16 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ev
 	entity := r.conv.ToEntity(item)
 
 	return r.updater.UpdateSingle(ctx, resource.EventDefinition, tenant, entity)
+}
+
+func (r *pgRepository) UpdateGlobal(ctx context.Context, item *model.EventDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
 // Exists checks if an EventDefinition with a given ID exists.

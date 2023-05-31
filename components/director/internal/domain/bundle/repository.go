@@ -48,6 +48,7 @@ type pgRepository struct {
 	unionLister        repo.UnionLister
 	creator            repo.Creator
 	updater            repo.Updater
+	updaterGlobal      repo.UpdaterGlobal
 	conv               EntityConverter
 }
 
@@ -63,6 +64,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		unionLister:        repo.NewUnionLister(bundleTable, bundleColumns),
 		creator:            repo.NewCreator(bundleTable, bundleColumns),
 		updater:            repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
 		conv:               conv,
 	}
 }
@@ -105,6 +107,21 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.B
 	return r.updater.UpdateSingle(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
+// Update missing godoc
+func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Bundle) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+
+	bndlEnt, err := r.conv.ToEntity(model)
+
+	if err != nil {
+		return errors.Wrap(err, "while converting to Bundle entity")
+	}
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, bndlEnt)
+}
+
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -119,6 +136,16 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
 	var bndlEnt Entity
 	if err := r.singleGetter.Get(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
+		return nil, err
+	}
+
+	return convertToBundle(r, &bndlEnt)
+}
+
+// GetByID missing godoc
+func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Bundle, error) {
+	var bndlEnt Entity
+	if err := r.singleGlobalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
 		return nil, err
 	}
 
@@ -207,7 +234,7 @@ func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, r
 
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
-		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &bundleCollection, condition)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.globalLister.ListGlobalWithSelectForUpdate(ctx, &bundleCollection, condition)

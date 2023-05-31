@@ -30,27 +30,31 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	conv         EntityConverter
-	existQuerier repo.ExistQuerier
-	lister       repo.Lister
-	listerGlobal repo.ListerGlobal
-	singleGetter repo.SingleGetter
-	deleter      repo.Deleter
-	creator      repo.Creator
-	updater      repo.Updater
+	conv               EntityConverter
+	existQuerier       repo.ExistQuerier
+	lister             repo.Lister
+	listerGlobal       repo.ListerGlobal
+	singleGetter       repo.SingleGetter
+	singleGetterGlobal repo.SingleGetterGlobal
+	deleter            repo.Deleter
+	creator            repo.Creator
+	updater            repo.Updater
+	updaterGlobal      repo.UpdaterGlobal
 }
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		conv:         conv,
-		existQuerier: repo.NewExistQuerier(packageTable),
-		lister:       repo.NewLister(packageTable, packageColumns),
-		listerGlobal: repo.NewListerGlobal(resource.Package, packageTable, packageColumns),
-		singleGetter: repo.NewSingleGetter(packageTable, packageColumns),
-		deleter:      repo.NewDeleter(packageTable),
-		creator:      repo.NewCreator(packageTable, packageColumns),
-		updater:      repo.NewUpdater(packageTable, updatableColumns, []string{"id"}),
+		conv:               conv,
+		existQuerier:       repo.NewExistQuerier(packageTable),
+		lister:             repo.NewLister(packageTable, packageColumns),
+		listerGlobal:       repo.NewListerGlobal(resource.Package, packageTable, packageColumns),
+		singleGetter:       repo.NewSingleGetter(packageTable, packageColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Package, packageTable, packageColumns),
+		deleter:            repo.NewDeleter(packageTable),
+		creator:            repo.NewCreator(packageTable, packageColumns),
+		updater:            repo.NewUpdater(packageTable, updatableColumns, []string{"id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Package, packageTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -71,6 +75,15 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.P
 	}
 	log.C(ctx).Debugf("Updating Package entity with id %q", model.ID)
 	return r.updater.UpdateSingle(ctx, resource.Package, tenant, r.conv.ToEntity(model))
+}
+
+// Update missing godoc
+func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Package) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+	log.C(ctx).Debugf("Updating Package entity with id %q", model.ID)
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc
@@ -100,6 +113,21 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 	return pkgModel, nil
 }
 
+func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Package, error) {
+	log.C(ctx).Debugf("Getting Package entity with id %q", id)
+	var pkgEnt Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &pkgEnt); err != nil {
+		return nil, err
+	}
+
+	pkgModel, err := r.conv.FromEntity(&pkgEnt)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting Package from Entity")
+	}
+
+	return pkgModel, nil
+}
+
 // ListByResourceID missing godoc
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Package, error) {
 	pkgCollection := pkgCollection{}
@@ -108,7 +136,7 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 	var err error
 	if resourceType == resource.Application {
 		condition = repo.NewEqualCondition("app_id", resourceID)
-		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &pkgCollection, condition)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, condition)
 	} else {
 		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &pkgCollection, condition)

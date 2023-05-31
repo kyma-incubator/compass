@@ -16,9 +16,11 @@ import (
 type TombstoneRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Tombstone) error
 	Update(ctx context.Context, tenant string, item *model.Tombstone) error
+	UpdateGlobal(ctx context.Context, model *model.Tombstone) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Tombstone, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Tombstone, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Tombstone, error)
 }
 
@@ -75,6 +77,20 @@ func (s *service) Update(ctx context.Context, id string, in model.TombstoneInput
 	tombstone.SetFromUpdateInput(in)
 
 	if err = s.tombstoneRepo.Update(ctx, tnt, tombstone); err != nil {
+		return errors.Wrapf(err, "while updating Tombstone with id %s", id)
+	}
+	return nil
+}
+
+func (s *service) UpdateGlobal(ctx context.Context, id string, in model.TombstoneInput) error {
+	tombstone, err := s.tombstoneRepo.GetByIDGlobal(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting Tombstone with id %s", id)
+	}
+
+	tombstone.SetFromUpdateInput(in)
+
+	if err = s.tombstoneRepo.UpdateGlobal(ctx, tombstone); err != nil {
 		return errors.Wrapf(err, "while updating Tombstone with id %s", id)
 	}
 	return nil

@@ -16,9 +16,11 @@ import (
 type PackageRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Package) error
 	Update(ctx context.Context, tenant string, item *model.Package) error
+	UpdateGlobal(ctx context.Context, model *model.Package) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Package, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Package, error)
 }
 
@@ -62,20 +64,32 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 }
 
 // Update missing godoc
-func (s *service) Update(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error {
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	pkg, err := s.pkgRepo.GetByID(ctx, tnt, id)
+	var pkg *model.Package
+	if resourceType == resource.ApplicationTemplateVersion {
+		pkg, err = s.pkgRepo.GetByIDGlobal(ctx, id)
+	} else {
+		pkg, err = s.pkgRepo.GetByID(ctx, tnt, id)
+	}
+
 	if err != nil {
 		return errors.Wrapf(err, "while getting Package with id %s", id)
 	}
 
 	pkg.SetFromUpdateInput(in, pkgHash)
 
-	if err = s.pkgRepo.Update(ctx, tnt, pkg); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.pkgRepo.UpdateGlobal(ctx, pkg)
+	} else {
+		err = s.pkgRepo.Update(ctx, tnt, pkg)
+	}
+
+	if err != nil {
 		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
 	return nil
