@@ -61,14 +61,9 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
-	if err != nil {
-		return false, errors.Wrap(err, "while determining subscription flow")
-	}
-
 	var dependentSvcInstancesInfo DependentServiceInstancesInfo
 	if err = json.Unmarshal([]byte(subscriptionPayload), &dependentSvcInstancesInfo); err != nil {
-		return false, errors.Wrapf(err, "while unmarshaling dependent service instance info")
+		return false, errors.Wrapf(err, "while unmarshaling dependent service instances info")
 	}
 	var success bool
 
@@ -78,6 +73,12 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		providerSubaccountID = instance.ProviderSubaccountID
 		subscriptionAppName = instance.AppName
 		subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), subscriptionIDKey).String()
+
+		flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
+		if err != nil {
+			return false, errors.Wrap(err, "while determining subscription flow")
+		}
+
 		switch flowType {
 		case resource.ApplicationTemplate:
 			log.C(ctx).Infof("Entering application subscription flow")
