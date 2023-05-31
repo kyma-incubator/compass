@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/token_claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"github.com/pkg/errors"
 )
@@ -13,7 +13,7 @@ import (
 type ClaimsValidator struct{}
 
 // Validate validates given id_token claims
-func (v *ClaimsValidator) Validate(ctx context.Context, claims token_claims.Claims) error {
+func (v *ClaimsValidator) Validate(ctx context.Context, claims idtokenclaims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

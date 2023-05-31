@@ -3,9 +3,8 @@ module github.com/kyma-incubator/compass/components/kyma-adapter
 go 1.18
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230530102137-b0af275e071e
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230531080032-40c3e4ac143e
 	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230505075253-b6e2a3035e6a
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
@@ -17,6 +16,7 @@ require (
 	github.com/99designs/gqlgen v0.17.31 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210825215144-46a420572a7c // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect

@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/config"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/config"
 	"github.com/pkg/errors"
 
 	"net/http"
