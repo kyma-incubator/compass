@@ -2,14 +2,15 @@ package operation_test
 
 import (
 	"database/sql/driver"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"regexp"
-	"testing"
-	"time"
 )
 
 func TestPgRepository_Create(t *testing.T) {

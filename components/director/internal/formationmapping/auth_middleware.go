@@ -31,22 +31,21 @@ const (
 	FormationAssignmentIDParam = "ucl-assignment-id"
 )
 
-//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentConverter interface {
-	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
-}
-
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
 //
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
-	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	Delete(ctx context.Context, id string) error
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
-	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error
+}
+
+//go:generate mockery --exported --name=formationAssignmentUpdater --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentUpdater interface {
+	Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications

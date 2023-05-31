@@ -40,10 +40,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 	// formation assignment fixtures with ASSIGN operation
 	faWithSourceAppAndTargetRuntime := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.ReadyAssignmentState, testValidConfig)
 	reverseFAWithSourceRuntimeAndTargetApp := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faTargetID, faSourceID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.ReadyAssignmentState, testValidConfig)
-	faModelInput := fixFormationAssignmentInput(testFormationID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.ReadyAssignmentState, testValidConfig)
 
 	faWithSourceAppAndTargetRuntimeWithCreateErrorState := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.CreateErrorAssignmentState, "")
-	faModelInputWithCreateErrorState := fixFormationAssignmentInput(testFormationID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.CreateErrorAssignmentState, "")
 
 	testFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
 		Request:             fixEmptyNotificationRequest(),
@@ -55,9 +53,12 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 		FormationAssignment: reverseFAWithSourceRuntimeAndTargetApp,
 	}
 
-	testAssignmentPair := &formationassignment.AssignmentMappingPair{
-		Assignment:        &testReverseFAReqMapping,
-		ReverseAssignment: &testFAReqMapping,
+	testAssignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment:        &testReverseFAReqMapping,
+			ReverseAssignment: &testFAReqMapping,
+		},
+		Operation: model.AssignFormation,
 	}
 
 	// formation assignment fixtures with UNASSIGN operation
@@ -84,9 +85,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 		name                string
 		transactFn          func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		faServiceFn         func() *automock.FormationAssignmentService
-		faConverterFn       func() *automock.FormationAssignmentConverter
 		faNotificationSvcFn func() *automock.FormationAssignmentNotificationService
 		formationSvcFn      func() *automock.FormationService
+		faUpdaterFn         func() *automock.FormationAssignmentUpdater
 		reqBody             fm.FormationAssignmentRequestBody
 		hasURLVars          bool
 		headers             map[string][]string
@@ -136,15 +137,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
 				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
 				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
@@ -156,6 +151,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
@@ -171,15 +171,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
 				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
 				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
@@ -191,6 +185,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
 				return formationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				Configuration: json.RawMessage(testValidConfig),
@@ -299,13 +298,17 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState).Return(testErr).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("SetAssignmentToErrorState", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, configurationErr.Error(), formationassignment.AssignmentErrorCode(2), model.CreateErrorAssignmentState, model.CreateFormation).Return(testErr).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State: model.CreateErrorAssignmentState,
@@ -321,8 +324,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeWithCreateErrorState, nil).Once()
-				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState).Return(nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInputWithCreateErrorState).Return(nil).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
@@ -330,10 +331,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntimeWithCreateErrorState).Return(faModelInputWithCreateErrorState).Once()
-				return faConv
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState, model.CreateFormation).Return(nil).Once()
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State: model.CreateErrorAssignmentState,
@@ -349,19 +351,18 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeWithCreateErrorState, nil).Once()
-				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState).Return(nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInputWithCreateErrorState).Return(nil).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntimeWithCreateErrorState).Return(faModelInputWithCreateErrorState).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState, model.CreateFormation).Return(nil).Once()
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State: model.CreateErrorAssignmentState,
@@ -377,19 +378,18 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeWithCreateErrorState, nil).Once()
-				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState).Return(nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInputWithCreateErrorState).Return(testErr).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntimeWithCreateErrorState).Return(faModelInputWithCreateErrorState).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState, model.CreateFormation).Return(nil).Once()
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, model.AssignFormation).Return(testErr).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State: model.CreateErrorAssignmentState,
@@ -405,13 +405,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
@@ -422,6 +416,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(nil, testErr).Once()
 				return faNotificationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
@@ -437,14 +436,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(nil, testErr).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
@@ -455,6 +448,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
@@ -470,14 +468,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
@@ -489,6 +481,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(fixEmptyNotificationRequest(), nil).Once()
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(nil, testErr).Once()
 				return faNotificationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
@@ -504,15 +501,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
 				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, testErr).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
@@ -524,6 +515,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(fixEmptyNotificationRequest(), nil).Once()
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
@@ -539,15 +535,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
 				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
-			},
-			faConverterFn: func() *automock.FormationAssignmentConverter {
-				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
-				return faConv
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
@@ -559,6 +549,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(fixEmptyNotificationRequest(), nil).Once()
 				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("Update", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
@@ -620,7 +615,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, nil).Once()
-				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorAssignmentState).Return(nil).Once()
 				return faSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -632,6 +626,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorAssignmentState, model.UnassignFormation).Return(nil).Once()
+				return updater
+			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
 			expectedErrOutput:  "",
@@ -642,13 +641,17 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, nil).Once()
-				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorAssignmentState).Return(testErr).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
+			},
+			faUpdaterFn: func() *automock.FormationAssignmentUpdater {
+				updater := &automock.FormationAssignmentUpdater{}
+				updater.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorAssignmentState, model.UnassignFormation).Return(testErr).Once()
+				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State: model.DeleteErrorAssignmentState,
@@ -922,11 +925,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				faSvc = tCase.faServiceFn()
 			}
 
-			faConv := fixUnusedFormationAssignmentConverter()
-			if tCase.faConverterFn != nil {
-				faConv = tCase.faConverterFn()
-			}
-
 			faNotificationSvc := fixUnusedFormationAssignmentNotificationSvc()
 			if tCase.faNotificationSvcFn != nil {
 				faNotificationSvc = tCase.faNotificationSvcFn()
@@ -937,9 +935,14 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				formationSvc = tCase.formationSvcFn()
 			}
 
-			defer mock.AssertExpectationsForObjects(t, persist, transact, faConv, faSvc, faNotificationSvc, formationSvc)
+			faUpdaterFn := &automock.FormationAssignmentUpdater{}
+			if tCase.faUpdaterFn != nil {
+				faUpdaterFn = tCase.faUpdaterFn()
+			}
 
-			handler := fm.NewFormationMappingHandler(transact, faConv, faSvc, faNotificationSvc, formationSvc)
+			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, faNotificationSvc, formationSvc, faUpdaterFn)
+
+			handler := fm.NewFormationMappingHandler(transact, faSvc, faUpdaterFn, faNotificationSvc, formationSvc)
 
 			// WHEN
 			handler.UpdateFormationAssignmentStatus(w, httpReq)
@@ -973,6 +976,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 		name               string
 		transactFn         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		formationSvcFn     func() *automock.FormationService
+		faUpdaterFn        func() *automock.FormationAssignmentUpdater
 		reqBody            fm.FormationRequestBody
 		hasURLVars         bool
 		headers            map[string][]string
@@ -1277,9 +1281,14 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 				formationSvc = tCase.formationSvcFn()
 			}
 
+			faUpdater := &automock.FormationAssignmentUpdater{}
+			if tCase.faUpdaterFn != nil {
+				faUpdater = tCase.faUpdaterFn()
+			}
+
 			defer mock.AssertExpectationsForObjects(t, persist, transact)
 
-			handler := fm.NewFormationMappingHandler(transact, nil, nil, nil, formationSvc)
+			handler := fm.NewFormationMappingHandler(transact, nil, faUpdater, nil, formationSvc)
 
 			// WHEN
 			handler.UpdateFormationStatus(w, httpReq)

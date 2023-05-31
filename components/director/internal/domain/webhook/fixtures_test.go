@@ -31,59 +31,43 @@ func stringPtr(s string) *string {
 }
 
 func fixApplicationModelWebhook(id, appID, tenant, url string, createdAt time.Time) *model.Webhook {
-	return &model.Webhook{
-		ID:             id,
-		ObjectID:       appID,
-		ObjectType:     model.ApplicationWebhookReference,
-		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            &url,
-		Auth:           fixBasicAuth(),
-		Mode:           &modelWebhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
-		CreatedAt:      &createdAt,
-	}
+	appWebhook := fixGenericModelWebhook(id, appID, url)
+	appWebhook.ObjectType = model.ApplicationWebhookReference
+	appWebhook.CreatedAt = &createdAt
+	return appWebhook
 }
 
 func fixRuntimeModelWebhook(id, runtimeID, url string) *model.Webhook {
-	return &model.Webhook{
-		ID:             id,
-		ObjectID:       runtimeID,
-		ObjectType:     model.RuntimeWebhookReference,
-		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            &url,
-		Auth:           fixBasicAuth(),
-		Mode:           &modelWebhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
-	}
+	runtimeWebhook := fixGenericModelWebhook(id, runtimeID, url)
+	runtimeWebhook.ObjectType = model.RuntimeWebhookReference
+	return runtimeWebhook
 }
 
 func fixFormationTemplateModelWebhook(id, formationTemplateID, url string) *model.Webhook {
-	return &model.Webhook{
-		ID:             id,
-		ObjectID:       formationTemplateID,
-		ObjectType:     model.FormationTemplateWebhookReference,
-		Type:           model.WebhookTypeFormationLifecycle,
-		URL:            &url,
-		Auth:           fixBasicAuth(),
-		Mode:           &modelWebhookMode,
-		URLTemplate:    &emptyTemplate,
-		InputTemplate:  &emptyTemplate,
-		HeaderTemplate: &emptyTemplate,
-		OutputTemplate: &emptyTemplate,
-	}
+	formationTmplWebhook := fixGenericModelWebhook(id, formationTemplateID, url)
+	formationTmplWebhook.ObjectType = model.FormationTemplateWebhookReference
+	formationTmplWebhook.Type = model.WebhookTypeFormationLifecycle
+	return formationTmplWebhook
 }
 
 func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.Webhook {
+	appTmplWebhook := fixGenericModelWebhook(id, appTemplateID, url)
+	appTmplWebhook.ObjectType = model.ApplicationTemplateWebhookReference
+	return appTmplWebhook
+}
+
+func fixIntegrationSystemModelWebhook(id, intSysID, url string) *model.Webhook {
+	intSysWebhook := fixGenericModelWebhook(id, intSysID, url)
+	intSysWebhook.ObjectType = model.IntegrationSystemWebhookReference
+	intSysWebhook.Type = ""
+	return intSysWebhook
+}
+
+func fixGenericModelWebhook(id, objectID, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
-		ObjectID:       appTemplateID,
-		ObjectType:     model.ApplicationTemplateWebhookReference,
+		ObjectID:       objectID,
+		ObjectType:     model.UnknownWebhookReference,
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           fixBasicAuth(),
@@ -95,10 +79,42 @@ func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.We
 	}
 }
 
-func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
+func fixApplicationGQLWebhook(id, appID, url string) *graphql.Webhook {
+	appWebhook := fixGenericGQLWebhook(id, url)
+	appWebhook.ApplicationID = &appID
+	appWebhook.CreatedAt = &graphql.Timestamp{}
+	return appWebhook
+}
+
+func fixRuntimeGQLWebhook(id, rtmID, url string) *graphql.Webhook {
+	rtmWebhook := fixGenericGQLWebhook(id, url)
+	rtmWebhook.RuntimeID = &rtmID
+	return rtmWebhook
+}
+
+func fixApplicationTemplateGQLWebhook(id, appTmplID, url string) *graphql.Webhook {
+	appTmplWebhook := fixGenericGQLWebhook(id, url)
+	appTmplWebhook.ApplicationTemplateID = &appTmplID
+	return appTmplWebhook
+}
+
+func fixFormationTemplateGQLWebhook(id, formationTmplID, url string) *graphql.Webhook {
+	formationTmplWebhook := fixGenericGQLWebhook(id, url)
+	formationTmplWebhook.FormationTemplateID = &formationTmplID
+	formationTmplWebhook.Type = graphql.WebhookTypeFormationLifecycle
+	return formationTmplWebhook
+}
+
+func fixIntegrationSystemGQLWebhook(id, intSysID, url string) *graphql.Webhook {
+	intSysWebhook := fixGenericGQLWebhook(id, url)
+	intSysWebhook.IntegrationSystemID = &intSysID
+	intSysWebhook.Type = ""
+	return intSysWebhook
+}
+
+func fixGenericGQLWebhook(id, url string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:             id,
-		ApplicationID:  &appID,
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &graphql.Auth{},
@@ -107,7 +123,6 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		CreatedAt:      &graphql.Timestamp{},
 	}
 }
 

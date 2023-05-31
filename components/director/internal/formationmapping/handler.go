@@ -47,18 +47,18 @@ type FormationRequestBody struct {
 // Handler is the base struct definition of the FormationMappingHandler
 type Handler struct {
 	transact              persistence.Transactioner
-	faConverter           formationAssignmentConverter
 	faService             FormationAssignmentService
+	faUpdater             formationAssignmentUpdater
 	faNotificationService FormationAssignmentNotificationService
 	formationService      formationService
 }
 
 // NewFormationMappingHandler creates a formation mapping Handler
-func NewFormationMappingHandler(transact persistence.Transactioner, faConverter formationAssignmentConverter, faService FormationAssignmentService, faNotificationService FormationAssignmentNotificationService, formationService formationService) *Handler {
+func NewFormationMappingHandler(transact persistence.Transactioner, faService FormationAssignmentService, faUpdater formationAssignmentUpdater, faNotificationService FormationAssignmentNotificationService, formationService formationService) *Handler {
 	return &Handler{
 		transact:              transact,
-		faConverter:           faConverter,
 		faService:             faService,
+		faUpdater:             faUpdater,
 		faNotificationService: faNotificationService,
 		formationService:      formationService,
 	}
@@ -173,8 +173,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	if reqBody.State == model.CreateErrorAssignmentState {
-		err = h.faService.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State)
-		if err != nil {
+		if err = h.faUpdater.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, formationAssignmentID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
@@ -192,8 +191,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
-	err = h.faService.Update(ctx, formationAssignmentID, h.faConverter.ToInput(fa))
-	if err != nil {
+	if err = h.faUpdater.Update(ctx, fa, model.AssignFormation); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
@@ -243,9 +241,12 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		FormationAssignment: reverseFA,
 	}
 
-	assignmentPair := formationassignment.AssignmentMappingPair{
-		Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
-		ReverseAssignment: &faReqMapping,
+	assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
+			ReverseAssignment: &faReqMapping,
+		},
+		Operation: model.AssignFormation,
 	}
 
 	log.C(ctx).Infof("Processing formation assignment pairs and their notifications")
@@ -433,7 +434,7 @@ func (h *Handler) processAsynchronousFormationAssignmentUnassign(ctx context.Con
 	}
 
 	if reqBody.State == model.DeleteErrorAssignmentState {
-		err := h.faService.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State)
+		err := h.faUpdater.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.UnassignFormation)
 		if err != nil {
 			return false, errors.Wrapf(err, "while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
 		}

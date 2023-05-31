@@ -33,7 +33,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 	gqlWebhookInput := fixGQLWebhookInput("foo")
 	modelWebhookInput := fixModelWebhookInput("foo")
 
-	gqlWebhook := fixGQLWebhook(id, "", "")
+	gqlWebhook := fixApplicationGQLWebhook(id, "", "")
 	modelWebhook := fixApplicationModelWebhook(id, givenAppID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {
@@ -384,7 +384,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 	givenWebhookID := "bar"
 	gqlWebhookInput := fixGQLWebhookInput("foo")
 	modelWebhookInput := fixModelWebhookInput("foo")
-	gqlWebhook := fixGQLWebhook(givenWebhookID, "", "")
+	gqlWebhook := fixApplicationGQLWebhook(givenWebhookID, "", "")
 	modelWebhook := fixApplicationModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {
@@ -537,7 +537,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 	applicationID := "foo"
 	givenWebhookID := "bar"
 
-	gqlWebhook := fixGQLWebhook(givenWebhookID, "", "")
+	gqlWebhook := fixApplicationGQLWebhook(givenWebhookID, "", "")
 	modelWebhook := fixApplicationModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {

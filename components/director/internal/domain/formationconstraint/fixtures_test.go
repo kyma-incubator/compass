@@ -23,8 +23,9 @@ const (
 	testInternalTenantID     = "aaaddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	scenario                 = "test-scenario"
 	testName                 = "test"
-	runtimeType     = "runtimeType"
-	applicationType = "applicationType")
+	runtimeType              = "runtimeType"
+	applicationType          = "applicationType"
+)
 
 var (
 	formationConstraintModel = &model.FormationConstraint{
