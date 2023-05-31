@@ -23,10 +23,14 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
+	testAppID          = "app-id"
 	testConsumerID     = "consumer-id"
+	testLabelInputKey  = "applicationType"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
+	testAppName                                 = "app-name"
+	updatedTestName                             = "new-test-name"
 	testNameOtherSystemType                     = "Other System Type"
 	testPageSize                                = 3
 	testCursor                                  = ""
@@ -596,5 +600,14 @@ func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
 			URL:  &testURL,
 			Auth: nil,
 		},
+	}
+}
+
+func fixLabelInput(key string, value string, objectID string, objectType model.LabelableObject) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: objectType,
 	}
 }

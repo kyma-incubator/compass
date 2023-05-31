@@ -321,12 +321,14 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	}
 
 	if oldAppTemplate.Name != appTemplate.Name {
+		log.C(ctx).Infof("Listing applications registered from application template with id %s", id)
 		appsByAppTemplate, err := s.appRepo.ListAllByApplicationTemplateID(ctx, id)
 		if err != nil {
 			return errors.Wrapf(err, "while listing applications for app template with id %s", id)
 		}
 
 		for _, app := range appsByAppTemplate {
+			log.C(ctx).Infof("Updating %s label for application with id %s", applicationTypeLabelKey, app.ID)
 			err = s.labelUpsertService.UpsertLabel(ctx, appTenant, &model.LabelInput{
 				Key:        applicationTypeLabelKey,
 				Value:      appTemplate.Name,
