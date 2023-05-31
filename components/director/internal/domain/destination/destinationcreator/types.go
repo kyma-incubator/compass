@@ -1,22 +1,37 @@
 package destinationcreator
 
 const (
+	// TypeHTTP represents the HTTP destination type
 	TypeHTTP Type = "HTTP"
-	TypeRFC  Type = "RFC"
+	// TypeRFC represents the RFC destination type
+	TypeRFC Type = "RFC"
+	// TypeLDAP represents the LDAP destination type
 	TypeLDAP Type = "LDAP"
+	// TypeMAIL represents the MAIL destination type
 	TypeMAIL Type = "MAIL"
 
-	AuthTypeNoAuth     AuthType = "NoAuthentication"
-	AuthTypeBasic      AuthType = "BasicAuthentication"
+	// AuthTypeNoAuth represents the NoAuth destination authentication
+	AuthTypeNoAuth AuthType = "NoAuthentication"
+	// AuthTypeBasic represents the Basic destination authentication
+	AuthTypeBasic AuthType = "BasicAuthentication"
+	// AuthTypeSAMLBearer represents the SAMLBearer destination authentication
 	AuthTypeSAMLBearer AuthType = "OAuth2SAMLBearerAssertion"
 
-	ProxyTypeInternet    ProxyType = "Internet"
-	ProxyTypeOnPremise   ProxyType = "OnPremise"
+	// ProxyTypeInternet represents the Internet proxy type
+	ProxyTypeInternet ProxyType = "Internet"
+	// ProxyTypeOnPremise represents the OnPremise proxy type
+	ProxyTypeOnPremise ProxyType = "OnPremise"
+	// ProxyTypePrivateLink represents the PrivateLink proxy type
 	ProxyTypePrivateLink ProxyType = "PrivateLink"
 )
 
+// Type represents the HTTP destination type
 type Type string
+
+// AuthType represents the destination authentication
 type AuthType string
+
+// ProxyType represents the destination proxy type
 type ProxyType string
 
 // Destination Creator API types
@@ -24,7 +39,7 @@ type ProxyType string
 // RequestBody // todo::: add godoc
 type RequestBody struct {
 	Name               string    `json:"name"`
-	Url                string    `json:"url"`
+	URL                string    `json:"url"`
 	Type               Type      `json:"type"`
 	ProxyType          ProxyType `json:"proxyType"`
 	AuthenticationType AuthType  `json:"authenticationType"`

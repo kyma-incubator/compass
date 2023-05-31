@@ -53,8 +53,8 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		}
 
 		// todo:: will be implemented with the second phase of the destination operator
-		//log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(confDetailsResp.Configuration.Destinations))
-		//for _, destDetails := range confDetailsResp.Configuration.Destinations {
+		// log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(confDetailsResp.Configuration.Destinations))
+		// for _, destDetails := range confDetailsResp.Configuration.Destinations {
 		//	statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, di.FormationAssignment)
 		//	if err != nil {
 		//		return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
@@ -70,10 +70,10 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		//			return false, errors.Wrapf(err, "while creating destination with name: %q", destDetails.Name)
 		//		}
 		//	}
-		//}
+		// }
 		//
-		//samlAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.SAMLBearerAuthenticationDetails
-		//if isSAMLDetailsExists := samlAuthDetails; isSAMLDetailsExists != nil {
+		// samlAuthDetails := confDetailsResp.Configuration.Credentials.InboundCommunicationDetails.SAMLBearerAuthenticationDetails
+		// if isSAMLDetailsExists := samlAuthDetails; isSAMLDetailsExists != nil {
 		//	log.C(ctx).Infof("There is/are %d SAML Bearer destination details in the configuration response", len(samlAuthDetails.Destinations))
 		//	for _, _ = range samlAuthDetails.Destinations {
 		//		// todo:: (for phase 2) create KeyStore for every destination elements and enrich the destination before sending it to the Destination Creator component
@@ -203,13 +203,13 @@ type OutboundCommunicationCredentials struct {
 
 // NoAuthentication todo::: add godoc
 type NoAuthentication struct {
-	Url            string   `json:"url"`
+	URL            string   `json:"url"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
 // BasicAuthentication todo::: add godoc
 type BasicAuthentication struct {
-	Url            string   `json:"url"`
+	URL            string   `json:"url"`
 	Username       string   `json:"username"`
 	Password       string   `json:"password"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
@@ -217,7 +217,7 @@ type BasicAuthentication struct {
 
 // ClientCredentialsAuthentication todo::: add godoc
 type ClientCredentialsAuthentication struct {
-	Url             string   `json:"url"`
+	URL             string   `json:"url"`
 	TokenServiceUrl string   `json:"tokenServiceUrl"`
 	ClientId        string   `json:"clientId"`
 	ClientSecret    string   `json:"clientSecret"`
@@ -226,7 +226,7 @@ type ClientCredentialsAuthentication struct {
 
 // ClientCertAuthentication todo::: add godoc
 type ClientCertAuthentication struct {
-	Url            string   `json:"url"`
+	URL            string   `json:"url"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
@@ -261,7 +261,7 @@ type Destination struct {
 	Description          string                       `json:"description,omitempty"`
 	ProxyType            destinationcreator.ProxyType `json:"proxyType"`
 	Authentication       destinationcreator.AuthType  `json:"authentication"`
-	Url                  string                       `json:"url"`
+	URL                  string                       `json:"url"`
 	SubaccountID         string                       `json:"subaccountId,omitempty"`
 	AdditionalAttributes AdditionalAttributes         `json:"additionalAttributes,omitempty"`
 	// todo:: additional fields for KeyStore(phase 2)

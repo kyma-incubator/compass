@@ -28,8 +28,8 @@ type automaticScenarioAssignmentService interface {
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
-//go:generate mockery --exported --name=DestinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type DestinationService interface {
+//go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type destinationService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
 	DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error
@@ -87,7 +87,7 @@ type ConstraintEngine struct {
 	constraintSvc             formationConstraintSvc
 	tenantSvc                 tenantService
 	asaSvc                    automaticScenarioAssignmentService
-	destinationSvc            DestinationService
+	destinationSvc            destinationService
 	formationRepo             formationRepository
 	labelRepo                 labelRepository
 	labelService              labelService
@@ -101,7 +101,7 @@ type ConstraintEngine struct {
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc DestinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:         constraintSvc,
 		tenantSvc:             tenantSvc,

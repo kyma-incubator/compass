@@ -66,6 +66,7 @@ type UIDService interface {
 	Generate() string
 }
 
+// Service todo::: add godoc
 type Service struct {
 	mtlsHTTPClient        *http.Client
 	destinationCreatorCfg *destinationcreator.Config
@@ -78,6 +79,7 @@ type Service struct {
 	uidSvc                UIDService
 }
 
+// NewService todo::: add godoc
 func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationcreator.Config, transact persistence.Transactioner, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, labelRepo labelRepository, destinationRepository destinationRepository, uidSvc UIDService) *Service {
 	return &Service{
 		mtlsHTTPClient:        mtlsHTTPClient,
@@ -92,6 +94,7 @@ func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationc
 	}
 }
 
+// CreateBasicCredentialDestinations todo::: add godoc
 func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
@@ -114,7 +117,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 	}
 
 	destinationName := destinationDetails.Name
-	log.C(ctx).Infof("Creating inbound basic destination with name: %q and subaccount ID: %q in the destination service", destinationName, subaccountID)
+	log.C(ctx).Infof("Creating inbound basic destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
 	if err != nil {
 		return defaultStatusCode, errors.Wrapf(err, "while creating inbound basic destination with name: %q in the destination service", destinationName)
@@ -125,7 +128,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 			ID:                    s.uidSvc.Generate(),
 			Name:                  reqBody.Name,
 			Type:                  reqBody.Type,
-			Url:                   reqBody.Url,
+			Url:                   reqBody.URL,
 			Authentication:        reqBody.AuthenticationType,
 			SubaccountID:          subaccountID,
 			FormationAssignmentID: &formationAssignment.ID,
@@ -142,7 +145,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 	return statusCode, nil
 }
 
-// todo:: will be implemented with the second phase of the destination operator. Uncomment and make the needed adaptation
+// CreateDesignTimeDestinations todo:: will be implemented with the second phase of the destination operator. Uncomment and make the needed adaptation
 func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
@@ -168,7 +171,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return defaultStatusCode, errors.Wrapf(err, "while validating destination request body")
 	}
 
-	log.C(ctx).Infof("Creating design time destination with name: %q in the destination service", destinationName)
+	log.C(ctx).Infof("Creating design time destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
 	if err != nil {
 		return defaultStatusCode, errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
@@ -186,7 +189,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	return statusCode, nil
 }
 
-// todo::: go doc
+// DeleteDestinations todo::: go doc
 func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error {
 	subaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
 	if err != nil {
@@ -217,7 +220,7 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *w
 	return nil
 }
 
-// todo::: go doc
+// DeleteDestinationFromDestinationService todo::: go doc
 func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationSubaccount, formationAssignment)
 	if err != nil {
@@ -241,6 +244,9 @@ func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, d
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, strURL, nil)
+	if err != nil {
+		return errors.Wrap(err, "while preparing request for deleting destination from destination service")
+	}
 	req.Header.Set(clientUserHeaderKey, clientUser)
 
 	log.C(ctx).Infof("Deleting destination with name: %q and subaccount ID: %q from destination service", destinationName, subaccountID)
@@ -423,6 +429,9 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		return defaultStatusCode, errors.Wrap(err, "while preparing request for creation of destination in destination service")
+	}
 	req.Header.Set(clientUserHeaderKey, clientUser)
 
 	resp, err := s.mtlsHTTPClient.Do(req)
@@ -458,21 +467,21 @@ func (s *Service) prepareRequestBody(ctx context.Context, destinationDetails ope
 		Password:           basicAuthenticationCredentials.Password,
 	}
 
-	if destinationDetails.Url != "" {
-		reqBody.Url = destinationDetails.Url
+	if destinationDetails.URL != "" {
+		reqBody.URL = destinationDetails.URL
 	}
 
-	if destinationDetails.Url == "" && basicAuthenticationCredentials.Url != "" {
-		reqBody.Url = basicAuthenticationCredentials.Url
+	if destinationDetails.URL == "" && basicAuthenticationCredentials.URL != "" {
+		reqBody.URL = basicAuthenticationCredentials.URL
 	}
 
-	if destinationDetails.Url == "" && basicAuthenticationCredentials.Url == "" {
+	if destinationDetails.URL == "" && basicAuthenticationCredentials.URL == "" {
 		app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
 		if err != nil {
 			return nil, err
 		}
 		if app.BaseURL != nil {
-			reqBody.Url = *app.BaseURL
+			reqBody.URL = *app.BaseURL
 		}
 	}
 
@@ -498,7 +507,7 @@ func (s *Service) prepareRequestBody(ctx context.Context, destinationDetails ope
 func validate(reqBody *destinationcreator.RequestBody) error {
 	return validation.ValidateStruct(reqBody,
 		validation.Field(&reqBody.Name, validation.Required, validation.Length(1, 200)),
-		validation.Field(&reqBody.Url, validation.Required),
+		validation.Field(&reqBody.URL, validation.Required),
 		validation.Field(&reqBody.Type, validation.In(destinationcreator.TypeHTTP, destinationcreator.TypeRFC, destinationcreator.TypeLDAP, destinationcreator.TypeMAIL)),
 		validation.Field(&reqBody.ProxyType, validation.In(destinationcreator.ProxyTypeInternet, destinationcreator.ProxyTypeOnPremise, destinationcreator.ProxyTypePrivateLink)),
 		validation.Field(&reqBody.AuthenticationType, validation.In(destinationcreator.AuthTypeNoAuth, destinationcreator.AuthTypeBasic, destinationcreator.AuthTypeSAMLBearer)),

@@ -74,7 +74,6 @@ func (r *repository) DeleteOld(ctx context.Context, latestRevision, tenantID str
 }
 
 func (r *repository) CreateDestination(ctx context.Context, destination *model.Destination) error {
-	log.C(ctx).Infof("Creating destination with name: %q, authentication type: %q, tenant: %q and assignment ID: %q in the DB", destination.Name, destination.Type, destination.SubaccountID, *destination.FormationAssignmentID)
 	if destination == nil {
 		return apperrors.NewInternalError("destination model can not be empty")
 	}
