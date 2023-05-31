@@ -147,7 +147,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3070"
+      version: "PR-3094"
       name: compass-ias-adapter
     gateway:
       dir: dev/incubator/
