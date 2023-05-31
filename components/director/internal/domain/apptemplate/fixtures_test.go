@@ -30,7 +30,7 @@ const (
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
 	testAppName                                 = "app-name"
-	updatedTestName                             = "new-test-name"
+	updatedAppTemplateTestName                  = "new-app-template-test-name"
 	testNameOtherSystemType                     = "Other System Type"
 	testPageSize                                = 3
 	testCursor                                  = ""

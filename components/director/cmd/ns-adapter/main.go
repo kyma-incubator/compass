@@ -157,7 +157,7 @@ func main() {
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, nil)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
 
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)

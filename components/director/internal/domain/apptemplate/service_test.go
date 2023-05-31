@@ -1096,16 +1096,16 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
-	appInputJSONWithNewAppType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, updatedTestName)
+	appInputJSONWithNewAppType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, updatedAppTemplateTestName)
 
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, nil)
-	modelAppTemplateWithNewName := fixModelAppTemplateWithAppInputJSON(testID, updatedTestName, appInputJSONWithNewAppType, nil)
+	modelAppTemplateWithNewName := fixModelAppTemplateWithAppInputJSON(testID, updatedAppTemplateTestName, appInputJSONWithNewAppType, nil)
 	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
 	modelAppTemplateWithLabels := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testName, appInputJSON, nil, newTestLabels)
 	modelAppTemplateUpdateInput := fixModelAppTemplateUpdateInputWithLabels(testName, appInputJSON, newTestLabels)
 
 	modelApplicationFromTemplate := fixModelApplication(testAppID, testAppName)
-	modelLabelInput := fixLabelInput(testLabelInputKey, updatedTestName, testAppID, model.ApplicationLabelableObject)
+	modelLabelInput := fixLabelInput(testLabelInputKey, updatedAppTemplateTestName, testAppID, model.ApplicationLabelableObject)
 
 	testCases := []struct {
 		Name              string
@@ -1169,12 +1169,12 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Success update of app template - no applications registered from the app template with changed name",
 			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedTestName, appInputJSONWithNewAppType)
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-				appTemplateRepo.On("ListByName", ctx, updatedTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -1198,12 +1198,12 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Error while listing applications from this app template when app template name is changed",
 			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedTestName, appInputJSONWithNewAppType)
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-				appTemplateRepo.On("ListByName", ctx, updatedTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -1228,12 +1228,12 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Success update of app template with changed name and the applicationType labels of applications registered from the app template",
 			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedTestName, appInputJSONWithNewAppType)
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-				appTemplateRepo.On("ListByName", ctx, updatedTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -1258,12 +1258,12 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Error while updating applicationType label of applications registered from the app template with changed name",
 			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedTestName, appInputJSONWithNewAppType)
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-				appTemplateRepo.On("ListByName", ctx, updatedTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
 				return appTemplateRepo
 			},

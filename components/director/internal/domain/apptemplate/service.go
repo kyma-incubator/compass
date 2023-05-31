@@ -341,7 +341,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 				ObjectType: model.ApplicationLabelableObject,
 			})
 			if err != nil {
-				return errors.Wrapf(err, "while updating applicationType label of application with id %s", app.ID)
+				return errors.Wrapf(err, "while updating %s label of application with id %s", applicationTypeLabelKey, app.ID)
 			}
 		}
 	}
