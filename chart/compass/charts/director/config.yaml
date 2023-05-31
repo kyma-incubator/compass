@@ -94,6 +94,8 @@ graphql:
     requestBundleInstanceAuthDeletion: ["runtime:write"]
     setBundleInstanceAuth: ["application:write"]
     deleteBundleInstanceAuth: ["application:write"]
+    createBundleInstanceAuth: ["bundle_instance_auth:write"]
+    updateBundleInstanceAuth: ["bundle_instance_auth:write"]
     addBundle: ["application:write"]
     updateBundle: ["application:write"]
     deleteBundle: ["application:write"]

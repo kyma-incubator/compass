@@ -244,6 +244,14 @@ type BundleInstanceAuth struct {
 	RuntimeContextID *string                   `json:"runtimeContextID"`
 }
 
+type BundleInstanceAuthCreateInput struct {
+	Context          *JSON      `json:"context"`
+	InputParams      *JSON      `json:"inputParams"`
+	Auth             *AuthInput `json:"auth"`
+	RuntimeID        *string    `json:"runtimeID"`
+	RuntimeContextID *string    `json:"runtimeContextID"`
+}
+
 type BundleInstanceAuthRequestInput struct {
 	ID *string `json:"id"`
 	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
@@ -286,6 +294,12 @@ type BundleInstanceAuthStatusInput struct {
 	//
 	// **Validation**: required, if condition is FAILED
 	Reason string `json:"reason"`
+}
+
+type BundleInstanceAuthUpdateInput struct {
+	Context     *JSON      `json:"context"`
+	InputParams *JSON      `json:"inputParams"`
+	Auth        *AuthInput `json:"auth"`
 }
 
 type BundlePage struct {

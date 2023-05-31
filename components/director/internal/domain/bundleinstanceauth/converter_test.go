@@ -13,6 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	testJSON = graphql.JSON("test")
+	testStr  = "test"
+
+	authInputModel = fixModelAuthInput()
+	authInputGQL   = fixGQLAuthInput()
+)
+
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
 	authModel := fixModelAuth()
@@ -145,9 +153,6 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 func TestConverter_RequestInputFromGraphQL(t *testing.T) {
 	// GIVEN
-	testJSON := graphql.JSON("test")
-	testStr := "test"
-
 	testCases := []struct {
 		Name     string
 		Input    graphql.BundleInstanceAuthRequestInput
@@ -190,11 +195,135 @@ func TestConverter_RequestInputFromGraphQL(t *testing.T) {
 	}
 }
 
+func TestConverter_CreateInputFromGraphQL(t *testing.T) {
+	// GIVEN
+	testCases := []struct {
+		Name             string
+		AuthConverterFn  func() *automock.AuthConverter
+		Input            graphql.BundleInstanceAuthCreateInput
+		ExpectedOutput   model.BundleInstanceAuthCreateInput
+		ExpectedErrorMsg string
+	}{
+		{
+			Name: "Success",
+			AuthConverterFn: func() *automock.AuthConverter {
+				conv := &automock.AuthConverter{}
+				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel, nil).Once()
+				return conv
+			},
+			Input: graphql.BundleInstanceAuthCreateInput{
+				Context:     &testJSON,
+				InputParams: &testJSON,
+				Auth:        authInputGQL,
+				RuntimeID:   &testStr,
+			},
+			ExpectedOutput: model.BundleInstanceAuthCreateInput{
+				Context:     &testStr,
+				InputParams: &testStr,
+				Auth:        authInputModel,
+				RuntimeID:   &testStr,
+			},
+		},
+		{
+			Name: "Returns error when can't convert auth",
+			AuthConverterFn: func() *automock.AuthConverter {
+				conv := &automock.AuthConverter{}
+				conv.On("InputFromGraphQL", authInputGQL).Return(nil, testError).Once()
+				return conv
+			},
+			Input: graphql.BundleInstanceAuthCreateInput{
+				Context:     &testJSON,
+				InputParams: &testJSON,
+				Auth:        authInputGQL,
+				RuntimeID:   &testStr,
+			},
+			ExpectedErrorMsg: "while converting Auth",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			authConv := testCase.AuthConverterFn()
+			conv := bundleinstanceauth.NewConverter(authConv)
+
+			// WHEN
+			result, err := conv.CreateInputFromGraphQL(testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrorMsg == "" {
+				require.Equal(t, testCase.ExpectedOutput, result)
+				require.Nil(t, err)
+			} else {
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			}
+		})
+	}
+}
+
+func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
+	// GIVEN
+	testCases := []struct {
+		Name             string
+		AuthConverterFn  func() *automock.AuthConverter
+		Input            graphql.BundleInstanceAuthUpdateInput
+		ExpectedOutput   model.BundleInstanceAuthUpdateInput
+		ExpectedErrorMsg string
+	}{
+		{
+			Name: "Success",
+			AuthConverterFn: func() *automock.AuthConverter {
+				conv := &automock.AuthConverter{}
+				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel, nil).Once()
+				return conv
+			},
+			Input: graphql.BundleInstanceAuthUpdateInput{
+				Context:     &testJSON,
+				InputParams: &testJSON,
+				Auth:        authInputGQL,
+			},
+			ExpectedOutput: model.BundleInstanceAuthUpdateInput{
+				Context:     &testStr,
+				InputParams: &testStr,
+				Auth:        authInputModel,
+			},
+		},
+		{
+			Name: "Returns error when can't convert auth",
+			AuthConverterFn: func() *automock.AuthConverter {
+				conv := &automock.AuthConverter{}
+				conv.On("InputFromGraphQL", authInputGQL).Return(nil, testError).Once()
+				return conv
+			},
+			Input: graphql.BundleInstanceAuthUpdateInput{
+				Context:     &testJSON,
+				InputParams: &testJSON,
+				Auth:        authInputGQL,
+			},
+			ExpectedErrorMsg: "while converting Auth",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			authConv := testCase.AuthConverterFn()
+			conv := bundleinstanceauth.NewConverter(authConv)
+
+			// WHEN
+			result, err := conv.UpdateInputFromGraphQL(testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrorMsg == "" {
+				require.Equal(t, testCase.ExpectedOutput, result)
+				require.Nil(t, err)
+			} else {
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			}
+		})
+	}
+}
+
 func TestConverter_SetInputFromGraphQL(t *testing.T) {
 	// GIVEN
-	authInputModel := fixModelAuthInput()
-	authInputGQL := fixGQLAuthInput()
-
 	testCases := []struct {
 		Name            string
 		AuthConverterFn func() *automock.AuthConverter
