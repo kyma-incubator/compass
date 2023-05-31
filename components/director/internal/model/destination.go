@@ -23,7 +23,7 @@ type Destination struct {
 	ID                    string                      `json:"id"`
 	Name                  string                      `json:"name"`
 	Type                  destinationcreator.Type     `json:"type"`
-	Url                   string                      `json:"url"`
+	URL                   string                      `json:"url"`
 	Authentication        destinationcreator.AuthType `json:"authentication"`
 	SubaccountID          string                      `json:"subaccount_id"`
 	FormationAssignmentID *string                     `json:"formationAssignmentID"`

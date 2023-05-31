@@ -128,7 +128,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 			ID:                    s.uidSvc.Generate(),
 			Name:                  reqBody.Name,
 			Type:                  reqBody.Type,
-			Url:                   reqBody.URL,
+			URL:                   reqBody.URL,
 			Authentication:        reqBody.AuthenticationType,
 			SubaccountID:          subaccountID,
 			FormationAssignmentID: &formationAssignment.ID,

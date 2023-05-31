@@ -218,8 +218,8 @@ type BasicAuthentication struct {
 // ClientCredentialsAuthentication todo::: add godoc
 type ClientCredentialsAuthentication struct {
 	URL             string   `json:"url"`
-	TokenServiceUrl string   `json:"tokenServiceUrl"`
-	ClientId        string   `json:"clientId"`
+	TokenServiceURL string   `json:"tokenServiceUrl"`
+	ClientID        string   `json:"clientId"`
 	ClientSecret    string   `json:"clientSecret"`
 	CorrelationIds  []string `json:"correlationIds,omitempty"`
 }
