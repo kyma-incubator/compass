@@ -51,6 +51,7 @@ func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatus
 	return nil
 }
 
+// SetFromUpdateInput sets fields to BundleInstanceAuth from BundleInstanceAuthUpdateInput
 func (a *BundleInstanceAuth) SetFromUpdateInput(in BundleInstanceAuthUpdateInput) {
 	if in.Context != nil {
 		a.Context = in.Context
