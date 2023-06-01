@@ -462,8 +462,8 @@ func fixValidApplicationRegisterInput() graphql.ApplicationRegisterInput {
 	}
 }
 
-func fixValidApplicationJSONInput() graphql.ApplicationRegisterInput {
-	return graphql.ApplicationRegisterInput{
+func fixValidApplicationJSONInput() graphql.ApplicationJSONInput {
+	return graphql.ApplicationJSONInput{
 		Name: "application",
 	}
 }
