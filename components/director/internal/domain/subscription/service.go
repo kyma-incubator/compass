@@ -333,7 +333,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
-	applications, err := s.appSvc.ListAll(ctx) // get all applications for the subscribedSubaccountID
+	applications, err := s.appSvc.ListAll(ctx)
 	if err != nil {
 		return false, errors.Wrapf(err, "while listing applications")
 	}
@@ -657,6 +657,7 @@ func removeSubscription(subscriptions []interface{}, subscriptionID string) ([]i
 	return subscriptions, false
 }
 
+// remove removes in place the subscriptionID
 func remove(subscriptions []interface{}, subscriptionID string) []interface{} {
 	writeIdx := 0
 

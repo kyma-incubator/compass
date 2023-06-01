@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	UserContextHeader  = "user_context"
-	LocationHeader     = "Location"
-	JobSucceededStatus = "COMPLETED"
-	EventuallyTimeout  = 60 * time.Second
-	EventuallyTick     = 2 * time.Second
-	InstancesLabelKey  = "instances"
+	UserContextHeader     = "user_context"
+	LocationHeader        = "Location"
+	JobSucceededStatus    = "COMPLETED"
+	EventuallyTimeout     = 60 * time.Second
+	EventuallyTick        = 2 * time.Second
+	SubscriptionsLabelKey = "subscriptions"
 )
 
 func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName string, httpClient *http.Client, subscriptionURL, apiPath, subscriptionToken, propagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
