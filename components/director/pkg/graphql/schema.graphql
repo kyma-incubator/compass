@@ -1921,7 +1921,15 @@ type Mutation {
 	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
 	requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundleInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthDeletion")
+	"""
+	**Examples**
+	- [create bundle instance auth](examples/create-bundle-instance-auth/create-bundle-instance-auth.graphql)
+	"""
 	createBundleInstanceAuth(bundleID: ID!, in: BundleInstanceAuthCreateInput! @validate): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.createBundleInstanceAuth")
+	"""
+	**Examples**
+	- [update bundle instance auth](examples/update-bundle-instance-auth/update-bundle-instance-auth.graphql)
+	"""
 	updateBundleInstanceAuth(id: ID!, bundleID: ID!, in: BundleInstanceAuthUpdateInput!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.updateBundleInstanceAuth")
 	"""
 	**Examples**
