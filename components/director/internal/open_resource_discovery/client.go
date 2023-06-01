@@ -3,7 +3,6 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"io"
 	"net/http"
@@ -77,24 +76,19 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	baseURL := str.PtrStrToStr(app.BaseURL)
-	systemTenantHeader := prepareS4SystemTenantHeader(baseURL)
+	systemTenantHeader := prepareS4SystemTenantHeader(str.PtrStrToStr(app.BaseURL))
 
 	config, err := c.fetchConfig(ctx, app, webhook, tenantValue, systemTenantHeader)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while fetching config")
 	}
-	fmt.Printf("\n config: %+v\n", config)
 
-	m, _ := json.MarshalIndent(webhook, "  ", "")
-	fmt.Println(string(m))
-
-	webhookURL, err := calculateBaseURL(webhook, *config)
+	baseURL, err := calculateBaseURL(webhook, *config)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while calculating baseURL")
 	}
 
-	err = config.Validate(webhookURL)
+	err = config.Validate(baseURL)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
@@ -116,7 +110,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 			}()
 
 			documentURL, err := buildDocumentURL(docDetails.URL, baseURL, str.PtrStrToStr(webhook.ProxyURL), c.ORDProxyBaseURL)
-			fmt.Println(fmt.Sprintf("\nBuilded documentURL %+v\n", documentURL))
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
@@ -172,12 +165,9 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 		return nil, errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
 	}
 
-	fmt.Printf("ALEX doc %s\n", documentURL)
-
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
 	bodyBytes, err := io.ReadAll(resp.Body)
 
-	fmt.Println(string(bodyBytes))
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading document body")
 	}
@@ -264,8 +254,6 @@ func buildDocumentURL(docURL, appBaseURL, proxyURL, proxyBaseURL string) (string
 	if docURLParsed.IsAbs() {
 		return docURL, nil
 	}
-
-	fmt.Printf("proxyURL: %s, docURL: %s, appBaseURL: %s", proxyURL, docURL, appBaseURL)
 
 	if proxyURL != "" {
 		return proxyBaseURL + docURL, nil

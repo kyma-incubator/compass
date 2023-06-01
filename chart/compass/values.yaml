@@ -315,6 +315,7 @@ global:
     kymaApplicationNamespaceValue: "sap.kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
+    ordProxyURL: "http://proxy"
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:
