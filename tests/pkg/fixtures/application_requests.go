@@ -80,6 +80,18 @@ func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.A
 	}
 }
 
+func FixSampleApplicationJSONInputWithWebhooks(placeholder string) graphql.ApplicationJSONInput {
+	return graphql.ApplicationJSONInput{
+		Name:         placeholder,
+		ProviderName: ptr.String("compass"),
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.WebhookTypeConfigurationChanged,
+			URL:  ptr.String(webhookURL),
+		},
+		},
+	}
+}
+
 func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL string, ordConfigSecurity *ORDConfigSecurity) graphql.ApplicationRegisterInput {
 	appRegisterInput := graphql.ApplicationRegisterInput{
 		Name:        appName,
