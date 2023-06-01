@@ -152,13 +152,9 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating system version"))
 			}
 		}
-		//if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
-		//	fmt.Println(doc.DescribedSystemInstance.BaseURL)
-		//	fmt.Println(baseURL)
-		//	fmt.Println("BASE URLS")
-		//
-		//	errs = multierror.Append(errs, errors.Errorf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL))
-		//}
+		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
+			errs = multierror.Append(errs, errors.Errorf("describedSystemInstance should be the same as the one providing the documents - %s : %s", *doc.DescribedSystemInstance.BaseURL, baseURL))
+		}
 	}
 
 	resourceIDs := ResourceIDs{
@@ -192,121 +188,15 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 	errs = multierror.Append(errs, e2)
 	errs = multierror.Append(errs, e3)
 
-	err := mergo.Merge(&resourceIDs, r1)
-	err = mergo.Merge(&resourceIDs, r2)
-	err = mergo.Merge(&resourceIDs, r3)
-	if err != nil {
+	if err := mergo.Merge(&resourceIDs, r1); err != nil {
 		return err
 	}
-	// Execute Validation functions on entities and check for duplicate IDs
-	//for _, doc := range docs {
-	//	if doc.Perspective == SystemInstancePerspective {
-	//		continue
-	//	}
-	//	invalidPackagesIndices := make([]int, 0)
-	//	invalidBundlesIndices := make([]int, 0)
-	//	invalidProductsIndices := make([]int, 0)
-	//	invalidVendorsIndices := make([]int, 0)
-	//	invalidTombstonesIndices := make([]int, 0)
-	//
-	//	if err := validateDocumentInput(doc); err != nil {
-	//		errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
-	//	}
-	//
-	//	for i, pkg := range doc.Packages {
-	//		if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
-	//			invalidPackagesIndices = append(invalidPackagesIndices, i)
-	//			packageIDs[pkg.OrdID] = false
-	//		}
-	//	}
-	//
-	//	for i, bndl := range doc.ConsumptionBundles {
-	//		if err := validateBundleInput(bndl, bundlesFromDB, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
-	//			invalidBundlesIndices = append(invalidBundlesIndices, i)
-	//			continue
-	//		}
-	//		if bndl.OrdID != nil {
-	//			if _, ok := bundleIDs[*bndl.OrdID]; ok {
-	//				errs = multierror.Append(errs, errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID))
-	//			}
-	//			bundleIDs[*bndl.OrdID] = true
-	//		}
-	//	}
-	//
-	//	for i, product := range doc.Products {
-	//		if err := validateProductInput(product); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
-	//			invalidProductsIndices = append(invalidProductsIndices, i)
-	//			continue
-	//		}
-	//		if _, ok := productIDs[product.OrdID]; ok {
-	//			errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
-	//		}
-	//		productIDs[product.OrdID] = true
-	//	}
-	//
-	//	for i, api := range doc.APIResources {
-	//		if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
-	//			invalidApisIndices = append(invalidApisIndices, i)
-	//			continue
-	//		}
-	//		if api.OrdID != nil {
-	//			if _, ok := apiIDs[*api.OrdID]; ok {
-	//				errs = multierror.Append(errs, errors.Errorf("found duplicate api with ord id %q", *api.OrdID))
-	//			}
-	//			apiIDs[*api.OrdID] = true
-	//		}
-	//	}
-	//
-	//	for i, event := range doc.EventResources {
-	//		if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
-	//			invalidEventsIndices = append(invalidEventsIndices, i)
-	//			continue
-	//		}
-	//
-	//		if event.OrdID != nil {
-	//			if _, ok := eventIDs[*event.OrdID]; ok {
-	//				errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
-	//			}
-	//
-	//			eventIDs[*event.OrdID] = true
-	//		}
-	//	}
-	//
-	//	for i, vendor := range doc.Vendors {
-	//		if err := validateVendorInput(vendor); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
-	//			invalidVendorsIndices = append(invalidVendorsIndices, i)
-	//			continue
-	//		}
-	//		if _, ok := vendorIDs[vendor.OrdID]; ok {
-	//			errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
-	//		}
-	//		vendorIDs[vendor.OrdID] = true
-	//	}
-	//
-	//	for i, tombstone := range doc.Tombstones {
-	//		if err := validateTombstoneInput(tombstone); err != nil {
-	//			errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
-	//			invalidTombstonesIndices = append(invalidTombstonesIndices, i)
-	//		}
-	//	}
-	//
-	//	doc.Packages = deleteInvalidInputObjects(invalidPackagesIndices, doc.Packages)
-	//	doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundlesIndices, doc.ConsumptionBundles)
-	//	doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
-	//	doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
-	//	doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
-	//	doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
-	//	doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
-	//
-	//	invalidApisIndices = nil
-	//	invalidEventsIndices = nil
-	//}
+	if err := mergo.Merge(&resourceIDs, r2); err != nil {
+		return err
+	}
+	if err := mergo.Merge(&resourceIDs, r3); err != nil {
+		return err
+	}
 
 	// Validate entity relations
 	for _, doc := range docs {

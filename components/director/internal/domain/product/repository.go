@@ -2,8 +2,6 @@ package product
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -163,8 +161,6 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceI
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("ListByResourceID in Product with type", resourceType, productCollection.Len())
 
 	products := make([]*model.Product, 0, productCollection.Len())
 	for _, product := range productCollection {

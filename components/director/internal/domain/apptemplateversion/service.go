@@ -2,7 +2,6 @@ package apptemplateversion
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -47,9 +46,6 @@ func (s *service) Create(ctx context.Context, applicationTemplateID string, in *
 
 	id := s.uidService.Generate()
 	applicationTemplateVersion := in.ToApplicationTemplateVersion(id, applicationTemplateID)
-
-	fmt.Println("applicationTemplateVersion")
-	fmt.Printf("%+v \n", applicationTemplateVersion)
 
 	if err := s.appTemplateVersionRepo.Create(ctx, applicationTemplateVersion); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Application Template Version with id %s", id)

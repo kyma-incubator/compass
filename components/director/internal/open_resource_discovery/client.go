@@ -3,9 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,6 +30,7 @@ type ClientConfig struct {
 type Resource struct {
 	Type          resource.Type
 	ID            string
+	ParentID      *string
 	Name          string
 	LocalTenantID *string
 }
@@ -47,7 +46,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource model.Application, webhook *model.Webhook, constraints map[string]string) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error)
 }
 
 type client struct {
@@ -66,7 +65,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource model.Application, webhook *model.Webhook, constraints map[string]string) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
@@ -101,15 +100,15 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 	errMutex := sync.Mutex{}
 
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
-		isCompliant, err := isDocumentCompliantToConstraints(docDetails, constraints)
-		if err != nil {
-			return nil, "", err
-		}
+		//isCompliant, err := isDocumentCompliantToConstraints(docDetails, constraints)
+		//if err != nil {
+		//	return nil, "", err
+		//}
 
-		if !isCompliant {
-			log.C(ctx).Infof("Doc is not compliant to constraint: %+v", constraints)
-			continue
-		}
+		//if !isCompliant {
+		//	log.C(ctx).Infof("Doc is not compliant to constraint: %+v", constraints)
+		//	continue
+		//}
 
 		wg.Add(1)
 		workers <- struct{}{}
@@ -153,31 +152,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 		fetchDocErr = errors.Errorf(strings.Join(stringErrors, "\n"))
 	}
 	return docs, baseURL, fetchDocErr
-}
-
-func isDocumentCompliantToConstraints(doc DocumentDetails, constraints map[string]string) (bool, error) {
-	configBytes, err := json.Marshal(doc)
-	if err != nil {
-		return false, err
-	}
-
-	isCompliant := true
-	for path, value := range constraints {
-		result := gjson.GetBytes(configBytes, path).String()
-		if result == "" {
-			result = string(SystemInstancePerspective)
-		}
-
-		fmt.Println("Result:")
-		fmt.Println(value)
-
-		if result != value {
-			isCompliant = false
-			break
-		}
-	}
-
-	return isCompliant, nil
 }
 
 func convertErrorsToStrings(errors []error) (result []string) {
@@ -235,7 +209,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, resource model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
@@ -272,8 +246,6 @@ func (c *client) fetchConfig(ctx context.Context, resource model.Application, we
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
-
-	fmt.Println(string(bodyBytes))
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {

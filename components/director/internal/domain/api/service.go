@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -178,11 +177,9 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 		}
 	}
 
-	fmt.Printf("ALEX CREATING API IN SVC LAYER %v", *api.OrdID)
 	if err = s.repo.Create(ctx, tnt, api); err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
-	fmt.Println("ALEX CREATED API IN SVC LAYER")
 
 	for _, spec := range specs {
 		if spec == nil {

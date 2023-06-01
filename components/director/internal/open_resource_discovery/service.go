@@ -3,7 +3,6 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/imdario/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strconv"
@@ -357,12 +356,12 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource model.Application, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	if _, err := s.processDescribedSystemVersions(ctx, resource.ApplicationTemplateID, documents); err != nil {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
 		return err
 	}
 
-	resourcesFromDB, err := s.fetchResources(ctx, resource.ID)
+	resourcesFromDB, err := s.fetchResources(ctx, resource, documents)
 	if err != nil {
 		return err
 	}
@@ -371,17 +370,6 @@ func (s *Service) processDocuments(ctx context.Context, resource model.Applicati
 	if err != nil {
 		return err
 	}
-
-	canHaveCrossDocDuplications := true
-	docType := documents[0].Perspective
-	for _, doc := range documents {
-		if doc.Perspective != docType {
-			canHaveCrossDocDuplications = false
-			break
-		}
-	}
-
-	fmt.Println("canHaveCrossDocDuplications", canHaveCrossDocDuplications)
 
 	validationResult := documents.Validate(baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
@@ -417,183 +405,63 @@ func (s *Service) processDocuments(ctx context.Context, resource model.Applicati
 		}
 	}
 	for _, doc := range documents {
-		r := Resource{
+		if resource.Type == directorresource.ApplicationTemplate && doc.DescribedSystemVersion == nil {
+			continue
+		}
+
+		resourceToAggregate := Resource{
 			ID:   resource.ID,
 			Type: directorresource.Application,
 		}
 
-		if resource.ApplicationTemplateID != nil && doc.DescribedSystemVersion != nil {
+		if doc.DescribedSystemVersion != nil {
+			applicationTemplateID := resource.ID
+			if resource.Type == directorresource.Application && resource.ParentID != nil {
+				applicationTemplateID = *resource.ParentID
+			}
 
-			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, *resource.ApplicationTemplateID, doc.DescribedSystemVersion.Version)
+			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, applicationTemplateID, doc.DescribedSystemVersion.Version)
 			if err != nil {
 				return err
 			}
 
-			r = Resource{
+			resourceToAggregate = Resource{
 				ID:   appTemplateVersion.ID,
 				Type: directorresource.ApplicationTemplateVersion,
 			}
-
 		}
 
-		fmt.Println("processVendors")
-
-		vendorsFromDB, err := s.processVendors(ctx, r.Type, r.ID, doc.Vendors)
+		vendorsFromDB, err := s.processVendors(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("processProducts")
-
-		productsFromDB, err := s.processProducts(ctx, r.Type, r.ID, doc.Products)
+		productsFromDB, err := s.processProducts(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("processPackages")
-
-		packagesFromDB, err := s.processPackages(ctx, r.Type, r.ID, doc.Packages, resourceHashes)
+		packagesFromDB, err := s.processPackages(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Packages, resourceHashes)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("processBundles")
-
-		bundlesFromDB, err := s.processBundles(ctx, r.Type, r.ID, doc.ConsumptionBundles, resourceHashes)
+		bundlesFromDB, err := s.processBundles(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.ConsumptionBundles, resourceHashes)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("processAPIs")
-
-		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, r.Type, r.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
+		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("processEvents")
-
-		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, r.Type, r.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
+		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
 		if err != nil {
 			return err
 		}
 
-		tombstonesFromDB, err := s.processTombstones(ctx, r.Type, r.ID, doc.Tombstones)
-		if err != nil {
-			return err
-		}
-
-		fetchRequests := append(apiFetchRequests, eventFetchRequests...)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
-		if err != nil {
-			return err
-		}
-
-		if err := s.processSpecs(ctx, fetchRequests); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *Service) processDocumentsForApplicationTemplate(ctx context.Context, resource Resource, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	_, err := s.processDescribedSystemVersions(ctx, &resource.ID, documents)
-	if err != nil {
-		return err
-	}
-
-	apiDataFromDB := make(map[string]*model.APIDefinition, 0)
-	eventDataFromDB := make(map[string]*model.EventDefinition, 0)
-	packageDataFromDB := make(map[string]*model.Package, 0)
-	bundleDataFromDB := make(map[string]*model.Bundle, 0)
-	for _, document := range documents {
-		systemVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, resource.ID, document.DescribedSystemVersion.Version)
-		if err != nil {
-			return err
-		}
-
-		resourcesFromDB, err := s.fetchResources(ctx, systemVersion.ID)
-		if err != nil {
-			return err
-		}
-
-		mergo.Merge(apiDataFromDB, resourcesFromDB.APIs)
-		mergo.Merge(eventDataFromDB, resourcesFromDB.Events)
-		mergo.Merge(packageDataFromDB, resourcesFromDB.Packages)
-		mergo.Merge(bundleDataFromDB, resourcesFromDB.Bundles)
-	}
-
-	resourceHashes, err := hashResources(documents)
-	if err != nil {
-		return err
-	}
-
-	resourcesFromDB := ResourcesFromDB{
-		APIs:     apiDataFromDB,
-		Events:   eventDataFromDB,
-		Packages: packageDataFromDB,
-		Bundles:  bundleDataFromDB,
-	}
-	validationResult := documents.Validate(baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
-	if validationResult != nil {
-		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
-		*validationErrors = validationResult
-	}
-
-	if err := documents.Sanitize(baseURL); err != nil {
-		return errors.Wrap(err, "while sanitizing ORD documents")
-	}
-
-	for _, doc := range documents {
-		appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, resource.ID, doc.DescribedSystemVersion.Version)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("processVendors")
-
-		vendorsFromDB, err := s.processVendors(ctx, resource.Type, appTemplateVersion.ID, doc.Vendors)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("processProducts")
-
-		productsFromDB, err := s.processProducts(ctx, resource.Type, appTemplateVersion.ID, doc.Products)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("processPackages")
-
-		packagesFromDB, err := s.processPackages(ctx, resource.Type, appTemplateVersion.ID, doc.Packages, resourceHashes)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("processBundles")
-
-		bundlesFromDB, err := s.processBundles(ctx, resource.Type, appTemplateVersion.ID, doc.ConsumptionBundles, resourceHashes)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("processAPIs")
-
-		apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, resource.Type, appTemplateVersion.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("processEvents")
-
-		eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, resource.Type, appTemplateVersion.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
-		if err != nil {
-			return err
-		}
-
-		tombstonesFromDB, err := s.processTombstones(ctx, resource.Type, appTemplateVersion.ID, doc.Tombstones)
+		tombstonesFromDB, err := s.processTombstones(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
 			return err
 		}
@@ -775,12 +643,13 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 	return excludeUnnecessaryFetchRequests(fetchRequests, frIdxToExclude), tx.Commit()
 }
 
-func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplateID *string, documents Documents) ([]*model.ApplicationTemplateVersion, error) {
-	if appTemplateID == nil {
-		return nil, nil
+func (s *Service) processDescribedSystemVersions(ctx context.Context, resource Resource, documents Documents) ([]*model.ApplicationTemplateVersion, error) {
+	appTemplateID := resource.ID
+	if resource.Type == directorresource.Application && resource.ParentID != nil {
+		appTemplateID = *resource.ParentID
 	}
 
-	appTemplateVersions, err := s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, *appTemplateID)
+	appTemplateVersions, err := s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, appTemplateID)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, err
 	}
@@ -790,12 +659,12 @@ func (s *Service) processDescribedSystemVersions(ctx context.Context, appTemplat
 			continue
 		}
 
-		if err := s.resyncApplicationTemplateVersionInTx(ctx, *appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
+		if err := s.resyncApplicationTemplateVersionInTx(ctx, appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
 			return nil, err
 		}
 	}
 
-	return s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, *appTemplateID)
+	return s.listApplicationTemplateVersionByAppTemplateIDInTx(ctx, appTemplateID)
 }
 
 func (s *Service) listApplicationTemplateVersionByAppTemplateIDInTx(ctx context.Context, applicationTemplateID string) ([]*model.ApplicationTemplateVersion, error) {
@@ -823,7 +692,6 @@ func (s *Service) getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	systemVersion, err := s.appTemplateVersionSvc.GetByAppTemplateIDAndVersion(ctx, applicationTemplateID, version)
-
 	if err != nil {
 		return nil, err
 	}
@@ -1231,8 +1099,6 @@ func (s *Service) processAPIs(ctx context.Context, resourceType directorresource
 		return nil, nil, err
 	}
 
-	fmt.Printf("apisFromDB: %v, resourceType: %s, resourceID: %s \n", len(apisFromDB), resourceType, resourceID)
-
 	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, api := range apis {
 		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
@@ -1414,86 +1280,73 @@ func (s *Service) resyncTombstoneInTx(ctx context.Context, resourceType director
 }
 
 func (s *Service) resyncPackage(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
-	fmt.Println("Len packageFromDB", len(packagesFromDB))
-
 	ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return packagesFromDB[i].OrdID == pkg.OrdID
 	}); found {
-		fmt.Println("Update Package for resource", resourceType)
+		if resourceType == directorresource.ApplicationTemplateVersion {
+			return s.packageSvc.UpdateGlobal(ctx, packagesFromDB[i].ID, pkg, pkgHash)
+		}
 		return s.packageSvc.Update(ctx, resourceType, packagesFromDB[i].ID, pkg, pkgHash)
 	}
-	fmt.Println("Create Package for resource", resourceType)
+
 	_, err := s.packageSvc.Create(ctx, resourceType, resourceID, pkg, pkgHash)
 	return err
 }
 
 func (s *Service) resyncBundle(ctx context.Context, resourceType directorresource.Type, resourceID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput, bndlHash uint64) error {
-	fmt.Println("Len bundlesFromDB", len(bundlesFromDB))
 	ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
-		fmt.Println("Update Bundle for resource", resourceType)
 		if resourceType == directorresource.ApplicationTemplateVersion {
 			return s.bundleSvc.UpdateBundleGlobal(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
-		} else {
-			return s.bundleSvc.UpdateBundle(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
 		}
+		return s.bundleSvc.UpdateBundle(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
 	}
-	fmt.Println("Create Bundles for resource", resourceType)
+
 	_, err := s.bundleSvc.CreateBundle(ctx, resourceType, resourceID, bndl, bndlHash)
 	return err
 }
 
 func (s *Service) resyncProduct(ctx context.Context, resourceType directorresource.Type, resourceID string, productsFromDB []*model.Product, product model.ProductInput) error {
-	fmt.Println("Len productsFromDB", len(productsFromDB))
-
 	ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
 	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 		return productsFromDB[i].OrdID == product.OrdID
 	}); found {
-		fmt.Println("Update Products for resource", resourceType)
+		if resourceType == directorresource.ApplicationTemplateVersion {
+			return s.productSvc.UpdateGlobal(ctx, productsFromDB[i].ID, product)
+		}
 		return s.productSvc.Update(ctx, productsFromDB[i].ID, product)
 	}
-	fmt.Println("Create Products for resource", resourceType)
 
 	_, err := s.productSvc.Create(ctx, resourceType, resourceID, product)
 	return err
 }
 
 func (s *Service) resyncVendor(ctx context.Context, resourceType directorresource.Type, resourceID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error {
-	fmt.Println("Len vendorsFromDB", len(vendorsFromDB))
 	ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
 	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 		return vendorsFromDB[i].OrdID == vendor.OrdID
 	}); found {
-		fmt.Println("Update Vendor for resource", resourceType)
-
 		if resourceType == directorresource.ApplicationTemplateVersion {
 			return s.vendorSvc.UpdateGlobal(ctx, vendorsFromDB[i].ID, vendor)
 		}
 		return s.vendorSvc.Update(ctx, vendorsFromDB[i].ID, vendor)
 	}
 
-	fmt.Println("Create Vendor for resource", resourceType)
 	_, err := s.vendorSvc.Create(ctx, resourceType, resourceID, vendor)
 	return err
 }
 
 func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
-	fmt.Println("resyncAppTemplateVersion; appTemplateID: ", appTemplateID)
-	fmt.Println("appTemplateVersionsFromDB; len: ", len(appTemplateVersionsFromDB))
-
-	r, _ := json.MarshalIndent(appTemplateVersion, "", "  ")
-	fmt.Printf("%+v \n", string(r))
-
 	ctx = addFieldToLogger(ctx, "app_template_version_id", appTemplateID)
 	if i, found := searchInSlice(len(appTemplateVersionsFromDB), func(i int) bool {
 		return appTemplateVersionsFromDB[i].Version == appTemplateVersion.Version
 	}); found {
 		return s.appTemplateVersionSvc.Update(ctx, appTemplateVersionsFromDB[i].ID, appTemplateID, appTemplateVersion)
 	}
+
 	_, err := s.appTemplateVersionSvc.Create(ctx, appTemplateID, appTemplateVersion)
 	return err
 }
@@ -1519,10 +1372,7 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 		specs = append(specs, resourceDef.ToSpec())
 	}
 
-	fmt.Printf("API TO BE CREATED - %v\n", !isAPIFound)
-
 	if !isAPIFound {
-		fmt.Println("Create API for resource", resourceType)
 		apiID, err := s.apiSvc.Create(ctx, resourceType, resourceID, nil, packageID, api, nil, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -1547,7 +1397,6 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	fmt.Println("Update API for resource", resourceType)
 	if resourceType == directorresource.ApplicationTemplateVersion {
 		err = s.apiSvc.UpdateInManyBundlesGlobal(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID)
 	} else {
@@ -1602,7 +1451,6 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	}
 
 	if !isEventFound {
-		fmt.Println("Create Events for resource", resourceType)
 		eventID, err := s.eventSvc.Create(ctx, resourceType, resourceID, nil, packageID, event, nil, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -1634,7 +1482,6 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 			bundleIDsForCreation = append(bundleIDsForCreation, id)
 		}
 	}
-	fmt.Println("Update Events for resource", resourceType)
 	if resourceType == directorresource.ApplicationTemplateVersion {
 		err = s.eventSvc.UpdateInManyBundlesGlobal(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID)
 	} else {
@@ -1709,26 +1556,33 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecR
 }
 
 func (s *Service) resyncTombstone(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstonesFromDB []*model.Tombstone, tombstone model.TombstoneInput) error {
-	fmt.Println("Len tombostoneFromDB", len(tombstonesFromDB))
 	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
 		return tombstonesFromDB[i].OrdID == tombstone.OrdID
 	}); found {
-		fmt.Println("Update Tombsone for resource", resourceType)
 		if resourceType == directorresource.ApplicationTemplateVersion {
 			return s.tombstoneSvc.UpdateGlobal(ctx, tombstonesFromDB[i].ID, tombstone)
 		}
 
 		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].ID, tombstone)
 	}
-	fmt.Println("Create Tombstone for resource", resourceType)
+
 	_, err := s.tombstoneSvc.Create(ctx, resourceType, resourceID, tombstone)
 	return err
 }
 
-func (s *Service) fetchAPIDefFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, error) {
-	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
+func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.APIDefinition, error) {
+	var (
+		apisFromDB []*model.APIDefinition
+		err        error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
+	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
+		return nil, err
 	}
 
 	apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
@@ -1741,10 +1595,19 @@ func (s *Service) fetchAPIDefFromDB(ctx context.Context, appID string) (map[stri
 	return apiDataFromDB, nil
 }
 
-func (s *Service) fetchPackagesFromDB(ctx context.Context, appID string) (map[string]*model.Package, error) {
-	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
+func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
+	var (
+		packagesFromDB []*model.Package
+		err            error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
+	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing packages for app with id %s", appID)
+		return nil, err
 	}
 
 	packageDataFromDB := make(map[string]*model.Package)
@@ -1756,10 +1619,19 @@ func (s *Service) fetchPackagesFromDB(ctx context.Context, appID string) (map[st
 	return packageDataFromDB, nil
 }
 
-func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, error) {
-	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
+func (s *Service) fetchEventDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EventDefinition, error) {
+	var (
+		eventsFromDB []*model.EventDefinition
+		err          error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
+	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
+		return nil, err
 	}
 
 	eventDataFromDB := make(map[string]*model.EventDefinition)
@@ -1772,10 +1644,19 @@ func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[st
 	return eventDataFromDB, nil
 }
 
-func (s *Service) fetchBundlesFromDB(ctx context.Context, appID string) (map[string]*model.Bundle, error) {
-	bundlesFromDB, err := s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
+func (s *Service) fetchBundlesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Bundle, error) {
+	var (
+		bundlesFromDB []*model.Bundle
+		err           error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
+	} else {
+		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
+	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing bundles for app with id %s", appID)
+		return nil, err
 	}
 
 	bundleDataFromDB := make(map[string]*model.Bundle)
@@ -1788,7 +1669,28 @@ func (s *Service) fetchBundlesFromDB(ctx context.Context, appID string) (map[str
 	return bundleDataFromDB, nil
 }
 
-func (s *Service) fetchResources(ctx context.Context, appID string) (ResourcesFromDB, error) {
+func (s *Service) fetchResources(ctx context.Context, resource Resource, documents Documents) (ResourcesFromDB, error) {
+	resourceIDs := make(map[string]directorresource.Type, 0)
+
+	if resource.Type == directorresource.Application {
+		resourceIDs[resource.ID] = directorresource.Application
+	}
+
+	for _, doc := range documents {
+		if doc.DescribedSystemVersion != nil {
+			appTemplateID := resource.ID
+			if resource.Type == directorresource.Application && resource.ParentID != nil {
+				appTemplateID = *resource.ParentID
+			}
+
+			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, appTemplateID, doc.DescribedSystemVersion.Version)
+			if err != nil {
+				return ResourcesFromDB{}, err
+			}
+			resourceIDs[appTemplateVersion.ID] = directorresource.ApplicationTemplateVersion
+		}
+	}
+
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return ResourcesFromDB{}, err
@@ -1797,38 +1699,60 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (ResourcesFr
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
-	if err != nil {
-		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
-	}
+	apiDataFromDB := make(map[string]*model.APIDefinition)
+	eventDataFromDB := make(map[string]*model.EventDefinition)
+	packageDataFromDB := make(map[string]*model.Package)
+	bundleDataFromDB := make(map[string]*model.Bundle)
 
-	eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
-	if err != nil {
-		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching events for app with id %s", appID)
-	}
+	for resourceID, resourceType := range resourceIDs {
+		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching apis for %s with id %s", resourceType, resourceID)
+		}
 
-	packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
-	if err != nil {
-		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
-	}
+		eventData, err := s.fetchEventDefFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching events for %s with id %s", resourceType, resourceID)
+		}
 
-	bundlDataFromDB, err := s.fetchBundlesFromDB(ctx, appID)
-	if err != nil {
-		return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for app with id %s", appID)
+		packageData, err := s.fetchPackagesFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for %s with id %s", resourceType, resourceID)
+		}
+
+		bundleData, err := s.fetchBundlesFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for %s with id %s", resourceType, resourceID)
+		}
+
+		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
+			return ResourcesFromDB{}, err
+		}
+		if err = mergo.Merge(&eventDataFromDB, eventData); err != nil {
+			return ResourcesFromDB{}, err
+		}
+		if err = mergo.Merge(&packageDataFromDB, packageData); err != nil {
+			return ResourcesFromDB{}, err
+		}
+		if err = mergo.Merge(&bundleDataFromDB, bundleData); err != nil {
+			return ResourcesFromDB{}, err
+		}
 	}
 
 	return ResourcesFromDB{
 		APIs:     apiDataFromDB,
 		Events:   eventDataFromDB,
 		Packages: packageDataFromDB,
-		Bundles:  bundlDataFromDB,
+		Bundles:  bundleDataFromDB,
 	}, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app model.Application, globalResourcesOrdIDs map[string]bool, constraints map[string]string) error {
-	var documents Documents
-	var baseURL string
-	var err error
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool) error {
+	var (
+		documents Documents
+		baseURL   string
+		err       error
+	)
 
 	metricsCfg := metrics.PusherConfig{
 		Enabled:    len(cfg.PushEndpoint) > 0,
@@ -1839,11 +1763,11 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
-	ctx = addFieldToLogger(ctx, "resource_id", app.ID)
-	ctx = addFieldToLogger(ctx, "resource_type", string(webhook.ObjectType))
+	ctx = addFieldToLogger(ctx, "resource_id", resource.ID)
+	ctx = addFieldToLogger(ctx, "resource_type", string(resource.Type))
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
-		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook, constraints)
+		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1856,17 +1780,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		log.C(ctx).Info("Processing ORD documents")
 		var validationErrors error
 
-		//var err error
-		//if constraints != nil {
-		//	err = s.processDocumentsForApplicationTemplate(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
-		//} else {
-		//	err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
-		//}
-
-		err = s.processDocuments(ctx, app, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
-
-		fmt.Println("ALEX ERRORRRR")
-
+		err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -2000,13 +1914,14 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		return err
 	}
 
-	//resource := Resource{
-	//	Type:          directorresource.Application,
-	//	ID:            app.ID,
-	//	Name:          app.Name,
-	//	LocalTenantID: app.LocalTenantID,
-	//}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, *app, globalResourcesOrdIDs, nil); err != nil {
+	resource := Resource{
+		Type:          directorresource.Application,
+		ID:            app.ID,
+		ParentID:      app.ApplicationTemplateID,
+		Name:          app.Name,
+		LocalTenantID: app.LocalTenantID,
+	}
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs); err != nil {
 		return err
 	}
 
@@ -2022,26 +1937,24 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	//appTemplate, err := s.appTemplateSvc.Get(ctx, appTemplateID)
-	//if err != nil {
-	//	return errors.Wrapf(err, "error while retrieving app template with id %q", appTemplateID)
-	//}
-	//
-	//if err = tx.Commit(); err != nil {
-	//	return err
-	//}
+	appTemplate, err := s.appTemplateSvc.Get(ctx, appTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "error while retrieving app template with id %q", appTemplateID)
+	}
 
-	//resource := Resource{
-	//	Type: directorresource.ApplicationTemplateVersion,
-	//	ID:   appTemplate.ID,
-	//	Name: appTemplate.Name,
-	//}
-	//constraints := map[string]string{
-	//	"perspective": string(SystemVersionPerspective),
-	//}
-	//if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, constraints); err != nil {
-	//	return err
-	//}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	resource := Resource{
+		Type: directorresource.ApplicationTemplate,
+		ID:   appTemplate.ID,
+		Name: appTemplate.Name,
+	}
+
+	if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs); err != nil {
+		return err
+	}
 
 	return nil
 }

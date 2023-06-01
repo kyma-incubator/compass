@@ -2,8 +2,6 @@ package bundle
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -251,11 +249,6 @@ func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, r
 		}
 		bundles = append(bundles, bundleModel)
 	}
-
-	fmt.Println("ListByResourceID")
-	fmt.Println("Type", resourceType, resourceID)
-	v, _ := json.MarshalIndent(bundles, "", "  ")
-	fmt.Println(string(v))
 
 	return bundles, nil
 }

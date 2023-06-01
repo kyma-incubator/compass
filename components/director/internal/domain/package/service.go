@@ -95,6 +95,21 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 	return nil
 }
 
+// Update missing godoc
+func (s *service) UpdateGlobal(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error {
+	pkg, err := s.pkgRepo.GetByIDGlobal(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting global Package with id %s", id)
+	}
+
+	pkg.SetFromUpdateInput(in, pkgHash)
+
+	if err = s.pkgRepo.UpdateGlobal(ctx, pkg); err != nil {
+		return errors.Wrapf(err, "while updating global Package with id %s", id)
+	}
+	return nil
+}
+
 // Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)

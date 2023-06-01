@@ -106,6 +106,7 @@ type FetchRequestService interface {
 type PackageService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error
+	UpdateGlobal(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error)
@@ -117,6 +118,7 @@ type PackageService interface {
 type ProductService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error)
 	Update(ctx context.Context, id string, in model.ProductInput) error
+	UpdateGlobal(ctx context.Context, id string, in model.ProductInput) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error)
