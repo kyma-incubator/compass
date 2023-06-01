@@ -739,10 +739,10 @@ func (g *Graphqlizer) BundleInstanceAuthCreateInputToGQL(in graphql.BundleInstan
 		inputParams: {{ .InputParams }}
 		{{- end }}
 		{{- if .RuntimeID }}
-		runtimeID: {{ .RuntimeID }}
+		runtimeID: "{{ .RuntimeID }}"
 		{{- end }}
 		{{- if .RuntimeContextID }}
-		runtimeContextID: {{ .RuntimeContextID }}
+		runtimeContextID: "{{ .RuntimeContextID }}"
 		{{- end }}
 	}`)
 }
