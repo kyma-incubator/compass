@@ -148,6 +148,7 @@ type ApplicationTemplateUpdateInput struct {
 	Description          *string                        `json:"description"`
 	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	Labels               Labels                         `json:"labels"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }

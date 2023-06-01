@@ -401,6 +401,7 @@ input ApplicationTemplateUpdateInput {
 	description: String
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
+	labels: Labels @hasScopes(path: "graphql.input.application_template.labels")
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
 }
