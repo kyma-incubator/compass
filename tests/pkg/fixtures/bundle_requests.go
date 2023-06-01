@@ -35,6 +35,24 @@ func FixBundleInstanceAuthRequestInput(ctx, inputParams *graphql.JSON) graphql.B
 	}
 }
 
+func FixBundleInstanceAuthCreateInput(ctx, inputParams *graphql.JSON, auth *graphql.AuthInput, rtmID, rtmCtxID *string) graphql.BundleInstanceAuthCreateInput {
+	return graphql.BundleInstanceAuthCreateInput{
+		Context:          ctx,
+		InputParams:      inputParams,
+		Auth:             auth,
+		RuntimeID:        rtmID,
+		RuntimeContextID: rtmCtxID,
+	}
+}
+
+func FixBundleInstanceAuthUpdateInput(ctx, inputParams *graphql.JSON, auth *graphql.AuthInput) graphql.BundleInstanceAuthUpdateInput {
+	return graphql.BundleInstanceAuthUpdateInput{
+		Context:     ctx,
+		InputParams: inputParams,
+		Auth:        auth,
+	}
+}
+
 func FixBundleInstanceAuthSetInputSucceeded(auth *graphql.AuthInput) graphql.BundleInstanceAuthSetInput {
 	return graphql.BundleInstanceAuthSetInput{
 		Auth: auth,
