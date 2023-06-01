@@ -300,7 +300,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Len(t, consumerSubaccountRtms.Data[0].RuntimeContexts.Data, 0)
 	})
 
-	t.Run("Runtime Contexts subscription flow - validate instances label", func(t *testing.T) {
+	t.Run("Runtime Contexts subscription flow - validate subscriptions label", func(t *testing.T) {
 		ctx := context.Background()
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
@@ -383,11 +383,11 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
-		t.Log("Assert the runtime context has instances label")
+		t.Log("Assert the runtime context has subscriptions label")
 		consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		instancesLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.InstancesLabelKey].(float64)
+		subscriptionsLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
 		require.True(t, ok)
-		require.Equal(t, float64(1), instancesLabel)
+		require.Equal(t, 1, len(subscriptionsLabel))
 
 		t.Logf("Creating a second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err = httpClient.Do(subscribeReq)
@@ -410,19 +410,19 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
-		t.Log("Assert runtime context instances label has increased value")
+		t.Log("Assert runtime context subscriptions label has new value added")
 		consumerSubaccountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		instancesLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.InstancesLabelKey].(float64)
+		subscriptionsLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
 		require.True(t, ok)
-		require.Equal(t, float64(2), instancesLabel)
+		require.Equal(t, 2, len(subscriptionsLabel))
 
 		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
-		t.Log("Assert runtime context instances label has decreased value")
+		t.Log("Assert runtime context subscriptions label has one value less")
 		consumerSubaccountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		instancesLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels["instances"].(float64)
+		subscriptionsLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
 		require.True(t, ok)
-		require.Equal(t, float64(1), instancesLabel)
+		require.Equal(t, 1, len(subscriptionsLabel))
 
 		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 

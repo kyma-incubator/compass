@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -30,7 +31,12 @@ type JobStatus struct {
 	Status string `json:"status"`
 }
 
-var Subscriptions = make(map[string]string)
+type ProviderSubscriptionInfo struct {
+	ProviderSubaccountID     string
+	ProviderSubscriptionsIds []string
+}
+
+var Subscriptions = make(map[string]ProviderSubscriptionInfo)
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
@@ -132,10 +138,20 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
+	var subscriptionID string
+	if httpMethod == http.MethodPut {
+		subscriptionID = uuid.New().String()
+	} else if httpMethod == http.MethodDelete {
+		if subscriptionInfo, exists := Subscriptions[appName]; exists {
+			subscriptionID = subscriptionInfo.ProviderSubscriptionsIds[0]
+		} else {
+			return http.StatusOK, nil
+		}
+	}
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID)
+	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
@@ -167,15 +183,27 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 	if httpMethod == http.MethodPut {
-		Subscriptions[appName] = providerSubaccID
+		if provider, exists := Subscriptions[appName]; !exists {
+			Subscriptions[appName] = ProviderSubscriptionInfo{
+				ProviderSubaccountID:     providerSubaccID,
+				ProviderSubscriptionsIds: []string{subscriptionID},
+			}
+		} else {
+			provider.ProviderSubscriptionsIds = append(provider.ProviderSubscriptionsIds, subscriptionID)
+		}
 	} else if httpMethod == http.MethodDelete {
-		delete(Subscriptions, appName)
+		provider := Subscriptions[appName]
+		if len(provider.ProviderSubscriptionsIds) == 1 {
+			delete(Subscriptions, appName)
+		} else {
+			provider.ProviderSubscriptionsIds = provider.ProviderSubscriptionsIds[1:] //remove first element
+		}
 	}
 
 	return http.StatusOK, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID string) (*http.Request, error) {
+func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -205,6 +233,17 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
+	// TO DO: add configuration props
+	body, err = sjson.Set(body, "dependentServiceInstancesInfo", []map[string]string{{"appId": h.tenantConfig.SubscriptionProviderID, "appName": h.tenantConfig.SubscriptionProviderAppNameValue, "providerSubaccountId": providerSubaccID}})
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+
+	body, err = sjson.Set(body, "subscriptionGUID", subscriptionID)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+	fmt.Printf("subscriptions: %v", Subscriptions)
 
 	body, err = sjson.Set(body, h.providerConfig.LicenseTypeProperty, DefaultLicenseType)
 	if err != nil {

@@ -119,7 +119,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 		})
 
-		t.Run("Application instances number is increased when two subscriptions are made", func(t *testing.T) {
+		t.Run("Application subscriptions label value is increased when two subscriptions are made", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
