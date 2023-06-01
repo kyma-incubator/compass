@@ -249,7 +249,7 @@ func (c *converter) CreateRegisterInputGQLToJSON(in *graphql.ApplicationRegister
 	return string(appInput), nil
 }
 
-// CreateRegisterInputGQLToJSON missing godoc
+// CreateJSONInputGQLToJSON missing godoc
 func (c *converter) CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInput) (string, error) {
 	appInput, err := json.Marshal(in)
 	if err != nil {
