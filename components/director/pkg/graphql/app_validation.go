@@ -17,6 +17,17 @@ func (i ApplicationRegisterInput) Validate() error {
 }
 
 // Validate missing godoc
+func (i ApplicationJSONInput) Validate() error {
+	return validation.ValidateStruct(&i,
+		validation.Field(&i.Name, validation.Required, validation.RuneLength(1, appNameLengthLimit)),
+		validation.Field(&i.ProviderName, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
+		validation.Field(&i.Labels, inputvalidation.EachKey(validation.Required, validation.Match(alphanumericUnderscoreRegexp))),
+		validation.Field(&i.HealthCheckURL, inputvalidation.IsURL, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.Webhooks, validation.Each(validation.Required)))
+}
+
+// Validate missing godoc
 func (i ApplicationUpdateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.ProviderName, validation.RuneLength(0, longStringLengthLimit)),

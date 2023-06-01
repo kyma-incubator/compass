@@ -73,7 +73,7 @@ type ApplicationTemplateConverter interface {
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
-	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
+	CreateRegisterInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 }
 
@@ -399,7 +399,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 
 	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
-	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
+	appCreateInputGQL, err := r.appConverter.CreateRegisterInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	}
@@ -663,7 +663,7 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	return templates[0], nil
 }
 
-func validateAppTemplateForSelfReg(applicationInput *graphql.ApplicationRegisterInput) error {
+func validateAppTemplateForSelfReg(applicationInput *graphql.ApplicationJSONInput) error {
 	appNameExists := applicationInput.Name != ""
 	var appDisplayNameLabelExists bool
 
@@ -682,7 +682,7 @@ func validateAppTemplateForSelfReg(applicationInput *graphql.ApplicationRegister
 	return nil
 }
 
-func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.ApplicationRegisterInput) error {
+func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.ApplicationJSONInput) error {
 	if appInput == nil || appInput.ProviderName == nil || str.PtrStrToStr(appInput.ProviderName) != sapProviderName {
 		return nil
 	}
