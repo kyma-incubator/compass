@@ -36,7 +36,7 @@ type ProviderSubscriptionInfo struct {
 	ProviderSubscriptionsIds []string
 }
 
-var Subscriptions = make(map[string]ProviderSubscriptionInfo)
+var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
@@ -138,15 +138,9 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
-	var subscriptionID string
-	if httpMethod == http.MethodPut {
-		subscriptionID = uuid.New().String()
-	} else if httpMethod == http.MethodDelete {
-		if subscriptionInfo, exists := Subscriptions[appName]; exists {
-			subscriptionID = subscriptionInfo.ProviderSubscriptionsIds[0]
-		} else {
-			return http.StatusOK, nil
-		}
+	subscriptionID := getSubscriptionID(httpMethod, appName)
+	if subscriptionID == "" {
+		return http.StatusOK, nil
 	}
 
 	// Build a request for consumer subscribe/unsubscribe
@@ -183,21 +177,9 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 	if httpMethod == http.MethodPut {
-		if provider, exists := Subscriptions[appName]; !exists {
-			Subscriptions[appName] = ProviderSubscriptionInfo{
-				ProviderSubaccountID:     providerSubaccID,
-				ProviderSubscriptionsIds: []string{subscriptionID},
-			}
-		} else {
-			provider.ProviderSubscriptionsIds = append(provider.ProviderSubscriptionsIds, subscriptionID)
-		}
+		addSubscription(appName, providerSubaccID, subscriptionID)
 	} else if httpMethod == http.MethodDelete {
-		provider := Subscriptions[appName]
-		if len(provider.ProviderSubscriptionsIds) == 1 {
-			delete(Subscriptions, appName)
-		} else {
-			provider.ProviderSubscriptionsIds = provider.ProviderSubscriptionsIds[1:] //remove first element
-		}
+		removeSubscription(appName)
 	}
 
 	return http.StatusOK, nil
@@ -233,13 +215,13 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
-	// TO DO: add configuration props
-	body, err = sjson.Set(body, "dependentServiceInstancesInfo", []map[string]string{{"appId": h.tenantConfig.SubscriptionProviderID, "appName": h.tenantConfig.SubscriptionProviderAppNameValue, "providerSubaccountId": providerSubaccID}})
+
+	body, err = sjson.Set(body, h.providerConfig.DependentServiceInstancesInfoProperty, []map[string]string{{h.providerConfig.DependentServiceInstancesInfoAppIDProperty: h.tenantConfig.SubscriptionProviderID, h.providerConfig.DependentServiceInstancesInfoAppNameProperty: h.tenantConfig.SubscriptionProviderAppNameValue, h.providerConfig.DependentServiceInstancesInfoProviderSubaccountIDProperty: providerSubaccID}})
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	body, err = sjson.Set(body, "subscriptionGUID", subscriptionID)
+	body, err = sjson.Set(body, h.providerConfig.SubscriptionIDProperty, subscriptionID)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
@@ -306,4 +288,36 @@ func extractValueFromTokenClaims(consumerToken, claimsKey string) (string, error
 	}
 
 	return jsonMap[claimsKey].(string), nil
+}
+
+func getSubscriptionID(httpMethod, appName string) string {
+	if httpMethod == http.MethodPut {
+		return uuid.New().String()
+	}
+	if httpMethod == http.MethodDelete {
+		if provider, exists := Subscriptions[appName]; exists {
+			return provider.ProviderSubscriptionsIds[0]
+		}
+	}
+	return ""
+}
+
+func addSubscription(appName, providerSubaccountID, subscriptionID string) {
+	if provider, exists := Subscriptions[appName]; !exists {
+		Subscriptions[appName] = &ProviderSubscriptionInfo{
+			ProviderSubaccountID:     providerSubaccountID,
+			ProviderSubscriptionsIds: []string{subscriptionID},
+		}
+	} else {
+		provider.ProviderSubscriptionsIds = append(provider.ProviderSubscriptionsIds, subscriptionID)
+	}
+}
+
+func removeSubscription(appName string) {
+	provider := Subscriptions[appName]
+	if len(provider.ProviderSubscriptionsIds) == 1 {
+		delete(Subscriptions, appName)
+	} else {
+		provider.ProviderSubscriptionsIds = provider.ProviderSubscriptionsIds[1:] //remove first element
+	}
 }
