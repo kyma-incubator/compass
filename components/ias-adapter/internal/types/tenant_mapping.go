@@ -101,9 +101,6 @@ func (tm TenantMapping) Validate() error {
 	if tm.AssignedTenants[0].Operation != OperationAssign && tm.AssignedTenants[0].Operation != OperationUnassign {
 		return errors.New("$.assignedTenants[0].operation can only be assign or unassign")
 	}
-	if tm.AssignedTenants[0].ReverseAssignmentState == "" {
-		return errors.New("$.assignedTenants[0].reverseAssignmentState is required")
-	}
 	if tm.AssignedTenants[0].Parameters.ClientID == "" {
 		return errors.New("$.assignedTenants[0].parameters.technicalIntegrationId is required")
 	}

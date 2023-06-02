@@ -221,7 +221,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Name: "All properties given",
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
-				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
+				appConverter.On("CreateJSONInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
 				return &appConverter
 			},
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -237,7 +237,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Name: "Error when converting Webhook",
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
-				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
+				appConverter.On("CreateJSONInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
 				return &appConverter
 			},
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -269,7 +269,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Name: "Error when converting",
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
-				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return("", testError).Once()
+				appConverter.On("CreateJSONInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return("", testError).Once()
 				return &appConverter
 			},
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -319,7 +319,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			Name: "All properties given",
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
-				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
+				appConverter.On("CreateJSONInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return(appTemplateInputModel.ApplicationInputJSON, nil).Once()
 				return &appConverter
 			},
 			Input:         *appTemplateInputGQL,
@@ -342,7 +342,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			Name: "Error when converting app",
 			AppConverterFn: func() *automock.AppConverter {
 				appConverter := automock.AppConverter{}
-				appConverter.On("CreateInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return("", testError).Once()
+				appConverter.On("CreateJSONInputGQLToJSON", appTemplateInputGQL.ApplicationInput).Return("", testError).Once()
 				return &appConverter
 			},
 			Input:         *appTemplateInputGQL,

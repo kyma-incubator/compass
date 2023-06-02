@@ -119,7 +119,7 @@ func ensureUniquePlaceholders(placeholders []*PlaceholderDefinitionInput) error 
 	return nil
 }
 
-func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationRegisterInput) error {
+func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationJSONInput) error {
 	placeholdersMarshalled, err := json.Marshal(appInput)
 	if err != nil {
 		return errors.Wrap(err, "while marshalling placeholders")
@@ -139,7 +139,7 @@ func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput
 	return nil
 }
 
-func validPlaceholders(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationRegisterInput) error {
+func validPlaceholders(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationJSONInput) error {
 	if err := ensureUniquePlaceholders(placeholders); err != nil {
 		return err
 	}

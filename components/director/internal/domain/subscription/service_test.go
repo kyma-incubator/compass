@@ -1229,7 +1229,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 
 				return appConv
@@ -1274,7 +1274,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 
 				return appConv
@@ -1319,7 +1319,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1360,7 +1360,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1400,7 +1400,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1441,7 +1441,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1487,7 +1487,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 
 				return appConv
@@ -1533,7 +1533,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1580,7 +1580,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1626,7 +1626,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", ctxWithTenantMatcher(subaccountTenantInternalID), gqlAppCreateInput).Return(model.ApplicationRegisterInput{}, testError).Once()
 				return appConv
 			},
@@ -1670,7 +1670,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", ctxWithTenantMatcher(subaccountTenantInternalID), gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				return appConv
 			},
@@ -1715,7 +1715,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1762,7 +1762,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1819,7 +1819,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1865,7 +1865,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1923,7 +1923,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
@@ -1971,7 +1971,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateRegisterInputJSONToGQL")
 				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv

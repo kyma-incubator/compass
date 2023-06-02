@@ -12,19 +12,19 @@ type AppConverter struct {
 	mock.Mock
 }
 
-// CreateInputGQLToJSON provides a mock function with given fields: in
-func (_m *AppConverter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
+// CreateJSONInputGQLToJSON provides a mock function with given fields: in
+func (_m *AppConverter) CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInput) (string, error) {
 	ret := _m.Called(in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(*graphql.ApplicationRegisterInput) string); ok {
+	if rf, ok := ret.Get(0).(func(*graphql.ApplicationJSONInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*graphql.ApplicationRegisterInput) error); ok {
+	if rf, ok := ret.Get(1).(func(*graphql.ApplicationJSONInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
