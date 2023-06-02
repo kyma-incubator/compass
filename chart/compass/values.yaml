@@ -147,7 +147,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3070"
+      version: "PR-3094"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -188,7 +188,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3096"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -394,6 +394,9 @@ global:
             outputTemplate: '{"error":"{{.Body.error}}","success_status_code": 202}'
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
+    protocol: HTTP
+    host: compass-external-services-mock.compass-system.svc.cluster.local
+    port: 8080
     mtlsTokenPath: "/cert/token"
     standardTokenPath: "/secured/oauth/token"
     skipSSLValidation: false

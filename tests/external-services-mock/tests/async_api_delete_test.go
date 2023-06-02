@@ -106,7 +106,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		displayNameJSONPath := "$.display-name-json-path"
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
+			ApplicationInput: &graphql.ApplicationJSONInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
 				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
@@ -185,7 +185,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		displayNameJSONPath := "$.display-name-json-path"
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
+			ApplicationInput: &graphql.ApplicationJSONInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
 				Labels:      graphql.Labels{"displayName": "{{display-name}}"},

@@ -22,7 +22,7 @@ import (
 //
 //go:generate mockery --name=AppConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AppConverter interface {
-	CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error)
+	CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInput) (string, error)
 }
 
 type converter struct {
@@ -90,7 +90,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	var appCreateInput string
 	var err error
 	if in.ApplicationInput != nil {
-		appCreateInput, err = c.appConverter.CreateInputGQLToJSON(in.ApplicationInput)
+		appCreateInput, err = c.appConverter.CreateJSONInputGQLToJSON(in.ApplicationInput)
 		if err != nil {
 			return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL input to Application Template model with name %s", in.Name)
 		}
@@ -122,7 +122,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 	var appCreateInput string
 	var err error
 	if in.ApplicationInput != nil {
-		appCreateInput, err = c.appConverter.CreateInputGQLToJSON(in.ApplicationInput)
+		appCreateInput, err = c.appConverter.CreateJSONInputGQLToJSON(in.ApplicationInput)
 		if err != nil {
 			return model.ApplicationTemplateUpdateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL update input to Application Template model with name %s", in.Name)
 		}
