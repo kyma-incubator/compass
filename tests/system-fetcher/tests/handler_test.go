@@ -1193,7 +1193,7 @@ func fixApplicationTemplate(name, intSystemID, systemRole string) directorSchema
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        name,
 		Description: str.Ptr("template description"),
-		ApplicationInput: &directorSchema.ApplicationRegisterInput{
+		ApplicationInput: &directorSchema.ApplicationJSONInput{
 			Name:        fmt.Sprintf("{{%s}}", namePlaceholder),
 			Description: ptr.String(fmt.Sprintf("{{%s}}", displayNamePlaceholder)),
 			Labels:      additionalSystemLabels,
@@ -1228,7 +1228,7 @@ func fixApplicationTemplateWithoutWebhooks(name, intSystemID, systemRole string)
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        name,
 		Description: str.Ptr("template description"),
-		ApplicationInput: &directorSchema.ApplicationRegisterInput{
+		ApplicationInput: &directorSchema.ApplicationJSONInput{
 			Name:                fmt.Sprintf("{{%s}}", namePlaceholder),
 			Description:         ptr.String(fmt.Sprintf("{{%s}}", displayNamePlaceholder)),
 			Labels:              additionalSystemLabels,

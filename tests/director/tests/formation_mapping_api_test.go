@@ -253,7 +253,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name:        applicationType,
 			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
+			ApplicationInput: &graphql.ApplicationJSONInput{
 				Name:          "{{name}}",
 				ProviderName:  str.Ptr("compass"),
 				Description:   ptr.String("test {{display-name}}"),

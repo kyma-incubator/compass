@@ -5291,6 +5291,39 @@ input ApplicationFromTemplateInput {
 	labels: Labels
 }
 
+input ApplicationJSONInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
+	name: String!
+	"""
+	**Validation:** max=256
+	"""
+	providerName: String
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
+	labels: Labels
+	webhooks: [WebhookInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	healthCheckURL: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	baseUrl: String
+	applicationNamespace: String
+	integrationSystemID: ID
+	statusCondition: ApplicationStatusCondition
+	localTenantID: String
+	bundles: [BundleCreateInput!]
+}
+
 input ApplicationRegisterInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -5341,7 +5374,7 @@ input ApplicationTemplateInput {
 	**Validation:** label key is alphanumeric with underscore
 	"""
 	labels: Labels
-	applicationInput: ApplicationRegisterInput!
+	applicationInput: ApplicationJSONInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
@@ -5356,7 +5389,7 @@ input ApplicationTemplateUpdateInput {
 	**Validation:** max=2000
 	"""
 	description: String
-	applicationInput: ApplicationRegisterInput!
+	applicationInput: ApplicationJSONInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	labels: Labels @hasScopes(path: "graphql.input.application_template.labels")
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -30842,6 +30875,90 @@ func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputApplicationJSONInput(ctx context.Context, obj interface{}) (ApplicationJSONInput, error) {
+	var it ApplicationJSONInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "providerName":
+			var err error
+			it.ProviderName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "webhooks":
+			var err error
+			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "healthCheckURL":
+			var err error
+			it.HealthCheckURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "baseUrl":
+			var err error
+			it.BaseURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "integrationSystemID":
+			var err error
+			it.IntegrationSystemID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "statusCondition":
+			var err error
+			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "localTenantID":
+			var err error
+			it.LocalTenantID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bundles":
+			var err error
+			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.Context, obj interface{}) (ApplicationRegisterInput, error) {
 	var it ApplicationRegisterInput
 	var asMap = obj.(map[string]interface{})
@@ -30977,7 +31094,7 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 			}
 		case "applicationInput":
 			var err error
-			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
+			it.ApplicationInput, err = ec.unmarshalNApplicationJSONInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationJSONInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -31025,7 +31142,7 @@ func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx con
 			}
 		case "applicationInput":
 			var err error
-			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
+			it.ApplicationInput, err = ec.unmarshalNApplicationJSONInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationJSONInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -37204,6 +37321,18 @@ func (ec *executionContext) unmarshalNApplicationFromTemplateInput2githubᚗcom�
 	return ec.unmarshalInputApplicationFromTemplateInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNApplicationJSONInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationJSONInput(ctx context.Context, v interface{}) (ApplicationJSONInput, error) {
+	return ec.unmarshalInputApplicationJSONInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNApplicationJSONInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationJSONInput(ctx context.Context, v interface{}) (*ApplicationJSONInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNApplicationJSONInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationJSONInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNApplicationPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v ApplicationPage) graphql.Marshaler {
 	return ec._ApplicationPage(ctx, sel, &v)
 }
@@ -37220,14 +37349,6 @@ func (ec *executionContext) marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑinc
 
 func (ec *executionContext) unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (ApplicationRegisterInput, error) {
 	return ec.unmarshalInputApplicationRegisterInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (*ApplicationRegisterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNApplicationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v ApplicationStatus) graphql.Marshaler {

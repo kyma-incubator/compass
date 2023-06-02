@@ -102,7 +102,7 @@ type ApplicationTemplateConverter interface {
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
-	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
+	CreateRegisterInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 }
 
@@ -449,7 +449,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
-	appCreateInputGQL, err := s.appConv.CreateInputJSONToGQL(appCreateInputJSON)
+	appCreateInputGQL, err := s.appConv.CreateRegisterInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
 		return errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	}
