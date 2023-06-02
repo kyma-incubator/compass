@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
+func TestApplicationInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -36,21 +36,26 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.Name = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.Name = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.Name = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
 }
 
-func TestApplicationRegisterInput_Validate_ProviderName(t *testing.T) {
+func TestApplicationInput_Validate_ProviderName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *string
@@ -81,21 +86,26 @@ func TestApplicationRegisterInput_Validate_ProviderName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.ProviderName = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.ProviderName = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.ProviderName = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
 }
 
-func TestApplicationRegisterInput_Validate_Description(t *testing.T) {
+func TestApplicationInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *string
@@ -126,21 +136,26 @@ func TestApplicationRegisterInput_Validate_Description(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.Description = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.Description = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.Description = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
 }
 
-func TestApplicationRegisterInput_Validate_Labels(t *testing.T) {
+func TestApplicationInput_Validate_Labels(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         graphql.Labels
@@ -176,21 +191,26 @@ func TestApplicationRegisterInput_Validate_Labels(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.Labels = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.Labels = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.Labels = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
 }
 
-func TestApplicationRegisterInput_Validate_HealthCheckURL(t *testing.T) {
+func TestApplicationInput_Validate_HealthCheckURL(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *string
@@ -221,21 +241,26 @@ func TestApplicationRegisterInput_Validate_HealthCheckURL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.HealthCheckURL = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.HealthCheckURL = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.HealthCheckURL = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
 }
 
-func TestApplicationRegisterInput_Validate_Webhooks(t *testing.T) {
+func TestApplicationInput_Validate_Webhooks(t *testing.T) {
 	validObj := fixValidWebhookInput(inputvalidationtest.ValidURL)
 
 	testCases := []struct {
@@ -263,15 +288,20 @@ func TestApplicationRegisterInput_Validate_Webhooks(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.Webhooks = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.Webhooks = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.Webhooks = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
@@ -308,15 +338,20 @@ func TestApplicationUpdateInput_Validate_ProviderName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidApplicationCreateInput()
-			app.ProviderName = testCase.Value
+			app1 := fixValidApplicationRegisterInput()
+			app1.ProviderName = testCase.Value
+			app2 := fixValidApplicationJSONInput()
+			app2.ProviderName = testCase.Value
 			// WHEN
-			err := app.Validate()
+			err1 := app1.Validate()
+			err2 := app2.Validate()
 			// THEN
 			if testCase.ExpectedValid {
-				require.NoError(t, err)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
 			} else {
-				require.Error(t, err)
+				require.Error(t, err1)
+				require.Error(t, err2)
 			}
 		})
 	}
@@ -421,8 +456,14 @@ func fixValidApplicationUpdateInput() graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{}
 }
 
-func fixValidApplicationCreateInput() graphql.ApplicationRegisterInput {
+func fixValidApplicationRegisterInput() graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
+		Name: "application",
+	}
+}
+
+func fixValidApplicationJSONInput() graphql.ApplicationJSONInput {
+	return graphql.ApplicationJSONInput{
 		Name: "application",
 	}
 }
