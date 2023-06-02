@@ -122,7 +122,7 @@ spec:
             - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_URL
               value: {{ .Values.global.tests.subscription.directDependencySubscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_URL
-              value: {{ .Values.global.tests.subscription.inDirectDependencySubscriptionURL }}
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
               valueFrom:
                 secretKeyRef:
