@@ -1,4 +1,4 @@
-package tenantvalidator
+package tenant
 
 // TenantInfo contains tenant information
 type TenantInfo struct {

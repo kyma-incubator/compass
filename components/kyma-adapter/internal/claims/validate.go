@@ -1,4 +1,4 @@
-package claimsvalidator
+package claims
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ClaimsValidator implements the ClaimsValidator interface
-type ClaimsValidator struct{}
+// Validator implements the Validator interface
+type Validator struct{}
 
 // Validate validates given id_token claims
-func (v *ClaimsValidator) Validate(ctx context.Context, claims idtokenclaims.Claims) error {
+func (v *Validator) Validate(ctx context.Context, claims idtokenclaims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

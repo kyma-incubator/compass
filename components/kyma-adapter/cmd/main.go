@@ -18,10 +18,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	claimsValidator "github.com/kyma-incubator/compass/components/kyma-adapter/internal/claims-validator"
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/claims"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/healthz"
-	tenant_validator "github.com/kyma-incubator/compass/components/kyma-adapter/internal/tenant-validator"
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/tenant"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -65,9 +65,9 @@ func main() {
 			return http.ErrUseLastResponse
 		},
 	}
-	tokenValidationMiddleware := authmiddleware.New(fetchJWKSClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, "", &claimsValidator.ClaimsValidator{})
+	tokenValidationMiddleware := authmiddleware.New(fetchJWKSClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, "", &claims.Validator{})
 
-	tenantValidationMiddleware, err := tenant_validator.NewTenantValidationMiddleware(ctx, cfg.TenantInfo)
+	tenantValidationMiddleware, err := tenant.NewMiddleware(ctx, cfg.TenantInfo)
 	exitOnError(err, "Error while preparing tenant validation middleware")
 
 	mainRouter := mux.NewRouter()
@@ -78,7 +78,7 @@ func main() {
 	adapter.Use(tenantValidationMiddleware.Handler())
 
 	gqlClient := graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient))
-	a := handler.AdapterHandler{GqlClient: gqlClient}
+	a := handler.AdapterHandler{DirectorGqlClient: gqlClient}
 
 	adapter.HandleFunc("/", a.HandlerFunc)
 	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())

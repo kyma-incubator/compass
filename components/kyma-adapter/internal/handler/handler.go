@@ -8,7 +8,7 @@ import (
 
 // AdapterHandler processes received requests
 type AdapterHandler struct {
-	GqlClient *graphql.Client
+	DirectorGqlClient *graphql.Client
 }
 
 // HandlerFunc is the implementation of AdapterHandler

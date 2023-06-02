@@ -1,4 +1,4 @@
-package tenantvalidator
+package tenant
 
 import (
 	"time"

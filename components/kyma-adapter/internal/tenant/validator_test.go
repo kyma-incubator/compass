@@ -1,4 +1,4 @@
-package tenantvalidator
+package tenant
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func TestNewTenantValidationMiddleware(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tenantValidationMiddleware, err := NewTenantValidationMiddleware(ctx, testCase.Config)
+			tenantValidationMiddleware, err := NewMiddleware(ctx, testCase.Config)
 
 			if testCase.ExpectedError != "" {
 				require.Error(t, err)
@@ -68,7 +68,7 @@ func TestNewHTTPHandler(t *testing.T) {
 	}))
 	defer server.Close()
 	serverURL := server.URL
-	tenantValidationMiddleware, err := NewTenantValidationMiddleware(context.Background(), getTestConfig(serverURL))
+	tenantValidationMiddleware, err := NewMiddleware(context.Background(), getTestConfig(serverURL))
 	require.NoError(t, err)
 
 	testCases := []struct {

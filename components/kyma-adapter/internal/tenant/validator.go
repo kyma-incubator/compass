@@ -1,4 +1,4 @@
-package tenantvalidator
+package tenant
 
 import (
 	"context"
@@ -17,16 +17,16 @@ import (
 	"net/http"
 )
 
-// TenantValidationMiddleware authorizes only requests made from CMP - checks if the tenant from ID token matches the provider subaccount of CMP
-type TenantValidationMiddleware struct {
+// Middleware authorizes only requests made from CMP - checks if the tenant from ID token matches the provider subaccount of CMP
+type Middleware struct {
 	config      config.TenantInfo
 	client      *http.Client
 	certSubject string
 }
 
-// NewTenantValidationMiddleware provides new TenantValidationMiddleware
-func NewTenantValidationMiddleware(ctx context.Context, cfg config.TenantInfo) (TenantValidationMiddleware, error) {
-	middleware := TenantValidationMiddleware{
+// NewMiddleware provides new Middleware
+func NewMiddleware(ctx context.Context, cfg config.TenantInfo) (Middleware, error) {
+	middleware := Middleware{
 		config: cfg,
 		client: &http.Client{
 			Timeout: cfg.RequestTimeout,
@@ -44,7 +44,7 @@ func NewTenantValidationMiddleware(ctx context.Context, cfg config.TenantInfo) (
 }
 
 // Handler performs a tenant validation by comparing the tenant from the ID token with CMPs provider subaccount
-func (m *TenantValidationMiddleware) Handler() func(next http.Handler) http.Handler {
+func (m *Middleware) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -68,7 +68,7 @@ func (m *TenantValidationMiddleware) Handler() func(next http.Handler) http.Hand
 	}
 }
 
-func (m *TenantValidationMiddleware) getTenant(ctx context.Context) error {
+func (m *Middleware) getTenant(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.config.Endpoint, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create request")

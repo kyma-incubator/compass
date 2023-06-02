@@ -77,7 +77,7 @@ spec:
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
-              path: "healthz"
+              path: "/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
