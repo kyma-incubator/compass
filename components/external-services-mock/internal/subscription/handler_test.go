@@ -70,14 +70,19 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	}
 
 	providerCfg := ProviderConfig{
-		TenantIDProperty:                    "tenantProperty",
-		SubaccountTenantIDProperty:          "subaccountProperty",
-		SubdomainProperty:                   "subdomainProperty",
-		LicenseTypeProperty:                 "LicenseTypeProperty",
-		SubscriptionProviderIDProperty:      "subscriptionProviderProperty",
-		ProviderSubaccountIDProperty:        "providerSubaccountIDProperty",
-		ConsumerTenantIDProperty:            "consumerTenantIdProperty",
-		SubscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty",
+		TenantIDProperty:                                          "tenantProperty",
+		SubaccountTenantIDProperty:                                "subaccountProperty",
+		SubdomainProperty:                                         "subdomainProperty",
+		LicenseTypeProperty:                                       "LicenseTypeProperty",
+		SubscriptionProviderIDProperty:                            "subscriptionProviderProperty",
+		ProviderSubaccountIDProperty:                              "providerSubaccountIDProperty",
+		ConsumerTenantIDProperty:                                  "consumerTenantIdProperty",
+		SubscriptionProviderAppNameProperty:                       "subscriptionProviderAppNameProperty",
+		SubscriptionIDProperty:                                    "subscriptionIDProperty",
+		DependentServiceInstancesInfoProperty:                     "dependentServiceInstancesInfoProperty",
+		DependentServiceInstancesInfoAppIDProperty:                "dependentServiceInstancesInfoAppIDProperty",
+		DependentServiceInstancesInfoAppNameProperty:              "dependentServiceInstancesInfoAppNameProperty",
+		DependentServiceInstancesInfoProviderSubaccountIDProperty: "dependentServiceInstancesInfoProviderSubaccountIDProperty",
 	}
 
 	t.Run("Error when missing authorization header", func(t *testing.T) {
@@ -241,7 +246,27 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				IsSubscription: true,
 			},
 			{
+				Name:           "Successfully executed subscribe request when adding second subscription",
+				Request:        subscribeReq,
+				IsSubscription: true,
+			},
+			{
+				Name:           "Successfully executed unsubscribe request when there are more than one subscriptions",
+				Request:        unsubscribeReq,
+				IsSubscription: false,
+			},
+			{
 				Name:           "Successfully executed unsubscribe request",
+				Request:        unsubscribeReq,
+				IsSubscription: false,
+			},
+			{
+				Name:           "Successfully executed unsubscribe request",
+				Request:        unsubscribeReq,
+				IsSubscription: false,
+			},
+			{
+				Name:           "Do not make unsubscribe request to tenant fetcher when there are not subscriptions to delete",
 				Request:        unsubscribeReq,
 				IsSubscription: false,
 			},
