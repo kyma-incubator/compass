@@ -328,7 +328,7 @@ func TestConverter_FromEntity(t *testing.T) {
 	})
 }
 
-func TestConverter_CreateInputJSONToGQL(t *testing.T) {
+func TestConverter_CreateRegisterInputJSONToGQL(t *testing.T) {
 	// GIVEN
 	conv := application.NewConverter(nil, nil)
 
@@ -338,11 +338,11 @@ func TestConverter_CreateInputJSONToGQL(t *testing.T) {
 
 		// WHEN
 		// GQL -> JSON
-		json, err := conv.CreateInputGQLToJSON(&inputGQL)
+		json, err := conv.CreateRegisterInputGQLToJSON(&inputGQL)
 		require.NoError(t, err)
 
 		// JSON -> GQL
-		outputGQL, err := conv.CreateInputJSONToGQL(json)
+		outputGQL, err := conv.CreateRegisterInputJSONToGQL(json)
 		require.NoError(t, err)
 
 		// THEN
@@ -352,7 +352,39 @@ func TestConverter_CreateInputJSONToGQL(t *testing.T) {
 	t.Run("Error while JSON to GQL conversion", func(t *testing.T) {
 		// WHEN
 		expectedErr := "invalid character 'a' looking for beginning of value"
-		_, err := conv.CreateInputJSONToGQL("ad[sd")
+		_, err := conv.CreateRegisterInputJSONToGQL("ad[sd")
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), expectedErr)
+	})
+}
+
+func TestConverter_CreateJSONInputJSONToGQL(t *testing.T) {
+	// GIVEN
+	conv := application.NewConverter(nil, nil)
+
+	t.Run("Successful two-way conversion", func(t *testing.T) {
+		inputGQL := fixGQLApplicationJSONInput("name", "description")
+		inputGQL.Labels = graphql.Labels{"test": "test"}
+
+		// WHEN
+		// GQL -> JSON
+		json, err := conv.CreateJSONInputGQLToJSON(&inputGQL)
+		require.NoError(t, err)
+
+		// JSON -> GQL
+		outputGQL, err := conv.CreateJSONInputJSONToGQL(json)
+		require.NoError(t, err)
+
+		// THEN
+		require.Equal(t, inputGQL, outputGQL)
+	})
+
+	t.Run("Error while JSON to GQL conversion", func(t *testing.T) {
+		// WHEN
+		expectedErr := "invalid character 'a' looking for beginning of value"
+		_, err := conv.CreateJSONInputJSONToGQL("ad[sd")
 
 		// THEN
 		require.Error(t, err)

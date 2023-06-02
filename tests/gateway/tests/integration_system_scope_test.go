@@ -59,7 +59,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		appTplInput := graphql.ApplicationTemplateInput{
 			Name:        "test",
 			Description: nil,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
+			ApplicationInput: &graphql.ApplicationJSONInput{
 				Name:         "test",
 				ProviderName: ptr.String("test"),
 			},
