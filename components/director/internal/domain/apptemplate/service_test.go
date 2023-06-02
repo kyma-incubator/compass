@@ -1246,7 +1246,7 @@ func TestService_Update(t *testing.T) {
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertSvc := &automock.LabelUpsertService{}
 				labelUpsertSvc.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
-				labelUpsertSvc.On("UpsertLabel", ctx, testTenant, modelLabelInput).Return(nil).Once()
+				labelUpsertSvc.On("UpsertLabelGlobal", ctx, modelLabelInput).Return(nil).Once()
 				return labelUpsertSvc
 			},
 			AppRepoFn: func() *automock.ApplicationRepository {
@@ -1276,7 +1276,7 @@ func TestService_Update(t *testing.T) {
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertSvc := &automock.LabelUpsertService{}
 				labelUpsertSvc.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
-				labelUpsertSvc.On("UpsertLabel", ctx, testTenant, modelLabelInput).Return(testError).Once()
+				labelUpsertSvc.On("UpsertLabelGlobal", ctx, modelLabelInput).Return(testError).Once()
 				return labelUpsertSvc
 			},
 			AppRepoFn: func() *automock.ApplicationRepository {

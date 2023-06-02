@@ -13,15 +13,18 @@ import (
 )
 
 // LabelRepository missing godoc
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	Create(ctx context.Context, tenant string, label *model.Label) error
 	Upsert(ctx context.Context, tenant string, label *model.Label) error
+	UpsertGlobal(ctx context.Context, label *model.Label) error
 	UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 // LabelDefinitionRepository missing godoc
+//
 //go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefinitionRepository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
@@ -30,6 +33,7 @@ type LabelDefinitionRepository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -87,6 +91,22 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 
 	if err := s.labelRepo.Upsert(ctx, tenant, label); err != nil {
+		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	}
+	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+
+	return nil
+}
+
+// UpsertLabelGlobal missing godoc
+func (s *labelService) UpsertLabelGlobal(ctx context.Context, labelInput *model.LabelInput) error {
+	if err := s.validateLabel(ctx, "", labelInput); err != nil {
+		return err
+	}
+
+	label := labelInput.ToLabel(s.uidService.Generate(), "")
+
+	if err := s.labelRepo.UpsertGlobal(ctx, label); err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)

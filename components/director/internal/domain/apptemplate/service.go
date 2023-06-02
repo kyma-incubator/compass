@@ -62,7 +62,7 @@ type WebhookRepository interface {
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
-	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+	UpsertLabelGlobal(ctx context.Context, labelInput *model.LabelInput) error
 }
 
 // LabelRepository missing godoc
@@ -283,11 +283,6 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
 	oldAppTemplate, err := s.Get(ctx, id)
 	if err != nil {
 		return err
@@ -334,7 +329,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 
 		for _, app := range appsByAppTemplate {
 			log.C(ctx).Infof("Updating %s label for application with id %s", applicationTypeLabelKey, app.ID)
-			err = s.labelUpsertService.UpsertLabel(ctx, appTenant, &model.LabelInput{
+			err = s.labelUpsertService.UpsertLabelGlobal(ctx, &model.LabelInput{
 				Key:        applicationTypeLabelKey,
 				Value:      appTemplate.Name,
 				ObjectID:   app.ID,
