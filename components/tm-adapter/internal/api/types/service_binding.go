@@ -17,11 +17,6 @@ type ServiceKey struct {
 	Credentials       json.RawMessage `json:"credentials"`
 }
 
-type IASParameters struct {
-	ConsumedServices      []ConsumedService `json:"consumed-services"`
-	XsuaaCrossConsumption bool              `json:"xsuaa-cross-consumption"`
-}
-
 type ConsumedService struct {
 	ServiceInstanceName string `json:"service-instance-name"`
 }

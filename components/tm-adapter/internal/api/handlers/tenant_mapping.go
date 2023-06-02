@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -26,6 +27,8 @@ const (
 	LocationHeaderKey = "Location"
 	AssignOperation   = "assign"
 	UnassignOperation = "unassign"
+
+	catalogNameIAS = "identity"
 )
 
 type Handler struct {
@@ -84,10 +87,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	catalogNameProcurement := "procurement-service-test" // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
-	planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+	planNameProcurement := "apiaccess"                   // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
 	svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
 
-	catalogNameIAS := "identity" // IAS
+	//catalogNameIAS := "identity" // IAS
 	planNameIAS := "application"
 	svcInstanceNameIAS := catalogNameIAS + "-instance-" + formationID
 
@@ -125,37 +128,40 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mockURL := "https://guidedbuyingmockapi.free.beeceptor.com/v1/tenantMappings"
-	req, err := http.NewRequest(http.MethodPatch, mockURL, nil)
-	if err != nil {
-		log.C(ctx).Error("An error occurred while creating request to the mock API")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
+	// todo::: consider removing it. Currently we have hardcoded the expected app response
+	//mockURL := "https://guidedbuyingmockapi.free.beeceptor.com/v1/tenantMappings"
+	//req, err := http.NewRequest(http.MethodPatch, mockURL, nil)
+	//if err != nil {
+	//	log.C(ctx).Error("An error occurred while creating request to the mock API")
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+	//
+	//log.C(ctx).Info("Calling beeceptor mock API...")
+	//resp, err := h.caller.Call(req)
+	//if err != nil {
+	//	log.C(ctx).Error("An error occurred while calling beeceptor mock API")
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+	//defer closeResponseBody(ctx, resp)
+	//
+	//body, err := ioutil.ReadAll(resp.Body)
+	//if err != nil {
+	//	log.C(ctx).Errorf("Failed to read response body from beeceptor mock API request: %v", err)
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
+	//
+	//if resp.StatusCode != http.StatusOK {
+	//	log.C(ctx).Errorf("Response status code is not the exepcted one, should be: %d, got: %d", http.StatusOK, resp.StatusCode)
+	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	//	return
+	//}
 
-	log.C(ctx).Info("Calling beeceptor mock API...")
-	resp, err := h.caller.Call(req)
-	if err != nil {
-		log.C(ctx).Error("An error occurred while calling beeceptor mock API")
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-	defer closeResponseBody(ctx, resp)
+	body := `{"configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","x-corelation-ids":["SAP_COM_0A00"]},"clientCredentialsAuthentication":{"url":"{{ .URL }}","tokenServiceUrl":"{{ .TokenURL }}","clientId":"{{ .ClientID }}","clientSecret":"{{ .ClientSecret }}","x-corelation-ids":["SAP_COM_0545"]}},"inboundCommunication":{"basicAuthentication":{"destinations":[{"name":"oneproc-consys-basicauth","subaccountId":"{{ .SubaccountID }}","additionalAttributes":{"x-corelation-ids":["SAP_COM_0545"]}}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"businessSystem","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.C(ctx).Errorf("Failed to read response body from beeceptor mock API request: %v", err)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.C(ctx).Errorf("Response status code is not the exepcted one, should be: %d, got: %d", http.StatusOK, resp.StatusCode)
-		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
-	}
-
-	t, err := template.New("").Parse(string(body))
+	t, err := template.New("").Parse(body)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while creating template: %v", err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -216,7 +222,7 @@ func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurem
 		return nil, err
 	}
 
-	_, err = h.createServiceInstance(ctx, svcInstanceNameProcurement, planIDProcurement)
+	_, err = h.createServiceInstance(ctx, svcInstanceNameProcurement, planIDProcurement, svcInstanceNameProcurement)
 	if err != nil {
 		return nil, err
 	}
@@ -233,32 +239,16 @@ func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurem
 		return nil, err
 	}
 
-	svcInstanceIDIAS, err := h.createServiceInstance(ctx, svcInstanceNameIAS, planIDIAS)
+	svcInstanceIDIAS, err := h.createServiceInstance(ctx, svcInstanceNameIAS, planIDIAS, svcInstanceNameProcurement)
 	if err != nil {
 		return nil, err
 	}
-
-	// todo:: consider removing it
-	//svcInstanceIDIAS, err := h.retrieveServiceInstanceIDByName(ctx, svcInstanceNameIAS)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
 
 	svcKeyNameIAS := svcInstanceNameIAS + "-key"
 	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement)
 	if err != nil {
 		return nil, err
 	}
-
-	// todo:: consider removing it
-	//serviceKeyIAS, err = h.retrieveServiceKeyByName(ctx, svcKeyNameIAS)
-	//if err != nil {
-	//	log.C(ctx).Error(err)
-	//	httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-	//	return
-	//}
 
 	serviceKeyIAS, err := h.retrieveServiceKeyByID(ctx, serviceKeyIDIAS)
 	if err != nil {
@@ -403,10 +393,16 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 	return planID, nil
 }
 
-func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID string) (string, error) {
+func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID, serviceInstanceNameProcurement string) (string, error) {
+	iasParamsBytes, err := buildIASParameters(ctx, serviceInstanceName, serviceInstanceNameProcurement)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building IAS service instance configuration")
+	}
+
 	siReqBody := &types.ServiceInstanceReqBody{
 		Name:          serviceInstanceName,
 		ServicePlanId: planID,
+		Parameters:    iasParamsBytes, // todo::: most probably should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
 	}
 
 	siReqBodyBytes, err := json.Marshal(siReqBody)
@@ -717,7 +713,6 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 	return nil
 }
 
-// todo:: consider removing retrieveServiceInstanceIDByName
 func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceInstanceName string) (string, error) {
 	strURL, err := buildURL(h.cfg.ServiceManagerURL, paths.ServiceInstancesPath, SubaccountKey, h.tenantID)
 	if err != nil {
@@ -763,6 +758,7 @@ func (h *Handler) retrieveServiceInstanceIDByName(ctx context.Context, serviceIn
 
 	if instanceID == "" {
 		log.C(ctx).Warnf("No instance ID found by name: %q", serviceInstanceName)
+		return "", nil
 	}
 
 	log.C(ctx).Infof("Successfully find service instance ID: %q by instance name: %q", instanceID, serviceInstanceName)
@@ -811,24 +807,9 @@ func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstan
 }
 
 func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement string) (string, error) {
-	iasParams := types.IASParameters{
-		ConsumedServices: []types.ConsumedService{
-			{
-				ServiceInstanceName: serviceInstanceNameProcurement,
-			},
-		},
-		XsuaaCrossConsumption: true,
-	}
-
-	iasParamsBytes, err := json.Marshal(iasParams)
-	if err != nil {
-		return "", errors.Errorf("Failed to marshal IAS parameters with procurement service details: %v", err)
-	}
-
 	serviceKeyReqBody := &types.ServiceKeyReqBody{
 		Name:              serviceKeyName,
 		ServiceInstanceId: serviceInstanceID,
-		Parameters:        iasParamsBytes, // todo::: most probably should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
 	}
 
 	serviceKeyReqBodyBytes, err := json.Marshal(serviceKeyReqBody)
@@ -1075,6 +1056,31 @@ func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID strin
 	}
 
 	return &serviceKey, nil
+}
+
+func buildIASParameters(ctx context.Context, serviceInstanceName, serviceInstanceNameProcurement string) ([]byte, error) {
+	if strings.Contains(serviceInstanceName, catalogNameIAS) {
+		log.C(ctx).Infof("The service instance is for IAS service, building instance configuration...")
+
+		iasParams := types.IASParameters{
+			ConsumedServices: []types.ConsumedService{
+				{
+					ServiceInstanceName: serviceInstanceNameProcurement,
+				},
+			},
+			XsuaaCrossConsumption: true,
+		}
+
+		iasParamsBytes, err := json.Marshal(iasParams)
+		if err != nil {
+			return nil, errors.Errorf("Failed to marshal IAS parameters with procurement service details: %v", err)
+		}
+
+		return iasParamsBytes, nil
+	} else {
+		log.C(ctx).Infof("The service instance name: %q does not contains %q and no IAS instance configuration will be build", serviceInstanceName, catalogNameIAS)
+		return nil, nil
+	}
 }
 
 func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
