@@ -208,12 +208,23 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 	}
 }
 
-// CreateInputJSONToGQL missing godoc
-func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
+// CreateRegisterInputJSONToGQL missing godoc
+func (c *converter) CreateRegisterInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
 	var appInput graphql.ApplicationRegisterInput
 	err := json.Unmarshal([]byte(in), &appInput)
 	if err != nil {
 		return graphql.ApplicationRegisterInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationRegisterInput")
+	}
+
+	return appInput, nil
+}
+
+// CreateJSONInputJSONToGQL missing godoc
+func (c *converter) CreateJSONInputJSONToGQL(in string) (graphql.ApplicationJSONInput, error) {
+	var appInput graphql.ApplicationJSONInput
+	err := json.Unmarshal([]byte(in), &appInput)
+	if err != nil {
+		return graphql.ApplicationJSONInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationJSONInput")
 	}
 
 	return appInput, nil
@@ -228,8 +239,18 @@ func (c *converter) CreateInputJSONToModel(ctx context.Context, in string) (mode
 	return modelIn, nil
 }
 
-// CreateInputGQLToJSON missing godoc
-func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
+// CreateRegisterInputGQLToJSON missing godoc
+func (c *converter) CreateRegisterInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
+	appInput, err := json.Marshal(in)
+	if err != nil {
+		return "", errors.Wrap(err, "while marshaling application input")
+	}
+
+	return string(appInput), nil
+}
+
+// CreateJSONInputGQLToJSON missing godoc
+func (c *converter) CreateJSONInputGQLToJSON(in *graphql.ApplicationJSONInput) (string, error) {
 	appInput, err := json.Marshal(in)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshaling application input")

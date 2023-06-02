@@ -309,7 +309,7 @@ func AssertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationJSONInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
@@ -326,7 +326,7 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationJSONInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)

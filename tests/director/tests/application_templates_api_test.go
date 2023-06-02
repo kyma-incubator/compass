@@ -406,7 +406,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	appTemplateName := createAppTemplateName("app-template")
 	newName := createAppTemplateName("new-app-template")
 	newDescription := "new description"
-	newAppCreateInput := &graphql.ApplicationRegisterInput{
+	newAppCreateInput := &graphql.ApplicationJSONInput{
 		Name:           "new-app-create-input",
 		Description:    ptr.String("{{name}} {{display-name}}"),
 		HealthCheckURL: ptr.String("http://url.valid"),
@@ -457,7 +457,7 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 	appTemplateName := createAppTemplateName("app-template")
 	newName := createAppTemplateName("new-app-template")
 	newDescription := "new description"
-	newAppCreateInput := &graphql.ApplicationRegisterInput{
+	newAppCreateInput := &graphql.ApplicationJSONInput{
 		Name:           "new-app-create-input",
 		Description:    ptr.String("{{name}} {{display-name}}"),
 		Labels:         map[string]interface{}{"displayName": "{{display-name}}"},
@@ -627,7 +627,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 
 			// WHEN
 			t.Log("Update application template")
-			appRegisterInput := &graphql.ApplicationRegisterInput{
+			appJSONInput := &graphql.ApplicationJSONInput{
 				Name:         "{{name}}",
 				ProviderName: ptr.String("compass-tests"),
 				Labels: graphql.Labels{
@@ -642,15 +642,15 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			}
 
 			if testCase.NewAppTemplateAppInputJSONNameProperty != nil {
-				appRegisterInput.Name = *testCase.NewAppTemplateAppInputJSONNameProperty
+				appJSONInput.Name = *testCase.NewAppTemplateAppInputJSONNameProperty
 			}
-			appRegisterInput.Description = testCase.AppInputDescription
-			appRegisterInput.ProviderName = &sapProvider
+			appJSONInput.Description = testCase.AppInputDescription
+			appJSONInput.ProviderName = &sapProvider
 			if testCase.NewAppTemplateAppInputJSONLabelsProperty != nil {
-				appRegisterInput.Labels = *testCase.NewAppTemplateAppInputJSONLabelsProperty
+				appJSONInput.Labels = *testCase.NewAppTemplateAppInputJSONLabelsProperty
 			}
 
-			appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: testCase.NewAppTemplateName, ApplicationInput: appRegisterInput, Placeholders: testCase.NewAppTemplatePlaceholders, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+			appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: testCase.NewAppTemplateName, ApplicationInput: appJSONInput, Placeholders: testCase.NewAppTemplatePlaceholders, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 			appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
 
 			updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)

@@ -206,7 +206,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        templateName,
 		Description: &appTemplateDesc,
-		ApplicationInput: &directorSchema.ApplicationRegisterInput{
+		ApplicationInput: &directorSchema.ApplicationJSONInput{
 			Name:                fmt.Sprintf("{{%s}}", namePlaceholderKey),
 			ProviderName:        &providerName,
 			Description:         ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholderKey)),
