@@ -61,7 +61,7 @@ spec:
                   name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: APP_SUBSCRIPTION_CONFIG_URL
-              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionURL }}
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL

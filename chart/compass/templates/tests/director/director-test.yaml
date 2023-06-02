@@ -119,8 +119,10 @@ spec:
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
               value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
-            - name: APP_SUBSCRIPTION_CONFIG_URL
-              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_URL
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_URL
+              value: {{ .Values.global.tests.subscription.inDirectDependencySubscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
               valueFrom:
                 secretKeyRef:
