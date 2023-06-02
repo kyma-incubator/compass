@@ -17,7 +17,13 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-const tenantTokenClaimsKey = "tenant"
+const (
+	tenantTokenClaimsKey = "tenant"
+	// subscribedProviderIdValue, subscribedProviderAppNameValue and subscribedProviderSubaccountIdValue are used when CMP is an indirect dependency in a subscription flow
+	subscribedProviderIdValue           = "subscribedProviderID"
+	subscribedProviderAppNameValue      = "subscribedProviderAppName"
+	subscribedProviderSubaccountIdValue = "subscribedProviderSubaccountID"
+)
 
 type handler struct {
 	httpClient       *http.Client
@@ -138,6 +144,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
+	isIndirectDependency := r.Header.Get("isIndirectDependency")
 	subscriptionID := getSubscriptionID(httpMethod, appName)
 	if subscriptionID == "" {
 		return http.StatusOK, nil
@@ -145,7 +152,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID)
+	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, isIndirectDependency)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
@@ -185,7 +192,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	return http.StatusOK, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID string) (*http.Request, error) {
+func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, isIndirectDependency string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -232,13 +239,6 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	if len(h.tenantConfig.SubscriptionProviderID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderIDProperty, h.tenantConfig.SubscriptionProviderID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
-		}
-	}
-
 	if len(h.tenantConfig.TestConsumerTenantID) > 0 {
 		body, err = sjson.Set(body, h.providerConfig.ConsumerTenantIDProperty, h.tenantConfig.TestConsumerTenantID)
 		if err != nil {
@@ -246,16 +246,16 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
-	if len(h.tenantConfig.SubscriptionProviderAppNameValue) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderAppNameProperty, h.tenantConfig.SubscriptionProviderAppNameValue)
+	if isIndirectDependency != "" { // is indirect dependency
+		body, err = h.setProviderValues(body, subscribedProviderIdValue, subscribedProviderAppNameValue, subscribedProviderSubaccountIdValue)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			return nil, err
 		}
-	}
-
-	body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, providerSubaccID)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	} else { //is direct dependency
+		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
@@ -320,4 +320,28 @@ func removeSubscription(appName string) {
 	} else {
 		provider.ProviderSubscriptionsIds = provider.ProviderSubscriptionsIds[1:] //remove first element
 	}
+}
+
+func (h *handler) setProviderValues(body, providerID, appName, subaccountID string) (string, error) {
+	var err error
+	if len(h.tenantConfig.SubscriptionProviderID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderIDProperty, providerID)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+		}
+	}
+
+	if len(h.tenantConfig.SubscriptionProviderAppNameValue) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderAppNameProperty, appName)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+		}
+	}
+
+	body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, subaccountID)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+
+	return body, nil
 }

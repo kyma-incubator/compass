@@ -1140,7 +1140,8 @@ global:
       certSvcInstanceTestSecretName: "cert-svc-secret"
       certSvcInstanceTestRegion2SecretName: "cert-svc-secret-eu2"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      directDependencySubscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      inDirectDependencySubscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
     namespace: kyma-system

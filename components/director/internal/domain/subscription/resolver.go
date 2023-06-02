@@ -66,7 +66,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		return false, errors.Wrapf(err, "while unmarshaling dependent service instances info")
 	}
 	var success bool
-
+	log.C(ctx).Infof("RIGHT BEFORE SUBSCRIBTION FLOW and dependentSvcIstancesInfo instances are %v", dependentSvcInstancesInfo.Instances)
 	for _, instance := range dependentSvcInstancesInfo.Instances {
 		log.C(ctx).Infof("Subscription flow for subscribe will be entered. Changing provider ID from %q to %q, provider subaccount id from %q to %q and subscription app name from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID, subscriptionAppName, instance.AppName)
 		providerID = instance.AppID

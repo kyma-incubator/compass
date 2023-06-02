@@ -1,7 +1,8 @@
 package subscription
 
 type Config struct {
-	URL                                   string `envconfig:"APP_SUBSCRIPTION_CONFIG_URL"`
+	DirectDependencyURL                   string `envconfig:"APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_URL"`
+	IndirectDependencyURL                 string `envconfig:"APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_URL"`
 	TokenURL                              string `envconfig:"APP_SUBSCRIPTION_CONFIG_TOKEN_URL"`
 	ClientID                              string `envconfig:"APP_SUBSCRIPTION_CONFIG_CLIENT_ID"`
 	ClientSecret                          string `envconfig:"APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET"`
