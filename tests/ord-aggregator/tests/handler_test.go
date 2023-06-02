@@ -574,7 +574,7 @@ func TestORDAggregator(stdT *testing.T) {
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testConfig.SubscriptionProviderAppNameValue)
-		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.DirectDependencyURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
@@ -583,11 +583,11 @@ func TestORDAggregator(stdT *testing.T) {
 
 		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		//In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.DirectDependencyURL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.DirectDependencyURL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
@@ -603,7 +603,7 @@ func TestORDAggregator(stdT *testing.T) {
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := testConfig.SubscriptionConfig.URL + subJobStatusPath
+		subJobStatusURL := testConfig.SubscriptionConfig.DirectDependencyURL + subJobStatusPath
 		require.Eventually(t, func() bool {
 			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)

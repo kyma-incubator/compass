@@ -239,6 +239,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 			Name           string
 			Request        *http.Request
 			IsSubscription bool
+			isIndirectDep  bool
 		}{
 			{
 				Name:           "Successfully executed subscribe request",
@@ -270,6 +271,18 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				Request:        unsubscribeReq,
 				IsSubscription: false,
 			},
+			{
+				Name:           "Successfully executed subscribe request when CMP is indirect dependency",
+				Request:        subscribeReq,
+				IsSubscription: true,
+				isIndirectDep:  true,
+			},
+			{
+				Name:           "Successfully executed unsubscribe request when CMP is indirect dependency",
+				Request:        unsubscribeReq,
+				IsSubscription: false,
+				isIndirectDep:  true,
+			},
 		}
 
 		for _, testCase := range testCases {
@@ -278,6 +291,9 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				req := testCase.Request
 				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
+				if testCase.isIndirectDep {
+					req.Header.Add("isIndirectDependency", "true")
+				}
 				req = mux.SetURLVars(req, map[string]string{"app_name": appName})
 
 				testClient := NewTestClient(func(req *http.Request) *http.Response {
