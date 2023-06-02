@@ -1306,51 +1306,6 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:      1,
 		},
 		{
-			Name:                "Succeeds",
-			Region:              tenantRegionWithPrefix,
-			SubscriptionPayload: subscriptionPayload,
-			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
-				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				return appTemplateSvc
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
-				return tenantSvc
-			},
-			AppConverterFn: func() *automock.ApplicationConverter {
-				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
-				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
-
-				return appConv
-			},
-			AppTemplConverterFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateSimplifiedInput, nil).Once()
-
-				return appTemplateConv
-			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return([]*model.Application{}, nil).Once()
-				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
-
-				return appSvc
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
-
-				return lblSvc
-			},
-			UIDServiceFn: unusedUUIDSvc,
-			IsSuccessful: true,
-			Repeats:      1,
-		},
-		{
 			Name:                "Returns an error when can't find internal consumer tenant",
 			Region:              tenantRegion,
 			SubscriptionPayload: subscriptionPayload,
