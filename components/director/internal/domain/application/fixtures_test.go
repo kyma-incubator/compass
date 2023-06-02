@@ -282,6 +282,44 @@ func fixModelApplicationUpdateInputStatus(statusCondition model.ApplicationStatu
 	}
 }
 
+func fixGQLApplicationJSONInput(name, description string) graphql.ApplicationJSONInput {
+	labels := graphql.Labels{
+		"test": []string{"val", "val2"},
+	}
+	kind := "test"
+	desc := "Sample"
+	return graphql.ApplicationJSONInput{
+		Name:                name,
+		Description:         &description,
+		Labels:              labels,
+		HealthCheckURL:      &testURL,
+		IntegrationSystemID: &intSysID,
+		LocalTenantID:       &localTenantID,
+		ProviderName:        &providerName,
+		Webhooks: []*graphql.WebhookInput{
+			{URL: stringPtr("webhook1.foo.bar")},
+			{URL: stringPtr("webhook2.foo.bar")},
+		},
+		Bundles: []*graphql.BundleCreateInput{
+			{
+				Name: "foo",
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{Name: "api1", TargetURL: "foo.bar"},
+					{Name: "api2", TargetURL: "foo.bar2"},
+				},
+				EventDefinitions: []*graphql.EventDefinitionInput{
+					{Name: "event1", Description: &desc},
+					{Name: "event2", Description: &desc},
+				},
+				Documents: []*graphql.DocumentInput{
+					{DisplayName: "doc1", Kind: &kind},
+					{DisplayName: "doc2", Kind: &kind},
+				},
+			},
+		},
+	}
+}
+
 func fixGQLApplicationRegisterInput(name, description string) graphql.ApplicationRegisterInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},

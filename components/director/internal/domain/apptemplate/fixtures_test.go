@@ -191,7 +191,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 		},
@@ -208,7 +208,7 @@ func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemp
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 		},
@@ -224,7 +224,7 @@ func fixGQLAppTemplateInputWithPlaceholderAndProvider(name string) *graphql.Appl
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:         "foo",
 			Description:  &desc,
 			ProviderName: str.Ptr("SAP"),
@@ -241,7 +241,7 @@ func fixGQLAppTemplateInputInvalidAppInputURLTemplateMethod(name string) *graphq
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 			Webhooks: []*graphql.WebhookInput{
@@ -263,7 +263,7 @@ func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdat
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 		},
@@ -280,7 +280,7 @@ func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.Applicati
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 			Labels: graphql.Labels{
@@ -299,7 +299,7 @@ func fixGQLAppTemplateUpdateInputWithPlaceholderAndProvider(name string) *graphq
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:         "foo",
 			Description:  &desc,
 			ProviderName: str.Ptr("SAP"),
@@ -316,7 +316,7 @@ func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.Applicati
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
 			Webhooks: []*graphql.WebhookInput{

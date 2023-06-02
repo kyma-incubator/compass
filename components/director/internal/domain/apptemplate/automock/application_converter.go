@@ -37,8 +37,8 @@ func (_m *ApplicationConverter) CreateInputFromGraphQL(ctx context.Context, in g
 	return r0, r1
 }
 
-// CreateInputJSONToGQL provides a mock function with given fields: in
-func (_m *ApplicationConverter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
+// CreateRegisterInputJSONToGQL provides a mock function with given fields: in
+func (_m *ApplicationConverter) CreateRegisterInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
 	ret := _m.Called(in)
 
 	var r0 graphql.ApplicationRegisterInput
