@@ -244,6 +244,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := testCase.AuthConverterFn()
+
 			conv := bundleinstanceauth.NewConverter(authConv)
 
 			// WHEN
@@ -256,6 +257,8 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			} else {
 				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
 			}
+
+			authConv.AssertExpectations(t)
 		})
 	}
 }
@@ -306,6 +309,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := testCase.AuthConverterFn()
+
 			conv := bundleinstanceauth.NewConverter(authConv)
 
 			// WHEN
@@ -318,6 +322,8 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			} else {
 				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
 			}
+
+			authConv.AssertExpectations(t)
 		})
 	}
 }

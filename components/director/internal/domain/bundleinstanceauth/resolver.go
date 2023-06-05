@@ -304,11 +304,12 @@ func (r *Resolver) CreateBundleInstanceAuth(ctx context.Context, bundleID string
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Infof("Successfully created BundleInstanceAuth with id %q for Bundle with id %q", instanceAuthID, bundleID)
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Successfully created BundleInstanceAuth with id %q for Bundle with id %q", instanceAuthID, bundleID)
 
 	return r.conv.ToGraphQL(instanceAuth)
 }
@@ -357,11 +358,12 @@ func (r *Resolver) UpdateBundleInstanceAuth(ctx context.Context, id string, bund
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Infof("Successfully updated BundleInstanceAuth with id %q for Bundle with id %q", id, bundleID)
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Successfully updated BundleInstanceAuth with id %q for Bundle with id %q", id, bundleID)
 
 	return r.conv.ToGraphQL(instanceAuth)
 }
