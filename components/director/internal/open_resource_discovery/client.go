@@ -3,7 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,7 +28,7 @@ type ClientConfig struct {
 }
 
 type Resource struct {
-	Type          resource.Type
+	Type          directorresource.Type
 	ID            string
 	ParentID      *string
 	Name          string
@@ -68,7 +68,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error) {
 	var tenantValue string
 
-	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
+	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplateVersion; needsTenantHeader {
 		tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template webhook flow")
