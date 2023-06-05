@@ -2,7 +2,6 @@ package formationassignment
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -15,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -111,36 +109,40 @@ type formationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 }
 
+//go:generate mockery --exported --name=formationAssignmentUpdater --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentUpdater interface {
+	Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+}
+
 type service struct {
-	repo                        FormationAssignmentRepository
-	uidSvc                      UIDService
-	applicationRepository       applicationRepository
-	runtimeRepo                 runtimeRepository
-	runtimeContextRepo          runtimeContextRepository
-	notificationService         notificationService
-	labelService                labelService
-	constraintEngine            constraintEngine
-	formationRepository         formationRepository
-	formationTemplateRepository formationTemplateRepository
-	runtimeTypeLabelKey         string
-	applicationTypeLabelKey     string
+	repo                    FormationAssignmentRepository
+	uidSvc                  UIDService
+	applicationRepository   applicationRepository
+	runtimeRepo             runtimeRepository
+	runtimeContextRepo      runtimeContextRepository
+	notificationService     notificationService
+	labelService            labelService
+	formationRepository     formationRepository
+	updater                 formationAssignmentUpdater
+	runtimeTypeLabelKey     string
+	applicationTypeLabelKey string
 }
 
 // NewService creates a FormationTemplate service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, labelService labelService, constraintEngine constraintEngine, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, labelService labelService, formationRepository formationRepository, updater formationAssignmentUpdater, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		repo:                        repo,
-		uidSvc:                      uidSvc,
-		applicationRepository:       applicationRepository,
-		runtimeRepo:                 runtimeRepository,
-		runtimeContextRepo:          runtimeContextRepo,
-		notificationService:         notificationService,
-		labelService:                labelService,
-		constraintEngine:            constraintEngine,
-		formationRepository:         formationRepository,
-		formationTemplateRepository: formationTemplateRepository,
-		runtimeTypeLabelKey:         runtimeTypeLabelKey,
-		applicationTypeLabelKey:     applicationTypeLabelKey,
+		repo:                    repo,
+		uidSvc:                  uidSvc,
+		applicationRepository:   applicationRepository,
+		runtimeRepo:             runtimeRepository,
+		runtimeContextRepo:      runtimeContextRepo,
+		notificationService:     notificationService,
+		labelService:            labelService,
+		formationRepository:     formationRepository,
+		updater:                 updater,
+		runtimeTypeLabelKey:     runtimeTypeLabelKey,
+		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 }
 
@@ -335,44 +337,6 @@ func (s *service) ListFormationAssignmentsForObjectIDs(ctx context.Context, form
 	}
 
 	return s.repo.ListAllForObjectIDs(ctx, tnt, formationID, objectIDs)
-}
-
-// Update updates a Formation Assignment matching ID `id` using `in`
-func (s *service) Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error {
-	id := fa.ID
-
-	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
-
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	joinPointDetails, err := s.prepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation)
-	if err != nil {
-		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
-	}
-	joinPointDetails.Location = formationconstraint.PreNotificationStatusReturned
-	if err := s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreNotificationStatusReturned, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
-		return errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.NotificationStatusReturned, model.PreOperation)
-	}
-
-	if exists, err := s.repo.Exists(ctx, id, tenantID); err != nil {
-		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
-	} else if !exists {
-		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
-	}
-
-	if err = s.repo.Update(ctx, fa); err != nil {
-		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
-	}
-
-	joinPointDetails.Location = formationconstraint.PostNotificationStatusReturned
-	if err := s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostNotificationStatusReturned, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
-		return errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.NotificationStatusReturned, model.PostOperation)
-	}
-
-	return nil
 }
 
 // Delete deletes a Formation Assignment matching ID `id`
@@ -610,7 +574,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	if assignmentClone.Request == nil {
 		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		assignment.State = string(model.ReadyAssignmentState)
-		if err := s.Update(ctx, assignment, mappingPair.Operation); err != nil {
+		if err := s.updater.Update(ctx, assignment, mappingPair.Operation); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
 		return nil
@@ -623,7 +587,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	response, err := s.notificationService.SendNotification(ctx, extendedRequest)
 	if err != nil {
-		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState, mappingPair.Operation)
+		updateError := s.updater.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState, mappingPair.Operation)
 		if updateError != nil {
 			return errors.Wrapf(
 				updateError,
@@ -635,7 +599,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState, mappingPair.Operation)
+		err = s.updater.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState, mappingPair.Operation)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -649,7 +613,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
 		assignment.State = string(model.InitialFormationState)
 		assignment.Value = nil
-		if err := s.Update(ctx, assignment, mappingPair.Operation); err != nil {
+		if err := s.updater.Update(ctx, assignment, mappingPair.Operation); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
 
@@ -685,7 +649,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	if storedAssignment.State != string(model.ReadyAssignmentState) {
-		if err = s.Update(ctx, assignment, mappingPair.Operation); err != nil {
+		if err = s.updater.Update(ctx, assignment, mappingPair.Operation); err != nil {
 			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
 		log.C(ctx).Infof("Assignment with ID: %q was updated with %q state", assignment.ID, assignment.State)
@@ -741,7 +705,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	if mappingPair.Assignment.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
-			updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState, mappingPair.Operation)
+			updateError := s.updater.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState, mappingPair.Operation)
 			if updateError != nil {
 				return false, errors.Wrapf(
 					updateError,
@@ -762,7 +726,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	response, err := s.notificationService.SendNotification(ctx, extendedRequest)
 	if err != nil {
-		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState, mappingPair.Operation)
+		updateError := s.updater.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState, mappingPair.Operation)
 		if updateError != nil {
 			return false, errors.Wrapf(
 				updateError,
@@ -773,7 +737,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		if err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+		if err = s.updater.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 		return false, errors.Errorf("Received error from response: %v", *response.Error)
@@ -784,7 +748,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", mappingPair.Assignment.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
 		assignment.State = string(model.DeletingAssignmentState)
 		assignment.Value = nil
-		if err := s.Update(ctx, assignment, mappingPair.Operation); err != nil {
+		if err := s.updater.Update(ctx, assignment, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
 		return false, nil
@@ -803,7 +767,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		(response.State == nil && *response.ActualStatusCode == *response.SuccessStatusCode) {
 		if err = s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
-			updateError := s.SetAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState, mappingPair.Operation)
+			updateError := s.updater.SetAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState, mappingPair.Operation)
 			if updateError != nil {
 				return false, errors.Wrapf(
 					updateError,
@@ -818,14 +782,14 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.State != nil && *response.State == string(model.DeleteErrorAssignmentState) {
-		if err = s.SetAssignmentToErrorState(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+		if err = s.updater.SetAssignmentToErrorState(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 	}
 
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		err = errors.New("Error while deleting assignment: config propagation is not supported on unassign notifications")
-		updateErr := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation)
+		updateErr := s.updater.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation)
 		if updateErr != nil {
 			return false, errors.Wrapf(updateErr, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -853,24 +817,6 @@ func validateResponseState(newState, previousState string) bool {
 	}
 
 	return true
-}
-
-func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
-	assignment.State = string(state)
-	assignmentError := AssignmentErrorWrapper{AssignmentError{
-		Message:   errorMessage,
-		ErrorCode: errorCode,
-	}}
-	marshaled, err := json.Marshal(assignmentError)
-	if err != nil {
-		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
-	}
-	assignment.Value = marshaled
-	if err := s.Update(ctx, assignment, operation); err != nil {
-		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
-	}
-	log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
-	return nil
 }
 
 func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest) []*AssignmentMappingPair {
@@ -958,39 +904,6 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		}
 	}
 	return assignmentMappingPairs
-}
-
-func (s *service) prepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
-	formation, err := s.formationRepository.Get(ctx, fa.FormationID, tenantID)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting formation with ID %q in tenant %q: %v", fa.FormationID, tenantID, err)
-		return nil, errors.Wrapf(err, "An error occurred while getting formation with ID %q in tenant %q", fa.FormationID, tenantID)
-	}
-
-	template, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting formation template by ID: %q: %v", formation.FormationTemplateID, err)
-		return nil, errors.Wrapf(err, "An error occurred while getting formation template by ID: %q", formation.FormationTemplateID)
-	}
-
-	reverseFa, err := s.GetReverseBySourceAndTarget(ctx, formation.ID, fa.Source, fa.Target)
-	if err != nil {
-		if !apperrors.IsNotFoundError(err) {
-			log.C(ctx).Errorf("An error occurred while getting reverse formation assignment: %v", err)
-			return nil, errors.Wrap(err, "An error occurred while getting reverse formation assignment")
-		}
-		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
-	}
-
-	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               model.FormationResourceType,
-		ResourceSubtype:            template.Name,
-		Operation:                  operation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
-		Formation:                  formation,
-		FormationTemplate:          template,
-	}, nil
 }
 
 func (s *service) createExtendedFARequest(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*FormationAssignmentRequestExt, error) {

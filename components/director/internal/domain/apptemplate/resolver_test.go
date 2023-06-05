@@ -1306,7 +1306,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
@@ -1451,7 +1451,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			ExpectedError:  testError,
 		},
 		{
-			Name: "Returns error when CreateInputJSONToGQL fails",
+			Name: "Returns error when CreateRegisterInputJSONToGQL fails",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
@@ -1467,7 +1467,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppSvcFn: UnusedAppSvc,
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
 				return appConv
 			},
 			WebhookConvFn:  UnusedWebhookConv,
@@ -1492,7 +1492,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppSvcFn: UnusedAppSvc,
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, nil).Once()
 				return appConv
 			},
 			WebhookConvFn:  UnusedWebhookConv,
@@ -1522,7 +1522,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
 			WebhookConvFn:  UnusedWebhookConv,
@@ -1553,7 +1553,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
 			WebhookConvFn:  UnusedWebhookConv,
@@ -1584,7 +1584,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
 			WebhookConvFn:  UnusedWebhookConv,

@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: {{ template "fullname" . }}-auditlog-entry
+  namespace: {{ .Release.Namespace }}
+spec:
+  hosts:
+    - {{ .Values.global.auditlog.host }}
+  ports:
+    - number: {{ .Values.global.auditlog.port }}
+      name: {{ .Values.global.auditlog.protocol }}
+      protocol: {{ .Values.global.auditlog.protocol }}
+  location: MESH_EXTERNAL
+  resolution: DNS

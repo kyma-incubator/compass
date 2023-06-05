@@ -334,6 +334,39 @@ input ApplicationFromTemplateInput {
 	labels: Labels
 }
 
+input ApplicationJSONInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
+	name: String!
+	"""
+	**Validation:** max=256
+	"""
+	providerName: String
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
+	labels: Labels
+	webhooks: [WebhookInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	healthCheckURL: String
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	baseUrl: String
+	applicationNamespace: String
+	integrationSystemID: ID
+	statusCondition: ApplicationStatusCondition
+	localTenantID: String
+	bundles: [BundleCreateInput!]
+}
+
 input ApplicationRegisterInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -384,7 +417,7 @@ input ApplicationTemplateInput {
 	**Validation:** label key is alphanumeric with underscore
 	"""
 	labels: Labels
-	applicationInput: ApplicationRegisterInput!
+	applicationInput: ApplicationJSONInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
@@ -399,8 +432,9 @@ input ApplicationTemplateUpdateInput {
 	**Validation:** max=2000
 	"""
 	description: String
-	applicationInput: ApplicationRegisterInput!
+	applicationInput: ApplicationJSONInput!
 	placeholders: [PlaceholderDefinitionInput!]
+	labels: Labels @hasScopes(path: "graphql.input.application_template.labels")
 	accessLevel: ApplicationTemplateAccessLevel!
 	applicationNamespace: String
 }

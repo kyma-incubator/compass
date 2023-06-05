@@ -84,6 +84,27 @@ type ApplicationFromTemplateInput struct {
 	Labels              Labels  `json:"labels"`
 }
 
+type ApplicationJSONInput struct {
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:** max=256
+	ProviderName *string `json:"providerName"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** label key is alphanumeric with underscore
+	Labels   Labels          `json:"labels"`
+	Webhooks []*WebhookInput `json:"webhooks"`
+	// **Validation:** valid URL, max=256
+	HealthCheckURL *string `json:"healthCheckURL"`
+	// **Validation:** valid URL, max=256
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
+	Bundles              []*BundleCreateInput        `json:"bundles"`
+}
+
 type ApplicationPage struct {
 	Data       []*Application `json:"data"`
 	PageInfo   *PageInfo      `json:"pageInfo"`
@@ -127,7 +148,7 @@ type ApplicationTemplateInput struct {
 	Description *string         `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
 	Labels               Labels                         `json:"labels"`
-	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
@@ -146,8 +167,9 @@ type ApplicationTemplateUpdateInput struct {
 	Name string `json:"name"`
 	// **Validation:** max=2000
 	Description          *string                        `json:"description"`
-	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	Labels               Labels                         `json:"labels"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
