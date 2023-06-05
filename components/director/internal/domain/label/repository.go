@@ -30,6 +30,7 @@ var (
 )
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.Label) (*Entity, error)
@@ -118,6 +119,29 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 	return r.updater.UpdateSingleWithVersion(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }
 
+// UpsertGlobal missing godoc
+func (r *repository) UpsertGlobal(ctx context.Context, label *model.Label) error {
+	if label == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
+
+	l, err := r.GetByKeyGlobal(ctx, label.ObjectType, label.ObjectID, label.Key)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return r.CreateGlobal(ctx, label)
+		}
+		return err
+	}
+
+	l.Value = label.Value
+	labelEntity, err := r.conv.ToEntity(l)
+	if err != nil {
+		return errors.Wrap(err, "while creating label entity from model")
+	}
+
+	return r.updaterGlobal.UpdateSingleWithVersionGlobal(ctx, labelEntity)
+}
+
 // UpdateWithVersion missing godoc
 func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
@@ -151,6 +175,20 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 	return r.creator.Create(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }
 
+// CreateGlobal missing godoc
+func (r *repository) CreateGlobal(ctx context.Context, label *model.Label) error {
+	if label == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
+
+	labelEntity, err := r.conv.ToEntity(label)
+	if err != nil {
+		return errors.Wrap(err, "while creating label entity from model")
+	}
+
+	return r.globalCreator.Create(ctx, labelEntity)
+}
+
 // GetByKey missing godoc
 func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
 	getter := r.getter
@@ -173,6 +211,27 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 		if err := getter.Get(ctx, objectType.GetResourceType(), tenant, conds, repo.NoOrderBy, &entity); err != nil {
 			return nil, err
 		}
+	}
+
+	labelModel, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting Label entity to model")
+	}
+
+	return labelModel, nil
+}
+
+// GetByKeyGlobal missing godoc
+func (r *repository) GetByKeyGlobal(ctx context.Context, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+	conds := repo.Conditions{repo.NewEqualCondition(keyColumn, key)}
+	if objectType != model.TenantLabelableObject {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+
+	var entity Entity
+
+	if err := r.getterGlobal.GetGlobal(ctx, conds, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
 	}
 
 	labelModel, err := r.conv.FromEntity(&entity)
