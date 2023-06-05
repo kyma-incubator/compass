@@ -194,6 +194,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, 
 
 // Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error {
+	log.C(ctx).Infof("Deleting webhook with id %q", id)
 	webhook, err := s.Get(ctx, id, objectType)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
