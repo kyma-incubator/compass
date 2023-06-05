@@ -1701,8 +1701,17 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
 		t.Logf("Add webhook with type %q and mode: %q to application template with ID %q", webhookType, webhookMode, appTmpl2.ID)
+
 		actualApplicationTemplateWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, applicationWebhookInput, "", appTmpl2.ID)
 		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualApplicationTemplateWebhook.ID)
+
+		// register a few more webhooks for the application template to verify that only the correct type of webhook is used when generation formation notifications
+		actualUnregisterApplicationWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, fixtures.FixNonFormationNotificationWebhookInput(graphql.WebhookTypeUnregisterApplication), "", appTmpl2.ID)
+		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualUnregisterApplicationWebhook.ID)
+		actualRegisterApplicationWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, fixtures.FixNonFormationNotificationWebhookInput(graphql.WebhookTypeRegisterApplication), "", appTmpl2.ID)
+		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualRegisterApplicationWebhook.ID)
+		actualORDWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, fixtures.FixNonFormationNotificationWebhookInput(graphql.WebhookTypeOpenResourceDiscovery), "", appTmpl2.ID)
+		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualORDWebhook.ID)
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
