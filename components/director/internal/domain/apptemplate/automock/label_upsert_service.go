@@ -14,6 +14,20 @@ type LabelUpsertService struct {
 	mock.Mock
 }
 
+// UpsertLabelGlobal provides a mock function with given fields: ctx, labelInput
+func (_m *LabelUpsertService) UpsertLabelGlobal(ctx context.Context, labelInput *model.LabelInput) error {
+	ret := _m.Called(ctx, labelInput)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
+		r0 = rf(ctx, labelInput)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertMultipleLabels provides a mock function with given fields: ctx, tenant, objectType, objectID, labels
 func (_m *LabelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, labels)

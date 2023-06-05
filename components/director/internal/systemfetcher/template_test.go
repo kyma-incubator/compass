@@ -141,34 +141,33 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		{
 			name:                "Succeeds when app template has placeholders",
 			system:              testSystem,
-			appInputOverride:    `{"name":"{{name}}", "display-name":"{{display-name}}"}`,
+			appInputOverride:    `{"name":"{{name}}"}`,
 			placeholderMappings: placeholdersMappings,
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
 				resultTemplate := model.ApplicationTemplate{
 					ID: appTemplateID,
 					Placeholders: []model.ApplicationTemplatePlaceholder{
-						{Name: "display-name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 						{Name: "name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 					},
-					ApplicationInputJSON: `{"display-name":"test2","integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"tenant":"123"},"name":"test1"}`,
+					ApplicationInputJSON: `{"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"tenant":"123"},"name":"test1"}`,
 				}
 				appTemplateFromDB := model.ApplicationTemplate{
 					ID: appTemplateID,
 					Placeholders: []model.ApplicationTemplatePlaceholder{
-						{Name: "display-name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
+						{Name: "name", JSONPath: str.Ptr("$.displayName"), Optional: &optionalFalse},
 					},
-					ApplicationInputJSON: `{ "name": "test1","display-name": "test2","labels":{"tenant":"123"},"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941"}`,
+					ApplicationInputJSON: `{ "name": "test1","labels":{"tenant":"123"},"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941"}`,
 				}
 
 				svc := &automock.ApplicationTemplateService{}
 				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
-				svc.On("PrepareApplicationCreateInputJSON", &resultTemplate, fixInputValuesForSystemWhichAppTemplateHasPlaceholders(t, testSystem)).Return(`{"name":"test", "display-name":"test"}`, nil).Once()
+				svc.On("PrepareApplicationCreateInputJSON", &resultTemplate, fixInputValuesForSystemWhichAppTemplateHasPlaceholders(t, testSystem)).Return(`{"name":"test"}`, nil).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
 				appInput := fixAppInputBySystem(t, testSystem)
 				conv := &automock.ApplicationConverter{}
-				conv.On("CreateInputJSONToModel", context.TODO(), `{"name":"test", "display-name":"test"}`).Return(appInput, nil).Once()
+				conv.On("CreateInputJSONToModel", context.TODO(), `{"name":"test"}`).Return(appInput, nil).Once()
 				return conv
 			},
 		},
