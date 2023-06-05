@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -13,12 +12,12 @@ import (
 type converter struct {
 }
 
-// NewConverter missing godoc
+// NewConverter returns a new Converter that can later be used to make the conversions between the service and repository layer representations of a Compass ApplicationTemplateVersion.
 func NewConverter() *converter {
 	return &converter{}
 }
 
-// ToEntity missing godoc
+// ToEntity converts the provided service-layer representation of an ApplicationTemplateVersion to the repository-layer one.
 func (c *converter) ToEntity(in *model.ApplicationTemplateVersion) (*Entity, error) {
 	if in == nil {
 		return nil, nil
@@ -26,7 +25,7 @@ func (c *converter) ToEntity(in *model.ApplicationTemplateVersion) (*Entity, err
 
 	correlationIDs, err := c.correlationIDsToJSON(in.CorrelationIDs)
 	if err != nil {
-		return nil, apperrors.NewInternalError("")
+		return nil, err
 	}
 
 	output := &Entity{
@@ -42,7 +41,7 @@ func (c *converter) ToEntity(in *model.ApplicationTemplateVersion) (*Entity, err
 	return output, nil
 }
 
-// FromEntity missing godoc
+// FromEntity converts the provided Entity repo-layer representation of an ApplicationTemplateVersion to the service-layer representation model.ApplicationTemplateVersion.
 func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplateVersion, error) {
 	if entity == nil {
 		return nil, nil
@@ -50,7 +49,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplateVersio
 
 	correlationIDs, err := c.correlationIDsToModel(entity.CorrelationIDs)
 	if err != nil {
-		return nil, apperrors.NewInternalError("")
+		return nil, errors.Wrap(err, "while converting correlationIDs to string array")
 	}
 
 	output := &model.ApplicationTemplateVersion{

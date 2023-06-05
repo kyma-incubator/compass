@@ -19,23 +19,34 @@ import (
 )
 
 const (
-	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
-	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
-	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	ordID            = "com.compass.ord.v1"
-	localTenantID    = "localTenantID"
-	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
-	successors       = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
-	resourceHash     = "123456"
-	publicVisibility = "public"
-	targetURL        = "https://test-url.com/api"
+	apiDefID             = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	specID               = "sssssssss-ssss-ssss-ssss-ssssssssssss"
+	tenantID             = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	externalTenantID     = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	bundleID             = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	packageID            = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	appTemplateVersionID = "fffffffff-ffff-aaaa-ffff-aaaaaaaaaaaa"
+	ordID                = "com.compass.ord.v1"
+	localTenantID        = "localTenantID"
+	extensible           = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	successors           = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
+	resourceHash         = "123456"
+	publicVisibility     = "public"
+	targetURL            = "https://test-url.com/api"
+
+	firstTargetURL  = "https://test-url.com"
+	secondTargetURL = "https://test2-url.com"
 )
 
-var fixedTimestamp = time.Now()
+var (
+	fixedTimestamp = time.Now()
+	firstBundleID  = "id1"
+	secondBundleID = "id2"
+	thirdBundleID  = "id3"
+	frURL          = "foo.bar"
+	spec           = "spec"
+)
 
 func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
@@ -46,11 +57,21 @@ func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefiniti
 	}
 }
 
-func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
-	return fixFullAPIDefinitionModelWithID(apiDefID, placeholder)
+func fixFullAPIDefinitionModelWithAppID(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
+	apiDef, spec, bundleRef := fixFullAPIDefinitionModel(apiDefID, placeholder)
+	apiDef.ApplicationID = str.Ptr(appID)
+
+	return apiDef, spec, bundleRef
 }
 
-func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
+func fixFullAPIDefinitionModelWithAppTemplateVersionID(appTemplateVersionID, placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
+	apiDef, spec, bundleRef := fixFullAPIDefinitionModel(apiDefID, placeholder)
+	apiDef.ApplicationTemplateVersionID = str.Ptr(appTemplateVersionID)
+
+	return apiDef, spec, bundleRef
+}
+
+func fixFullAPIDefinitionModel(apiDefID, placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
 	apiType := model.APISpecTypeOpenAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -80,7 +101,6 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 
 	boolVar := false
 	return model.APIDefinition{
-		ApplicationID:                           appID,
 		PackageID:                               str.Ptr(packageID),
 		Name:                                    placeholder,
 		Description:                             str.Ptr("desc_" + placeholder),
@@ -117,7 +137,7 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 		SupportedUseCases:                       json.RawMessage("[]"),
 		DocumentationLabels:                     json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
-			ID:        id,
+			ID:        apiDefID,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},
@@ -237,9 +257,22 @@ func fixEntityAPIDefinition(id string, name, targetURL string) *api.Entity {
 	}
 }
 
+func fixFullEntityAPIDefinitionWithAppID(apiDefID, placeholder string) api.Entity {
+	entity := fixFullEntityAPIDefinition(apiDefID, placeholder)
+	entity.ApplicationID = repo.NewValidNullableString(appID)
+
+	return entity
+}
+
+func fixFullEntityAPIDefinitionWithAppTemplateVersionID(apiDefID, placeholder string) api.Entity {
+	entity := fixFullEntityAPIDefinition(apiDefID, placeholder)
+	entity.ApplicationTemplateVersionID = repo.NewValidNullableString(appTemplateVersionID)
+
+	return entity
+}
+
 func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
-		ApplicationID:                           appID,
 		PackageID:                               repo.NewValidNullableString(packageID),
 		Name:                                    placeholder,
 		Description:                             repo.NewValidNullableString("desc_" + placeholder),
@@ -292,7 +325,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	return []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol",
 		"tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
@@ -303,7 +336,7 @@ func fixAPIDefinitionColumns() []string {
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		ordID, localTenantID, "shortDescription", &boolVar, nil, nil, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
@@ -312,7 +345,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 }
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
+	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, apiDef.Name, apiDef.Description, apiDef.Group,
 		apiDef.OrdID, apiDef.LocalTenantID, apiDef.ShortDescription, apiDef.SystemInstanceAware, nil, nil, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,

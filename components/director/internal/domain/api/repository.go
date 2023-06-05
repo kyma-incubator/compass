@@ -129,16 +129,16 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 }
 
 // ListByResourceID lists all APIDefinitions for a given application ID.
-func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, appID string, resourceType resource.Type) ([]*model.APIDefinition, error) {
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
 
 	var condition repo.Condition
 	var err error
 	if resourceType == resource.Application {
-		condition = repo.NewEqualCondition("app_id", appID)
+		condition = repo.NewEqualCondition("app_id", resourceID)
 		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, condition)
 	} else {
-		condition = repo.NewEqualCondition("app_template_version_id", appID)
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &apiCollection, condition)
 	}
 	if err != nil {
@@ -225,7 +225,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.AP
 	return r.updater.UpdateSingle(ctx, resource.API, tenant, entity)
 }
 
-// Update updates an APIDefinition.
+// UpdateGlobal updates an existing APIDefinition without tenant isolation.
 func (r *pgRepository) UpdateGlobal(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")

@@ -369,7 +369,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(apiDefinitions, nil).Once()
+				repo.On("ListByResourceID", ctx, tenantID, resource.Application, appID).Return(apiDefinitions, nil).Once()
 				return repo
 			},
 			ExpectedResult:     apiDefinitions,
@@ -379,7 +379,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Returns error when APIDefinition listing failed",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				repo.On("ListByResourceID", ctx, tenantID, resource.Application, appID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -418,6 +418,82 @@ func TestService_ListByApplicationID(t *testing.T) {
 	})
 }
 
+func TestService_ListByApplicationTemplateVersionID(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	name := "foo"
+	desc := "bar"
+
+	apiDefinitions := []*model.APIDefinition{
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.APIRepository
+		ExpectedResult     []*model.APIDefinition
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListByResourceID", ctx, tenantID, resource.ApplicationTemplateVersion, appTemplateVersionID).Return(apiDefinitions, nil).Once()
+				return repo
+			},
+			ExpectedResult:     apiDefinitions,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListByResourceID", ctx, tenantID, resource.ApplicationTemplateVersion, appTemplateVersionID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := api.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			docs, err := svc.ListByApplicationTemplateVersionID(ctx, appTemplateVersionID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
@@ -425,12 +501,11 @@ func TestService_Create(t *testing.T) {
 	id := "foo"
 	bundleID := "bndlid"
 	bundleID2 := "bndlid2"
-	packageID := packageID
 	name := "Foo"
 	targetURL := "https://test-url.com"
 	targetURL2 := "https://test2-url.com"
 
-	timestamp := time.Now()
+	fixedTimestamp := time.Now()
 	frURL := "foo.bar"
 	spec := "test"
 	spec2 := "test2"
@@ -458,8 +533,8 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		PackageID:     &packageID,
-		ApplicationID: appID,
+		PackageID:     str.Ptr(packageID),
+		ApplicationID: str.Ptr(appID),
 		Name:          name,
 		TargetURLs:    api.ConvertTargetURLToJSONArray(targetURL),
 		Version:       &model.Version{},
@@ -495,6 +570,8 @@ func TestService_Create(t *testing.T) {
 		BundleReferenceFn         func() *automock.BundleReferenceService
 		Input                     model.APIDefinitionInput
 		SpecsInput                []*model.SpecInput
+		ResourceType              resource.Type
+		ResourceID                string
 		DefaultTargetURLPerBundle map[string]string
 		DefaultBundleID           string
 		ExpectedErr               error
@@ -666,10 +743,15 @@ func TestService_Create(t *testing.T) {
 			bundleReferenceService := testCase.BundleReferenceFn()
 
 			svc := api.NewService(repo, uidService, specService, bundleReferenceService)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
+			svc.SetTimestampGen(func() time.Time { return fixedTimestamp })
+
+			if testCase.ResourceType == "" {
+				testCase.ResourceType = resource.Application
+				testCase.ResourceID = appID
+			}
 
 			// WHEN
-			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.DefaultTargetURLPerBundle, 0, testCase.DefaultBundleID)
+			result, err := svc.Create(ctx, testCase.ResourceType, testCase.ResourceID, &bundleID, str.Ptr(packageID), testCase.Input, testCase.SpecsInput, testCase.DefaultTargetURLPerBundle, 0, testCase.DefaultBundleID)
 
 			// THEN
 			if testCase.ExpectedErr != nil {
@@ -688,7 +770,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", nil, nil, model.APIDefinitionInput{}, []*model.SpecInput{}, nil, 0, "")
+		_, err := svc.Create(context.TODO(), "", "", nil, nil, model.APIDefinitionInput{}, []*model.SpecInput{}, nil, 0, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -701,7 +783,7 @@ func TestService_Update(t *testing.T) {
 
 	id := "foo"
 	var bundleID *string
-	timestamp := time.Now()
+	fixedTimestamp := time.Now()
 	frURL := "foo.bar"
 	spec := "spec"
 
@@ -921,7 +1003,7 @@ func TestService_Update(t *testing.T) {
 			bundleReferenceSvc := testCase.BundleReferenceFn()
 
 			svc := api.NewService(repo, nil, specSvc, bundleReferenceSvc)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
+			svc.SetTimestampGen(func() time.Time { return fixedTimestamp })
 
 			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput)
@@ -954,14 +1036,6 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	firstBndlID := "id1"
-	secondBndlID := "id2"
-	thirdBndlID := "id3"
-	firstTargetURL := "https://test-url.com"
-	secondTargetURL := "https://test2-url.com"
-	timestamp := time.Now()
-	frURL := "foo.bar"
-	spec := "spec"
 	isDefaultBundle := true
 
 	modelInput := model.APIDefinitionInput{
@@ -1011,9 +1085,9 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 		IsDefaultBundle:     &isDefaultBundle,
 	}
 
-	defaultTargetURLPerBundleForUpdate := map[string]string{firstBndlID: firstTargetURL}
-	defaultTargetURLPerBundleForCreation := map[string]string{secondBndlID: secondTargetURL}
-	bundleIDsForDeletion := []string{thirdBndlID}
+	defaultTargetURLPerBundleForUpdate := map[string]string{firstBundleID: firstTargetURL}
+	defaultTargetURLPerBundleForCreation := map[string]string{secondBundleID: secondTargetURL}
+	bundleIDsForDeletion := []string{thirdBundleID}
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -1048,9 +1122,9 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInputWithDefaultBundle, model.BundleAPIReference, str.Ptr(id), &firstBndlID).Return(nil).Once()
-				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBndlID).Return(nil).Once()
-				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBndlID).Return(nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInputWithDefaultBundle, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(nil).Once()
+				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBundleID).Return(nil).Once()
 				return svc
 			},
 			InputID:                              "foo",
@@ -1059,7 +1133,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
 			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
 			BundleIDsForDeletion:                 bundleIDsForDeletion,
-			DefaultBundleID:                      firstBndlID,
+			DefaultBundleID:                      firstBundleID,
 			ExpectedErr:                          nil,
 		},
 		{
@@ -1078,9 +1152,9 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBndlID).Return(nil).Once()
-				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInputWithDefaultBundle, model.BundleAPIReference, str.Ptr(id), &secondBndlID).Return(nil).Once()
-				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBndlID).Return(nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInputWithDefaultBundle, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(nil).Once()
+				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBundleID).Return(nil).Once()
 				return svc
 			},
 			InputID:                              "foo",
@@ -1089,7 +1163,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
 			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
 			BundleIDsForDeletion:                 bundleIDsForDeletion,
-			DefaultBundleID:                      secondBndlID,
+			DefaultBundleID:                      secondBundleID,
 			ExpectedErr:                          nil,
 		},
 		{
@@ -1105,7 +1179,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBndlID).Return(testErr).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(testErr).Once()
 				return svc
 			},
 			InputID:                              "foo",
@@ -1129,8 +1203,8 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBndlID).Return(nil).Once()
-				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBndlID).Return(testErr).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(testErr).Once()
 				return svc
 			},
 			InputID:                              "foo",
@@ -1154,9 +1228,9 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
 				svc := &automock.BundleReferenceService{}
-				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBndlID).Return(nil).Once()
-				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBndlID).Return(nil).Once()
-				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBndlID).Return(testErr).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(nil).Once()
+				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBundleID).Return(testErr).Once()
 				return svc
 			},
 			InputID:                              "foo",
@@ -1177,10 +1251,257 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			bundleReferenceSvc := testCase.BundleReferenceFn()
 
 			svc := api.NewService(repo, nil, specSvc, bundleReferenceSvc)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
+			svc.SetTimestampGen(func() time.Time { return fixedTimestamp })
 
 			// WHEN
 			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.DefaultTargetURLPerBundleForUpdate, testCase.DefaultTargetURLPerBundleForCreation, testCase.BundleIDsForDeletion, 0, testCase.DefaultBundleID)
+
+			// then
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+
+			repo.AssertExpectations(t)
+			specSvc.AssertExpectations(t)
+			bundleReferenceSvc.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.UpdateInManyBundles(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{}, nil, nil, nil, 0, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_UpdateInManyBundlesGlobal(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	isDefaultBundle := true
+
+	modelInput := model.APIDefinitionInput{
+		Name:         "Foo",
+		TargetURLs:   api.ConvertTargetURLToJSONArray(firstTargetURL),
+		VersionInput: &model.VersionInput{},
+	}
+
+	modelSpecInput := model.SpecInput{
+		Data: &spec,
+		FetchRequest: &model.FetchRequestInput{
+			URL: frURL,
+		},
+	}
+
+	modelSpec := &model.Spec{
+		ID:         id,
+		ObjectType: model.APISpecReference,
+		ObjectID:   id,
+		Data:       &spec,
+	}
+
+	inputAPIDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
+		return api.Name == modelInput.Name
+	})
+
+	apiDefinitionModel := &model.APIDefinition{
+		Name:       "Bar",
+		TargetURLs: api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
+		Version:    &model.Version{},
+	}
+
+	bundleReferenceInput := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelInput.TargetURLs)),
+	}
+	secondBundleReferenceInput := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(secondTargetURL),
+	}
+
+	bundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelInput.TargetURLs)),
+		IsDefaultBundle:     &isDefaultBundle,
+	}
+
+	secondBundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
+		APIDefaultTargetURL: str.Ptr(secondTargetURL),
+		IsDefaultBundle:     &isDefaultBundle,
+	}
+
+	defaultTargetURLPerBundleForUpdate := map[string]string{firstBundleID: firstTargetURL}
+	defaultTargetURLPerBundleForCreation := map[string]string{secondBundleID: secondTargetURL}
+	bundleIDsForDeletion := []string{thirdBundleID}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                                 string
+		RepositoryFn                         func() *automock.APIRepository
+		SpecServiceFn                        func() *automock.SpecService
+		BundleReferenceFn                    func() *automock.BundleReferenceService
+		Input                                model.APIDefinitionInput
+		InputID                              string
+		SpecInput                            *model.SpecInput
+		DefaultTargetURLPerBundleForUpdate   map[string]string
+		DefaultTargetURLPerBundleForCreation map[string]string
+		BundleIDsForDeletion                 []string
+		DefaultBundleID                      string
+		ExpectedErr                          error
+	}{
+		{
+			Name: "Success in ORD case",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, model.APISpecReference, id).Return(nil).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInputWithDefaultBundle, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(nil).Once()
+				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBundleID).Return(nil).Once()
+				return svc
+			},
+			InputID:                              "foo",
+			Input:                                modelInput,
+			SpecInput:                            &modelSpecInput,
+			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
+			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
+			BundleIDsForDeletion:                 bundleIDsForDeletion,
+			DefaultBundleID:                      firstBundleID,
+			ExpectedErr:                          nil,
+		},
+		{
+			Name: "Success in ORD case when there is defaultBundle for BundleReference that has to be created",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, model.APISpecReference, id).Return(nil).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInputWithDefaultBundle, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(nil).Once()
+				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBundleID).Return(nil).Once()
+				return svc
+			},
+			InputID:                              "foo",
+			Input:                                modelInput,
+			SpecInput:                            &modelSpecInput,
+			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
+			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
+			BundleIDsForDeletion:                 bundleIDsForDeletion,
+			DefaultBundleID:                      secondBundleID,
+			ExpectedErr:                          nil,
+		},
+		{
+			Name: "Error on BundleReference Update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				return &automock.SpecService{}
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(testErr).Once()
+				return svc
+			},
+			InputID:                              "foo",
+			Input:                                modelInput,
+			SpecInput:                            &modelSpecInput,
+			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
+			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
+			BundleIDsForDeletion:                 bundleIDsForDeletion,
+			ExpectedErr:                          testErr,
+		},
+		{
+			Name: "Error on BundleReference Creation",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				return &automock.SpecService{}
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(testErr).Once()
+				return svc
+			},
+			InputID:                              "foo",
+			Input:                                modelInput,
+			SpecInput:                            &modelSpecInput,
+			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
+			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
+			BundleIDsForDeletion:                 bundleIDsForDeletion,
+			ExpectedErr:                          testErr,
+		},
+		{
+			Name: "Error on BundleReference Deletion",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				return &automock.SpecService{}
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("UpdateByReferenceObjectID", ctx, *bundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &firstBundleID).Return(nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, *secondBundleReferenceInput, model.BundleAPIReference, str.Ptr(id), &secondBundleID).Return(nil).Once()
+				svc.On("DeleteByReferenceObjectID", ctx, model.BundleAPIReference, str.Ptr(id), &thirdBundleID).Return(testErr).Once()
+				return svc
+			},
+			InputID:                              "foo",
+			Input:                                modelInput,
+			SpecInput:                            &modelSpecInput,
+			DefaultTargetURLPerBundleForUpdate:   defaultTargetURLPerBundleForUpdate,
+			DefaultTargetURLPerBundleForCreation: defaultTargetURLPerBundleForCreation,
+			BundleIDsForDeletion:                 bundleIDsForDeletion,
+			ExpectedErr:                          testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			specSvc := testCase.SpecServiceFn()
+			bundleReferenceSvc := testCase.BundleReferenceFn()
+
+			svc := api.NewService(repo, nil, specSvc, bundleReferenceSvc)
+			svc.SetTimestampGen(func() time.Time { return fixedTimestamp })
+
+			// WHEN
+			err := svc.UpdateInManyBundlesGlobal(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.DefaultTargetURLPerBundleForUpdate, testCase.DefaultTargetURLPerBundleForCreation, testCase.BundleIDsForDeletion, 0, testCase.DefaultBundleID)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -1353,10 +1674,10 @@ func TestService_ListFetchRequests(t *testing.T) {
 	firstSpecID := "specID"
 	secondSpecID := "specID2"
 	specIDs := []string{firstSpecID, secondSpecID}
-	timestamp := time.Now()
+	fixedTimestamp := time.Now()
 
-	firstFetchRequest := fixModelFetchRequest(firstFRID, frURL, timestamp)
-	secondFetchRequest := fixModelFetchRequest(secondFRID, frURL, timestamp)
+	firstFetchRequest := fixModelFetchRequest(firstFRID, frURL, fixedTimestamp)
+	secondFetchRequest := fixModelFetchRequest(secondFRID, frURL, fixedTimestamp)
 	fetchRequests := []*model.FetchRequest{firstFetchRequest, secondFetchRequest}
 
 	testCases := []struct {

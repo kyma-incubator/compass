@@ -3,6 +3,8 @@ package api_test
 import (
 	"context"
 	"database/sql/driver"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"regexp"
 	"testing"
 
@@ -19,14 +21,14 @@ import (
 )
 
 func TestPgRepository_GetByID(t *testing.T) {
-	entity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
-	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")
+	entity := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
+	apiDefModel, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get API",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiDefID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -50,17 +52,50 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ListByApplicationID(t *testing.T) {
-	entity1 := fixFullEntityAPIDefinition(apiDefID, "placeholder")
-	apiDefModel1, _, _ := fixFullAPIDefinitionModel("placeholder")
-	entity2 := fixFullEntityAPIDefinition(apiDefID, "placeholder2")
-	apiDefModel2, _, _ := fixFullAPIDefinitionModel("placeholder2")
+func TestPgRepository_GetByIDGlobal(t *testing.T) {
+	entity := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
+	apiDefModel, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Global API",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE id = $1`),
+				Args:     []driver.Value{apiDefID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns()).AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ExpectedModelEntity:       &apiDefModel,
+		ExpectedDBEntity:          &entity,
+		MethodName:                "GetByIDGlobal",
+		MethodArgs:                []interface{}{apiDefID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ListByResourceID(t *testing.T) {
+	entity1 := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
+	apiDefModel1, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
+	entity2 := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder2")
+	apiDefModel2, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder2")
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List APIs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -77,8 +112,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		RepoConstructorFunc:       api.NewRepository,
 		ExpectedModelEntities:     []interface{}{&apiDefModel1, &apiDefModel2},
 		ExpectedDBEntities:        []interface{}{&entity1, &entity2},
-		MethodArgs:                []interface{}{tenantID, appID},
-		MethodName:                "ListByApplicationID",
+		MethodArgs:                []interface{}{tenantID, appID, resource.Application},
+		MethodName:                "ListByResourceID",
 		DisableConverterErrorTest: true,
 	}
 
@@ -93,15 +128,18 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	onePageBundleID := "onePageBundleID"
 	firstAPIDefID := "firstAPIDefID"
-	firstAPIDef, _, _ := fixFullAPIDefinitionModelWithID(firstAPIDefID, "placeholder")
-	firstEntity := fixFullEntityAPIDefinition(firstAPIDefID, "placeholder")
+	firstAPIDef, _, _ := fixFullAPIDefinitionModel(firstAPIDefID, "placeholder")
+	firstAPIDef.ApplicationID = str.Ptr(appID)
+
+	firstEntity := fixFullEntityAPIDefinitionWithAppID(firstAPIDefID, "placeholder")
 	firstBundleRef := fixModelBundleReference(onePageBundleID, firstAPIDefID)
 
 	multiplePagesBundleID := "multiplePagesBundleID"
 
 	secondAPIDefID := "secondAPIDefID"
-	secondAPIDef, _, _ := fixFullAPIDefinitionModelWithID(secondAPIDefID, "placeholder")
-	secondEntity := fixFullEntityAPIDefinition(secondAPIDefID, "placeholder")
+	secondAPIDef, _, _ := fixFullAPIDefinitionModel(secondAPIDefID, "placeholder")
+	secondAPIDef.ApplicationID = str.Ptr(appID)
+	secondEntity := fixFullEntityAPIDefinitionWithAppID(secondAPIDefID, "placeholder")
 	secondBundleRef := fixModelBundleReference(multiplePagesBundleID, secondAPIDefID)
 
 	totalCounts := map[string]int{
@@ -114,7 +152,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		Name: "List APIs for multiple bundles with paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstAPIDefID, secondAPIDefID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -178,8 +216,8 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	var nilAPIDefModel *model.APIDefinition
-	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")
-	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+	apiDefModel, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
+	apiDefEntity := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create API",
@@ -221,14 +259,14 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		first, _, _ := fixFullAPIDefinitionModel("first")
-		second, _, _ := fixFullAPIDefinitionModel("second")
-		third, _, _ := fixFullAPIDefinitionModel("third")
+		first, _, _ := fixFullAPIDefinitionModelWithAppID("first")
+		second, _, _ := fixFullAPIDefinitionModelWithAppID("second")
+		third, _, _ := fixFullAPIDefinitionModelWithAppID("third")
 		items := []*model.APIDefinition{&first, &second, &third}
 
 		convMock := &automock.APIDefinitionConverter{}
 		for _, item := range items {
-			ent := fixFullEntityAPIDefinition(item.ID, item.Name)
+			ent := fixFullEntityAPIDefinitionWithAppID(item.ID, item.Name)
 			convMock.On("ToEntity", item).Return(&ent, nil).Once()
 			sqlMock.ExpectQuery(regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3")).
 				WithArgs(tenantID, appID, true).WillReturnRows(testdb.RowWhenObjectExist())
@@ -256,8 +294,8 @@ func TestPgRepository_Update(t *testing.T) {
 		WHERE id = ? AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = ? AND owner = true))`)
 
 	var nilAPIDefModel *model.APIDefinition
-	apiModel, _, _ := fixFullAPIDefinitionModel("update")
-	entity := fixFullEntityAPIDefinition(apiDefID, "update")
+	apiModel, _, _ := fixFullAPIDefinitionModelWithAppID("update")
+	entity := fixFullEntityAPIDefinitionWithAppID(apiDefID, "update")
 	entity.UpdatedAt = &fixedTimestamp
 	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
@@ -286,6 +324,52 @@ func TestPgRepository_Update(t *testing.T) {
 		NilModelEntity:            nilAPIDefModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_UpdateGlobal(t *testing.T) {
+	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?, local_tenant_id = ?,
+		short_description = ?, system_instance_aware = ?, policy_level = ?, custom_policy_level = ?, api_protocol = ?, tags = ?, countries = ?, links = ?, api_resource_links = ?, release_status = ?,
+		sunset_date = ?, changelog_entries = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?,
+		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?,
+		updated_at = ?, deleted_at = ?, error = ?, implementation_standard = ?, custom_implementation_standard = ?, custom_implementation_standard_description = ?,
+		target_urls = ?, extensible = ?, successors = ?, resource_hash = ?, hierarchy = ?, supported_use_cases = ?, documentation_labels = ?
+		WHERE id = ?`)
+
+	var nilAPIDefModel *model.APIDefinition
+	apiModel, _, _ := fixFullAPIDefinitionModelWithAppID("update")
+	entity := fixFullEntityAPIDefinitionWithAppID(apiDefID, "update")
+	entity.UpdatedAt = &fixedTimestamp
+	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Global API Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: updateQuery,
+				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.Group,
+					entity.OrdID, entity.LocalTenantID, entity.ShortDescription, entity.SystemInstanceAware, entity.PolicyLevel, entity.CustomPolicyLevel, entity.APIProtocol, entity.Tags, entity.Countries,
+					entity.Links, entity.APIResourceLinks, entity.ReleaseStatus, entity.SunsetDate, entity.ChangeLogEntries, entity.Labels, entity.Visibility,
+					entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated,
+					entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt,
+					entity.Error, entity.ImplementationStandard, entity.CustomImplementationStandard, entity.CustomImplementationStandardDescription,
+					entity.TargetURLs, entity.Extensible, entity.Successors, entity.ResourceHash, entity.Hierarchy, entity.SupportedUseCases, entity.DocumentationLabels, entity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ModelEntity:               &apiModel,
+		DBEntity:                  &entity,
+		NilModelEntity:            nilAPIDefModel,
+		DisableConverterErrorTest: true,
+		UpdateMethodName:          "UpdateGlobal",
+		IsGlobal:                  true,
 	}
 
 	suite.Run(t)

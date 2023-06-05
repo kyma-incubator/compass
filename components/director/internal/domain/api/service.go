@@ -25,7 +25,7 @@ type APIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
-	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.APIDefinition, error)
+	ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
@@ -108,7 +108,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.repo.ListByResourceID(ctx, tnt, appID, resource.Application)
+	return s.repo.ListByResourceID(ctx, tnt, resource.Application, appID)
 }
 
 // ListByApplicationTemplateVersionID lists all APIDefinitions for a given application ID.
@@ -118,7 +118,7 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 		return nil, err
 	}
 
-	return s.repo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
+	return s.repo.ListByResourceID(ctx, tnt, resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
 
 // Get returns the APIDefinition by its ID.
@@ -261,6 +261,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 	return nil
 }
 
+// UpdateInManyBundlesGlobal updates APIDefinition/s globally without tenant.
 func (s *service) UpdateInManyBundlesGlobal(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
 	api, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {

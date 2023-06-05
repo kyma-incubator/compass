@@ -29,9 +29,9 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 	id := "bar"
 
-	modelAPI, spec, bundleRef := fixFullAPIDefinitionModel("test")
+	modelAPI, spec, bundleRef := fixFullAPIDefinitionModelWithAppID("test")
 	modelBndl := &model.Bundle{
-		ApplicationID: appID,
+		ApplicationID: str.Ptr(appID),
 		BaseEntity: &model.BaseEntity{
 			ID: bundleID,
 		},
@@ -58,7 +58,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
 				return svc
 			},
@@ -187,7 +187,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return("", testErr).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
@@ -220,7 +220,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -255,7 +255,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
 				return svc
 			},
@@ -291,7 +291,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
 				return svc
 			},
@@ -327,7 +327,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
 				return svc
 			},
@@ -365,7 +365,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
 				return svc
 			},
@@ -404,7 +404,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, bundleID, *modelAPIInput, specInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPI, nil).Once()
 				return svc
 			},
@@ -484,7 +484,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 	id := "bar"
 	var nilBundleID *string
 
-	modelAPIDefinition, spec, bundleRef := fixFullAPIDefinitionModel("test")
+	modelAPIDefinition, spec, bundleRef := fixFullAPIDefinitionModelWithAppID("test")
 	gqlAPIDefinition := fixFullGQLAPIDefinition("test")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -734,7 +734,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput(id, "foo", "bar")
 	modelAPIDefinitionInput, modelSpecInput := fixModelAPIDefinitionInput(id, "foo", "bar")
 	gqlAPIDefinition := fixFullGQLAPIDefinition("test")
-	modelAPIDefinition, modelSpec, modelBundleRef := fixFullAPIDefinitionModel("test")
+	modelAPIDefinition, modelSpec, modelBundleRef := fixFullAPIDefinitionModelWithAppID("test")
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
