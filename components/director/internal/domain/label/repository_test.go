@@ -529,6 +529,75 @@ func TestRepository_Upsert(t *testing.T) {
 	})
 }
 
+func TestRepository_UpsertGlobal(t *testing.T) {
+	testErr := errors.New("Test error")
+
+	t.Run("Success update of label for Application", func(t *testing.T) {
+		labelModel := fixModelLabel(model.ApplicationLabelableObject)
+		labelEntity := fixEntityLabel(model.ApplicationLabelableObject)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", labelModel).Return(labelEntity, nil).Once()
+		mockConverter.On("FromEntity", labelEntity).Return(labelModel, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2`)
+		escapedUpdateQuery := regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ?`)
+
+		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.AppTemplateID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
+		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID).WillReturnRows(mockedRows)
+		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.UpsertGlobal(ctx, labelModel)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error in GetByKeyGlobal", func(t *testing.T) {
+		labelModel := fixModelLabel(model.ApplicationLabelableObject)
+
+		labelRepo := label.NewRepository(&automock.Converter{})
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2`)
+		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID).WillReturnError(testErr)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.UpsertGlobal(ctx, labelModel)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("Error when empty label is passed", func(t *testing.T) {
+		var labelModel *model.Label
+		labelRepo := label.NewRepository(&automock.Converter{})
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.UpsertGlobal(ctx, labelModel)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: item can not be empty")
+	})
+}
+
 func TestRepository_UpdateWithVersion(t *testing.T) {
 	version := 42
 

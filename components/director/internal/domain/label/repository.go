@@ -128,7 +128,7 @@ func (r *repository) UpsertGlobal(ctx context.Context, label *model.Label) error
 	l, err := r.GetByKeyGlobal(ctx, label.ObjectType, label.ObjectID, label.Key)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return r.Create(ctx, "", label)
+			return r.CreateGlobal(ctx, label)
 		}
 		return err
 	}
@@ -173,6 +173,20 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 	}
 
 	return r.creator.Create(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
+}
+
+// CreateGlobal missing godoc
+func (r *repository) CreateGlobal(ctx context.Context, label *model.Label) error {
+	if label == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
+
+	labelEntity, err := r.conv.ToEntity(label)
+	if err != nil {
+		return errors.Wrap(err, "while creating label entity from model")
+	}
+
+	return r.globalCreator.Create(ctx, labelEntity)
 }
 
 // GetByKey missing godoc
