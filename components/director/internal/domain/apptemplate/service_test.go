@@ -301,7 +301,7 @@ func TestService_Create(t *testing.T) {
 			labelUpsertSvc := testCase.LabelUpsertSvcFn()
 			labelRepo := testCase.LabelRepoFn()
 			idSvc := uidSvcFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, labelRepo)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, labelRepo, nil)
 
 			// WHEN
 			result, err := svc.Create(ctx, *testCase.Input())
@@ -390,7 +390,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 			webhookRepo := testCase.WebhookRepoFn()
 			labelUpsertSvc := testCase.LabelUpsertSvcFn()
 			idSvc := uidSvcFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil, nil)
 
 			defer mock.AssertExpectationsForObjects(t, appTemplateRepo, labelUpsertSvc, idSvc)
 
@@ -448,7 +448,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Get(ctx, testID)
@@ -558,7 +558,7 @@ func TestService_ListLabels(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil)
 
 			// WHEN
 			result, err := svc.ListLabels(ctx, testID)
@@ -657,7 +657,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil)
 
 			// WHEN
 			result, err := svc.GetLabel(ctx, testID, testCase.Key)
@@ -712,7 +712,7 @@ func TestService_ListByName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.ListByName(ctx, testName)
@@ -767,7 +767,7 @@ func TestService_ListByFilters(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.ListByFilters(ctx, filters)
@@ -873,7 +873,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil)
 
 			// WHEN
 			result, err := svc.GetByNameAndRegion(ctx, testName, testCase.Region)
@@ -929,7 +929,7 @@ func TestService_GetByFilters(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.GetByFilters(ctx, filters)
@@ -986,7 +986,7 @@ func TestService_Exists(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exists(ctx, testID)
@@ -1073,7 +1073,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.List(ctx, labelFilters, testCase.InputPageSize, testCursor)
@@ -1096,11 +1096,17 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
+	appInputJSONWithNewAppType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, updatedAppTemplateTestName)
 
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, nil)
+	modelAppTemplateWithNewName := fixModelAppTemplateWithAppInputJSON(testID, updatedAppTemplateTestName, appInputJSONWithNewAppType, nil)
 	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
-	modelAppTemplateWithLabels := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testName, appInputJSON, nil, map[string]interface{}{"label1": "test"})
-	modelAppTemplateUpdateInput := fixModelAppTemplateUpdateInput(testName, appInputJSON)
+	modelAppTemplateWithLabels := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testName, appInputJSON, nil, newTestLabels)
+	modelAppTemplateUpdateInput := fixModelAppTemplateUpdateInputWithLabels(testName, appInputJSON, newTestLabels)
+
+	modelApplicationFromTemplate := fixModelApplication(testAppID, testAppName)
+	modelLabelInput := fixLabelInput(testLabelInputKey, updatedAppTemplateTestName, testAppID, model.ApplicationLabelableObject)
+
 	testCases := []struct {
 		Name              string
 		Input             func() *model.ApplicationTemplateUpdateInput
@@ -1108,6 +1114,7 @@ func TestService_Update(t *testing.T) {
 		WebhookRepoFn     func() *automock.WebhookRepository
 		LabelUpsertSvcFn  func() *automock.LabelUpsertService
 		LabelRepoFn       func() *automock.LabelRepository
+		AppRepoFn         func() *automock.ApplicationRepository
 		ExpectedError     error
 	}{
 		{
@@ -1132,6 +1139,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
+			AppRepoFn: UnusedAppRepo,
 		},
 		{
 			Name: "Success - app input json without labels",
@@ -1148,7 +1156,7 @@ func TestService_Update(t *testing.T) {
 			WebhookRepoFn: UnusedWebhookRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, modelAppTemplateUpdateInput.Labels).Return(nil).Once()
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
 				return labelUpsertService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -1156,6 +1164,127 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
+			AppRepoFn: UnusedAppRepo,
+		},
+		{
+			Name: "Success update of app template - no applications registered from the app template with changed name",
+			Input: func() *model.ApplicationTemplateUpdateInput {
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: UnusedWebhookRepo,
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
+				return labelRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertService := &automock.LabelUpsertService{}
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
+				return labelUpsertService
+			},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("ListAllByApplicationTemplateID", ctx, testID).Return([]*model.Application{}, nil).Once()
+				return appRepo
+			},
+		},
+		{
+			Name: "Error while listing applications from this app template when app template name is changed",
+			Input: func() *model.ApplicationTemplateUpdateInput {
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: UnusedWebhookRepo,
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
+				return labelRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertService := &automock.LabelUpsertService{}
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
+				return labelUpsertService
+			},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("ListAllByApplicationTemplateID", ctx, testID).Return(nil, testError).Once()
+				return appRepo
+			},
+			ExpectedError: testError,
+		},
+		{
+			Name: "Success update of app template with changed name and the applicationType labels of applications registered from the app template",
+			Input: func() *model.ApplicationTemplateUpdateInput {
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: UnusedWebhookRepo,
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
+				return labelRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertSvc := &automock.LabelUpsertService{}
+				labelUpsertSvc.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
+				labelUpsertSvc.On("UpsertLabelGlobal", ctx, modelLabelInput).Return(nil).Once()
+				return labelUpsertSvc
+			},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("ListAllByApplicationTemplateID", ctx, testID).Return([]*model.Application{&modelApplicationFromTemplate}, nil).Once()
+				return appRepo
+			},
+		},
+		{
+			Name: "Error while updating applicationType label of applications registered from the app template with changed name",
+			Input: func() *model.ApplicationTemplateUpdateInput {
+				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, updatedAppTemplateTestName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("Update", ctx, *modelAppTemplateWithNewName).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: UnusedWebhookRepo,
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
+				return labelRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertSvc := &automock.LabelUpsertService{}
+				labelUpsertSvc.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
+				labelUpsertSvc.On("UpsertLabelGlobal", ctx, modelLabelInput).Return(testError).Once()
+				return labelUpsertSvc
+			},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("ListAllByApplicationTemplateID", ctx, testID).Return([]*model.Application{&modelApplicationFromTemplate}, nil).Once()
+				return appRepo
+			},
+			ExpectedError: testError,
 		},
 		{
 			Name: "Error when getting application template",
@@ -1170,6 +1299,7 @@ func TestService_Update(t *testing.T) {
 			WebhookRepoFn:    UnusedWebhookRepo,
 			LabelUpsertSvcFn: UnusedLabelUpsertSvc,
 			LabelRepoFn:      UnusedLabelRepo,
+			AppRepoFn:        UnusedAppRepo,
 			ExpectedError:    testError,
 		},
 		{
@@ -1190,6 +1320,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: errors.New("app input json labels are type map[string]interface {} instead of map[string]interface{}"),
 		},
 		{
@@ -1210,6 +1341,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: errors.New("\"applicationType\" label value must be string"),
 		},
 		{
@@ -1230,19 +1362,20 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: errors.New("\"applicationType\" label value does not match the application template name"),
 		},
 		{
 			Name: "No error in func enriching app input json with applicationType label when application type value does not match the application template name for Other System Type",
 			Input: func() *model.ApplicationTemplateUpdateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testNameOtherSystemType, appInputJSON)
+				return fixModelAppTemplateUpdateInputWithLabels(testNameOtherSystemType, appInputJSON, newTestLabels)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
-				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testNameOtherSystemType, appInputJSON, nil, map[string]interface{}{"label1": "test"})
+				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testNameOtherSystemType, appInputJSON, nil, newTestLabels)
 				appTemplateRepo.On("Get", ctx, modelAppTemplateOtherSystemType.ID).Return(modelAppTemplateOtherSystemType, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelOtherSystemTypeUpdate).Return(nil).Once()
 				return appTemplateRepo
@@ -1250,7 +1383,7 @@ func TestService_Update(t *testing.T) {
 			WebhookRepoFn: UnusedWebhookRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, map[string]interface{}{"label1": "test"}).Return(nil).Once()
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, mock.Anything).Return(nil).Once()
 				return labelUpsertService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -1259,6 +1392,7 @@ func TestService_Update(t *testing.T) {
 
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: nil,
 		},
 		{
@@ -1278,6 +1412,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, testError).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: testError,
 		},
 		{
@@ -1299,6 +1434,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, testError).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: testError,
 		},
 		{
@@ -1320,12 +1456,13 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: errors.New("application template with name \"bartest\" and region <nil> already exists"),
 		},
 		{
 			Name: "Error when updating application template - update failed",
 			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
+				return fixModelAppTemplateUpdateInputWithLabels(testName, appInputJSON, newTestLabels)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1340,6 +1477,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: testError,
 		},
 		{
@@ -1364,6 +1502,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
+			AppRepoFn:     UnusedAppRepo,
 			ExpectedError: testError,
 		},
 	}
@@ -1374,7 +1513,8 @@ func TestService_Update(t *testing.T) {
 			webhookRepo := testCase.WebhookRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelUpsertService := testCase.LabelUpsertSvcFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, labelUpsertService, labelRepo)
+			appRepo := testCase.AppRepoFn()
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, labelUpsertService, labelRepo, appRepo)
 
 			// WHEN
 			err := svc.Update(ctx, testID, *testCase.Input())
@@ -1390,6 +1530,7 @@ func TestService_Update(t *testing.T) {
 			appTemplateRepo.AssertExpectations(t)
 			labelRepo.AssertExpectations(t)
 			labelUpsertService.AssertExpectations(t)
+			appRepo.AssertExpectations(t)
 		})
 	}
 }
@@ -1429,7 +1570,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testID)
@@ -1449,7 +1590,7 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 	// GIVEN
-	svc := apptemplate.NewService(nil, nil, nil, nil, nil)
+	svc := apptemplate.NewService(nil, nil, nil, nil, nil, nil)
 	placeholderNotOptional := false
 	placeholderIsOptional := true
 
@@ -1623,4 +1764,8 @@ func UnusedLabelUpsertSvc() *automock.LabelUpsertService {
 
 func UnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 	return &automock.ApplicationTemplateRepository{}
+}
+
+func UnusedAppRepo() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
 }
