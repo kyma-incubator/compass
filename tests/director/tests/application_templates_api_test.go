@@ -511,7 +511,7 @@ func TestUpdateApplicationTypeLabelOfApplicationsWhenAppTemplateNameIsUpdated(t 
 	}
 
 	firstTenantId := tenant.TestTenants.GetDefaultTenantID()
-	secondTenantId := tenant.TestTenants.List()[1].ID
+	secondTenantId := tenant.TestTenants.List()[1].ExternalTenant
 
 	t.Log("Create application template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)

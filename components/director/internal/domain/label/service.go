@@ -107,9 +107,9 @@ func (s *labelService) UpsertLabelGlobal(ctx context.Context, labelInput *model.
 	label := labelInput.ToLabel(s.uidService.Generate(), "")
 
 	if err := s.labelRepo.UpsertGlobal(ctx, label); err != nil {
-		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+		return errors.Wrapf(err, "while upserting Label with id %q for %q with id %q", label.ID, label.ObjectType, label.ObjectID)
 	}
-	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	log.C(ctx).Debugf("Successfully upserted Label with id %q for %q with id %q", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }
