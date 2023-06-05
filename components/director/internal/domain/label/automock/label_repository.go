@@ -80,6 +80,20 @@ func (_m *LabelRepository) Upsert(ctx context.Context, tenant string, _a2 *model
 	return r0
 }
 
+// UpsertGlobal provides a mock function with given fields: ctx, _a1
+func (_m *LabelRepository) UpsertGlobal(ctx context.Context, _a1 *model.Label) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Label) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewLabelRepository interface {
 	mock.TestingT
 	Cleanup(func())
