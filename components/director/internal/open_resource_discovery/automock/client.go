@@ -16,32 +16,29 @@ type Client struct {
 	mock.Mock
 }
 
-// FetchOpenResourceDiscoveryDocuments provides a mock function with given fields: ctx, resource, webhook, constraints
-func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource ord.Resource, webhook *model.Webhook, constraints map[string]interface{}) (ord.Documents, string, error) {
-	ret := _m.Called(ctx, resource, webhook, constraints)
+// FetchOpenResourceDiscoveryDocuments provides a mock function with given fields: ctx, resource, webhook
+func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource ord.Resource, webhook *model.Webhook) (ord.Documents, string, error) {
+	ret := _m.Called(ctx, resource, webhook)
 
 	var r0 ord.Documents
-	var r1 string
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) (ord.Documents, string, error)); ok {
-		return rf(ctx, resource, webhook, constraints)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) ord.Documents); ok {
-		r0 = rf(ctx, resource, webhook, constraints)
+	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook) ord.Documents); ok {
+		r0 = rf(ctx, resource, webhook)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ord.Documents)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) string); ok {
-		r1 = rf(ctx, resource, webhook, constraints)
+	var r1 string
+	if rf, ok := ret.Get(1).(func(context.Context, ord.Resource, *model.Webhook) string); ok {
+		r1 = rf(ctx, resource, webhook)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, ord.Resource, *model.Webhook, map[string]interface{}) error); ok {
-		r2 = rf(ctx, resource, webhook, constraints)
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, ord.Resource, *model.Webhook) error); ok {
+		r2 = rf(ctx, resource, webhook)
 	} else {
 		r2 = ret.Error(2)
 	}

@@ -100,6 +100,29 @@ func (_m *SpecRepository) GetByID(ctx context.Context, tenantID string, id strin
 	return r0, r1
 }
 
+// GetByIDGlobal provides a mock function with given fields: ctx, id
+func (_m *SpecRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Spec
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Spec); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Spec)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByReferenceObjectID provides a mock function with given fields: ctx, tenant, objectType, objectID
 func (_m *SpecRepository) ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
@@ -176,6 +199,20 @@ func (_m *SpecRepository) Update(ctx context.Context, tenant string, item *model
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Spec) error); ok {
 		r0 = rf(ctx, tenant, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateGlobal provides a mock function with given fields: ctx, item
+func (_m *SpecRepository) UpdateGlobal(ctx context.Context, item *model.Spec) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Spec) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
