@@ -203,9 +203,12 @@ func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		conditionsForAppTemplate := repo.NewNotNullCondition(refColumn)
+		conditionsForAppTemplate := repo.Conditions{
+			repo.NewNotNullCondition(refColumn),
+			repo.NewEqualCondition("type", whType),
+		}
 
-		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate); err != nil {
+		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate...); err != nil {
 			return nil, err
 		}
 

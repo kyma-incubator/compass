@@ -23,10 +23,14 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
+	testAppID          = "app-id"
 	testConsumerID     = "consumer-id"
+	testLabelInputKey  = "applicationType"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
+	testAppName                                 = "app-name"
+	updatedAppTemplateTestName                  = "new-app-template-test-name"
 	testNameOtherSystemType                     = "Other System Type"
 	testPageSize                                = 3
 	testCursor                                  = ""
@@ -47,6 +51,7 @@ var (
 	testURL                        = "http://valid.url"
 	testError                      = errors.New("test error")
 	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+	newTestLabels                  = map[string]interface{}{"label1": "test"}
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -172,7 +177,6 @@ func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.A
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputString,
 		Placeholders:         fixModelPlaceholders(),
-		Labels:               map[string]interface{}{"label1": "test"},
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
@@ -180,6 +184,13 @@ func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.A
 func fixModelAppTemplateUpdateInputWithPlaceholders(name string, appInputString string, placeholders []model.ApplicationTemplatePlaceholder) *model.ApplicationTemplateUpdateInput {
 	out := fixModelAppTemplateUpdateInput(name, appInputString)
 	out.Placeholders = placeholders
+
+	return out
+}
+
+func fixModelAppTemplateUpdateInputWithLabels(name string, appInputString string, labels map[string]interface{}) *model.ApplicationTemplateUpdateInput {
+	out := fixModelAppTemplateUpdateInput(name, appInputString)
+	out.Labels = labels
 
 	return out
 }
@@ -606,5 +617,14 @@ func fixEnrichedTenantMappedWebhooks() []*graphql.WebhookInput {
 			URL:  &testURL,
 			Auth: nil,
 		},
+	}
+}
+
+func fixLabelInput(key string, value string, objectID string, objectType model.LabelableObject) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: objectType,
 	}
 }
