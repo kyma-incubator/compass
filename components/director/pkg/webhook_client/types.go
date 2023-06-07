@@ -49,12 +49,12 @@ func (fnr *FormationNotificationRequestExt) GetOperation() model.FormationOperat
 }
 
 // GetFormationAssignment returns FormationNotificationRequestExt formation assignment
-func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *model.FormationAssignment {
+func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *webhook.FormationAssignment {
 	return nil
 }
 
 // GetReverseFormationAssignment returns FormationNotificationRequestExt reverse formation assignment
-func (fnr *FormationNotificationRequestExt) GetReverseFormationAssignment() *model.FormationAssignment {
+func (fnr *FormationNotificationRequestExt) GetReverseFormationAssignment() *webhook.FormationAssignment {
 	return nil
 }
 
@@ -68,6 +68,56 @@ type FormationAssignmentNotificationRequest struct {
 	Webhook       graphql.Webhook
 	Object        webhook.FormationAssignmentTemplateInput
 	CorrelationID string
+}
+
+// FormationAssignmentNotificationRequestExt is extended FormationAssignmentRequest with Operation, FA, ReverseFA, Formation and Target subtype.
+type FormationAssignmentNotificationRequestExt struct {
+	*FormationAssignmentNotificationRequest
+	Operation                  model.FormationOperation
+	FormationAssignment        *webhook.FormationAssignment
+	ReverseFormationAssignment *webhook.FormationAssignment
+	Formation                  *model.Formation
+	TargetSubtype              string
+}
+
+// GetObjectType returns FormationAssignmentNotificationRequestExt object type
+func (f *FormationAssignmentNotificationRequestExt) GetObjectType() model.ResourceType {
+	switch f.FormationAssignment.TargetType {
+	case model.FormationAssignmentTypeApplication:
+		return model.ApplicationResourceType
+
+	case model.FormationAssignmentTypeRuntime:
+		return model.RuntimeResourceType
+
+	case model.FormationAssignmentTypeRuntimeContext:
+		return model.RuntimeContextResourceType
+	}
+	return ""
+}
+
+// GetObjectSubtype returns FormationAssignmentNotificationRequestExt object subtype
+func (f *FormationAssignmentNotificationRequestExt) GetObjectSubtype() string {
+	return f.TargetSubtype
+}
+
+// GetOperation returns FormationAssignmentNotificationRequestExt operation
+func (f *FormationAssignmentNotificationRequestExt) GetOperation() model.FormationOperation {
+	return f.Operation
+}
+
+// GetFormationAssignment returns FormationAssignmentNotificationRequestExt formation assignment
+func (f *FormationAssignmentNotificationRequestExt) GetFormationAssignment() *webhook.FormationAssignment {
+	return f.FormationAssignment
+}
+
+// GetReverseFormationAssignment returns FormationAssignmentNotificationRequestExt reverse formation assignment
+func (f *FormationAssignmentNotificationRequestExt) GetReverseFormationAssignment() *webhook.FormationAssignment {
+	return f.ReverseFormationAssignment
+}
+
+// GetFormation returns FormationAssignmentNotificationRequestExt formation
+func (f *FormationAssignmentNotificationRequestExt) GetFormation() *model.Formation {
+	return f.Formation
 }
 
 // GetWebhook returns the Webhook associated with the FormationAssignmentNotificationRequest
@@ -152,7 +202,7 @@ type WebhookExtRequest interface {
 	GetObjectType() model.ResourceType
 	GetObjectSubtype() string
 	GetOperation() model.FormationOperation
-	GetFormationAssignment() *model.FormationAssignment
-	GetReverseFormationAssignment() *model.FormationAssignment
+	GetFormationAssignment() *webhook.FormationAssignment
+	GetReverseFormationAssignment() *webhook.FormationAssignment
 	GetFormation() *model.Formation
 }

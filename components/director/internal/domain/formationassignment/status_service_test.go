@@ -16,8 +16,8 @@ import (
 )
 
 func TestUpdater_Update(t *testing.T) {
-	preJoinPointDetails := fixNotificationStatusReturnedDetails(fa, reverseFa, formationconstraint.PreNotificationStatusReturned)
-	postJoinPointDetails := fixNotificationStatusReturnedDetails(fa, reverseFa, formationconstraint.PostNotificationStatusReturned)
+	preJoinPointDetails := fixNotificationStatusReturnedDetails(webhookFa, reverseWebhookFa, formationconstraint.PreNotificationStatusReturned)
+	postJoinPointDetails := fixNotificationStatusReturnedDetails(webhookFa, reverseWebhookFa, formationconstraint.PostNotificationStatusReturned)
 
 	// GIVEN
 	testCases := []struct {
@@ -271,10 +271,10 @@ func TestUpdater_Update(t *testing.T) {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
 
-			svc := formationassignment.NewFormationAssignmentUpdaterService(faRepo, constraintEngine, formationRepo, formationTemplateRepo)
+			svc := formationassignment.NewFormationAssignmentStatusService(faRepo, constraintEngine, formationRepo, formationTemplateRepo)
 
 			// WHEN
-			err := svc.Update(testCase.Context, testCase.FormationAssignment, assignOperation)
+			err := svc.UpdateWithConstraints(testCase.Context, testCase.FormationAssignment, assignOperation)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -325,8 +325,8 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 
 	reverseFaErrorState := fixReverseFormationAssignment(faErrorState)
 
-	preJoinPointDetails := fixNotificationStatusReturnedDetails(faErrorState, reverseFaErrorState, formationconstraint.PreNotificationStatusReturned)
-	postJoinPointDetails := fixNotificationStatusReturnedDetails(faErrorState, reverseFaErrorState, formationconstraint.PostNotificationStatusReturned)
+	preJoinPointDetails := fixNotificationStatusReturnedDetails(convertFormationAssignmentFromModel(faErrorState), convertFormationAssignmentFromModel(reverseFaErrorState), formationconstraint.PreNotificationStatusReturned)
+	postJoinPointDetails := fixNotificationStatusReturnedDetails(convertFormationAssignmentFromModel(faErrorState), convertFormationAssignmentFromModel(reverseFaErrorState), formationconstraint.PostNotificationStatusReturned)
 
 	testCases := []struct {
 		Name                    string
@@ -418,10 +418,10 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
 
-			svc := formationassignment.NewFormationAssignmentUpdaterService(faRepo, constraintEngine, formationRepo, formationTemplateRepo)
+			svc := formationassignment.NewFormationAssignmentStatusService(faRepo, constraintEngine, formationRepo, formationTemplateRepo)
 
 			// WHEN
-			err := svc.SetAssignmentToErrorState(testCase.Context, testCase.FormationAssignment, errorMsg, formationassignment.TechnicalError, model.DeleteErrorAssignmentState, assignOperation)
+			err := svc.SetAssignmentToErrorStateWithConstraints(testCase.Context, testCase.FormationAssignment, errorMsg, formationassignment.TechnicalError, model.DeleteErrorAssignmentState, assignOperation)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

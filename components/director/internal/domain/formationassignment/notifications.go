@@ -42,10 +42,14 @@ type formationAssignmentNotificationService struct {
 	webhookDataInputBuilder databuilder.DataInputBuilder
 	formationRepository     formationRepository
 	notificationBuilder     notificationBuilder
+	runtimeContextRepo      runtimeContextRepository
+	labelService            labelService
+	runtimeTypeLabelKey     string
+	applicationTypeLabelKey string
 }
 
 // NewFormationAssignmentNotificationService creates formation assignment notifications service
-func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, tenantRepository tenantRepository, webhookDataInputBuilder databuilder.DataInputBuilder, formationRepository formationRepository, notificationBuilder notificationBuilder) *formationAssignmentNotificationService {
+func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, tenantRepository tenantRepository, webhookDataInputBuilder databuilder.DataInputBuilder, formationRepository formationRepository, notificationBuilder notificationBuilder, runtimeContextRepo runtimeContextRepository, labelService labelService, runtimeTypeLabelKey, applicationTypeLabelKey string) *formationAssignmentNotificationService {
 	return &formationAssignmentNotificationService{
 		formationAssignmentRepo: formationAssignmentRepo,
 		webhookConverter:        webhookConverter,
@@ -54,6 +58,10 @@ func NewFormationAssignmentNotificationService(formationAssignmentRepo Formation
 		webhookDataInputBuilder: webhookDataInputBuilder,
 		formationRepository:     formationRepository,
 		notificationBuilder:     notificationBuilder,
+		runtimeContextRepo:      runtimeContextRepo,
+		labelService:            labelService,
+		runtimeTypeLabelKey:     runtimeTypeLabelKey,
+		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 }
 
@@ -81,6 +89,140 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	default:
 		return nil, errors.Errorf("Unknown formation assignment type: %q", fa.TargetType)
 	}
+}
+
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	formation, err := fan.formationRepository.Get(ctx, fa.FormationID, tenantID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation with ID %q in tenant %q: %v", fa.FormationID, tenantID, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation with ID %q in tenant %q", fa.FormationID, tenantID)
+	}
+
+	reverseFa, err := fan.getReverseBySourceAndTarget(ctx, formation.ID, fa.Source, fa.Target)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).Errorf("An error occurred while getting reverse formation assignment: %v", err)
+			return nil, errors.Wrap(err, "An error occurred while getting reverse formation assignment")
+		}
+		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
+	}
+
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		ResourceType:               model.FormationResourceType,
+		ResourceSubtype:            "todo",
+		Operation:                  operation,
+		FormationAssignment:        convertFormationAssignmentFromModel(fa),
+		ReverseFormationAssignment: convertFormationAssignmentFromModel(reverseFa),
+		Formation:                  formation,
+	}, nil
+}
+
+func (fan *formationAssignmentNotificationService) CreateExtendedFARequest(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
+	targetSubtype, err := fan.getObjectSubtype(ctx, faRequestMapping.FormationAssignment.TenantID, faRequestMapping.FormationAssignment.Target, faRequestMapping.FormationAssignment.TargetType)
+	if err != nil {
+		return nil, err
+	}
+
+	formation, err := fan.formationRepository.Get(ctx, faRequestMapping.FormationAssignment.FormationID, faRequestMapping.FormationAssignment.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	var reverseFa *model.FormationAssignment
+	if reverseFaRequestMapping != nil {
+		reverseFa = reverseFaRequestMapping.FormationAssignment
+	}
+
+	return &webhookclient.FormationAssignmentNotificationRequestExt{
+		Operation:                              operation,
+		FormationAssignmentNotificationRequest: faRequestMapping.Request,
+		FormationAssignment:                    convertFormationAssignmentFromModel(faRequestMapping.FormationAssignment),
+		ReverseFormationAssignment:             convertFormationAssignmentFromModel(reverseFa),
+		Formation:                              formation,
+		TargetSubtype:                          targetSubtype,
+	}, nil
+}
+
+func (fan *formationAssignmentNotificationService) getObjectSubtype(ctx context.Context, tnt, objectID string, objectType model.FormationAssignmentType) (string, error) {
+	switch objectType {
+	case model.FormationAssignmentTypeApplication:
+		applicationTypeLabel, err := fan.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        fan.applicationTypeLabelKey,
+			ObjectID:   objectID,
+			ObjectType: model.ApplicationLabelableObject,
+		})
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
+			return "", errors.Wrapf(err, "while getting label %q for application with ID %q", fan.applicationTypeLabelKey, objectID)
+		}
+
+		applicationType, ok := applicationTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing application type for application %q", objectID)
+		}
+		return applicationType, nil
+
+	case model.FormationAssignmentTypeRuntime:
+		runtimeTypeLabel, err := fan.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        fan.runtimeTypeLabelKey,
+			ObjectID:   objectID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
+			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", fan.runtimeTypeLabelKey, objectID)
+		}
+
+		runtimeType, ok := runtimeTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing runtime type for runtime %q", objectID)
+		}
+		return runtimeType, nil
+
+	case model.FormationAssignmentTypeRuntimeContext:
+		rtmCtx, err := fan.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while fetching runtime context with ID %q", objectID)
+		}
+
+		runtimeTypeLabel, err := fan.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        fan.runtimeTypeLabelKey,
+			ObjectID:   rtmCtx.RuntimeID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", fan.runtimeTypeLabelKey, objectID)
+		}
+
+		runtimeType, ok := runtimeTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing runtime type for runtime %q", rtmCtx.RuntimeID)
+		}
+		return runtimeType, nil
+
+	default:
+		return "", errors.Errorf("unknown formation type %s", objectType)
+	}
+}
+
+func (fan *formationAssignmentNotificationService) getReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, formationID, sourceID, targetID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
+	}
+
+	return reverseFA, nil
 }
 
 // generateApplicationFANotification generates application formation assignment notification based on the reverse(source) type of the formation assignment

@@ -1387,6 +1387,18 @@ func fixFormationAssignmentModelWithParameters(id, formationID, source, target s
 	}
 }
 
+func fixWebhookFormationAssignmentWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *webhook.FormationAssignment {
+	return &webhook.FormationAssignment{
+		ID:          id,
+		FormationID: formationID,
+		Source:      source,
+		SourceType:  sourceType,
+		Target:      target,
+		TargetType:  targetType,
+		State:       string(state),
+	}
+}
+
 func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
 	res := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
@@ -1498,5 +1510,14 @@ func fixAssignTenantDetails(formationName string) *formationconstraint.AssignFor
 		FormationTemplateID: FormationTemplateID,
 		FormationID:         FormationID,
 		TenantID:            TntInternalID,
+	}
+}
+
+func fixFormationNotificationRequestExt(request *webhookclient.Request, operation model.FormationOperation, formation *model.Formation, formationType string) *webhookclient.FormationNotificationRequestExt {
+	return &webhookclient.FormationNotificationRequestExt{
+		Request:       request,
+		Operation:     operation,
+		Formation:     formation,
+		FormationType: formationType,
 	}
 }
