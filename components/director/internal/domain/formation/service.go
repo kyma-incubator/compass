@@ -792,6 +792,33 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	formationFromDB := ft.formation
+	if objectType != graphql.FormationObjectTypeTenant {
+		selfFATx, err := s.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
+		defer s.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
+
+		fa, err := s.formationAssignmentService.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
+		if err != nil {
+			commitErr := selfFATx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+		}
+		err = s.formationAssignmentService.Delete(selfFATransactionCtx, fa.ID)
+		if err != nil {
+			commitErr := selfFATx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+		}
+		err = selfFATx.Commit()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while committing transaction")
+		}
+	}
 
 	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
 	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
