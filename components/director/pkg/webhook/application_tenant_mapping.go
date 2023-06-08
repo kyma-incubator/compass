@@ -53,7 +53,7 @@ func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 // SetAssignment sets the assignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
 	config := string(assignment.Value)
-	if config == "" {
+	if config == "" || assignment.State == string(model.CreateErrorAssignmentState) || assignment.State == string(model.DeleteErrorAssignmentState) {
 		config = "\"\""
 	}
 	rd.Assignment = &FormationAssignment{
@@ -72,7 +72,7 @@ func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.Formati
 // SetReverseAssignment sets the reverseAssignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
 	config := string(reverseAssignment.Value)
-	if config == "" {
+	if config == "" || reverseAssignment.State == string(model.CreateErrorAssignmentState) || reverseAssignment.State == string(model.DeleteErrorAssignmentState) {
 		config = "\"\""
 	}
 	rd.ReverseAssignment = &FormationAssignment{
