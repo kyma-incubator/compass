@@ -3127,50 +3127,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: transactionError.Error(),
 		},
 		{
-			Name: "fail when transaction fails on commit after delete self formation assignment fails",
-			TxFn: txGen.ThatFailsOnCommit,
-			LabelServiceFn: func() *automock.LabelService {
-				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				return labelService
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
-				return formationRepo
-			},
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID, RuntimeID).Return(formationAssignments[1], nil).Once()
-				formationAssignmentSvc.On("Delete", txtest.CtxWithDBMatcher(), formationAssignments[1].ID).Return(testErr).Once()
-				return formationAssignmentSvc
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return repo
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				details := &formationconstraint.UnassignFormationOperationDetails{
-					ResourceType:        model.RuntimeResourceType,
-					ResourceSubtype:     runtimeType,
-					ResourceID:          RuntimeID,
-					FormationType:       testFormationTemplateName,
-					FormationTemplateID: FormationTemplateID,
-					FormationID:         FormationID,
-					TenantID:            TntInternalID,
-				}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
 			Name: "fail when transaction fails on commit after getting self formation assignment fails",
 			TxFn: txGen.ThatFailsOnCommit,
 			LabelServiceFn: func() *automock.LabelService {

@@ -807,13 +807,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 				return nil, errors.Wrapf(err, "while committing transaction with error")
 			}
 		}
-		err = s.formationAssignmentService.Delete(selfFATransactionCtx, fa.ID)
-		if err != nil {
-			commitErr := selfFATx.Commit()
-			if commitErr != nil {
-				return nil, errors.Wrapf(err, "while committing transaction with error")
-			}
-		}
+		_ = s.formationAssignmentService.Delete(selfFATransactionCtx, fa.ID)
 		err = selfFATx.Commit()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while committing transaction")
