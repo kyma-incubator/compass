@@ -816,8 +816,9 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	appRepo := application.NewRepository(appConverter)
 
-	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, appRepo)
 }
 
 func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, certCache certloader.Cache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {

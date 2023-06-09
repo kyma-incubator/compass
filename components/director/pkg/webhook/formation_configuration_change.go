@@ -107,7 +107,7 @@ func (rd *FormationConfigurationChangeInput) GetParticipantsIDs() []string {
 // SetAssignment sets the assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.FormationAssignment) {
 	config := string(assignment.Value)
-	if config == "" {
+	if config == "" || assignment.State == string(model.CreateErrorAssignmentState) || assignment.State == string(model.DeleteErrorAssignmentState) {
 		config = "\"\""
 	}
 	rd.Assignment = &FormationAssignment{
@@ -126,7 +126,7 @@ func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.For
 // SetReverseAssignment sets the reverse assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
 	config := string(reverseAssignment.Value)
-	if config == "" {
+	if config == "" || reverseAssignment.State == string(model.CreateErrorAssignmentState) || reverseAssignment.State == string(model.DeleteErrorAssignmentState) {
 		config = "\"\""
 	}
 	rd.ReverseAssignment = &FormationAssignment{
