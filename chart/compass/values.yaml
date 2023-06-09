@@ -1059,6 +1059,7 @@ global:
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    indirectDependencyXsappname: ""
     saasAppNamesSecret:
       manage: false
     regionInstancesCredentials:
@@ -1143,10 +1144,10 @@ global:
       certSvcInstanceTestSecretName: "cert-svc-secret"
       certSvcInstanceTestRegion2SecretName: "cert-svc-secret-eu2"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      directDependencySubscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      indirectDependencySubscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
+      indirectDependencySubscriptionProviderAppNameValue: "indirectDependencySubscriptionProviderAppNameValue"
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local

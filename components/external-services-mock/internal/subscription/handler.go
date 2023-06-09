@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -251,7 +252,7 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		if err != nil {
 			return nil, err
 		}
-	} else { //is direct dependency
+	} else { // is direct dependency
 		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
 		if err != nil {
 			return nil, err
