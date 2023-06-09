@@ -143,11 +143,6 @@ func (rd *EventResourceDefinition) ToSpec() *SpecInput {
 	}
 }
 
-// ToEventDefinitionWithinBundle missing godoc
-func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, resourceType resource.Type, resourceID string, appTemplateVersionID *string, bndlID string, eventHash uint64) *EventDefinition {
-	return e.ToEventDefinition(id, resourceType, resourceID, nil, eventHash)
-}
-
 // ToEventDefinition missing godoc
 func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resource.Type, resourceID string, packageID *string, eventHash uint64) *EventDefinition {
 	if e == nil {

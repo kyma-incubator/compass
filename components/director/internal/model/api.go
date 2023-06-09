@@ -173,11 +173,6 @@ type APIDefinitionPage struct {
 // IsPageable missing godoc
 func (APIDefinitionPage) IsPageable() {}
 
-// ToAPIDefinitionWithinBundle missing godoc
-func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, resourceType resource.Type, resourceID string, apiHash uint64) *APIDefinition {
-	return a.ToAPIDefinition(id, resourceType, resourceID, nil, apiHash)
-}
-
 // ToAPIDefinition missing godoc
 func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Type, resourceID string, packageID *string, apiHash uint64) *APIDefinition {
 	if a == nil {
