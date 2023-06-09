@@ -46,10 +46,6 @@ func fixInputValuesForSystemWhichAppTemplateHasPlaceholders(t *testing.T, s syst
 	require.NoError(t, err)
 	return model.ApplicationFromTemplateInputValues{
 		{
-			Placeholder: "display-name",
-			Value:       gjson.GetBytes(systemPayload, "displayName").String(),
-		},
-		{
 			Placeholder: "name",
 			Value:       gjson.GetBytes(systemPayload, "displayName").String(),
 		},

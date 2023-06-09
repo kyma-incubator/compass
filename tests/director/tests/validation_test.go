@@ -450,7 +450,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
+	appCreateInput := fixtures.FixSampleApplicationJSONInputWithWebhooks("placeholder")
 	invalidInput := fixAppTemplateInputWithDefaultDistinguishLabel("")
 	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
 	invalidInput.ApplicationInput = &appCreateInput
@@ -483,7 +483,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	require.NotEmpty(t, appTpl.ID)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTpl.Labels[tenantfetcher.RegionKey])
 
-	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
+	appCreateInput := fixtures.FixSampleApplicationJSONInputWithWebhooks("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
 		Name:             "",
 		Placeholders:     []*graphql.PlaceholderDefinitionInput{},

@@ -406,7 +406,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	appTemplateName := createAppTemplateName("app-template")
 	newName := createAppTemplateName("new-app-template")
 	newDescription := "new description"
-	newAppCreateInput := &graphql.ApplicationRegisterInput{
+	newAppCreateInput := &graphql.ApplicationJSONInput{
 		Name:           "new-app-create-input",
 		Description:    ptr.String("{{name}} {{display-name}}"),
 		HealthCheckURL: ptr.String("http://url.valid"),
@@ -457,7 +457,7 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 	appTemplateName := createAppTemplateName("app-template")
 	newName := createAppTemplateName("new-app-template")
 	newDescription := "new description"
-	newAppCreateInput := &graphql.ApplicationRegisterInput{
+	newAppCreateInput := &graphql.ApplicationJSONInput{
 		Name:           "new-app-create-input",
 		Description:    ptr.String("{{name}} {{display-name}}"),
 		Labels:         map[string]interface{}{"displayName": "{{display-name}}"},
@@ -495,6 +495,116 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 	t.Log("Should return error because there is no application_template.labels:write scope")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "insufficient scopes provided")
+}
+
+func TestUpdateApplicationTypeLabelOfApplicationsWhenAppTemplateNameIsUpdated(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := createAppTemplateName("app-template")
+	newName := createAppTemplateName("new-app-template")
+	newDescription := "new description"
+	newAppCreateInput := &graphql.ApplicationJSONInput{
+		Name:           "new-app-create-input",
+		Description:    ptr.String("{{name}} {{display-name}}"),
+		Labels:         map[string]interface{}{"displayName": "{{display-name}}"},
+		HealthCheckURL: ptr.String("http://url.valid"),
+	}
+
+	firstTenantId := tenant.TestTenants.GetDefaultTenantID()
+	secondTenantId := tenant.TestTenants.List()[1].ExternalTenant
+
+	t.Log("Create application template")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, firstTenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, firstTenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	t.Log("Create application from template for the first tenant")
+	appFromTmplFirstTenant := graphql.ApplicationFromTemplateInput{
+		TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "name",
+				Value:       "app1-e2e-update-applicationType-label",
+			},
+			{
+				Placeholder: "display-name",
+				Value:       "app1 description",
+			},
+		},
+	}
+
+	appFromTmplGQLFirstTenant, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplFirstTenant)
+	require.NoError(t, err)
+
+	createAppFromTmplRequestFirstTenant := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQLFirstTenant)
+	outputAppFirstTenant := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, firstTenantId, createAppFromTmplRequestFirstTenant, &outputAppFirstTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, firstTenantId, &outputAppFirstTenant)
+	require.NoError(t, err)
+
+	t.Log("Create application from template for the second tenant")
+	appFromTmplSecondTenant := graphql.ApplicationFromTemplateInput{
+		TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "name",
+				Value:       "app2-e2e-update-applicationType-label",
+			},
+			{
+				Placeholder: "display-name",
+				Value:       "app2 description",
+			},
+		},
+	}
+
+	appFromTmplGQLSecondTenant, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSecondTenant)
+	require.NoError(t, err)
+
+	createAppFromTmplRequestSecondTenant := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQLSecondTenant)
+	outputAppSecondTenant := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, secondTenantId, createAppFromTmplRequestSecondTenant, &outputAppSecondTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondTenantId, &outputAppSecondTenant)
+	require.NoError(t, err)
+
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name: "name",
+		},
+		{
+			Name: "display-name",
+		},
+	}
+	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+
+	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
+	updateOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Log("Update application template")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updateOutput.ID)
+
+	t.Log("Get updated application for the first tenant")
+	app1 := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, firstTenantId, outputAppFirstTenant.ID)
+	assert.Equal(t, outputAppFirstTenant.ID, app1.ID)
+
+	t.Log("Get updated application for the second tenant")
+	app2 := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, secondTenantId, outputAppSecondTenant.ID)
+	assert.Equal(t, outputAppSecondTenant.ID, app2.ID)
+
+	//THEN
+	t.Log("Check if application template was updated")
+	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
+
+	t.Log("Check if applicationType label of application for the first tenant was updated")
+	assert.Equal(t, app1.Labels["applicationType"], newName)
+
+	t.Log("Check if applicationType label of application for the second tenant was updated")
+	assert.Equal(t, app2.Labels["applicationType"], newName)
 }
 
 func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
@@ -627,7 +737,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 
 			// WHEN
 			t.Log("Update application template")
-			appRegisterInput := &graphql.ApplicationRegisterInput{
+			appJSONInput := &graphql.ApplicationJSONInput{
 				Name:         "{{name}}",
 				ProviderName: ptr.String("compass-tests"),
 				Labels: graphql.Labels{
@@ -642,15 +752,15 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			}
 
 			if testCase.NewAppTemplateAppInputJSONNameProperty != nil {
-				appRegisterInput.Name = *testCase.NewAppTemplateAppInputJSONNameProperty
+				appJSONInput.Name = *testCase.NewAppTemplateAppInputJSONNameProperty
 			}
-			appRegisterInput.Description = testCase.AppInputDescription
-			appRegisterInput.ProviderName = &sapProvider
+			appJSONInput.Description = testCase.AppInputDescription
+			appJSONInput.ProviderName = &sapProvider
 			if testCase.NewAppTemplateAppInputJSONLabelsProperty != nil {
-				appRegisterInput.Labels = *testCase.NewAppTemplateAppInputJSONLabelsProperty
+				appJSONInput.Labels = *testCase.NewAppTemplateAppInputJSONLabelsProperty
 			}
 
-			appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: testCase.NewAppTemplateName, ApplicationInput: appRegisterInput, Placeholders: testCase.NewAppTemplatePlaceholders, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+			appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: testCase.NewAppTemplateName, ApplicationInput: appJSONInput, Placeholders: testCase.NewAppTemplatePlaceholders, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 			appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
 
 			updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)

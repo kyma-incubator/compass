@@ -17,3 +17,11 @@ func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode 
 		OutputTemplate: &outputTemplate,
 	}
 }
+
+func FixNonFormationNotificationWebhookInput(webhookType graphql.WebhookType) *graphql.WebhookInput {
+	return &graphql.WebhookInput{
+		URL:            str.Ptr("http://new-webhook.url"),
+		Type:           webhookType,
+		OutputTemplate: str.Ptr("{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"),
+	}
+}
