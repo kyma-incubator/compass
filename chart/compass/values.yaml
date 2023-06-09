@@ -314,8 +314,8 @@ global:
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
     destination:
-      baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/api/v1" # todo::: revert to local value
-      path: "/regions/{region}/subaccounts/{subaccountId}/destinations/{destinationName}"
+      baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
+      path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
       regionParam: "region"
       subaccountIDParam: "subaccountId"
       nameParam: "destinationName"

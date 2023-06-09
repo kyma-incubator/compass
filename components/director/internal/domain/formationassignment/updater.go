@@ -125,13 +125,38 @@ func (fau *formationAssignmentUpdaterService) prepareDetailsForNotificationStatu
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
+	// todo::: temp workaround
+	var resourceType model.ResourceType
+	if operation == model.AssignFormation || operation == model.UnassignFormation {
+		resourceType, err = fromFormationAssignmentTypeToResourceType(fa.TargetType)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		resourceType = model.FormationResourceType
+	}
+
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               model.FormationResourceType,
-		ResourceSubtype:            template.Name,
+		ResourceType:               resourceType,
+		ResourceSubtype:            "SAP Cloud for Customer",
 		Operation:                  operation,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,
 		Formation:                  formation,
 		FormationTemplate:          template,
 	}, nil
+}
+
+// todo::: temp workaround
+func fromFormationAssignmentTypeToResourceType(assignmentType model.FormationAssignmentType) (model.ResourceType, error) {
+	switch assignmentType {
+	case model.FormationAssignmentTypeApplication:
+		return model.ApplicationResourceType, nil
+	case model.FormationAssignmentTypeRuntime:
+		return model.RuntimeResourceType, nil
+	case model.FormationAssignmentTypeRuntimeContext:
+		return model.RuntimeContextResourceType, nil
+	default:
+		return "", errors.Errorf("Could not determine resource type from formation assignment type: %q", assignmentType)
+	}
 }

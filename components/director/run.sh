@@ -248,7 +248,7 @@ export APP_HTTP_RETRY_ATTEMPTS=3
 export APP_HTTP_RETRY_DELAY=100ms
 export APP_DISABLE_ASYNC_MODE=${DISABLE_ASYNC_MODE}
 export APP_DISABLE_TENANT_ON_DEMAND_MODE=true
-export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
+export APP_HEALTH_CONFIG_INDICATORS="{database,10s,120s,5s,80}"
 export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
 export APP_SCHEMA_MIGRATION_VERSION=$(ls -lr ${ROOT_PATH}/../schema-migrator/migrations/director | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
 export APP_ALLOW_JWT_SIGNING_NONE=true
@@ -298,8 +298,8 @@ export APP_PAIRING_ADAPTER_CM_KEY="config.json"
 export APP_PAIRING_ADAPTER_WATCHER_ID="pairing-adapter-watcher-id"
 
 # Destination Properties
-export APP_DESTINATION_BASE_URL="http://base-url.com"
-export APP_DESTINATION_PATH="/regions/{region}/subaccounts/{subaccountId}/destinations/{destinationName}"
+export APP_DESTINATION_BASE_URL="https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
+export APP_DESTINATION_PATH="/regions/{region}/subaccounts/{subaccountId}/destinations"
 export APP_DESTINATION_REGION_PARAMETER="region"
 export APP_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
 export APP_DESTINATION_NAME_PARAMETER="destinationName"

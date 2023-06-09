@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -23,9 +23,11 @@ import (
 )
 
 const (
-	clientUserHeaderKey      = "CLIENT_USER"
-	globalSubaccountLabelKey = "global_subaccount_id"
-	regionLabelKey           = "region"
+	clientUserHeaderKey        = "CLIENT_USER"
+	contentTypeHeaderKey       = "Content-Type"
+	contentTypeApplicationJson = "application/json;charset=UTF-8"
+	globalSubaccountLabelKey   = "global_subaccount_id"
+	regionLabelKey             = "region"
 )
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -54,9 +56,14 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=destinationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationRepository interface {
-	CreateDestination(ctx context.Context, destination *model.Destination) error
 	DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) error
 	ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error)
+	UpsertWithEmbeddedTenant(ctx context.Context, destination *model.Destination) error
+}
+
+//go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantRepository interface {
+	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // UIDService generates UUIDs for new entities
@@ -76,11 +83,12 @@ type Service struct {
 	runtimeCtxRepository  runtimeCtxRepository
 	labelRepo             labelRepository
 	destinationRepo       destinationRepository
+	tenantRepo            tenantRepository
 	uidSvc                UIDService
 }
 
 // NewService todo::: add godoc
-func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationcreator.Config, transact persistence.Transactioner, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, labelRepo labelRepository, destinationRepository destinationRepository, uidSvc UIDService) *Service {
+func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationcreator.Config, transact persistence.Transactioner, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, labelRepo labelRepository, destinationRepository destinationRepository, tenantRepository tenantRepository, uidSvc UIDService) *Service {
 	return &Service{
 		mtlsHTTPClient:        mtlsHTTPClient,
 		destinationCreatorCfg: destinationCreatorCfg,
@@ -90,6 +98,7 @@ func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationc
 		runtimeCtxRepository:  runtimeCtxRepository,
 		labelRepo:             labelRepo,
 		destinationRepo:       destinationRepository,
+		tenantRepo:            tenantRepository,
 		uidSvc:                uidSvc,
 	}
 }
@@ -123,19 +132,28 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		return defaultStatusCode, errors.Wrapf(err, "while creating inbound basic destination with name: %q in the destination service", destinationName)
 	}
 
+	if statusCode == http.StatusConflict {
+		return statusCode, nil
+	}
+
 	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
+		t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+		}
+
 		destModel := &model.Destination{
 			ID:                    s.uidSvc.Generate(),
 			Name:                  reqBody.Name,
 			Type:                  reqBody.Type,
 			URL:                   reqBody.URL,
 			Authentication:        reqBody.AuthenticationType,
-			SubaccountID:          subaccountID,
+			SubaccountID:          t.ID,
 			FormationAssignmentID: &formationAssignment.ID,
 		}
 
-		if err = s.destinationRepo.CreateDestination(ctx, destModel); err != nil {
-			return errors.Wrapf(err, "while creating destination with name: %q and assignment ID: %q in the DB", destinationName, formationAssignment.ID)
+		if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
+			return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationName, formationAssignment.ID)
 		}
 		return nil
 	}); transactionErr != nil {
@@ -145,7 +163,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 	return statusCode, nil
 }
 
-// CreateDesignTimeDestinations todo:: will be implemented with the second phase of the destination operator. Uncomment and make the needed adaptation
+// CreateDesignTimeDestinations todo:: go doc
 func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
@@ -163,12 +181,19 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	}
 
 	destinationName := destinationDetails.Name
-	destReqBody := &destinationcreator.RequestBody{
-		Name: destinationName,
+	destReqBody := &destinationcreator.NoAuthRequestBody{
+		BaseDestinationRequestBody: destinationcreator.BaseDestinationRequestBody{
+			Name:                 destinationDetails.Name,
+			URL:                  destinationDetails.URL,
+			Type:                 destinationDetails.Type,
+			ProxyType:            destinationDetails.ProxyType,
+			AuthenticationType:   destinationDetails.Authentication,
+			AdditionalAttributes: destinationDetails.AdditionalAttributes,
+		},
 	}
 
-	if err := validate(destReqBody); err != nil {
-		return defaultStatusCode, errors.Wrapf(err, "while validating destination request body")
+	if err := destReqBody.Validate(); err != nil {
+		return defaultStatusCode, errors.Wrapf(err, "while validating no authentication destination request body")
 	}
 
 	log.C(ctx).Infof("Creating design time destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
@@ -177,9 +202,24 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return defaultStatusCode, errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
 	}
 
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
+	if err != nil {
+		return defaultStatusCode, errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+	}
+
+	destModel := &model.Destination{
+		ID:                    s.uidSvc.Generate(),
+		Name:                  destReqBody.Name,
+		Type:                  destReqBody.Type,
+		URL:                   destReqBody.URL,
+		Authentication:        destReqBody.AuthenticationType,
+		SubaccountID:          t.ID,
+		FormationAssignmentID: &formationAssignment.ID,
+	}
+
 	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err = s.destinationRepo.CreateDestination(ctx, nil); err != nil { // todo:: adapt with the second phase
-			return errors.Wrapf(err, "while creating destination with name: %q and assignment ID: %q in the DB", destinationName, formationAssignment.ID)
+		if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
+			return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationName, formationAssignment.ID)
 		}
 		return nil
 	}); transactionErr != nil {
@@ -191,26 +231,37 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 
 // DeleteDestinations todo::: go doc
 func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error {
-	subaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
+	externalDestSubaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
 	if err != nil {
 		return err
 	}
 
 	formationAssignmentID := formationAssignment.ID
-	destinations, err := s.destinationRepo.ListByTenantIDAndAssignmentID(ctx, subaccountID, formationAssignmentID)
+
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, externalDestSubaccountID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting tenant by external ID: %q", externalDestSubaccountID)
+	}
+
+	destinations, err := s.destinationRepo.ListByTenantIDAndAssignmentID(ctx, t.ID, formationAssignmentID)
 	if err != nil {
 		return err
 	}
 
+	log.C(ctx).Infof("There is/are %d destination(s) in the DB", len(destinations))
+	if len(destinations) == 0 {
+		return nil
+	}
+
 	for _, destination := range destinations {
-		if err := s.DeleteDestinationFromDestinationService(ctx, destination.Name, destination.SubaccountID, formationAssignment); err != nil {
+		if err := s.DeleteDestinationFromDestinationService(ctx, destination.Name, externalDestSubaccountID, formationAssignment); err != nil {
 			return err
 		}
 	}
 
 	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err := s.destinationRepo.DeleteByTenantIDAndAssignmentID(ctx, subaccountID, formationAssignmentID); err != nil {
-			return errors.Wrapf(err, "while deleting destination(s) by tenant ID: %q and assignment ID: %q from the DB", subaccountID, formationAssignmentID)
+		if err := s.destinationRepo.DeleteByTenantIDAndAssignmentID(ctx, t.ID, formationAssignmentID); err != nil {
+			return errors.Wrapf(err, "while deleting destination(s) by internal tenant ID: %q and assignment ID: %q from the DB", t.ID, formationAssignmentID)
 		}
 		return nil
 	}); transactionErr != nil {
@@ -221,8 +272,8 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *w
 }
 
 // DeleteDestinationFromDestinationService todo::: go doc
-func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error {
-	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationSubaccount, formationAssignment)
+func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, destinationName, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) error {
+	subaccountID, err := s.validateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
 	if err != nil {
 		return err
 	}
@@ -248,6 +299,7 @@ func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, d
 		return errors.Wrap(err, "while preparing request for deleting destination from destination service")
 	}
 	req.Header.Set(clientUserHeaderKey, clientUser)
+	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJson)
 
 	log.C(ctx).Infof("Deleting destination with name: %q and subaccount ID: %q from destination service", destinationName, subaccountID)
 	resp, err := s.mtlsHTTPClient.Do(req)
@@ -265,37 +317,53 @@ func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, d
 		return errors.Errorf("Failed to delete destination from destination service, status: %d, body: %s", resp.StatusCode, body)
 	}
 
+	log.C(ctx).Infof("Successfully deleted destination with name: %q and subaccount ID: %q from destination service", destinationName, subaccountID)
+
 	return nil
 }
 
-func (s *Service) validateDestinationSubaccount(ctx context.Context, destinationSubaccountID string, formationAssignment *webhook.FormationAssignment) (string, error) {
-	consumerSubaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
-	if err != nil {
-		return "", err
+func (s *Service) validateDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) (string, error) {
+	var subaccountID string
+	if externalDestSubaccountID == "" {
+		consumerSubaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
+		if err != nil {
+			return "", err
+		}
+		subaccountID = consumerSubaccountID
+
+		log.C(ctx).Info("There was no subaccount ID provided in the destination but the consumer is validated successfully")
+		return subaccountID, nil
 	}
 
-	var subaccountID string
-	subaccountID = consumerSubaccountID
+	if externalDestSubaccountID != "" {
+		consumerSubaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
+		if err != nil {
+			log.C(ctx).Warnf("Couldn't validate the if the provided destination subaccount ID: %q is a consumer subaccount. Validating if it's a provider one...", externalDestSubaccountID)
+		}
 
-	if destinationSubaccountID != "" && destinationSubaccountID != consumerSubaccountID {
+		if consumerSubaccountID != "" && externalDestSubaccountID == consumerSubaccountID {
+			log.C(ctx).Infof("Successfully validated the provided destination subaccount ID: %q is a consumer subaccount", externalDestSubaccountID)
+			return consumerSubaccountID, nil
+		}
+
 		switch formationAssignment.TargetType {
 		case model.FormationAssignmentTypeApplication:
-			if err := s.validateAppTemplateProviderSubaccount(ctx, formationAssignment, destinationSubaccountID); err != nil {
+			if err := s.validateAppTemplateProviderSubaccount(ctx, formationAssignment, externalDestSubaccountID); err != nil {
 				return "", err
 			}
 		case model.FormationAssignmentTypeRuntime:
-			if err := s.validateRuntimeProviderSubaccount(ctx, formationAssignment.Target, destinationSubaccountID); err != nil {
+			if err := s.validateRuntimeProviderSubaccount(ctx, formationAssignment.Target, externalDestSubaccountID); err != nil {
 				return "", err
 			}
 		case model.FormationAssignmentTypeRuntimeContext:
-			if err := s.validateRuntimeContextProviderSubaccount(ctx, formationAssignment, destinationSubaccountID); err != nil {
+			if err := s.validateRuntimeContextProviderSubaccount(ctx, formationAssignment, externalDestSubaccountID); err != nil {
 				return "", err
 			}
 		default:
 			return "", errors.Errorf("Unknown formation assignment type: %q", formationAssignment.TargetType)
 		}
 
-		subaccountID = destinationSubaccountID
+		subaccountID = externalDestSubaccountID
 	}
 
 	return subaccountID, nil
@@ -326,7 +394,12 @@ func (s *Service) getConsumerTenant(ctx context.Context, formationAssignment *we
 }
 
 func (s *Service) getRegionLabel(ctx context.Context, tenantID string) (string, error) {
-	regionLbl, err := s.labelRepo.GetByKey(ctx, tenantID, model.TenantLabelableObject, tenantID, regionLabelKey)
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, tenantID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting tenant by external ID: %q", tenantID)
+	}
+
+	regionLbl, err := s.labelRepo.GetByKey(ctx, t.ID, model.TenantLabelableObject, tenantID, regionLabelKey)
 	if err != nil {
 		return "", err
 	}
@@ -338,61 +411,72 @@ func (s *Service) getRegionLabel(ctx context.Context, tenantID string) (string, 
 	return region, nil
 }
 
-func (s *Service) validateAppTemplateProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, destinationSubaccountID string) error {
+func (s *Service) validateAppTemplateProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, externalDestSubaccountID string) error {
 	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
 		return err
 	}
 
-	if app.ApplicationTemplateID != nil && *app.ApplicationTemplateID != "" {
-		labels, err := s.labelRepo.ListForGlobalObject(ctx, model.AppTemplateLabelableObject, *app.ApplicationTemplateID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting labels for application template with ID: %q", *app.ApplicationTemplateID)
-		}
-
-		subaccountLbl, subaccountLblExists := labels[globalSubaccountLabelKey]
-
-		if !subaccountLblExists {
-			return errors.Errorf("%q label should exist as part of the provider application template with ID: %q", globalSubaccountLabelKey, *app.ApplicationTemplateID)
-		}
-
-		subaccountLblValue, ok := subaccountLbl.Value.(string)
-		if !ok {
-			return errors.Errorf("unexpected type of %q label, expect: string, got: %T", globalSubaccountLabelKey, subaccountLbl.Value)
-		}
-
-		if destinationSubaccountID != subaccountLblValue {
-			return errors.Errorf("The provided destination subaccount is different from the owner subaccount of the application template with ID: %q", *app.ApplicationTemplateID)
-		}
-
-		log.C(ctx).Infof("Successfully validated that the provided destination subaccount: %q is a provider one - the owner of the application template", destinationSubaccountID)
+	if app.ApplicationTemplateID == nil || *app.ApplicationTemplateID == "" {
+		return errors.Errorf("The application template ID for application ID: %q should not be empty", app.ID)
 	}
+
+	labels, err := s.labelRepo.ListForGlobalObject(ctx, model.AppTemplateLabelableObject, *app.ApplicationTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting labels for application template with ID: %q", *app.ApplicationTemplateID)
+	}
+
+	subaccountLbl, subaccountLblExists := labels[globalSubaccountLabelKey]
+
+	if !subaccountLblExists {
+		return errors.Errorf("%q label should exist as part of the provider application template with ID: %q", globalSubaccountLabelKey, *app.ApplicationTemplateID)
+	}
+
+	subaccountLblValue, ok := subaccountLbl.Value.(string)
+	if !ok {
+		return errors.Errorf("unexpected type of %q label, expect: string, got: %T", globalSubaccountLabelKey, subaccountLbl.Value)
+	}
+
+	if externalDestSubaccountID != subaccountLblValue {
+		return errors.Errorf("The provided destination subaccount is different from the owner subaccount of the application template with ID: %q", *app.ApplicationTemplateID)
+	}
+
+	log.C(ctx).Infof("Successfully validated that the provided destination subaccount: %q is a provider one - the owner of the application template", externalDestSubaccountID)
 
 	return nil
 }
 
-func (s *Service) validateRuntimeProviderSubaccount(ctx context.Context, runtimeID, destinationSubaccountID string) error {
-	exists, err := s.runtimeRepository.OwnerExists(ctx, destinationSubaccountID, runtimeID)
+func (s *Service) validateRuntimeProviderSubaccount(ctx context.Context, runtimeID, externalDestSubaccountID string) error {
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, externalDestSubaccountID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting tenant by external ID: %q", externalDestSubaccountID)
+	}
+
+	if t.Type != tenant.Subaccount {
+		return errors.Errorf("The provided destination external tenant ID: %q has invalid type, expected: %q, got: %q", externalDestSubaccountID, tenant.Subaccount, t.Type)
+	}
+
+	exists, err := s.runtimeRepository.OwnerExists(ctx, t.ID, runtimeID)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		return errors.Errorf("The provided destination subaccount: %q is not provider of the runtime with ID: %q", destinationSubaccountID, runtimeID)
+		return errors.Errorf("The provided destination external subaccount: %q is not provider of the runtime with ID: %q", externalDestSubaccountID, runtimeID)
 	}
 
-	log.C(ctx).Infof("Successfully validated that the provided destination subaccount: %q is a provider one - the owner of the runtime", destinationSubaccountID)
+	log.C(ctx).Infof("Successfully validated that the provided destination external subaccount: %q is a provider one - the owner of the runtime", externalDestSubaccountID)
 
 	return nil
 }
 
-func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, destinationSubaccountID string) error {
+func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, externalDestSubaccountID string) error {
 	rtmCtxID, err := s.runtimeCtxRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
 		return err
 	}
 
-	return s.validateRuntimeProviderSubaccount(ctx, rtmCtxID.RuntimeID, destinationSubaccountID)
+	return s.validateRuntimeProviderSubaccount(ctx, rtmCtxID.RuntimeID, externalDestSubaccountID)
 }
 
 func (s *Service) transaction(ctx context.Context, dbCall func(ctxWithTransact context.Context) error) error {
@@ -416,7 +500,7 @@ func (s *Service) transaction(ctx context.Context, dbCall func(ctxWithTransact c
 	return nil
 }
 
-func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody *destinationcreator.RequestBody, destinationName string) (defaultStatusCode int, err error) {
+func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody interface{}, destinationName string) (defaultStatusCode int, err error) {
 	reqBodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return defaultStatusCode, errors.Wrapf(err, "while marshalling destination request body")
@@ -433,6 +517,7 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 		return defaultStatusCode, errors.Wrap(err, "while preparing request for creation of destination in destination service")
 	}
 	req.Header.Set(clientUserHeaderKey, clientUser)
+	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJson)
 
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
@@ -457,14 +542,18 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 	return http.StatusCreated, nil
 }
 
-func (s *Service) prepareRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment) (*destinationcreator.RequestBody, error) {
-	reqBody := &destinationcreator.RequestBody{
-		Name:               destinationDetails.Name,
-		Type:               destinationcreator.TypeHTTP,
-		ProxyType:          destinationcreator.ProxyTypeInternet,
-		AuthenticationType: destinationcreator.AuthTypeBasic,
-		User:               basicAuthenticationCredentials.Username,
-		Password:           basicAuthenticationCredentials.Password,
+func (s *Service) prepareRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment) (*destinationcreator.BasicRequestBody, error) {
+	reqBody := &destinationcreator.BasicRequestBody{
+		BaseDestinationRequestBody: destinationcreator.BaseDestinationRequestBody{
+			Name:                 destinationDetails.Name,
+			URL:                  "",
+			Type:                 destinationcreator.TypeHTTP,
+			ProxyType:            destinationcreator.ProxyTypeInternet,
+			AuthenticationType:   destinationcreator.AuthTypeBasic,
+			AdditionalAttributes: destinationDetails.AdditionalAttributes,
+		},
+		User:                 basicAuthenticationCredentials.Username,
+		Password:             basicAuthenticationCredentials.Password,
 	}
 
 	if destinationDetails.URL != "" {
@@ -497,22 +586,11 @@ func (s *Service) prepareRequestBody(ctx context.Context, destinationDetails ope
 		return nil, errors.Errorf("The provided authentication type is invalid: %s. It should be %s", reqBody.AuthenticationType, destinationcreator.AuthTypeBasic)
 	}
 
-	if err := validate(reqBody); err != nil {
-		return nil, err
+	if err := reqBody.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "while validating basic destination request body")
 	}
 
 	return reqBody, nil
-}
-
-func validate(reqBody *destinationcreator.RequestBody) error {
-	return validation.ValidateStruct(reqBody,
-		validation.Field(&reqBody.Name, validation.Required, validation.Length(1, 200)),
-		validation.Field(&reqBody.URL, validation.Required),
-		validation.Field(&reqBody.Type, validation.In(destinationcreator.TypeHTTP, destinationcreator.TypeRFC, destinationcreator.TypeLDAP, destinationcreator.TypeMAIL)),
-		validation.Field(&reqBody.ProxyType, validation.In(destinationcreator.ProxyTypeInternet, destinationcreator.ProxyTypeOnPremise, destinationcreator.ProxyTypePrivateLink)),
-		validation.Field(&reqBody.AuthenticationType, validation.In(destinationcreator.AuthTypeNoAuth, destinationcreator.AuthTypeBasic, destinationcreator.AuthTypeSAMLBearer)),
-		validation.Field(&reqBody.User, validation.Required, validation.Length(1, 256)),
-	)
 }
 
 func determineLabelableObjectType(assignmentType model.FormationAssignmentType) (model.LabelableObject, error) {

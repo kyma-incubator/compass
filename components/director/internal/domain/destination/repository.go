@@ -32,23 +32,25 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	conv          EntityConverter
-	globalCreator repo.CreatorGlobal
-	deleter       repo.Deleter
-	globalDeleter repo.DeleterGlobal
-	upserter      repo.UpserterGlobal
-	lister        repo.Lister
+	conv                       EntityConverter
+	globalCreator              repo.CreatorGlobal
+	deleter                    repo.Deleter
+	globalDeleter              repo.DeleterGlobal
+	upserterWithEmbeddedTenant repo.UpserterGlobal
+	upserterGlobal             repo.UpserterGlobal
+	lister                     repo.Lister
 }
 
 // NewRepository returns new destination repository
 func NewRepository(converter EntityConverter) *repository {
 	return &repository{
-		conv:          converter,
-		globalCreator: repo.NewCreatorGlobal(resource.Destination, destinationTable, destinationColumns),
-		deleter:       repo.NewDeleterWithEmbeddedTenant(destinationTable, tenantIDColumn),
-		globalDeleter: repo.NewDeleterGlobal(resource.Destination, destinationTable),
-		upserter:      repo.NewUpserterGlobal(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns),
-		lister:        repo.NewListerWithEmbeddedTenant(destinationTable, tenantIDColumn, destinationColumns),
+		conv:                       converter,
+		globalCreator:              repo.NewCreatorGlobal(resource.Destination, destinationTable, destinationColumns),
+		deleter:                    repo.NewDeleterWithEmbeddedTenant(destinationTable, tenantIDColumn),
+		globalDeleter:              repo.NewDeleterGlobal(resource.Destination, destinationTable),
+		upserterWithEmbeddedTenant: repo.NewUpserterWithEmbeddedTenant(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns, tenantIDColumn),
+		upserterGlobal:             repo.NewUpserterGlobal(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns),
+		lister:                     repo.NewListerWithEmbeddedTenant(destinationTable, tenantIDColumn, destinationColumns),
 	}
 }
 
@@ -64,7 +66,16 @@ func (r *repository) Upsert(ctx context.Context, in model.DestinationInput, id, 
 		TenantID:       tenantID,
 		Revision:       repo.NewNullableString(&revisionID),
 	}
-	return r.upserter.UpsertGlobal(ctx, destination)
+	return r.upserterGlobal.UpsertGlobal(ctx, destination)
+}
+
+// UpsertWithEmbeddedTenant upserts a destination entity in th DB with embedded tenant
+func (r *repository) UpsertWithEmbeddedTenant(ctx context.Context, destination *model.Destination) error {
+	if destination == nil {
+		return apperrors.NewInternalError("destination model can not be empty")
+	}
+
+	return r.upserterWithEmbeddedTenant.UpsertGlobal(ctx, r.conv.ToEntity(destination))
 }
 
 // DeleteOld deletes all destinations in a given tenant that do not have latestRevision

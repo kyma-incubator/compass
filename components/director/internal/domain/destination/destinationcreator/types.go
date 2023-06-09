@@ -1,5 +1,10 @@
 package destinationcreator
 
+import (
+	"encoding/json"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+)
+
 const (
 	// TypeHTTP represents the HTTP destination type
 	TypeHTTP Type = "HTTP"
@@ -25,6 +30,11 @@ const (
 	ProxyTypePrivateLink ProxyType = "PrivateLink"
 )
 
+// Validator validates destination creator request body
+type Validator interface {
+	Validate() error
+}
+
 // Type represents the HTTP destination type
 type Type string
 
@@ -36,25 +46,44 @@ type ProxyType string
 
 // Destination Creator API types
 
-// RequestBody // todo::: add godoc
-type RequestBody struct {
-	Name               string    `json:"name"`
-	URL                string    `json:"url"`
-	Type               Type      `json:"type"`
-	ProxyType          ProxyType `json:"proxyType"`
-	AuthenticationType AuthType  `json:"authenticationType"`
-	User               string    `json:"user"`
-	Password           string    `json:"password"`
+// BaseDestinationRequestBody todo::: go doc
+type BaseDestinationRequestBody struct {
+	Name                 string          `json:"name"`
+	URL                  string          `json:"url"`
+	Type                 Type            `json:"type"`
+	ProxyType            ProxyType       `json:"proxyType"`
+	AuthenticationType   AuthType        `json:"authenticationType"`
+	AdditionalAttributes json.RawMessage `json:"additionalAttributes,omitempty"`
 }
 
-// ErrorResponse // todo::: add godoc
-type ErrorResponse struct {
-	Error Error `json:"error"`
+// NoAuthRequestBody // todo::: add godoc
+type NoAuthRequestBody struct {
+	BaseDestinationRequestBody
 }
 
-// Error // todo::: add godoc
-type Error struct {
-	Timestamp string `json:"timestamp"`
-	Code      int    `json:"code"`
-	Message   string `json:"message"`
+// BasicRequestBody // todo::: add godoc
+type BasicRequestBody struct {
+	BaseDestinationRequestBody
+	User     string `json:"user"`
+	Password string `json:"password"`
+}
+
+func (n *NoAuthRequestBody) Validate() error {
+	return validation.ValidateStruct(n,
+		validation.Field(&n.Name, validation.Required, validation.Length(1, 200)),
+		validation.Field(&n.URL, validation.Required),
+		validation.Field(&n.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
+		validation.Field(&n.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
+		validation.Field(&n.AuthenticationType, validation.In(AuthTypeNoAuth)),
+	)
+}
+
+func (b *BasicRequestBody) Validate() error {
+	return validation.ValidateStruct(b,
+		validation.Field(&b.Name, validation.Required, validation.Length(1, 200)),
+		validation.Field(&b.URL, validation.Required),
+		validation.Field(&b.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
+		validation.Field(&b.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
+		validation.Field(&b.AuthenticationType, validation.In(AuthTypeBasic)),
+	)
 }

@@ -15,20 +15,6 @@ type DestinationRepository struct {
 	mock.Mock
 }
 
-// CreateDestination provides a mock function with given fields: ctx, _a1
-func (_m *DestinationRepository) CreateDestination(ctx context.Context, _a1 *model.Destination) error {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Destination) error); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteByTenantIDAndAssignmentID provides a mock function with given fields: ctx, tenantID, formationAssignmentID
 func (_m *DestinationRepository) DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID string, formationAssignmentID string) error {
 	ret := _m.Called(ctx, tenantID, formationAssignmentID)
@@ -64,6 +50,20 @@ func (_m *DestinationRepository) ListByTenantIDAndAssignmentID(ctx context.Conte
 	}
 
 	return r0, r1
+}
+
+// UpsertWithEmbeddedTenant provides a mock function with given fields: ctx, _a1
+func (_m *DestinationRepository) UpsertWithEmbeddedTenant(ctx context.Context, _a1 *model.Destination) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Destination) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 type mockConstructorTestingTNewDestinationRepository interface {
