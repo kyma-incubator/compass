@@ -86,12 +86,16 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 }
 
 func TestPgRepository_ListByResourceID(t *testing.T) {
-	entity1 := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
-	apiDefModel1, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
-	entity2 := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder2")
-	apiDefModel2, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder2")
+	entity1App := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder")
+	apiDefModel1App, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
+	entity2App := fixFullEntityAPIDefinitionWithAppID(apiDefID, "placeholder2")
+	apiDefModel2App, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder2")
+	entity1AppTemplateVersion := fixFullEntityAPIDefinitionWithAppTemplateVersionID(apiDefID, "placeholder")
+	apiDefModel1AppTemplateVersion, _, _ := fixFullAPIDefinitionModelWithAppTemplateVersionID("placeholder")
+	entity2AppTemplateVersion := fixFullEntityAPIDefinitionWithAppTemplateVersionID(apiDefID, "placeholder2")
+	apiDefModel2AppTemplateVersion, _, _ := fixFullAPIDefinitionModelWithAppTemplateVersionID("placeholder2")
 
-	suite := testdb.RepoListTestSuite{
+	suiteForApplication := testdb.RepoListTestSuite{
 		Name: "List APIs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
@@ -110,14 +114,42 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 			return &automock.APIDefinitionConverter{}
 		},
 		RepoConstructorFunc:       api.NewRepository,
-		ExpectedModelEntities:     []interface{}{&apiDefModel1, &apiDefModel2},
-		ExpectedDBEntities:        []interface{}{&entity1, &entity2},
-		MethodArgs:                []interface{}{tenantID, appID, resource.Application},
+		ExpectedModelEntities:     []interface{}{&apiDefModel1App, &apiDefModel2App},
+		ExpectedDBEntities:        []interface{}{&entity1App, &entity2App},
+		MethodArgs:                []interface{}{tenantID, resource.Application, appID},
 		MethodName:                "ListByResourceID",
 		DisableConverterErrorTest: true,
 	}
 
-	suite.Run(t)
+	suiteForApplicationTemplateVersion := testdb.RepoListTestSuite{
+		Name: "List APIs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE app_template_version_id = $1
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     FOR UPDATE`),
+				Args:     []driver.Value{appTemplateVersionID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns()).AddRow(fixAPIDefinitionRowForAppTemplateVersion(apiDefID, "placeholder")...).AddRow(fixAPIDefinitionRowForAppTemplateVersion(apiDefID, "placeholder2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ExpectedModelEntities:     []interface{}{&apiDefModel1AppTemplateVersion, &apiDefModel2AppTemplateVersion},
+		ExpectedDBEntities:        []interface{}{&entity1AppTemplateVersion, &entity2AppTemplateVersion},
+		MethodArgs:                []interface{}{tenantID, resource.ApplicationTemplateVersion, appTemplateVersionID},
+		MethodName:                "ListByResourceID",
+		DisableConverterErrorTest: true,
+	}
+
+	suiteForApplication.Run(t)
+	suiteForApplicationTemplateVersion.Run(t)
 }
 
 func TestPgRepository_ListAllForBundle(t *testing.T) {
@@ -247,6 +279,35 @@ func TestPgRepository_Create(t *testing.T) {
 		DBEntity:                  &apiDefEntity,
 		NilModelEntity:            nilAPIDefModel,
 		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_CreateGlobal(t *testing.T) {
+	var nilAPIDefModel *model.APIDefinition
+	apiDefModel, _, _ := fixFullAPIDefinitionModelWithAppTemplateVersionID("placeholder")
+	apiDefEntity := fixFullEntityAPIDefinitionWithAppTemplateVersionID(apiDefID, "placeholder")
+
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create API",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       `^INSERT INTO "public"."api_definitions" \(.+\) VALUES \(.+\)$`,
+				Args:        fixAPICreateArgsForAppTemplateVersion(apiDefID, &apiDefModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ModelEntity:               &apiDefModel,
+		DBEntity:                  &apiDefEntity,
+		NilModelEntity:            nilAPIDefModel,
+		IsGlobal:                  true,
+		MethodName:                "CreateGlobal",
 		DisableConverterErrorTest: true,
 	}
 

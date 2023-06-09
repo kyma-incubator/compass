@@ -29,6 +29,20 @@ func (_m *FetchRequestRepository) Create(ctx context.Context, tenant string, ite
 	return r0
 }
 
+// CreateGlobal provides a mock function with given fields: ctx, item
+func (_m *FetchRequestRepository) CreateGlobal(ctx context.Context, item *model.FetchRequest) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Delete provides a mock function with given fields: ctx, tenant, id, objectType
 func (_m *FetchRequestRepository) Delete(ctx context.Context, tenant string, id string, objectType model.FetchRequestReferenceObjectType) error {
 	ret := _m.Called(ctx, tenant, id, objectType)
@@ -48,6 +62,10 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, 
 	ret := _m.Called(ctx, tenant, objectType, objectIDs)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, tenant, objectType, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
@@ -56,7 +74,6 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectIDs)
 	} else {

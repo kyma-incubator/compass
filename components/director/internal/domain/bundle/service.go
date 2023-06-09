@@ -18,6 +18,7 @@ import (
 //go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Bundle) error
+	CreateGlobal(ctx context.Context, model *model.Bundle) error
 	Update(ctx context.Context, tenant string, item *model.Bundle) error
 	UpdateGlobal(ctx context.Context, model *model.Bundle) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -63,22 +64,31 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // CreateBundle Creates bundle for an application with given id
 func (s *service) CreateBundle(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput, bndlHash uint64) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
 	bndl := in.ToBundle(id, resourceType, resourceID, bndlHash)
 
-	if err = s.bndlRepo.Create(ctx, tnt, bndl); err != nil {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.bndlRepo.CreateGlobal(ctx, bndl)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.bndlRepo.Create(ctx, tnt, bndl)
+	}
+	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
 	}
+
 	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
 
 	log.C(ctx).Infof("Creating related resources in Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
-	err = s.createRelatedResources(ctx, in, id, resourceType, resourceID)
-	if err != nil {
+	if err = s.createRelatedResources(ctx, in, id, resourceType, resourceID); err != nil {
 		return "", errors.Wrapf(err, "while creating related resources for %s with id %s", resourceType, resourceID)
 	}
 
@@ -106,41 +116,43 @@ func (s *service) CreateMultiple(ctx context.Context, resourceType resource.Type
 }
 
 // Update missing godoc
-func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateInput) error {
-	return s.UpdateBundle(ctx, id, in, 0)
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput) error {
+	return s.UpdateBundle(ctx, resourceType, id, in, 0)
 }
 
 // UpdateBundle missing godoc
-func (s *service) UpdateBundle(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
+func (s *service) UpdateBundle(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput, bndlHash uint64) error {
+	var (
+		bndl *model.Bundle
+		tnt  string
+		err  error
+	)
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		bndl, err = s.bndlRepo.GetByIDGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		bndl, err = s.bndlRepo.GetByID(ctx, tnt, id)
 	}
-
-	bndl, err := s.bndlRepo.GetByID(ctx, tnt, id)
-	if err != nil {
-		return errors.Wrapf(err, "while getting Bundle with id %s", id)
-	}
-
-	bndl.SetFromUpdateInput(in, bndlHash)
-
-	if err = s.bndlRepo.Update(ctx, tnt, bndl); err != nil {
-		return errors.Wrapf(err, "while updating Bundle with id %s", id)
-	}
-	return nil
-}
-
-func (s *service) UpdateBundleGlobal(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
-	bndl, err := s.bndlRepo.GetByIDGlobal(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Bundle with id %s", id)
 	}
 
 	bndl.SetFromUpdateInput(in, bndlHash)
 
-	if err = s.bndlRepo.UpdateGlobal(ctx, bndl); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.bndlRepo.UpdateGlobal(ctx, bndl)
+	} else {
+		err = s.bndlRepo.Update(ctx, tnt, bndl)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating Bundle with id %s", id)
 	}
+
 	return nil
 }
 
@@ -214,14 +226,9 @@ func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string)
 	return s.bndlRepo.ListByResourceIDNoPaging(ctx, tnt, appID, resource.Application)
 }
 
-// ListByApplicationTemplateVersionIDNoPaging missing godoc
+// ListByApplicationTemplateVersionIDNoPaging lists bundles by Application Template Version ID without tenant isolation
 func (s *service) ListByApplicationTemplateVersionIDNoPaging(ctx context.Context, appTemplateVersionID string) ([]*model.Bundle, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.bndlRepo.ListByResourceIDNoPaging(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
+	return s.bndlRepo.ListByResourceIDNoPaging(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // ListByApplicationIDs missing godoc

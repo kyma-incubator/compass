@@ -124,6 +124,35 @@ func TestRepository_Create(t *testing.T) {
 	docFRSuite.Run(t)
 }
 
+func TestRepository_CreateGlobal(t *testing.T) {
+	timestamp := time.Now()
+	var nilFrModel *model.FetchRequest
+	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
+	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+
+	apiFRSuite := testdb.RepoCreateTestSuite{
+		Name: "Create API FR",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), sql.NullString{}, "foo.bar", apiFREntity.Auth, apiFREntity.Mode, apiFREntity.Filter, apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, refID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         apiFRModel,
+		DBEntity:            apiFREntity,
+		NilModelEntity:      nilFrModel,
+		IsGlobal:            true,
+		MethodName:          "CreateGlobal",
+	}
+
+	apiFRSuite.Run(t)
+}
+
 func TestRepository_Update(t *testing.T) {
 	timestamp := time.Now()
 	var nilFrModel *model.FetchRequest
@@ -199,6 +228,36 @@ func TestRepository_Update(t *testing.T) {
 	}
 
 	docFRSuite.Run(t)
+}
+
+func TestRepository_UpdateGlobal(t *testing.T) {
+	timestamp := time.Now()
+	var nilFrModel *model.FetchRequest
+	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
+	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+
+	apiFRSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update API Fetch Request",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ?`),
+				Args:          []driver.Value{apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, givenID()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         apiFRModel,
+		DBEntity:            apiFREntity,
+		NilModelEntity:      nilFrModel,
+		IsGlobal:            true,
+		UpdateMethodName:    "UpdateGlobal",
+	}
+
+	apiFRSuite.Run(t)
 }
 
 func TestRepository_GetByReferenceObjectID(t *testing.T) {
@@ -435,6 +494,72 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		MethodArgs:          []interface{}{tenantID, model.DocumentFetchRequestReference, refID},
 		MethodName:          "DeleteByReferenceObjectID",
 		IsDeleteMany:        true,
+	}
+
+	apiFRSuite.Run(t)
+	eventFRSuite.Run(t)
+	docFRSuite.Run(t)
+}
+
+func TestRepository_DeleteByReferenceObjectIDGlobal(t *testing.T) {
+	apiFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "API Fetch Request Delete By ObjectID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1`),
+				Args:          []driver.Value{refID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{model.APISpecFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+		IsGlobal:            true,
+	}
+
+	eventFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Event Fetch Request Delete",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1`),
+				Args:          []driver.Value{refID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{model.EventSpecFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+		IsGlobal:            true,
+	}
+
+	docFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Documents Fetch Request Delete",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE document_id = $1`),
+				Args:          []driver.Value{refID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{model.DocumentFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+		IsGlobal:            true,
 	}
 
 	apiFRSuite.Run(t)

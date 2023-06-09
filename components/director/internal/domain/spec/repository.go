@@ -36,6 +36,7 @@ type repository struct {
 	creator       repo.Creator
 	creatorGlobal repo.CreatorGlobal
 	lister        repo.Lister
+	listerGlobal  repo.ListerGlobal
 	idLister      repo.Lister
 	unionLister   repo.UnionLister
 	getter        repo.SingleGetter
@@ -60,6 +61,7 @@ func NewRepository(conv Converter) *repository {
 				Dir:   repo.AscOrderBy,
 			},
 		}),
+		listerGlobal: repo.NewListerGlobal(resource.Specification, specificationsTable, specificationsColumns),
 		idLister: repo.NewListerWithOrderBy(specificationsTable, []string{"id"}, repo.OrderByParams{
 			{
 				Field: "created_at",
@@ -106,8 +108,19 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Spec,
 	return specModel, nil
 }
 
-// Create missing godoc
+// Create creates a spec in the scope of a tenant
 func (r *repository) Create(ctx context.Context, tenant string, item *model.Spec) error {
+	if item == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+}
+
+// CreateGlobal create a spec without a tenant isolation
+func (r *repository) CreateGlobal(ctx context.Context, item *model.Spec) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -154,6 +167,36 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 
 	var specCollection SpecCollection
 	err = r.lister.List(ctx, objectType.GetResourceType(), tenant, &specCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Spec, 0, len(specCollection))
+
+	for _, specEnt := range specCollection {
+		m, err := r.conv.FromEntity(&specEnt)
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
+// ListByReferenceObjectIDGlobal lists specs by a model.SpecReferenceObjectType without tenant isolation
+func (r *repository) ListByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(fieldName, objectID),
+	}
+
+	var specCollection SpecCollection
+	err = r.listerGlobal.ListGlobal(ctx, &specCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}

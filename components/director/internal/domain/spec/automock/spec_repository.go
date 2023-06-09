@@ -28,6 +28,20 @@ func (_m *SpecRepository) Create(ctx context.Context, tenant string, item *model
 	return r0
 }
 
+// CreateGlobal provides a mock function with given fields: ctx, item
+func (_m *SpecRepository) CreateGlobal(ctx context.Context, item *model.Spec) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Spec) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Delete provides a mock function with given fields: ctx, tenant, id, objectType
 func (_m *SpecRepository) Delete(ctx context.Context, tenant string, id string, objectType model.SpecReferenceObjectType) error {
 	ret := _m.Called(ctx, tenant, id, objectType)
@@ -139,6 +153,29 @@ func (_m *SpecRepository) ListByReferenceObjectID(ctx context.Context, tenant st
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByReferenceObjectIDGlobal provides a mock function with given fields: ctx, objectType, objectID
+func (_m *SpecRepository) ListByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
+	ret := _m.Called(ctx, objectType, objectID)
+
+	var r0 []*model.Spec
+	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) []*model.Spec); ok {
+		r0 = rf(ctx, objectType, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Spec)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.SpecReferenceObjectType, string) error); ok {
+		r1 = rf(ctx, objectType, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}

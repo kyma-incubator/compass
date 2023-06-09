@@ -113,11 +113,13 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 }
 
 var (
-	docKind  = "fookind"
-	docTitle = "footitle"
-	docData  = "foodata"
-	docCLOB  = graphql.CLOB(docData)
-	desc     = "Lorem Ipsum"
+	docKind              = "fookind"
+	docTitle             = "footitle"
+	docData              = "foodata"
+	docCLOB              = graphql.CLOB(docData)
+	desc                 = "Lorem Ipsum"
+	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	appTemplateVersionID = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
 func fixModelDocument(bundleID, id string) *model.Document {
@@ -169,7 +171,6 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 
 const (
 	bundleID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	ordID            = "com.compass.v1"
@@ -180,12 +181,11 @@ const (
 )
 
 func fixBundleModel(name, desc string) *model.Bundle {
-	return fixBundleModelWithID(bundleID, name, desc)
+	return fixBundleModelWithIDAndAppID(bundleID, name, desc)
 }
 
 func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 	return &model.Bundle{
-		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &desc,
 		Version:                        str.Ptr(version),
@@ -210,6 +210,17 @@ func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 			DeletedAt: &time.Time{},
 		},
 	}
+}
+
+func fixBundleModelWithIDAndAppID(id, name, desc string) *model.Bundle {
+	bundle := fixBundleModelWithID(id, name, desc)
+	bundle.ApplicationID = &appID
+	return bundle
+}
+func fixBundleModelWithIDAndAppTemplateVersionID(id, name, desc string) *model.Bundle {
+	bundle := fixBundleModelWithID(id, name, desc)
+	bundle.ApplicationTemplateVersionID = &appTemplateVersionID
+	return bundle
 }
 
 func fixGQLBundle(id, name, desc string) *graphql.Bundle {
@@ -391,6 +402,18 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
+func fixEntityBundleWithAppID(id, name, desc string) *bundle.Entity {
+	entity := fixEntityBundle(id, name, desc)
+	entity.ApplicationID = repo.NewValidNullableString(appID)
+	return entity
+}
+
+func fixEntityBundleWithAppTemplateVersionID(id, name, desc string) *bundle.Entity {
+	entity := fixEntityBundle(id, name, desc)
+	entity.ApplicationTemplateVersionID = repo.NewValidNullableString(appTemplateVersionID)
+	return entity
+}
+
 func fixEntityBundle(id, name, desc string) *bundle.Entity {
 	descSQL := sql.NullString{String: desc, Valid: true}
 	schemaSQL := sql.NullString{
@@ -403,7 +426,6 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 	}
 
 	return &bundle.Entity{
-		ApplicationID:                 appID,
 		Name:                          name,
 		Description:                   descSQL,
 		Version:                       repo.NewValidNullableString(version),
@@ -431,19 +453,27 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "app_id", "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "resource_hash", "documentation_labels"}
+	return []string{"id", "app_id", "app_template_version_id", "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "resource_hash", "documentation_labels"}
 }
 
-func fixBundleRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, appID, "foo", "bar", version, fixSchema(), fixDefaultAuth(), ordID, localTenantID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+func fixBundleRowWithAppID(id string) []driver.Value {
+	return []driver.Value{id, appID, repo.NewValidNullableString(""), "foo", "bar", version, fixSchema(), fixDefaultAuth(), ordID, localTenantID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
 }
 
-func fixBundleRowWithAppID(id, applicationID string) []driver.Value {
-	return []driver.Value{id, applicationID, "foo", "bar", version, fixSchema(), fixDefaultAuth(), ordID, localTenantID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+func fixBundleRowWithAppTemplateVersionID(id string) []driver.Value {
+	return []driver.Value{id, repo.NewValidNullableString(""), appTemplateVersionID, "foo", "bar", version, fixSchema(), fixDefaultAuth(), ordID, localTenantID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
 }
 
-func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, appID, bndl.Name, bndl.Description, bndl.Version, schema, defAuth, ordID, bndl.LocalTenantID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error, repo.NewNullableStringFromJSONRawMessage(bndl.CorrelationIDs), repo.NewNullableStringFromJSONRawMessage(bndl.Tags), bndl.ResourceHash, repo.NewNullableStringFromJSONRawMessage(bndl.DocumentationLabels)}
+func fixBundleRowWithCustomAppID(id, applicationID string) []driver.Value {
+	return []driver.Value{id, applicationID, repo.NewValidNullableString(""), "foo", "bar", version, fixSchema(), fixDefaultAuth(), ordID, localTenantID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+}
+
+func fixBundleCreateArgsForApp(defAuth, schema string, bndl *model.Bundle) []driver.Value {
+	return []driver.Value{bundleID, appID, repo.NewValidNullableString(""), bndl.Name, bndl.Description, bndl.Version, schema, defAuth, ordID, bndl.LocalTenantID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error, repo.NewNullableStringFromJSONRawMessage(bndl.CorrelationIDs), repo.NewNullableStringFromJSONRawMessage(bndl.Tags), bndl.ResourceHash, repo.NewNullableStringFromJSONRawMessage(bndl.DocumentationLabels)}
+}
+
+func fixBundleCreateArgsForAppTemplateVersion(defAuth, schema string, bndl *model.Bundle) []driver.Value {
+	return []driver.Value{bundleID, repo.NewValidNullableString(""), appTemplateVersionID, bndl.Name, bndl.Description, bndl.Version, schema, defAuth, ordID, bndl.LocalTenantID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error, repo.NewNullableStringFromJSONRawMessage(bndl.CorrelationIDs), repo.NewNullableStringFromJSONRawMessage(bndl.Tags), bndl.ResourceHash, repo.NewNullableStringFromJSONRawMessage(bndl.DocumentationLabels)}
 }
 
 func fixDefaultAuth() string {
@@ -524,6 +554,19 @@ func fixModelEventBundleReference(bundleID, eventID string) *model.BundleReferen
 		BundleID:   str.Ptr(bundleID),
 		ObjectType: model.BundleEventReference,
 		ObjectID:   str.Ptr(eventID),
+	}
+}
+
+func fixBasicModelBundle(id, name string) *model.Bundle {
+	return &model.Bundle{
+		Name:                           name,
+		Description:                    &desc,
+		InstanceAuthRequestInputSchema: fixBasicSchema(),
+		DefaultInstanceAuth:            &model.Auth{},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }
 

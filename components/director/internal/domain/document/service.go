@@ -22,6 +22,7 @@ type DocumentRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 	Create(ctx context.Context, tenant string, item *model.Document) error
+	CreateGlobal(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
@@ -30,6 +31,7 @@ type DocumentRepository interface {
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
+	CreateGlobal(ctx context.Context, item *model.FetchRequest) error
 	Delete(ctx context.Context, tenant, id string, objectType model.FetchRequestReferenceObjectType) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
@@ -90,15 +92,24 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 
 // CreateInBundle missing godoc
 func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.DocumentInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
-
 	document := in.ToDocumentWithinBundle(id, bundleID, resourceType, resourceID)
-	if err = s.repo.Create(ctx, tnt, document); err != nil {
+
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.CreateGlobal(ctx, document)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.repo.Create(ctx, tnt, document)
+	}
+	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}
 
@@ -106,7 +117,13 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 		generatedID := s.uidService.Generate()
 		fetchRequestID := &generatedID
 		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
-		if err := s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel); err != nil {
+
+		if resourceType == resource.ApplicationTemplateVersion {
+			err = s.fetchRequestRepo.CreateGlobal(ctx, fetchRequestModel)
+		} else {
+			err = s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel)
+		}
+		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}
 	}

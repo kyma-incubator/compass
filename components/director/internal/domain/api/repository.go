@@ -38,6 +38,7 @@ type APIDefinitionConverter interface {
 
 type pgRepository struct {
 	creator               repo.Creator
+	creatorGlobal         repo.CreatorGlobal
 	singleGetter          repo.SingleGetter
 	singleGetterGlobal    repo.SingleGetterGlobal
 	pageableQuerier       repo.PageableQuerier
@@ -61,6 +62,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 		lister:                repo.NewLister(apiDefTable, apiDefColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.API, apiDefTable, apiDefColumns),
 		creator:               repo.NewCreator(apiDefTable, apiDefColumns),
+		creatorGlobal:         repo.NewCreatorGlobal(resource.API, apiDefTable, apiDefColumns),
 		updater:               repo.NewUpdater(apiDefTable, updatableColumns, idColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.API, apiDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(apiDefTable),
@@ -193,6 +195,21 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.AP
 
 	entity := r.conv.ToEntity(item)
 	err := r.creator.Create(ctx, resource.API, tenant, entity)
+	if err != nil {
+		return errors.Wrap(err, "while saving entity to db")
+	}
+
+	return nil
+}
+
+// CreateGlobal creates an APIDefinition.
+func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.APIDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+	err := r.creatorGlobal.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}

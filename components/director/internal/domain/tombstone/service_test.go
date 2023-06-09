@@ -2,6 +2,7 @@ package tombstone_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -21,7 +22,7 @@ func TestService_Create(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
-	modelTombstone := fixTombstoneModel()
+	modelTombstone := fixTombstoneModelForApp()
 	modelInput := *fixTombstoneModelInput()
 
 	testCases := []struct {
@@ -29,6 +30,7 @@ func TestService_Create(t *testing.T) {
 		RepositoryFn func() *automock.TombstoneRepository
 		UIDServiceFn func() *automock.UIDService
 		Input        model.TombstoneInput
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
@@ -43,8 +45,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(tombstoneID)
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: nil,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
 		},
 		{
 			Name: "Error - Tombstone creation",
@@ -58,8 +61,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(tombstoneID)
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -72,7 +76,7 @@ func TestService_Create(t *testing.T) {
 			svc := tombstone.NewService(repo, uidSvc)
 
 			// WHEN
-			result, err := svc.Create(ctx, appID, testCase.Input)
+			result, err := svc.Create(ctx, testCase.ResourceType, appID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -86,9 +90,9 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := tombstone.NewService(nil, nil)
+		svc := tombstone.NewService(nil, fixUIDService())
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.TombstoneInput{})
+		_, err := svc.Create(context.TODO(), resource.Application, "", model.TombstoneInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -99,7 +103,7 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	modelTombstone := fixTombstoneModel()
+	modelTombstone := fixTombstoneModelForApp()
 	modelInput := *fixTombstoneModelInput()
 
 	inputTombstoneModel := mock.MatchedBy(func(ts *model.Tombstone) bool {
@@ -114,6 +118,7 @@ func TestService_Update(t *testing.T) {
 		RepositoryFn func() *automock.TombstoneRepository
 		Input        model.TombstoneInput
 		InputID      string
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
@@ -124,9 +129,10 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctx, tenantID, inputTombstoneModel).Return(nil).Once()
 				return repo
 			},
-			InputID:     tombstoneID,
-			Input:       modelInput,
-			ExpectedErr: nil,
+			InputID:      tombstoneID,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
 		},
 		{
 			Name: "Update Error",
@@ -136,9 +142,10 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctx, tenantID, inputTombstoneModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:     tombstoneID,
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			InputID:      tombstoneID,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
 		},
 		{
 			Name: "Get Error",
@@ -147,9 +154,10 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tenantID, tombstoneID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:     tombstoneID,
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			InputID:      tombstoneID,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -161,7 +169,7 @@ func TestService_Update(t *testing.T) {
 			svc := tombstone.NewService(repo, nil)
 
 			// WHEN
-			err := svc.Update(ctx, testCase.InputID, testCase.Input)
+			err := svc.Update(ctx, testCase.ResourceType, testCase.InputID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -175,9 +183,9 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := tombstone.NewService(nil, nil)
+		svc := tombstone.NewService(nil, fixUIDService())
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.TombstoneInput{})
+		err := svc.Update(context.TODO(), resource.Application, "", model.TombstoneInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -318,7 +326,7 @@ func TestService_Get(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	tsModel := fixTombstoneModel()
+	tsModel := fixTombstoneModelForApp()
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -390,9 +398,9 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	tombstones := []*model.Tombstone{
-		fixTombstoneModel(),
-		fixTombstoneModel(),
-		fixTombstoneModel(),
+		fixTombstoneModelForApp(),
+		fixTombstoneModelForApp(),
+		fixTombstoneModelForApp(),
 	}
 
 	ctx := context.TODO()
@@ -409,7 +417,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(tombstones, nil).Once()
+				repo.On("ListByResourceID", ctx, tenantID, appID, resource.Application).Return(tombstones, nil).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -420,7 +428,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Returns error when Tombstone listing failed",
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				repo.On("ListByResourceID", ctx, tenantID, appID, resource.Application).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -458,4 +466,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+}
+
+func fixUIDService() *automock.UIDService {
+	svc := &automock.UIDService{}
+	svc.On("Generate").Return(tombstoneID).Once()
+	return svc
 }

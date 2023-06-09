@@ -74,7 +74,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -310,7 +310,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(nil, testErr).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, gqlAPI.ID).Return(nil, testErr).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -343,7 +343,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -381,7 +381,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -426,7 +426,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, gqlAPI.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			AppServiceFn: func() *automock.ApplicationService {
@@ -515,7 +515,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -577,7 +577,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(nil, testErr).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(nil, testErr).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -599,7 +599,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -625,7 +625,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -652,7 +652,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -679,7 +679,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -755,7 +755,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
 				return svc
 			},
@@ -767,7 +767,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -827,7 +827,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(testErr).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -851,7 +851,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -876,7 +876,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
 				return svc
 			},
@@ -887,7 +887,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(nil, testErr).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(nil, testErr).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -903,7 +903,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
 				return svc
 			},
@@ -914,7 +914,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -932,7 +932,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
 				return svc
 			},
@@ -944,7 +944,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -962,7 +962,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, id, *modelAPIDefinitionInput, modelSpecInput).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
 				return svc
 			},
@@ -974,7 +974,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&modelSpec, nil).Once()
 				return svc
 			},
 			BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -1055,7 +1055,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
 				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
@@ -1084,7 +1084,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(nil, testErr).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(nil, testErr).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1098,7 +1098,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(nil, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(nil, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1112,7 +1112,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
 				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(nil, testErr).Once()
 				return svc
 			},
@@ -1127,7 +1127,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
 				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
@@ -1144,7 +1144,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, apiID).Return(modelSpec, nil).Once()
 				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},

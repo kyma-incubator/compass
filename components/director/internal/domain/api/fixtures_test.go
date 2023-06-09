@@ -19,33 +19,33 @@ import (
 )
 
 const (
-	apiDefID             = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	specID               = "sssssssss-ssss-ssss-ssss-ssssssssssss"
-	tenantID             = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	externalTenantID     = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	bundleID             = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	packageID            = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
-	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	appTemplateVersionID = "fffffffff-ffff-aaaa-ffff-aaaaaaaaaaaa"
-	ordID                = "com.compass.ord.v1"
-	localTenantID        = "localTenantID"
-	extensible           = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
-	successors           = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
-	resourceHash         = "123456"
-	publicVisibility     = "public"
-	targetURL            = "https://test-url.com/api"
+	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	ordID            = "com.compass.ord.v1"
+	localTenantID    = "localTenantID"
+	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
+	successors       = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
+	resourceHash     = "123456"
+	publicVisibility = "public"
+	targetURL        = "https://test-url.com/api"
 
 	firstTargetURL  = "https://test-url.com"
 	secondTargetURL = "https://test2-url.com"
 )
 
 var (
-	fixedTimestamp = time.Now()
-	firstBundleID  = "id1"
-	secondBundleID = "id2"
-	thirdBundleID  = "id3"
-	frURL          = "foo.bar"
-	spec           = "spec"
+	fixedTimestamp       = time.Now()
+	firstBundleID        = "id1"
+	secondBundleID       = "id2"
+	thirdBundleID        = "id3"
+	frURL                = "foo.bar"
+	spec                 = "spec"
+	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	appTemplateVersionID = "fffffffff-ffff-aaaa-ffff-aaaaaaaaaaaa"
 )
 
 func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefinition {
@@ -57,6 +57,19 @@ func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefiniti
 	}
 }
 
+func fixAPIDefinitionWithPackageModel(id, name string) *model.APIDefinition {
+	return &model.APIDefinition{
+		PackageID:  str.Ptr(packageID),
+		Name:       name,
+		TargetURLs: api.ConvertTargetURLToJSONArray(targetURL),
+		Version:    &model.Version{},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
+	}
+}
+
 func fixFullAPIDefinitionModelWithAppID(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
 	apiDef, spec, bundleRef := fixFullAPIDefinitionModel(apiDefID, placeholder)
 	apiDef.ApplicationID = str.Ptr(appID)
@@ -64,7 +77,7 @@ func fixFullAPIDefinitionModelWithAppID(placeholder string) (model.APIDefinition
 	return apiDef, spec, bundleRef
 }
 
-func fixFullAPIDefinitionModelWithAppTemplateVersionID(appTemplateVersionID, placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
+func fixFullAPIDefinitionModelWithAppTemplateVersionID(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
 	apiDef, spec, bundleRef := fixFullAPIDefinitionModel(apiDefID, placeholder)
 	apiDef.ApplicationTemplateVersionID = str.Ptr(appTemplateVersionID)
 
@@ -344,8 +357,29 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
+func fixAPIDefinitionRowForAppTemplateVersion(id, placeholder string) []driver.Value {
+	boolVar := false
+	return []driver.Value{id, repo.NewValidNullableString(""), appTemplateVersionID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+		ordID, localTenantID, "shortDescription", &boolVar, nil, nil, "apiProtocol", repo.NewValidNullableString("[]"),
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
+		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
+		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+}
+
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, apiDef.Name, apiDef.Description, apiDef.Group,
+		apiDef.OrdID, apiDef.LocalTenantID, apiDef.ShortDescription, apiDef.SystemInstanceAware, nil, nil, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
+		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
+		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
+		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error,
+		apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs), extensible,
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
+}
+
+func fixAPICreateArgsForAppTemplateVersion(id string, apiDef *model.APIDefinition) []driver.Value {
+	return []driver.Value{id, repo.NewValidNullableString(""), appTemplateVersionID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
 		apiDef.OrdID, apiDef.LocalTenantID, apiDef.ShortDescription, apiDef.SystemInstanceAware, nil, nil, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,

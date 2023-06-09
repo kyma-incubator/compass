@@ -34,6 +34,7 @@ type repository struct {
 	singleGetter  repo.SingleGetter
 	lister        repo.Lister
 	deleter       repo.Deleter
+	deleterGlobal repo.DeleterGlobal
 	updater       repo.Updater
 	updaterGlobal repo.UpdaterGlobal
 	conv          Converter
@@ -47,6 +48,7 @@ func NewRepository(conv Converter) *repository {
 		singleGetter:  repo.NewSingleGetter(fetchRequestTable, fetchRequestColumns),
 		lister:        repo.NewLister(fetchRequestTable, fetchRequestColumns),
 		deleter:       repo.NewDeleter(fetchRequestTable),
+		deleterGlobal: repo.NewDeleterGlobal(resource.FetchRequest, fetchRequestTable),
 		updater:       repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
 		updaterGlobal: repo.NewUpdaterGlobal(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
 		conv:          conv,
@@ -55,6 +57,20 @@ func NewRepository(conv Converter) *repository {
 
 // Create missing godoc
 func (r *repository) Create(ctx context.Context, tenant string, item *model.FetchRequest) error {
+	if item == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
+
+	entity, err := r.conv.ToEntity(item)
+	if err != nil {
+		return errors.Wrap(err, "while creating FetchRequest entity from model")
+	}
+
+	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+}
+
+// CreateGlobal creates a fetch request without tenant isolation
+func (r *repository) CreateGlobal(ctx context.Context, item *model.FetchRequest) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -102,6 +118,16 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 	return r.deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
 }
 
+// DeleteByReferenceObjectIDGlobal deletes fetch request by model.FetchRequestReferenceObjectType without tenant isolation
+func (r *repository) DeleteByReferenceObjectIDGlobal(ctx context.Context, objectType model.FetchRequestReferenceObjectType, objectID string) error {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return err
+	}
+
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
+}
+
 // Update missing godoc
 func (r *repository) Update(ctx context.Context, tenant string, item *model.FetchRequest) error {
 	if item == nil {
@@ -114,7 +140,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Fetc
 	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
-// Update missing godoc
+// UpdateGlobal updates a fetch request globally without tenant isolation
 func (r *repository) UpdateGlobal(ctx context.Context, item *model.FetchRequest) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")

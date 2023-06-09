@@ -35,6 +35,7 @@ type pgRepository struct {
 	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
 	creator            repo.Creator
+	creatorGlobal      repo.CreatorGlobal
 	updater            repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 }
@@ -50,6 +51,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		listerGlobal:       repo.NewListerGlobal(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		deleter:            repo.NewDeleter(tombstoneTable),
 		creator:            repo.NewCreator(tombstoneTable, tombstoneColumns),
+		creatorGlobal:      repo.NewCreatorGlobal(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		updater:            repo.NewUpdater(tombstoneTable, updatableColumns, []string{"id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tombstone, tombstoneTable, updatableColumns, []string{"id"}),
 	}
@@ -65,6 +67,16 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.T
 	return r.creator.Create(ctx, resource.Tombstone, tenant, r.conv.ToEntity(model))
 }
 
+// CreateGlobal creates a tombstone without tenant isolation
+func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.Tombstone) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+
+	log.C(ctx).Debugf("Persisting Tombstone entity with id %q", model.ID)
+	return r.creatorGlobal.Create(ctx, r.conv.ToEntity(model))
+}
+
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Tombstone) error {
 	if model == nil {
@@ -74,7 +86,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.T
 	return r.updater.UpdateSingle(ctx, resource.Tombstone, tenant, r.conv.ToEntity(model))
 }
 
-// UpdateGlobal missing godoc
+// UpdateGlobal updates a given tombstone without tenant isolation
 func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Tombstone) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -110,7 +122,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.T
 	return tombstoneModel, nil
 }
 
-// GetByID missing godoc
+// GetByIDGlobal gets a tombstone by id without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Tombstone, error) {
 	log.C(ctx).Debugf("Getting Tombstone entity with id %q", id)
 	var tombstoneEnt Entity
@@ -126,7 +138,7 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Tom
 	return tombstoneModel, nil
 }
 
-// ListByApplicationID missing godoc
+// ListByResourceID lists tombstones by resource ID and type
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Tombstone, error) {
 	tombstoneCollection := tombstoneCollection{}
 

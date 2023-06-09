@@ -15,6 +15,7 @@ import (
 //go:generate mockery --name=PackageRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PackageRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Package) error
+	CreateGlobal(ctx context.Context, model *model.Package) error
 	Update(ctx context.Context, tenant string, item *model.Package) error
 	UpdateGlobal(ctx context.Context, model *model.Package) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -45,38 +46,52 @@ func NewService(pkgRepo PackageRepository, uidService UIDService) *service {
 	}
 }
 
-// Create missing godoc
+// Create creates a package for a given resource.Type
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
 	pkg := in.ToPackage(id, resourceType, resourceID, pkgHash)
 
-	if err = s.pkgRepo.Create(ctx, tnt, pkg); err != nil {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.pkgRepo.CreateGlobal(ctx, pkg)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.pkgRepo.Create(ctx, tnt, pkg)
+	}
+	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for %s with id %s", id, pkg.Title, resourceType, resourceID)
 	}
+
 	log.C(ctx).Debugf("Successfully created a Package with id %s and title %s for %s with id %s", id, pkg.Title, resourceType, resourceID)
 
 	return id, nil
 }
 
-// Update missing godoc
+// Update updates a package by ID for a given resource.Type
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
+	var (
+		pkg *model.Package
+		tnt string
+		err error
+	)
 
-	var pkg *model.Package
 	if resourceType == resource.ApplicationTemplateVersion {
 		pkg, err = s.pkgRepo.GetByIDGlobal(ctx, id)
 	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
 		pkg, err = s.pkgRepo.GetByID(ctx, tnt, id)
 	}
-
 	if err != nil {
 		return errors.Wrapf(err, "while getting Package with id %s", id)
 	}
@@ -88,25 +103,10 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 	} else {
 		err = s.pkgRepo.Update(ctx, tnt, pkg)
 	}
-
 	if err != nil {
 		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
-	return nil
-}
 
-// Update missing godoc
-func (s *service) UpdateGlobal(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error {
-	pkg, err := s.pkgRepo.GetByIDGlobal(ctx, id)
-	if err != nil {
-		return errors.Wrapf(err, "while getting global Package with id %s", id)
-	}
-
-	pkg.SetFromUpdateInput(in, pkgHash)
-
-	if err = s.pkgRepo.UpdateGlobal(ctx, pkg); err != nil {
-		return errors.Wrapf(err, "while updating global Package with id %s", id)
-	}
 	return nil
 }
 
@@ -165,12 +165,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.pkgRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
 }
 
-// ListByApplicationTemplateVersionID missing godoc
+// ListByApplicationTemplateVersionID lists packages by Application Template Version ID without tenant isolation
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.pkgRepo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
+	return s.pkgRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }

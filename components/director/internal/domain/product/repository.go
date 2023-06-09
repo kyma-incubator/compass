@@ -145,17 +145,16 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Pro
 	return productModel, nil
 }
 
-// ListByApplicationID gets all products for a given application id
+// ListByResourceID gets all products for a given resource ID and type
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Product, error) {
 	productCollection := productCollection{}
 
-	var condition repo.Condition
 	var err error
 	if resourceType == resource.Application {
-		condition = repo.NewEqualCondition("app_id", resourceID)
+		condition := repo.NewEqualCondition("app_id", resourceID)
 		err = r.lister.ListWithSelectForUpdate(ctx, resource.Product, tenantID, &productCollection, condition)
 	} else {
-		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		condition := repo.NewEqualCondition("app_template_version_id", resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &productCollection, condition)
 	}
 	if err != nil {

@@ -23,7 +23,7 @@ import (
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput) (string, error)
-	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
@@ -113,7 +113,7 @@ type DocumentConverter interface {
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
-	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
+	GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 }
 
@@ -251,7 +251,7 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 		return nil, errors.Wrapf(err, "while converting converting GraphQL input to Bundle with id %s", id)
 	}
 
-	err = r.bundleSvc.Update(ctx, id, *convertedIn)
+	err = r.bundleSvc.Update(ctx, resource.Application, id, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +405,7 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
@@ -549,7 +549,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, eventAPI.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPI.ID)
 	}

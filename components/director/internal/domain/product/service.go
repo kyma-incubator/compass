@@ -49,17 +49,27 @@ func NewService(productRepo ProductRepository, uidService UIDService) *service {
 
 // Create creates a new product.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
 	product := in.ToProduct(id, resourceType, resourceID)
 
-	if err = s.productRepo.Create(ctx, tnt, product); err != nil {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.productRepo.CreateGlobal(ctx, product)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.productRepo.Create(ctx, tnt, product)
+	}
+	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for %v with id %s", id, product.Title, resourceType, resourceID)
 	}
+
 	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for %s with id %s", id, product.Title, resourceType, resourceID)
 
 	return product.OrdID, nil
@@ -79,22 +89,38 @@ func (s *service) CreateGlobal(ctx context.Context, in model.ProductInput) (stri
 }
 
 // Update updates an existing product.
-func (s *service) Update(ctx context.Context, id string, in model.ProductInput) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error {
+	var (
+		product *model.Product
+		tnt     string
+		err     error
+	)
 
-	product, err := s.productRepo.GetByID(ctx, tnt, id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		product, err = s.productRepo.GetByIDGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		product, err = s.productRepo.GetByID(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while getting Product with id %s", id)
 	}
 
 	product.SetFromUpdateInput(in)
 
-	if err = s.productRepo.Update(ctx, tnt, product); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.productRepo.UpdateGlobal(ctx, product)
+	} else {
+		err = s.productRepo.Update(ctx, tnt, product)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating Product with id %s", id)
 	}
+
 	return nil
 }
 
@@ -179,12 +205,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 
 // ListByApplicationTemplateVersionID returns a list of products for a given application ID.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.productRepo.ListByResourceID(ctx, tnt, appID, resource.ApplicationTemplateVersion)
+	return s.productRepo.ListByResourceID(ctx, "", appID, resource.ApplicationTemplateVersion)
 }
 
 // ListGlobal returns a list of global products (with NULL app_id).

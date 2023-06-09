@@ -30,6 +30,20 @@ func (_m *APIRepository) Create(ctx context.Context, tenant string, item *model.
 	return r0
 }
 
+// CreateGlobal provides a mock function with given fields: ctx, item
+func (_m *APIRepository) CreateGlobal(ctx context.Context, item *model.APIDefinition) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.APIDefinition) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateMany provides a mock function with given fields: ctx, tenant, item
 func (_m *APIRepository) CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error {
 	ret := _m.Called(ctx, tenant, item)
@@ -77,16 +91,13 @@ func (_m *APIRepository) Exists(ctx context.Context, tenant string, id string) (
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
-		return rf(ctx, tenant, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -101,10 +112,6 @@ func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string
 	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.APIDefinition
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.APIDefinition, error)); ok {
-		return rf(ctx, tenantID, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, tenantID, id)
 	} else {
@@ -113,6 +120,7 @@ func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id)
 	} else {
@@ -127,10 +135,6 @@ func (_m *APIRepository) GetByIDGlobal(ctx context.Context, id string) (*model.A
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.APIDefinition
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.APIDefinition, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -139,6 +143,7 @@ func (_m *APIRepository) GetByIDGlobal(ctx context.Context, id string) (*model.A
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -153,10 +158,6 @@ func (_m *APIRepository) GetForBundle(ctx context.Context, tenant string, id str
 	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.APIDefinition
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.APIDefinition, error)); ok {
-		return rf(ctx, tenant, id, bundleID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -165,6 +166,7 @@ func (_m *APIRepository) GetForBundle(ctx context.Context, tenant string, id str
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -179,10 +181,6 @@ func (_m *APIRepository) ListByBundleIDs(ctx context.Context, tenantID string, b
 	ret := _m.Called(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
 
 	var r0 []*model.APIDefinitionPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) ([]*model.APIDefinitionPage, error)); ok {
-		return rf(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) []*model.APIDefinitionPage); ok {
 		r0 = rf(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
 	} else {
@@ -191,6 +189,7 @@ func (_m *APIRepository) ListByBundleIDs(ctx context.Context, tenantID string, b
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*model.BundleReference, map[string]int, int, string) error); ok {
 		r1 = rf(ctx, tenantID, bundleIDs, bundleRefs, counts, pageSize, cursor)
 	} else {
@@ -205,10 +204,6 @@ func (_m *APIRepository) ListByResourceID(ctx context.Context, tenantID string, 
 	ret := _m.Called(ctx, tenantID, resourceType, resourceID)
 
 	var r0 []*model.APIDefinition
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type, string) ([]*model.APIDefinition, error)); ok {
-		return rf(ctx, tenantID, resourceType, resourceID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type, string) []*model.APIDefinition); ok {
 		r0 = rf(ctx, tenantID, resourceType, resourceID)
 	} else {
@@ -217,6 +212,7 @@ func (_m *APIRepository) ListByResourceID(ctx context.Context, tenantID string, 
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Type, string) error); ok {
 		r1 = rf(ctx, tenantID, resourceType, resourceID)
 	} else {

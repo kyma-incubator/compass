@@ -23,7 +23,6 @@ const (
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
-	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	ordID            = "com.compass.ord.v1"
 	localTenantID    = "localTenantID"
 	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
@@ -32,7 +31,10 @@ const (
 	publicVisibility = "public"
 )
 
-var fixedTimestamp = time.Now()
+var (
+	fixedTimestamp = time.Now()
+	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+)
 
 func fixEventDefinitionModel(id string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
@@ -75,7 +77,7 @@ func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefin
 
 	boolVar := false
 	return model.EventDefinition{
-		ApplicationID:       appID,
+		ApplicationID:       &appID,
 		PackageID:           str.Ptr(packageID),
 		Name:                placeholder,
 		Description:         str.Ptr("desc_" + placeholder),
@@ -223,7 +225,7 @@ func fixEntityEventDefinition(id string, name string) *event.Entity {
 
 func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 	return &event.Entity{
-		ApplicationID:       appID,
+		ApplicationID:       repo.NewValidNullableString(appID),
 		PackageID:           repo.NewValidNullableString(packageID),
 		Name:                placeholder,
 		Description:         repo.NewValidNullableString("desc_" + placeholder),
@@ -269,7 +271,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	return []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level",
 		"changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
@@ -278,14 +280,14 @@ func fixEventDefinitionColumns() []string {
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, localTenantID, "shortDescription", &boolVar, nil, nil,
+	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, localTenantID, "shortDescription", &boolVar, nil, nil,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible),
 		repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
-	return []driver.Value{id, appID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.LocalTenantID, event.ShortDescription,
+	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, event.Name, event.Description, event.Group, event.OrdID, event.LocalTenantID, event.ShortDescription,
 		event.SystemInstanceAware, event.PolicyLevel, event.CustomPolicyLevel, repo.NewNullableStringFromJSONRawMessage(event.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(event.Links),
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,

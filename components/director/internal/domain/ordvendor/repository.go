@@ -146,7 +146,7 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Ven
 	return vendorModel, nil
 }
 
-// ListByApplicationID gets a list of Vendors by given application id
+// ListByResourceID gets a list of Vendors by given resource id and type
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Vendor, error) {
 	vendorCollection := vendorCollection{}
 

@@ -49,6 +49,7 @@ type pgRepository struct {
 	lister                repo.Lister
 	listerGlobal          repo.ListerGlobal
 	creator               repo.Creator
+	creatorGlobal         repo.CreatorGlobal
 	updater               repo.Updater
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
@@ -65,6 +66,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		lister:                repo.NewLister(eventAPIDefTable, eventDefColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		creator:               repo.NewCreator(eventAPIDefTable, eventDefColumns),
+		creatorGlobal:         repo.NewCreatorGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:               repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(eventAPIDefTable),
@@ -196,6 +198,23 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 
 	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
 	err := r.creator.Create(ctx, resource.EventDefinition, tenant, entity)
+	if err != nil {
+		return errors.Wrap(err, "while saving entity to db")
+	}
+
+	return nil
+}
+
+// CreateGlobal creates an EventDefinition.
+func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.EventDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
+	err := r.creatorGlobal.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}

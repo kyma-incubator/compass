@@ -49,17 +49,27 @@ func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 
 // Create creates a new Vendor.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
 	vendor := in.ToVendor(id, resourceType, resourceID)
 
-	if err = s.vendorRepo.Create(ctx, tnt, vendor); err != nil {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.vendorRepo.CreateGlobal(ctx, vendor)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.vendorRepo.Create(ctx, tnt, vendor)
+	}
+	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s", id, vendor.Title)
 	}
+
 	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s", id, vendor.Title)
 
 	return vendor.OrdID, nil
@@ -79,22 +89,38 @@ func (s *service) CreateGlobal(ctx context.Context, in model.VendorInput) (strin
 }
 
 // Update updates an existing Vendor.
-func (s *service) Update(ctx context.Context, id string, in model.VendorInput) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error {
+	var (
+		vendor *model.Vendor
+		err    error
+		tnt    string
+	)
 
-	vendor, err := s.vendorRepo.GetByID(ctx, tnt, id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		vendor, err = s.vendorRepo.GetByIDGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		vendor, err = s.vendorRepo.GetByID(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while getting Vendor with id %s", id)
 	}
 
 	vendor.SetFromUpdateInput(in)
 
-	if err = s.vendorRepo.Update(ctx, tnt, vendor); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.vendorRepo.UpdateGlobal(ctx, vendor)
+	} else {
+		err = s.vendorRepo.Update(ctx, tnt, vendor)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating Vendor with id %s", id)
 	}
+
 	return nil
 }
 
@@ -178,13 +204,9 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.vendorRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
 }
 
+// ListByApplicationTemplateVersionID returns a list of Vendors by Application Template Version ID without tenant isolation.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.vendorRepo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
+	return s.vendorRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // ListGlobal returns a list of Global Vendors (with NULL app_id).

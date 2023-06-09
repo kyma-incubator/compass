@@ -31,6 +31,20 @@ func (_m *EventAPIRepository) Create(ctx context.Context, tenant string, item *m
 	return r0
 }
 
+// CreateGlobal provides a mock function with given fields: ctx, item
+func (_m *EventAPIRepository) CreateGlobal(ctx context.Context, item *model.EventDefinition) error {
+	ret := _m.Called(ctx, item)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventDefinition) error); ok {
+		r0 = rf(ctx, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Delete provides a mock function with given fields: ctx, tenantID, id
 func (_m *EventAPIRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	ret := _m.Called(ctx, tenantID, id)

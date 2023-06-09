@@ -98,13 +98,13 @@ func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIDs []
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in, spec
-func (_m *EventDefService) Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error {
-	ret := _m.Called(ctx, id, in, spec)
+// Update provides a mock function with given fields: ctx, resourceType, id, in, spec
+func (_m *EventDefService) Update(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, spec *model.SpecInput) error {
+	ret := _m.Called(ctx, resourceType, id, in, spec)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
-		r0 = rf(ctx, id, in, spec)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
+		r0 = rf(ctx, resourceType, id, in, spec)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -15,6 +15,7 @@ import (
 //go:generate mockery --name=TombstoneRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TombstoneRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Tombstone) error
+	CreateGlobal(ctx context.Context, model *model.Tombstone) error
 	Update(ctx context.Context, tenant string, item *model.Tombstone) error
 	UpdateGlobal(ctx context.Context, model *model.Tombstone) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -46,53 +47,65 @@ func NewService(tombstoneRepo TombstoneRepository, uidService UIDService) *servi
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
 	tombstone := in.ToTombstone(id, resourceType, resourceID)
 
-	if err = s.tombstoneRepo.Create(ctx, tnt, tombstone); err != nil {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.tombstoneRepo.CreateGlobal(ctx, tombstone)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.tombstoneRepo.Create(ctx, tnt, tombstone)
+	}
+	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for %s with id %s", id, resourceType, resourceID)
 	}
+
 	log.C(ctx).Debugf("Successfully created a Tombstone with id %s for %s with id %s", id, resourceType, resourceID)
 
 	return tombstone.OrdID, nil
 }
 
 // Update missing godoc
-func (s *service) Update(ctx context.Context, id string, in model.TombstoneInput) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error {
+	var (
+		tombstone *model.Tombstone
+		tnt       string
+		err       error
+	)
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		tombstone, err = s.tombstoneRepo.GetByIDGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		tombstone, err = s.tombstoneRepo.GetByID(ctx, tnt, id)
 	}
-
-	tombstone, err := s.tombstoneRepo.GetByID(ctx, tnt, id)
-	if err != nil {
-		return errors.Wrapf(err, "while getting Tombstone with id %s", id)
-	}
-
-	tombstone.SetFromUpdateInput(in)
-
-	if err = s.tombstoneRepo.Update(ctx, tnt, tombstone); err != nil {
-		return errors.Wrapf(err, "while updating Tombstone with id %s", id)
-	}
-	return nil
-}
-
-func (s *service) UpdateGlobal(ctx context.Context, id string, in model.TombstoneInput) error {
-	tombstone, err := s.tombstoneRepo.GetByIDGlobal(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Tombstone with id %s", id)
 	}
 
 	tombstone.SetFromUpdateInput(in)
 
-	if err = s.tombstoneRepo.UpdateGlobal(ctx, tombstone); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.tombstoneRepo.UpdateGlobal(ctx, tombstone)
+	} else {
+		err = s.tombstoneRepo.Update(ctx, tnt, tombstone)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating Tombstone with id %s", id)
 	}
+
 	return nil
 }
 
@@ -153,10 +166,5 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 
 // ListByApplicationTemplateVersionID missing godoc
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.tombstoneRepo.ListByResourceID(ctx, tnt, appID, resource.ApplicationTemplateVersion)
+	return s.tombstoneRepo.ListByResourceID(ctx, "", appID, resource.ApplicationTemplateVersion)
 }

@@ -3,6 +3,7 @@ package spec
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -17,10 +18,12 @@ import (
 //go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Spec) error
+	CreateGlobal(ctx context.Context, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error)
 	ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	ListByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
@@ -34,8 +37,10 @@ type SpecRepository interface {
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
+	CreateGlobal(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
+	DeleteByReferenceObjectIDGlobal(ctx context.Context, objectType model.FetchRequestReferenceObjectType, objectID string) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
@@ -108,13 +113,22 @@ func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType mode
 
 // GetByReferenceObjectID
 // Until now APIs and Events had embedded specification in them, we will model this behavior by relying that the first created spec is the one which GraphQL expects
-func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (s *service) GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
+	var (
+		specs []*model.Spec
+		err   error
+		tnt   string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		specs, err = s.repo.ListByReferenceObjectIDGlobal(ctx, objectType, objectID)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-	specs, err := s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
+		specs, err = s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -139,11 +153,11 @@ func (s *service) ListByReferenceObjectIDs(ctx context.Context, objectType model
 }
 
 // CreateByReferenceObjectID missing godoc
-func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
+func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
+	var (
+		err error
+		tnt string
+	)
 
 	id := s.uidService.Generate()
 	spec, err := in.ToSpec(id, objectType, objectID)
@@ -151,19 +165,34 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 		return "", err
 	}
 
-	if err = s.repo.Create(ctx, tnt, spec); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.CreateGlobal(ctx, spec)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.repo.Create(ctx, tnt, spec)
+	}
+	if err != nil {
 		return "", errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
 
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType, resourceType)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
 
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
-		if err = s.repo.Update(ctx, tnt, spec); err != nil {
+		if resourceType == resource.ApplicationTemplateVersion {
+			err = s.repo.UpdateGlobal(ctx, spec)
+		} else {
+			err = s.repo.Update(ctx, tnt, spec)
+		}
+		if err != nil {
 			return "", errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 		}
 	}
@@ -172,11 +201,11 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 }
 
 // CreateByReferenceObjectIDWithDelayedFetchRequest identical to CreateByReferenceObjectID with the only difference that the spec and fetch request entities are only persisted in DB and the fetch request itself is not executed
-func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", nil, err
-	}
+func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error) {
+	var (
+		err error
+		tnt string
+	)
 
 	id := s.uidService.Generate()
 	spec, err := in.ToSpec(id, objectType, objectID)
@@ -184,13 +213,23 @@ func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.C
 		return "", nil, err
 	}
 
-	if err = s.repo.Create(ctx, tnt, spec); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.CreateGlobal(ctx, spec)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", nil, err
+		}
+
+		err = s.repo.Create(ctx, tnt, spec)
+	}
+	if err != nil {
 		return "", nil, errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
 
 	var fr *model.FetchRequest
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err = s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType)
+		fr, err = s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType, resourceType)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
@@ -200,17 +239,30 @@ func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.C
 }
 
 // UpdateByReferenceObjectID missing godoc
-func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
+func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error {
+	var (
+		tnt string
+		err error
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		if _, err = s.repo.GetByIDGlobal(ctx, id); err != nil {
+			return err
+		}
+
+		err = s.fetchRequestRepo.DeleteByReferenceObjectIDGlobal(ctx, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		if _, err = s.repo.GetByID(ctx, tnt, id, objectType); err != nil {
+			return err
+		}
+
+		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
+	}
 	if err != nil {
-		return err
-	}
-
-	if _, err = s.repo.GetByID(ctx, tnt, id, objectType); err != nil {
-		return err
-	}
-
-	if err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id); err != nil {
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
@@ -220,7 +272,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	}
 
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType, resourceType)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
@@ -228,8 +280,14 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	if err = s.repo.Update(ctx, tnt, spec); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.UpdateGlobal(ctx, spec)
+	} else {
+		err = s.repo.Update(ctx, tnt, spec)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
+
 	}
 
 	return nil
@@ -339,10 +397,17 @@ func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, ten
 	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType, resourceType resource.Type) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, getFetchRequestObjectTypeBySpecObjectType(objectType), parentObjectID)
-	if err := s.fetchRequestRepo.Create(ctx, tenant, fr); err != nil {
+
+	var err error
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.fetchRequestRepo.CreateGlobal(ctx, fr)
+	} else {
+		err = s.fetchRequestRepo.Create(ctx, tenant, fr)
+	}
+	if err != nil {
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with id %q", objectType, parentObjectID)
 	}
 

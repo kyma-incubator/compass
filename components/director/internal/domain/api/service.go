@@ -28,6 +28,7 @@ type APIRepository interface {
 	ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
+	CreateGlobal(ctx context.Context, item *model.APIDefinition) error
 	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
 	UpdateGlobal(ctx context.Context, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
@@ -45,9 +46,9 @@ type UIDService interface {
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
-	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
-	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
-	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
+	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, error)
+	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error
+	GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 }
@@ -113,12 +114,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 
 // ListByApplicationTemplateVersionID lists all APIDefinitions for a given application ID.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.APIDefinition, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.repo.ListByResourceID(ctx, tnt, resource.ApplicationTemplateVersion, appTemplateVersionID)
+	return s.repo.ListByResourceID(ctx, "", resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
 
 // Get returns the APIDefinition by its ID.
@@ -158,87 +154,80 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 
 // Create creates APIDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	id := s.uidService.Generate()
 	api := in.ToAPIDefinition(id, resourceType, resourceID, packageID, apiHash)
 
-	if len(specs) > 0 && specs[0] != nil && specs[0].APIType != nil {
-		switch *specs[0].APIType {
-		case model.APISpecTypeOdata:
-			protocol := ord.APIProtocolODataV2
-			api.APIProtocol = &protocol
-		case model.APISpecTypeOpenAPI:
-			protocol := ord.APIProtocolRest
-			api.APIProtocol = &protocol
-		}
-	}
+	enrichAPIProtocol(api, specs)
 
-	if err = s.repo.Create(ctx, tnt, api); err != nil {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.CreateGlobal(ctx, api)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		err = s.repo.Create(ctx, tnt, api)
+	}
+	if err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
 
-	for _, spec := range specs {
-		if spec == nil {
-			continue
-		}
-
-		if _, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, api.ID); err != nil {
-			return "", err
-		}
+	if err := s.processSpecs(ctx, api.ID, specs, resourceType); err != nil {
+		return "", err
 	}
 
-	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
-	if defaultTargetURLPerBundle == nil {
-		bundleRefInput := &model.BundleReferenceInput{
-			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
-		}
-		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID); err != nil {
-			return "", err
-		}
-	} else {
-		for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundle {
-			bundleRefInput := &model.BundleReferenceInput{
-				APIDefaultTargetURL: &defaultTargetURL,
-			}
-			if defaultBundleID != "" && crrBndlID == defaultBundleID {
-				isDefaultBundle := true
-				bundleRefInput.IsDefaultBundle = &isDefaultBundle
-			}
-			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID); err != nil {
-				return "", err
-			}
-		}
+	if err := s.createBundleReferenceObject(ctx, api.ID, bundleID, defaultBundleID, api.TargetURLs, defaultTargetURLPerBundle); err != nil {
+		return "", err
 	}
 
 	return id, nil
 }
 
 // Update updates an APIDefinition. This function is used in the graphQL flow.
-func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0, "")
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
+	return s.UpdateInManyBundles(ctx, resourceType, id, in, specIn, nil, nil, nil, 0, "")
 }
 
 // UpdateInManyBundles updates APIDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
+func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
+	var (
+		api *model.APIDefinition
+		err error
+		tnt string
+	)
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		api, err = s.repo.GetByIDGlobal(ctx, id)
+		if err != nil {
+			return err
+		}
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		api, err = s.Get(ctx, id)
+		if err != nil {
+			return err
+		}
 	}
 
-	api, err := s.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	resourceType, resourceID := getParentResource(api)
+	_, resourceID := getParentResource(api)
 
 	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
 
-	if err = s.repo.Update(ctx, tnt, api); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.UpdateGlobal(ctx, api)
+	} else {
+		err = s.repo.Update(ctx, tnt, api)
+	}
+	if err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}
 
@@ -255,41 +244,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 	}
 
 	if specIn != nil {
-		return s.handleSpecsInAPI(ctx, api.ID, specIn)
-	}
-
-	return nil
-}
-
-// UpdateInManyBundlesGlobal updates APIDefinition/s globally without tenant.
-func (s *service) UpdateInManyBundlesGlobal(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
-	api, err := s.repo.GetByIDGlobal(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	resourceType, resourceID := getParentResource(api)
-
-	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
-
-	if err = s.repo.UpdateGlobal(ctx, api); err != nil {
-		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
-	}
-
-	if err = s.updateReferences(ctx, api, in.TargetURLs, defaultTargetURLPerBundleForUpdate, defaultBundleID); err != nil {
-		return err
-	}
-
-	if err = s.createBundleReferences(ctx, api, defaultTargetURLPerBundleForCreation, defaultBundleID); err != nil {
-		return err
-	}
-
-	if err = s.deleteBundleIDs(ctx, &api.ID, bundleIDsForDeletion); err != nil {
-		return err
-	}
-
-	if specIn != nil {
-		return s.handleSpecsInAPI(ctx, api.ID, specIn)
+		return s.handleSpecsInAPI(ctx, api.ID, specIn, resourceType)
 	}
 
 	return nil
@@ -389,18 +344,18 @@ func (s *service) deleteBundleIDs(ctx context.Context, apiID *string, bundleIDsF
 	return nil
 }
 
-func (s *service) handleSpecsInAPI(ctx context.Context, id string, specIn *model.SpecInput) error {
-	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, id)
+func (s *service) handleSpecsInAPI(ctx context.Context, id string, specIn *model.SpecInput, resourceType resource.Type) error {
+	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, resourceType, model.APISpecReference, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", id)
 	}
 
 	if dbSpec == nil {
-		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, id)
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, resourceType, model.APISpecReference, id)
 		return err
 	}
 
-	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, id)
+	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, resourceType, model.APISpecReference, id)
 }
 
 func (s *service) updateReferences(ctx context.Context, api *model.APIDefinition, targetURLs json.RawMessage, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
@@ -416,6 +371,45 @@ func (s *service) updateReferences(ctx context.Context, api *model.APIDefinition
 	return s.updateBundleReferences(ctx, api, defaultTargetURLPerBundleForUpdate, defaultBundleID)
 }
 
+func (s *service) processSpecs(ctx context.Context, apiID string, specs []*model.SpecInput, resourceType resource.Type) error {
+	for _, spec := range specs {
+		if spec == nil {
+			continue
+		}
+
+		if _, err := s.specService.CreateByReferenceObjectID(ctx, *spec, resourceType, model.APISpecReference, apiID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *service) createBundleReferenceObject(ctx context.Context, apiID string, bundleID *string, defaultBundleID string, targetURLs json.RawMessage, defaultTargetURLPerBundle map[string]string) error {
+	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
+	if defaultTargetURLPerBundle == nil {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(targetURLs)),
+		}
+		return s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &apiID, bundleID)
+	}
+
+	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundle {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: &defaultTargetURL,
+		}
+		if defaultBundleID != "" && crrBndlID == defaultBundleID {
+			isDefaultBundle := true
+			bundleRefInput.IsDefaultBundle = &isDefaultBundle
+		}
+		if err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &apiID, &crrBndlID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getParentResource(api *model.APIDefinition) (resource.Type, string) {
 	if api.ApplicationTemplateVersionID != nil {
 		return resource.ApplicationTemplateVersion, *api.ApplicationTemplateVersionID
@@ -424,4 +418,17 @@ func getParentResource(api *model.APIDefinition) (resource.Type, string) {
 	}
 
 	return "", ""
+}
+
+func enrichAPIProtocol(api *model.APIDefinition, specs []*model.SpecInput) {
+	if len(specs) > 0 && specs[0] != nil && specs[0].APIType != nil {
+		switch *specs[0].APIType {
+		case model.APISpecTypeOdata:
+			protocol := ord.APIProtocolODataV2
+			api.APIProtocol = &protocol
+		case model.APISpecTypeOpenAPI:
+			protocol := ord.APIProtocolRest
+			api.APIProtocol = &protocol
+		}
+	}
 }

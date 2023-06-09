@@ -2,9 +2,8 @@ package eventdef
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -23,6 +22,7 @@ type EventAPIRepository interface {
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, tenant string, item *model.EventDefinition) error
+	CreateGlobal(ctx context.Context, item *model.EventDefinition) error
 	Update(ctx context.Context, tenant string, item *model.EventDefinition) error
 	UpdateGlobal(ctx context.Context, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
@@ -40,9 +40,9 @@ type UIDService interface {
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
-	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
-	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
-	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
+	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, error)
+	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error
+	GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 }
@@ -108,12 +108,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 
 // ListByApplicationTemplateVersionID lists all EventDefinitions for a given application ID.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.eventAPIRepo.ListByResourceID(ctx, tnt, appTemplateVersionID, resource.ApplicationTemplateVersion)
+	return s.eventAPIRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // Get returns the EventDefinition by its ID.
@@ -153,73 +148,76 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 
 // Create creates EventDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", errors.Wrapf(err, "while loading tenant from context")
-	}
-
 	id := s.uidService.Generate()
 	eventAPI := in.ToEventDefinition(id, resourceType, resourceID, packageID, eventHash)
 
-	if err = s.eventAPIRepo.Create(ctx, tnt, eventAPI); err != nil {
+	if resourceType == resource.ApplicationTemplateVersion {
+		if err := s.eventAPIRepo.CreateGlobal(ctx, eventAPI); err != nil {
+			return "", errors.Wrap(err, "while creating api")
+		}
+	} else {
+		tnt, err := tenant.LoadFromContext(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		if err = s.eventAPIRepo.Create(ctx, tnt, eventAPI); err != nil {
+			return "", errors.Wrap(err, "while creating api")
+		}
+	}
+
+	if err := s.processSpecs(ctx, eventAPI.ID, specs, resourceType); err != nil {
 		return "", err
 	}
 
-	for _, spec := range specs {
-		if spec == nil {
-			continue
-		}
-		if _, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID); err != nil {
-			return "", err
-		}
-	}
-
-	// if bundleIDs == nil we are in the graphQL flow
-	if bundleIDs == nil {
-		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
-			return "", err
-		}
-	} else {
-		for _, bndlID := range bundleIDs {
-			bundleRefInput := &model.BundleReferenceInput{}
-			if defaultBundleID != "" && bndlID == defaultBundleID {
-				isDefaultBundle := true
-				bundleRefInput = &model.BundleReferenceInput{
-					IsDefaultBundle: &isDefaultBundle,
-				}
-			}
-			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
-				return "", err
-			}
-		}
+	if err := s.createBundleReferenceObject(ctx, eventAPI.ID, bundleID, defaultBundleID, bundleIDs); err != nil {
+		return "", err
 	}
 
 	return id, nil
 }
 
 // Update updates an EventDefinition. This function is used in the graphQL flow.
-func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0, "")
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
+	return s.UpdateInManyBundles(ctx, resourceType, id, in, specIn, nil, nil, nil, 0, "")
 }
 
 // UpdateInManyBundles updates EventDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
+func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
+	var (
+		event *model.EventDefinition
+		err   error
+		tnt   string
+	)
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		event, err = s.eventAPIRepo.GetByIDGlobal(ctx, id)
+		if err != nil {
+			return err
+		}
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		event, err = s.Get(ctx, id)
+		if err != nil {
+			return err
+		}
 	}
 
-	event, err := s.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	resourceType, resourceID := getParentResource(event)
-
+	_, resourceID := getParentResource(event)
 	event = in.ToEventDefinition(id, resourceType, resourceID, event.PackageID, eventHash)
 
-	if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
-		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		if err = s.eventAPIRepo.UpdateGlobal(ctx, event); err != nil {
+			return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
+		}
+	} else {
+		if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
+			return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
+		}
 	}
 
 	if err = s.handleReferenceObjects(ctx, event.ID, bundleIDsForCreation, bundleIDsForDeletion, bundleIDsFromBundleReference, defaultBundleID); err != nil {
@@ -227,32 +225,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	if specIn != nil {
-		return s.handleSpecsInEvent(ctx, event.ID, specIn)
-	}
-
-	return nil
-}
-
-func (s *service) UpdateInManyBundlesGlobal(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
-	event, err := s.eventAPIRepo.GetByIDGlobal(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	resourceType, resourceID := getParentResource(event)
-
-	event = in.ToEventDefinition(id, resourceType, resourceID, event.PackageID, eventHash)
-
-	if err = s.eventAPIRepo.UpdateGlobal(ctx, event); err != nil {
-		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
-	}
-
-	if err = s.handleReferenceObjects(ctx, event.ID, bundleIDsForCreation, bundleIDsForDeletion, bundleIDsFromBundleReference, defaultBundleID); err != nil {
-		return err
-	}
-
-	if specIn != nil {
-		return s.handleSpecsInEvent(ctx, event.ID, specIn)
+		return s.handleSpecsInEvent(ctx, resourceType, event.ID, specIn)
 	}
 
 	return nil
@@ -306,18 +279,18 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 	return fetchRequests, nil
 }
 
-func (s *service) handleSpecsInEvent(ctx context.Context, id string, specIn *model.SpecInput) error {
-	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, id)
+func (s *service) handleSpecsInEvent(ctx context.Context, resourceType resource.Type, id string, specIn *model.SpecInput) error {
+	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, resourceType, model.EventSpecReference, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting spec for EventDefinition with id %q", id)
 	}
 
 	if dbSpec == nil {
-		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.EventSpecReference, id)
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, resourceType, model.EventSpecReference, id)
 		return err
 	}
 
-	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.EventSpecReference, id)
+	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, resourceType, model.EventSpecReference, id)
 }
 
 func (s *service) handleReferenceObjects(ctx context.Context, id string, bundleIDsForCreation, bundleIDsForDeletion, bundleIDsFromBundleReference []string, defaultBundleID string) error {
@@ -345,6 +318,43 @@ func (s *service) handleReferenceObjects(ctx context.Context, id string, bundleI
 			bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: &isDefaultBundle}
 		}
 		if err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &id, &bundleID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *service) processSpecs(ctx context.Context, eventID string, specs []*model.SpecInput, resourceType resource.Type) error {
+	for _, spec := range specs {
+		if spec == nil {
+			continue
+		}
+
+		if _, err := s.specService.CreateByReferenceObjectID(ctx, *spec, resourceType, model.EventSpecReference, eventID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *service) createBundleReferenceObject(ctx context.Context, eventID string, bundleID *string, defaultBundleID string, bundleIDs []string) error {
+	if bundleIDs == nil {
+		if err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventID, bundleID); err != nil {
+			return err
+		}
+	}
+
+	for _, bndlID := range bundleIDs {
+		bundleRefInput := &model.BundleReferenceInput{}
+		if defaultBundleID != "" && bndlID == defaultBundleID {
+			isDefaultBundle := true
+			bundleRefInput = &model.BundleReferenceInput{
+				IsDefaultBundle: &isDefaultBundle,
+			}
+		}
+		if err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &eventID, &bndlID); err != nil {
 			return err
 		}
 	}

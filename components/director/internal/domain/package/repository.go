@@ -38,6 +38,7 @@ type pgRepository struct {
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
 	creator            repo.Creator
+	creatorGlobal      repo.CreatorGlobal
 	updater            repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 }
@@ -53,6 +54,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Package, packageTable, packageColumns),
 		deleter:            repo.NewDeleter(packageTable),
 		creator:            repo.NewCreator(packageTable, packageColumns),
+		creatorGlobal:      repo.NewCreatorGlobal(resource.Package, packageTable, packageColumns),
 		updater:            repo.NewUpdater(packageTable, updatableColumns, []string{"id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Package, packageTable, updatableColumns, []string{"id"}),
 	}
@@ -68,6 +70,16 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.P
 	return r.creator.Create(ctx, resource.Package, tenant, r.conv.ToEntity(model))
 }
 
+// CreateGlobal creates a packages globally without tenant isolation
+func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.Package) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+
+	log.C(ctx).Debugf("Persisting Package entity with id %q", model.ID)
+	return r.creatorGlobal.Create(ctx, r.conv.ToEntity(model))
+}
+
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Package) error {
 	if model == nil {
@@ -77,7 +89,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.P
 	return r.updater.UpdateSingle(ctx, resource.Package, tenant, r.conv.ToEntity(model))
 }
 
-// Update missing godoc
+// UpdateGlobal updates a package globally without tenant isolation
 func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Package) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -113,6 +125,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 	return pkgModel, nil
 }
 
+// GetByIDGlobal gets a package by ID without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Package, error) {
 	log.C(ctx).Debugf("Getting Package entity with id %q", id)
 	var pkgEnt Entity

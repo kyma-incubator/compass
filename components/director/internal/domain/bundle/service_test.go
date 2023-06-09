@@ -2,6 +2,7 @@ package bundle_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
@@ -22,7 +23,6 @@ func TestService_Create(t *testing.T) {
 	id := "foo"
 	applicationID := appID
 	name := "foo"
-	desc := "bar"
 
 	modelInput := model.BundleCreateInput{
 		Name:                           name,
@@ -63,17 +63,12 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
-	modelBundle := &model.Bundle{
-		ApplicationID:                  applicationID,
-		Name:                           name,
-		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            &model.Auth{},
-		BaseEntity: &model.BaseEntity{
-			ID:    id,
-			Ready: true,
-		},
-	}
+	modelBundleForApp := fixBasicModelBundle(id, name)
+	modelBundleForApp.ApplicationID = &appID
+
+	modelBundleForAppTemplateVersion := fixBasicModelBundle(id, name)
+	modelBundleForAppTemplateVersion.ApplicationTemplateVersionID = &appTemplateVersionID
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
@@ -85,13 +80,15 @@ func TestService_Create(t *testing.T) {
 		DocumentServiceFn func() *automock.DocumentService
 		UIDServiceFn      func() *automock.UIDService
 		Input             model.BundleCreateInput
+		ResourceType      resource.Type
+		ResourceID        string
 		ExpectedErr       error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundleForApp).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -101,30 +98,67 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.Documents[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.Documents[1]).Return("", nil).Once()
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: nil,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   applicationID,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Error - Bundle creation",
+			Name: "Success for Application Template Version",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, tenantID, modelBundle).Return(testErr).Once()
+				repo.On("CreateGlobal", ctx, modelBundleForAppTemplateVersion).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			APIServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("CreateInBundle", ctx, resource.ApplicationTemplateVersion, appTemplateVersionID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.ApplicationTemplateVersion, appTemplateVersionID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				return svc
+			},
+			EventServiceFn: func() *automock.EventService {
+				svc := &automock.EventService{}
+				svc.On("CreateInBundle", ctx, resource.ApplicationTemplateVersion, appTemplateVersionID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.ApplicationTemplateVersion, appTemplateVersionID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				return svc
+			},
+			DocumentServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				svc.On("CreateInBundle", ctx, resource.ApplicationTemplateVersion, appTemplateVersionID, id, *modelInput.Documents[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.ApplicationTemplateVersion, appTemplateVersionID, id, *modelInput.Documents[1]).Return("", nil).Once()
+				return svc
+			},
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Error - Bundle creation for App",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, tenantID, modelBundleForApp).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -141,14 +175,42 @@ func TestService_Create(t *testing.T) {
 			DocumentServiceFn: func() *automock.DocumentService {
 				return &automock.DocumentService{}
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   applicationID,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Error - Bundle creation for App Template Version",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("CreateGlobal", ctx, modelBundleForAppTemplateVersion).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			APIServiceFn: func() *automock.APIService {
+				return &automock.APIService{}
+			},
+			EventServiceFn: func() *automock.EventService {
+				return &automock.EventService{}
+			},
+			DocumentServiceFn: func() *automock.DocumentService {
+				return &automock.DocumentService{}
+			},
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  nil,
 		},
 		{
 			Name: "Error - API creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundleForApp).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -158,7 +220,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", testErr).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
@@ -169,14 +231,16 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   applicationID,
+			ExpectedErr:  testErr,
 		},
 		{
 			Name: "Error - Event creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundleForApp).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -186,27 +250,29 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", testErr).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				repo := &automock.DocumentService{}
 				return repo
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   applicationID,
+			ExpectedErr:  testErr,
 		},
 		{
 			Name: "Error - Document creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundleForApp).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -216,23 +282,25 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, resource.Application, appID, id, *modelInput.Documents[0]).Return("", testErr).Once()
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   applicationID,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -248,7 +316,7 @@ func TestService_Create(t *testing.T) {
 			svc := bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
 
 			// WHEN
-			result, err := svc.Create(ctx, applicationID, testCase.Input)
+			result, err := svc.Create(ctx, testCase.ResourceType, testCase.ResourceID, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErr != nil {
@@ -262,9 +330,9 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, fixUIDService())
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.BundleCreateInput{})
+		_, err := svc.Create(context.TODO(), resource.Application, appID, model.BundleCreateInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -277,7 +345,6 @@ func TestService_Update(t *testing.T) {
 
 	id := "foo"
 	name := "bar"
-	desc := "baz"
 
 	modelInput := model.BundleUpdateInput{
 		Name:                           name,
@@ -290,14 +357,11 @@ func TestService_Update(t *testing.T) {
 		return bndl.Name == modelInput.Name
 	})
 
-	bundleModel := &model.Bundle{
-		ApplicationID:                  "id",
-		Name:                           name,
-		Description:                    &desc,
-		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            &model.Auth{},
-		BaseEntity:                     &model.BaseEntity{ID: id},
-	}
+	bundleModelForApp := fixBasicModelBundle(id, name)
+	bundleModelForApp.ApplicationID = &appID
+
+	bundleModelForAppTemplateVersion := fixBasicModelBundle(id, name)
+	bundleModelForApp.ApplicationTemplateVersionID = &appTemplateVersionID
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -307,31 +371,60 @@ func TestService_Update(t *testing.T) {
 		RepositoryFn func() *automock.BundleRepository
 		Input        model.BundleUpdateInput
 		InputID      string
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for App",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("GetByID", ctx, tenantID, id).Return(bundleModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, id).Return(bundleModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputBundleModel).Return(nil).Once()
 				return repo
 			},
-			InputID:     "foo",
-			Input:       modelInput,
-			ExpectedErr: nil,
+			InputID:      "foo",
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Success for App Template Version",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(bundleModelForAppTemplateVersion, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputBundleModel).Return(nil).Once()
+				return repo
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  nil,
 		},
 		{
 			Name: "Update Error",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("GetByID", ctx, tenantID, "foo").Return(bundleModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, "foo").Return(bundleModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputBundleModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:     "foo",
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			InputID:      "foo",
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Update Error for Application Template Version",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("GetByIDGlobal", ctx, "foo").Return(bundleModelForApp, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputBundleModel).Return(testErr).Once()
+				return repo
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
 		},
 		{
 			Name: "Get Error",
@@ -340,9 +433,22 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", ctx, tenantID, "foo").Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:     "foo",
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			InputID:      "foo",
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Get Error for Application Template Version",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("GetByIDGlobal", ctx, "foo").Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -354,7 +460,7 @@ func TestService_Update(t *testing.T) {
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
 			// WHEN
-			err := svc.Update(ctx, testCase.InputID, testCase.Input)
+			err := svc.Update(ctx, testCase.ResourceType, testCase.InputID, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErr == nil {
@@ -370,7 +476,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.BundleUpdateInput{})
+		err := svc.Update(context.TODO(), resource.Application, "", model.BundleUpdateInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -690,7 +796,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("ListByApplicationIDNoPaging", ctx, tenantID, appID).Return(bundles, nil).Once()
+				repo.On("ListByResourceIDNoPaging", ctx, tenantID, appID, resource.Application).Return(bundles, nil).Once()
 				return repo
 			},
 			ExpectedResult:     bundles,
@@ -700,7 +806,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 			Name: "Returns error when Bundle listing failed",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("ListByApplicationIDNoPaging", ctx, tenantID, appID).Return(nil, testErr).Once()
+				repo.On("ListByResourceIDNoPaging", ctx, tenantID, appID, resource.Application).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -739,6 +845,78 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 	})
 }
 
+func TestService_ListByApplicationTemplateVersionIDNoPaging(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	name := "foo"
+
+	bundles := []*model.Bundle{
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
+	}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.BundleRepository
+		ExpectedResult     []*model.Bundle
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByResourceIDNoPaging", ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion).Return(bundles, nil).Once()
+				return repo
+			},
+			ExpectedResult:     bundles,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Bundle listing failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByResourceIDNoPaging", ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := bundle.NewService(repo, nil, nil, nil, nil)
+
+			// WHEN
+			docs, err := svc.ListByApplicationTemplateVersionIDNoPaging(ctx, appTemplateVersionID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationIDNoPaging(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_ListByApplicationIDs(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
@@ -750,9 +928,9 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 	appIDs := []string{firstAppID, secondAppID}
 
 	bundleFirstApp := fixBundleModel(name, desc)
-	bundleFirstApp.ApplicationID = firstAppID
+	bundleFirstApp.ApplicationID = &firstAppID
 	bundleSecondApp := fixBundleModel(name, desc)
-	bundleSecondApp.ApplicationID = secondAppID
+	bundleSecondApp.ApplicationID = &secondAppID
 
 	bundlesFirstApp := []*model.Bundle{bundleFirstApp}
 	bundlesSecondApp := []*model.Bundle{bundleSecondApp}
@@ -863,4 +1041,10 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+}
+
+func fixUIDService() *automock.UIDService {
+	svc := &automock.UIDService{}
+	svc.On("Generate").Return(appID)
+	return svc
 }

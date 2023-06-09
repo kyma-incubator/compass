@@ -45,6 +45,7 @@ type pgRepository struct {
 	globalLister       repo.ListerGlobal
 	unionLister        repo.UnionLister
 	creator            repo.Creator
+	creatorGlobal      repo.CreatorGlobal
 	updater            repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 	conv               EntityConverter
@@ -61,6 +62,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalLister:       repo.NewListerGlobal(resource.Bundle, bundleTable, bundleColumns),
 		unionLister:        repo.NewUnionLister(bundleTable, bundleColumns),
 		creator:            repo.NewCreator(bundleTable, bundleColumns),
+		creatorGlobal:      repo.NewCreatorGlobal(resource.Bundle, bundleTable, bundleColumns),
 		updater:            repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
 		conv:               conv,
@@ -90,6 +92,21 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.B
 	return r.creator.Create(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
+// CreateGlobal creates a bundle without tenant isolation
+func (r *pgRepository) CreateGlobal(ctx context.Context, model *model.Bundle) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be nil")
+	}
+
+	bndlEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Bundle entity")
+	}
+
+	log.C(ctx).Debugf("Persisting Bundle entity with id %s to db", model.ID)
+	return r.creatorGlobal.Create(ctx, bndlEnt)
+}
+
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Bundle) error {
 	if model == nil {
@@ -105,7 +122,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.B
 	return r.updater.UpdateSingle(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
-// Update missing godoc
+// UpdateGlobal updates a bundle without tenant isolation
 func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
@@ -140,7 +157,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.B
 	return convertToBundle(r, &bndlEnt)
 }
 
-// GetByID missing godoc
+// GetByIDGlobal gets a single bundle by ID without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Bundle, error) {
 	var bndlEnt Entity
 	if err := r.singleGlobalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {

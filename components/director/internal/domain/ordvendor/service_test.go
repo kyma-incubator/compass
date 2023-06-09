@@ -2,6 +2,7 @@ package ordvendor_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
@@ -21,7 +22,8 @@ func TestService_Create(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
-	modelVendor := fixVendorModel()
+	modelVendorForApp := fixVendorModelForApp()
+	modelVendorForAppTemplateVersion := fixVendorModelForAppTemplateVersion()
 	modelInput := *fixVendorModelInput()
 
 	testCases := []struct {
@@ -29,13 +31,15 @@ func TestService_Create(t *testing.T) {
 		RepositoryFn func() *automock.VendorRepository
 		UIDServiceFn func() *automock.UIDService
 		Input        model.VendorInput
+		ResourceType resource.Type
+		ResourceID   string
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("Create", ctx, tenantID, modelVendor).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelVendorForApp).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -43,14 +47,16 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(vendorID)
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: nil,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   appID,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Error - Vendor creation",
+			Name: "Success for Application Template Version",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("Create", ctx, tenantID, modelVendor).Return(testErr).Once()
+				repo.On("CreateGlobal", ctx, modelVendorForAppTemplateVersion).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -58,8 +64,44 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(vendorID)
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Error - Vendor creation for Application",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("Create", ctx, tenantID, modelVendorForApp).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(vendorID)
+				return svc
+			},
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   appID,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Error - Vendor creation for Application Template Version",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("CreateGlobal", ctx, modelVendorForAppTemplateVersion).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(vendorID)
+				return svc
+			},
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -72,7 +114,7 @@ func TestService_Create(t *testing.T) {
 			svc := ordvendor.NewService(repo, uidSvc)
 
 			// WHEN
-			result, err := svc.Create(ctx, appID, testCase.Input)
+			result, err := svc.Create(ctx, testCase.ResourceType, testCase.ResourceID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -86,9 +128,9 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil, nil)
+		svc := ordvendor.NewService(nil, fixUIDService())
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.VendorInput{})
+		_, err := svc.Create(context.TODO(), resource.Application, "", model.VendorInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -171,7 +213,8 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	modelVendor := fixVendorModel()
+	modelVendorForApp := fixVendorModelForApp()
+	modelVendorForAppTemplateVersion := fixVendorModelForAppTemplateVersion()
 	modelInput := *fixVendorModelInput()
 
 	inputVendorModel := mock.MatchedBy(func(vendor *model.Vendor) bool {
@@ -186,42 +229,84 @@ func TestService_Update(t *testing.T) {
 		RepositoryFn func() *automock.VendorRepository
 		Input        model.VendorInput
 		InputID      string
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendor, nil).Once()
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendorForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputVendorModel).Return(nil).Once()
 				return repo
 			},
-			InputID:     vendorID,
-			Input:       modelInput,
-			ExpectedErr: nil,
+			InputID:      vendorID,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Update Error",
+			Name: "Success for Application Template Version",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendor, nil).Once()
+				repo.On("GetByIDGlobal", ctx, vendorID).Return(modelVendorForAppTemplateVersion, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputVendorModel).Return(nil).Once()
+				return repo
+			},
+			InputID:      vendorID,
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Update Error for Application",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendorForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputVendorModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:     vendorID,
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			InputID:      vendorID,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
 		},
 		{
-			Name: "Get Error",
+			Name: "Update Error for Application Template Version",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("GetByIDGlobal", ctx, vendorID).Return(modelVendorForApp, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputVendorModel).Return(testErr).Once()
+				return repo
+			},
+			InputID:      vendorID,
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Get Error for Application",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
 				repo.On("GetByID", ctx, tenantID, vendorID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:     vendorID,
-			Input:       modelInput,
-			ExpectedErr: testErr,
+			InputID:      vendorID,
+			Input:        modelInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Get Error for Application Template Version",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("GetByIDGlobal", ctx, vendorID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:      vendorID,
+			Input:        modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -233,7 +318,7 @@ func TestService_Update(t *testing.T) {
 			svc := ordvendor.NewService(repo, nil)
 
 			// WHEN
-			err := svc.Update(ctx, testCase.InputID, testCase.Input)
+			err := svc.Update(ctx, testCase.ResourceType, testCase.InputID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -247,9 +332,9 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := ordvendor.NewService(nil, nil)
+		svc := ordvendor.NewService(nil, fixUIDService())
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.VendorInput{})
+		err := svc.Update(context.TODO(), resource.Application, "", model.VendorInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -528,7 +613,7 @@ func TestService_Get(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	vendor := fixVendorModel()
+	vendor := fixVendorModelForApp()
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -600,9 +685,9 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	vendors := []*model.Vendor{
-		fixVendorModel(),
-		fixVendorModel(),
-		fixVendorModel(),
+		fixVendorModelForApp(),
+		fixVendorModelForApp(),
+		fixVendorModelForApp(),
 	}
 
 	ctx := context.TODO()
@@ -619,7 +704,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(vendors, nil).Once()
+				repo.On("ListByResourceID", ctx, tenantID, appID, resource.Application).Return(vendors, nil).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -630,7 +715,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 			Name: "Returns error when Vendor listing failed",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				repo.On("ListByResourceID", ctx, tenantID, appID, resource.Application).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -647,6 +732,79 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			// WHEN
 			docs, err := svc.ListByApplicationID(ctx, appID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := ordvendor.NewService(nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListByApplicationTemplateVersionID(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	vendors := []*model.Vendor{
+		fixVendorModelForAppTemplateVersion(),
+		fixVendorModelForAppTemplateVersion(),
+	}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.VendorRepository
+		ExpectedResult     []*model.Vendor
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("ListByResourceID", ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion).Return(vendors, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     vendors,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Vendor listing failed",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("ListByResourceID", ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := ordvendor.NewService(repo, nil)
+
+			// WHEN
+			docs, err := svc.ListByApplicationTemplateVersionID(ctx, appTemplateVersionID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -734,4 +892,10 @@ func TestService_ListGlobal(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+}
+
+func fixUIDService() *automock.UIDService {
+	svc := &automock.UIDService{}
+	svc.On("Generate").Return(vendorID)
+	return svc
 }
