@@ -583,7 +583,7 @@ func unusedNotificationBuilder() *automock.NotificationBuilder {
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	config := string(formationAssignment.Value)
-	if config == "" {
+	if config == "" || formationAssignment.State == string(model.CreateErrorAssignmentState) || formationAssignment.State == string(model.DeleteErrorAssignmentState) {
 		config = "\"\""
 	}
 	return &webhook.FormationAssignment{
