@@ -111,20 +111,6 @@ func (_m *PackageService) Update(ctx context.Context, resourceType resource.Type
 	return r0
 }
 
-// UpdateGlobal provides a mock function with given fields: ctx, id, in, pkgHash
-func (_m *PackageService) UpdateGlobal(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error {
-	ret := _m.Called(ctx, id, in, pkgHash)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput, uint64) error); ok {
-		r0 = rf(ctx, id, in, pkgHash)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 type mockConstructorTestingTNewPackageService interface {
 	mock.TestingT
 	Cleanup(func())

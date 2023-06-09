@@ -97,27 +97,13 @@ func (_m *APIService) ListByApplicationTemplateVersionID(ctx context.Context, ap
 	return r0, r1
 }
 
-// UpdateInManyBundles provides a mock function with given fields: ctx, id, in, specIn, defaultTargetURLPerBundle, defaultTargetURLPerBundleToBeCreated, bundleIDsToBeDeleted, apiHash, defaultBundleID
-func (_m *APIService) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error {
-	ret := _m.Called(ctx, id, in, specIn, defaultTargetURLPerBundle, defaultTargetURLPerBundleToBeCreated, bundleIDsToBeDeleted, apiHash, defaultBundleID)
+// UpdateInManyBundles provides a mock function with given fields: ctx, resourceType, id, in, specIn, defaultTargetURLPerBundle, defaultTargetURLPerBundleToBeCreated, bundleIDsToBeDeleted, apiHash, defaultBundleID
+func (_m *APIService) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error {
+	ret := _m.Called(ctx, resourceType, id, in, specIn, defaultTargetURLPerBundle, defaultTargetURLPerBundleToBeCreated, bundleIDsToBeDeleted, apiHash, defaultBundleID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput, map[string]string, map[string]string, []string, uint64, string) error); ok {
-		r0 = rf(ctx, id, in, specIn, defaultTargetURLPerBundle, defaultTargetURLPerBundleToBeCreated, bundleIDsToBeDeleted, apiHash, defaultBundleID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateInManyBundlesGlobal provides a mock function with given fields: ctx, id, in, specIn, defaultTargetURLPerBundleForUpdate, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultBundleID
-func (_m *APIService) UpdateInManyBundlesGlobal(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
-	ret := _m.Called(ctx, id, in, specIn, defaultTargetURLPerBundleForUpdate, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultBundleID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput, map[string]string, map[string]string, []string, uint64, string) error); ok {
-		r0 = rf(ctx, id, in, specIn, defaultTargetURLPerBundleForUpdate, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultBundleID)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.APIDefinitionInput, *model.SpecInput, map[string]string, map[string]string, []string, uint64, string) error); ok {
+		r0 = rf(ctx, resourceType, id, in, specIn, defaultTargetURLPerBundle, defaultTargetURLPerBundleToBeCreated, bundleIDsToBeDeleted, apiHash, defaultBundleID)
 	} else {
 		r0 = ret.Error(0)
 	}

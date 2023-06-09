@@ -1284,9 +1284,6 @@ func (s *Service) resyncPackage(ctx context.Context, resourceType directorresour
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return packagesFromDB[i].OrdID == pkg.OrdID
 	}); found {
-		if resourceType == directorresource.ApplicationTemplateVersion {
-			return s.packageSvc.UpdateGlobal(ctx, packagesFromDB[i].ID, pkg, pkgHash)
-		}
 		return s.packageSvc.Update(ctx, resourceType, packagesFromDB[i].ID, pkg, pkgHash)
 	}
 
@@ -1299,10 +1296,7 @@ func (s *Service) resyncBundle(ctx context.Context, resourceType directorresourc
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
-		if resourceType == directorresource.ApplicationTemplateVersion {
-			return s.bundleSvc.UpdateBundleGlobal(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
-		}
-		return s.bundleSvc.UpdateBundle(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
+		return s.bundleSvc.UpdateBundle(ctx, resourceType, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
 	}
 
 	_, err := s.bundleSvc.CreateBundle(ctx, resourceType, resourceID, bndl, bndlHash)
@@ -1314,10 +1308,7 @@ func (s *Service) resyncProduct(ctx context.Context, resourceType directorresour
 	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 		return productsFromDB[i].OrdID == product.OrdID
 	}); found {
-		if resourceType == directorresource.ApplicationTemplateVersion {
-			return s.productSvc.UpdateGlobal(ctx, productsFromDB[i].ID, product)
-		}
-		return s.productSvc.Update(ctx, productsFromDB[i].ID, product)
+		return s.productSvc.Update(ctx, resourceType, productsFromDB[i].ID, product)
 	}
 
 	_, err := s.productSvc.Create(ctx, resourceType, resourceID, product)
@@ -1329,10 +1320,7 @@ func (s *Service) resyncVendor(ctx context.Context, resourceType directorresourc
 	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 		return vendorsFromDB[i].OrdID == vendor.OrdID
 	}); found {
-		if resourceType == directorresource.ApplicationTemplateVersion {
-			return s.vendorSvc.UpdateGlobal(ctx, vendorsFromDB[i].ID, vendor)
-		}
-		return s.vendorSvc.Update(ctx, vendorsFromDB[i].ID, vendor)
+		return s.vendorSvc.Update(ctx, resourceType, vendorsFromDB[i].ID, vendor)
 	}
 
 	_, err := s.vendorSvc.Create(ctx, resourceType, resourceID, vendor)
@@ -1344,7 +1332,7 @@ func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID st
 	if i, found := searchInSlice(len(appTemplateVersionsFromDB), func(i int) bool {
 		return appTemplateVersionsFromDB[i].Version == appTemplateVersion.Version
 	}); found {
-		return s.appTemplateVersionSvc.Update(ctx, appTemplateVersionsFromDB[i].ID, appTemplateID, appTemplateVersion)
+		return s.appTemplateVersionSvc.Update(ctx, appTemplateVersionsFromDB[i].ID, appTemplateID, *appTemplateVersion)
 	}
 
 	_, err := s.appTemplateVersionSvc.Create(ctx, appTemplateID, appTemplateVersion)
@@ -1378,7 +1366,7 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 			return nil, err
 		}
 
-		fr, err := s.createSpecs(ctx, model.APISpecReference, apiID, specs)
+		fr, err := s.createSpecs(ctx, model.APISpecReference, apiID, specs, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -1397,18 +1385,13 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		err = s.apiSvc.UpdateInManyBundlesGlobal(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID)
-	} else {
-		err = s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID)
-	}
-	if err != nil {
+	if err = s.apiSvc.UpdateInManyBundles(ctx, directorresource.ApplicationTemplateVersion, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
 		return nil, err
 	}
 
 	var fetchRequests []*model.FetchRequest
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
-		fetchRequests, err = s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs)
+		fetchRequests, err = s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -1455,7 +1438,7 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 		if err != nil {
 			return nil, err
 		}
-		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs)
+		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs, resourceType)
 	}
 
 	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)
@@ -1482,18 +1465,14 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 			bundleIDsForCreation = append(bundleIDsForCreation, id)
 		}
 	}
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		err = s.eventSvc.UpdateInManyBundlesGlobal(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID)
-	} else {
-		err = s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID)
-	}
-	if err != nil {
+
+	if err = s.eventSvc.UpdateInManyBundles(ctx, resourceType, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID); err != nil {
 		return nil, err
 	}
 
 	var fetchRequests []*model.FetchRequest
 	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
-		fetchRequests, err = s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs)
+		fetchRequests, err = s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -1507,14 +1486,14 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	return fetchRequests, nil
 }
 
-func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) ([]*model.FetchRequest, error) {
+func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
 	fetchRequests := make([]*model.FetchRequest, 0)
 	for _, spec := range specs {
 		if spec == nil {
 			continue
 		}
 
-		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, objectType, objectID)
+		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, objectType, objectID, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -1523,11 +1502,11 @@ func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenc
 	return fetchRequests, nil
 }
 
-func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) ([]*model.FetchRequest, error) {
+func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
 	if err := s.specSvc.DeleteByReferenceObjectID(ctx, objectType, objectID); err != nil {
 		return nil, err
 	}
-	return s.createSpecs(ctx, objectType, objectID, specs)
+	return s.createSpecs(ctx, objectType, objectID, specs, resourceType)
 }
 
 func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
@@ -1559,11 +1538,7 @@ func (s *Service) resyncTombstone(ctx context.Context, resourceType directorreso
 	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
 		return tombstonesFromDB[i].OrdID == tombstone.OrdID
 	}); found {
-		if resourceType == directorresource.ApplicationTemplateVersion {
-			return s.tombstoneSvc.UpdateGlobal(ctx, tombstonesFromDB[i].ID, tombstone)
-		}
-
-		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].ID, tombstone)
+		return s.tombstoneSvc.Update(ctx, resourceType, tombstonesFromDB[i].ID, tombstone)
 	}
 
 	_, err := s.tombstoneSvc.Create(ctx, resourceType, resourceID, tombstone)

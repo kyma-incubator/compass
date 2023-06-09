@@ -97,27 +97,13 @@ func (_m *TombstoneService) ListByApplicationTemplateVersionID(ctx context.Conte
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *TombstoneService) Update(ctx context.Context, id string, in model.TombstoneInput) error {
-	ret := _m.Called(ctx, id, in)
+// Update provides a mock function with given fields: ctx, resourceType, id, in
+func (_m *TombstoneService) Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error {
+	ret := _m.Called(ctx, resourceType, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.TombstoneInput) error); ok {
-		r0 = rf(ctx, id, in)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateGlobal provides a mock function with given fields: ctx, id, in
-func (_m *TombstoneService) UpdateGlobal(ctx context.Context, id string, in model.TombstoneInput) error {
-	ret := _m.Called(ctx, id, in)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.TombstoneInput) error); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.TombstoneInput) error); ok {
+		r0 = rf(ctx, resourceType, id, in)
 	} else {
 		r0 = ret.Error(0)
 	}

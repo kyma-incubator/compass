@@ -97,27 +97,13 @@ func (_m *BundleService) ListByApplicationTemplateVersionIDNoPaging(ctx context.
 	return r0, r1
 }
 
-// UpdateBundle provides a mock function with given fields: ctx, id, in, bndlHash
-func (_m *BundleService) UpdateBundle(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
-	ret := _m.Called(ctx, id, in, bndlHash)
+// UpdateBundle provides a mock function with given fields: ctx, resourceType, id, in, bndlHash
+func (_m *BundleService) UpdateBundle(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput, bndlHash uint64) error {
+	ret := _m.Called(ctx, resourceType, id, in, bndlHash)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleUpdateInput, uint64) error); ok {
-		r0 = rf(ctx, id, in, bndlHash)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateBundleGlobal provides a mock function with given fields: ctx, id, in, bndlHash
-func (_m *BundleService) UpdateBundleGlobal(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
-	ret := _m.Called(ctx, id, in, bndlHash)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleUpdateInput, uint64) error); ok {
-		r0 = rf(ctx, id, in, bndlHash)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.BundleUpdateInput, uint64) error); ok {
+		r0 = rf(ctx, resourceType, id, in, bndlHash)
 	} else {
 		r0 = ret.Error(0)
 	}

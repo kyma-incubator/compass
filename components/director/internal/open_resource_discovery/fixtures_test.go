@@ -37,7 +37,6 @@ const (
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
-	appID            = "testApp"
 	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
 	tenantID         = "testTenant"
@@ -74,6 +73,7 @@ const (
 )
 
 var (
+	appID              = str.Ptr("testApp")
 	uidSvc             = uid.NewService()
 	packageLinksFormat = removeWhitespace(`[
         {
@@ -312,6 +312,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
+		Perspective:           ord.SystemInstancePerspective,
 		DescribedSystemInstance: &model.Application{
 			BaseURL:             str.Ptr(baseURL),
 			OrdLabels:           json.RawMessage(labels),
@@ -625,13 +626,15 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	}
 }
 
+const testApplicationType = ""
+
 func fixApplicationPage() *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: []*model.Application{
 			{
 				Name: "testApp",
 				BaseEntity: &model.BaseEntity{
-					ID:    appID,
+					ID:    *appID,
 					Ready: true,
 				},
 				Type:                  testApplicationType,
@@ -651,7 +654,7 @@ func fixApplications() []*model.Application {
 		{
 			Name: "testApp",
 			BaseEntity: &model.BaseEntity{
-				ID:    appID,
+				ID:    *appID,
 				Ready: true,
 			},
 			Type:                  testApplicationType,
@@ -687,7 +690,7 @@ func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
 		{
 			ID:         whID,
-			ObjectID:   appID,
+			ObjectID:   *appID,
 			ObjectType: model.ApplicationWebhookReference,
 			Type:       model.WebhookTypeOpenResourceDiscovery,
 			URL:        str.Ptr(baseURL),
@@ -715,7 +718,7 @@ func fixTenantMappingWebhooksForApplication() []*model.Webhook {
 		},
 		Mode:       &syncMode,
 		ObjectType: model.ApplicationWebhookReference,
-		ObjectID:   appID,
+		ObjectID:   *appID,
 	}}
 }
 
@@ -724,7 +727,7 @@ func fixVendors() []*model.Vendor {
 		{
 			ID:                  vendorID,
 			OrdID:               vendorORDID,
-			ApplicationID:       str.Ptr(appID),
+			ApplicationID:       str.Ptr(*appID),
 			Title:               "SAP",
 			Partners:            json.RawMessage(partners),
 			Labels:              json.RawMessage(labels),
@@ -756,7 +759,7 @@ func fixProducts() []*model.Product {
 		{
 			ID:                  productID,
 			OrdID:               productORDID,
-			ApplicationID:       str.Ptr(appID),
+			ApplicationID:       str.Ptr(*appID),
 			Title:               "PRODUCT TITLE",
 			ShortDescription:    "lorem ipsum",
 			Vendor:              vendorORDID,

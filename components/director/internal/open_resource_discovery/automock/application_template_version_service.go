@@ -82,11 +82,11 @@ func (_m *ApplicationTemplateVersionService) ListByAppTemplateID(ctx context.Con
 }
 
 // Update provides a mock function with given fields: ctx, id, appTemplateID, in
-func (_m *ApplicationTemplateVersionService) Update(ctx context.Context, id string, appTemplateID string, in *model.ApplicationTemplateVersionInput) error {
+func (_m *ApplicationTemplateVersionService) Update(ctx context.Context, id string, appTemplateID string, in model.ApplicationTemplateVersionInput) error {
 	ret := _m.Called(ctx, id, appTemplateID, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.ApplicationTemplateVersionInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.ApplicationTemplateVersionInput) error); ok {
 		r0 = rf(ctx, id, appTemplateID, in)
 	} else {
 		r0 = ret.Error(0)

@@ -68,7 +68,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error) {
 	var tenantValue string
 
-	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplateVersion; needsTenantHeader {
+	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
 		tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template webhook flow")

@@ -97,27 +97,13 @@ func (_m *EventService) ListByApplicationTemplateVersionID(ctx context.Context, 
 	return r0, r1
 }
 
-// UpdateInManyBundles provides a mock function with given fields: ctx, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID
-func (_m *EventService) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference []string, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
-	ret := _m.Called(ctx, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID)
+// UpdateInManyBundles provides a mock function with given fields: ctx, resourceType, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID
+func (_m *EventService) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference []string, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
+	ret := _m.Called(ctx, resourceType, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput, []string, []string, []string, uint64, string) error); ok {
-		r0 = rf(ctx, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateInManyBundlesGlobal provides a mock function with given fields: ctx, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID
-func (_m *EventService) UpdateInManyBundlesGlobal(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference []string, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
-	ret := _m.Called(ctx, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput, []string, []string, []string, uint64, string) error); ok {
-		r0 = rf(ctx, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.EventDefinitionInput, *model.SpecInput, []string, []string, []string, uint64, string) error); ok {
+		r0 = rf(ctx, resourceType, id, in, specIn, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultBundleID)
 	} else {
 		r0 = ret.Error(0)
 	}

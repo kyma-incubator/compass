@@ -30,12 +30,12 @@ func TestHandler_AggregateORDData(t *testing.T) {
 		{
 			Name: "Successful ORD data aggregation",
 			RequestBody: ord.AggregationResources{
-				ApplicationIDs:         []string{appID},
+				ApplicationIDs:         []string{*appID},
 				ApplicationTemplateIDs: []string{appTemplateID},
 			},
 			ORDService: func() *automock.ORDService {
 				svc := &automock.ORDService{}
-				svc.On("ProcessApplications", mock.Anything, metricsConfig, []string{appID}).Return(nil)
+				svc.On("ProcessApplications", mock.Anything, metricsConfig, []string{*appID}).Return(nil)
 				svc.On("ProcessApplicationTemplates", mock.Anything, metricsConfig, []string{appTemplateID}).Return(nil)
 				return svc
 			},
