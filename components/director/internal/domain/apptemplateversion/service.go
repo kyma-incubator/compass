@@ -2,11 +2,12 @@ package apptemplateversion
 
 import (
 	"context"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // ApplicationTemplateVersionRepository is responsible for repo-layer ApplicationTemplateVersion operations

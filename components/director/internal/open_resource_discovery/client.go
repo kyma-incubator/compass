@@ -3,12 +3,13 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 

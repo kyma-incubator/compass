@@ -2,8 +2,9 @@ package ord_test
 
 import (
 	"context"
-	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
+
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"

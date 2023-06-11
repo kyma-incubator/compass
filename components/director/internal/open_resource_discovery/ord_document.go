@@ -2,10 +2,11 @@ package ord
 
 import (
 	"encoding/json"
-	"github.com/imdario/mergo"
 	"net/url"
 	"path"
 	"regexp"
+
+	"github.com/imdario/mergo"
 
 	"github.com/hashicorp/go-multierror"
 

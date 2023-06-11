@@ -3,13 +3,14 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/imdario/mergo"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/imdario/mergo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"

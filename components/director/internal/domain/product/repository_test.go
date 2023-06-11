@@ -2,9 +2,10 @@ package product_test
 
 import (
 	"database/sql/driver"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"

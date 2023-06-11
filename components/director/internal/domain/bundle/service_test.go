@@ -2,8 +2,9 @@ package bundle_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"

@@ -2,6 +2,9 @@ package apptemplateversion_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -9,8 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestService_Create(t *testing.T) {

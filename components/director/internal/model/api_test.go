@@ -1,8 +1,9 @@
 package model_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 

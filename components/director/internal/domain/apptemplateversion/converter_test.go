@@ -2,8 +2,9 @@ package apptemplateversion_test
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 
 	"github.com/pkg/errors"
 

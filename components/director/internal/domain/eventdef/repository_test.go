@@ -3,9 +3,10 @@ package eventdef_test
 import (
 	"context"
 	"database/sql/driver"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"

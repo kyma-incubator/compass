@@ -3,6 +3,9 @@ package apptemplateversion_test
 import (
 	"context"
 	"database/sql/driver"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion/automock"
@@ -10,8 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestRepository_Create(t *testing.T) {

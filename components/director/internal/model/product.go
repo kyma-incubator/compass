@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 

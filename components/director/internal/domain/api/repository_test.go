@@ -3,10 +3,11 @@ package api_test
 import (
 	"context"
 	"database/sql/driver"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"

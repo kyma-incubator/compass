@@ -3,11 +3,12 @@ package ord
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mitchellh/hashstructure/v2"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/hashstructure/v2"
 
 	"golang.org/x/mod/semver"
 
