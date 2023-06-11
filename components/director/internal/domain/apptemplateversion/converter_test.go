@@ -6,14 +6,10 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var mockedError = errors.New("test-error")
 
 func TestConverter_ToEntity(t *testing.T) {
 	// GIVEN

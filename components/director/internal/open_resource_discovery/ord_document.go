@@ -23,10 +23,13 @@ import (
 // WellKnownEndpoint is the single entry point for the discovery.
 const WellKnownEndpoint = "/.well-known/open-resource-discovery"
 
+// DocumentPerspective represents the perspective of the document
 type DocumentPerspective string
 
 const (
-	SystemVersionPerspective  DocumentPerspective = "system-version"
+	// SystemVersionPerspective represents a dynamic document
+	SystemVersionPerspective DocumentPerspective = "system-version"
+	// SystemInstancePerspective represents a static document
 	SystemInstancePerspective DocumentPerspective = "system-instance"
 )
 
@@ -107,6 +110,7 @@ func (c WellKnownConfig) Validate(baseURL string) error {
 // Documents is a slice of Document objects
 type Documents []*Document
 
+// ResourcesFromDB holds some of the ORD data from the database
 type ResourcesFromDB struct {
 	APIs     map[string]*model.APIDefinition
 	Events   map[string]*model.EventDefinition
@@ -114,12 +118,13 @@ type ResourcesFromDB struct {
 	Bundles  map[string]*model.Bundle
 }
 
+// ResourceIDs holds some of the ORD entities' IDs
 type ResourceIDs struct {
 	PackageIDs          map[string]bool
 	PackagePolicyLevels map[string]string
 	BundleIDs           map[string]bool
 	ProductIDs          map[string]bool
-	ApiIDs              map[string]bool
+	APIIDs              map[string]bool
 	EventIDs            map[string]bool
 	VendorIDs           map[string]bool
 }
@@ -163,7 +168,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		PackagePolicyLevels: make(map[string]string),
 		BundleIDs:           make(map[string]bool),
 		ProductIDs:          make(map[string]bool),
-		ApiIDs:              make(map[string]bool),
+		APIIDs:              make(map[string]bool),
 		EventIDs:            make(map[string]bool),
 		VendorIDs:           make(map[string]bool),
 	}
@@ -276,7 +281,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		PackagePolicyLevels: resourceID.PackagePolicyLevels,
 		BundleIDs:           make(map[string]bool),
 		ProductIDs:          make(map[string]bool),
-		ApiIDs:              make(map[string]bool),
+		APIIDs:              make(map[string]bool),
 		EventIDs:            make(map[string]bool),
 		VendorIDs:           make(map[string]bool),
 	}
@@ -337,10 +342,10 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 				continue
 			}
 			if api.OrdID != nil {
-				if _, ok := resourceIDs.ApiIDs[*api.OrdID]; ok && forbidDuplications {
+				if _, ok := resourceIDs.APIIDs[*api.OrdID]; ok && forbidDuplications {
 					errs = multierror.Append(errs, errors.Errorf("found duplicate api with ord id %q", *api.OrdID))
 				}
-				resourceIDs.ApiIDs[*api.OrdID] = true
+				resourceIDs.APIIDs[*api.OrdID] = true
 			}
 		}
 
@@ -391,7 +396,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 	return ResourceIDs{
 		PackageIDs:          resourceIDs.PackageIDs,
 		ProductIDs:          resourceIDs.ProductIDs,
-		ApiIDs:              resourceIDs.ApiIDs,
+		APIIDs:              resourceIDs.APIIDs,
 		EventIDs:            resourceIDs.EventIDs,
 		VendorIDs:           resourceIDs.VendorIDs,
 		BundleIDs:           resourceIDs.BundleIDs,

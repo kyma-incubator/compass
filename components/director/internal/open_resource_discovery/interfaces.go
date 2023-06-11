@@ -169,6 +169,8 @@ type TenantService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
+// ApplicationTemplateVersionService is responsible for the service-layer Application Template Version operations
+//
 //go:generate mockery --name=ApplicationTemplateVersionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateVersionService interface {
 	GetByAppTemplateIDAndVersion(ctx context.Context, id, version string) (*model.ApplicationTemplateVersion, error)
@@ -177,6 +179,8 @@ type ApplicationTemplateVersionService interface {
 	Update(ctx context.Context, id, appTemplateID string, in model.ApplicationTemplateVersionInput) error
 }
 
+// ApplicationTemplateService is responsible for the service-layer Application Template operations
+//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)

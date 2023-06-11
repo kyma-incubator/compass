@@ -366,7 +366,6 @@ func (s *service) updateReferences(ctx context.Context, api *model.APIDefinition
 			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(targetURLs)),
 		}
 		return s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, nil)
-
 	}
 
 	return s.updateBundleReferences(ctx, api, defaultTargetURLPerBundleForUpdate, defaultBundleID)

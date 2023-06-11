@@ -10,7 +10,7 @@ const (
 	Application Type = "application"
 	// ApplicationTemplate type represents application template resource.
 	ApplicationTemplate Type = "applicationTemplate"
-	// ApplicationTemplate type represents application template resource.
+	// ApplicationTemplateVersion type represents application template version resource.
 	ApplicationTemplateVersion Type = "applicationTemplateVersion"
 	// Runtime type represents runtime resource.
 	Runtime Type = "runtime"

@@ -15,6 +15,7 @@ type ApplicationTemplateVersion struct {
 	ApplicationTemplateID string
 }
 
+// ApplicationTemplateVersionInput represents a struct with the updatable fields
 type ApplicationTemplateVersionInput struct {
 	Version        string
 	Title          *string

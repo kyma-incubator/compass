@@ -288,7 +288,6 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	}
 	if err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
-
 	}
 
 	return nil

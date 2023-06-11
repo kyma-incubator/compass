@@ -234,6 +234,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 	)
 }
 
+// ValidateSystemVersionInput validates the given SystemVersion
 func ValidateSystemVersionInput(appTemplateVersion *model.ApplicationTemplateVersionInput) error {
 	return validation.ValidateStruct(appTemplateVersion,
 		validation.Field(&appTemplateVersion.Title, validation.NilOrNotEmpty, validation.Length(MinSystemVersionTitleLength, MaxSystemVersionTitleLength), validation.Match(regexp.MustCompile(NoNewLineRegex))),

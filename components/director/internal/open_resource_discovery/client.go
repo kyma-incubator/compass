@@ -28,6 +28,7 @@ type ClientConfig struct {
 	maxParallelDocumentsPerApplication int
 }
 
+// Resource represents a resource that is being aggregated. This would be an Application or Application Template
 type Resource struct {
 	Type          directorresource.Type
 	ID            string
@@ -101,16 +102,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 	errMutex := sync.Mutex{}
 
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
-		//isCompliant, err := isDocumentCompliantToConstraints(docDetails, constraints)
-		//if err != nil {
-		//	return nil, "", err
-		//}
-
-		//if !isCompliant {
-		//	log.C(ctx).Infof("Doc is not compliant to constraint: %+v", constraints)
-		//	continue
-		//}
-
 		wg.Add(1)
 		workers <- struct{}{}
 		go func(docDetails DocumentDetails) {

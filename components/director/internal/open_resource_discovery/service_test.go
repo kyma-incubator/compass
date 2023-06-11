@@ -180,12 +180,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return vendorSvc
 	}
 
-	//successfulVendorList := func() *automock.VendorService {
-	//	vendorSvc := &automock.VendorService{}
-	//	vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-	//	return vendorSvc
-	//}
-
 	successfulProductUpdateForApplication := func() *automock.ProductService {
 		productSvc := &automock.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
@@ -201,12 +195,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
-	//
-	//successfulProductList := func() *automock.ProductService {
-	//	productSvc := &automock.ProductService{}
-	//	productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-	//	return productSvc
-	//}
 
 	successfulPackageUpdateForApplication := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
@@ -903,36 +891,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 		},
-		//{
-		//	Name: "Returns error when second transaction commit fails when there is app template ord webhook",
-		//	TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-		//		persistTx := &persistenceautomock.PersistenceTx{}
-		//		persistTx.On("Commit").Return(nil).Once()
-		//		persistTx.On("Commit").Return(testErr).Once()
-		//
-		//		transact := &persistenceautomock.Transactioner{}
-		//		transact.On("Begin").Return(persistTx, nil).Times(2)
-		//		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
-		//		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-		//		return persistTx, transact
-		//	},
-		//	webhookSvcFn: func() *automock.WebhookService {
-		//		whSvc := &automock.WebhookService{}
-		//		whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
-		//		return whSvc
-		//	},
-		//	appSvcFn: func() *automock.ApplicationService {
-		//		appSvc := &automock.ApplicationService{}
-		//		appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
-		//		return appSvc
-		//	},
-		//	appTemplateSvcFn: func() *automock.ApplicationTemplateService {
-		//		svc := &automock.ApplicationTemplateService{}
-		//		svc.On("Get", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplate(), nil)
-		//		return svc
-		//	},
-		//	globalRegistrySvcFn: successfulGlobalRegistrySvc,
-		//},
 		{
 			Name: "Returns error when get internal tenant id fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
@@ -1546,8 +1504,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				//apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				//apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				return apiSvc
 			},
 			eventSvcFn: func() *automock.EventService {

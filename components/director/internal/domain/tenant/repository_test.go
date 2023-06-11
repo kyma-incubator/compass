@@ -924,7 +924,7 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		for topLvlEntity, _ := range resource.TopLevelEntities {
+		for topLvlEntity := range resource.TopLevelEntities {
 			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
 				continue
 			}
@@ -1103,7 +1103,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		for topLvlEntity, _ := range resource.TopLevelEntities {
+		for topLvlEntity := range resource.TopLevelEntities {
 			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
 				continue
 			}
@@ -1253,7 +1253,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		for topLvlEntity, _ := range resource.TopLevelEntities {
+		for topLvlEntity := range resource.TopLevelEntities {
 			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
 				continue
 			}
