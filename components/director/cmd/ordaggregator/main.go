@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"net/http"
 	"os"
 	"time"
@@ -302,6 +303,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	appTemplateVersionRepo := apptemplateversion.NewRepository(appTemplateVersionConv)
 
+	timeSvc := directorTime.NewService()
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
@@ -334,8 +336,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
-	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, uidSvc, timeSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 

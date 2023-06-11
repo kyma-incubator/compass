@@ -37,7 +37,6 @@ const (
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
-	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
@@ -70,12 +69,18 @@ const (
 
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
+
+	appTemplateVersionID    = "testAppTemplateVersionID"
+	appTemplateVersionValue = "2303"
+	appTemplateName         = "appTemplateName"
 )
 
 var (
-	appID              = str.Ptr("testApp")
-	uidSvc             = uid.NewService()
-	packageLinksFormat = removeWhitespace(`[
+	appID                            = "testApp"
+	appTemplateID                    = "testAppTemplate"
+	appTemplateVersionCorrelationIDs = []string{"one"}
+	uidSvc                           = uid.NewService()
+	packageLinksFormat               = removeWhitespace(`[
         {
           "type": "terms-of-service",
           "url": "https://example.com/en/legal/terms-of-use.html"
@@ -626,15 +631,13 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	}
 }
 
-const testApplicationType = ""
-
 func fixApplicationPage() *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: []*model.Application{
 			{
 				Name: "testApp",
 				BaseEntity: &model.BaseEntity{
-					ID:    *appID,
+					ID:    appID,
 					Ready: true,
 				},
 				Type:                  testApplicationType,
@@ -649,12 +652,31 @@ func fixApplicationPage() *model.ApplicationPage {
 		TotalCount: 1,
 	}
 }
+
+func fixAppTemplate() *model.ApplicationTemplate {
+	return &model.ApplicationTemplate{
+		ID:   appTemplateID,
+		Name: appTemplateName,
+	}
+}
+
+func fixAppTemplateVersions() []*model.ApplicationTemplateVersion {
+	return []*model.ApplicationTemplateVersion{
+		{
+			ID:                    appTemplateVersionID,
+			Version:               appTemplateVersionValue,
+			CorrelationIDs:        appTemplateVersionCorrelationIDs,
+			ApplicationTemplateID: appTemplateID,
+		},
+	}
+}
+
 func fixApplications() []*model.Application {
 	return []*model.Application{
 		{
 			Name: "testApp",
 			BaseEntity: &model.BaseEntity{
-				ID:    *appID,
+				ID:    appID,
 				Ready: true,
 			},
 			Type:                  testApplicationType,
@@ -690,7 +712,7 @@ func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
 		{
 			ID:         whID,
-			ObjectID:   *appID,
+			ObjectID:   appID,
 			ObjectType: model.ApplicationWebhookReference,
 			Type:       model.WebhookTypeOpenResourceDiscovery,
 			URL:        str.Ptr(baseURL),
@@ -718,7 +740,7 @@ func fixTenantMappingWebhooksForApplication() []*model.Webhook {
 		},
 		Mode:       &syncMode,
 		ObjectType: model.ApplicationWebhookReference,
-		ObjectID:   *appID,
+		ObjectID:   appID,
 	}}
 }
 
@@ -727,7 +749,7 @@ func fixVendors() []*model.Vendor {
 		{
 			ID:                  vendorID,
 			OrdID:               vendorORDID,
-			ApplicationID:       str.Ptr(*appID),
+			ApplicationID:       str.Ptr(appID),
 			Title:               "SAP",
 			Partners:            json.RawMessage(partners),
 			Labels:              json.RawMessage(labels),
@@ -759,7 +781,7 @@ func fixProducts() []*model.Product {
 		{
 			ID:                  productID,
 			OrdID:               productORDID,
-			ApplicationID:       str.Ptr(*appID),
+			ApplicationID:       str.Ptr(appID),
 			Title:               "PRODUCT TITLE",
 			ShortDescription:    "lorem ipsum",
 			Vendor:              vendorORDID,
@@ -787,7 +809,7 @@ func fixPackages() []*model.Package {
 	return []*model.Package{
 		{
 			ID:                  packageID,
-			ApplicationID:       appID,
+			ApplicationID:       &appID,
 			OrdID:               packageORDID,
 			Vendor:              str.Ptr(vendorORDID),
 			Title:               "PACKAGE 1 TITLE",
@@ -813,7 +835,7 @@ func fixPackages() []*model.Package {
 func fixBundles() []*model.Bundle {
 	return []*model.Bundle{
 		{
-			ApplicationID:                appID,
+			ApplicationID:                &appID,
 			Name:                         "BUNDLE TITLE",
 			Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
 			Version:                      str.Ptr("1.1.2"),
@@ -913,7 +935,7 @@ func fixBundlesWithHash() []*model.Bundle {
 func fixAPIs() []*model.APIDefinition {
 	return []*model.APIDefinition{
 		{
-			ApplicationID:                           appID,
+			ApplicationID:                           &appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Name:                                    "API TITLE",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -946,7 +968,7 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 		{
-			ApplicationID:                           appID,
+			ApplicationID:                           &appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Name:                                    "Gateway Sample Service",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -1018,7 +1040,7 @@ func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			ApplicationID:       appID,
+			ApplicationID:       &appID,
 			PackageID:           str.Ptr(packageORDID),
 			Name:                "EVENT TITLE",
 			Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -1045,7 +1067,7 @@ func fixEvents() []*model.EventDefinition {
 			},
 		},
 		{
-			ApplicationID:    appID,
+			ApplicationID:    &appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
@@ -1194,7 +1216,7 @@ func fixTombstones() []*model.Tombstone {
 		{
 			ID:            tombstoneID,
 			OrdID:         api2ORDID,
-			ApplicationID: appID,
+			ApplicationID: &appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
 		},
 	}

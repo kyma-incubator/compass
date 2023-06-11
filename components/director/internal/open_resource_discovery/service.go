@@ -472,7 +472,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 			return err
 		}
 
-		if err := s.processSpecs(ctx, fetchRequests); err != nil {
+		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests); err != nil {
 			return err
 		}
 	}
@@ -480,7 +480,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 	return nil
 }
 
-func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest) error {
+func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*ordFetchRequest) error {
 	queue := make(chan *model.FetchRequest)
 
 	workers := s.config.maxParallelSpecificationProcessors
@@ -515,7 +515,7 @@ func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetch
 	close(queue)
 	wg.Wait()
 
-	if err := s.processFetchRequestResults(ctx, fetchRequestResults); err != nil {
+	if err := s.processFetchRequestResults(ctx, resourceType, fetchRequestResults); err != nil {
 		errMsg := "error while processing fetch request results"
 		log.C(ctx).WithError(err).Error(errMsg)
 		return errors.Errorf(errMsg)
@@ -543,7 +543,7 @@ func (s *Service) addFetchRequestResult(fetchReqResults *[]*fetchRequestResult, 
 	*fetchReqResults = append(*fetchReqResults, result)
 }
 
-func (s *Service) processFetchRequestResults(ctx context.Context, results []*fetchRequestResult) error {
+func (s *Service) processFetchRequestResults(ctx context.Context, resourceType directorresource.Type, results []*fetchRequestResult) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while opening transaction to process fetch request results")
@@ -553,31 +553,59 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, result := range results {
-		//specReferenceType := model.APISpecReference
-		//if result.fetchRequest.ObjectType == model.EventSpecFetchRequestReference {
-		//	specReferenceType = model.EventSpecReference
-		//}
-
-		if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
-			spec, err := s.specSvc.GetByIDGlobal(ctx, result.fetchRequest.ObjectID)
-			if err != nil {
+		if resourceType == directorresource.ApplicationTemplateVersion {
+			if err := s.processFetchRequestResultGlobal(ctx, result); err != nil {
 				return err
 			}
-
-			spec.Data = result.data
-
-			if err = s.specSvc.UpdateSpecOnlyGlobal(ctx, *spec); err != nil {
+		} else {
+			if err := s.processFetchRequestResult(ctx, result); err != nil {
 				return err
 			}
-		}
-
-		result.fetchRequest.Status = result.status
-		if err = s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest); err != nil {
-			return err
 		}
 	}
 
 	return tx.Commit()
+}
+
+func (s *Service) processFetchRequestResult(ctx context.Context, result *fetchRequestResult) error {
+	specReferenceType := model.APISpecReference
+	if result.fetchRequest.ObjectType == model.EventSpecFetchRequestReference {
+		specReferenceType = model.EventSpecReference
+	}
+
+	if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
+		spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
+		if err != nil {
+			return err
+		}
+
+		spec.Data = result.data
+
+		if err = s.specSvc.UpdateSpecOnly(ctx, *spec); err != nil {
+			return err
+		}
+	}
+
+	result.fetchRequest.Status = result.status
+	return s.fetchReqSvc.Update(ctx, result.fetchRequest)
+}
+
+func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *fetchRequestResult) error {
+	if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
+		spec, err := s.specSvc.GetByIDGlobal(ctx, result.fetchRequest.ObjectID)
+		if err != nil {
+			return err
+		}
+
+		spec.Data = result.data
+
+		if err = s.specSvc.UpdateSpecOnlyGlobal(ctx, *spec); err != nil {
+			return err
+		}
+	}
+
+	result.fetchRequest.Status = result.status
+	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
 func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
@@ -1385,7 +1413,7 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	if err = s.apiSvc.UpdateInManyBundles(ctx, directorresource.ApplicationTemplateVersion, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
+	if err = s.apiSvc.UpdateInManyBundles(ctx, resourceType, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
 		return nil, err
 	}
 
@@ -1493,7 +1521,7 @@ func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenc
 			continue
 		}
 
-		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, objectType, objectID, resourceType)
+		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, resourceType, objectType, objectID)
 		if err != nil {
 			return nil, err
 		}
