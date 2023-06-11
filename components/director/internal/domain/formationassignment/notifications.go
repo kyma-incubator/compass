@@ -411,7 +411,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		return &webhook.FormationAssignment{Value: "\"\""}
 	}
 	config := string(formationAssignment.Value)
-	if config == "" {
+	if config == "" || formationAssignment.State == string(model.CreateErrorAssignmentState) || formationAssignment.State == string(model.DeleteErrorAssignmentState) {
 		config = "\"\""
 	}
 	return &webhook.FormationAssignment{

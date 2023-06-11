@@ -10,11 +10,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
@@ -436,7 +437,7 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := authenticator.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
+	middleware := auth_middleware.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.SecurityConfig.JWKSSyncPeriod)

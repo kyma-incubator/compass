@@ -215,6 +215,10 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
+	if notificationReq == nil {
+		log.C(ctx).Info("The formation assignment notifications are successfully processed")
+		httputils.Respond(w, http.StatusOK)
+	}
 
 	reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
 	if err != nil {

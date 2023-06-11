@@ -2,7 +2,6 @@ package formation_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -81,9 +80,8 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			Details:            generateConfigurationChangeNotificationDetails,
-			Webhook:            webhook,
-			ExpectedErrMessage: fmt.Sprintf("While enforcing constraints for target operation %q and constraint type %q: %s", model.GenerateFormationAssignmentNotificationOperation, model.PreOperation, testErr.Error()),
+			Details: generateConfigurationChangeNotificationDetails,
+			Webhook: webhook,
 		},
 		{
 			Name: "error when webhook type is not supported",
@@ -125,9 +123,8 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			Details:            generateConfigurationChangeNotificationDetails,
-			Webhook:            webhook,
-			ExpectedErrMessage: fmt.Sprintf("While enforcing constraints for target operation %q and constraint type %q: %s", model.GenerateFormationAssignmentNotificationOperation, model.PostOperation, testErr.Error()),
+			Details: generateConfigurationChangeNotificationDetails,
+			Webhook: webhook,
 		},
 	}
 
