@@ -1,13 +1,8 @@
 package apptemplateversion
 
 import (
-	"database/sql"
-	"encoding/json"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
 type converter struct {
@@ -54,33 +49,4 @@ func (c *converter) FromEntity(entity *Entity) *model.ApplicationTemplateVersion
 	}
 
 	return output
-}
-
-func (c *converter) correlationIDsToModel(in sql.NullString) ([]string, error) {
-	if !in.Valid || in.String == "" {
-		return nil, nil
-	}
-
-	var correlationIDs []string
-	err := json.Unmarshal([]byte(in.String), &correlationIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return correlationIDs, nil
-}
-
-func (c *converter) correlationIDsToJSON(in []string) (sql.NullString, error) {
-	result := sql.NullString{}
-
-	if in == nil {
-		return result, nil
-	}
-
-	correlationIDsMarshalled, err := json.Marshal(in)
-	if err != nil {
-		return result, errors.Wrap(err, "while marshalling correlation IDs")
-	}
-
-	return repo.NewValidNullableString(string(correlationIDsMarshalled)), nil
 }
