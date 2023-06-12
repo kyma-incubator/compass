@@ -159,6 +159,10 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 	return commonScenarios, nil
 }
 
+// 42
+// Application
+// 22
+
 func (d *directive) getObjectScenarios(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) ([]string, error) {
 	scenariosLabel, err := d.labelRepo.GetByKey(ctx, tenantID, objectType, objectID, model.ScenariosKey)
 	if err != nil {

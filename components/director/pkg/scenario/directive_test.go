@@ -416,7 +416,7 @@ func TestHasScenario(t *testing.T) {
 		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedBndlAuth.BundleID).Return(mockedBndl, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, *mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
@@ -470,7 +470,7 @@ func TestHasScenario(t *testing.T) {
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, *mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByBundleInstanceAuth, bndlAuthIDField)
