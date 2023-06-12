@@ -131,44 +131,6 @@ func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.
 	return persistTx, transact
 }
 
-// ThatSucceedsOnceAndSecondOneFailsOnCommit missing godoc
-func (g txCtxGenerator) ThatSucceedsOnceAndSecondOneFailsOnCommit() (*automock.PersistenceTx, *automock.Transactioner) {
-	persistTx := &automock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
-	persistTx.On("Commit").Return(g.returnedError).Once()
-
-	transact := &automock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Twice()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
-
-	return persistTx, transact
-}
-
-// ThatSucceedsOnceAndSecondOneDoesNotExpectCommit missing godoc
-func (g txCtxGenerator) ThatSucceedsOnceAndSecondOneDoesNotExpectCommit() (*automock.PersistenceTx, *automock.Transactioner) {
-	persistTx := &automock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
-
-	transact := &automock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Twice()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
-
-	return persistTx, transact
-}
-
-// ThatSucceedsOnceAndSecondOneFailsOnBegin missing godoc
-func (g txCtxGenerator) ThatSucceedsOnceAndSecondOneFailsOnBegin() (*automock.PersistenceTx, *automock.Transactioner) {
-	persistTx := &automock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
-
-	transact := &automock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("Begin").Return(persistTx, g.returnedError).Once()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-
-	return persistTx, transact
-}
-
 // ThatFailsOnBegin missing godoc
 func (g txCtxGenerator) ThatFailsOnBegin() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
