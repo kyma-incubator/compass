@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -278,27 +277,9 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	}
 
 	if objectType != graphql.FormationObjectTypeTenant {
-		selfFATx, err := r.transact.Begin()
+		err = r.deleteSelfFormationAssignment(ctx, tnt, formation.Name, objectID)
 		if err != nil {
-			return nil, err
-		}
-		selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
-		defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
-
-		formationFromDB, err := r.service.GetFormationByName(ctx, formation.Name, tnt)
-		if err != nil {
-			log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formation.Name, err)
-			return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formation.Name)
-		}
-
-		fa, err := r.formationAssignmentSvc.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
-		if err == nil {
-			_ = r.formationAssignmentSvc.Delete(selfFATransactionCtx, fa.ID)
-		}
-
-		err = selfFATx.Commit()
-		if err != nil {
-			return nil, errors.Wrapf(err, "while committing transaction")
+			return nil, errors.Wrapf(err, "while deleting self formation assignmetn")
 		}
 	}
 
@@ -515,6 +496,32 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	return r.conv.ToGraphQL(updatedFormation)
+}
+
+func (r *Resolver) deleteSelfFormationAssignment(ctx context.Context, tnt, formationName, objectID string) error {
+	selfFATx, err := r.transact.Begin()
+	if err != nil {
+		return err
+	}
+	selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
+	defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
+
+	formationFromDB, err := r.service.GetFormationByName(ctx, formationName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
+	}
+
+	fa, err := r.formationAssignmentSvc.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
+	if err == nil {
+		_ = r.formationAssignmentSvc.Delete(selfFATransactionCtx, fa.ID)
+	}
+
+	err = selfFATx.Commit()
+	if err != nil {
+		return errors.Wrapf(err, "while committing transaction")
+	}
+	return nil
 }
 
 func isInErrorState(state string) bool {
