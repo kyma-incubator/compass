@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -335,20 +336,92 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	if err != nil {
 		return err
 	}
+	// config.QueryConfig.PageNumField:  config.QueryConfig.PageStartValue,
+	// config.QueryConfig.PageSizeField: config.QueryConfig.PageSizeValue,
+	// params["pageNum"]= 0
+	// params["pageSize"]= 150
+	// for i := pageStart + 1; i <= totalPages; i++ {
+	//	// params - map[string]string
+	//	// params["pageNum"] = превръща i в string в 10-тична система
+	//	params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
+	//	res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
+	//	if err != nil {
+	//		return errors.Wrap(err, "while fetching tenant events page")
+	//	}
+	//	if res == nil {
+	//		return apperrors.NewInternalError("next page was expected but response was empty")
+	//	}
+	//	if initialCount != gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int() {
+	//		return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
+	//	}
+	//
+	//	if err = applyFunc(res); err != nil {
+	//		return err
+	//	}
+	// }
+
+	eventPages := make([]*EventsPage, 0)
+	var m sync.Mutex
+	pagesQueue := make(chan QueryParams, totalPages)
+	errorChan := make(chan error)
+	wg := sync.WaitGroup{}
+	for worker := 0; worker < 10; worker++ {
+		wg.Add(1)
+		go func() {
+			defer func() {
+				wg.Done()
+			}()
+			for qParams := range pagesQueue {
+				res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
+				if err != nil {
+					errorChan <- errors.Wrap(err, "while fetching tenant events page")
+					continue
+				}
+				if res == nil {
+					errorChan <- apperrors.NewInternalError("next page was expected but response was empty")
+					continue
+				}
+				totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
+				if initialCount != totalResults {
+					errorChan <- apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count %d, Total results %d", initialCount, totalResults)
+					continue
+				}
+
+				m.Lock()
+				eventPages = append(eventPages, &EventsPage{
+					FieldMapping:                 res.FieldMapping,
+					MovedSubaccountsFieldMapping: res.MovedSubaccountsFieldMapping,
+					ProviderName:                 res.ProviderName,
+					Payload:                      res.Payload,
+				})
+				m.Unlock()
+			}
+		}()
+	}
 
 	for i := pageStart + 1; i <= totalPages; i++ {
-		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
-		res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
-		if err != nil {
-			return errors.Wrap(err, "while fetching tenant events page")
+		qParams := make(map[string]string)
+		for k, v := range params {
+			qParams[k] = v
 		}
-		if res == nil {
-			return apperrors.NewInternalError("next page was expected but response was empty")
-		}
-		if initialCount != gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int() {
-			return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
-		}
+		qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
+		pagesQueue <- qParams
+	}
 
+	close(pagesQueue)
+	wg.Wait()
+	close(errorChan)
+
+	hasError := false
+	for err := range errorChan {
+		hasError = true
+		log.C(ctx).Error(err.Error())
+	}
+	if hasError {
+		return errors.New("error while fetching pages")
+	}
+
+	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
 			return err
 		}
