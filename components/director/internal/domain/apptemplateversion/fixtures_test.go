@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	mockedTimestamp    = time.Now().String()
+	mockedTimestamp    = time.Now()
 	testCorrelationIDs = json.RawMessage(`["one"]`)
 	testError          = errors.New("test error")
 	testTableColumns   = []string{"id", "version", "title", "correlation_ids", "release_date", "created_at", "app_template_id"}
@@ -34,7 +34,7 @@ func fixModelApplicationTemplateVersion(id string) *model.ApplicationTemplateVer
 		ID:                    id,
 		Version:               testVersion,
 		Title:                 str.Ptr(testTitle),
-		ReleaseDate:           &mockedTimestamp,
+		ReleaseDate:           str.Ptr(mockedTimestamp.String()),
 		CorrelationIDs:        testCorrelationIDs,
 		CreatedAt:             mockedTimestamp,
 		ApplicationTemplateID: appTemplateID,
@@ -45,7 +45,7 @@ func fixModelApplicationTemplateVersionInput() *model.ApplicationTemplateVersion
 	return &model.ApplicationTemplateVersionInput{
 		Version:        testVersion,
 		Title:          str.Ptr(testTitle),
-		ReleaseDate:    &mockedTimestamp,
+		ReleaseDate:    str.Ptr(mockedTimestamp.String()),
 		CorrelationIDs: testCorrelationIDs,
 	}
 }
@@ -58,7 +58,7 @@ func fixEntityApplicationTemplateVersion(t *testing.T, id string) *apptemplateve
 		ID:                    id,
 		Version:               testVersion,
 		Title:                 repo.NewNullableString(str.Ptr(testTitle)),
-		ReleaseDate:           repo.NewValidNullableString(mockedTimestamp),
+		ReleaseDate:           repo.NewValidNullableString(mockedTimestamp.String()),
 		CorrelationIDs:        repo.NewValidNullableString(string(marshalledCorrelationIDs)),
 		CreatedAt:             mockedTimestamp,
 		ApplicationTemplateID: appTemplateID,

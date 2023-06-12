@@ -15,7 +15,7 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity *apptemplateversion.Entity) (*model.ApplicationTemplateVersion, error) {
+func (_m *EntityConverter) FromEntity(entity *apptemplateversion.Entity) *model.ApplicationTemplateVersion {
 	ret := _m.Called(entity)
 
 	var r0 *model.ApplicationTemplateVersion
@@ -27,18 +27,11 @@ func (_m *EntityConverter) FromEntity(entity *apptemplateversion.Entity) (*model
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*apptemplateversion.Entity) error); ok {
-		r1 = rf(entity)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in *model.ApplicationTemplateVersion) (*apptemplateversion.Entity, error) {
+func (_m *EntityConverter) ToEntity(in *model.ApplicationTemplateVersion) *apptemplateversion.Entity {
 	ret := _m.Called(in)
 
 	var r0 *apptemplateversion.Entity
@@ -50,14 +43,7 @@ func (_m *EntityConverter) ToEntity(in *model.ApplicationTemplateVersion) (*appt
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*model.ApplicationTemplateVersion) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 type mockConstructorTestingTNewEntityConverter interface {

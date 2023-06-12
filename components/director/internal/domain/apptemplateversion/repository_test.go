@@ -40,24 +40,6 @@ func TestRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error when converting", func(t *testing.T) {
-		// GIVEN
-		appTemplateVersionModel := fixModelApplicationTemplateVersion(appTemplateVersionID)
-
-		mockConverter := &automock.EntityConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", appTemplateVersionModel).Return(nil, testError).Once()
-
-		appTemplateRepo := apptemplateversion.NewRepository(mockConverter)
-
-		// WHEN
-		err := appTemplateRepo.Create(context.TODO(), *appTemplateVersionModel)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
-	})
-
 	t.Run("Error when creating", func(t *testing.T) {
 		// GIVEN
 		appTemplateVersionModel := fixModelApplicationTemplateVersion(appTemplateVersionID)
@@ -133,32 +115,6 @@ func TestRepository_GetByAppTemplateIDAndVersion(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
-
-	t.Run("Error when converting", func(t *testing.T) {
-		// GIVEN
-		appTemplateVersionEntity := fixEntityApplicationTemplateVersion(t, appTemplateVersionID)
-
-		mockConverter := &automock.EntityConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", appTemplateVersionEntity).Return(nil, testError).Once()
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rowsToReturn := fixSQLRows([]apptemplateversion.Entity{*appTemplateVersionEntity})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, version, title, correlation_ids, release_date, created_at, app_template_id FROM public.app_template_versions WHERE app_template_id = $1 AND version = $2`)).
-			WithArgs(appTemplateID, testVersion).
-			WillReturnRows(rowsToReturn)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		appTemplateVersionRepo := apptemplateversion.NewRepository(mockConverter)
-
-		// WHEN
-		_, err := appTemplateVersionRepo.GetByAppTemplateIDAndVersion(ctx, appTemplateID, testVersion)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
-	})
 }
 
 func TestRepository_ListByAppTemplateID(t *testing.T) {
@@ -187,7 +143,7 @@ func TestRepository_ListByAppTemplateID(t *testing.T) {
 		},
 		RepoConstructorFunc:       apptemplateversion.NewRepository,
 		MethodArgs:                []interface{}{appTemplateID},
-		DisableConverterErrorTest: false,
+		DisableConverterErrorTest: true,
 	}
 
 	suite.Run(t)
@@ -283,22 +239,5 @@ func TestRepository_Update(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("Error when converting", func(t *testing.T) {
-		// GIVEN
-		appTemplateVersionModel := fixModelApplicationTemplateVersion(appTemplateVersionID)
-		mockConverter := &automock.EntityConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", appTemplateVersionModel).Return(nil, testError).Once()
-
-		appTemplateVersionRepo := apptemplateversion.NewRepository(mockConverter)
-
-		// WHEN
-		err := appTemplateVersionRepo.Update(context.TODO(), *appTemplateVersionModel)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
 	})
 }
