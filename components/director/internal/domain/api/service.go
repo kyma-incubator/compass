@@ -180,11 +180,11 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 		return "", errors.Wrap(err, "while creating api")
 	}
 
-	if err := s.processSpecs(ctx, api.ID, specs, resourceType); err != nil {
+	if err = s.processSpecs(ctx, api.ID, specs, resourceType); err != nil {
 		return "", err
 	}
 
-	if err := s.createBundleReferenceObject(ctx, api.ID, bundleID, defaultBundleID, api.TargetURLs, defaultTargetURLPerBundle); err != nil {
+	if err = s.createBundleReferenceObject(ctx, api.ID, bundleID, defaultBundleID, api.TargetURLs, defaultTargetURLPerBundle); err != nil {
 		return "", err
 	}
 

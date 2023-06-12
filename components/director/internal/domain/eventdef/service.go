@@ -154,26 +154,29 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	id := s.uidService.Generate()
 	eventAPI := in.ToEventDefinition(id, resourceType, resourceID, packageID, eventHash)
 
+	var (
+		err error
+		tnt string
+	)
 	if resourceType == resource.ApplicationTemplateVersion {
-		if err := s.eventAPIRepo.CreateGlobal(ctx, eventAPI); err != nil {
-			return "", errors.Wrap(err, "while creating api")
-		}
+		err = s.eventAPIRepo.CreateGlobal(ctx, eventAPI)
 	} else {
-		tnt, err := tenant.LoadFromContext(ctx)
+		tnt, err = tenant.LoadFromContext(ctx)
 		if err != nil {
 			return "", err
 		}
 
-		if err = s.eventAPIRepo.Create(ctx, tnt, eventAPI); err != nil {
-			return "", errors.Wrap(err, "while creating api")
-		}
+		err = s.eventAPIRepo.Create(ctx, tnt, eventAPI)
+	}
+	if err != nil {
+		return "", errors.Wrap(err, "while creating api")
 	}
 
-	if err := s.processSpecs(ctx, eventAPI.ID, specs, resourceType); err != nil {
+	if err = s.processSpecs(ctx, eventAPI.ID, specs, resourceType); err != nil {
 		return "", err
 	}
 
-	if err := s.createBundleReferenceObject(ctx, eventAPI.ID, bundleID, defaultBundleID, bundleIDs); err != nil {
+	if err = s.createBundleReferenceObject(ctx, eventAPI.ID, bundleID, defaultBundleID, bundleIDs); err != nil {
 		return "", err
 	}
 
