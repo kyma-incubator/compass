@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -34,6 +35,7 @@ type APIRepository interface {
 	UpdateGlobal(ctx context.Context, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
+	DeleteGlobal(ctx context.Context, id string) error
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal apiDefinition IDs when they are created.
@@ -252,16 +254,26 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 }
 
 // Delete deletes the APIDefinition by its ID.
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.DeleteGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
 
-	err = s.repo.Delete(ctx, tnt, id)
+		err = s.repo.Delete(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while deleting APIDefinition with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted APIDefinition with id %s", id)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package eventdef
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -27,6 +28,7 @@ type EventAPIRepository interface {
 	Update(ctx context.Context, tenant string, item *model.EventDefinition) error
 	UpdateGlobal(ctx context.Context, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
+	DeleteGlobal(ctx context.Context, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
 
@@ -233,16 +235,27 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 }
 
 // Delete deletes the EventDefinition by its ID.
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
-	}
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	var (
+		err error
+		tnt string
+	)
 
-	err = s.eventAPIRepo.Delete(ctx, tnt, id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.eventAPIRepo.DeleteGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "while loading tenant from context")
+		}
+
+		err = s.eventAPIRepo.Delete(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while deleting EventDefinition with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted EventDefinition with id %s", id)
 
 	return nil
 }

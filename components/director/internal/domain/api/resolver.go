@@ -25,7 +25,7 @@ type APIService interface {
 	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 }
 
@@ -244,7 +244,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
 
-	err = r.svc.Delete(ctx, id)
+	err = r.svc.Delete(ctx, resource.Application, id)
 	if err != nil {
 		return nil, err
 	}

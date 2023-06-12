@@ -53,6 +53,7 @@ type pgRepository struct {
 	updater               repo.Updater
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
+	deleterGlobal         repo.DeleterGlobal
 	existQuerier          repo.ExistQuerier
 	conv                  EventAPIDefinitionConverter
 }
@@ -70,6 +71,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		updater:               repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(eventAPIDefTable),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.EventDefinition, eventAPIDefTable),
 		existQuerier:          repo.NewExistQuerier(eventAPIDefTable),
 		conv:                  conv,
 	}
@@ -264,6 +266,11 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 // Delete deletes an EventDefinition by its ID.
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
+}
+
+// DeleteGlobal deletes an EventDefinition by its ID without tenant isolation.
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // DeleteAllByBundleID deletes all EventDefinitions for a given bundle ID.

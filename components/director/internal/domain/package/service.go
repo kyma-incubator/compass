@@ -20,6 +20,7 @@ type PackageRepository interface {
 	Update(ctx context.Context, tenant string, item *model.Package) error
 	UpdateGlobal(ctx context.Context, model *model.Package) error
 	Delete(ctx context.Context, tenant, id string) error
+	DeleteGlobal(ctx context.Context, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Package, error)
@@ -112,16 +113,27 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 }
 
 // Delete missing godoc
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
-	}
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	var (
+		tnt string
+		err error
+	)
 
-	err = s.pkgRepo.Delete(ctx, tnt, id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.pkgRepo.DeleteGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "while loading tenant from context")
+		}
+
+		err = s.pkgRepo.Delete(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Package with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted Package with id %s", id)
 
 	return nil
 }

@@ -38,7 +38,7 @@ type ApplicationService interface {
 type BundleService interface {
 	CreateBundle(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput, bndlHash uint64) (string, error)
 	UpdateBundle(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput, bndlHash uint64) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error)
 	ListByApplicationTemplateVersionIDNoPaging(ctx context.Context, appTemplateVersionID string) ([]*model.Bundle, error)
 }
@@ -56,7 +56,7 @@ type BundleReferenceService interface {
 type APIService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error)
 	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.APIDefinition, error)
 }
@@ -67,7 +67,7 @@ type APIService interface {
 type EventService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error)
 	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error)
 }
@@ -78,7 +78,7 @@ type EventService interface {
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error)
-	DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
+	DeleteByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 	UpdateSpecOnly(ctx context.Context, spec model.Spec) error
@@ -103,7 +103,7 @@ type FetchRequestService interface {
 type PackageService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error)
 }
@@ -114,7 +114,7 @@ type PackageService interface {
 type ProductService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error)
 }
@@ -135,7 +135,7 @@ type GlobalProductService interface {
 type VendorService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error)
 }
@@ -156,7 +156,7 @@ type GlobalVendorService interface {
 type TombstoneService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
 }

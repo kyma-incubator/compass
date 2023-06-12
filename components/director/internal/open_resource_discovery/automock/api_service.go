@@ -37,13 +37,13 @@ func (_m *APIService) Create(ctx context.Context, resourceType resource.Type, re
 	return r0, r1
 }
 
-// Delete provides a mock function with given fields: ctx, id
-func (_m *APIService) Delete(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
+// Delete provides a mock function with given fields: ctx, resourceType, id
+func (_m *APIService) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	ret := _m.Called(ctx, resourceType, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) error); ok {
+		r0 = rf(ctx, resourceType, id)
 	} else {
 		r0 = ret.Error(0)
 	}

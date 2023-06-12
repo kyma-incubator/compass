@@ -282,27 +282,52 @@ func TestService_Delete(t *testing.T) {
 		RepositoryFn func() *automock.PackageRepository
 		Input        model.PackageInput
 		InputID      string
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("Delete", ctx, tenantID, packageID).Return(nil).Once()
 				return repo
 			},
-			InputID:     packageID,
-			ExpectedErr: nil,
+			InputID:      packageID,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Success for Application",
+			RepositoryFn: func() *automock.PackageRepository {
+				repo := &automock.PackageRepository{}
+				repo.On("DeleteGlobal", ctx, packageID).Return(nil).Once()
+				return repo
+			},
+			InputID:      packageID,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Delete Error for Application",
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("Delete", ctx, tenantID, packageID).Return(testErr).Once()
 				return repo
 			},
-			InputID:     packageID,
-			ExpectedErr: testErr,
+			InputID:      packageID,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Delete Error for Application Template Version",
+			RepositoryFn: func() *automock.PackageRepository {
+				repo := &automock.PackageRepository{}
+				repo.On("DeleteGlobal", ctx, packageID).Return(testErr).Once()
+				return repo
+			},
+			InputID:      packageID,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -314,7 +339,7 @@ func TestService_Delete(t *testing.T) {
 			svc := ordpackage.NewService(repo, nil)
 
 			// WHEN
-			err := svc.Delete(ctx, testCase.InputID)
+			err := svc.Delete(ctx, testCase.ResourceType, testCase.InputID)
 
 			// THEN
 			if testCase.ExpectedErr == nil {
@@ -330,7 +355,7 @@ func TestService_Delete(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := ordpackage.NewService(nil, nil)
 		// WHEN
-		err := svc.Delete(context.TODO(), "")
+		err := svc.Delete(context.TODO(), resource.Application, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

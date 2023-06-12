@@ -314,6 +314,29 @@ func TestPgRepository_Delete(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_DeleteGlobal(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Event Delete Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM "public"."event_api_definitions" WHERE id = $1`),
+				Args:          []driver.Value{eventID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc: event.NewRepository,
+		MethodArgs:          []interface{}{eventID},
+		IsGlobal:            true,
+		MethodName:          "DeleteGlobal",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Event Delete By BundleID",

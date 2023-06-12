@@ -184,6 +184,29 @@ func TestPgRepository_Delete(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_DeleteGlobal(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Bundle Delete Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.bundles WHERE id = $1`),
+				Args:          []driver.Value{bundleID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		MethodArgs:          []interface{}{bundleID},
+		IsGlobal:            true,
+		MethodName:          "DeleteGlobal",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Bundle Exists",

@@ -73,6 +73,20 @@ func (_m *EventAPIRepository) DeleteAllByBundleID(ctx context.Context, tenantID 
 	return r0
 }
 
+// DeleteGlobal provides a mock function with given fields: ctx, id
+func (_m *EventAPIRepository) DeleteGlobal(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetByID provides a mock function with given fields: ctx, tenantID, id
 func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	ret := _m.Called(ctx, tenantID, id)

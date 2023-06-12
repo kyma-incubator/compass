@@ -629,6 +629,49 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 	eventSpecSuite.Run(t)
 }
 
+func TestRepository_DeleteByReferenceObjectIDGlobal(t *testing.T) {
+	apiSpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "API Spec DeleteByReferenceObjectIDGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE api_def_id = $1`),
+				Args:          []driver.Value{apiID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{model.APISpecReference, apiID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+	}
+
+	eventSpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "Event Spec DeleteByReferenceObjectIDGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE event_def_id = $1`),
+				Args:          []driver.Value{eventID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{model.EventSpecReference, eventID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+	}
+
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
+}
+
 func TestRepository_Update(t *testing.T) {
 	var nilSpecModel *model.Spec
 	apiSpecModel := fixModelAPISpec()

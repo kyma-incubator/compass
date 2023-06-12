@@ -141,16 +141,27 @@ func (s *service) UpdateGlobal(ctx context.Context, id string, in model.VendorIn
 }
 
 // Delete deletes an existing Vendor.
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
-	}
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	var (
+		err error
+		tnt string
+	)
 
-	err = s.vendorRepo.Delete(ctx, tnt, id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.vendorRepo.DeleteGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "while loading tenant from context")
+		}
+
+		err = s.vendorRepo.Delete(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Vendor with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted Vendir with id %s", id)
 
 	return nil
 }

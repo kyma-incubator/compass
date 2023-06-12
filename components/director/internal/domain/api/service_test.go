@@ -1372,27 +1372,52 @@ func TestService_Delete(t *testing.T) {
 		Name         string
 		RepositoryFn func() *automock.APIRepository
 		InputID      string
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("Delete", ctx, tenantID, id).Return(nil).Once()
 				return repo
 			},
-			InputID:     id,
-			ExpectedErr: nil,
+			InputID:      id,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Success for Application Template Version",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("DeleteGlobal", ctx, id).Return(nil).Once()
+				return repo
+			},
+			InputID:      id,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Delete Error for Application",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("Delete", ctx, tenantID, id).Return(testErr).Once()
 				return repo
 			},
-			InputID:     id,
-			ExpectedErr: testErr,
+			InputID:      id,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Delete Error for Application Tempalate Version",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("DeleteGlobal", ctx, id).Return(testErr).Once()
+				return repo
+			},
+			InputID:      id,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -1404,7 +1429,7 @@ func TestService_Delete(t *testing.T) {
 			svc := api.NewService(repo, nil, nil, nil)
 
 			// WHEN
-			err := svc.Delete(ctx, testCase.InputID)
+			err := svc.Delete(ctx, testCase.ResourceType, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -1420,7 +1445,7 @@ func TestService_Delete(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.Delete(context.TODO(), "")
+		err := svc.Delete(context.TODO(), resource.Application, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -1487,7 +1512,7 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.Delete(context.TODO(), "")
+		err := svc.DeleteAllByBundleID(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

@@ -434,27 +434,52 @@ func TestService_Delete(t *testing.T) {
 		RepositoryFn func() *automock.ProductRepository
 		Input        model.ProductInput
 		InputID      string
+		ResourceType resource.Type
 		ExpectedErr  error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
 				repo.On("Delete", ctx, tenantID, productID).Return(nil).Once()
 				return repo
 			},
-			InputID:     productID,
-			ExpectedErr: nil,
+			InputID:      productID,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Delete Error",
+			Name: "Success for Application Template Version",
+			RepositoryFn: func() *automock.ProductRepository {
+				repo := &automock.ProductRepository{}
+				repo.On("DeleteGlobal", ctx, productID).Return(nil).Once()
+				return repo
+			},
+			InputID:      productID,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Delete Error for Application",
 			RepositoryFn: func() *automock.ProductRepository {
 				repo := &automock.ProductRepository{}
 				repo.On("Delete", ctx, tenantID, productID).Return(testErr).Once()
 				return repo
 			},
-			InputID:     productID,
-			ExpectedErr: testErr,
+			InputID:      productID,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Delete Error for Application Template Version",
+			RepositoryFn: func() *automock.ProductRepository {
+				repo := &automock.ProductRepository{}
+				repo.On("DeleteGlobal", ctx, productID).Return(testErr).Once()
+				return repo
+			},
+			InputID:      productID,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -466,7 +491,7 @@ func TestService_Delete(t *testing.T) {
 			svc := product.NewService(repo, nil)
 
 			// WHEN
-			err := svc.Delete(ctx, testCase.InputID)
+			err := svc.Delete(ctx, testCase.ResourceType, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -482,7 +507,7 @@ func TestService_Delete(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := product.NewService(nil, nil)
 		// WHEN
-		err := svc.Delete(context.TODO(), "")
+		err := svc.Delete(context.TODO(), resource.Application, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

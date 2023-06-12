@@ -62,10 +62,6 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, 
 	ret := _m.Called(ctx, tenant, objectType, objectIDs)
 
 	var r0 []*model.FetchRequest
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) ([]*model.FetchRequest, error)); ok {
-		return rf(ctx, tenant, objectType, objectIDs)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
@@ -74,6 +70,7 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, 
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectIDs)
 	} else {

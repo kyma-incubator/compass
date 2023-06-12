@@ -70,6 +70,20 @@ func (_m *SpecRepository) DeleteByReferenceObjectID(ctx context.Context, tenant 
 	return r0
 }
 
+// DeleteByReferenceObjectIDGlobal provides a mock function with given fields: ctx, objectType, objectID
+func (_m *SpecRepository) DeleteByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
+	ret := _m.Called(ctx, objectType, objectID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) error); ok {
+		r0 = rf(ctx, objectType, objectID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Exists provides a mock function with given fields: ctx, tenantID, id, objectType
 func (_m *SpecRepository) Exists(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (bool, error) {
 	ret := _m.Called(ctx, tenantID, id, objectType)

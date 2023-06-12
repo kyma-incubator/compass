@@ -1853,7 +1853,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
 				return svc
 			},
 			APIDefFn: func() *automock.APIService {
@@ -1974,7 +1974,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(testErr).Once()
 				return svc
 			},
 			APIDefFn: func() *automock.APIService {
@@ -2000,7 +2000,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
 				return svc
 			},
 			APIDefFn: func() *automock.APIService {
@@ -2027,7 +2027,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			ServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
 				return svc
 			},
 			APIDefFn: func() *automock.APIService {

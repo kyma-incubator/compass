@@ -37,6 +37,7 @@ type pgRepository struct {
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
+	deleterGlobal      repo.DeleterGlobal
 	creator            repo.Creator
 	creatorGlobal      repo.CreatorGlobal
 	updater            repo.Updater
@@ -53,6 +54,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		singleGetter:       repo.NewSingleGetter(packageTable, packageColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Package, packageTable, packageColumns),
 		deleter:            repo.NewDeleter(packageTable),
+		deleterGlobal:      repo.NewDeleterGlobal(resource.Package, packageTable),
 		creator:            repo.NewCreator(packageTable, packageColumns),
 		creatorGlobal:      repo.NewCreatorGlobal(resource.Package, packageTable, packageColumns),
 		updater:            repo.NewUpdater(packageTable, updatableColumns, []string{"id"}),
@@ -102,6 +104,11 @@ func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Package) e
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Package entity with id %q", id)
 	return r.deleter.DeleteOne(ctx, resource.Package, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	log.C(ctx).Debugf("Deleting Package entity with id %q", id)
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc

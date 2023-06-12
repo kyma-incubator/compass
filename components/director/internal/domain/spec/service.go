@@ -28,6 +28,7 @@ type SpecRepository interface {
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
+	DeleteByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
 	Update(ctx context.Context, tenant string, item *model.Spec) error
 	UpdateGlobal(ctx context.Context, item *model.Spec) error
 	Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType) (bool, error)
@@ -317,13 +318,26 @@ func (s *service) UpdateSpecOnlyGlobal(ctx context.Context, spec model.Spec) err
 }
 
 // DeleteByReferenceObjectID missing godoc
-func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
+func (s *service) DeleteByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error {
+	var (
+		err error
+		tnt string
+	)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.repo.DeleteByReferenceObjectIDGlobal(ctx, objectType, objectID)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		err = s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
+	}
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while deleting reference object type %s with id %s", objectType, objectID)
 	}
 
-	return s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
+	return nil
 }
 
 // Delete missing godoc

@@ -458,6 +458,29 @@ func TestPgRepository_Delete(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_DeleteGlobal(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "API Delete Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM "public"."api_definitions" WHERE id = $1`),
+				Args:          []driver.Value{apiDefID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc: api.NewRepository,
+		MethodArgs:          []interface{}{apiDefID},
+		IsGlobal:            true,
+		MethodName:          "DeleteGlobal",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "API Delete By BundleID",

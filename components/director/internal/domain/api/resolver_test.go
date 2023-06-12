@@ -505,7 +505,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -642,7 +642,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(testErr).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -669,7 +669,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
-				svc.On("Delete", txtest.CtxWithDBMatcher(), id).Return(nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.APIConverter {

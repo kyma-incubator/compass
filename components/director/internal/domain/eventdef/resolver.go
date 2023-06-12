@@ -27,7 +27,7 @@ type EventDefService interface {
 	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error)
 }
 
@@ -223,7 +223,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
 
-	err = r.svc.Delete(ctx, id)
+	err = r.svc.Delete(ctx, resource.Application, id)
 	if err != nil {
 		return nil, err
 	}

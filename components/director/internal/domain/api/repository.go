@@ -49,6 +49,7 @@ type pgRepository struct {
 	updater               repo.Updater
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
+	deleterGlobal         repo.DeleterGlobal
 	existQuerier          repo.ExistQuerier
 	conv                  APIDefinitionConverter
 }
@@ -67,6 +68,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 		updater:               repo.NewUpdater(apiDefTable, updatableColumns, idColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.API, apiDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(apiDefTable),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.API, apiDefTable),
 		existQuerier:          repo.NewExistQuerier(apiDefTable),
 		conv:                  conv,
 	}
@@ -262,6 +264,11 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 // Delete deletes an APIDefinition by its ID.
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// DeleteGlobal deletes an APIDefinition by its ID without tenant isolation.
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // DeleteAllByBundleID deletes all APIDefinitions for a given bundle ID.

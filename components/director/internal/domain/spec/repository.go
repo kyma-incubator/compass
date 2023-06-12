@@ -43,6 +43,7 @@ type repository struct {
 	getter        repo.SingleGetter
 	getterGlobal  repo.SingleGetterGlobal
 	deleter       repo.Deleter
+	deleterGlobal repo.DeleterGlobal
 	updater       repo.Updater
 	updaterGlobal repo.UpdaterGlobal
 	existQuerier  repo.ExistQuerier
@@ -71,6 +72,7 @@ func NewRepository(conv Converter) *repository {
 		}),
 		unionLister:   repo.NewUnionLister(specificationsTable, specificationsColumns),
 		deleter:       repo.NewDeleter(specificationsTable),
+		deleterGlobal: repo.NewDeleterGlobal(resource.Specification, specificationsTable),
 		updater:       repo.NewUpdater(specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
 		updaterGlobal: repo.NewUpdaterGlobal(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
 		existQuerier:  repo.NewExistQuerier(specificationsTable),
@@ -257,6 +259,16 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 	}
 
 	return r.deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
+}
+
+// DeleteByReferenceObjectIDGlobal deletes a reference object with a given ID without tenant isolation
+func (r *repository) DeleteByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return err
+	}
+
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
 }
 
 // Update missing godoc

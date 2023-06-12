@@ -468,7 +468,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 		}
 
 		fetchRequests := append(apiFetchRequests, eventFetchRequests...)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -555,13 +555,16 @@ func (s *Service) processFetchRequestResults(ctx context.Context, resourceType d
 
 	for _, result := range results {
 		if resourceType == directorresource.ApplicationTemplateVersion {
-			if err := s.processFetchRequestResultGlobal(ctx, result); err != nil {
+			if err = s.processFetchRequestResultGlobal(ctx, result); err != nil {
 				return err
 			}
 		} else {
-			if err := s.processFetchRequestResult(ctx, result); err != nil {
+			if err = s.processFetchRequestResult(ctx, result); err != nil {
 				return err
 			}
+		}
+		if err != nil {
+			return err
 		}
 	}
 
@@ -609,7 +612,7 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -623,42 +626,42 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 			return packagesFromDB[i].OrdID == ts.OrdID
 		}); found {
-			if err := s.packageSvc.Delete(ctx, packagesFromDB[i].ID); err != nil {
+			if err := s.packageSvc.Delete(ctx, resourceType, packagesFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
 			return equalStrings(apisFromDB[i].OrdID, &ts.OrdID)
 		}); found {
-			if err := s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil {
+			if err := s.apiSvc.Delete(ctx, resourceType, apisFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
 			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
 		}); found {
-			if err := s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil {
+			if err := s.eventSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 			return equalStrings(bundlesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
-			if err := s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil {
+			if err := s.bundleSvc.Delete(ctx, resourceType, bundlesFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 			return vendorsFromDB[i].OrdID == ts.OrdID
 		}); found {
-			if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].ID); err != nil {
+			if err := s.vendorSvc.Delete(ctx, resourceType, vendorsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 			return productsFromDB[i].OrdID == ts.OrdID
 		}); found {
-			if err := s.productSvc.Delete(ctx, productsFromDB[i].ID); err != nil {
+			if err := s.productSvc.Delete(ctx, resourceType, productsFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1532,7 +1535,7 @@ func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenc
 }
 
 func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
-	if err := s.specSvc.DeleteByReferenceObjectID(ctx, objectType, objectID); err != nil {
+	if err := s.specSvc.DeleteByReferenceObjectID(ctx, resourceType, objectType, objectID); err != nil {
 		return nil, err
 	}
 	return s.createSpecs(ctx, objectType, objectID, specs, resourceType)

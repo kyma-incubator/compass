@@ -363,25 +363,50 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.SpecRepository
 		ExpectedResult     []*model.Spec
+		ResourceType       resource.Type
 		ExpectedErrMessage string
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.SpecRepository {
 				repo := &automock.SpecRepository{}
 				repo.On("DeleteByReferenceObjectID", ctx, tenant, model.APISpecReference, apiID).Return(nil).Once()
 				return repo
 			},
+			ResourceType:       resource.Application,
 			ExpectedResult:     specs,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when APIDefinition listing failed",
+			Name: "Success for Application Template Version",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("DeleteByReferenceObjectIDGlobal", ctx, model.APISpecReference, apiID).Return(nil).Once()
+				return repo
+			},
+			ResourceType:       resource.ApplicationTemplateVersion,
+			ExpectedResult:     specs,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed for Application",
 			RepositoryFn: func() *automock.SpecRepository {
 				repo := &automock.SpecRepository{}
 				repo.On("DeleteByReferenceObjectID", ctx, tenant, model.APISpecReference, apiID).Return(testErr).Once()
 				return repo
 			},
+			ResourceType:       resource.Application,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed for Application",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("DeleteByReferenceObjectIDGlobal", ctx, model.APISpecReference, apiID).Return(testErr).Once()
+				return repo
+			},
+			ResourceType:       resource.ApplicationTemplateVersion,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -394,7 +419,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 			svc := spec.NewService(repo, nil, nil, nil)
 
 			// WHEN
-			err := svc.DeleteByReferenceObjectID(ctx, model.APISpecReference, apiID)
+			err := svc.DeleteByReferenceObjectID(ctx, testCase.ResourceType, model.APISpecReference, apiID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -410,7 +435,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := spec.NewService(nil, nil, nil, nil)
 		// WHEN
-		err := svc.DeleteByReferenceObjectID(context.TODO(), model.APISpecReference, apiID)
+		err := svc.DeleteByReferenceObjectID(context.TODO(), resource.Application, model.APISpecReference, apiID)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

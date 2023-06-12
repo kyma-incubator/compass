@@ -25,7 +25,7 @@ import (
 type BundleService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
@@ -303,7 +303,7 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 		return nil, err
 	}
 
-	err = r.bundleSvc.Delete(ctx, id)
+	err = r.bundleSvc.Delete(ctx, resource.Application, id)
 	if err != nil {
 		return nil, err
 	}

@@ -141,16 +141,27 @@ func (s *service) UpdateGlobal(ctx context.Context, id string, in model.ProductI
 }
 
 // Delete deletes an existing product.
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
-	}
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	var (
+		tnt string
+		err error
+	)
 
-	err = s.productRepo.Delete(ctx, tnt, id)
+	if resourceType == resource.ApplicationTemplateVersion {
+		err = s.productRepo.DeleteGlobal(ctx, id)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "while loading tenant from context")
+		}
+
+		err = s.productRepo.Delete(ctx, tnt, id)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Product with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted Product with id %s", id)
 
 	return nil
 }

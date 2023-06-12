@@ -42,6 +42,7 @@ type pgRepository struct {
 	singleGetter       repo.SingleGetter
 	singleGlobalGetter repo.SingleGetterGlobal
 	deleter            repo.Deleter
+	deleterGlobal      repo.DeleterGlobal
 	lister             repo.Lister
 	globalLister       repo.ListerGlobal
 	unionLister        repo.UnionLister
@@ -59,6 +60,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		singleGetter:       repo.NewSingleGetter(bundleTable, bundleColumns),
 		singleGlobalGetter: repo.NewSingleGetterGlobal(resource.Bundle, bundleTable, bundleColumns),
 		deleter:            repo.NewDeleter(bundleTable),
+		deleterGlobal:      repo.NewDeleterGlobal(resource.Bundle, bundleTable),
 		lister:             repo.NewLister(bundleTable, bundleColumns),
 		globalLister:       repo.NewListerGlobal(resource.Bundle, bundleTable, bundleColumns),
 		unionLister:        repo.NewUnionLister(bundleTable, bundleColumns),
@@ -141,6 +143,11 @@ func (r *pgRepository) UpdateGlobal(ctx context.Context, model *model.Bundle) er
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// DeleteGlobal deletes a bundles by ID without tenant isolation
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
