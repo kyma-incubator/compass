@@ -506,7 +506,7 @@ func (r *Resolver) deleteSelfFormationAssignment(ctx context.Context, tnt, forma
 	selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
 	defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
 
-	formationFromDB, err := r.service.GetFormationByName(ctx, formationName, tnt)
+	formationFromDB, err := r.service.GetFormationByName(selfFATransactionCtx, formationName, tnt)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
 		return errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
