@@ -125,5 +125,7 @@ func (h *handler) DependenciesIndirect(writer http.ResponseWriter, r *http.Reque
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
+	log.C(ctx).Infof("Successfully configured indirect subscription dependency: %s", h.indirectDependencyXsaappnameClone)
+
 	log.C(ctx).Info("Successfully handled dependency request")
 }
