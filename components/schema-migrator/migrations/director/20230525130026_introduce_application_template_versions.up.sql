@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS app_template_versions
 (
     id              UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_template_id UUID NOT NULL,
-    CONSTRAINT app_template_versions_app_template_id_fk FOREIGN KEY  (app_template_id) REFERENCES app_templates(id) on DELETE CASCADE,
+    CONSTRAINT app_template_versions_app_template_id_fk
+        FOREIGN KEY (app_template_id) REFERENCES app_templates(id) ON DELETE CASCADE,
     version         varchar(256) NOT NULL,
     title           varchar(256),
     correlation_ids JSONB,
