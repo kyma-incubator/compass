@@ -30,6 +30,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	sanitizedDoc := fixSanitizedORDDocument()
+	sanitizedDynamicDoc := fixSanitizedDynamicORDDocument()
 	var testSpecData = "{}"
 	var testSpec = model.Spec{}
 	var nilSpecInput *model.SpecInput
@@ -69,6 +70,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	bundlePreSanitizedHash, err := ord.HashObject(fixORDDocument().ConsumptionBundles[0])
 	require.NoError(t, err)
 
+	c := fixORDDynamicDocument().ConsumptionBundles[0]
+	bundlePreSanitizedHashDynamicDoc, err := ord.HashObject(c)
+	require.NoError(t, err)
+
 	successfulWebhookConversion := func() *automock.WebhookConverter {
 		whConv := &automock.WebhookConverter{}
 		whConv.On("InputFromGraphQL", fixTenantMappingWebhookGraphQLInput()).Return(fixTenantMappingWebhookModelInput(), nil).Once()
@@ -78,6 +83,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+		return whSvc
+	}
+
+	successfulWebhookListAppTemplate := func() *automock.WebhookService {
+		whSvc := &automock.WebhookService{}
+		whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 		return whSvc
 	}
 
@@ -101,11 +112,63 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return whSvc
 	}
 
+	successfulTombstoneCreate := func() *automock.TombstoneService {
+		tombstoneSvc := &automock.TombstoneService{}
+		tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
+		tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+		return tombstoneSvc
+	}
+
+	successfulTombstoneCreateForDynamicDoc := func() *automock.TombstoneService {
+		tombstoneSvc := &automock.TombstoneService{}
+		tombstoneSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedDynamicDoc.Tombstones[0]).Return("", nil).Once()
+		tombstoneSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixTombstones(), nil).Once()
+		return tombstoneSvc
+	}
+
+	successfulTombstoneUpdateForDynamicDoc := func() *automock.TombstoneService {
+		tombstoneSvc := &automock.TombstoneService{}
+		tombstoneSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixTombstones(), nil).Once()
+		tombstoneSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, tombstoneID, *sanitizedDynamicDoc.Tombstones[0]).Return(nil).Once()
+		tombstoneSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixTombstones(), nil).Once()
+		return tombstoneSvc
+	}
+
+	successfulTombstoneUpdateForDynamicDocWithApplication := func() *automock.TombstoneService {
+		tombstoneSvc := &automock.TombstoneService{}
+		tombstoneSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixTombstones(), nil).Times(2)
+		tombstoneSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, tombstoneID, *sanitizedDynamicDoc.Tombstones[0]).Return(nil).Times(2)
+		tombstoneSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixTombstones(), nil).Times(2)
+		return tombstoneSvc
+	}
+
 	successfulBundleUpdateForApplication := func() *automock.BundleService {
 		bundlesSvc := &automock.BundleService{}
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		bundlesSvc.On("UpdateBundle", txtest.CtxWithDBMatcher(), resource.Application, bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0]), bundlePreSanitizedHash).Return(nil).Once()
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
+		return bundlesSvc
+	}
+
+	successfulBundleUpdateForDynamicDoc := func() *automock.BundleService {
+		bundlesSvc := &automock.BundleService{}
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundlesWithCredentialExchangeStrategies(), nil).Once()
+		bundlesSvc.On("UpdateBundle", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, bundleID, bundleUpdateInputFromCreateInput(*sanitizedDynamicDoc.ConsumptionBundles[0]), bundlePreSanitizedHashDynamicDoc).Return(nil).Once()
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundlesWithCredentialExchangeStrategies(), nil).Once()
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundlesWithCredentialExchangeStrategies(), nil).Once()
+		return bundlesSvc
+	}
+
+	successfulBundleUpdateForDynamicDocWithApplication := func() *automock.BundleService {
+		bundlesSvc := &automock.BundleService{}
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundlesWithCredentialExchangeStrategies(), nil).Once()
+		bundlesSvc.On("UpdateBundle", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, bundleID, bundleUpdateInputFromCreateInput(*sanitizedDynamicDoc.ConsumptionBundles[0]), bundlePreSanitizedHashDynamicDoc).Return(nil).Times(2)
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundlesWithCredentialExchangeStrategies(), nil).Once()
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundlesWithCredentialExchangeStrategies(), nil).Times(4)
+
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
@@ -116,6 +179,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
+		return bundlesSvc
+	}
+
+	successfulBundleCreateForDynamicDoc := func() *automock.BundleService {
+		bundlesSvc := &automock.BundleService{}
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedDynamicDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
+		bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
 
@@ -171,12 +243,39 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return vendorSvc
 	}
 
+	successfulVendorUpdateForDynamicDoc := func() *automock.VendorService {
+		vendorSvc := &automock.VendorService{}
+		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Once()
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, vendorID, *sanitizedDynamicDoc.Vendors[0]).Return(nil).Once()
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, vendorID2, *sanitizedDynamicDoc.Vendors[1]).Return(nil).Once()
+		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Once()
+		return vendorSvc
+	}
+
+	successfulVendorUpdateForDynamicDocWithApplication := func() *automock.VendorService {
+		vendorSvc := &automock.VendorService{}
+		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Times(2)
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, vendorID, *sanitizedDynamicDoc.Vendors[0]).Return(nil).Times(2)
+		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, vendorID2, *sanitizedDynamicDoc.Vendors[1]).Return(nil).Times(2)
+		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Times(2)
+		return vendorSvc
+	}
+
 	successfulVendorCreate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[0]).Return("", nil).Once()
 		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Vendors[1]).Return("", nil).Once()
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
+		return vendorSvc
+	}
+
+	successfulVendorCreateForDynamicDoc := func() *automock.VendorService {
+		vendorSvc := &automock.VendorService{}
+		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedDynamicDoc.Vendors[0]).Return("", nil).Once()
+		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedDynamicDoc.Vendors[1]).Return("", nil).Once()
+		vendorSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixVendors(), nil).Once()
 		return vendorSvc
 	}
 
@@ -188,11 +287,35 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return productSvc
 	}
 
+	successfulProductUpdateForDynamicDoc := func() *automock.ProductService {
+		productSvc := &automock.ProductService{}
+		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
+		productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, productID, *sanitizedDynamicDoc.Products[0]).Return(nil).Once()
+		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
+		return productSvc
+	}
+
+	successfulProductUpdateForDynamicDocWithApplication := func() *automock.ProductService {
+		productSvc := &automock.ProductService{}
+		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Times(2)
+		productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, productID, *sanitizedDynamicDoc.Products[0]).Return(nil).Times(2)
+		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Times(2)
+		return productSvc
+	}
+
 	successfulProductCreate := func() *automock.ProductService {
 		productSvc := &automock.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", nil).Once()
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
+		return productSvc
+	}
+
+	successfulProductCreateForDynamicDoc := func() *automock.ProductService {
+		productSvc := &automock.ProductService{}
+		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedDynamicDoc.Products[0]).Return("", nil).Once()
+		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
 
@@ -205,12 +328,41 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return packagesSvc
 	}
 
+	successfulPackageUpdateForDynamicDoc := func() *automock.PackageService {
+		packagesSvc := &automock.PackageService{}
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackagesWithHash(), nil).Once()
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
+		packagesSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, packageID, *sanitizedDynamicDoc.Packages[0], packagePreSanitizedHash).Return(nil).Once()
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
+		return packagesSvc
+	}
+
+	successfulPackageUpdateForDynamicDocWithApplication := func() *automock.PackageService {
+		packagesSvc := &automock.PackageService{}
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackagesWithHash(), nil).Once()
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
+		packagesSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, packageID, *sanitizedDynamicDoc.Packages[0], packagePreSanitizedHash).Return(nil).Times(2)
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Times(4)
+
+		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackagesWithHash(), nil).Once()
+		return packagesSvc
+	}
+
 	successfulPackageCreate := func() *automock.PackageService {
 		packagesSvc := &automock.PackageService{}
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Packages[0], mock.Anything).Return("", nil).Once()
 		packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
+		return packagesSvc
+	}
+
+	successfulPackageCreateForDynamicDoc := func() *automock.PackageService {
+		packagesSvc := &automock.PackageService{}
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		packagesSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedDynamicDoc.Packages[0], mock.Anything).Return("", nil).Once()
+		packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
 		return packagesSvc
 	}
 
@@ -337,6 +489,40 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return specSvc
 	}
 
+	successfulSpecCreateAndUpdateForDynamicDoc := func() *automock.SpecService {
+		specSvc := &automock.SpecService{}
+
+		api1SpecInput1 := fixAPI1SpecInputs()[0]
+		api1SpecInput2 := fixAPI1SpecInputs()[1]
+		api1SpecInput3 := fixAPI1SpecInputs()[2]
+
+		api2SpecInput1 := fixAPI2SpecInputs()[0]
+		api2SpecInput2 := fixAPI2SpecInputs()[1]
+
+		event1Spec := fixEvent1SpecInputs()[0]
+		event2Spec := fixEvent2SpecInputs()[0]
+
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, resource.ApplicationTemplateVersion, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, resource.ApplicationTemplateVersion, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput3, resource.ApplicationTemplateVersion, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput3.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput1, resource.ApplicationTemplateVersion, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput2, resource.ApplicationTemplateVersion, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, resource.ApplicationTemplateVersion, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, resource.ApplicationTemplateVersion, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("GetByIDGlobal", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		expectedSpecToUpdate := testSpec
+		expectedSpecToUpdate.Data = &testSpecData
+		specSvc.On("UpdateSpecOnlyGlobal", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		return specSvc
+	}
+
 	successfulSpecWithOneEventCreateAndUpdate := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 
@@ -406,6 +592,80 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return specSvc
 	}
 
+	successfulSpecRecreateAndUpdateForDynamicDoc := func() *automock.SpecService {
+		specSvc := &automock.SpecService{}
+
+		api1SpecInput1 := fixAPI1SpecInputs()[0]
+		api1SpecInput2 := fixAPI1SpecInputs()[1]
+		api1SpecInput3 := fixAPI1SpecInputs()[2]
+
+		api2SpecInput1 := fixAPI2SpecInputs()[0]
+		api2SpecInput2 := fixAPI2SpecInputs()[1]
+
+		event1Spec := fixEvent1SpecInputs()[0]
+		event2Spec := fixEvent2SpecInputs()[0]
+
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return(nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput3, resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput3.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.APISpecReference, api2ID).Return(nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput1, resource.ApplicationTemplateVersion, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput2, resource.ApplicationTemplateVersion, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.EventSpecReference, event1ID).Return(nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, resource.ApplicationTemplateVersion, model.EventSpecReference, event1ID).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.EventSpecReference, event2ID).Return(nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, resource.ApplicationTemplateVersion, model.EventSpecReference, event2ID).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("GetByIDGlobal", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		expectedSpecToUpdate := testSpec
+		expectedSpecToUpdate.Data = &testSpecData
+		specSvc.On("UpdateSpecOnlyGlobal", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		return specSvc
+	}
+
+	successfulSpecRecreateAndUpdateForDynamicDocWithApplication := func() *automock.SpecService {
+		specSvc := &automock.SpecService{}
+
+		api1SpecInput1 := fixAPI1SpecInputs()[0]
+		api1SpecInput2 := fixAPI1SpecInputs()[1]
+		api1SpecInput3 := fixAPI1SpecInputs()[2]
+
+		api2SpecInput1 := fixAPI2SpecInputs()[0]
+		api2SpecInput2 := fixAPI2SpecInputs()[1]
+
+		event1Spec := fixEvent1SpecInputs()[0]
+		event2Spec := fixEvent2SpecInputs()[0]
+
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return(nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput3, resource.ApplicationTemplateVersion, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput3.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Times(2)
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.APISpecReference, api2ID).Return(nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput1, resource.ApplicationTemplateVersion, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput2, resource.ApplicationTemplateVersion, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Times(2)
+
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.EventSpecReference, event1ID).Return(nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, resource.ApplicationTemplateVersion, model.EventSpecReference, event1ID).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Times(2)
+		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, model.EventSpecReference, event2ID).Return(nil).Times(2)
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, resource.ApplicationTemplateVersion, model.EventSpecReference, event2ID).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Times(2)
+
+		specSvc.On("GetByIDGlobal", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
+			Times((len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) * 2) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		expectedSpecToUpdate := testSpec
+		expectedSpecToUpdate.Data = &testSpecData
+		specSvc.On("UpdateSpecOnlyGlobal", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
+			Times((len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) * 2) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		return specSvc
+	}
+
 	successfulSpecRefetch := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 		specSvc.On("ListIDByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixAPI1IDs(), nil).Once()
@@ -471,6 +731,32 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return fetchReqSvc
 	}
 
+	successfulFetchRequestFetchAndUpdateForDynamicDoc := func() *automock.FetchRequestService {
+		fetchReqSvc := &automock.FetchRequestService{}
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		fetchReqSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
+			return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
+		})).Return(nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		return fetchReqSvc
+	}
+
+	successfulFetchRequestFetchAndUpdateForDynamicDocForApplication := func() *automock.FetchRequestService {
+		fetchReqSvc := &automock.FetchRequestService{}
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+			Times((len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) * 2) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		fetchReqSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
+			return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
+		})).Return(nil).
+			Times((len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) * 2) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
+
+		return fetchReqSvc
+	}
+
 	successfulAPIUpdate := func() *automock.APIService {
 		apiSvc := &automock.APIService{}
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -491,12 +777,46 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return apiSvc
 	}
 
+	successfulAPICreateAndDelete := func() *automock.APIService {
+		apiSvc := &automock.APIService{}
+		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+		apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+		apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
+		return apiSvc
+	}
+
 	successfulEventUpdate := func() *automock.EventService {
 		eventSvc := &automock.EventService{}
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 		eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 		eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, event2PreSanitizedHash, "").Return(nil).Once()
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Twice()
+		return eventSvc
+	}
+
+	successfulEventUpdateForDynamicDoc := func() *automock.EventService {
+		eventSvc := &automock.EventService{}
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Once()
+		eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, event1ID, *sanitizedDynamicDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
+		eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, event2ID, *sanitizedDynamicDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, event2PreSanitizedHash, "").Return(nil).Once()
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Twice()
+		return eventSvc
+	}
+
+	successfulEventUpdateForDynamicDocWithApplication := func() *automock.EventService {
+		eventSvc := &automock.EventService{}
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Once()
+		eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, event1ID, *sanitizedDynamicDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Times(2)
+		eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, event2ID, *sanitizedDynamicDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, event2PreSanitizedHash, "").Return(nil).Times(2)
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Times(5)
+
+		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
+		//eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Times(2)
+		//eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, event2PreSanitizedHash, "").Return(nil).Times(2)
+		//eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Twice()
 		return eventSvc
 	}
 
@@ -507,6 +827,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], ([]*model.SpecInput)(nil), []string{bundleID}, mock.Anything, "").Return(event1ID, nil).Once()
 		eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], ([]*model.SpecInput)(nil), []string{bundleID}, mock.Anything, "").Return(event2ID, nil).Once()
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
+		return eventSvc
+	}
+
+	successfulEventCreateForDynamicDoc := func() *automock.EventService {
+		eventSvc := &automock.EventService{}
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+		eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, nilBundleID, str.Ptr(packageID), *sanitizedDynamicDoc.EventResources[0], ([]*model.SpecInput)(nil), []string{bundleID}, mock.Anything, "").Return(event1ID, nil).Once()
+		eventSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, nilBundleID, str.Ptr(packageID), *sanitizedDynamicDoc.EventResources[1], ([]*model.SpecInput)(nil), []string{bundleID}, mock.Anything, "").Return(event2ID, nil).Once()
+		eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Once()
 		return eventSvc
 	}
 
@@ -525,9 +855,47 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return client
 	}
 
+	successfulClientFetchForDynamicDoc := func() *automock.Client {
+		client := &automock.Client{}
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate).Return(ord.Documents{fixORDDynamicDocument()}, baseURL, nil)
+		return client
+	}
+
+	successfulClientFetchForDynamicDocOnAppTemplateWithApplications := func() *automock.Client {
+		client := &automock.Client{}
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate).Return(ord.Documents{fixORDDynamicDocument()}, baseURL, nil).Once()
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForAppTemplate).Return(ord.Documents{fixORDDynamicDocument()}, baseURL, nil).Once()
+		return client
+	}
+
 	successfulAppTemplateVersionList := func() *automock.ApplicationTemplateVersionService {
 		svc := &automock.ApplicationTemplateVersionService{}
 		svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Twice()
+		return svc
+	}
+
+	successfulAppTemplateVersionListAndUpdate := func() *automock.ApplicationTemplateVersionService {
+		svc := &automock.ApplicationTemplateVersionService{}
+		svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Twice()
+		svc.On("Update", txtest.CtxWithDBMatcher(), appTemplateVersionID, appTemplateID, *fixAppTemplateVersionInput()).Return(nil).Once()
+		svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(fixAppTemplateVersion(), nil).Twice()
+		return svc
+	}
+
+	successfulAppTemplateVersionListAndUpdateForApplication := func() *automock.ApplicationTemplateVersionService {
+		svc := &automock.ApplicationTemplateVersionService{}
+		svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Times(4)
+		svc.On("Update", txtest.CtxWithDBMatcher(), appTemplateVersionID, appTemplateID, *fixAppTemplateVersionInput()).Return(nil).Twice()
+		svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(fixAppTemplateVersion(), nil).Times(4)
+		return svc
+	}
+
+	successfulAppTemplateVersionForCreation := func() *automock.ApplicationTemplateVersionService {
+		svc := &automock.ApplicationTemplateVersionService{}
+		svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return([]*model.ApplicationTemplateVersion{}, nil).Once()
+		svc.On("Create", txtest.CtxWithDBMatcher(), appTemplateID, fixAppTemplateVersionInput()).Return(appTemplateVersionID, nil)
+		svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Once()
+		svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(fixAppTemplateVersion(), nil).Twice()
 		return svc
 	}
 
@@ -560,6 +928,69 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		clientFn                func() *automock.Client
 		ExpectedErr             error
 	}{
+		{
+			Name: "Success for Application Template webhook with Dynamic ORD data when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(35)
+			},
+			appSvcFn:       successfulAppTemplateNoAppsAppSvc,
+			webhookSvcFn:   successfulWebhookListAppTemplate,
+			bundleSvcFn:    successfulBundleUpdateForDynamicDoc,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api1ID, *sanitizedDynamicDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDynamicDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api2ID, *sanitizedDynamicDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}, api2PreSanitizedHash, "").Return(nil).Once()
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Twice()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:              successfulEventUpdateForDynamicDoc,
+			specSvcFn:               successfulSpecRecreateAndUpdateForDynamicDoc,
+			fetchReqFn:              successfulFetchRequestFetchAndUpdateForDynamicDoc,
+			packageSvcFn:            successfulPackageUpdateForDynamicDoc,
+			productSvcFn:            successfulProductUpdateForDynamicDoc,
+			vendorSvcFn:             successfulVendorUpdateForDynamicDoc,
+			tombstoneSvcFn:          successfulTombstoneUpdateForDynamicDoc,
+			appTemplateVersionSvcFn: successfulAppTemplateVersionListAndUpdate,
+			appTemplateSvcFn:        successAppTemplateGetSvc,
+			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
+			clientFn:                successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Success for Application Template and Applications webhook with Dynamic ORD data when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(68)
+			},
+			tenantSvcFn:    successfulTenantSvc,
+			appSvcFn:       successfulAppTemplateAppSvc,
+			webhookSvcFn:   successfulWebhookListAppTemplate,
+			bundleSvcFn:    successfulBundleUpdateForDynamicDocWithApplication,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api1ID, *sanitizedDynamicDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDynamicDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Times(2)
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api2ID, *sanitizedDynamicDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}, api2PreSanitizedHash, "").Return(nil).Times(2)
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Times(5)
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api2ID).Return(nil).Times(2)
+
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:              successfulEventUpdateForDynamicDocWithApplication,
+			specSvcFn:               successfulSpecRecreateAndUpdateForDynamicDocWithApplication,
+			fetchReqFn:              successfulFetchRequestFetchAndUpdateForDynamicDocForApplication,
+			packageSvcFn:            successfulPackageUpdateForDynamicDocWithApplication,
+			productSvcFn:            successfulProductUpdateForDynamicDocWithApplication,
+			vendorSvcFn:             successfulVendorUpdateForDynamicDocWithApplication,
+			tombstoneSvcFn:          successfulTombstoneUpdateForDynamicDocWithApplication,
+			appTemplateVersionSvcFn: successfulAppTemplateVersionListAndUpdateForApplication,
+			appTemplateSvcFn:        successAppTemplateGetSvc,
+			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
+			clientFn:                successfulClientFetchForDynamicDocOnAppTemplateWithApplications,
+		},
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
@@ -646,37 +1077,255 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(32)
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion,
-			bundleSvcFn:   successfulBundleCreate,
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
-				return apiSvc
-			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			appSvcFn:                successfulAppGet,
+			tenantSvcFn:             successfulTenantSvc,
+			webhookSvcFn:            successfulTenantMappingOnlyCreation,
+			webhookConvFn:           successfulWebhookConversion,
+			bundleSvcFn:             successfulBundleCreate,
+			apiSvcFn:                successfulAPICreateAndDelete,
+			eventSvcFn:              successfulEventCreate,
+			specSvcFn:               successfulSpecCreateAndUpdate,
+			fetchReqFn:              successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
+		},
+		{
+			Name: "Success when resources are not in db should Create them for a Dynamic document",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(35)
+			},
+			appSvcFn:     successfulAppTemplateNoAppsAppSvc,
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			bundleSvcFn:  successfulBundleCreateForDynamicDoc,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, nilBundleID, str.Ptr(packageID), *sanitizedDynamicDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDynamicDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, nilBundleID, str.Ptr(packageID), *sanitizedDynamicDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:              successfulEventCreateForDynamicDoc,
+			specSvcFn:               successfulSpecCreateAndUpdateForDynamicDoc,
+			fetchReqFn:              successfulFetchRequestFetchAndUpdateForDynamicDoc,
+			packageSvcFn:            successfulPackageCreateForDynamicDoc,
+			productSvcFn:            successfulProductCreateForDynamicDoc,
+			vendorSvcFn:             successfulVendorCreateForDynamicDoc,
+			tombstoneSvcFn:          successfulTombstoneCreateForDynamicDoc,
+			appTemplateVersionSvcFn: successfulAppTemplateVersionForCreation,
+			appTemplateSvcFn:        successAppTemplateGetSvc,
+			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
+			clientFn:                successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Error when creating Application Template Version based on the doc",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			appTemplateVersionSvcFn: func() *automock.ApplicationTemplateVersionService {
+				svc := &automock.ApplicationTemplateVersionService{}
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return([]*model.ApplicationTemplateVersion{}, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), appTemplateID, fixAppTemplateVersionInput()).Return("", testErr).Once()
+				return svc
+			},
+			appTemplateSvcFn:    successAppTemplateGetSvc,
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			clientFn:            successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Error when getting Application Template from the webhook ObjectID",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			appTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), appTemplateID).Return(nil, testErr)
+				return svc
+			},
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Error when listing Application Template Version by app template ID",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			appTemplateVersionSvcFn: func() *automock.ApplicationTemplateVersionService {
+				svc := &automock.ApplicationTemplateVersionService{}
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(nil, testErr).Once()
+				return svc
+			},
+			appTemplateSvcFn:    successAppTemplateGetSvc,
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			clientFn:            successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Error when fetching the Application Template for the given dynamic doc",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(5)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(6)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			appTemplateVersionSvcFn: func() *automock.ApplicationTemplateVersionService {
+				svc := &automock.ApplicationTemplateVersionService{}
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return([]*model.ApplicationTemplateVersion{}, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), appTemplateID, fixAppTemplateVersionInput()).Return(appTemplateVersionID, nil)
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Once()
+				svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(nil, testErr)
+				return svc
+			},
+			appTemplateSvcFn:    successAppTemplateGetSvc,
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			clientFn:            successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Error when fetching the Application Template for the given dynamic doc for a second time",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(7)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(8)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			bundleSvcFn: func() *automock.BundleService {
+				bundlesSvc := &automock.BundleService{}
+				bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixBundles(), nil).Once()
+				return bundlesSvc
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Once()
+				return eventSvc
+			},
+			packageSvcFn: func() *automock.PackageService {
+				packagesSvc := &automock.PackageService{}
+				packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackagesWithHash(), nil).Once()
+				return packagesSvc
+			},
+
+			appTemplateVersionSvcFn: func() *automock.ApplicationTemplateVersionService {
+				svc := &automock.ApplicationTemplateVersionService{}
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return([]*model.ApplicationTemplateVersion{}, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), appTemplateID, fixAppTemplateVersionInput()).Return(appTemplateVersionID, nil)
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Once()
+				svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(fixAppTemplateVersion(), nil).Once()
+				svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(nil, testErr).Once()
+				return svc
+			},
+			appTemplateSvcFn:    successAppTemplateGetSvc,
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			clientFn:            successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Error when fetching the packages from the DB",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(6)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(6)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Once()
+				return eventSvc
+			},
+			packageSvcFn: func() *automock.PackageService {
+				packagesSvc := &automock.PackageService{}
+				packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, testErr).Once()
+				return packagesSvc
+			},
+
+			appTemplateVersionSvcFn: func() *automock.ApplicationTemplateVersionService {
+				svc := &automock.ApplicationTemplateVersionService{}
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return([]*model.ApplicationTemplateVersion{}, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), appTemplateID, fixAppTemplateVersionInput()).Return(appTemplateVersionID, nil)
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Once()
+				svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(fixAppTemplateVersion(), nil).Once()
+				return svc
+			},
+			appTemplateSvcFn:    successAppTemplateGetSvc,
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			clientFn:            successfulClientFetchForDynamicDoc,
+		},
+		{
+			Name: "Error when fetching the bundles from the DB",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(6)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(7)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(6)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			webhookSvcFn: successfulWebhookListAppTemplate,
+			bundleSvcFn: func() *automock.BundleService {
+				bundlesSvc := &automock.BundleService{}
+				bundlesSvc.On("ListByApplicationTemplateVersionIDNoPaging", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, testErr).Once()
+				return bundlesSvc
+			},
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixAPIs(), nil).Once()
+				return apiSvc
+			},
+			eventSvcFn: func() *automock.EventService {
+				eventSvc := &automock.EventService{}
+				eventSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixEvents(), nil).Once()
+				return eventSvc
+			},
+			packageSvcFn: func() *automock.PackageService {
+				packagesSvc := &automock.PackageService{}
+				packagesSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixPackages(), nil).Once()
+				return packagesSvc
+			},
+			appTemplateVersionSvcFn: func() *automock.ApplicationTemplateVersionService {
+				svc := &automock.ApplicationTemplateVersionService{}
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return([]*model.ApplicationTemplateVersion{}, nil).Once()
+				svc.On("Create", txtest.CtxWithDBMatcher(), appTemplateID, fixAppTemplateVersionInput()).Return(appTemplateVersionID, nil)
+				svc.On("ListByAppTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixAppTemplateVersions(), nil).Once()
+				svc.On("GetByAppTemplateIDAndVersion", txtest.CtxWithDBMatcher(), appTemplateID, appTemplateVersionValue).Return(fixAppTemplateVersion(), nil).Once()
+				return svc
+			},
+			appTemplateSvcFn:    successAppTemplateGetSvc,
+			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			clientFn:            successfulClientFetchForDynamicDoc,
 		},
 		{
 			Name: "Success when there is ORD webhook on app template",
@@ -737,34 +1386,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(32)
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion,
-			bundleSvcFn:   successfulBundleCreate,
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
-				return apiSvc
-			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			appSvcFn:                successfulAppGet,
+			tenantSvcFn:             successfulTenantSvc,
+			webhookSvcFn:            successfulTenantMappingOnlyCreation,
+			webhookConvFn:           successfulWebhookConversion,
+			bundleSvcFn:             successfulBundleCreate,
+			apiSvcFn:                successfulAPICreateAndDelete,
+			eventSvcFn:              successfulEventCreate,
+			specSvcFn:               successfulSpecCreateAndUpdate,
+			fetchReqFn:              successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
 				globalRegistrySvcFn := &automock.GlobalRegistryService{}
@@ -779,34 +1413,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(32)
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion,
-			bundleSvcFn:   successfulBundleCreate,
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
-				return apiSvc
-			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			appSvcFn:                successfulAppGet,
+			tenantSvcFn:             successfulTenantSvc,
+			webhookSvcFn:            successfulTenantMappingOnlyCreation,
+			webhookConvFn:           successfulWebhookConversion,
+			bundleSvcFn:             successfulBundleCreate,
+			apiSvcFn:                successfulAPICreateAndDelete,
+			eventSvcFn:              successfulEventCreate,
+			specSvcFn:               successfulSpecCreateAndUpdate,
+			fetchReqFn:              successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
 				globalRegistrySvcFn := &automock.GlobalRegistryService{}
@@ -1276,34 +1895,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 				return persistTx, transact
 			},
-			appSvcFn:      successfulAppGet,
-			tenantSvcFn:   successfulTenantSvc,
-			webhookSvcFn:  successfulTenantMappingOnlyCreation,
-			webhookConvFn: successfulWebhookConversion,
-			bundleSvcFn:   successfulBundleCreate,
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
-				return apiSvc
-			},
-			eventSvcFn:   successfulOneEventCreate,
-			specSvcFn:    successfulSpecWithOneEventCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			appSvcFn:            successfulAppGet,
+			tenantSvcFn:         successfulTenantSvc,
+			webhookSvcFn:        successfulTenantMappingOnlyCreation,
+			webhookConvFn:       successfulWebhookConversion,
+			bundleSvcFn:         successfulBundleCreate,
+			apiSvcFn:            successfulAPICreateAndDelete,
+			eventSvcFn:          successfulOneEventCreate,
+			specSvcFn:           successfulSpecWithOneEventCreateAndUpdate,
+			fetchReqFn:          successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:        successfulPackageCreate,
+			productSvcFn:        successfulProductCreate,
+			vendorSvcFn:         successfulVendorCreate,
+			tombstoneSvcFn:      successfulTombstoneCreate,
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -1352,18 +1956,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				return eventSvc
 			},
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			specSvcFn:           successfulSpecCreateAndUpdate,
+			fetchReqFn:          successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:        successfulPackageCreate,
+			productSvcFn:        successfulProductCreate,
+			vendorSvcFn:         successfulVendorCreate,
+			tombstoneSvcFn:      successfulTombstoneCreate,
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -1391,21 +1989,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
 			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
-				return apiSvc
-			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
+			apiSvcFn:      successfulAPICreateAndDelete,
+			eventSvcFn:    successfulEventCreate,
+			specSvcFn:     successfulSpecCreateAndUpdate,
+			fetchReqFn:    successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:  successfulPackageCreate,
+			productSvcFn:  successfulProductCreate,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1413,13 +2002,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
 				return vendorSvc
 			},
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			tombstoneSvcFn:      successfulTombstoneCreate,
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -1447,33 +2030,18 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn:  successfulTenantMappingOnlyCreation,
 			webhookConvFn: successfulWebhookConversion,
 			bundleSvcFn:   successfulBundleCreate,
-			apiSvcFn: func() *automock.APIService {
-				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
-				return apiSvc
-			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
+			apiSvcFn:      successfulAPICreateAndDelete,
+			eventSvcFn:    successfulEventCreate,
+			specSvcFn:     successfulSpecCreateAndUpdate,
+			fetchReqFn:    successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:  successfulPackageCreate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
 				return productSvc
 			},
-			vendorSvcFn: successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			vendorSvcFn:         successfulVendorCreate,
+			tombstoneSvcFn:      successfulTombstoneCreate,
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -2302,13 +2870,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(testErr).Once()
 				return apiSvc
 			},
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			eventSvcFn:              successfulEventCreate,
 			specSvcFn:               successfulSpecCreate,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2358,13 +2920,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(testErr).Once()
 				return apiSvc
 			},
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			eventSvcFn:              successfulEventCreate,
 			specSvcFn:               successfulSpecCreate,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2418,13 +2974,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			eventSvcFn:              successfulEventCreate,
 			specSvcFn:               successfulSpecCreateAndUpdate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
@@ -3558,18 +4108,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(testErr).Once()
 				return apiSvc
 			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			eventSvcFn:              successfulEventCreate,
+			specSvcFn:               successfulSpecCreate,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -3849,19 +4393,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreate,
-			fetchReqFn:   successfulFetchRequestFetch,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			eventSvcFn:              successfulEventCreate,
+			specSvcFn:               successfulSpecCreate,
+			fetchReqFn:              successfulFetchRequestFetch,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -3916,17 +4454,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 				return specSvc
 			},
-			fetchReqFn:   successfulFetchRequestFetch,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			fetchReqFn:              successfulFetchRequestFetch,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -3985,17 +4517,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 				return specSvc
 			},
-			fetchReqFn:   successfulFetchRequestFetch,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			fetchReqFn:              successfulFetchRequestFetch,
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4065,16 +4591,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 				return fetchReqSvc
 			},
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulVendorCreate,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			packageSvcFn:            successfulPackageCreate,
+			productSvcFn:            successfulProductCreate,
+			vendorSvcFn:             successfulVendorCreate,
+			tombstoneSvcFn:          successfulTombstoneCreate,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetch,
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4098,19 +4618,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			eventSvcFn:   successfulEventCreate,
-			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
-			packageSvcFn: successfulPackageCreate,
-			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulEmptyVendorList,
-			tombstoneSvcFn: func() *automock.TombstoneService {
-				tombstoneSvc := &automock.TombstoneService{}
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
-				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
-				return tombstoneSvc
-			},
+			eventSvcFn:          successfulEventCreate,
+			specSvcFn:           successfulSpecCreateAndUpdate,
+			fetchReqFn:          successfulFetchRequestFetchAndUpdate,
+			packageSvcFn:        successfulPackageCreate,
+			productSvcFn:        successfulProductCreate,
+			vendorSvcFn:         successfulEmptyVendorList,
+			tombstoneSvcFn:      successfulTombstoneCreate,
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -4744,6 +5258,13 @@ func successfulAppTemplateAppSvc() *automock.ApplicationService {
 	appSvc := &automock.ApplicationService{}
 	appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
 	appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(fixApplications()[0], nil).Once()
+
+	return appSvc
+}
+
+func successfulAppTemplateNoAppsAppSvc() *automock.ApplicationService {
+	appSvc := &automock.ApplicationService{}
+	appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(nil, nil).Once()
 
 	return appSvc
 }

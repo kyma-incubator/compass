@@ -1,14 +1,12 @@
 package apptemplateversion_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestConverter_ToEntity(t *testing.T) {
@@ -43,10 +41,9 @@ func TestConverter_ToEntity(t *testing.T) {
 			conv := apptemplateversion.NewConverter()
 
 			// WHEN
-			res, err := conv.ToEntity(testCase.Input)
+			res := conv.ToEntity(testCase.Input)
 
 			// then
-			require.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
@@ -59,38 +56,24 @@ func TestConverter_FromEntity(t *testing.T) {
 	appTemplateModel := fixModelApplicationTemplateVersion(appTemplateVersionID)
 
 	testCases := []struct {
-		Name               string
-		Input              *apptemplateversion.Entity
-		Expected           *model.ApplicationTemplateVersion
-		ExpectedErrMessage string
+		Name     string
+		Input    *apptemplateversion.Entity
+		Expected *model.ApplicationTemplateVersion
 	}{
 		{
-			Name:               "All properties given",
-			Input:              appTemplateEntity,
-			Expected:           appTemplateModel,
-			ExpectedErrMessage: "",
+			Name:     "All properties given",
+			Input:    appTemplateEntity,
+			Expected: appTemplateModel,
 		},
 		{
-			Name:               "Empty",
-			Input:              &apptemplateversion.Entity{},
-			Expected:           &model.ApplicationTemplateVersion{},
-			ExpectedErrMessage: "",
+			Name:     "Empty",
+			Input:    &apptemplateversion.Entity{},
+			Expected: &model.ApplicationTemplateVersion{},
 		},
 		{
-			Name:               "Nil",
-			Input:              nil,
-			Expected:           nil,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "PlaceholdersJSON Unmarshall Error",
-			Input: &apptemplateversion.Entity{
-				CorrelationIDs: sql.NullString{
-					String: "{dasdd",
-					Valid:  true,
-				},
-			},
-			ExpectedErrMessage: "while converting correlationIDs to string array: invalid character 'd' looking for beginning of object key string",
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
 		},
 	}
 
@@ -99,14 +82,7 @@ func TestConverter_FromEntity(t *testing.T) {
 			conv := apptemplateversion.NewConverter()
 
 			// WHEN
-			res, err := conv.FromEntity(testCase.Input)
-
-			if testCase.ExpectedErrMessage != "" {
-				require.Error(t, err)
-				assert.Equal(t, testCase.ExpectedErrMessage, err.Error())
-			} else {
-				require.Nil(t, err)
-			}
+			res := conv.FromEntity(testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)

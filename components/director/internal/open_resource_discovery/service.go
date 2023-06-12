@@ -285,7 +285,7 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 		}
 
 		for _, app := range apps {
-			if err := s.processApplicationWebhook(ctx, cfg, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationWebhook(ctx, cfg, webhook, app.ID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
@@ -555,13 +555,9 @@ func (s *Service) processFetchRequestResults(ctx context.Context, resourceType d
 
 	for _, result := range results {
 		if resourceType.IsTenantIgnorable() {
-			if err = s.processFetchRequestResultGlobal(ctx, result); err != nil {
-				return err
-			}
+			err = s.processFetchRequestResultGlobal(ctx, result)
 		} else {
-			if err = s.processFetchRequestResult(ctx, result); err != nil {
-				return err
-			}
+			err = s.processFetchRequestResult(ctx, result)
 		}
 		if err != nil {
 			return err
@@ -691,7 +687,7 @@ func (s *Service) processDescribedSystemVersions(ctx context.Context, resource R
 			continue
 		}
 
-		if err := s.resyncApplicationTemplateVersionInTx(ctx, appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
+		if err = s.resyncApplicationTemplateVersionInTx(ctx, appTemplateID, appTemplateVersions, document.DescribedSystemVersion); err != nil {
 			return nil, err
 		}
 	}
@@ -793,7 +789,7 @@ func (s *Service) resyncApplicationTemplateVersionInTx(ctx context.Context, appT
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.resyncAppTemplateVersion(ctx, appTemplateID, appTemplateVersionsFromDB, appTemplateVersion); err != nil {
+	if err = s.resyncAppTemplateVersion(ctx, appTemplateID, appTemplateVersionsFromDB, appTemplateVersion); err != nil {
 		return errors.Wrapf(err, "error while resyncing App Template Version for App template %q", appTemplateID)
 	}
 	return tx.Commit()
@@ -949,7 +945,7 @@ func (s *Service) processBundles(ctx context.Context, resourceType directorresou
 		}
 	}
 
-	if err := s.resyncTenantMappingWebhooksInTx(ctx, credentialExchangeStrategyJSON, resourceID); err != nil {
+	if err = s.resyncTenantMappingWebhooksInTx(ctx, credentialExchangeStrategyJSON, resourceID); err != nil {
 		return nil, err
 	}
 
@@ -1357,7 +1353,7 @@ func (s *Service) resyncVendor(ctx context.Context, resourceType directorresourc
 }
 
 func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
-	ctx = addFieldToLogger(ctx, "app_template_version_id", appTemplateID)
+	ctx = addFieldToLogger(ctx, "app_template_id", appTemplateID)
 	if i, found := searchInSlice(len(appTemplateVersionsFromDB), func(i int) bool {
 		return appTemplateVersionsFromDB[i].Version == appTemplateVersion.Version
 	}); found {
@@ -1955,8 +1951,7 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-
-	if err := s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs); err != nil {
 		return err
 	}
 

@@ -10,7 +10,7 @@ type Entity struct {
 	ID                    string         `db:"id"`
 	Version               string         `db:"version"`
 	Title                 sql.NullString `db:"title"`
-	ReleaseDate           *time.Time     `db:"release_date"`
+	ReleaseDate           sql.NullString `db:"release_date"`
 	CorrelationIDs        sql.NullString `db:"correlation_ids"`
 	CreatedAt             time.Time      `db:"created_at"`
 	ApplicationTemplateID string         `db:"app_template_id"`

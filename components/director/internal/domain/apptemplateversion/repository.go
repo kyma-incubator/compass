@@ -9,7 +9,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/pkg/errors"
 )
 
 const tableName string = `public.app_template_versions`
@@ -24,8 +23,8 @@ var (
 //
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
-	ToEntity(in *model.ApplicationTemplateVersion) (*Entity, error)
-	FromEntity(entity *Entity) (*model.ApplicationTemplateVersion, error)
+	ToEntity(in *model.ApplicationTemplateVersion) *Entity
+	FromEntity(entity *Entity) *model.ApplicationTemplateVersion
 }
 
 type repository struct {
@@ -52,10 +51,7 @@ func NewRepository(conv EntityConverter) *repository {
 // Create persists a model.ApplicationTemplateVersion
 func (r *repository) Create(ctx context.Context, item model.ApplicationTemplateVersion) error {
 	log.C(ctx).Debugf("Converting Application Template Version with id %s to entity", item.ID)
-	entity, err := r.conv.ToEntity(&item)
-	if err != nil {
-		return errors.Wrapf(err, "while converting Application Template Version with ID %s", item.ID)
-	}
+	entity := r.conv.ToEntity(&item)
 
 	log.C(ctx).Debugf("Persisting Application Template Version entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
@@ -71,12 +67,7 @@ func (r *repository) GetByAppTemplateIDAndVersion(ctx context.Context, appTempla
 		return nil, err
 	}
 
-	result, err := r.conv.FromEntity(&entity)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting")
-	}
-
-	return result, nil
+	return r.conv.FromEntity(&entity), nil
 }
 
 // ListByAppTemplateID lists multiple model.ApplicationTemplateVersion based on Application Template ID
@@ -96,10 +87,7 @@ func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 
 // Update updates a model.ApplicationTemplateVersion
 func (r *repository) Update(ctx context.Context, model model.ApplicationTemplateVersion) error {
-	entity, err := r.conv.ToEntity(&model)
-	if err != nil {
-		return errors.Wrapf(err, "while converting Application Template with ID %s", model.ID)
-	}
+	entity := r.conv.ToEntity(&model)
 
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
@@ -107,10 +95,7 @@ func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate
 func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.ApplicationTemplateVersion, error) {
 	items := make([]*model.ApplicationTemplateVersion, 0, len(entities))
 	for _, ent := range entities {
-		m, err := r.conv.FromEntity(&ent)
-		if err != nil {
-			return nil, err
-		}
+		m := r.conv.FromEntity(&ent)
 		items = append(items, m)
 	}
 	return items, nil

@@ -1,16 +1,17 @@
 package model
 
 import (
+	"encoding/json"
 	"time"
 )
 
-// ApplicationTemplateVersion missing godoc
+// ApplicationTemplateVersion represents a struct for Application Template Version data
 type ApplicationTemplateVersion struct {
 	ID                    string
 	Version               string
 	Title                 *string
-	ReleaseDate           *time.Time
-	CorrelationIDs        []string
+	ReleaseDate           *string
+	CorrelationIDs        json.RawMessage
 	CreatedAt             time.Time
 	ApplicationTemplateID string
 }
@@ -19,11 +20,11 @@ type ApplicationTemplateVersion struct {
 type ApplicationTemplateVersionInput struct {
 	Version        string
 	Title          *string
-	ReleaseDate    *time.Time
-	CorrelationIDs []string
+	ReleaseDate    *string
+	CorrelationIDs json.RawMessage
 }
 
-// ToApplicationTemplateVersion missing godoc
+// ToApplicationTemplateVersion converts ApplicationTemplateVersionInput into ApplicationTemplateVersion
 func (a *ApplicationTemplateVersionInput) ToApplicationTemplateVersion(id, appTemplateID string) ApplicationTemplateVersion {
 	if a == nil {
 		return ApplicationTemplateVersion{}

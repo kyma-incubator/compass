@@ -19,51 +19,41 @@ func NewConverter() *converter {
 }
 
 // ToEntity converts the provided service-layer representation of an ApplicationTemplateVersion to the repository-layer one.
-func (c *converter) ToEntity(in *model.ApplicationTemplateVersion) (*Entity, error) {
+func (c *converter) ToEntity(in *model.ApplicationTemplateVersion) *Entity {
 	if in == nil {
-		return nil, nil
-	}
-
-	correlationIDs, err := c.correlationIDsToJSON(in.CorrelationIDs)
-	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	output := &Entity{
 		ID:                    in.ID,
 		Version:               in.Version,
 		Title:                 repo.NewNullableString(in.Title),
-		ReleaseDate:           in.ReleaseDate,
-		CorrelationIDs:        correlationIDs,
+		ReleaseDate:           repo.NewNullableString(in.ReleaseDate),
+		CorrelationIDs:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		CreatedAt:             in.CreatedAt,
 		ApplicationTemplateID: in.ApplicationTemplateID,
 	}
 
-	return output, nil
+	return output
 }
 
 // FromEntity converts the provided Entity repo-layer representation of an ApplicationTemplateVersion to the service-layer representation model.ApplicationTemplateVersion.
-func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplateVersion, error) {
+func (c *converter) FromEntity(entity *Entity) *model.ApplicationTemplateVersion {
 	if entity == nil {
-		return nil, nil
-	}
-
-	correlationIDs, err := c.correlationIDsToModel(entity.CorrelationIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting correlationIDs to string array")
+		return nil
 	}
 
 	output := &model.ApplicationTemplateVersion{
 		ID:                    entity.ID,
 		Version:               entity.Version,
 		Title:                 repo.StringPtrFromNullableString(entity.Title),
-		ReleaseDate:           entity.ReleaseDate,
-		CorrelationIDs:        correlationIDs,
+		ReleaseDate:           repo.StringPtrFromNullableString(entity.ReleaseDate),
+		CorrelationIDs:        repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		CreatedAt:             entity.CreatedAt,
 		ApplicationTemplateID: entity.ApplicationTemplateID,
 	}
 
-	return output, nil
+	return output
 }
 
 func (c *converter) correlationIDsToModel(in sql.NullString) ([]string, error) {
