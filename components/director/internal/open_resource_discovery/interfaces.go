@@ -156,7 +156,6 @@ type GlobalVendorService interface {
 type TombstoneService interface {
 	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
 	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
 }
