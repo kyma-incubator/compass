@@ -790,26 +790,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
-
 	formationFromDB := ft.formation
-	if objectType != graphql.FormationObjectTypeTenant {
-		selfFATx, err := s.transact.Begin()
-		if err != nil {
-			return nil, err
-		}
-		selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
-		defer s.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
-
-		fa, err := s.formationAssignmentService.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
-		if err == nil {
-			_ = s.formationAssignmentService.Delete(selfFATransactionCtx, fa.ID)
-		}
-
-		err = selfFATx.Commit()
-		if err != nil {
-			return nil, errors.Wrapf(err, "while committing transaction")
-		}
-	}
 
 	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
 	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -273,6 +275,31 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if objectType != graphql.FormationObjectTypeTenant {
+		selfFATx, err := r.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
+		defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
+
+		formationFromDB, err := r.service.GetFormationByName(ctx, formation.Name, tnt)
+		if err != nil {
+			log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formation.Name, err)
+			return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formation.Name)
+		}
+
+		fa, err := r.formationAssignmentSvc.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
+		if err == nil {
+			_ = r.formationAssignmentSvc.Delete(selfFATransactionCtx, fa.ID)
+		}
+
+		err = selfFATx.Commit()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while committing transaction")
+		}
 	}
 
 	tx, err := r.transact.Begin()
