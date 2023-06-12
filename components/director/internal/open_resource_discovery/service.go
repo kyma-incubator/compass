@@ -554,7 +554,7 @@ func (s *Service) processFetchRequestResults(ctx context.Context, resourceType d
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, result := range results {
-		if resourceType == directorresource.ApplicationTemplateVersion {
+		if resourceType.IsTenantIgnorable() {
 			if err = s.processFetchRequestResultGlobal(ctx, result); err != nil {
 				return err
 			}
@@ -764,7 +764,6 @@ func (s *Service) listVendorsInTx(ctx context.Context, resourceType directorreso
 	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
-
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing vendors for %s with id %q", resourceType, resourceID)
 	}
@@ -976,7 +975,6 @@ func (s *Service) listBundlesInTx(ctx context.Context, resourceType directorreso
 	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
 	}
-
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing bundles for %s with id %q", resourceType, resourceID)
 	}
@@ -1169,7 +1167,6 @@ func (s *Service) listAPIsInTx(ctx context.Context, resourceType directorresourc
 	} else if resourceType == directorresource.ApplicationTemplateVersion {
 		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
-
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing apis for %s with id %q", resourceType, resourceID)
 	}

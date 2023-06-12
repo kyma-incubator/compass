@@ -71,7 +71,7 @@ func (d *DocumentInput) ToDocumentWithinBundle(id, bundleID string, resourceType
 		},
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		doc.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		doc.AppID = &resourceID

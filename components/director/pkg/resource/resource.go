@@ -154,6 +154,12 @@ func (t Type) IgnoredTenantAccessTable() (string, bool) {
 	return tbl, ok
 }
 
+// IsTenantIgnorable returns true if the entity has a Global access and does not need tenant isolation
+func (t Type) IsTenantIgnorable() bool {
+	_, exists := ignoredTenantAccessTable[t]
+	return exists
+}
+
 // TenantAccessTable returns the table / view with tenant accesses of the given type.
 func (t Type) TenantAccessTable() (string, bool) {
 	tbl, ok := tenantAccessTable[t]

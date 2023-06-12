@@ -223,7 +223,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		},
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		api.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		api.ApplicationID = &resourceID

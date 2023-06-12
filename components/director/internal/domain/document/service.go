@@ -100,7 +100,7 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 		err error
 		tnt string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.repo.CreateGlobal(ctx, document)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -119,7 +119,7 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 		fetchRequestID := &generatedID
 		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
 
-		if resourceType == resource.ApplicationTemplateVersion {
+		if resourceType.IsTenantIgnorable() {
 			err = s.fetchRequestRepo.CreateGlobal(ctx, fetchRequestModel)
 		} else {
 			err = s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel)

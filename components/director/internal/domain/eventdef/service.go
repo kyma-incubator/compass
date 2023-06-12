@@ -158,7 +158,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 		err error
 		tnt string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.eventAPIRepo.CreateGlobal(ctx, eventAPI)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -196,7 +196,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 		tnt   string
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		event, err = s.eventAPIRepo.GetByIDGlobal(ctx, id)
 		if err != nil {
 			return err
@@ -216,7 +216,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 	_, resourceID := getParentResource(event)
 	event = in.ToEventDefinition(id, resourceType, resourceID, event.PackageID, eventHash)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		if err = s.eventAPIRepo.UpdateGlobal(ctx, event); err != nil {
 			return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 		}
@@ -244,7 +244,7 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 		tnt string
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.eventAPIRepo.DeleteGlobal(ctx, id)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)

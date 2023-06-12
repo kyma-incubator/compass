@@ -55,7 +55,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 		err error
 		tnt string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.tombstoneRepo.CreateGlobal(ctx, tombstone)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -82,7 +82,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 		err       error
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		tombstone, err = s.tombstoneRepo.GetByIDGlobal(ctx, id)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -98,7 +98,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 
 	tombstone.SetFromUpdateInput(in)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.tombstoneRepo.UpdateGlobal(ctx, tombstone)
 	} else {
 		err = s.tombstoneRepo.Update(ctx, tnt, tombstone)

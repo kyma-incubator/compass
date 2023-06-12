@@ -94,7 +94,7 @@ func (i *PackageInput) ToPackage(id string, resourceType resource.Type, resource
 		ResourceHash:        hash,
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		pkg.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		pkg.ApplicationID = &resourceID

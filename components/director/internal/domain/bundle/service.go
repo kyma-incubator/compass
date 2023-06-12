@@ -73,7 +73,7 @@ func (s *service) CreateBundle(ctx context.Context, resourceType resource.Type, 
 		err error
 		tnt string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.bndlRepo.CreateGlobal(ctx, bndl)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -130,7 +130,7 @@ func (s *service) UpdateBundle(ctx context.Context, resourceType resource.Type, 
 		err  error
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		bndl, err = s.bndlRepo.GetByIDGlobal(ctx, id)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -146,7 +146,7 @@ func (s *service) UpdateBundle(ctx context.Context, resourceType resource.Type, 
 
 	bndl.SetFromUpdateInput(in, bndlHash)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.bndlRepo.UpdateGlobal(ctx, bndl)
 	} else {
 		err = s.bndlRepo.Update(ctx, tnt, bndl)
@@ -165,7 +165,7 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 		tnt string
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.bndlRepo.DeleteGlobal(ctx, id)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)

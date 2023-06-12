@@ -189,7 +189,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		},
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		event.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		event.ApplicationID = &resourceID

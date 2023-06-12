@@ -54,7 +54,7 @@ func (i *ProductInput) ToProduct(id string, resourceType resource.Type, resource
 		DocumentationLabels: i.DocumentationLabels,
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		product.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		product.ApplicationID = &resourceID

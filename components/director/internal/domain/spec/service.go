@@ -121,7 +121,7 @@ func (s *service) GetByReferenceObjectID(ctx context.Context, resourceType resou
 		err   error
 		tnt   string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		specs, err = s.repo.ListByReferenceObjectIDGlobal(ctx, objectType, objectID)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -167,7 +167,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 		return "", err
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.repo.CreateGlobal(ctx, spec)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -189,7 +189,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
-		if resourceType == resource.ApplicationTemplateVersion {
+		if resourceType.IsTenantIgnorable() {
 			err = s.repo.UpdateGlobal(ctx, spec)
 		} else {
 			err = s.repo.Update(ctx, tnt, spec)
@@ -215,7 +215,7 @@ func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.C
 		return "", nil, err
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.repo.CreateGlobal(ctx, spec)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -246,7 +246,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		tnt string
 		err error
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		if _, err = s.repo.GetByIDGlobal(ctx, id); err != nil {
 			return err
 		}
@@ -282,7 +282,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.repo.UpdateGlobal(ctx, spec)
 	} else {
 		err = s.repo.Update(ctx, tnt, spec)
@@ -323,7 +323,7 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, resourceType re
 		err error
 		tnt string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.repo.DeleteByReferenceObjectIDGlobal(ctx, objectType, objectID)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -416,7 +416,7 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 	fr := in.ToFetchRequest(s.timestampGen(), id, getFetchRequestObjectTypeBySpecObjectType(objectType), parentObjectID)
 
 	var err error
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.fetchRequestRepo.CreateGlobal(ctx, fr)
 	} else {
 		err = s.fetchRequestRepo.Create(ctx, tenant, fr)

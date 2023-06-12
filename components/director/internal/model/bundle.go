@@ -145,7 +145,7 @@ func (i *BundleCreateInput) ToBundle(id string, resourceType resource.Type, reso
 		},
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		bundle.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		bundle.ApplicationID = &resourceID

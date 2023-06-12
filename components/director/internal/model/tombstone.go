@@ -29,7 +29,7 @@ func (i *TombstoneInput) ToTombstone(id string, resourceType resource.Type, reso
 		RemovalDate: i.RemovalDate,
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		tombstone.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		tombstone.ApplicationID = &resourceID

@@ -44,7 +44,7 @@ func (i *VendorInput) ToVendor(id string, resourceType resource.Type, resourceID
 		DocumentationLabels: i.DocumentationLabels,
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		vendor.ApplicationTemplateVersionID = &resourceID
 	} else if resourceType == resource.Application {
 		vendor.ApplicationID = &resourceID

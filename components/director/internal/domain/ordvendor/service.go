@@ -57,7 +57,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 		err error
 		tnt string
 	)
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.vendorRepo.CreateGlobal(ctx, vendor)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -97,7 +97,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 		tnt    string
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		vendor, err = s.vendorRepo.GetByIDGlobal(ctx, id)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
@@ -113,7 +113,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 
 	vendor.SetFromUpdateInput(in)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.vendorRepo.UpdateGlobal(ctx, vendor)
 	} else {
 		err = s.vendorRepo.Update(ctx, tnt, vendor)
@@ -147,7 +147,7 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 		tnt string
 	)
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	if resourceType.IsTenantIgnorable() {
 		err = s.vendorRepo.DeleteGlobal(ctx, id)
 	} else {
 		tnt, err = tenant.LoadFromContext(ctx)
