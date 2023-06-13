@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
 
-	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
@@ -163,19 +163,22 @@ func (c *Client) buildFilter() map[string]string {
 		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
 		lblExists := false
+		minTime := time.Now()
 
 		for _, s := range SystemSynchronizationTimestamps {
-			v, ok := s[lbl.Value.(string)]
-
+			v, ok := s[lblToString]
 			if ok {
 				lblExists = true
-
-				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", v.LastSyncTimestamp.String())
-				filterBuilder.addFilter(expr1, expr2)
+				if v.LastSyncTimestamp.Before(minTime) {
+					minTime = v.LastSyncTimestamp
+				}
 			}
 		}
 
-		if !lblExists {
+		if lblExists {
+			expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
+			filterBuilder.addFilter(expr1, expr2)
+		} else {
 			filterBuilder.addFilter(expr1)
 		}
 	}
