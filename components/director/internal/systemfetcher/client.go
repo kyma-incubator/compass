@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/avast/retry-go/v4"
 	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
