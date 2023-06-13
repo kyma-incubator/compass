@@ -1013,9 +1013,6 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		if err != nil {
 			return nil, err
 		}
-		if notificationForFA == nil {
-			continue
-		}
 
 		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
 		if err != nil && !apperrors.IsNotFoundError(err) {
