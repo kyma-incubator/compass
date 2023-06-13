@@ -277,9 +277,9 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	}
 
 	if objectType != graphql.FormationObjectTypeTenant {
-		err = r.deleteSelfFormationAssignment(ctx, tnt, formation.Name, objectID)
+		err = r.deleteSelfReferencedFormationAssignment(ctx, tnt, formation.Name, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while deleting self formation assignmetn")
+			return nil, errors.Wrapf(err, "while deleting self referenced formation assignment for formation with name %q and object ID %q", formation.Name, objectID)
 		}
 	}
 
@@ -498,7 +498,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	return r.conv.ToGraphQL(updatedFormation)
 }
 
-func (r *Resolver) deleteSelfFormationAssignment(ctx context.Context, tnt, formationName, objectID string) error {
+func (r *Resolver) deleteSelfReferencedFormationAssignment(ctx context.Context, tnt, formationName, objectID string) error {
 	selfFATx, err := r.transact.Begin()
 	if err != nil {
 		return err
