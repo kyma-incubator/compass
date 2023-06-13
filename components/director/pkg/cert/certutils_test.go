@@ -117,7 +117,7 @@ func TestSubjectExtraction(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(testCase.subject, func(t *testing.T) {
+		t.Run("should extract subject values from subject: "+testCase.subject, func(t *testing.T) {
 			assert.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
 			assert.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
 			assert.Equal(t, testCase.province, cert.GetProvince(testCase.subject))
