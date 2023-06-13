@@ -1068,7 +1068,7 @@ global:
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
-    indirectDependencyXsappname: ""
+    directDependencyXsappname: ""
     saasAppNamesSecret:
       manage: false
     regionInstancesCredentials:

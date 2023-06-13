@@ -151,13 +151,13 @@ func TestHandler_Dependencies(t *testing.T) {
 
 func TestHandler_DependenciesIndirect(t *testing.T) {
 	depApiPath := "/v1/dependencies/indirect"
-	indirectDependency := "indirect-dependency-name"
+	dependency := "direct-dependency-name"
 
 	t.Run("Successfully handled get dependency request", func(t *testing.T) {
 		//GIVEN
 		depReq, err := http.NewRequest(http.MethodGet, url+depApiPath, bytes.NewBuffer([]byte{}))
 		require.NoError(t, err)
-		h := NewHandler(indirectDependency)
+		h := NewHandler(dependency)
 
 		//WHEN
 		r := httptest.NewRecorder()
@@ -165,7 +165,7 @@ func TestHandler_DependenciesIndirect(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		expectedBody := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", indirectDependency)
+		expectedBody := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", dependency)
 		assertExpectedResponse(t, resp, expectedBody, http.StatusOK)
 	})
 }
