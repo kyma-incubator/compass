@@ -21,9 +21,9 @@ type handler struct {
 	indirectDependencyXsaappnameClone string
 }
 
-func NewHandler(indirectDependencyXsappname string) *handler {
+func NewHandler(directDependencyXsappname string) *handler {
 	return &handler{
-		indirectDependencyXsaappnameClone: indirectDependencyXsappname,
+		indirectDependencyXsaappnameClone: directDependencyXsappname,
 	}
 }
 

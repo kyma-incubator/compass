@@ -69,7 +69,7 @@ type config struct {
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
 
-	IndirectDependencyXsappname string `envconfig:"APP_INDIRECT_DEPENDENCY_XSAPPNAME"`
+	DirectDependencyXsappname string `envconfig:"APP_DIRECT_DEPENDENCY_XSAPPNAME"`
 }
 
 // DestinationServiceConfig configuration for destination service endpoints.
@@ -196,7 +196,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
 
 	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
-	providerHandler := provider.NewHandler(cfg.IndirectDependencyXsappname)
+	providerHandler := provider.NewHandler(cfg.DirectDependencyXsappname)
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
 	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant
