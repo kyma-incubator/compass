@@ -85,7 +85,7 @@ func fixModelApplicationWithAllUpdatableFields(id, name, description, url string
 		Description:          &description,
 		HealthCheckURL:       &url,
 		ProviderName:         &providerName,
-		BaseEntity:           &model.BaseEntity{ID: id},
+		BaseEntity:           &model.BaseEntity{ID: id, UpdatedAt: &conditionTimestamp},
 		BaseURL:              baseURL,
 		ApplicationNamespace: applicationNamespace,
 	}
