@@ -799,7 +799,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
-
 	formationFromDB := ft.formation
 
 	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
