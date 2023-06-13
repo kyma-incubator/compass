@@ -3,7 +3,7 @@ package formation
 import "github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 // NewServiceWithAsaEngine creates formation service with the provided ASAEngine
-func NewServiceWithAsaEngine(transact persistence.Transactioner, applicationRepository applicationRepository, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, webhookRepository webhookRepository, formationAssignmentNotificationService FormationAssignmentNotificationsService, notificationsService NotificationsService, constraintEngine constraintEngine, runtimeTypeLabelKey, applicationTypeLabelKey string, engine asaEngine) *service {
+func NewServiceWithAsaEngine(transact persistence.Transactioner, applicationRepository applicationRepository, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, webhookRepository webhookRepository, formationAssignmentNotificationService FormationAssignmentNotificationsService, notificationsService NotificationsService, constraintEngine constraintEngine, formationAssignmentUpdaterService FormationAssignmentUpdaterService, runtimeTypeLabelKey, applicationTypeLabelKey string, engine asaEngine) *service {
 	return &service{
 		applicationRepository:                  applicationRepository,
 		labelDefRepository:                     labelDefRepository,
@@ -24,6 +24,7 @@ func NewServiceWithAsaEngine(transact persistence.Transactioner, applicationRepo
 		notificationsService:                   notificationsService,
 		constraintEngine:                       constraintEngine,
 		transact:                               transact,
+		formationAssignmentUpdaterService:      formationAssignmentUpdaterService,
 		runtimeTypeLabelKey:                    runtimeTypeLabelKey,
 		applicationTypeLabelKey:                applicationTypeLabelKey,
 		asaEngine:                              engine,

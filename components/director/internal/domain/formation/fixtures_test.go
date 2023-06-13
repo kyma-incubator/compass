@@ -948,6 +948,10 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 	return &automock.FormationAssignmentService{}
 }
 
+func unusedFormationAssignmentUpdaterService() *automock.FormationAssignmentUpdaterService {
+	return &automock.FormationAssignmentUpdaterService{}
+}
+
 func unusedFormationAssignmentNotificationService() *automock.FormationAssignmentNotificationsService {
 	return &automock.FormationAssignmentNotificationsService{}
 }
@@ -1375,7 +1379,7 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 	}
 }
 
-func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationAssignmentState) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          id,
 		FormationID: formationID,

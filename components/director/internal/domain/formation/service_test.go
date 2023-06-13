@@ -2172,7 +2172,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			labelDefService := testCase.LabelDefServiceFn()
 			asaEngine := testCase.AsaEngineFN()
 
-			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelDefService, asaRepo, nil, tenantSvc, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelDefService, asaRepo, nil, tenantSvc, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			actual, err := svc.CreateAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -2268,7 +2268,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			asaEngine := testCase.AsaEngineFN()
 			tenantSvc := &automock.TenantService{}
 
-			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, tenantSvc, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, tenantSvc, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			err := svc.DeleteAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -2588,10 +2588,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	formationInCreateErrorStateTechnicalError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
 
 	formationAssignments := []*model.FormationAssignment{
-		fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState),
-		fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorFormationState),
-		fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingFormationState),
-		fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorFormationState),
+		fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialAssignmentState),
+		fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorAssignmentState),
+		fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingAssignmentState),
+		fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorAssignmentState),
 	}
 	reverseAssignment := &model.FormationAssignment{
 		ID:          "id1",
@@ -2658,6 +2658,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		FormationAssignmentNotificationServiceFN func() *automock.FormationAssignmentNotificationsService
 		NotificationServiceFN                    func() *automock.NotificationsService
 		FormationAssignmentServiceFn             func() *automock.FormationAssignmentService
+		FormationAssignmentUpdaterServiceFn      func() *automock.FormationAssignmentUpdaterService
 		WebhookRepoFn                            func() *automock.WebhookRepository
 		RuntimeContextRepoFn                     func() *automock.RuntimeContextRepository
 		LabelDefRepositoryFn                     func() *automock.LabelDefRepository
@@ -2699,6 +2700,31 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "success when resynchronization is successful there is an initial assignment without a webhook",
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{fixFormationAssignmentModelWithParameters("id6", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialAssignmentState)}, nil).Once()
+
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", ctx, fixFormationAssignmentModelWithParameters("id6", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialAssignmentState)).Return(nil, nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			FormationAssignmentUpdaterServiceFn: func() *automock.FormationAssignmentUpdaterService {
+				svc := &automock.FormationAssignmentUpdaterService{}
+				svc.On("Update", ctx, fixFormationAssignmentModelWithParameters("id6", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.ReadyAssignmentState), model.AssignFormation).Return(nil).Once()
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
 			Name: "success when resynchronization is successful and there no left formation assignments should unassign",
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2730,6 +2756,31 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				return repo
 			},
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "returns error when there is an initial assignment without a webhook and update fails",
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{fixFormationAssignmentModelWithParameters("id6", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialAssignmentState)}, nil).Once()
+
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", ctx, fixFormationAssignmentModelWithParameters("id6", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialAssignmentState)).Return(nil, nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			FormationAssignmentUpdaterServiceFn: func() *automock.FormationAssignmentUpdaterService {
+				svc := &automock.FormationAssignmentUpdaterService{}
+				svc.On("Update", ctx, fixFormationAssignmentModelWithParameters("id6", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.ReadyAssignmentState), model.AssignFormation).Return(testErr).Once()
+				return svc
+			},
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "returns error when failing to unassign from formation after resynchronizing",
@@ -3227,6 +3278,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			if testCase.FormationAssignmentServiceFn != nil {
 				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
 			}
+			formationAssignmentUpdaterSvc := unusedFormationAssignmentUpdaterService()
+			if testCase.FormationAssignmentUpdaterServiceFn != nil {
+				formationAssignmentUpdaterSvc = testCase.FormationAssignmentUpdaterServiceFn()
+			}
 			asaEngine := unusedASAEngine()
 			if testCase.AsaEngineFN != nil {
 				asaEngine = testCase.AsaEngineFN()
@@ -3248,7 +3303,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				labelDefSvc = testCase.LabelDefServiceFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(nil, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(nil, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, formationAssignmentUpdaterSvc, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			_, err := svc.ResynchronizeFormationNotifications(ctx, FormationID)
