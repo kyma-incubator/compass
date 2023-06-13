@@ -161,10 +161,7 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 		return nil, err
 	}
 
-	conditions, err := r.buildConditionsForReferenceObjectIDs(objectIDs, fieldName)
-	if err != nil {
-		return nil, err
-	}
+	conditions := r.buildConditionsForReferenceObjectIDs(objectIDs, fieldName)
 
 	var fetchRequestCollection FetchRequestsCollection
 	if err = r.lister.List(ctx, objectType.GetResourceType(), tenant, &fetchRequestCollection, conditions...); err != nil {
@@ -181,10 +178,7 @@ func (r *repository) ListByReferenceObjectIDsGlobal(ctx context.Context, objectT
 		return nil, err
 	}
 
-	conditions, err := r.buildConditionsForReferenceObjectIDs(objectIDs, fieldName)
-	if err != nil {
-		return nil, err
-	}
+	conditions := r.buildConditionsForReferenceObjectIDs(objectIDs, fieldName)
 
 	var fetchRequestCollection FetchRequestsCollection
 	if err = r.listerGlobal.ListGlobal(ctx, &fetchRequestCollection, conditions...); err != nil {
@@ -207,7 +201,7 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
 }
 
-func (r *repository) buildConditionsForReferenceObjectIDs(objectIDs []string, fieldName string) (repo.Conditions, error) {
+func (r *repository) buildConditionsForReferenceObjectIDs(objectIDs []string, fieldName string) repo.Conditions {
 	var conditions repo.Conditions
 	if len(objectIDs) > 0 {
 		conditions = repo.Conditions{
@@ -215,7 +209,7 @@ func (r *repository) buildConditionsForReferenceObjectIDs(objectIDs []string, fi
 		}
 	}
 
-	return conditions, nil
+	return conditions
 }
 
 func (r *repository) enrichFetchRequestModel(fetchRequestCollection FetchRequestsCollection, fieldName string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
