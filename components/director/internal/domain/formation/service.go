@@ -95,6 +95,12 @@ type FormationAssignmentNotificationsService interface {
 	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
+// FormationAssignmentUpdaterService represents the formation assignment service for updating formation assignments
+//go:generate mockery --exported --name=FormationAssignmentUpdaterService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentUpdaterService interface {
+	Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
+}
+
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
@@ -164,6 +170,7 @@ type service struct {
 	runtimeRepo                            runtimeRepository
 	runtimeContextRepo                     runtimeContextRepository
 	formationAssignmentService             formationAssignmentService
+	formationAssignmentUpdaterService      FormationAssignmentUpdaterService
 	formationAssignmentNotificationService FormationAssignmentNotificationsService
 	notificationsService                   NotificationsService
 	constraintEngine                       constraintEngine
@@ -194,6 +201,7 @@ func NewService(
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
 	webhookRepository webhookRepository,
+	formationAssignmentUpdaterService FormationAssignmentUpdaterService,
 	runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		transact:                               transact,
@@ -211,6 +219,7 @@ func NewService(
 		runtimeRepo:                            runtimeRepo,
 		runtimeContextRepo:                     runtimeContextRepo,
 		formationAssignmentNotificationService: formationAssignmentNotificationService,
+		formationAssignmentUpdaterService:      formationAssignmentUpdaterService,
 		formationAssignmentService:             formationAssignmentService,
 		notificationsService:                   notificationsService,
 		constraintEngine:                       constraintEngine,
@@ -1015,6 +1024,11 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			return nil, err
 		}
 		if notificationForFA == nil {
+			if fa.State == string(model.InitialFormationState) {
+				if err := s.formationAssignmentUpdaterService.Update(ctx, fa, model.AssignFormation); err != nil {
+					return nil, err
+				}
+			}
 			continue
 		}
 

@@ -572,8 +572,8 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	if assignmentClone.Request == nil {
-		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		assignment.State = string(model.ReadyAssignmentState)
+		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		if err := s.updater.Update(ctx, assignment, mappingPair.Operation); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
