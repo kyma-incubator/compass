@@ -289,7 +289,7 @@ func fixORDDocument() *ord.Document {
 	return fixORDDocumentWithBaseURL("")
 }
 
-func fixORDDynamicDocument() *ord.Document {
+func fixORDStaticDocument() *ord.Document {
 	doc := fixORDDocumentWithBaseURL("")
 	doc.DescribedSystemInstance = nil
 	doc.DescribedSystemVersion = fixAppTemplateVersionInput()
@@ -304,8 +304,8 @@ func fixSanitizedORDDocument() *ord.Document {
 	return sanitizedDoc
 }
 
-func fixSanitizedDynamicORDDocument() *ord.Document {
-	sanitizedDoc := fixORDDynamicDocumentWithBaseURL(baseURL)
+func fixSanitizedStaticORDDocument() *ord.Document {
+	sanitizedDoc := fixORDStaticDocumentWithBaseURL(baseURL)
 	sanitizeResources(sanitizedDoc)
 	return sanitizedDoc
 }
@@ -655,7 +655,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	}
 }
 
-func fixORDDynamicDocumentWithBaseURL(providedBaseURL string) *ord.Document {
+func fixORDStaticDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	doc := fixORDDocumentWithBaseURL(providedBaseURL)
 	doc.DescribedSystemInstance = nil
 	doc.DescribedSystemVersion = fixAppTemplateVersionInput()
