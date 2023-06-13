@@ -1024,7 +1024,8 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			return nil, err
 		}
 		if notificationForFA == nil {
-			if fa.State == string(model.InitialFormationState) {
+			if fa.State == string(model.InitialAssignmentState) {
+				fa.State = string(model.ReadyAssignmentState)
 				if err := s.formationAssignmentUpdaterService.Update(ctx, fa, model.AssignFormation); err != nil {
 					return nil, err
 				}
