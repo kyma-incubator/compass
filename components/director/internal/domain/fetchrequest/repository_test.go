@@ -684,6 +684,123 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 	docFRSuite.Run(t)
 }
 
+func TestRepository_ListByReferenceObjectIDsGlobal(t *testing.T) {
+	timestamp := time.Now()
+	firstFrID := "111111111-1111-1111-1111-111111111111"
+	firstRefID := "refID1"
+	secondFrID := "222222222-2222-2222-2222-222222222222"
+	secondRefID := "refID2"
+
+	firstAPIFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.APISpecFetchRequestReference, firstRefID)
+	firstAPIFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.APISpecFetchRequestReference, firstRefID)
+	secondAPIFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.APISpecFetchRequestReference, secondRefID)
+	secondAPIFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.APISpecFetchRequestReference, secondRefID)
+
+	apiFRSuite := testdb.RepoListTestSuite{
+		Name: "List API Fetch Requests by Object IDs Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id IN ($1, $2)`),
+				Args:     []driver.Value{firstRefID, secondRefID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).
+						AddRow(firstFrID, firstAPIFREntity.DocumentID, "foo.bar", firstAPIFREntity.Auth, firstAPIFREntity.Mode, firstAPIFREntity.Filter, firstAPIFREntity.StatusCondition, firstAPIFREntity.StatusMessage, firstAPIFREntity.StatusTimestamp, firstAPIFREntity.SpecID).
+						AddRow(secondFrID, secondAPIFREntity.DocumentID, "foo.bar", secondAPIFREntity.Auth, secondAPIFREntity.Mode, secondAPIFREntity.Filter, secondAPIFREntity.StatusCondition, secondAPIFREntity.StatusMessage, secondAPIFREntity.StatusTimestamp, secondAPIFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		AdditionalConverterArgs: []interface{}{model.APISpecFetchRequestReference},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntities:   []interface{}{firstAPIFRModel, secondAPIFRModel},
+		ExpectedDBEntities:      []interface{}{firstAPIFREntity, secondAPIFREntity},
+		MethodArgs:              []interface{}{model.APISpecFetchRequestReference, []string{firstRefID, secondRefID}},
+		MethodName:              "ListByReferenceObjectIDsGlobal",
+		DisableEmptySliceTest:   true,
+	}
+
+	firstEventFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.EventSpecFetchRequestReference, firstRefID)
+	firstEventFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.EventSpecFetchRequestReference, firstRefID)
+	secondEventFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.EventSpecFetchRequestReference, secondRefID)
+	secondEventFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.EventSpecFetchRequestReference, secondRefID)
+
+	eventFRSuite := testdb.RepoListTestSuite{
+		Name: "List Event Fetch Requests by Object IDs Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id IN ($1, $2)`),
+				Args:     []driver.Value{firstRefID, secondRefID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).
+						AddRow(firstFrID, firstEventFREntity.DocumentID, "foo.bar", firstEventFREntity.Auth, firstEventFREntity.Mode, firstEventFREntity.Filter, firstEventFREntity.StatusCondition, firstEventFREntity.StatusMessage, firstEventFREntity.StatusTimestamp, firstEventFREntity.SpecID).
+						AddRow(secondFrID, secondEventFREntity.DocumentID, "foo.bar", secondEventFREntity.Auth, secondEventFREntity.Mode, secondEventFREntity.Filter, secondEventFREntity.StatusCondition, secondEventFREntity.StatusMessage, secondEventFREntity.StatusTimestamp, secondEventFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		AdditionalConverterArgs: []interface{}{model.EventSpecFetchRequestReference},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntities:   []interface{}{firstEventFRModel, secondEventFRModel},
+		ExpectedDBEntities:      []interface{}{firstEventFREntity, secondEventFREntity},
+		MethodArgs:              []interface{}{model.EventSpecFetchRequestReference, []string{firstRefID, secondRefID}},
+		MethodName:              "ListByReferenceObjectIDsGlobal",
+		DisableEmptySliceTest:   true,
+	}
+
+	firstDocFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.DocumentFetchRequestReference, firstRefID)
+	firstDocFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.DocumentFetchRequestReference, firstRefID)
+	secondDocFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.DocumentFetchRequestReference, secondRefID)
+	secondDocFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.DocumentFetchRequestReference, secondRefID)
+
+	docFRSuite := testdb.RepoListTestSuite{
+		Name: "List Doc Fetch Requests by Object IDs Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE document_id IN ($1, $2)`),
+				Args:     []driver.Value{firstRefID, secondRefID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).
+						AddRow(firstFrID, firstDocFREntity.DocumentID, "foo.bar", firstDocFREntity.Auth, firstDocFREntity.Mode, firstDocFREntity.Filter, firstDocFREntity.StatusCondition, firstDocFREntity.StatusMessage, firstDocFREntity.StatusTimestamp, firstDocFREntity.SpecID).
+						AddRow(secondFrID, secondDocFREntity.DocumentID, "foo.bar", secondDocFREntity.Auth, secondDocFREntity.Mode, secondDocFREntity.Filter, secondDocFREntity.StatusCondition, secondDocFREntity.StatusMessage, secondDocFREntity.StatusTimestamp, secondDocFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		AdditionalConverterArgs: []interface{}{model.DocumentFetchRequestReference},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntities:   []interface{}{firstDocFRModel, secondDocFRModel},
+		ExpectedDBEntities:      []interface{}{firstDocFREntity, secondDocFREntity},
+		MethodArgs:              []interface{}{model.DocumentFetchRequestReference, []string{firstRefID, secondRefID}},
+		MethodName:              "ListByReferenceObjectIDsGlobal",
+		DisableEmptySliceTest:   true,
+	}
+
+	apiFRSuite.Run(t)
+	eventFRSuite.Run(t)
+	docFRSuite.Run(t)
+}
+
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }

@@ -34,20 +34,21 @@ type Converter interface {
 }
 
 type repository struct {
-	creator       repo.Creator
-	creatorGlobal repo.CreatorGlobal
-	lister        repo.Lister
-	listerGlobal  repo.ListerGlobal
-	idLister      repo.Lister
-	unionLister   repo.UnionLister
-	getter        repo.SingleGetter
-	getterGlobal  repo.SingleGetterGlobal
-	deleter       repo.Deleter
-	deleterGlobal repo.DeleterGlobal
-	updater       repo.Updater
-	updaterGlobal repo.UpdaterGlobal
-	existQuerier  repo.ExistQuerier
-	conv          Converter
+	creator        repo.Creator
+	creatorGlobal  repo.CreatorGlobal
+	lister         repo.Lister
+	listerGlobal   repo.ListerGlobal
+	idLister       repo.Lister
+	idListerGlobal repo.ListerGlobal
+	unionLister    repo.UnionLister
+	getter         repo.SingleGetter
+	getterGlobal   repo.SingleGetterGlobal
+	deleter        repo.Deleter
+	deleterGlobal  repo.DeleterGlobal
+	updater        repo.Updater
+	updaterGlobal  repo.UpdaterGlobal
+	existQuerier   repo.ExistQuerier
+	conv           Converter
 }
 
 // NewRepository missing godoc
@@ -65,6 +66,12 @@ func NewRepository(conv Converter) *repository {
 		}),
 		listerGlobal: repo.NewListerGlobal(resource.Specification, specificationsTable, specificationsColumns),
 		idLister: repo.NewListerWithOrderBy(specificationsTable, []string{"id"}, repo.OrderByParams{
+			{
+				Field: "created_at",
+				Dir:   repo.AscOrderBy,
+			},
+		}),
+		idListerGlobal: repo.NewListerGlobalWithOrderBy(resource.Specification, specificationsTable, []string{"id"}, repo.OrderByParams{
 			{
 				Field: "created_at",
 				Dir:   repo.AscOrderBy,
@@ -135,12 +142,9 @@ func (r *repository) CreateGlobal(ctx context.Context, item *model.Spec) error {
 
 // ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
 func (r *repository) ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
-	fieldName, err := r.referenceObjectFieldName(objectType)
+	conditions, err := r.buildReferenceObjectIDConditions(objectType, objectID)
 	if err != nil {
 		return nil, err
-	}
-	conditions := repo.Conditions{
-		repo.NewEqualCondition(fieldName, objectID),
 	}
 
 	var specCollection SpecCollection
@@ -149,13 +153,23 @@ func (r *repository) ListIDByReferenceObjectID(ctx context.Context, tenant strin
 		return nil, err
 	}
 
-	items := make([]string, 0, len(specCollection))
+	return extractIDsFromCollection(specCollection), nil
+}
 
-	for _, specEnt := range specCollection {
-		items = append(items, specEnt.ID)
+// ListIDByReferenceObjectIDGlobal retrieves all spec ids by objectType and objectID
+func (r *repository) ListIDByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	conditions, err := r.buildReferenceObjectIDConditions(objectType, objectID)
+	if err != nil {
+		return nil, err
 	}
 
-	return items, nil
+	var specCollection SpecCollection
+	err = r.idListerGlobal.ListGlobal(ctx, &specCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractIDsFromCollection(specCollection), nil
 }
 
 // ListByReferenceObjectID missing godoc
@@ -308,10 +322,31 @@ func (r *repository) referenceObjectFieldName(objectType model.SpecReferenceObje
 	return "", apperrors.NewInternalError("Invalid type of the Specification reference object")
 }
 
+func (r *repository) buildReferenceObjectIDConditions(objectType model.SpecReferenceObjectType, objectID string) (repo.Conditions, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.Conditions{
+		repo.NewEqualCondition(fieldName, objectID),
+	}, nil
+}
+
 // SpecCollection missing godoc
 type SpecCollection []Entity
 
 // Len missing godoc
 func (r SpecCollection) Len() int {
 	return len(r)
+}
+
+func extractIDsFromCollection(specCollection SpecCollection) []string {
+	items := make([]string, 0, len(specCollection))
+
+	for _, specEnt := range specCollection {
+		items = append(items, specEnt.ID)
+	}
+
+	return items
 }

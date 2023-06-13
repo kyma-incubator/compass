@@ -317,6 +317,67 @@ func TestRepository_ListIDByReferenceObjectID(t *testing.T) {
 	eventSpecSuite.Run(t)
 }
 
+func TestRepository_ListIDByReferenceObjectIDGlobal(t *testing.T) {
+	idOne := "1"
+	idTwo := "2"
+	apiSpecSuite := testdb.RepoListTestSuite{
+		Name: "List API Spec IDs By Ref Object ID Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id FROM public.specifications WHERE api_def_id = $1`),
+				Args:     []driver.Value{apiID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixAPISpecRowWithID("1")...).AddRow(fixAPISpecRowWithID("2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		ShouldSkipMockFromEntity:  true,
+		RepoConstructorFunc:       spec.NewRepository,
+		ExpectedModelEntities:     []interface{}{&idOne, &idTwo},
+		ExpectedDBEntities:        []interface{}{idOne, idTwo},
+		MethodArgs:                []interface{}{model.APISpecReference, apiID},
+		MethodName:                "ListIDByReferenceObjectIDGlobal",
+		DisableConverterErrorTest: true,
+	}
+
+	eventSpecSuite := testdb.RepoListTestSuite{
+		Name: "List Event Spec IDs By Ref Object ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{apiID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixEventSpecRowWithID("1")...).AddRow(fixEventSpecRowWithID("2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		ShouldSkipMockFromEntity:  true,
+		RepoConstructorFunc:       spec.NewRepository,
+		ExpectedModelEntities:     []interface{}{&idOne, &idTwo},
+		ExpectedDBEntities:        []interface{}{idOne, idTwo},
+		MethodArgs:                []interface{}{tenant, model.EventSpecReference, apiID},
+		MethodName:                "ListIDByReferenceObjectID",
+		DisableConverterErrorTest: true,
+	}
+
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
+}
+
 func TestRepository_ListByReferenceObjectID(t *testing.T) {
 	apiSpecModel1 := fixModelAPISpecWithID("1")
 	apiSpecModel2 := fixModelAPISpecWithID("2")

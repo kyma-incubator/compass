@@ -1421,7 +1421,7 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 			return nil, err
 		}
 	} else {
-		fetchRequests, err = s.refetchFailedSpecs(ctx, model.APISpecReference, apisFromDB[i].ID)
+		fetchRequests, err = s.refetchFailedSpecs(ctx, resourceType, model.APISpecReference, apisFromDB[i].ID)
 		if err != nil {
 			return nil, err
 		}
@@ -1502,7 +1502,7 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 			return nil, err
 		}
 	} else {
-		fetchRequests, err = s.refetchFailedSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID)
+		fetchRequests, err = s.refetchFailedSpecs(ctx, resourceType, model.EventSpecReference, eventsFromDB[i].ID)
 		if err != nil {
 			return nil, err
 		}
@@ -1534,18 +1534,26 @@ func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenc
 	return s.createSpecs(ctx, objectType, objectID, specs, resourceType)
 }
 
-func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
-	specIDsFromDB, err := s.specSvc.ListIDByReferenceObjectID(ctx, objectType, objectID)
+func (s *Service) refetchFailedSpecs(ctx context.Context, resourceType directorresource.Type, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
+	specIDsFromDB, err := s.specSvc.ListIDByReferenceObjectID(ctx, resourceType, objectType, objectID)
 	if err != nil {
 		return nil, err
 	}
 
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		fetchRequestsFromDB []*model.FetchRequest
+		tnt                 string
+	)
+	if resourceType.IsTenantIgnorable() {
+		fetchRequestsFromDB, err = s.specSvc.ListFetchRequestsByReferenceObjectIDsGlobal(ctx, specIDsFromDB, objectType)
+	} else {
+		tnt, err = tenant.LoadFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-	fetchRequestsFromDB, err := s.specSvc.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDsFromDB, objectType)
+		fetchRequestsFromDB, err = s.specSvc.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDsFromDB, objectType)
+	}
 	if err != nil {
 		return nil, err
 	}

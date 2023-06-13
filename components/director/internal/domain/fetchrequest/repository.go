@@ -34,6 +34,7 @@ type repository struct {
 	creatorGlobal repo.CreatorGlobal
 	singleGetter  repo.SingleGetter
 	lister        repo.Lister
+	listerGlobal  repo.ListerGlobal
 	deleter       repo.Deleter
 	deleterGlobal repo.DeleterGlobal
 	updater       repo.Updater
@@ -48,6 +49,7 @@ func NewRepository(conv Converter) *repository {
 		creatorGlobal: repo.NewCreatorGlobal(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
 		singleGetter:  repo.NewSingleGetter(fetchRequestTable, fetchRequestColumns),
 		lister:        repo.NewLister(fetchRequestTable, fetchRequestColumns),
+		listerGlobal:  repo.NewListerGlobal(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
 		deleter:       repo.NewDeleter(fetchRequestTable),
 		deleterGlobal: repo.NewDeleterGlobal(resource.FetchRequest, fetchRequestTable),
 		updater:       repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
@@ -159,18 +161,64 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 		return nil, err
 	}
 
-	var fetchRequestCollection FetchRequestsCollection
+	conditions, err := r.buildConditionsForReferenceObjectIDs(objectIDs, fieldName)
+	if err != nil {
+		return nil, err
+	}
 
+	var fetchRequestCollection FetchRequestsCollection
+	if err = r.lister.List(ctx, objectType.GetResourceType(), tenant, &fetchRequestCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.enrichFetchRequestModel(fetchRequestCollection, fieldName, objectType, objectIDs)
+}
+
+// ListByReferenceObjectIDsGlobal lists fetch requests by reference objects IDs without tenant isolation
+func (r *repository) ListByReferenceObjectIDsGlobal(ctx context.Context, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions, err := r.buildConditionsForReferenceObjectIDs(objectIDs, fieldName)
+	if err != nil {
+		return nil, err
+	}
+
+	var fetchRequestCollection FetchRequestsCollection
+	if err = r.listerGlobal.ListGlobal(ctx, &fetchRequestCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.enrichFetchRequestModel(fetchRequestCollection, fieldName, objectType, objectIDs)
+}
+
+func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {
+	switch objectType {
+	case model.DocumentFetchRequestReference:
+		return documentIDColumn, nil
+	case model.EventSpecFetchRequestReference:
+		fallthrough
+	case model.APISpecFetchRequestReference:
+		return specIDColumn, nil
+	}
+
+	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
+}
+
+func (r *repository) buildConditionsForReferenceObjectIDs(objectIDs []string, fieldName string) (repo.Conditions, error) {
 	var conditions repo.Conditions
 	if len(objectIDs) > 0 {
 		conditions = repo.Conditions{
 			repo.NewInConditionForStringValues(fieldName, objectIDs),
 		}
 	}
-	if err := r.lister.List(ctx, objectType.GetResourceType(), tenant, &fetchRequestCollection, conditions...); err != nil {
-		return nil, err
-	}
 
+	return conditions, nil
+}
+
+func (r *repository) enrichFetchRequestModel(fetchRequestCollection FetchRequestsCollection, fieldName string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
 	fetchRequestsByID := map[string]*model.FetchRequest{}
 	for _, fetchRequestEnt := range fetchRequestCollection {
 		m, err := r.conv.FromEntity(&fetchRequestEnt, objectType)
@@ -191,19 +239,6 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 	}
 
 	return fetchRequests, nil
-}
-
-func (r *repository) referenceObjectFieldName(objectType model.FetchRequestReferenceObjectType) (string, error) {
-	switch objectType {
-	case model.DocumentFetchRequestReference:
-		return documentIDColumn, nil
-	case model.EventSpecFetchRequestReference:
-		fallthrough
-	case model.APISpecFetchRequestReference:
-		return specIDColumn, nil
-	}
-
-	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
 }
 
 // FetchRequestsCollection missing godoc

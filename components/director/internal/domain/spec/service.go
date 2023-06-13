@@ -23,6 +23,7 @@ type SpecRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error)
 	ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
+	ListIDByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDGlobal(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
@@ -44,6 +45,7 @@ type FetchRequestRepository interface {
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 	DeleteByReferenceObjectIDGlobal(ctx context.Context, objectType model.FetchRequestReferenceObjectType, objectID string) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
+	ListByReferenceObjectIDsGlobal(ctx context.Context, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 // UIDService missing godoc
@@ -104,7 +106,11 @@ func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.
 }
 
 // ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
-func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+func (s *service) ListIDByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.ListIDByReferenceObjectIDGlobal(ctx, objectType, objectID)
+	}
+
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -406,9 +412,14 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string, objectType
 	return fetchRequest, nil
 }
 
-// ListFetchRequestsByReferenceObjectIDs missing godoc
+// ListFetchRequestsByReferenceObjectIDs lists specs by reference object IDs
 func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error) {
 	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)
+}
+
+// ListFetchRequestsByReferenceObjectIDsGlobal lists specs by reference object IDs without tenant isolation
+func (s *service) ListFetchRequestsByReferenceObjectIDsGlobal(ctx context.Context, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error) {
+	return s.fetchRequestRepo.ListByReferenceObjectIDsGlobal(ctx, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)
 }
 
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType, resourceType resource.Type) (*model.FetchRequest, error) {
