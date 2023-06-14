@@ -466,6 +466,7 @@ type ComplexityRoot struct {
 		AssignFormation                              func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		AttachConstraintToFormationTemplate          func(childComplexity int, constraintID string, formationTemplateID string) int
 		CreateApplicationTemplate                    func(childComplexity int, in ApplicationTemplateInput) int
+		CreateBundleInstanceAuth                     func(childComplexity int, bundleID string, in BundleInstanceAuthCreateInput) int
 		CreateCertificateSubjectMapping              func(childComplexity int, in CertificateSubjectMappingInput) int
 		CreateFormation                              func(childComplexity int, formation FormationInput) int
 		CreateFormationConstraint                    func(childComplexity int, formationConstraint FormationConstraintInput) int
@@ -524,6 +525,7 @@ type ComplexityRoot struct {
 		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
 		UpdateBundle                                 func(childComplexity int, id string, in BundleUpdateInput) int
+		UpdateBundleInstanceAuth                     func(childComplexity int, id string, bundleID string, in BundleInstanceAuthUpdateInput) int
 		UpdateCertificateSubjectMapping              func(childComplexity int, id string, in CertificateSubjectMappingInput) int
 		UpdateEventDefinition                        func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateFormationConstraint                    func(childComplexity int, id string, in FormationConstraintUpdateInput) int
@@ -858,6 +860,8 @@ type MutationResolver interface {
 	DeleteBundleInstanceAuth(ctx context.Context, authID string) (*BundleInstanceAuth, error)
 	RequestBundleInstanceAuthCreation(ctx context.Context, bundleID string, in BundleInstanceAuthRequestInput) (*BundleInstanceAuth, error)
 	RequestBundleInstanceAuthDeletion(ctx context.Context, authID string) (*BundleInstanceAuth, error)
+	CreateBundleInstanceAuth(ctx context.Context, bundleID string, in BundleInstanceAuthCreateInput) (*BundleInstanceAuth, error)
+	UpdateBundleInstanceAuth(ctx context.Context, id string, bundleID string, in BundleInstanceAuthUpdateInput) (*BundleInstanceAuth, error)
 	AddBundle(ctx context.Context, applicationID string, in BundleCreateInput) (*Bundle, error)
 	UpdateBundle(ctx context.Context, id string, in BundleUpdateInput) (*Bundle, error)
 	DeleteBundle(ctx context.Context, id string) (*Bundle, error)
@@ -2869,6 +2873,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateApplicationTemplate(childComplexity, args["in"].(ApplicationTemplateInput)), true
 
+	case "Mutation.createBundleInstanceAuth":
+		if e.complexity.Mutation.CreateBundleInstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBundleInstanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateBundleInstanceAuth(childComplexity, args["bundleID"].(string), args["in"].(BundleInstanceAuthCreateInput)), true
+
 	case "Mutation.createCertificateSubjectMapping":
 		if e.complexity.Mutation.CreateCertificateSubjectMapping == nil {
 			break
@@ -3564,6 +3580,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateBundle(childComplexity, args["id"].(string), args["in"].(BundleUpdateInput)), true
+
+	case "Mutation.updateBundleInstanceAuth":
+		if e.complexity.Mutation.UpdateBundleInstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBundleInstanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateBundleInstanceAuth(childComplexity, args["id"].(string), args["bundleID"].(string), args["in"].(BundleInstanceAuthUpdateInput)), true
 
 	case "Mutation.updateCertificateSubjectMapping":
 		if e.complexity.Mutation.UpdateCertificateSubjectMapping == nil {
@@ -5456,6 +5484,14 @@ input BundleCreateInput {
 	correlationIDs: [String!]
 }
 
+input BundleInstanceAuthCreateInput {
+	context: JSON
+	inputParams: JSON
+	auth: AuthInput!
+	runtimeID: ID
+	runtimeContextID: ID
+}
+
 input BundleInstanceAuthRequestInput {
 	id: ID
 	"""
@@ -5497,6 +5533,12 @@ input BundleInstanceAuthStatusInput {
 	**Validation**: required, if condition is FAILED
 	"""
 	reason: String!
+}
+
+input BundleInstanceAuthUpdateInput {
+	context: JSON
+	inputParams: JSON
+	auth: AuthInput
 }
 
 input BundleUpdateInput {
@@ -6899,6 +6941,16 @@ type Mutation {
 	requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundleInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthDeletion")
 	"""
 	**Examples**
+	- [create bundle instance auth](examples/create-bundle-instance-auth/create-bundle-instance-auth.graphql)
+	"""
+	createBundleInstanceAuth(bundleID: ID!, in: BundleInstanceAuthCreateInput! @validate): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.createBundleInstanceAuth")
+	"""
+	**Examples**
+	- [update bundle instance auth](examples/update-bundle-instance-auth/update-bundle-instance-auth.graphql)
+	"""
+	updateBundleInstanceAuth(id: ID!, bundleID: ID!, in: BundleInstanceAuthUpdateInput!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.updateBundleInstanceAuth")
+	"""
+	**Examples**
 	- [add bundle](examples/add-bundle/add-bundle.graphql)
 	"""
 	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
@@ -7602,6 +7654,43 @@ func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx co
 		}
 	}
 	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createBundleInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["bundleID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["bundleID"] = arg0
+	var arg1 BundleInstanceAuthCreateInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNBundleInstanceAuthCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthCreateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(BundleInstanceAuthCreateInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuthCreateInput`, tmp)
+		}
+	}
+	args["in"] = arg1
 	return args, nil
 }
 
@@ -8890,6 +8979,36 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 		}
 	}
 	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateBundleInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["bundleID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["bundleID"] = arg1
+	var arg2 BundleInstanceAuthUpdateInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg2, err = ec.unmarshalNBundleInstanceAuthUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg2
 	return args, nil
 }
 
@@ -22791,6 +22910,136 @@ func (ec *executionContext) _Mutation_requestBundleInstanceAuthDeletion(ctx cont
 	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createBundleInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createBundleInstanceAuth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateBundleInstanceAuth(rctx, args["bundleID"].(string), args["in"].(BundleInstanceAuthCreateInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createBundleInstanceAuth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*BundleInstanceAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuth`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BundleInstanceAuth)
+	fc.Result = res
+	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateBundleInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateBundleInstanceAuth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateBundleInstanceAuth(rctx, args["id"].(string), args["bundleID"].(string), args["in"].(BundleInstanceAuthUpdateInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateBundleInstanceAuth")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*BundleInstanceAuth); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuth`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BundleInstanceAuth)
+	fc.Result = res
+	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31426,6 +31675,48 @@ func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBundleInstanceAuthCreateInput(ctx context.Context, obj interface{}) (BundleInstanceAuthCreateInput, error) {
+	var it BundleInstanceAuthCreateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "inputParams":
+			var err error
+			it.InputParams, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "auth":
+			var err error
+			it.Auth, err = ec.unmarshalNAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "runtimeID":
+			var err error
+			it.RuntimeID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "runtimeContextID":
+			var err error
+			it.RuntimeContextID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputBundleInstanceAuthRequestInput(ctx context.Context, obj interface{}) (BundleInstanceAuthRequestInput, error) {
 	var it BundleInstanceAuthRequestInput
 	var asMap = obj.(map[string]interface{})
@@ -31505,6 +31796,36 @@ func (ec *executionContext) unmarshalInputBundleInstanceAuthStatusInput(ctx cont
 		case "reason":
 			var err error
 			it.Reason, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBundleInstanceAuthUpdateInput(ctx context.Context, obj interface{}) (BundleInstanceAuthUpdateInput, error) {
+	var it BundleInstanceAuthUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "inputParams":
+			var err error
+			it.InputParams, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "auth":
+			var err error
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35423,6 +35744,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createBundleInstanceAuth":
+			out.Values[i] = ec._Mutation_createBundleInstanceAuth(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateBundleInstanceAuth":
+			out.Values[i] = ec._Mutation_updateBundleInstanceAuth(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "addBundle":
 			out.Values[i] = ec._Mutation_addBundle(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -37464,6 +37795,14 @@ func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubator�
 	return ec.unmarshalInputAuthInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (*AuthInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNAutomaticScenarioAssignment2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignment) graphql.Marshaler {
 	return ec._AutomaticScenarioAssignment(ctx, sel, &v)
 }
@@ -37606,6 +37945,10 @@ func (ec *executionContext) marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑ
 	return ec._BundleInstanceAuth(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBundleInstanceAuthCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthCreateInput(ctx context.Context, v interface{}) (BundleInstanceAuthCreateInput, error) {
+	return ec.unmarshalInputBundleInstanceAuthCreateInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNBundleInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthRequestInput(ctx context.Context, v interface{}) (BundleInstanceAuthRequestInput, error) {
 	return ec.unmarshalInputBundleInstanceAuthRequestInput(ctx, v)
 }
@@ -37644,6 +37987,10 @@ func (ec *executionContext) unmarshalNBundleInstanceAuthStatusCondition2github�
 
 func (ec *executionContext) marshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthStatusCondition) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNBundleInstanceAuthUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthUpdateInput(ctx context.Context, v interface{}) (BundleInstanceAuthUpdateInput, error) {
+	return ec.unmarshalInputBundleInstanceAuthUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleUpdateInput(ctx context.Context, v interface{}) (BundleUpdateInput, error) {

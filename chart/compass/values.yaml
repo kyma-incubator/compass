@@ -1342,6 +1342,7 @@ global:
         - "certificate_subject_mapping:write"
         - "formation.state:write"
         - "tenant_access:write"
+        - "bundle_instance_auth:write"
       default:
         - "runtime:read"
         - "runtime:write"

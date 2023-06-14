@@ -73,3 +73,22 @@ func (i BundleInstanceAuthStatusInput) Validate() error {
 		validation.Field(&i.Condition, validation.Required),
 	)
 }
+
+// Validate validates BundleInstanceAuthCreateInput
+func (i BundleInstanceAuthCreateInput) Validate() error {
+	if i.Auth == nil {
+		return apperrors.NewInvalidDataError("Auth should be provided")
+	}
+
+	// Exactly one of RuntimeID and RuntimeContextID should be provided
+	if i.RuntimeID == nil && i.RuntimeContextID == nil {
+		return apperrors.NewInvalidDataError("At least one of RuntimeID or RuntimeContextID should be provided")
+	} else if i.RuntimeID != nil && i.RuntimeContextID != nil {
+		return apperrors.NewInvalidDataError("Only one of RuntimeID or RuntimeContextID should be provided")
+	}
+
+	return validation.ValidateStruct(&i,
+		validation.Field(&i.Context, validation.NilOrNotEmpty),
+		validation.Field(&i.InputParams, validation.NilOrNotEmpty),
+	)
+}

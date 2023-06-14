@@ -14,6 +14,27 @@ type Converter struct {
 	mock.Mock
 }
 
+// CreateInputFromGraphQL provides a mock function with given fields: in
+func (_m *Converter) CreateInputFromGraphQL(in graphql.BundleInstanceAuthCreateInput) (model.BundleInstanceAuthCreateInput, error) {
+	ret := _m.Called(in)
+
+	var r0 model.BundleInstanceAuthCreateInput
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthCreateInput) model.BundleInstanceAuthCreateInput); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(model.BundleInstanceAuthCreateInput)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthCreateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RequestInputFromGraphQL provides a mock function with given fields: in
 func (_m *Converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput {
 	ret := _m.Called(in)
@@ -64,6 +85,27 @@ func (_m *Converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleIns
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.BundleInstanceAuth) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateInputFromGraphQL provides a mock function with given fields: in
+func (_m *Converter) UpdateInputFromGraphQL(in graphql.BundleInstanceAuthUpdateInput) (model.BundleInstanceAuthUpdateInput, error) {
+	ret := _m.Called(in)
+
+	var r0 model.BundleInstanceAuthUpdateInput
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthUpdateInput) model.BundleInstanceAuthUpdateInput); ok {
+		r0 = rf(in)
+	} else {
+		r0 = ret.Get(0).(model.BundleInstanceAuthUpdateInput)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthUpdateInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
