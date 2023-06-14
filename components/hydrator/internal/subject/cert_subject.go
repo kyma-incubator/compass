@@ -128,10 +128,25 @@ func (p *processor) authIDFromMappings() func(subject string) string {
 }
 
 func subjectsMatch(actualSubject, expectedSubject string) bool {
-	expectedSubjectComponents := strings.Split(expectedSubject, ",")
+	return cert.GetCommonName(expectedSubject) == cert.GetCommonName(actualSubject) &&
+		cert.GetCountry(expectedSubject) == cert.GetCountry(actualSubject) &&
+		cert.GetLocality(expectedSubject) == cert.GetLocality(actualSubject) &&
+		cert.GetOrganization(expectedSubject) == cert.GetOrganization(actualSubject) &&
+		matchOrganizationalUnits(cert.GetAllOrganizationalUnits(actualSubject), cert.GetAllOrganizationalUnits(expectedSubject))
+}
 
-	for _, expectedSubjectComponent := range expectedSubjectComponents {
-		if !strings.Contains(actualSubject, strings.TrimSpace(expectedSubjectComponent)) {
+func matchOrganizationalUnits(actualOrgUnits, expectedOrgUnits []string) bool {
+	if len(expectedOrgUnits) != len(actualOrgUnits) {
+		return false
+	}
+
+	expectedOrgUnitsMap := make(map[string]struct{}, len(expectedOrgUnits))
+	for _, expectedOrgUnit := range expectedOrgUnits {
+		expectedOrgUnitsMap[strings.TrimSpace(expectedOrgUnit)] = struct{}{}
+	}
+
+	for _, actualOrgUnit := range actualOrgUnits {
+		if _, exist := expectedOrgUnitsMap[strings.TrimSpace(actualOrgUnit)]; !exist {
 			return false
 		}
 	}
