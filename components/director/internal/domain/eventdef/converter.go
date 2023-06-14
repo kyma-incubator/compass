@@ -52,7 +52,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 	}
 
 	var bundleID string
-	if bundleRef.BundleID != nil {
+	if bundleRef != nil && bundleRef.BundleID != nil {
 		bundleID = *bundleRef.BundleID
 	}
 

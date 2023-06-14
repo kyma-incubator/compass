@@ -18,16 +18,21 @@ import (
 )
 
 // EventDefService is responsible for the service-layer EventDefinition operations.
+//
 //go:generate mockery --name=EventDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventDefService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInApplication(ctx context.Context, appID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
+	UpdateForApplication(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
+	ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error)
 }
 
 // EventDefConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the graphql-layer representation.
+//
 //go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventDefConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
@@ -37,12 +42,14 @@ type EventDefConverter interface {
 }
 
 // FetchRequestConverter converts FetchRequest from the model.FetchRequest service-layer representation to the graphql-layer one.
+//
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 }
 
 // BundleService is responsible for the service-layer Bundle operations.
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
@@ -72,6 +79,62 @@ func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSv
 		specConverter: specConverter,
 		specService:   specService,
 	}
+}
+
+// EventDefinitionsForApplication lists all APIDefinitions for a given application ID with paging.
+func (r *Resolver) EventDefinitionsForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Listing EventDefinition for Application with ID %s", appID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	eventPage, err := r.svc.ListByApplicationIDPage(ctx, appID, *first, cursor)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing EventDefinition for Application with ID %s", appID)
+	}
+
+	gqlEvents := make([]*graphql.EventDefinition, 0, len(eventPage.Data))
+	for _, event := range eventPage.Data {
+		spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+		}
+
+		gqlEvent, err := r.converter.ToGraphQL(event, spec, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
+		}
+
+		gqlEvents = append(gqlEvents, gqlEvent)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphql.EventDefinitionPage{
+		Data:       gqlEvents,
+		TotalCount: eventPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(eventPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(eventPage.PageInfo.EndCursor),
+			HasNextPage: eventPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 // AddEventDefinitionToBundle adds an EventDefinition to a Bundle with a given ID.
@@ -133,6 +196,52 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 	return gqlEvent, nil
 }
 
+// AddEventDefinitionToApplication adds an EventDefinition in the context of an Application without Bundle
+func (r *Resolver) AddEventDefinitionToApplication(ctx context.Context, appID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Adding EventDefinition to Application with id %s", appID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting GraphQL input to EventDefinition")
+	}
+
+	id, err := r.svc.CreateInApplication(ctx, appID, *convertedIn, convertedSpec)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating EventDefinition in Application with id %s", appID)
+	}
+
+	event, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+	}
+
+	gqlEvent, err := r.converter.ToGraphQL(event, spec, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("EventDefinition with id %s successfully added to Application with id %s", id, appID)
+	return gqlEvent, nil
+}
+
 // UpdateEventDefinition updates an EventDefinition by its ID.
 func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
@@ -171,6 +280,52 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 	}
 
 	gqlEvent, err := r.converter.ToGraphQL(event, spec, bndlRef)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("EventDefinition with id %s successfully updated.", id)
+	return gqlEvent, nil
+}
+
+// UpdateEventDefinitionForApplication updates an EventDefinition for Application without being in a Bundle
+func (r *Resolver) UpdateEventDefinitionForApplication(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Updating EventDefinition with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
+	}
+
+	err = r.svc.UpdateForApplication(ctx, id, *convertedIn, convertedSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+	}
+
+	gqlEvent, err := r.converter.ToGraphQL(event, spec, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}

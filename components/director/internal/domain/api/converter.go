@@ -54,9 +54,18 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		return nil, err
 	}
 
-	var bundleID string
-	if bundleRef.BundleID != nil {
-		bundleID = *bundleRef.BundleID
+	var (
+		bundleID            string
+		apiDefaultTargetURL string
+	)
+	if bundleRef != nil {
+		if bundleRef.BundleID != nil {
+			bundleID = *bundleRef.BundleID
+		}
+
+		if bundleRef.APIDefaultTargetURL != nil {
+			apiDefaultTargetURL = *bundleRef.APIDefaultTargetURL
+		}
 	}
 
 	return &graphql.APIDefinition{
@@ -64,7 +73,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
-		TargetURL:   str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
+		TargetURL:   apiDefaultTargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{

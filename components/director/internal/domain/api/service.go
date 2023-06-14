@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -15,6 +14,7 @@ import (
 )
 
 // APIRepository is responsible for the repo-layer APIDefinition operations.
+//
 //go:generate mockery --name=APIRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
@@ -22,6 +22,7 @@ type APIRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
+	ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
@@ -30,12 +31,14 @@ type APIRepository interface {
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal apiDefinition IDs when they are created.
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // SpecService is responsible for the service-layer Specification operations.
+//
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -46,6 +49,7 @@ type SpecService interface {
 }
 
 // BundleReferenceService is responsible for the service-layer BundleReference operations.
+//
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
@@ -103,6 +107,20 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.repo.ListByApplicationID(ctx, tnt, appID)
 }
 
+// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+func (s *service) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListByApplicationIDPage(ctx, tnt, appID, pageSize, cursor)
+}
+
 // Get returns the APIDefinition by its ID.
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -136,6 +154,11 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 // CreateInBundle creates an APIDefinition. This function is used in the graphQL flow.
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
 	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
+}
+
+// CreateInApplication creates an APIDefinition in the context of an Application without Bundle
+func (s *service) CreateInApplication(ctx context.Context, appID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, appID, nil, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
 // Create creates APIDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
@@ -174,14 +197,14 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
-	if defaultTargetURLPerBundle == nil {
+	if defaultTargetURLPerBundle == nil && bundleID != nil {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
 		}
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID); err != nil {
 			return "", err
 		}
-	} else {
+	} else if defaultTargetURLPerBundle != nil {
 		for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundle {
 			bundleRefInput := &model.BundleReferenceInput{
 				APIDefaultTargetURL: &defaultTargetURL,
@@ -249,17 +272,32 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 	}
 
 	if specIn != nil {
-		dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
-		}
+		return s.handleSpecsInAPI(ctx, id, specIn)
+	}
 
-		if dbSpec == nil {
-			_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, api.ID)
-			return err
-		}
+	return nil
+}
 
-		return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, api.ID)
+// UpdateForApplication updates an APIDefinition for Application without being in a Bundle
+func (s *service) UpdateForApplication(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	api, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, 0)
+
+	if err = s.repo.Update(ctx, tnt, api); err != nil {
+		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
+	}
+
+	if specIn != nil {
+		return s.handleSpecsInAPI(ctx, id, specIn)
 	}
 
 	return nil
@@ -357,4 +395,18 @@ func (s *service) deleteBundleIDs(ctx context.Context, apiID *string, bundleIDsF
 		}
 	}
 	return nil
+}
+
+func (s *service) handleSpecsInAPI(ctx context.Context, id string, specIn *model.SpecInput) error {
+	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", id)
+	}
+
+	if dbSpec == nil {
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, id)
+		return err
+	}
+
+	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, id)
 }

@@ -15,6 +15,27 @@ type EventDefService struct {
 	mock.Mock
 }
 
+// CreateInApplication provides a mock function with given fields: ctx, appID, in, spec
+func (_m *EventDefService) CreateInApplication(ctx context.Context, appID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+	ret := _m.Called(ctx, appID, in, spec)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) string); ok {
+		r0 = rf(ctx, appID, in, spec)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
+		r1 = rf(ctx, appID, in, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateInBundle provides a mock function with given fields: ctx, appID, bundleID, in, spec
 func (_m *EventDefService) CreateInBundle(ctx context.Context, appID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
 	ret := _m.Called(ctx, appID, bundleID, in, spec)
@@ -73,6 +94,29 @@ func (_m *EventDefService) Get(ctx context.Context, id string) (*model.EventDefi
 	return r0, r1
 }
 
+// ListByApplicationIDPage provides a mock function with given fields: ctx, appID, pageSize, cursor
+func (_m *EventDefService) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	ret := _m.Called(ctx, appID, pageSize, cursor)
+
+	var r0 *model.EventDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.EventDefinitionPage); ok {
+		r0 = rf(ctx, appID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.EventDefinitionPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, appID, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListFetchRequests provides a mock function with given fields: ctx, eventDefIDs
 func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error) {
 	ret := _m.Called(ctx, eventDefIDs)
@@ -103,6 +147,20 @@ func (_m *EventDefService) Update(ctx context.Context, id string, in model.Event
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
 		r0 = rf(ctx, id, in, spec)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateForApplication provides a mock function with given fields: ctx, id, in, specIn
+func (_m *EventDefService) UpdateForApplication(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
+	ret := _m.Called(ctx, id, in, specIn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
+		r0 = rf(ctx, id, in, specIn)
 	} else {
 		r0 = ret.Error(0)
 	}

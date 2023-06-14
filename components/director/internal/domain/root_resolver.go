@@ -449,6 +449,14 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 	return r.viewer.Viewer(ctx)
 }
 
+func (r *queryResolver) ApisForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	return r.api.APIDefinitionsForApplication(ctx, appID, first, after)
+}
+
+func (r *queryResolver) EventsForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+	return r.eventAPI.EventDefinitionsForApplication(ctx, appID, first, after)
+}
+
 // Applications missing godoc
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
@@ -734,6 +742,10 @@ func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, i
 	return r.api.UpdateAPIDefinition(ctx, id, in)
 }
 
+func (r *mutationResolver) UpdateAPIDefinitionForApplication(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return r.api.UpdateAPIDefinitionForApplication(ctx, id, in)
+}
+
 // DeleteAPIDefinition missing godoc
 func (r *mutationResolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	return r.api.DeleteAPIDefinition(ctx, id)
@@ -747,6 +759,11 @@ func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*g
 // UpdateEventDefinition missing godoc
 func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.UpdateEventDefinition(ctx, id, in)
+}
+
+// UpdateEventDefinitionForApplication TODO
+func (r *mutationResolver) UpdateEventDefinitionForApplication(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return r.eventAPI.UpdateEventDefinitionForApplication(ctx, id, in)
 }
 
 // DeleteEventDefinition missing godoc
@@ -907,9 +924,18 @@ func (r *mutationResolver) AddAPIDefinitionToBundle(ctx context.Context, bundleI
 	return r.api.AddAPIDefinitionToBundle(ctx, bundleID, in)
 }
 
+func (r *mutationResolver) AddAPIDefinitionToApplication(ctx context.Context, appID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return r.api.AddAPIDefinitionToApplication(ctx, appID, in)
+}
+
 // AddEventDefinitionToBundle missing godoc
 func (r *mutationResolver) AddEventDefinitionToBundle(ctx context.Context, bundleID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.AddEventDefinitionToBundle(ctx, bundleID, in)
+}
+
+// AddEventDefinitionToApplication missing godoc
+func (r *mutationResolver) AddEventDefinitionToApplication(ctx context.Context, appID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return r.eventAPI.AddEventDefinitionToApplication(ctx, appID, in)
 }
 
 // AddDocumentToBundle missing godoc

@@ -50,6 +50,7 @@ type pgRepository struct {
 	updater               repo.Updater
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
+	pageableQuerier       repo.PageableQuerier
 	conv                  EventAPIDefinitionConverter
 }
 
@@ -63,6 +64,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		updater:               repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(eventAPIDefTable),
 		existQuerier:          repo.NewExistQuerier(eventAPIDefTable),
+		pageableQuerier:       repo.NewPageableQuerier(eventAPIDefTable, eventDefColumns),
 		conv:                  conv,
 	}
 }
@@ -91,6 +93,28 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct Event will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
+}
+
+// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	var apiDefCollection EventAPIDefCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EventDefinition, tenantID, pageSize, cursor, "id", &apiDefCollection, repo.NewEqualCondition("app_id", appID))
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	items := make([]*model.EventDefinition, 0, len(apiDefCollection))
+	for _, api := range apiDefCollection {
+		m := r.conv.FromEntity(&api)
+		items = append(items, m)
+	}
+
+	return &model.EventDefinitionPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 // ListByBundleIDs retrieves all EventDefinitions for a Bundle in pages. Each Bundle is extracted from the input array of bundleIDs. The input bundleReferences array is used for getting the appropriate EventDefinition IDs.

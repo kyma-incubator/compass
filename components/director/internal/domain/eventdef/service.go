@@ -2,7 +2,6 @@ package eventdef
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -13,12 +12,14 @@ import (
 )
 
 // EventAPIRepository is responsible for the repo-layer EventDefinition operations.
+//
 //go:generate mockery --name=EventAPIRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
+	ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, tenant string, item *model.EventDefinition) error
 	Update(ctx context.Context, tenant string, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
@@ -26,12 +27,14 @@ type EventAPIRepository interface {
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal eventDefinition IDs when they are created.
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // SpecService is responsible for the service-layer Specification operations.
+//
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
@@ -42,6 +45,7 @@ type SpecService interface {
 }
 
 // BundleReferenceService is responsible for the service-layer BundleReference operations.
+//
 //go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
@@ -99,6 +103,20 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, appID)
 }
 
+// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+func (s *service) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.eventAPIRepo.ListByApplicationIDPage(ctx, tnt, appID, pageSize, cursor)
+}
+
 // Get returns the EventDefinition by its ID.
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -134,6 +152,11 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
+// CreateInApplication creates an EventDefinition in the context of an Application without Bundle
+func (s *service) CreateInApplication(ctx context.Context, appID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, appID, nil, nil, in, []*model.SpecInput{spec}, nil, 0, "")
+}
+
 // Create creates EventDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
 func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -158,11 +181,11 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	// if bundleIDs == nil we are in the graphQL flow
-	if bundleIDs == nil {
+	if bundleIDs == nil && bundleID != nil {
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
-	} else {
+	} else if bundleIDs != nil {
 		for _, bndlID := range bundleIDs {
 			bundleRefInput := &model.BundleReferenceInput{}
 			if defaultBundleID != "" && bndlID == defaultBundleID {
@@ -232,17 +255,32 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	if specIn != nil {
-		dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
-		}
+		return s.handleSpecsInEvent(ctx, id, specIn)
+	}
 
-		if dbSpec == nil {
-			_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.EventSpecReference, event.ID)
-			return err
-		}
+	return nil
+}
 
-		return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.EventSpecReference, event.ID)
+// UpdateForApplication updates an EventDefinition for Application without being in a Bundle
+func (s *service) UpdateForApplication(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	event, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, 0)
+
+	if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
+		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
+	}
+
+	if specIn != nil {
+		return s.handleSpecsInEvent(ctx, id, specIn)
 	}
 
 	return nil
@@ -294,4 +332,22 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 	}
 
 	return fetchRequests, nil
+}
+
+func (s *service) handleSpecsInEvent(ctx context.Context, id string, specIn *model.SpecInput) error {
+	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting spec for EventDefinition with id %q", id)
+	}
+
+	if dbSpec == nil {
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.EventSpecReference, id)
+		return errors.Wrapf(err, "while creating spec for EventDefinition with ID %s", id)
+	}
+
+	if err = s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.EventSpecReference, id); err != nil {
+		return errors.Wrapf(err, "while updating spec for EventDefinition with ID %s", id)
+	}
+
+	return nil
 }
