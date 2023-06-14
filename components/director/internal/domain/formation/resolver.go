@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
@@ -275,6 +276,13 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 		return nil, err
 	}
 
+	if objectType != graphql.FormationObjectTypeTenant {
+		err = r.deleteSelfReferencedFormationAssignment(ctx, tnt, formation.Name, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting self referenced formation assignment for formation with name %q and object ID %q", formation.Name, objectID)
+		}
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -488,6 +496,32 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	return r.conv.ToGraphQL(updatedFormation)
+}
+
+func (r *Resolver) deleteSelfReferencedFormationAssignment(ctx context.Context, tnt, formationName, objectID string) error {
+	selfFATx, err := r.transact.Begin()
+	if err != nil {
+		return err
+	}
+	selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
+	defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
+
+	formationFromDB, err := r.service.GetFormationByName(selfFATransactionCtx, formationName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
+	}
+
+	fa, err := r.formationAssignmentSvc.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
+	if err == nil {
+		_ = r.formationAssignmentSvc.Delete(selfFATransactionCtx, fa.ID)
+	}
+
+	err = selfFATx.Commit()
+	if err != nil {
+		return errors.Wrapf(err, "while committing transaction")
+	}
+	return nil
 }
 
 func isInErrorState(state string) bool {

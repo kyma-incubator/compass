@@ -790,7 +790,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
-
 	formationFromDB := ft.formation
 
 	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
@@ -1013,9 +1012,6 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
 		if err != nil {
 			return nil, err
-		}
-		if notificationForFA == nil {
-			continue
 		}
 
 		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
