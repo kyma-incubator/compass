@@ -364,7 +364,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) processAsynchronousFormationUnassign(ctx context.Context, formation *model.Formation, fa *model.FormationAssignment) error {
 	unassignTx, err := h.transact.Begin()
 	if err != nil {
-		return errors.Wrapf(err, "while betinning transaction")
+		return errors.Wrapf(err, "while beginning transaction")
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, unassignTx)
 
