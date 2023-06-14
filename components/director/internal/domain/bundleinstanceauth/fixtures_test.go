@@ -131,6 +131,23 @@ func fixModelRequestInput() *model.BundleInstanceAuthRequestInput {
 	}
 }
 
+func fixModelCreateInput() *model.BundleInstanceAuthCreateInput {
+	return &model.BundleInstanceAuthCreateInput{
+		Context:     &testContext,
+		InputParams: &testInputParams,
+		Auth:        fixModelAuthInput(),
+		RuntimeID:   &testRuntimeID,
+	}
+}
+
+func fixModelUpdateInput() *model.BundleInstanceAuthUpdateInput {
+	return &model.BundleInstanceAuthUpdateInput{
+		Context:     &testContext,
+		InputParams: &testInputParams,
+		Auth:        fixModelAuthInput(),
+	}
+}
+
 func fixGQLRequestInput() *graphql.BundleInstanceAuthRequestInput {
 	context := graphql.JSON(testContext)
 	inputParams := graphql.JSON(testInputParams)
@@ -138,6 +155,29 @@ func fixGQLRequestInput() *graphql.BundleInstanceAuthRequestInput {
 	return &graphql.BundleInstanceAuthRequestInput{
 		Context:     &context,
 		InputParams: &inputParams,
+	}
+}
+
+func fixGQLCreateInput() *graphql.BundleInstanceAuthCreateInput {
+	context := graphql.JSON(testContext)
+	inputParams := graphql.JSON(testInputParams)
+
+	return &graphql.BundleInstanceAuthCreateInput{
+		Context:     &context,
+		InputParams: &inputParams,
+		Auth:        fixGQLAuthInput(),
+		RuntimeID:   &testRuntimeID,
+	}
+}
+
+func fixGQLUpdateInput() *graphql.BundleInstanceAuthUpdateInput {
+	context := graphql.JSON(testContext)
+	inputParams := graphql.JSON(testInputParams)
+
+	return &graphql.BundleInstanceAuthUpdateInput{
+		Context:     &context,
+		InputParams: &inputParams,
+		Auth:        fixGQLAuthInput(),
 	}
 }
 

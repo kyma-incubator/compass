@@ -235,7 +235,7 @@ func TestRepository_ListByRuntimeID(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.bundle_instance_auths SET auth_value = ?, status_condition = ?, status_timestamp = ?, status_message = ?, status_reason = ? WHERE id = ? AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = ? AND owner = true) OR owner_id = ?)`)
+	updateStmt := regexp.QuoteMeta(`UPDATE public.bundle_instance_auths SET context = ?, input_params = ?, auth_value = ?, status_condition = ?, status_timestamp = ?, status_message = ?, status_reason = ? WHERE id = ? AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = ? AND owner = true) OR owner_id = ?)`)
 
 	var nilBiaModel *model.BundleInstanceAuth
 	biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
@@ -246,7 +246,7 @@ func TestRepository_Update(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
-				Args:          []driver.Value{biaEntity.AuthValue, biaEntity.StatusCondition, biaEntity.StatusTimestamp, biaEntity.StatusMessage, biaEntity.StatusReason, testID, testTenant, testTenant},
+				Args:          []driver.Value{biaEntity.Context, biaEntity.InputParams, biaEntity.AuthValue, biaEntity.StatusCondition, biaEntity.StatusTimestamp, biaEntity.StatusMessage, biaEntity.StatusReason, testID, testTenant, testTenant},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
