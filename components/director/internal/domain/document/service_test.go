@@ -8,8 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -361,7 +359,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		svc := document.NewService(nil, nil, fixUIDSvc())
 		// WHEN
 		_, err := svc.CreateInBundle(context.TODO(), resource.Application, "appID", "bndlID", model.DocumentInput{})
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 func TestService_Delete(t *testing.T) {
