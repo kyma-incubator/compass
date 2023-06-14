@@ -33,7 +33,7 @@ func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, con
 	}
 }
 
-// UpdateWithConstraints updates a Formation Assignment and enforces PreNotificationStatusReturned constraints before and after the update
+// UpdateWithConstraints updates a Formation Assignment and enforces NotificationStatusReturned constraints before and after the update
 func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	id := fa.ID
 
@@ -72,7 +72,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 }
 
 // SetAssignmentToErrorStateWithConstraints updates Formation Assignment state to error state using the errorMessage, errorCode and state parameters.
-// Also, it enforces PreNotificationStatusReturned constraints before and after the update.
+// Also, it enforces NotificationStatusReturned constraints before and after the update.
 func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstraints(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error {
 	assignment.State = string(state)
 	assignmentError := AssignmentErrorWrapper{AssignmentError{
@@ -91,7 +91,7 @@ func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstr
 	return nil
 }
 
-// DeleteWithConstraints deletes a Formation Assignment matching ID `id` and enforces PreNotificationStatusReturned constraints before and after delete.
+// DeleteWithConstraints deletes a Formation Assignment matching ID `id` and enforces NotificationStatusReturned constraints before and after delete.
 func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string) error {
 	log.C(ctx).Infof("Deleting formation assignment with ID: %q", id)
 

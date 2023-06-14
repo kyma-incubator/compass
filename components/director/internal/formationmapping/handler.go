@@ -46,21 +46,23 @@ type FormationRequestBody struct {
 
 // Handler is the base struct definition of the FormationMappingHandler
 type Handler struct {
-	transact              persistence.Transactioner
-	faService             FormationAssignmentService
-	faStatusService       formationAssignmentStatusService
-	faNotificationService FormationAssignmentNotificationService
-	formationService      formationService
+	transact               persistence.Transactioner
+	faService              FormationAssignmentService
+	faStatusService        formationAssignmentStatusService
+	faNotificationService  FormationAssignmentNotificationService
+	formationService       formationService
+	formationStatusService formationStatusService
 }
 
 // NewFormationMappingHandler creates a formation mapping Handler
-func NewFormationMappingHandler(transact persistence.Transactioner, faService FormationAssignmentService, faStatusService formationAssignmentStatusService, faNotificationService FormationAssignmentNotificationService, formationService formationService) *Handler {
+func NewFormationMappingHandler(transact persistence.Transactioner, faService FormationAssignmentService, faStatusService formationAssignmentStatusService, faNotificationService FormationAssignmentNotificationService, formationService formationService, formationStatusService formationStatusService) *Handler {
 	return &Handler{
-		transact:              transact,
-		faService:             faService,
-		faStatusService:       faStatusService,
-		faNotificationService: faNotificationService,
-		formationService:      formationService,
+		transact:               transact,
+		faService:              faService,
+		faStatusService:        faStatusService,
+		faNotificationService:  faNotificationService,
+		formationService:       formationService,
+		formationStatusService: formationStatusService,
 	}
 }
 
@@ -173,7 +175,6 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	if reqBody.State == model.CreateErrorAssignmentState {
-		// CHECK HERE
 		if err = h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, formationAssignmentID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -192,7 +193,6 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
-	// CHECK HERE
 	if err = h.faStatusService.UpdateWithConstraints(ctx, fa, model.AssignFormation); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -440,16 +440,13 @@ func (h *Handler) processAsynchronousFormationAssignmentUnassign(ctx context.Con
 	}
 
 	if reqBody.State == model.DeleteErrorAssignmentState {
-		// CHECK HERE
-		err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.UnassignFormation)
-		if err != nil {
+		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.UnassignFormation); err != nil {
 			return false, errors.Wrapf(err, "while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
 		}
 		return false, nil
 	}
 
-	err := h.faService.Delete(ctx, fa.ID)
-	if err != nil {
+	if err := h.faStatusService.DeleteWithConstraints(ctx, fa.ID); err != nil {
 		return false, errors.Wrapf(err, "while deleting formation assignment with ID: %q", fa.ID)
 	}
 
@@ -463,16 +460,14 @@ func (h *Handler) processAsynchronousFormationDelete(ctx context.Context, format
 	}
 
 	if reqBody.State == model.DeleteErrorFormationState {
-		err := h.formationService.SetFormationToErrorState(ctx, formation, reqBody.Error, formationassignment.ClientError, reqBody.State)
-		if err != nil {
+		if err := h.formationStatusService.SetFormationToErrorStateWithConstraints(ctx, formation, reqBody.Error, formationassignment.ClientError, reqBody.State, model.DeleteFormation); err != nil {
 			return errors.Wrapf(err, "while updating error state to: %s for formation with ID: %q", reqBody.State, formation.ID)
 		}
 		return nil
 	}
 
 	log.C(ctx).Infof("Deleting formation with ID: %q and name: %q", formation.ID, formation.Name)
-	err := h.formationService.DeleteFormationEntityAndScenarios(ctx, formation.TenantID, formation.Name)
-	if err != nil {
+	if err := h.formationStatusService.DeleteFormationEntityAndScenariosWithConstraints(ctx, formation.TenantID, formation); err != nil {
 		return errors.Wrapf(err, "while deleting formation with ID: %q and name: %q", formation.ID, formation.Name)
 	}
 
@@ -486,8 +481,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 	}
 
 	if reqBody.State == model.CreateErrorFormationState {
-		err := h.formationService.SetFormationToErrorState(ctx, formation, reqBody.Error, formationassignment.ClientError, reqBody.State)
-		if err != nil {
+		if err := h.formationStatusService.SetFormationToErrorStateWithConstraints(ctx, formation, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
 			return errors.Wrapf(err, "while updating error state to: %s for formation with ID: %q", reqBody.State, formation.ID)
 		}
 		return nil
@@ -495,14 +489,12 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 
 	log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, reqBody.State)
 	formation.State = model.ReadyFormationState
-	err := h.formationService.Update(ctx, formation)
-	if err != nil {
+	if err := h.formationStatusService.UpdateWithConstraints(ctx, formation, model.CreateFormation); err != nil {
 		return errors.Wrapf(err, "while updating formation with ID: %q to: %q state", formation.ID, model.ReadyFormationState)
 	}
 
 	log.C(ctx).Infof("Resynchronizing formation with ID: %q and name: %q", formation.ID, formation.Name)
-	_, err = h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID)
-	if err != nil {
+	if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID); err != nil {
 		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
 	}
 

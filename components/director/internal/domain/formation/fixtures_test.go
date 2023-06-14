@@ -584,7 +584,7 @@ var (
 	}
 
 	formationWithInitialState                 = fixFormationModelWithState(model.InitialFormationState)
-	formationNotificationSyncCreateExtRequest = &webhookclient.FormationNotificationRequestExt{
+	formationNotificationSyncCreateExtRequest = &webhookclient.FormationNotificationRequest{
 		Request:       formationNotificationSyncCreateRequest.Request,
 		Operation:     model.CreateFormation,
 		Formation:     fixFormationModelWithState(model.InitialFormationState),
@@ -604,7 +604,7 @@ var (
 			CorrelationID: "",
 		},
 	}
-	formationNotificationAsyncCreateExtRequest = &webhookclient.FormationNotificationRequestExt{
+	formationNotificationAsyncCreateExtRequest = &webhookclient.FormationNotificationRequest{
 		Request:       formationNotificationAsyncCreateRequest.Request,
 		Operation:     model.CreateFormation,
 		Formation:     fixFormationModelWithState(model.InitialFormationState),
@@ -618,7 +618,7 @@ var (
 			CorrelationID: "",
 		},
 	}
-	formationNotificationAsyncDeleteExtRequest = &webhookclient.FormationNotificationRequestExt{
+	formationNotificationAsyncDeleteExtRequest = &webhookclient.FormationNotificationRequest{
 		Request:       formationNotificationAsyncDeleteRequest.Request,
 		Operation:     model.DeleteFormation,
 		Formation:     fixFormationModelWithState(model.ReadyFormationState),
@@ -1513,11 +1513,21 @@ func fixAssignTenantDetails(formationName string) *formationconstraint.AssignFor
 	}
 }
 
-func fixFormationNotificationRequestExt(request *webhookclient.Request, operation model.FormationOperation, formation *model.Formation, formationType string) *webhookclient.FormationNotificationRequestExt {
-	return &webhookclient.FormationNotificationRequestExt{
+func fixFormationNotificationRequest(request *webhookclient.Request, operation model.FormationOperation, formation *model.Formation, formationType string) *webhookclient.FormationNotificationRequest {
+	return &webhookclient.FormationNotificationRequest{
 		Request:       request,
 		Operation:     operation,
 		Formation:     formation,
 		FormationType: formationType,
+	}
+}
+
+func fixDetailsForNotificationStatusReturned(formationType string, operation model.FormationOperation, location formationconstraint.JoinPointLocation, formation *model.Formation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		ResourceType:    model.FormationResourceType,
+		ResourceSubtype: formationType,
+		Location:        location,
+		Operation:       operation,
+		Formation:       formation,
 	}
 }

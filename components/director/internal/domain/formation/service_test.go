@@ -2641,7 +2641,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	nilSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, testSchema)
 	nilSchemaLblDef.Schema = nil
 
-	formationNotificationSyncDeleteExtRequest := fixFormationNotificationRequestExt(formationNotificationSyncDeleteRequest.Request, model.DeleteFormation, fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), 2), testFormationTemplateName)
+	formationNotificationSyncDeleteExtRequest := fixFormationNotificationRequest(formationNotificationSyncDeleteRequest.Request, model.DeleteFormation, fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), 2), testFormationTemplateName)
 
 	testCases := []struct {
 		Name                                     string

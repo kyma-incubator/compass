@@ -69,6 +69,13 @@ type formationService interface {
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
 }
 
+//go:generate mockery --exported --name=formationStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationStatusService interface {
+	UpdateWithConstraints(ctx context.Context, formation *model.Formation, operation model.FormationOperation) error
+	SetFormationToErrorStateWithConstraints(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState, operation model.FormationOperation) error
+	DeleteFormationEntityAndScenariosWithConstraints(ctx context.Context, tnt string, formation *model.Formation) error
+}
+
 // RuntimeRepository is responsible for the repo-layer runtime operations
 //
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string

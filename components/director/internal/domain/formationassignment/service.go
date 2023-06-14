@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/hashicorp/go-multierror"

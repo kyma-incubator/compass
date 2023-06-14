@@ -87,6 +87,13 @@ type NotificationsService interface {
 	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
 	GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error)
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, formation *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
+}
+
+//go:generate mockery --exported --name=statusService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type statusService interface {
+	UpdateWithConstraints(ctx context.Context, formation *model.Formation, operation model.FormationOperation) error
+	SetFormationToErrorStateWithConstraints(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState, operation model.FormationOperation) error
 }
 
 // FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
@@ -170,6 +177,7 @@ type service struct {
 	webhookRepository                      webhookRepository
 	transact                               persistence.Transactioner
 	asaEngine                              asaEngine
+	statusService                          statusService
 	runtimeTypeLabelKey                    string
 	applicationTypeLabelKey                string
 }
@@ -194,6 +202,7 @@ func NewService(
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
 	webhookRepository webhookRepository,
+	statusService statusService,
 	runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		transact:                               transact,
@@ -218,6 +227,7 @@ func NewService(
 		applicationTypeLabelKey:                applicationTypeLabelKey,
 		asaEngine:                              NewASAEngine(asaRepo, runtimeRepo, runtimeContextRepo, formationRepository, formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey),
 		webhookRepository:                      webhookRepository,
+		statusService:                          statusService,
 	}
 }
 
@@ -360,8 +370,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, newFormation, formationTemplateName, model.CreateFormation)
-		if err := s.processFormationNotifications(ctx, newFormation, extendedFormationReq, model.CreateErrorFormationState); err != nil {
+		if err := s.processFormationNotifications(ctx, newFormation, formationReq, model.CreateErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
@@ -412,8 +421,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, ft.formation, formationTemplateName, model.DeleteFormation)
-		if err := s.processFormationNotifications(ctx, ft.formation, extendedFormationReq, model.DeleteErrorFormationState); err != nil {
+		if err := s.processFormationNotifications(ctx, ft.formation, formationReq, model.DeleteErrorFormationState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formationName)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
@@ -1101,8 +1109,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 	}
 
 	for _, formationReq := range formationReqs {
-		extendedFormationReq := createExtendedFormationReq(formationReq, formation, formationTemplateName, operation)
-		if err = s.processFormationNotifications(ctx, formation, extendedFormationReq, errorState); err != nil {
+		if err = s.processFormationNotifications(ctx, formation, formationReq, errorState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
@@ -1571,7 +1578,7 @@ func setToSlice(set map[string]bool) []string {
 	return result
 }
 
-func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequestExt, errorState model.FormationState) error {
+func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {
 	response, err := s.notificationsService.SendNotification(ctx, formationReq)
 	if err != nil {
 		updateError := s.SetFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
@@ -1584,8 +1591,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.SetFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
-		if err != nil {
+		if err = s.statusService.SetFormationToErrorStateWithConstraints(ctx, formation, *response.Error, formationassignment.ClientError, errorState, determineFormationOperationFromState(errorState)); err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID: %q and name: %q", formation.ID, formation.Name)
 		}
 
@@ -1617,7 +1623,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 		formation.State = model.ReadyFormationState
 		formation.Error = nil
 		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, model.ReadyFormationState)
-		if err := s.formationRepository.Update(ctx, formation); err != nil {
+		if err := s.statusService.UpdateWithConstraints(ctx, formation, determineFormationOperationFromState(errorState)); err != nil {
 			return errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
 		}
 	}
@@ -1671,13 +1677,4 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 	}
 
 	return true
-}
-
-func createExtendedFormationReq(formationReq *webhookclient.FormationNotificationRequest, formation *model.Formation, formationType string, operation model.FormationOperation) *webhookclient.FormationNotificationRequestExt {
-	return &webhookclient.FormationNotificationRequestExt{
-		Request:       formationReq.Request,
-		Operation:     operation,
-		Formation:     formation,
-		FormationType: formationType,
-	}
 }

@@ -20,46 +20,41 @@ func NewWebhookStatusGoneErr(goneStatusCode int) WebhookStatusGoneErr {
 	return WebhookStatusGoneErr{error: fmt.Errorf("gone response status %d was met while calling webhook", goneStatusCode)}
 }
 
-// FormationNotificationRequest represents a formation webhook request to be executed
+// FormationNotificationRequest represents a formation webhook request to be executed with added Operation, Formation and FormationType
 type FormationNotificationRequest struct {
-	*Request
-}
-
-// FormationNotificationRequestExt is extended FormationNotificationRequest with Operation, Formation and FormationType
-type FormationNotificationRequestExt struct {
 	*Request
 	Operation     model.FormationOperation
 	Formation     *model.Formation
 	FormationType string
 }
 
-// GetObjectType returns FormationNotificationRequestExt object type
-func (fnr *FormationNotificationRequestExt) GetObjectType() model.ResourceType {
+// GetObjectType returns FormationNotificationRequest object type
+func (fnr *FormationNotificationRequest) GetObjectType() model.ResourceType {
 	return model.FormationResourceType
 }
 
-// GetObjectSubtype returns FormationNotificationRequestExt object subtype
-func (fnr *FormationNotificationRequestExt) GetObjectSubtype() string {
+// GetObjectSubtype returns FormationNotificationRequest object subtype
+func (fnr *FormationNotificationRequest) GetObjectSubtype() string {
 	return fnr.FormationType
 }
 
-// GetOperation returns FormationNotificationRequestExt operation
-func (fnr *FormationNotificationRequestExt) GetOperation() model.FormationOperation {
+// GetOperation returns FormationNotificationRequest operation
+func (fnr *FormationNotificationRequest) GetOperation() model.FormationOperation {
 	return fnr.Operation
 }
 
-// GetFormationAssignment returns FormationNotificationRequestExt formation assignment
-func (fnr *FormationNotificationRequestExt) GetFormationAssignment() *webhook.FormationAssignment {
+// GetFormationAssignment returns FormationNotificationRequest formation assignment
+func (fnr *FormationNotificationRequest) GetFormationAssignment() *webhook.FormationAssignment {
 	return nil
 }
 
-// GetReverseFormationAssignment returns FormationNotificationRequestExt reverse formation assignment
-func (fnr *FormationNotificationRequestExt) GetReverseFormationAssignment() *webhook.FormationAssignment {
+// GetReverseFormationAssignment returns FormationNotificationRequest reverse formation assignment
+func (fnr *FormationNotificationRequest) GetReverseFormationAssignment() *webhook.FormationAssignment {
 	return nil
 }
 
-// GetFormation returns FormationNotificationRequestExt formation
-func (fnr *FormationNotificationRequestExt) GetFormation() *model.Formation {
+// GetFormation returns FormationNotificationRequest formation
+func (fnr *FormationNotificationRequest) GetFormation() *model.Formation {
 	return fnr.Formation
 }
 
