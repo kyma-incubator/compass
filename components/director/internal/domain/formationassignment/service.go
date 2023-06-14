@@ -743,6 +743,11 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	assignment := mappingPair.Assignment.FormationAssignment
 	if mappingPair.Assignment.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
+				return false, nil
+			}
+
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
 			if updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState); updateError != nil {
 				return false, errors.Wrapf(
@@ -786,6 +791,10 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		assignment.State = string(model.DeletingAssignmentState)
 		assignment.Value = nil
 		if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
+				return false, nil
+			}
 			return false, errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
 		return false, nil
@@ -803,8 +812,16 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	if (response.State != nil && *response.State == string(model.ReadyAssignmentState)) ||
 		(response.State == nil && *response.ActualStatusCode == *response.SuccessStatusCode) {
 		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
+				return false, nil
+			}
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
 			if updateError := s.SetAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState); updateError != nil {
+				if apperrors.IsNotFoundError(updateError) {
+					log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
+					return false, nil
+				}
 				return false, errors.Wrapf(
 					updateError,
 					"while updating error state: %s",
@@ -819,6 +836,10 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	if response.State != nil && *response.State == string(model.DeleteErrorAssignmentState) {
 		if err = s.statusService.SetAssignmentToErrorStateWithConstraints(ctx, assignment, "", ClientError, model.DeleteErrorAssignmentState, mappingPair.Operation); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
+				return false, nil
+			}
 			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
 	}

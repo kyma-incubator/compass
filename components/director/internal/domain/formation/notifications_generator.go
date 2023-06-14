@@ -135,8 +135,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		}
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
-		} else {
+			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+		} else if req != nil {
 			requests = append(requests, req)
 		}
 	}
@@ -217,8 +217,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[runtime.ID])
 		if err != nil {
-			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
-		} else {
+			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+		} else if req != nil {
 			requests = append(requests, req)
 		}
 	}
@@ -323,8 +323,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 
 			req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 			if err != nil {
-				log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
-			} else {
+				return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+			} else if req != nil {
 				requests = append(requests, req)
 			}
 		}
@@ -370,8 +370,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, appIDToWebhookMapping[appID])
 		if err != nil {
-			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
-		} else {
+			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+		} else if req != nil {
 			requests = append(requests, req)
 		}
 	}
@@ -487,8 +487,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, appIDToWebhookMapping[appID])
 		if err != nil {
-			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
-		} else {
+			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+		} else if req != nil {
 			requests = append(requests, req)
 		}
 	}
@@ -553,8 +553,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
-		} else {
+			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+		} else if req != nil {
 			requests = append(requests, req)
 		}
 	}
@@ -613,8 +613,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
-		} else {
+			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
+		} else if req != nil {
 			requests = append(requests, req)
 		}
 	}

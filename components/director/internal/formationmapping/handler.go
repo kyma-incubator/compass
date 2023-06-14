@@ -217,6 +217,10 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
+	if notificationReq == nil {
+		log.C(ctx).Info("The formation assignment notifications are successfully processed")
+		httputils.Respond(w, http.StatusOK)
+	}
 
 	reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
 	if err != nil {
@@ -362,7 +366,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) processAsynchronousFormationUnassign(ctx context.Context, formation *model.Formation, fa *model.FormationAssignment) error {
 	unassignTx, err := h.transact.Begin()
 	if err != nil {
-		return errors.Wrapf(err, "while betinning transaction")
+		return errors.Wrapf(err, "while beginning transaction")
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, unassignTx)
 
