@@ -517,7 +517,7 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
-		t.Run("Application is created successfully in consumer subaccount as a result of subscription for an indirect dependency", func(t *testing.T) {
+		t.Run("Application is created successfully in consumer subaccount as a result of subscription where CMP is indirect dependency", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -535,7 +535,7 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 		})
 
-		t.Run("Application subscriptions label value is increased when two subscriptions are made one for an indirect dependency and one for a direct dependency", func(t *testing.T) {
+		t.Run("Application subscriptions label value is increased when two subscriptions are made one where CPM is an indirect dependency and one where CMP is a direct dependency", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -562,7 +562,7 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 			require.Len(t, actualAppPage.Data, 0)
 		})
 
-		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription from indirect dependency", func(t *testing.T) {
+		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription where CPM is an indirect dependency", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
