@@ -51,6 +51,21 @@ func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatus
 	return nil
 }
 
+// SetFromUpdateInput sets fields to BundleInstanceAuth from BundleInstanceAuthUpdateInput
+func (a *BundleInstanceAuth) SetFromUpdateInput(in BundleInstanceAuthUpdateInput) {
+	if in.Context != nil {
+		a.Context = in.Context
+	}
+
+	if in.InputParams != nil {
+		a.InputParams = in.InputParams
+	}
+
+	if in.Auth != nil {
+		a.Auth = in.Auth.ToAuth()
+	}
+}
+
 // BundleInstanceAuthStatus missing godoc
 type BundleInstanceAuthStatus struct {
 	Condition BundleInstanceAuthStatusCondition
@@ -131,3 +146,34 @@ const (
 	// BundleInstanceAuthSetStatusConditionInputFailed missing godoc
 	BundleInstanceAuthSetStatusConditionInputFailed BundleInstanceAuthSetStatusConditionInput = "FAILED"
 )
+
+// BundleInstanceAuthCreateInput type is input for createBundleInstanceAuth mutation
+type BundleInstanceAuthCreateInput struct {
+	Context          *string
+	InputParams      *string
+	Auth             *AuthInput
+	RuntimeID        *string
+	RuntimeContextID *string
+}
+
+// ToBundleInstanceAuth creates BundleInstanceAuth from BundleInstanceAuthCreateInput
+func (ri BundleInstanceAuthCreateInput) ToBundleInstanceAuth(id, bundleID, tenant string, status *BundleInstanceAuthStatus) BundleInstanceAuth {
+	return BundleInstanceAuth{
+		ID:               id,
+		BundleID:         bundleID,
+		RuntimeID:        ri.RuntimeID,
+		RuntimeContextID: ri.RuntimeContextID,
+		Owner:            tenant,
+		Context:          ri.Context,
+		InputParams:      ri.InputParams,
+		Auth:             ri.Auth.ToAuth(),
+		Status:           status,
+	}
+}
+
+// BundleInstanceAuthUpdateInput type is input for updateBundleInstanceAuth mutation
+type BundleInstanceAuthUpdateInput struct {
+	Context     *string
+	InputParams *string
+	Auth        *AuthInput
+}

@@ -937,6 +937,16 @@ func (r *mutationResolver) RequestBundleInstanceAuthDeletion(ctx context.Context
 	return r.bundleInstanceAuth.RequestBundleInstanceAuthDeletion(ctx, authID)
 }
 
+// CreateBundleInstanceAuth creates graphql.BundleInstanceAuth from a given input for a bundle with id - bundleID
+func (r *mutationResolver) CreateBundleInstanceAuth(ctx context.Context, bundleID string, in graphql.BundleInstanceAuthCreateInput) (*graphql.BundleInstanceAuth, error) {
+	return r.bundleInstanceAuth.CreateBundleInstanceAuth(ctx, bundleID, in)
+}
+
+// UpdateBundleInstanceAuth updates graphql.BundleInstanceAuth with id from a given input for a bundle with id - bundleID
+func (r *mutationResolver) UpdateBundleInstanceAuth(ctx context.Context, id string, bundleID string, in graphql.BundleInstanceAuthUpdateInput) (*graphql.BundleInstanceAuth, error) {
+	return r.bundleInstanceAuth.UpdateBundleInstanceAuth(ctx, id, bundleID, in)
+}
+
 // AddBundle missing godoc
 func (r *mutationResolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleCreateInput) (*graphql.Bundle, error) {
 	return r.mpBundle.AddBundle(ctx, applicationID, in)
