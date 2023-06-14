@@ -53,21 +53,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	id := s.uidService.Generate()
 	vendor := in.ToVendor(id, resourceType, resourceID)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.vendorRepo.CreateGlobal(ctx, vendor)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.vendorRepo.Create(ctx, tnt, vendor)
-	}
-	if err != nil {
+	if err := s.createVendor(ctx, vendor, resourceType); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s", id, vendor.Title)
 	}
 
@@ -91,34 +77,14 @@ func (s *service) CreateGlobal(ctx context.Context, in model.VendorInput) (strin
 
 // Update updates an existing Vendor.
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error {
-	var (
-		vendor *model.Vendor
-		err    error
-		tnt    string
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		vendor, err = s.vendorRepo.GetByIDGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		vendor, err = s.vendorRepo.GetByID(ctx, tnt, id)
-	}
+	vendor, err := s.getVendor(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Vendor with id %s", id)
 	}
 
 	vendor.SetFromUpdateInput(in)
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.vendorRepo.UpdateGlobal(ctx, vendor)
-	} else {
-		err = s.vendorRepo.Update(ctx, tnt, vendor)
-	}
-	if err != nil {
+	if err = s.updateVendor(ctx, vendor, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Vendor with id %s", id)
 	}
 
@@ -142,22 +108,7 @@ func (s *service) UpdateGlobal(ctx context.Context, id string, in model.VendorIn
 
 // Delete deletes an existing Vendor.
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
-	var (
-		err error
-		tnt string
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		err = s.vendorRepo.DeleteGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return errors.Wrap(err, "while loading tenant from context")
-		}
-
-		err = s.vendorRepo.Delete(ctx, tnt, id)
-	}
-	if err != nil {
+	if err := s.deleteVendor(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Vendor with id %s", id)
 	}
 
@@ -224,4 +175,51 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 // ListGlobal returns a list of Global Vendors (with NULL app_id).
 func (s *service) ListGlobal(ctx context.Context) ([]*model.Vendor, error) {
 	return s.vendorRepo.ListGlobal(ctx)
+}
+
+func (s *service) createVendor(ctx context.Context, vendor *model.Vendor, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.CreateGlobal(ctx, vendor)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.vendorRepo.Create(ctx, tnt, vendor)
+}
+
+func (s *service) getVendor(ctx context.Context, id string, resourceType resource.Type) (*model.Vendor, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateVendor(ctx context.Context, vendor *model.Vendor, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.UpdateGlobal(ctx, vendor)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.vendorRepo.Update(ctx, tnt, vendor)
+}
+
+func (s *service) deleteVendor(ctx context.Context, id string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.DeleteGlobal(ctx, id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	return s.vendorRepo.Delete(ctx, tnt, id)
 }

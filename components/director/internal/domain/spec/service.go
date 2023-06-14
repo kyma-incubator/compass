@@ -122,21 +122,7 @@ func (s *service) ListIDByReferenceObjectID(ctx context.Context, resourceType re
 // GetByReferenceObjectID
 // Until now APIs and Events had embedded specification in them, we will model this behavior by relying that the first created spec is the one which GraphQL expects
 func (s *service) GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
-	var (
-		specs []*model.Spec
-		err   error
-		tnt   string
-	)
-	if resourceType.IsTenantIgnorable() {
-		specs, err = s.repo.ListByReferenceObjectIDGlobal(ctx, objectType, objectID)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		specs, err = s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
-	}
+	specs, err := s.listSpecsByReferenceObjectID(ctx, objectType, objectID, resourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -162,45 +148,25 @@ func (s *service) ListByReferenceObjectIDs(ctx context.Context, objectType model
 
 // CreateByReferenceObjectID missing godoc
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
-	var (
-		err error
-		tnt string
-	)
-
 	id := s.uidService.Generate()
 	spec, err := in.ToSpec(id, objectType, objectID)
 	if err != nil {
 		return "", err
 	}
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.CreateGlobal(ctx, spec)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.repo.Create(ctx, tnt, spec)
-	}
-	if err != nil {
+	if err = s.createSpec(ctx, spec, resourceType); err != nil {
 		return "", errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
 
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType, resourceType)
+		fr, err := s.createFetchRequest(ctx, *in.FetchRequest, id, objectType, resourceType)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
 
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
-		if resourceType.IsTenantIgnorable() {
-			err = s.repo.UpdateGlobal(ctx, spec)
-		} else {
-			err = s.repo.Update(ctx, tnt, spec)
-		}
-		if err != nil {
+		if err = s.updateSpec(ctx, spec, resourceType); err != nil {
 			return "", errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 		}
 	}
@@ -210,34 +176,19 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 
 // CreateByReferenceObjectIDWithDelayedFetchRequest identical to CreateByReferenceObjectID with the only difference that the spec and fetch request entities are only persisted in DB and the fetch request itself is not executed
 func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error) {
-	var (
-		err error
-		tnt string
-	)
-
 	id := s.uidService.Generate()
 	spec, err := in.ToSpec(id, objectType, objectID)
 	if err != nil {
 		return "", nil, err
 	}
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.CreateGlobal(ctx, spec)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", nil, err
-		}
-
-		err = s.repo.Create(ctx, tnt, spec)
-	}
-	if err != nil {
+	if err = s.createSpec(ctx, spec, resourceType); err != nil {
 		return "", nil, errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
 
 	var fr *model.FetchRequest
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err = s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType, resourceType)
+		fr, err = s.createFetchRequest(ctx, *in.FetchRequest, id, objectType, resourceType)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
@@ -248,29 +199,7 @@ func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.C
 
 // UpdateByReferenceObjectID missing godoc
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error {
-	var (
-		tnt string
-		err error
-	)
-	if resourceType.IsTenantIgnorable() {
-		if _, err = s.repo.GetByIDGlobal(ctx, id); err != nil {
-			return err
-		}
-
-		err = s.fetchRequestRepo.DeleteByReferenceObjectIDGlobal(ctx, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		if _, err = s.repo.GetByID(ctx, tnt, id, objectType); err != nil {
-			return err
-		}
-
-		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
-	}
-	if err != nil {
+	if err := s.deleteFetchRequestByReferenceObjectID(ctx, id, objectType, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
@@ -280,7 +209,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	}
 
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType, resourceType)
+		fr, err := s.createFetchRequest(ctx, *in.FetchRequest, id, objectType, resourceType)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
@@ -288,12 +217,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.UpdateGlobal(ctx, spec)
-	} else {
-		err = s.repo.Update(ctx, tnt, spec)
-	}
-	if err != nil {
+	if err = s.updateSpec(ctx, spec, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 	}
 
@@ -325,21 +249,7 @@ func (s *service) UpdateSpecOnlyGlobal(ctx context.Context, spec model.Spec) err
 
 // DeleteByReferenceObjectID missing godoc
 func (s *service) DeleteByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error {
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.DeleteByReferenceObjectIDGlobal(ctx, objectType, objectID)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		err = s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
-	}
-	if err != nil {
+	if err := s.deleteSpecByReferenceObjectID(ctx, objectType, objectID, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting reference object type %s with id %s", objectType, objectID)
 	}
 
@@ -422,21 +332,101 @@ func (s *service) ListFetchRequestsByReferenceObjectIDsGlobal(ctx context.Contex
 	return s.fetchRequestRepo.ListByReferenceObjectIDsGlobal(ctx, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType, resourceType resource.Type) (*model.FetchRequest, error) {
+func (s *service) createFetchRequest(ctx context.Context, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType, resourceType resource.Type) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, getFetchRequestObjectTypeBySpecObjectType(objectType), parentObjectID)
 
-	var err error
 	if resourceType.IsTenantIgnorable() {
-		err = s.fetchRequestRepo.CreateGlobal(ctx, fr)
-	} else {
-		err = s.fetchRequestRepo.Create(ctx, tenant, fr)
+		if err := s.fetchRequestRepo.CreateGlobal(ctx, fr); err != nil {
+			return nil, err
+		}
+
+		return fr, nil
 	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with id %q", objectType, parentObjectID)
+		return nil, err
+	}
+
+	if err = s.fetchRequestRepo.Create(ctx, tnt, fr); err != nil {
+		return nil, err
 	}
 
 	return fr, nil
+}
+
+func (s *service) listSpecsByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, resourceType resource.Type) ([]*model.Spec, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.ListByReferenceObjectIDGlobal(ctx, objectType, objectID)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
+}
+
+func (s *service) createSpec(ctx context.Context, spec *model.Spec, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.CreateGlobal(ctx, spec)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Create(ctx, tnt, spec)
+}
+
+func (s *service) updateSpec(ctx context.Context, spec *model.Spec, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.UpdateGlobal(ctx, spec)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Update(ctx, tnt, spec)
+}
+
+func (s *service) deleteSpecByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.DeleteByReferenceObjectIDGlobal(ctx, objectType, objectID)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.DeleteByReferenceObjectID(ctx, tnt, objectType, objectID)
+}
+
+func (s *service) deleteFetchRequestByReferenceObjectID(ctx context.Context, id string, objectType model.SpecReferenceObjectType, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		if _, err := s.repo.GetByIDGlobal(ctx, id); err != nil {
+			return err
+		}
+
+		return s.fetchRequestRepo.DeleteByReferenceObjectIDGlobal(ctx, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = s.repo.GetByID(ctx, tnt, id, objectType); err != nil {
+		return err
+	}
+
+	return s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
 }
 
 func getFetchRequestObjectTypeBySpecObjectType(specObjectType model.SpecReferenceObjectType) model.FetchRequestReferenceObjectType {

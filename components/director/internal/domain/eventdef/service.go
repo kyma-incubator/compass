@@ -155,29 +155,15 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	id := s.uidService.Generate()
 	eventAPI := in.ToEventDefinition(id, resourceType, resourceID, packageID, eventHash)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.eventAPIRepo.CreateGlobal(ctx, eventAPI)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.eventAPIRepo.Create(ctx, tnt, eventAPI)
-	}
-	if err != nil {
+	if err := s.createEventDef(ctx, eventAPI, resourceType); err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
 
-	if err = s.processSpecs(ctx, eventAPI.ID, specs, resourceType); err != nil {
+	if err := s.processSpecs(ctx, eventAPI.ID, specs, resourceType); err != nil {
 		return "", err
 	}
 
-	if err = s.createBundleReferenceObject(ctx, eventAPI.ID, bundleID, defaultBundleID, bundleIDs); err != nil {
+	if err := s.createBundleReferenceObject(ctx, eventAPI.ID, bundleID, defaultBundleID, bundleIDs); err != nil {
 		return "", err
 	}
 
@@ -191,48 +177,24 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 
 // UpdateInManyBundles updates EventDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
 func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
-	var (
-		event *model.EventDefinition
-		err   error
-		tnt   string
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		event, err = s.eventAPIRepo.GetByIDGlobal(ctx, id)
-		if err != nil {
-			return err
-		}
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		event, err = s.Get(ctx, id)
-		if err != nil {
-			return err
-		}
+	eventDef, err := s.getEventDef(ctx, id, resourceType)
+	if err != nil {
+		return errors.Wrapf(err, "while getting EventDefinition with ID %s", id)
 	}
 
-	_, resourceID := getParentResource(event)
-	event = in.ToEventDefinition(id, resourceType, resourceID, event.PackageID, eventHash)
+	_, resourceID := getParentResource(eventDef)
+	eventDef = in.ToEventDefinition(id, resourceType, resourceID, eventDef.PackageID, eventHash)
 
-	if resourceType.IsTenantIgnorable() {
-		if err = s.eventAPIRepo.UpdateGlobal(ctx, event); err != nil {
-			return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
-		}
-	} else {
-		if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
-			return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
-		}
+	if err = s.updateEventDef(ctx, eventDef, resourceType); err != nil {
+		return errors.Wrapf(err, "while updating EventDefinition with ID %s", id)
 	}
 
-	if err = s.handleReferenceObjects(ctx, event.ID, bundleIDsForCreation, bundleIDsForDeletion, bundleIDsFromBundleReference, defaultBundleID); err != nil {
-		return err
+	if err = s.handleReferenceObjects(ctx, eventDef.ID, bundleIDsForCreation, bundleIDsForDeletion, bundleIDsFromBundleReference, defaultBundleID); err != nil {
+		return errors.Wrapf(err, "while handling reference objects for EventDefinition with ID %s", eventDef.ID)
 	}
 
 	if specIn != nil {
-		return s.handleSpecsInEvent(ctx, resourceType, event.ID, specIn)
+		return s.handleSpecsInEvent(ctx, resourceType, eventDef.ID, specIn)
 	}
 
 	return nil
@@ -240,22 +202,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 
 // Delete deletes the EventDefinition by its ID.
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
-	var (
-		err error
-		tnt string
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		err = s.eventAPIRepo.DeleteGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "while loading tenant from context")
-		}
-
-		err = s.eventAPIRepo.Delete(ctx, tnt, id)
-	}
-	if err != nil {
+	if err := s.deleteEventDef(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting EventDefinition with id %s", id)
 	}
 
@@ -305,10 +252,14 @@ func (s *service) handleSpecsInEvent(ctx context.Context, resourceType resource.
 
 	if dbSpec == nil {
 		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, resourceType, model.EventSpecReference, id)
-		return err
+		return errors.Wrapf(err, "while creating spec for EventDefinition with ID %s", id)
 	}
 
-	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, resourceType, model.EventSpecReference, id)
+	if err = s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, resourceType, model.EventSpecReference, id); err != nil {
+		return errors.Wrapf(err, "while updating spec for EventDefinition with ID %s", id)
+	}
+
+	return nil
 }
 
 func (s *service) handleReferenceObjects(ctx context.Context, id string, bundleIDsForCreation, bundleIDsForDeletion, bundleIDsFromBundleReference []string, defaultBundleID string) error {
@@ -378,6 +329,53 @@ func (s *service) createBundleReferenceObject(ctx context.Context, eventID strin
 	}
 
 	return nil
+}
+
+func (s *service) createEventDef(ctx context.Context, eventAPI *model.EventDefinition, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.eventAPIRepo.CreateGlobal(ctx, eventAPI)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.eventAPIRepo.Create(ctx, tnt, eventAPI)
+}
+
+func (s *service) getEventDef(ctx context.Context, id string, resourceType resource.Type) (*model.EventDefinition, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.eventAPIRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateEventDef(ctx context.Context, eventDef *model.EventDefinition, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.eventAPIRepo.UpdateGlobal(ctx, eventDef)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.eventAPIRepo.Update(ctx, tnt, eventDef)
+}
+
+func (s *service) deleteEventDef(ctx context.Context, id string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.eventAPIRepo.DeleteGlobal(ctx, id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.eventAPIRepo.Delete(ctx, tnt, id)
 }
 
 func getParentResource(api *model.EventDefinition) (resource.Type, string) {

@@ -163,30 +163,16 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 	enrichAPIProtocol(api, specs)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.CreateGlobal(ctx, api)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.repo.Create(ctx, tnt, api)
-	}
-	if err != nil {
+	if err := s.createAPI(ctx, api, resourceType); err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
 
-	if err = s.processSpecs(ctx, api.ID, specs, resourceType); err != nil {
-		return "", err
+	if err := s.processSpecs(ctx, api.ID, specs, resourceType); err != nil {
+		return "", errors.Wrap(err, "while processing specs")
 	}
 
-	if err = s.createBundleReferenceObject(ctx, api.ID, bundleID, defaultBundleID, api.TargetURLs, defaultTargetURLPerBundle); err != nil {
-		return "", err
+	if err := s.createBundleReferenceObject(ctx, api.ID, bundleID, defaultBundleID, api.TargetURLs, defaultTargetURLPerBundle); err != nil {
+		return "", errors.Wrap(err, "while creating bundle reference object")
 	}
 
 	return id, nil
@@ -199,40 +185,18 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 
 // UpdateInManyBundles updates APIDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
 func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
-	var (
-		api *model.APIDefinition
-		err error
-		tnt string
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		api, err = s.repo.GetByIDGlobal(ctx, id)
-		if err != nil {
-			return err
-		}
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		api, err = s.Get(ctx, id)
-		if err != nil {
-			return err
-		}
+	api, err := s.getAPI(ctx, id, resourceType)
+	if err != nil {
+		return errors.Wrapf(err, "while getting API with ID %s for %s", id, resourceType)
 	}
 
 	_, resourceID := getParentResource(api)
 
 	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.UpdateGlobal(ctx, api)
-	} else {
-		err = s.repo.Update(ctx, tnt, api)
-	}
+	err = s.updateAPI(ctx, api, resourceType)
 	if err != nil {
-		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
+		return errors.Wrapf(err, "while updating API with ID %s for %s", id, resourceType)
 	}
 
 	if err = s.updateReferences(ctx, api, in.TargetURLs, defaultTargetURLPerBundleForUpdate, defaultBundleID); err != nil {
@@ -256,21 +220,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 
 // Delete deletes the APIDefinition by its ID.
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.DeleteGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		err = s.repo.Delete(ctx, tnt, id)
-	}
-	if err != nil {
+	if err := s.deleteAPI(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting APIDefinition with id %s", id)
 	}
 
@@ -421,6 +371,50 @@ func (s *service) createBundleReferenceObject(ctx context.Context, apiID string,
 	}
 
 	return nil
+}
+
+func (s *service) getAPI(ctx context.Context, id string, resourceType resource.Type) (*model.APIDefinition, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.GetByIDGlobal(ctx, id)
+	}
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateAPI(ctx context.Context, api *model.APIDefinition, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.UpdateGlobal(ctx, api)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	return s.repo.Update(ctx, tnt, api)
+}
+
+func (s *service) createAPI(ctx context.Context, api *model.APIDefinition, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.CreateGlobal(ctx, api)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Create(ctx, tnt, api)
+}
+
+func (s *service) deleteAPI(ctx context.Context, apiID string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.DeleteGlobal(ctx, apiID)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	return s.repo.Delete(ctx, tnt, apiID)
 }
 
 func getParentResource(api *model.APIDefinition) (resource.Type, string) {

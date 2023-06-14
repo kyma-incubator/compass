@@ -53,21 +53,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	id := s.uidService.Generate()
 	product := in.ToProduct(id, resourceType, resourceID)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.productRepo.CreateGlobal(ctx, product)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.productRepo.Create(ctx, tnt, product)
-	}
-	if err != nil {
+	if err := s.createProduct(ctx, product, resourceType); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for %v with id %s", id, product.Title, resourceType, resourceID)
 	}
 
@@ -91,34 +77,14 @@ func (s *service) CreateGlobal(ctx context.Context, in model.ProductInput) (stri
 
 // Update updates an existing product.
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error {
-	var (
-		product *model.Product
-		tnt     string
-		err     error
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		product, err = s.productRepo.GetByIDGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		product, err = s.productRepo.GetByID(ctx, tnt, id)
-	}
+	product, err := s.getProduct(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Product with id %s", id)
 	}
 
 	product.SetFromUpdateInput(in)
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.productRepo.UpdateGlobal(ctx, product)
-	} else {
-		err = s.productRepo.Update(ctx, tnt, product)
-	}
-	if err != nil {
+	if err = s.updateProduct(ctx, product, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Product with id %s", id)
 	}
 
@@ -142,22 +108,7 @@ func (s *service) UpdateGlobal(ctx context.Context, id string, in model.ProductI
 
 // Delete deletes an existing product.
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
-	var (
-		tnt string
-		err error
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		err = s.productRepo.DeleteGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return errors.Wrap(err, "while loading tenant from context")
-		}
-
-		err = s.productRepo.Delete(ctx, tnt, id)
-	}
-	if err != nil {
+	if err := s.deleteProduct(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Product with id %s", id)
 	}
 
@@ -223,4 +174,51 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID 
 // ListGlobal returns a list of global products (with NULL app_id).
 func (s *service) ListGlobal(ctx context.Context) ([]*model.Product, error) {
 	return s.productRepo.ListGlobal(ctx)
+}
+
+func (s *service) createProduct(ctx context.Context, product *model.Product, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.CreateGlobal(ctx, product)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.productRepo.Create(ctx, tnt, product)
+}
+
+func (s *service) getProduct(ctx context.Context, id string, resourceType resource.Type) (*model.Product, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateProduct(ctx context.Context, product *model.Product, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.UpdateGlobal(ctx, product)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.productRepo.Update(ctx, tnt, product)
+}
+
+func (s *service) deleteProduct(ctx context.Context, id string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.DeleteGlobal(ctx, id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	return s.productRepo.Delete(ctx, tnt, id)
 }

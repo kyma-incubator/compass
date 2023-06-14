@@ -96,21 +96,7 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 	id := s.uidService.Generate()
 	document := in.ToDocumentWithinBundle(id, bundleID, resourceType, resourceID)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.repo.CreateGlobal(ctx, document)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.repo.Create(ctx, tnt, document)
-	}
-	if err != nil {
+	if err := s.createDocument(ctx, document, resourceType); err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}
 
@@ -119,12 +105,7 @@ func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type
 		fetchRequestID := &generatedID
 		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
 
-		if resourceType.IsTenantIgnorable() {
-			err = s.fetchRequestRepo.CreateGlobal(ctx, fetchRequestModel)
-		} else {
-			err = s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel)
-		}
-		if err != nil {
+		if err := s.createFetchRequest(ctx, fetchRequestModel, resourceType); err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}
 	}
@@ -169,4 +150,30 @@ func (s *service) ListFetchRequests(ctx context.Context, documentIDs []string) (
 	}
 
 	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.DocumentFetchRequestReference, documentIDs)
+}
+
+func (s *service) createDocument(ctx context.Context, document *model.Document, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.CreateGlobal(ctx, document)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Create(ctx, tnt, document)
+}
+
+func (s *service) createFetchRequest(ctx context.Context, fetchRequest *model.FetchRequest, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.fetchRequestRepo.CreateGlobal(ctx, fetchRequest)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.fetchRequestRepo.Create(ctx, tnt, fetchRequest)
 }

@@ -51,21 +51,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	id := s.uidService.Generate()
 	tombstone := in.ToTombstone(id, resourceType, resourceID)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.tombstoneRepo.CreateGlobal(ctx, tombstone)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.tombstoneRepo.Create(ctx, tnt, tombstone)
-	}
-	if err != nil {
+	if err := s.createTombstone(ctx, tombstone, resourceType); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for %s with id %s", id, resourceType, resourceID)
 	}
 
@@ -76,34 +62,14 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error {
-	var (
-		tombstone *model.Tombstone
-		tnt       string
-		err       error
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		tombstone, err = s.tombstoneRepo.GetByIDGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		tombstone, err = s.tombstoneRepo.GetByID(ctx, tnt, id)
-	}
+	tombstone, err := s.getTombstone(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Tombstone with id %s", id)
 	}
 
 	tombstone.SetFromUpdateInput(in)
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.tombstoneRepo.UpdateGlobal(ctx, tombstone)
-	} else {
-		err = s.tombstoneRepo.Update(ctx, tnt, tombstone)
-	}
-	if err != nil {
+	if err = s.updateTombstone(ctx, tombstone, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Tombstone with id %s", id)
 	}
 
@@ -168,4 +134,38 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 // ListByApplicationTemplateVersionID missing godoc
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error) {
 	return s.tombstoneRepo.ListByResourceID(ctx, "", appID, resource.ApplicationTemplateVersion)
+}
+
+func (s *service) createTombstone(ctx context.Context, tombstone *model.Tombstone, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.tombstoneRepo.CreateGlobal(ctx, tombstone)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.tombstoneRepo.Create(ctx, tnt, tombstone)
+}
+
+func (s *service) getTombstone(ctx context.Context, id string, resourceType resource.Type) (*model.Tombstone, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.tombstoneRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateTombstone(ctx context.Context, tombstone *model.Tombstone, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.tombstoneRepo.UpdateGlobal(ctx, tombstone)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.tombstoneRepo.Update(ctx, tnt, tombstone)
 }

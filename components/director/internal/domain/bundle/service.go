@@ -69,28 +69,14 @@ func (s *service) CreateBundle(ctx context.Context, resourceType resource.Type, 
 	id := s.uidService.Generate()
 	bndl := in.ToBundle(id, resourceType, resourceID, bndlHash)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.bndlRepo.CreateGlobal(ctx, bndl)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.bndlRepo.Create(ctx, tnt, bndl)
-	}
-	if err != nil {
+	if err := s.createBundle(ctx, bndl, resourceType); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
 	}
 
 	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
 
 	log.C(ctx).Infof("Creating related resources in Bundle with id %s and name %s for %s with id %s", id, bndl.Name, resourceType, resourceID)
-	if err = s.createRelatedResources(ctx, in, id, resourceType, resourceID); err != nil {
+	if err := s.createRelatedResources(ctx, in, id, resourceType, resourceID); err != nil {
 		return "", errors.Wrapf(err, "while creating related resources for %s with id %s", resourceType, resourceID)
 	}
 
@@ -108,8 +94,7 @@ func (s *service) CreateMultiple(ctx context.Context, resourceType resource.Type
 			continue
 		}
 
-		_, err := s.Create(ctx, resourceType, resourceID, *bndl)
-		if err != nil {
+		if _, err := s.Create(ctx, resourceType, resourceID, *bndl); err != nil {
 			return errors.Wrapf(err, "while creating Bundle for %s with id %s", resourceType, resourceID)
 		}
 	}
@@ -124,34 +109,14 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 
 // UpdateBundle missing godoc
 func (s *service) UpdateBundle(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput, bndlHash uint64) error {
-	var (
-		bndl *model.Bundle
-		tnt  string
-		err  error
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		bndl, err = s.bndlRepo.GetByIDGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		bndl, err = s.bndlRepo.GetByID(ctx, tnt, id)
-	}
+	bndl, err := s.getBundle(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Bundle with id %s", id)
 	}
 
 	bndl.SetFromUpdateInput(in, bndlHash)
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.bndlRepo.UpdateGlobal(ctx, bndl)
-	} else {
-		err = s.bndlRepo.Update(ctx, tnt, bndl)
-	}
-	if err != nil {
+	if err = s.updateBundle(ctx, bndl, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Bundle with id %s", id)
 	}
 
@@ -160,22 +125,7 @@ func (s *service) UpdateBundle(ctx context.Context, resourceType resource.Type, 
 
 // Delete deletes a bundle by id
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
-	var (
-		err error
-		tnt string
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		err = s.bndlRepo.DeleteGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return errors.Wrap(err, "while loading tenant from context")
-		}
-
-		err = s.bndlRepo.Delete(ctx, tnt, id)
-	}
-	if err != nil {
+	if err := s.deleteBundle(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Bundle with id %s", id)
 	}
 
@@ -278,4 +228,51 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	}
 
 	return nil
+}
+
+func (s *service) createBundle(ctx context.Context, bundle *model.Bundle, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.bndlRepo.CreateGlobal(ctx, bundle)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.bndlRepo.Create(ctx, tnt, bundle)
+}
+
+func (s *service) getBundle(ctx context.Context, bundleID string, resourceType resource.Type) (*model.Bundle, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.bndlRepo.GetByIDGlobal(ctx, bundleID)
+	}
+
+	return s.Get(ctx, bundleID)
+}
+
+func (s *service) updateBundle(ctx context.Context, bndl *model.Bundle, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.bndlRepo.UpdateGlobal(ctx, bndl)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.bndlRepo.Update(ctx, tnt, bndl)
+}
+
+func (s *service) deleteBundle(ctx context.Context, bundleID string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.bndlRepo.DeleteGlobal(ctx, bundleID)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.bndlRepo.Delete(ctx, tnt, bundleID)
 }

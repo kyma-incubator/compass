@@ -53,21 +53,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	id := s.uidService.Generate()
 	pkg := in.ToPackage(id, resourceType, resourceID, pkgHash)
 
-	var (
-		err error
-		tnt string
-	)
-	if resourceType.IsTenantIgnorable() {
-		err = s.pkgRepo.CreateGlobal(ctx, pkg)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		err = s.pkgRepo.Create(ctx, tnt, pkg)
-	}
-	if err != nil {
+	if err := s.createPackage(ctx, pkg, resourceType); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for %s with id %s", id, pkg.Title, resourceType, resourceID)
 	}
 
@@ -78,34 +64,14 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 
 // Update updates a package by ID for a given resource.Type
 func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error {
-	var (
-		pkg *model.Package
-		tnt string
-		err error
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		pkg, err = s.pkgRepo.GetByIDGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return err
-		}
-
-		pkg, err = s.pkgRepo.GetByID(ctx, tnt, id)
-	}
+	pkg, err := s.getPackage(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Package with id %s", id)
 	}
 
 	pkg.SetFromUpdateInput(in, pkgHash)
 
-	if resourceType.IsTenantIgnorable() {
-		err = s.pkgRepo.UpdateGlobal(ctx, pkg)
-	} else {
-		err = s.pkgRepo.Update(ctx, tnt, pkg)
-	}
-	if err != nil {
+	if err = s.updatePackage(ctx, pkg, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
 
@@ -114,22 +80,7 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 
 // Delete missing godoc
 func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
-	var (
-		tnt string
-		err error
-	)
-
-	if resourceType.IsTenantIgnorable() {
-		err = s.pkgRepo.DeleteGlobal(ctx, id)
-	} else {
-		tnt, err = tenant.LoadFromContext(ctx)
-		if err != nil {
-			return errors.Wrap(err, "while loading tenant from context")
-		}
-
-		err = s.pkgRepo.Delete(ctx, tnt, id)
-	}
-	if err != nil {
+	if err := s.deletePackage(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Package with id %s", id)
 	}
 
@@ -181,4 +132,51 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 // ListByApplicationTemplateVersionID lists packages by Application Template Version ID without tenant isolation
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error) {
 	return s.pkgRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
+}
+
+func (s *service) createPackage(ctx context.Context, pkg *model.Package, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.pkgRepo.CreateGlobal(ctx, pkg)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.pkgRepo.Create(ctx, tnt, pkg)
+}
+
+func (s *service) getPackage(ctx context.Context, id string, resourceType resource.Type) (*model.Package, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.pkgRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updatePackage(ctx context.Context, pkg *model.Package, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.pkgRepo.UpdateGlobal(ctx, pkg)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.pkgRepo.Update(ctx, tnt, pkg)
+}
+
+func (s *service) deletePackage(ctx context.Context, id string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.pkgRepo.DeleteGlobal(ctx, id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	return s.pkgRepo.Delete(ctx, tnt, id)
 }
