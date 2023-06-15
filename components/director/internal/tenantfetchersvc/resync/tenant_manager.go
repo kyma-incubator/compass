@@ -382,7 +382,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 
 				var res *EventsPage
 				err := retry.Do(func() error {
-					res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
+					res, err = eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
 					if err != nil {
 						log.C(ctx).Infof(errors.Wrap(err, "while fetching tenant events page").Error())
 						return err
@@ -395,6 +395,11 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 					return nil
 				}, []retry.Option{retry.Attempts(5)}...)
 
+				if res == nil {
+					log.C(ctx).Infof("Result is nil")
+					hasErr = true
+					continue
+				}
 				if err != nil {
 					log.C(ctx).Infof("Error from retry %v", err)
 					hasErr = true
