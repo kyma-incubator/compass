@@ -336,7 +336,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		return err
 	}
 
-	log.C(ctx).Infof("Starging processing %d events in %d pages", initialCount, totalPages)
+	log.C(ctx).Infof("Starging processing %d events in %d pages for event type %v", initialCount, totalPages, eventsType)
 	start := time.Now()
 	for i := pageStart + 1; i <= totalPages; i++ {
 		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
