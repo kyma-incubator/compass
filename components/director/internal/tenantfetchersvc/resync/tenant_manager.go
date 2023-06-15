@@ -369,7 +369,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	// errorChan := make(chan error)
 	wg := sync.WaitGroup{}
 	hasErr := false
-	for worker := 0; worker < 3; worker++ {
+	for worker := 0; worker < 2; worker++ {
 		wg.Add(1)
 		go func() {
 			defer func() {
