@@ -328,7 +328,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		return fmt.Errorf("while applyfunc on event page: %v", err)
 	}
 
-	// initialCount := gjson.GetBytes(firstPage.Payload, pageConfig.TotalResultsField).Int()
+	initialCount := gjson.GetBytes(firstPage.Payload, pageConfig.TotalResultsField).Int()
 	totalPages := gjson.GetBytes(firstPage.Payload, pageConfig.TotalPagesField).Int()
 
 	pageStart, err := strconv.ParseInt(params[pageConfig.PageNumField], 10, 64)
@@ -336,6 +336,8 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		return err
 	}
 
+	log.C(ctx).Infof("Starging processing %d events in %d pages", initialCount, totalPages)
+	start := time.Now()
 	for i := pageStart + 1; i <= totalPages; i++ {
 		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
 		res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
@@ -345,14 +347,16 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		if res == nil {
 			return apperrors.NewInternalError("next page was expected but response was empty")
 		}
-		// if initialCount != gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int() {
-		//	 return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
-		// }
+		if initialCount != gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int() {
+			return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
+		}
 
 		if err = applyFunc(res); err != nil {
 			return err
 		}
 	}
+	duration := time.Since(start)
+	log.C(ctx).Infof("Processing of %d events in %d pages took %v", initialCount, totalPages, duration)
 
 	return nil
 }
