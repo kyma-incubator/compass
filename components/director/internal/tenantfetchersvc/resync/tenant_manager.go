@@ -365,7 +365,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	start := time.Now()
 	eventPages := make([]*EventsPage, 0)
 	var m sync.Mutex
-	pagesQueue := make(chan QueryParams, totalPages)
+	pagesQueue := make(chan QueryParams)
 	errorChan := make(chan error)
 	wg := sync.WaitGroup{}
 	for worker := 0; worker < 3; worker++ {
@@ -402,17 +402,25 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		}()
 	}
 
-	for i := pageStart + 1; i <= totalPages; i++ {
-		qParams := make(map[string]string)
-		for k, v := range params {
-			qParams[k] = v
+	wg2 := sync.WaitGroup{}
+	wg2.Add(1)
+	go func() {
+		defer func() {
+			wg2.Done()
+		}()
+		for i := pageStart + 1; i <= totalPages; i++ {
+			qParams := make(map[string]string)
+			for k, v := range params {
+				qParams[k] = v
+			}
+			qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
+			pagesQueue <- qParams
 		}
-		qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
-		pagesQueue <- qParams
-	}
+	}()
 
-	close(pagesQueue)
+	wg2.Wait()
 	wg.Wait()
+	close(pagesQueue)
 
 	hasError := false
 	for err := range errorChan {
