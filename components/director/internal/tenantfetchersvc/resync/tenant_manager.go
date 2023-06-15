@@ -387,12 +387,12 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 					hasErr = true
 					continue
 				}
-				totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
-				if initialCount != totalResults {
-					log.C(ctx).Infof(apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count %d, Total results %d", initialCount, totalResults).Error())
-					hasErr = true
-					continue
-				}
+				//totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
+				//if initialCount != totalResults {
+				//	log.C(ctx).Infof(apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count %d, Total results %d", initialCount, totalResults).Error())
+				//	hasErr = true
+				//	continue
+				//}
 
 				m.Lock()
 				eventPages = append(eventPages, &EventsPage{
