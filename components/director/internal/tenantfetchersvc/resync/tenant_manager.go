@@ -360,12 +360,13 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	//	}
 	// }
 
+	start := time.Now()
 	eventPages := make([]*EventsPage, 0)
 	var m sync.Mutex
 	pagesQueue := make(chan QueryParams, totalPages)
 	errorChan := make(chan error)
 	wg := sync.WaitGroup{}
-	for worker := 0; worker < 10; worker++ {
+	for worker := 0; worker < 5; worker++ {
 		wg.Add(1)
 		go func() {
 			defer func() {
@@ -426,6 +427,9 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 			return err
 		}
 	}
+
+	duration := time.Since(start)
+	log.C(ctx).Infof("Processing of %d events in %d pages took %v", initialCount, totalPages, duration)
 
 	return nil
 }
