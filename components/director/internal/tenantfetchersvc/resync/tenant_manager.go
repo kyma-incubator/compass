@@ -402,6 +402,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		}()
 	}
 
+	log.C(ctx).Infof("Creating query params")
 	wg2 := sync.WaitGroup{}
 	wg2.Add(1)
 	go func() {
