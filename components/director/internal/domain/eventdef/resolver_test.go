@@ -2,10 +2,11 @@ package eventdef_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/stretchr/testify/mock"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
