@@ -63,9 +63,6 @@ type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
-	SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error
-	DeleteFormationEntityAndScenarios(ctx context.Context, tnt, formationName string) error
-	Update(ctx context.Context, model *model.Formation) error
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
 }
 
