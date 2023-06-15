@@ -366,7 +366,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	pagesQueue := make(chan QueryParams, totalPages)
 	errorChan := make(chan error)
 	wg := sync.WaitGroup{}
-	for worker := 0; worker < 5; worker++ {
+	for worker := 0; worker < 3; worker++ {
 		wg.Add(1)
 		go func() {
 			defer func() {
