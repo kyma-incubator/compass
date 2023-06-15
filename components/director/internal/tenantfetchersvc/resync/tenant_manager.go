@@ -424,7 +424,9 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		}
 	}()
 
+	log.C(ctx).Infof("Waiting for params go routine.")
 	wg2.Wait()
+	log.C(ctx).Infof("Waiting for request go routine.")
 	wg.Wait()
 	close(pagesQueue)
 
