@@ -205,7 +205,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID); err != nil {
 			return "", err
 		}
-	} else if defaultTargetURLPerBundle != nil {
+	} else {
 		for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundle {
 			bundleRefInput := &model.BundleReferenceInput{
 				APIDefaultTargetURL: &defaultTargetURL,

@@ -186,7 +186,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
-	} else if bundleIDs != nil {
+	} else {
 		for _, bndlID := range bundleIDs {
 			bundleRefInput := &model.BundleReferenceInput{}
 			if defaultBundleID != "" && bndlID == defaultBundleID {
