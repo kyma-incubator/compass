@@ -413,13 +413,15 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 
 	close(pagesQueue)
 	wg.Wait()
-	close(errorChan)
 
 	hasError := false
 	for err := range errorChan {
 		hasError = true
 		log.C(ctx).Error(err.Error())
 	}
+
+	close(errorChan)
+
 	if hasError {
 		return errors.New("error while fetching pages")
 	}
