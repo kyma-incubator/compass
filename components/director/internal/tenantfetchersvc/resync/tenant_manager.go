@@ -366,8 +366,9 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	eventPages := make([]*EventsPage, 0)
 	var m sync.Mutex
 	pagesQueue := make(chan QueryParams)
-	errorChan := make(chan error)
+	// errorChan := make(chan error)
 	wg := sync.WaitGroup{}
+	hasErr := false
 	for worker := 0; worker < 3; worker++ {
 		wg.Add(1)
 		go func() {
@@ -377,16 +378,19 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 			for qParams := range pagesQueue {
 				res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
 				if err != nil {
-					errorChan <- errors.Wrap(err, "while fetching tenant events page")
+					log.C(ctx).Infof(errors.Wrap(err, "while fetching tenant events page").Error())
+					hasErr = true
 					continue
 				}
 				if res == nil {
-					errorChan <- apperrors.NewInternalError("next page was expected but response was empty")
+					log.C(ctx).Infof(apperrors.NewInternalError("next page was expected but response was empty").Error())
+					hasErr = true
 					continue
 				}
 				totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
 				if initialCount != totalResults {
-					errorChan <- apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count %d, Total results %d", initialCount, totalResults)
+					log.C(ctx).Infof(apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count %d, Total results %d", initialCount, totalResults).Error())
+					hasErr = true
 					continue
 				}
 
@@ -415,6 +419,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 				qParams[k] = v
 			}
 			qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
+			log.C(ctx).Infof("PARAMS ADDED for page %d", i)
 			pagesQueue <- qParams
 		}
 	}()
@@ -423,15 +428,15 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	wg.Wait()
 	close(pagesQueue)
 
-	hasError := false
-	for err := range errorChan {
-		hasError = true
-		log.C(ctx).Error(err.Error())
-	}
+	//hasError := false
+	//for err := range errorChan {
+	//	hasError = true
+	//	log.C(ctx).Error(err.Error())
+	//}
 
-	close(errorChan)
+	//close(errorChan)
 
-	if hasError {
+	if hasErr {
 		return errors.New("error while fetching pages")
 	}
 	log.C(ctx).Infof("Number of fetched event pages %d", len(eventPages))
