@@ -46,6 +46,7 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
 	app.Status.Timestamp = timestamp
+	app.SetUpdatedAt(timestamp)
 
 	if update.Description != nil {
 		app.Description = update.Description

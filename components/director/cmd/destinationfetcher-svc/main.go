@@ -22,9 +22,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
+	"github.com/gorilla/mux"
 	destinationfetcher "github.com/kyma-incubator/compass/components/director/internal/destinationfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -139,7 +140,7 @@ func main() {
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := authenticator.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := auth_middleware.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)

@@ -775,6 +775,42 @@ func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInsta
 	}`)
 }
 
+// BundleInstanceAuthCreateInputToGQL converts graphql.BundleInstanceAuthCreateInput to input arguments in graphql format
+func (g *Graphqlizer) BundleInstanceAuthCreateInputToGQL(in graphql.BundleInstanceAuthCreateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+		{{- if .RuntimeID }}
+		runtimeID: "{{ .RuntimeID }}"
+		{{- end }}
+		{{- if .RuntimeContextID }}
+		runtimeContextID: "{{ .RuntimeContextID }}"
+		{{- end }}
+	}`)
+}
+
+// BundleInstanceAuthUpdateInputToGQL converts graphql.BundleInstanceAuthUpdateInput to input arguments in graphql format
+func (g *Graphqlizer) BundleInstanceAuthUpdateInputToGQL(in graphql.BundleInstanceAuthUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+	}`)
+}
+
 // BundleInstanceAuthSetInputToGQL missing godoc
 func (g *Graphqlizer) BundleInstanceAuthSetInputToGQL(in graphql.BundleInstanceAuthSetInput) (string, error) {
 	return g.genericToGQL(in, `{

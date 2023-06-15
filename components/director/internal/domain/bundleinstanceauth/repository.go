@@ -18,7 +18,7 @@ const tableName string = `public.bundle_instance_auths`
 
 var (
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	updatableColumns = []string{"context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
 	tableColumns     = []string{"id", "owner_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 

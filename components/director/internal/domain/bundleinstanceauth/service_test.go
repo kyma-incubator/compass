@@ -607,6 +607,114 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
+func TestService_CreateBundleInstanceAuth(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+
+	consumerEntity := consumer.Consumer{
+		ConsumerID:   testRuntimeID,
+		ConsumerType: consumer.Runtime,
+	}
+	ctx = consumer.SaveToContext(ctx, consumerEntity)
+
+	modelCreateInput := fixModelCreateInput()
+	modelExpectedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuthInput().ToAuth(), fixModelStatusSucceeded(), &testRuntimeID)
+
+	testCases := []struct {
+		Name               string
+		InstanceAuthRepoFn func() *automock.Repository
+		UIDSvcFn           func() *automock.UIDService
+		Input              model.BundleInstanceAuthCreateInput
+		InputSchema        *string
+		ExpectedOutput     string
+		ExpectedError      error
+	}{
+		{
+			Name: "Success",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(nil).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			Input:          *modelCreateInput,
+			InputSchema:    nil,
+			ExpectedOutput: testID,
+		},
+		{
+			Name: "Returns error when creating the bundle instance auth fails",
+			InstanceAuthRepoFn: func() *automock.Repository {
+				instanceAuthRepo := &automock.Repository{}
+				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(testError).Once()
+				return instanceAuthRepo
+			},
+			UIDSvcFn: func() *automock.UIDService {
+				svc := automock.UIDService{}
+				svc.On("Generate").Return(testID).Once()
+				return &svc
+			},
+			Input:          *modelCreateInput,
+			InputSchema:    nil,
+			ExpectedOutput: "",
+			ExpectedError:  testError,
+		},
+		{
+			Name: "Returns error when can't validate input params against schema",
+			Input: model.BundleInstanceAuthCreateInput{
+				InputParams: str.Ptr("{"),
+			},
+			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("while validating BundleInstanceAuth request input for Bundle"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			instanceAuthRepo := &automock.Repository{}
+			if testCase.InstanceAuthRepoFn != nil {
+				instanceAuthRepo = testCase.InstanceAuthRepoFn()
+			}
+			uidSvc := &automock.UIDService{}
+			if testCase.UIDSvcFn != nil {
+				uidSvc = testCase.UIDSvcFn()
+			}
+
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, uidSvc)
+			svc.SetTimestampGen(func() time.Time { return testTime })
+
+			// WHEN
+			result, err := svc.CreateBundleInstanceAuth(ctx, testBundleID, testCase.Input, testCase.InputSchema)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, instanceAuthRepo, uidSvc)
+		})
+
+		t.Run("Error when tenant not in context", func(t *testing.T) {
+			svc := bundleinstanceauth.NewService(nil, nil)
+
+			// WHEN
+			_, err := svc.CreateBundleInstanceAuth(context.TODO(), testBundleID, *modelCreateInput, nil)
+
+			// THEN
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "cannot read tenant from context")
+		})
+	}
+}
+
 func TestService_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
