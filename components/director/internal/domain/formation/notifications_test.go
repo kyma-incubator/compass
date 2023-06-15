@@ -433,7 +433,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsGenerator = testCase.NotificationsGenerator()
 			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil, nil)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
@@ -519,7 +519,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, tenantRepo, notificationGenerator)
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil, nil)
 
 			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
 
@@ -711,7 +711,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				webhookConverter = testCase.WebhookConverter()
 			}
 
-			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter)
+			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter, nil)
 
 			// WHEN
 			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)

@@ -1595,8 +1595,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 			return errors.Wrapf(err, "while updating error state for formation with ID: %q and name: %q", formation.ID, formation.Name)
 		}
 
-		err = errors.Errorf("Received error from formation webhook response: %v", *response.Error)
-		log.C(ctx).Error(err)
+		log.C(ctx).Errorf("Received error from formation webhook response: %v", *response.Error)
 		// This is the client error case, and we should not return an error,
 		// because otherwise the transaction will be rolled back
 		return nil

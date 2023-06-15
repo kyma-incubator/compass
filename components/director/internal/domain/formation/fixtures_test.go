@@ -581,15 +581,12 @@ var (
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
-	}
-
-	formationWithInitialState                 = fixFormationModelWithState(model.InitialFormationState)
-	formationNotificationSyncCreateExtRequest = &webhookclient.FormationNotificationRequest{
-		Request:       formationNotificationSyncCreateRequest.Request,
 		Operation:     model.CreateFormation,
-		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		Formation:     fixFormationModelWithoutError(),
 		FormationType: testFormationTemplateName,
 	}
+
+	formationWithInitialState              = fixFormationModelWithState(model.InitialFormationState)
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
@@ -603,11 +600,8 @@ var (
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
-	}
-	formationNotificationAsyncCreateExtRequest = &webhookclient.FormationNotificationRequest{
-		Request:       formationNotificationAsyncCreateRequest.Request,
 		Operation:     model.CreateFormation,
-		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		Formation:     fixFormationModelWithoutError(),
 		FormationType: testFormationTemplateName,
 	}
 
@@ -617,9 +611,6 @@ var (
 			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
-	}
-	formationNotificationAsyncDeleteExtRequest = &webhookclient.FormationNotificationRequest{
-		Request:       formationNotificationAsyncDeleteRequest.Request,
 		Operation:     model.DeleteFormation,
 		Formation:     fixFormationModelWithState(model.ReadyFormationState),
 		FormationType: testFormationTemplateName,
@@ -1510,15 +1501,6 @@ func fixAssignTenantDetails(formationName string) *formationconstraint.AssignFor
 		FormationTemplateID: FormationTemplateID,
 		FormationID:         FormationID,
 		TenantID:            TntInternalID,
-	}
-}
-
-func fixFormationNotificationRequest(request *webhookclient.Request, operation model.FormationOperation, formation *model.Formation, formationType string) *webhookclient.FormationNotificationRequest {
-	return &webhookclient.FormationNotificationRequest{
-		Request:       request,
-		Operation:     operation,
-		Formation:     formation,
-		FormationType: formationType,
 	}
 }
 
