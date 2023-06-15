@@ -127,35 +127,39 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3097"
+      version: "PR-3108"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3108"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
       version: "PR-3094"
       name: compass-ias-adapter
+    kyma_adapter:
+      dir: dev/incubator/
+      version: "PR-3090"
+      name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -163,11 +167,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3057"
+      version: "PR-3110"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -176,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3084"
+      version: "PR-3093"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
@@ -184,7 +188,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3091"
+      version: "PR-3093"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -481,7 +485,7 @@ global:
     port: 3000
     prefix: /hydrators
     certSubjectMappingResyncInterval: "10s"
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -520,6 +524,11 @@ global:
       requestTimeout: 30s
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+  kymaAdapter:
+    port: 8080
+    apiRootPath: "/kyma-adapter"
+    tenantInfo:
+      requestTimeout: 30s
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -613,7 +622,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -794,7 +803,7 @@ global:
   externalCertConfiguration:
     issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
-    technicalClientSubjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=%s/L=%s/CN=%s"
+    technicalClientSubjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
@@ -1326,6 +1335,7 @@ global:
         - "certificate_subject_mapping:write"
         - "formation.state:write"
         - "tenant_access:write"
+        - "bundle_instance_auth:write"
       default:
         - "runtime:read"
         - "runtime:write"

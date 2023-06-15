@@ -662,13 +662,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime when formation is coming from ASA",
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -955,13 +948,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while getting label",
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -990,13 +976,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while converting label values to string slice",
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -1490,11 +1469,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			ASAEngineFn: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2104,13 +2078,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application if listing runtime contexts fails",
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
@@ -2162,13 +2129,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for runtime if listing runtime contexts fails",
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2225,13 +2185,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for runtime if listing formation assignments for formation fails",
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2904,13 +2857,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error while enforcing pre constraints",
 			TxFn: txGen.ThatDoesntExpectCommit,
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -2940,13 +2886,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error while preparing details",
 			TxFn: txGen.ThatDoesntExpectCommit,
-			ApplicationRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-
-				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-
-				return repo
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(nil, testErr)
@@ -3052,7 +2991,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 				require.Nil(t, actual)
 			}
-			mock.AssertExpectationsForObjects(t, persist, uidService, labelService, asaRepo, asaService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, labelRepo, notificationsSvc, formationAssignmentSvc, constraintEngine, tenantSvc)
+			mock.AssertExpectationsForObjects(t, persist, uidService, labelService, applicationRepository, asaRepo, asaService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, labelRepo, notificationsSvc, formationAssignmentSvc, constraintEngine, tenantSvc, asaEngine)
 		})
 	}
 }
