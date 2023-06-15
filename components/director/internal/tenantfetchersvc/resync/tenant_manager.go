@@ -360,6 +360,8 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	//	}
 	// }
 
+	log.C(ctx).Infof("Starting processing of %d events in %d pages", initialCount, totalPages)
+
 	start := time.Now()
 	eventPages := make([]*EventsPage, 0)
 	var m sync.Mutex
