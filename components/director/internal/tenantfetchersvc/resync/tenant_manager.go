@@ -376,15 +376,29 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 				wg.Done()
 			}()
 			for qParams := range pagesQueue {
-				res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
-				if err != nil {
-					log.C(ctx).Infof(errors.Wrap(err, "while fetching tenant events page").Error())
-					hasErr = true
+				if hasErr {
 					continue
 				}
-				if res == nil {
-					log.C(ctx).Infof(apperrors.NewInternalError("next page was expected but response was empty").Error())
-					hasErr = true
+
+				var res *EventsPage
+				err := retry.Do(func() error {
+					res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
+					if err != nil {
+						log.C(ctx).Infof(errors.Wrap(err, "while fetching tenant events page").Error())
+						hasErr = true
+						return err
+					}
+					if res == nil {
+						log.C(ctx).Infof(apperrors.NewInternalError("next page was expected but response was empty").Error())
+						hasErr = true
+						return apperrors.NewInternalError("next page was expected but response was empty")
+					}
+
+					return nil
+				}, []retry.Option{retry.Attempts(5)}...)
+
+				if err != nil {
+					log.C(ctx).Infof("Error from retry %v", err)
 					continue
 				}
 				//totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
