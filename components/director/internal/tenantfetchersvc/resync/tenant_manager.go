@@ -423,7 +423,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	if hasError {
 		return errors.New("error while fetching pages")
 	}
-
+	log.C(ctx).Infof("Number of fetched event pages %d", len(eventPages))
 	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
 			return err
