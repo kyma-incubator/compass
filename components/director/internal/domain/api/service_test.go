@@ -418,6 +418,108 @@ func TestService_ListByApplicationID(t *testing.T) {
 	})
 }
 
+func TestService_ListByApplicationIDPage(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	name := "foo"
+	desc := "bar"
+	pageSize := 1
+	invalidPageSize := 0
+	cursor := ""
+
+	apiDefinitions := []*model.APIDefinition{
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+		fixAPIDefinitionModel(id, name, desc),
+	}
+
+	apiDefinitionsPage := &model.APIDefinitionPage{
+		Data: apiDefinitions,
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+		TotalCount: len(apiDefinitions),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.APIRepository
+		ExpectedResult     *model.APIDefinitionPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name:     "Success",
+			PageSize: pageSize,
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListByApplicationIDPage", ctx, tenantID, appID, pageSize, cursor).Return(apiDefinitionsPage, nil).Once()
+				return repo
+			},
+			ExpectedResult:     apiDefinitionsPage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:     "Returns error when APIDefinition paging failed",
+			PageSize: pageSize,
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListByApplicationIDPage", ctx, tenantID, appID, pageSize, cursor).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:     "Returns error when pageSize is out of the range 1-200",
+			PageSize: invalidPageSize,
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := api.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			docs, err := svc.ListByApplicationIDPage(ctx, appID, testCase.PageSize, cursor)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
@@ -689,6 +791,155 @@ func TestService_Create(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", nil, nil, model.APIDefinitionInput{}, []*model.SpecInput{}, nil, 0, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_CreateInApplication(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	name := "Foo"
+	targetURL := "https://test-url.com"
+
+	timestamp := time.Now()
+	frURL := "foo.bar"
+	spec := "test"
+
+	modelInput := model.APIDefinitionInput{
+		Name:         name,
+		TargetURLs:   api.ConvertTargetURLToJSONArray(targetURL),
+		VersionInput: &model.VersionInput{},
+	}
+
+	modelSpecInput := &model.SpecInput{
+		Data: &spec,
+		FetchRequest: &model.FetchRequestInput{
+			URL: frURL,
+		},
+	}
+
+	modelSpecsInput := []*model.SpecInput{
+		modelSpecInput,
+	}
+
+	modelAPIDefinition := &model.APIDefinition{
+		ApplicationID: appID,
+		Name:          name,
+		TargetURLs:    api.ConvertTargetURLToJSONArray(targetURL),
+		Version:       &model.Version{},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name                      string
+		RepositoryFn              func() *automock.APIRepository
+		UIDServiceFn              func() *automock.UIDService
+		SpecServiceFn             func() *automock.SpecService
+		Input                     model.APIDefinitionInput
+		SpecsInput                *model.SpecInput
+		DefaultTargetURLPerBundle map[string]string
+		DefaultBundleID           string
+		ExpectedErr               error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[0], model.APISpecReference, id).Return("id", nil).Once()
+				return svc
+			},
+			Input:      modelInput,
+			SpecsInput: modelSpecInput,
+		},
+		{
+			Name: "Error - API Creation",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				return &automock.SpecService{}
+			},
+			Input:       modelInput,
+			SpecsInput:  modelSpecInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error - Spec Creation",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[0], model.APISpecReference, id).Return("", testErr).Once()
+				return svc
+			},
+			Input:       modelInput,
+			SpecsInput:  modelSpecInput,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			uidService := testCase.UIDServiceFn()
+			specService := testCase.SpecServiceFn()
+			defer mock.AssertExpectationsForObjects(t, repo, specService, uidService)
+
+			svc := api.NewService(repo, uidService, specService, nil)
+			svc.SetTimestampGen(func() time.Time { return timestamp })
+
+			// WHEN
+			result, err := svc.CreateInApplication(ctx, appID, testCase.Input, testCase.SpecsInput)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.IsType(t, "string", result)
+			}
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.CreateInApplication(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -1199,6 +1450,220 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.UpdateInManyBundles(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{}, nil, nil, nil, 0, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_UpdateForApplication(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	firstTargetURL := "https://test-url.com"
+	timestamp := time.Now()
+	frURL := "foo.bar"
+	spec := "spec"
+
+	modelInput := model.APIDefinitionInput{
+		Name:         "Foo",
+		TargetURLs:   api.ConvertTargetURLToJSONArray(firstTargetURL),
+		VersionInput: &model.VersionInput{},
+	}
+
+	modelSpecInput := model.SpecInput{
+		Data: &spec,
+		FetchRequest: &model.FetchRequestInput{
+			URL: frURL,
+		},
+	}
+
+	modelSpec := &model.Spec{
+		ID:         id,
+		ObjectType: model.APISpecReference,
+		ObjectID:   id,
+		Data:       &spec,
+	}
+
+	inputAPIDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
+		return api.Name == modelInput.Name
+	})
+
+	apiDefinitionModel := &model.APIDefinition{
+		Name:       "Bar",
+		TargetURLs: api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
+		Version:    &model.Version{},
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name              string
+		RepositoryFn      func() *automock.APIRepository
+		SpecServiceFn     func() *automock.SpecService
+		BundleReferenceFn func() *automock.BundleReferenceService
+		SpecInput         *model.SpecInput
+		Input             model.APIDefinitionInput
+		InputID           string
+		ExpectedErr       error
+	}{
+		{
+			Name: "Success with spec update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, model.APISpecReference, id).Return(nil).Once()
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success with spec create",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(nil, nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, modelSpecInput, model.APISpecReference, id).Return(specID, nil).Once()
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Error when getting API",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(nil, testErr).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error when updating API",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(testErr).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error when getting specs after API update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(nil, testErr).Once()
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error when creating specs after API update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(nil, nil).Once()
+				svc.On("CreateByReferenceObjectID", ctx, modelSpecInput, model.APISpecReference, id).Return("", testErr).Once()
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error when updating specs after API update",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, model.APISpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, model.APISpecReference, id).Return(testErr).Once()
+				return svc
+			},
+			SpecInput:   &modelSpecInput,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			specSvc := testCase.SpecServiceFn()
+			defer mock.AssertExpectationsForObjects(t, repo, specSvc)
+
+			svc := api.NewService(repo, nil, specSvc, nil)
+			svc.SetTimestampGen(func() time.Time { return timestamp })
+
+			// WHEN
+			err := svc.UpdateForApplication(ctx, testCase.InputID, testCase.Input, testCase.SpecInput)
+
+			// then
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.UpdateForApplication(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

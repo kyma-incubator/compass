@@ -92,6 +92,62 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
+	pageSize := 1
+	cursor := ""
+
+	firstEventDefID := "firstEventDefID"
+	firstEventDef, _, _ := fixFullEventDefinitionModelWithID(firstEventDefID, "placeholder")
+	firstEntity := fixFullEntityEventDefinition(firstEventDefID, "placeholder")
+
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List Events with paging",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixEventDefinitionColumns()).AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...)}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM "public"."event_api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{&firstEventDef},
+				ExpectedDBEntities:    []interface{}{firstEntity},
+				ExpectedPage: &model.EventDefinitionPage{
+					Data: []*model.EventDefinition{&firstEventDef},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		MethodName:                "ListByApplicationIDPage",
+		MethodArgs:                []interface{}{tenantID, appID, pageSize, cursor},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+
+}
+
 func TestPgRepository_ListAllForBundle(t *testing.T) {
 	pageSize := 1
 	cursor := ""

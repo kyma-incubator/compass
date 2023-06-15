@@ -138,8 +138,7 @@ func (r *Resolver) APIDefinitionsForApplication(ctx context.Context, appID strin
 		gqlAPIs = append(gqlAPIs, gqlAPI)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -258,8 +257,7 @@ func (r *Resolver) AddAPIDefinitionToApplication(ctx context.Context, appID stri
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -335,8 +333,7 @@ func (r *Resolver) UpdateAPIDefinitionForApplication(ctx context.Context, id str
 		return nil, errors.Wrapf(err, "while converting GraphQL input to APIDefinition with id %s", id)
 	}
 
-	err = r.svc.UpdateForApplication(ctx, id, *convertedIn, convertedSpec)
-	if err != nil {
+	if err = r.svc.UpdateForApplication(ctx, id, *convertedIn, convertedSpec); err != nil {
 		return nil, err
 	}
 
@@ -355,8 +352,7 @@ func (r *Resolver) UpdateAPIDefinitionForApplication(ctx context.Context, id str
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 

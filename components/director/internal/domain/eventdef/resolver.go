@@ -121,8 +121,7 @@ func (r *Resolver) EventDefinitionsForApplication(ctx context.Context, appID str
 		gqlEvents = append(gqlEvents, gqlEvent)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -233,8 +232,7 @@ func (r *Resolver) AddEventDefinitionToApplication(ctx context.Context, appID st
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -330,8 +328,7 @@ func (r *Resolver) UpdateEventDefinitionForApplication(ctx context.Context, id s
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
