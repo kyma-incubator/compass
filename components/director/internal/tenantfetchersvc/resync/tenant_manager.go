@@ -346,7 +346,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	eventPages := make([]*EventsPage, 0)
 	pagesQueue := make(chan QueryParams)
 	wg := sync.WaitGroup{}
-	hasErr := false
+	var globalErr safeError
 
 	for worker := 0; worker < 2; worker++ {
 		wg.Add(1)
@@ -354,7 +354,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 			defer wg.Done()
 
 			for qParams := range pagesQueue {
-				if hasErr {
+				if globalErr.GetError() != nil {
 					continue
 				}
 
@@ -373,7 +373,9 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 
 				if err != nil {
 					log.C(ctx).Infof("Error from retry %v", err)
-					hasErr = true
+					if globalErr.GetError() == nil {
+						globalErr.SetError(err)
+					}
 					continue
 				}
 
@@ -400,9 +402,10 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	close(pagesQueue)
 	wg.Wait()
 
-	if hasErr {
-		return errors.New("error while fetching pages")
+	if globalErr.GetError() != nil {
+		return globalErr.GetError()
 	}
+
 	log.C(ctx).Infof("Number of fetched event pages %d for region %s", len(eventPages), region)
 	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
@@ -446,4 +449,21 @@ func runInChunks(ctx context.Context, maxChunkSize int, tenants []graphql.Busine
 	}
 
 	return nil
+}
+
+type safeError struct {
+	mu    sync.Mutex
+	Error error
+}
+
+func (se *safeError) SetError(err error) {
+	se.mu.Lock()
+	defer se.mu.Unlock()
+	se.Error = err
+}
+
+func (se *safeError) GetError() error {
+	se.mu.Lock()
+	defer se.mu.Unlock()
+	return se.Error
 }

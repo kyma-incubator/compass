@@ -780,14 +780,14 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.CreatedSubaccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -806,14 +806,14 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", mock.Anything, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
