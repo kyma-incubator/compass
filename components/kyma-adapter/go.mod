@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230531080032-40c3e4ac143e
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230505075253-b6e2a3035e6a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230614145307-e9ad6fe317b7
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230607082115-977757624f7e
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
