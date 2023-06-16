@@ -49,9 +49,11 @@ type Entity struct {
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 	if e.ApplicationID.Valid {
 		return resource.Application, e.ApplicationID.String
-	} else {
+	} else if e.ApplicationTemplateVersionID.Valid {
 		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
 	}
+
+	return "", ""
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.
