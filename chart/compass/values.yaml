@@ -960,6 +960,7 @@ global:
       tenantType: "subaccount"
       schedule: "*/5 * * * *"
       tenantInsertChunkSize: "500"
+      pageWorkers: "2"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: 2s

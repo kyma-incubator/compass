@@ -259,6 +259,7 @@ func eventsQueryConfigProviderWithAdditionalFields(config EventsConfig, addition
 			TotalPagesField:   config.PagingConfig.TotalPagesField,
 			TotalResultsField: config.PagingConfig.TotalResultsField,
 			PageNumField:      config.QueryConfig.PageNumField,
+			PageWorkers:       config.PageWorkers,
 		}
 		return qp, pc
 	}
@@ -348,7 +349,8 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	wg := sync.WaitGroup{}
 	var globalErr safeError
 
-	for worker := 0; worker < 2; worker++ {
+	log.C(ctx).Infof("Initializing %d page fetching workers: starting concurrent retrieval of pages.", pageConfig.PageWorkers)
+	for worker := 0; worker < pageConfig.PageWorkers; worker++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -372,7 +374,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 				}, []retry.Option{retry.Attempts(5)}...)
 
 				if err != nil {
-					log.C(ctx).Infof("Error from retry %v", err)
+					log.C(ctx).WithError(err).Errorf("Error occured while fetching page.")
 					if globalErr.GetError() == nil {
 						globalErr.SetError(err)
 					}
@@ -391,22 +393,24 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		}()
 	}
 
-	log.C(ctx).Infof("Creating query params")
 	wgParams := sync.WaitGroup{}
 	wgParams.Add(1)
+
+	log.C(ctx).Infof("Starting a goroutine to prepare query parameters.")
 	go createParamsForFetching(&wgParams, pageStart, totalPages, params, pageConfig, pagesQueue)
 
-	log.C(ctx).Infof("Waiting for params go routine.")
+	log.C(ctx).Infof("Waiting for the goroutine to prepare all query parameters.")
 	wgParams.Wait()
-	log.C(ctx).Infof("Waiting for request go routine.")
+
 	close(pagesQueue)
+	log.C(ctx).Infof("Waiting for all page fetching workers to finish.")
 	wg.Wait()
 
 	if globalErr.GetError() != nil {
 		return globalErr.GetError()
 	}
 
-	log.C(ctx).Infof("Number of fetched event pages %d for region %s", len(eventPages), region)
+	log.C(ctx).Infof("Successfuly fetched %d event pages for region %s. Starting processing...", len(eventPages), region)
 	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
 			return err
