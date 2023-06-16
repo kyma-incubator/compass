@@ -6856,6 +6856,10 @@ type Mutation {
 	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
 	"""
 	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
+	"""
+	**Examples**
+	- [add api definition to application](examples/add-api-definition-to-application/add-api-definition-to-application.graphql)
+	"""
 	addAPIDefinitionToApplication(appID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToApplication")
 	"""
 	**Examples**
@@ -6888,6 +6892,10 @@ type Mutation {
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
 	"""
 	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
+	"""
+	**Examples**
+	- [add event definition to application](examples/add-event-definition-to-application/add-event-definition-to-application.graphql)
+	"""
 	addEventDefinitionToApplication(appID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToApplication")
 	"""
 	**Examples**
