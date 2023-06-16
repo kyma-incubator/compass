@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3108"
+      version: "PR-3122"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -960,6 +960,7 @@ global:
       tenantType: "subaccount"
       schedule: "*/5 * * * *"
       tenantInsertChunkSize: "500"
+      pageWorkers: "2"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: 2s
