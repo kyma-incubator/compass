@@ -55,7 +55,7 @@ type AssignedTenant struct {
 func (at *AssignedTenant) String() string {
 	return fmt.Sprintf(
 		"$.operation: %s, $.localTenantId: %s, $.uclApplicationId: %s, $.parameters.technicalIntegrationId: %s, $.configuration: %+v",
-		at.Operation, at.LocalTenantID, at.UCLApplicationID, at.Parameters.ClientID, at.Config)
+		at.Operation, at.LocalTenantID, at.UCLApplicationID, at.Parameters.ClientID, at.Configuration)
 }
 
 func (at *AssignedTenant) SetConfiguration(ctx context.Context) error {
