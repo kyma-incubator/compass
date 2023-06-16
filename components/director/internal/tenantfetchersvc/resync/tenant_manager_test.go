@@ -912,6 +912,7 @@ func configForTenantType(tenantType tenant.Type) resync.JobConfig {
 			},
 			TenantOperationChunkSize: 500,
 			RetryAttempts:            1,
+			PageWorkers:              2,
 		},
 		ResyncConfig:   resync.ResyncConfig{},
 		KubeConfig:     resync.KubeConfig{},
