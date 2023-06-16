@@ -345,7 +345,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	start := time.Now()
 	var m sync.Mutex
 	eventPages := make([]*EventsPage, 0)
-	pagesQueue := make(chan QueryParams)
+	queryParamsQueue := make(chan QueryParams)
 	wg := sync.WaitGroup{}
 	var globalErr safeError
 
@@ -355,7 +355,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		go func() {
 			defer wg.Done()
 
-			for qParams := range pagesQueue {
+			for qParams := range queryParamsQueue {
 				if globalErr.GetError() != nil {
 					continue
 				}
@@ -397,12 +397,12 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	wgParams.Add(1)
 
 	log.C(ctx).Infof("Starting a goroutine to prepare query parameters.")
-	go createParamsForFetching(&wgParams, pageStart, totalPages, params, pageConfig, pagesQueue)
+	go createParamsForFetching(&wgParams, pageStart, totalPages, params, pageConfig, queryParamsQueue)
 
 	log.C(ctx).Infof("Waiting for the goroutine to prepare all query parameters.")
 	wgParams.Wait()
 
-	close(pagesQueue)
+	close(queryParamsQueue)
 	log.C(ctx).Infof("Waiting for all page fetching workers to finish.")
 	wg.Wait()
 
