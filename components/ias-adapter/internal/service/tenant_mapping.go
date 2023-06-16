@@ -47,11 +47,22 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 
 func (s TenantMappingsService) handleAssign(ctx context.Context,
 	tenantMapping types.TenantMapping, tenantMappingsFromDB map[string]types.TenantMapping) error {
+
 	formationID := tenantMapping.FormationID
+	uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
+
+	if _, ok := tenantMappingsFromDB[uclAppID]; ok {
+		// Safeguard for empty consumedAPIs
+		logger.FromContext(ctx).Warn().Msgf(
+			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping processing",
+			uclAppID, formationID)
+		return nil
+	}
+
 	if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
 		return err
 	}
-	tenantMappingsFromDB[tenantMapping.AssignedTenants[0].UCLApplicationID] = tenantMapping
+	tenantMappingsFromDB[uclAppID] = tenantMapping
 	if len(tenantMappingsFromDB) == 2 {
 		if err := s.updateIASAppsConsumedAPIs(ctx, types.OperationAssign, tenantMappingsFromDB); err != nil {
 			return errors.Newf("failed to update applications consumed APIs in formation '%s': %w", formationID, err)
@@ -96,7 +107,7 @@ func (s TenantMappingsService) updateIASAppsConsumedAPIs(ctx context.Context,
 			Operation:             triggerOperation,
 			TenantMapping:         tenantMapping,
 			ConsumerApplication:   iasApps[idx],
-			ProviderApplicationID: iasApps[Abs(idx-1)].ID,
+			ProviderApplicationID: iasApps[abs(idx-1)].ID,
 		}
 		if err := s.IASService.UpdateApplicationConsumedAPIs(ctx, updateData); err != nil {
 			return errors.Newf("error ocurred during IAS consumed APIs update", err)
@@ -154,7 +165,7 @@ func (s TenantMappingsService) getIASApps(
 	return iasApps, nil
 }
 
-func Abs(x int) int {
+func abs(x int) int {
 	if x < 0 {
 		return -x
 	}
