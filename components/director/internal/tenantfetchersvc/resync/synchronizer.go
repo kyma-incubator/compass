@@ -13,12 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+type contextKey string
+
 const (
 	retryDelaySeconds = 3
 	// TenantOnDemandProvider is the name of the business tenant mapping provider used when the tenant is not found in the events service
 	TenantOnDemandProvider = "lazily-tenant-fetcher"
-	// TenantRegionCtxKey key used to store the region in the context
-	TenantRegionCtxKey = "tenantsRegion"
+	// TenantRegionCtxKey region context key
+	TenantRegionCtxKey contextKey = "tenantsRegion"
 )
 
 // TenantStorageService missing godoc

@@ -402,20 +402,6 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	wgParams := sync.WaitGroup{}
 	wgParams.Add(1)
 	go createParamsForFetching(&wgParams, pageStart, totalPages, params, pageConfig, pagesQueue)
-	//go func() {
-	//	defer func() {
-	//		wgParams.Done()
-	//	}()
-	//	for i := pageStart + 1; i <= totalPages; i++ {
-	//		qParams := make(map[string]string)
-	//		for k, v := range params {
-	//			qParams[k] = v
-	//		}
-	//		qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
-	//		log.C(ctx).Infof("PARAMS ADDED for page %d", i)
-	//		pagesQueue <- qParams
-	//	}
-	//}()
 
 	log.C(ctx).Infof("Waiting for params go routine.")
 	wgParams.Wait()
@@ -455,7 +441,6 @@ func createParamsForFetching(wg *sync.WaitGroup, pageStart int64, totalPages int
 			qParams[k] = v
 		}
 		qParams[config.PageNumField] = strconv.FormatInt(i, 10)
-		fmt.Printf("PARAMS ADDED for page %d", i)
 		queue <- qParams
 	}
 }
