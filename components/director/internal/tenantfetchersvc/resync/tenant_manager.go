@@ -374,7 +374,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 				}, []retry.Option{retry.Attempts(5)}...)
 
 				if err != nil {
-					log.C(ctx).WithError(err).Errorf("Error occured while fetching page.")
+					log.C(ctx).WithError(err).Errorf("Error occurred while fetching page.")
 					if globalErr.GetError() == nil {
 						globalErr.SetError(err)
 					}
@@ -410,7 +410,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		return globalErr.GetError()
 	}
 
-	log.C(ctx).Infof("Successfuly fetched %d event pages for region %s. Starting processing...", len(eventPages), region)
+	log.C(ctx).Infof("Successfully fetched %d event pages for region %s. Starting processing...", len(eventPages), region)
 	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
 			return err
