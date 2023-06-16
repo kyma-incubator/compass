@@ -351,9 +351,8 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	for worker := 0; worker < 2; worker++ {
 		wg.Add(1)
 		go func() {
-			defer func() {
-				wg.Done()
-			}()
+			defer wg.Done()
+
 			for qParams := range pagesQueue {
 				if hasErr {
 					continue
@@ -363,23 +362,15 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 				err := retry.Do(func() error {
 					res, err = eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
 					if err != nil {
-						log.C(ctx).Infof(errors.Wrap(err, "while fetching tenant events page").Error())
-						return err
+						return errors.Wrap(err, "while fetching tenant events page")
 					}
 					if res == nil {
-						log.C(ctx).Infof(apperrors.NewInternalError("next page was expected but response was empty").Error())
 						return apperrors.NewInternalError("next page was expected but response was empty")
 					}
 
 					return nil
 				}, []retry.Option{retry.Attempts(5)}...)
 
-				// redundant if the res is null -> err will be != nil
-				if res == nil {
-					log.C(ctx).Infof("Result is nil")
-					hasErr = true
-					continue
-				}
 				if err != nil {
 					log.C(ctx).Infof("Error from retry %v", err)
 					hasErr = true
@@ -412,7 +403,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	if hasErr {
 		return errors.New("error while fetching pages")
 	}
-	log.C(ctx).Infof("Number of fetched event pages %d", len(eventPages))
+	log.C(ctx).Infof("Number of fetched event pages %d for region %s", len(eventPages), region)
 	for _, res := range eventPages {
 		if err = applyFunc(res); err != nil {
 			return err
@@ -432,9 +423,8 @@ func getRegionFromCtx(ctx context.Context) string {
 }
 
 func createParamsForFetching(wg *sync.WaitGroup, pageStart int64, totalPages int64, params QueryParams, config PageConfig, queue chan QueryParams) {
-	defer func() {
-		wg.Done()
-	}()
+	defer wg.Done()
+
 	for i := pageStart + 1; i <= totalPages; i++ {
 		qParams := make(map[string]string)
 		for k, v := range params {
