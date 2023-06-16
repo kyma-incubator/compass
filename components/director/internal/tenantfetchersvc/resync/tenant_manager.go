@@ -133,6 +133,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	tenantChan := make(chan *model.BusinessTenantMappingInput, len(tm.regionalClients))
 	for region, regionalClient := range tm.regionalClients {
 		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan *model.BusinessTenantMappingInput) {
+			ctx = context.WithValue(ctx, TenantRegionCtxKey, region)
 			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(ctx, regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from region %s: %v", region, err)
@@ -336,39 +337,17 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	if err != nil {
 		return err
 	}
-	// config.QueryConfig.PageNumField:  config.QueryConfig.PageStartValue,
-	// config.QueryConfig.PageSizeField: config.QueryConfig.PageSizeValue,
-	// params["pageNum"]= 0
-	// params["pageSize"]= 150
-	// for i := pageStart + 1; i <= totalPages; i++ {
-	//	// params - map[string]string
-	//	// params["pageNum"] = превръща i в string в 10-тична система
-	//	params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
-	//	res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
-	//	if err != nil {
-	//		return errors.Wrap(err, "while fetching tenant events page")
-	//	}
-	//	if res == nil {
-	//		return apperrors.NewInternalError("next page was expected but response was empty")
-	//	}
-	//	if initialCount != gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int() {
-	//		return apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
-	//	}
-	//
-	//	if err = applyFunc(res); err != nil {
-	//		return err
-	//	}
-	// }
 
-	log.C(ctx).Infof("Starting processing of %d events in %d pages", initialCount, totalPages)
+	region := getRegionFromCtx(ctx)
+	log.C(ctx).Infof("Starting processing for %d events across %d pages for event type %v in region %s", initialCount, totalPages, eventsType, region)
 
 	start := time.Now()
-	eventPages := make([]*EventsPage, 0)
 	var m sync.Mutex
+	eventPages := make([]*EventsPage, 0)
 	pagesQueue := make(chan QueryParams)
-	// errorChan := make(chan error)
 	wg := sync.WaitGroup{}
 	hasErr := false
+
 	for worker := 0; worker < 2; worker++ {
 		wg.Add(1)
 		go func() {
@@ -395,6 +374,7 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 					return nil
 				}, []retry.Option{retry.Attempts(5)}...)
 
+				// redundant if the res is null -> err will be != nil
 				if res == nil {
 					log.C(ctx).Infof("Result is nil")
 					hasErr = true
@@ -405,12 +385,6 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 					hasErr = true
 					continue
 				}
-				//totalResults := gjson.GetBytes(res.Payload, pageConfig.TotalResultsField).Int()
-				//if initialCount != totalResults {
-				//	log.C(ctx).Infof(apperrors.NewInternalError("total results number changed during fetching consecutive events pages. Initial count %d, Total results %d", initialCount, totalResults).Error())
-				//	hasErr = true
-				//	continue
-				//}
 
 				m.Lock()
 				eventPages = append(eventPages, &EventsPage{
@@ -425,36 +399,29 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	}
 
 	log.C(ctx).Infof("Creating query params")
-	wg2 := sync.WaitGroup{}
-	wg2.Add(1)
-	go func() {
-		defer func() {
-			wg2.Done()
-		}()
-		for i := pageStart + 1; i <= totalPages; i++ {
-			qParams := make(map[string]string)
-			for k, v := range params {
-				qParams[k] = v
-			}
-			qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
-			log.C(ctx).Infof("PARAMS ADDED for page %d", i)
-			pagesQueue <- qParams
-		}
-	}()
+	wgParams := sync.WaitGroup{}
+	wgParams.Add(1)
+	go createParamsForFetching(&wgParams, pageStart, totalPages, params, pageConfig, pagesQueue)
+	//go func() {
+	//	defer func() {
+	//		wgParams.Done()
+	//	}()
+	//	for i := pageStart + 1; i <= totalPages; i++ {
+	//		qParams := make(map[string]string)
+	//		for k, v := range params {
+	//			qParams[k] = v
+	//		}
+	//		qParams[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
+	//		log.C(ctx).Infof("PARAMS ADDED for page %d", i)
+	//		pagesQueue <- qParams
+	//	}
+	//}()
 
 	log.C(ctx).Infof("Waiting for params go routine.")
-	wg2.Wait()
+	wgParams.Wait()
 	log.C(ctx).Infof("Waiting for request go routine.")
 	close(pagesQueue)
 	wg.Wait()
-
-	//hasError := false
-	//for err := range errorChan {
-	//	hasError = true
-	//	log.C(ctx).Error(err.Error())
-	//}
-
-	//close(errorChan)
 
 	if hasErr {
 		return errors.New("error while fetching pages")
@@ -466,10 +433,31 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 		}
 	}
 
-	duration := time.Since(start)
-	log.C(ctx).Infof("Processing of %d events in %d pages took %v", initialCount, totalPages, duration)
-
+	log.C(ctx).Infof("Processing of %d events across %d pages for event type %v in region %s took %v", initialCount, totalPages, eventsType, region, time.Since(start))
 	return nil
+}
+
+func getRegionFromCtx(ctx context.Context) string {
+	region, ok := ctx.Value(TenantRegionCtxKey).(string)
+	if !ok {
+		return ""
+	}
+	return region
+}
+
+func createParamsForFetching(wg *sync.WaitGroup, pageStart int64, totalPages int64, params QueryParams, config PageConfig, queue chan QueryParams) {
+	defer func() {
+		wg.Done()
+	}()
+	for i := pageStart + 1; i <= totalPages; i++ {
+		qParams := make(map[string]string)
+		for k, v := range params {
+			qParams[k] = v
+		}
+		qParams[config.PageNumField] = strconv.FormatInt(i, 10)
+		fmt.Printf("PARAMS ADDED for page %d", i)
+		queue <- qParams
+	}
 }
 
 func runInChunks(ctx context.Context, maxChunkSize int, tenants []graphql.BusinessTenantMappingInput, storeTenantsFunc func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error) error {
