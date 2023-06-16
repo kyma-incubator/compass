@@ -1847,7 +1847,6 @@ func TestResolver_AddAPIDefinitionToApplication(t *testing.T) {
 			} else {
 				require.Nil(t, err)
 			}
-
 		})
 	}
 }

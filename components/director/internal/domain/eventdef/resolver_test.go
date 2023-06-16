@@ -1465,7 +1465,6 @@ func TestResolver_EventDefinitionsForApplication(t *testing.T) {
 			} else {
 				require.Nil(t, err)
 			}
-
 		})
 	}
 }

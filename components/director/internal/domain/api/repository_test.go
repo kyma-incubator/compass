@@ -138,7 +138,6 @@ func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
 	}
 
 	suite.Run(t)
-
 }
 
 func TestPgRepository_ListAllForBundle(t *testing.T) {
