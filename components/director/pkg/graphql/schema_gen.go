@@ -6894,9 +6894,7 @@ type Mutation {
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
 	"""
 	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
-
 	updateEventDefinitionForApplication(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinitionForApplication")
-
 	"""
 	**Examples**
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
