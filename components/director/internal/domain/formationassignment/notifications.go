@@ -91,6 +91,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 }
 
+// PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
 func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
@@ -132,6 +133,7 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}, nil
 }
 
+// GenerateFormationAssignmentNotificationExt generates extended formation assignment notification by given formation(and reverse formation) assignment request mapping and formation operation
 func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
 	targetSubtype, err := fan.getObjectSubtype(ctx, faRequestMapping.FormationAssignment.TenantID, faRequestMapping.FormationAssignment.Target, faRequestMapping.FormationAssignment.TargetType)
 	if err != nil {
