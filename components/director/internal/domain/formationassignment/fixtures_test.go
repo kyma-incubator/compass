@@ -210,28 +210,11 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 	}
 }
 
-func fixFormationAssignmentOnlyWithSourceAndTarget() *model.FormationAssignment {
-	return &model.FormationAssignment{Source: "source", Target: "target"}
-}
-
 func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 			Assignment: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             nil,
-				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
-			},
-			ReverseAssignment: nil,
-		},
-		Operation: model.AssignFormation,
-	}
-}
-
-func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
-				Request:             req,
 				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
 			},
 			ReverseAssignment: nil,
@@ -277,32 +260,6 @@ func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.For
 		ReverseFormationAssignment:             convertFormationAssignmentFromModel(&model.FormationAssignment{}),
 		Formation:                              formation,
 		TargetSubtype:                          appSubtype,
-	}
-}
-
-func fixFormationAssignmentWithConfigAndState(assignment *model.FormationAssignment, state model.FormationAssignmentState, value json.RawMessage) *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:          assignment.ID,
-		FormationID: assignment.FormationID,
-		TenantID:    assignment.TenantID,
-		Source:      assignment.Source,
-		SourceType:  assignment.SourceType,
-		Target:      assignment.Target,
-		TargetType:  assignment.TargetType,
-		State:       string(state),
-		Value:       value,
-	}
-}
-
-func fixFormationAssignmentWithConfigAndStateInput(assignment *model.FormationAssignmentInput, state model.FormationAssignmentState, value json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: assignment.FormationID,
-		Source:      assignment.Source,
-		SourceType:  assignment.SourceType,
-		Target:      assignment.Target,
-		TargetType:  assignment.TargetType,
-		State:       string(state),
-		Value:       value,
 	}
 }
 
@@ -641,17 +598,5 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
 		Value:       config,
-	}
-}
-
-func fixFormationAssignmentInput(fa *model.FormationAssignment) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: fa.FormationID,
-		Source:      fa.Source,
-		SourceType:  fa.SourceType,
-		Target:      fa.Target,
-		TargetType:  fa.TargetType,
-		State:       fa.State,
-		Value:       fa.Value,
 	}
 }
