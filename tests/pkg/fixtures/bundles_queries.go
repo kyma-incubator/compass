@@ -3,6 +3,7 @@ package fixtures
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -112,4 +113,14 @@ func CreateBundleInstanceAuth(t require.TestingT, ctx context.Context, gqlClient
 	require.NoError(t, err)
 
 	return resp
+}
+
+func DeleteBundleInstanceAuth(t *testing.T, ctx context.Context, gqlClient *gcli.Client, authID string) {
+	deleteBundleInstanceAuthReq := FixDeleteBundleInstanceAuthRequest(authID)
+	output := graphql.BundleInstanceAuth{}
+
+	t.Log("Deleting the bundle instance auth...")
+	err := testctx.Tc.RunOperation(ctx, gqlClient, deleteBundleInstanceAuthReq, &output)
+
+	require.NoError(t, err)
 }

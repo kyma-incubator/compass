@@ -35,6 +35,27 @@ func (_m *Service) Create(ctx context.Context, bundleID string, in model.BundleI
 	return r0, r1
 }
 
+// CreateBundleInstanceAuth provides a mock function with given fields: ctx, bundleID, in, requestInputSchema
+func (_m *Service) CreateBundleInstanceAuth(ctx context.Context, bundleID string, in model.BundleInstanceAuthCreateInput, requestInputSchema *string) (string, error) {
+	ret := _m.Called(ctx, bundleID, in, requestInputSchema)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthCreateInput, *string) string); ok {
+		r0 = rf(ctx, bundleID, in, requestInputSchema)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInstanceAuthCreateInput, *string) error); ok {
+		r1 = rf(ctx, bundleID, in, requestInputSchema)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Delete provides a mock function with given fields: ctx, id
 func (_m *Service) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
@@ -100,6 +121,20 @@ func (_m *Service) SetAuth(ctx context.Context, id string, in model.BundleInstan
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthSetInput) error); ok {
 		r0 = rf(ctx, id, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Update provides a mock function with given fields: ctx, instanceAuth
+func (_m *Service) Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error {
+	ret := _m.Called(ctx, instanceAuth)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth) error); ok {
+		r0 = rf(ctx, instanceAuth)
 	} else {
 		r0 = ret.Error(0)
 	}

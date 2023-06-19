@@ -77,6 +77,36 @@ func (c *converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequest
 	}
 }
 
+// CreateInputFromGraphQL converts graphql.BundleInstanceAuthCreateInput to model.BundleInstanceAuthCreateInput
+func (c *converter) CreateInputFromGraphQL(in graphql.BundleInstanceAuthCreateInput) (model.BundleInstanceAuthCreateInput, error) {
+	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
+	if err != nil {
+		return model.BundleInstanceAuthCreateInput{}, errors.Wrap(err, "while converting Auth")
+	}
+
+	return model.BundleInstanceAuthCreateInput{
+		Context:          c.jsonPtrToStrPtr(in.Context),
+		InputParams:      c.jsonPtrToStrPtr(in.InputParams),
+		Auth:             auth,
+		RuntimeID:        in.RuntimeID,
+		RuntimeContextID: in.RuntimeContextID,
+	}, nil
+}
+
+// UpdateInputFromGraphQL converts graphql.BundleInstanceAuthUpdateInput to model.BundleInstanceAuthUpdateInput
+func (c *converter) UpdateInputFromGraphQL(in graphql.BundleInstanceAuthUpdateInput) (model.BundleInstanceAuthUpdateInput, error) {
+	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
+	if err != nil {
+		return model.BundleInstanceAuthUpdateInput{}, errors.Wrap(err, "while converting Auth")
+	}
+
+	return model.BundleInstanceAuthUpdateInput{
+		Context:     c.jsonPtrToStrPtr(in.Context),
+		InputParams: c.jsonPtrToStrPtr(in.InputParams),
+		Auth:        auth,
+	}, nil
+}
+
 // SetInputFromGraphQL missing godoc
 func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error) {
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)

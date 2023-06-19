@@ -47,13 +47,14 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	mp_authenticator "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
-	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
