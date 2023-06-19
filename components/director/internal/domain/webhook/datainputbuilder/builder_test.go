@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/stretchr/testify/assert"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -95,6 +97,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *t
 		runtimeRepo                   func() *automock.RuntimeRepository
 		runtimeCtxRepo                func() *automock.RuntimeContextRepository
 		labelRepo                     func() *automock.LabelRepository
+		tenantRepo                    func() *automock.TenantRepository
 		expectedAppWithLabels         *webhook.ApplicationWithLabels
 		expectedAppTemplateWithLabels *webhook.ApplicationTemplateWithLabels
 		expectedErrMsg                string
@@ -228,9 +231,10 @@ func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *t
 			runtimeRepo := tCase.runtimeRepo()
 			runtimeCtxRepo := tCase.runtimeCtxRepo()
 			labelRepo := tCase.labelRepo()
-			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			tenantRepo := tCase.tenantRepo()
+			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
 			// WHEN
 			appWithLabels, appTemplateWithLabels, err := webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(emptyCtx, testTenantID, testAppID)
@@ -258,6 +262,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimeWithLabels(t *testing.T) {
 		runtimeRepo                   func() *automock.RuntimeRepository
 		runtimeCtxRepo                func() *automock.RuntimeContextRepository
 		labelRepo                     func() *automock.LabelRepository
+		tenantRepo                    func() *automock.TenantRepository
 		expectedAppWithLabels         *webhook.ApplicationWithLabels
 		expectedAppTemplateWithLabels *webhook.ApplicationTemplateWithLabels
 		expectedRuntimeWithLabels     *webhook.RuntimeWithLabels
@@ -321,9 +326,10 @@ func TestWebhookDataInputBuilder_PrepareRuntimeWithLabels(t *testing.T) {
 			runtimeRepo := tCase.runtimeRepo()
 			runtimeCtxRepo := tCase.runtimeCtxRepo()
 			labelRepo := tCase.labelRepo()
-			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			tenantRepo := tCase.tenantRepo()
+			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
 			// WHEN
 			runtimeWithLabels, err := webhookDataInputBuilder.PrepareRuntimeWithLabels(emptyCtx, testTenantID, testRuntimeID)
@@ -349,6 +355,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimeContextWithLabels(t *testing.T) {
 		runtimeRepo                   func() *automock.RuntimeRepository
 		runtimeCtxRepo                func() *automock.RuntimeContextRepository
 		labelRepo                     func() *automock.LabelRepository
+		tenantRepo                    func() *automock.TenantRepository
 		expectedAppWithLabels         *webhook.ApplicationWithLabels
 		expectedAppTemplateWithLabels *webhook.ApplicationTemplateWithLabels
 		expectedRuntimeWithLabels     *webhook.RuntimeWithLabels
@@ -412,9 +419,10 @@ func TestWebhookDataInputBuilder_PrepareRuntimeContextWithLabels(t *testing.T) {
 			runtimeRepo := tCase.runtimeRepo()
 			runtimeCtxRepo := tCase.runtimeCtxRepo()
 			labelRepo := tCase.labelRepo()
-			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			tenantRepo := tCase.tenantRepo()
+			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
 			// WHEN
 			runtimeCtxWithLabels, err := webhookDataInputBuilder.PrepareRuntimeContextWithLabels(emptyCtx, testTenantID, testRuntimeCtxID)
@@ -440,6 +448,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimeAndRuntimeContextWithLabels(t *te
 		runtimeRepo                   func() *automock.RuntimeRepository
 		runtimeCtxRepo                func() *automock.RuntimeContextRepository
 		labelRepo                     func() *automock.LabelRepository
+		tenantRepo                    func() *automock.TenantRepository
 		expectedAppWithLabels         *webhook.ApplicationWithLabels
 		expectedAppTemplateWithLabels *webhook.ApplicationTemplateWithLabels
 		expectedRuntimeWithLabels     *webhook.RuntimeWithLabels
@@ -535,9 +544,10 @@ func TestWebhookDataInputBuilder_PrepareRuntimeAndRuntimeContextWithLabels(t *te
 			runtimeRepo := tCase.runtimeRepo()
 			runtimeCtxRepo := tCase.runtimeCtxRepo()
 			labelRepo := tCase.labelRepo()
-			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			tenantRepo := tCase.tenantRepo()
+			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo)
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelRepo, tenantRepo)
 
 			// WHEN
 			runtimeWithLabels, runtimeCtxWithLabels, err := webhookDataInputBuilder.PrepareRuntimeAndRuntimeContextWithLabels(emptyCtx, testTenantID, testRuntimeID)
@@ -565,6 +575,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 		RuntimeRepoFN                   func() *automock.RuntimeRepository
 		RuntimeContextRepoFN            func() *automock.RuntimeContextRepository
 		LabelRepoFN                     func() *automock.LabelRepository
+		TenantRepoFN                    func() *automock.TenantRepository
 		FormationName                   string
 		ExpectedRuntimesMappings        map[string]*webhook.RuntimeWithLabels
 		ExpectedRuntimeContextsMappings map[string]*webhook.RuntimeContextWithLabels
@@ -718,8 +729,12 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			if testCase.LabelRepoFN != nil {
 				labelRepo = testCase.LabelRepoFN()
 			}
+			tenantRepo := unusedTenantRepo()
+			if testCase.TenantRepoFN != nil {
+				tenantRepo = testCase.TenantRepoFN()
+			}
 
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(nil, nil, runtimeRepo, runtimeContextRepo, labelRepo)
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(nil, nil, runtimeRepo, runtimeContextRepo, labelRepo, tenantRepo)
 
 			// WHEN
 			runtimeMappings, runtimeContextMappings, err := webhookDataInputBuilder.PrepareRuntimesAndRuntimeContextsMappingsInFormation(emptyCtx, Tnt, testCase.FormationName)
@@ -748,6 +763,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 		ApplicationRepoFN            func() *automock.ApplicationRepository
 		ApplicationTemplateRepoFN    func() *automock.ApplicationTemplateRepository
 		LabelRepoFN                  func() *automock.LabelRepository
+		TenantRepoFN                 func() *automock.TenantRepository
 		FormationName                string
 		ExpectedApplicationsMappings map[string]*webhook.ApplicationWithLabels
 		ExpectedAppTemplateMappings  map[string]*webhook.ApplicationTemplateWithLabels
@@ -774,6 +790,14 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
+				return repo
+			},
+			TenantRepoFN: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("GetLowestOwnerForResource", ctx, resource.Application, ApplicationID).Return(ApplicationTenantID, nil)
+				repo.On("GetLowestOwnerForResource", ctx, resource.Application, Application2ID).Return(Application2TenantID, nil)
+				repo.On("Get", ctx, ApplicationTenantID).Return(applicationTenant, nil)
+				repo.On("Get", ctx, Application2TenantID).Return(application2Tenant, nil)
 				return repo
 			},
 			FormationName:                ScenarioName,
@@ -910,8 +934,12 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			if testCase.LabelRepoFN != nil {
 				labelRepo = testCase.LabelRepoFN()
 			}
+			tenantRepo := unusedTenantRepo()
+			if testCase.TenantRepoFN != nil {
+				tenantRepo = testCase.TenantRepoFN()
+			}
 
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, nil, nil, labelRepo)
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, nil, nil, labelRepo, tenantRepo)
 
 			// WHEN
 			appMappings, appTemplateMappings, err := webhookDataInputBuilder.PrepareApplicationMappingsInFormation(emptyCtx, Tnt, testCase.FormationName)
@@ -927,7 +955,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 				require.Nil(t, appMappings, appTemplateMappings)
 			}
 
-			mock.AssertExpectationsForObjects(t, applicationRepo, appTemplateRepo, labelRepo)
+			mock.AssertExpectationsForObjects(t, applicationRepo, appTemplateRepo, labelRepo, tenantRepo)
 		})
 	}
 }

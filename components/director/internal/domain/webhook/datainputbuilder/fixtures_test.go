@@ -20,6 +20,8 @@ const (
 	ApplicationID           = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
 	Application2ID          = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
 	ApplicationTemplateID   = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	ApplicationTenantID     = "d456f5a3-9b1f-42d5-aa81-8fde48cddfbd"
+	Application2TenantID    = "946d2550-5d90-4727-93e7-87c48286a6e7"
 )
 
 var (
@@ -73,6 +75,8 @@ var (
 			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
 		},
 	}
+	applicationTenant  = &model.BusinessTenantMapping{ID: ApplicationTenantID}
+	application2Tenant = &model.BusinessTenantMapping{ID: Application2TenantID}
 )
 
 func fixApplicationLabelsMap() map[string]interface{} {
@@ -222,4 +226,8 @@ func unusedRuntimeCtxRepo() *automock.RuntimeContextRepository {
 
 func unusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
+}
+
+func unusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
 }

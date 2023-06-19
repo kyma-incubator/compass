@@ -306,7 +306,7 @@ func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, object
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
 	}
 
-	if objectType == model.AppTemplateLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.TenantLabelableObject {
 		if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 			return nil, err
 		}
@@ -324,12 +324,16 @@ func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, object
 			return nil, errors.Wrap(err, "while converting Label entity to model")
 		}
 
-		labelsForObject, ok := labelsMap[m.ObjectID]
+		key := m.ObjectID
+		if objectType == model.TenantLabelableObject && m.Tenant != nil {
+			key = *m.Tenant
+		}
+		labelsForObject, ok := labelsMap[key]
 		if !ok {
 			labelsForObject = make(map[string]interface{})
 		}
 		labelsForObject[m.Key] = m.Value
-		labelsMap[m.ObjectID] = labelsForObject
+		labelsMap[key] = labelsForObject
 	}
 
 	return labelsMap, nil

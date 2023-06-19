@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -45,6 +47,13 @@ type labelRepository interface {
 	ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error)
 }
 
+//go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantRepository interface {
+	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
+	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // DataInputBuilder is responsible to prepare and build different entity data needed for a webhook input
 //go:generate mockery --exported --name=DataInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DataInputBuilder interface {
@@ -63,16 +72,20 @@ type WebhookDataInputBuilder struct {
 	runtimeRepo                   runtimeRepository
 	runtimeContextRepo            runtimeContextRepository
 	labelRepository               labelRepository
+	tenantRepository              tenantRepository
 }
 
+const globalSubaccountIDLabelKey = "global_subaccount_id"
+
 // NewWebhookDataInputBuilder creates a WebhookDataInputBuilder
-func NewWebhookDataInputBuilder(applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelRepository labelRepository) *WebhookDataInputBuilder {
+func NewWebhookDataInputBuilder(applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelRepository labelRepository, tenantRepository tenantRepository) *WebhookDataInputBuilder {
 	return &WebhookDataInputBuilder{
 		applicationRepository:         applicationRepository,
 		applicationTemplateRepository: applicationTemplateRepository,
 		runtimeRepo:                   runtimeRepo,
 		runtimeContextRepo:            runtimeContextRepo,
 		labelRepository:               labelRepository,
+		tenantRepository:              tenantRepository,
 	}
 }
 
@@ -86,9 +99,15 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 	if err != nil {
 		return nil, nil, err
 	}
+	tenantWithLabelsForApplication, err := b.getTenantForObject(ctx, appID, resource.Application)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	applicationWithLabels := &webhook.ApplicationWithLabels{
 		Application: application,
 		Labels:      applicationLabels,
+		Tenant:      tenantWithLabelsForApplication,
 	}
 
 	var appTemplateWithLabels *webhook.ApplicationTemplateWithLabels
@@ -101,9 +120,16 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 		if err != nil {
 			return nil, nil, err
 		}
+
+		tenantsWithLabelsForApplicationTemplate, err := b.getTenantForApplicationTemplate(ctx, tenant, applicationTemplateLabels)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+		}
+
 		appTemplateWithLabels = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: appTemplate,
 			Labels:              applicationTemplateLabels,
+			Tenant:              tenantsWithLabelsForApplicationTemplate,
 		}
 	}
 	return applicationWithLabels, appTemplateWithLabels, nil
@@ -121,9 +147,15 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, 
 		return nil, err
 	}
 
+	tenantWithLabelsForRuntime, err := b.getTenantForObject(ctx, runtimeID, resource.Runtime)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	runtimeWithLabels := &webhook.RuntimeWithLabels{
 		Runtime: runtime,
 		Labels:  runtimeLabels,
+		Tenant:  tenantWithLabelsForRuntime,
 	}
 
 	return runtimeWithLabels, nil
@@ -141,9 +173,15 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Co
 		return nil, err
 	}
 
+	tenantWithLabelsForRuntimeContext, err := b.getTenantForObject(ctx, runtimeCtxID, resource.RuntimeContext)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	runtimeContextWithLabels := &webhook.RuntimeContextWithLabels{
 		RuntimeContext: runtimeCtx,
 		Labels:         runtimeCtxLabels,
+		Tenant:         tenantWithLabelsForRuntimeContext,
 	}
 
 	return runtimeContextWithLabels, nil
@@ -166,9 +204,15 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx 
 		return nil, nil, err
 	}
 
+	tenantWithLabelsForRuntimeContext, err := b.getTenantForObject(ctx, runtimeCtx.ID, resource.RuntimeContext)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	runtimeContextWithLabels := &webhook.RuntimeContextWithLabels{
 		RuntimeContext: runtimeCtx,
 		Labels:         runtimeCtxLabels,
+		Tenant:         tenantWithLabelsForRuntimeContext,
 	}
 
 	return runtimeWithLabels, runtimeContextWithLabels, nil
@@ -212,11 +256,17 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		return nil, nil, errors.Wrap(err, "while listing runtime labels")
 	}
 
+	tenantsWithLabelsForRuntimes, err := b.getTenantForObjects(ctx, tenant, runtimesIDs, resource.Runtime)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	runtimesMapping := make(map[string]*webhook.RuntimeWithLabels, len(runtimesLabels))
 	for _, rt := range runtimes {
 		runtimesMapping[rt.ID] = &webhook.RuntimeWithLabels{
 			Runtime: rt,
 			Labels:  runtimesLabels[rt.ID],
+			Tenant:  tenantsWithLabelsForRuntimes[rt.ID],
 		}
 	}
 
@@ -225,11 +275,17 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		return nil, nil, errors.Wrap(err, "while listing labels for runtime contexts")
 	}
 
+	tenantsWithLabelsForRuntimeContexts, err := b.getTenantForObjects(ctx, tenant, runtimeContextsIDs, resource.RuntimeContext)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	runtimesToRuntimeContextsMapping := make(map[string]*webhook.RuntimeContextWithLabels, len(runtimeContextsInFormation))
 	for _, rtCtx := range runtimeContextsInFormation {
 		runtimesToRuntimeContextsMapping[rtCtx.RuntimeID] = &webhook.RuntimeContextWithLabels{
 			RuntimeContext: rtCtx,
 			Labels:         runtimeContextsLabels[rtCtx.ID],
+			Tenant:         tenantsWithLabelsForRuntimeContexts[rtCtx.ID],
 		}
 	}
 
@@ -264,11 +320,17 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrap(err, "while listing labels for applications")
 	}
 
+	tenantsWithLabelsForApplication, err := b.getTenantForObjects(ctx, tenant, applicationsToBeNotifiedForIDs, resource.Application)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	applicationMapping := make(map[string]*webhook.ApplicationWithLabels, len(applicationsToBeNotifiedForIDs))
 	for i, app := range applicationsToBeNotifiedFor {
 		applicationMapping[app.ID] = &webhook.ApplicationWithLabels{
 			Application: applicationsToBeNotifiedFor[i],
 			Labels:      applicationsToBeNotifiedForLabels[app.ID],
+			Tenant:      tenantsWithLabelsForApplication[app.ID],
 		}
 	}
 
@@ -282,11 +344,17 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrap(err, "while listing labels for application templates")
 	}
 
+	tenantsWithLabelsForApplicationTemplates, err := b.getTenantForApplicationTemplates(ctx, tenant, applicationTemplatesLabels, applicationsTemplateIDs)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
+	}
+
 	applicationTemplatesMapping := make(map[string]*webhook.ApplicationTemplateWithLabels, len(applicationTemplates))
 	for i, appTemplate := range applicationTemplates {
 		applicationTemplatesMapping[appTemplate.ID] = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: applicationTemplates[i],
 			Labels:              applicationTemplatesLabels[appTemplate.ID],
+			Tenant:              tenantsWithLabelsForApplicationTemplates[appTemplate.ID],
 		}
 	}
 
@@ -343,4 +411,103 @@ func (b *WebhookDataInputBuilder) getLabelsForObjects(ctx context.Context, tenan
 		}
 	}
 	return labelsForResourcesMap, nil
+}
+
+func (b *WebhookDataInputBuilder) getTenantForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
+	tenantsForObjects := make(map[string]*webhook.TenantWithLabels)
+	tenantIDs := make([]string, 0)
+	objectTenantMapping := make(map[string]string)
+	for _, objectId := range objectIDs {
+		if subaccountId, ok := labels[objectId][globalSubaccountIDLabelKey]; ok {
+			tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountId)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while getting tenant by external id %q", subaccountId)
+			}
+
+			tenantsForObjects[objectId] = &webhook.TenantWithLabels{
+				BusinessTenantMapping: tenantModel,
+				Labels:                nil,
+			}
+			tenantIDs = append(tenantIDs, subaccountId)
+			objectTenantMapping[objectId] = subaccountId
+		}
+	}
+
+	tenantLabels, err := b.getLabelsForObjects(ctx, tenant, tenantIDs, model.TenantLabelableObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing tenant labels")
+	}
+	for objectID, tenantID := range objectTenantMapping {
+		tenantsForObjects[objectID].Labels = tenantLabels[tenantID]
+	}
+	return tenantsForObjects, nil
+}
+
+func (b *WebhookDataInputBuilder) getTenantForApplicationTemplate(ctx context.Context, tenant string, labels map[string]string) (*webhook.TenantWithLabels, error) {
+	if subaccountId, ok := labels[globalSubaccountIDLabelKey]; ok {
+		tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountId)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting tenant by external id %q", subaccountId)
+		}
+
+		tenantLabels, err := b.getLabelsForObject(ctx, tenant, subaccountId, model.TenantLabelableObject)
+		if err != nil {
+			return nil, errors.Wrap(err, "while listing tenant labels")
+		}
+
+		return &webhook.TenantWithLabels{
+			BusinessTenantMapping: tenantModel,
+			Labels:                tenantLabels,
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func (b *WebhookDataInputBuilder) getTenantForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error) {
+	tenantsForObjects := make(map[string]*webhook.TenantWithLabels)
+	tenantIDs := make([]string, 0)
+	objectTenantMapping := make(map[string]string)
+	for _, objectId := range objectIDs {
+		tenantId, err := b.tenantRepository.GetLowestOwnerForResource(ctx, resourceType, objectId)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantId)
+		}
+		tenantModel, err := b.tenantRepository.Get(ctx, tenantId)
+
+		tenantsForObjects[objectId] = &webhook.TenantWithLabels{
+			BusinessTenantMapping: tenantModel,
+			Labels:                nil,
+		}
+		tenantIDs = append(tenantIDs, tenantId)
+		objectTenantMapping[objectId] = tenantId
+	}
+
+	tenantLabels, err := b.getLabelsForObjects(ctx, tenant, tenantIDs, model.TenantLabelableObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing tenant labels")
+	}
+	for _, objectID := range objectIDs {
+		tenantsForObjects[objectID].Labels = tenantLabels[objectTenantMapping[objectID]]
+	}
+
+	return tenantsForObjects, nil
+}
+
+func (b *WebhookDataInputBuilder) getTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error) {
+	tenantId, err := b.tenantRepository.GetLowestOwnerForResource(ctx, resourceType, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantId)
+	}
+	tenantModel, err := b.tenantRepository.Get(ctx, tenantId)
+
+	tenantLabels, err := b.getLabelsForObject(ctx, tenantId, tenantId, model.TenantLabelableObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing tenant labels")
+	}
+
+	return &webhook.TenantWithLabels{
+		BusinessTenantMapping: tenantModel,
+		Labels:                tenantLabels,
+	}, nil
 }
