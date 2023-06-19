@@ -39,7 +39,7 @@ type TenantSubscriber interface {
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
 	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"` // FIX ROUTE
-	TenantOnDemandHandlerEndpoint2     string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{tenantId}"`                  // FIX ROUTE
+	TenantOnDemandHandlerEndpoint2     string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT2,default=/v1/fetch/{tenantId}"`                 // FIX ROUTE
 	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
 	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
 	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
