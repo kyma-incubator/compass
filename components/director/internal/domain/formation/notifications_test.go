@@ -4,10 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/assert"
 
@@ -436,7 +433,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsGenerator = testCase.NotificationsGenerator()
 			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator, nil, nil, nil)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
@@ -522,7 +519,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, tenantRepo, notificationGenerator)
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator, nil, nil, nil)
 
 			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
 
@@ -544,8 +541,8 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 
 	subtype := "subtype"
 
-	fa := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
-	reverseFa := fixFormationAssignmentModelWithParameters("id2", FormationID, ApplicationID, RuntimeID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InitialFormationState)
+	fa := fixWebhookFormationAssignmentWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
+	reverseFa := fixWebhookFormationAssignmentWithParameters("id2", FormationID, ApplicationID, RuntimeID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InitialFormationState)
 
 	templateInput := &webhook.FormationConfigurationChangeInput{
 		Operation:   model.AssignFormation,
@@ -558,18 +555,11 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			Application: fixApplicationModel(ApplicationID),
 			Labels:      fixApplicationLabelsMap(),
 		},
-		Runtime: &webhook.RuntimeWithLabels{
-			Runtime: fixRuntimeModel(RuntimeID),
-			Labels:  fixRuntimeLabelsMap(),
-		},
-		RuntimeContext: nil,
-		CustomerTenantContext: &webhook.CustomerTenantContext{
-			CustomerID: TntParentID,
-			AccountID:  str.Ptr(TntExternalID),
-			Path:       nil,
-		},
-		Assignment:        emptyFormationAssignment,
-		ReverseAssignment: emptyFormationAssignment,
+		Runtime:               fixRuntimeWithLabels(RuntimeID),
+		RuntimeContext:        nil,
+		CustomerTenantContext: fixCustomerTenantContext(TntParentID, TntExternalID),
+		Assignment:            emptyFormationAssignment,
+		ReverseAssignment:     emptyFormationAssignment,
 	}
 
 	preJoinPointDetails := &formationconstraint.SendNotificationOperationDetails{
@@ -597,7 +587,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 		Formation:                  formationModel,
 	}
 
-	faRequestExt := &formationassignment.FormationAssignmentRequestExt{
+	faRequestExt := &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook:       *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 			Object:        templateInput,
@@ -615,7 +605,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 		WebhookClientFN    func() *automock.WebhookClient
 		ConstraintEngine   func() *automock.ConstraintEngine
 		WebhookConverter   func() *automock.WebhookConverter
-		InputRequest       *formationassignment.FormationAssignmentRequestExt
+		InputRequest       *webhookclient.FormationAssignmentNotificationRequestExt
 		ExpectedErrMessage string
 	}{
 		{
@@ -721,7 +711,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				webhookConverter = testCase.WebhookConverter()
 			}
 
-			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter)
+			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, constraintEngine, webhookConverter, nil)
 
 			// WHEN
 			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)
