@@ -89,6 +89,7 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, resourceGroupTnt, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroupTnt, &actualApp)
+	require.NoError(t, err)
 
 	// WHEN
 	err = fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -146,6 +147,7 @@ func TestCreateTenantAccessForNewTenant(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, resourceGroupTnt, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroupTnt, &actualApp)
+	require.NoError(t, err)
 
 	// WHEN
 	err = fixtures.WriteTenant(t, ctx, directorInternalGQLClient, newTenant)

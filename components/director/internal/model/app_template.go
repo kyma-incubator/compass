@@ -108,32 +108,3 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 		Webhooks:             webhooks,
 	}
 }
-
-// ApplicationTemplateUpdateInput missing godoc
-type ApplicationTemplateUpdateInput struct {
-	Name                 string
-	Description          *string
-	ApplicationNamespace *string
-	ApplicationInputJSON string
-	Placeholders         []ApplicationTemplatePlaceholder
-	AccessLevel          ApplicationTemplateAccessLevel
-	Labels               map[string]interface{}
-}
-
-// ToApplicationTemplate missing godoc
-func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) ApplicationTemplate {
-	if a == nil {
-		return ApplicationTemplate{}
-	}
-
-	return ApplicationTemplate{
-		ID:                   id,
-		Name:                 a.Name,
-		Description:          a.Description,
-		ApplicationNamespace: a.ApplicationNamespace,
-		ApplicationInputJSON: a.ApplicationInputJSON,
-		Placeholders:         a.Placeholders,
-		AccessLevel:          a.AccessLevel,
-		Labels:               a.Labels,
-	}
-}

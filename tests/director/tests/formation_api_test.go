@@ -3526,7 +3526,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 				t.Logf("Check that application with ID %q is unassigned from formation %s", app1.ID, providerFormationName)
 				app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
-				scenarios, hasScenarios = app.Labels["scenarios"]
+				_, hasScenarios = app.Labels["scenarios"]
 				assert.False(t, hasScenarios)
 
 				t.Logf("Check that runtime context with ID %q is still assigned to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -3544,7 +3544,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 				t.Logf("Check that runtime context with ID %q is actually unassigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 				actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
-				scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+				_, hasScenarios = actualRtmCtx.Labels["scenarios"]
 				assert.False(t, hasScenarios)
 
 			})
@@ -3613,11 +3613,11 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 				actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
-				scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+				_, hasScenarios = actualRtmCtx.Labels["scenarios"]
 				assert.False(t, hasScenarios)
 
 				app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
-				scenarios, hasScenarios = app.Labels["scenarios"]
+				_, hasScenarios = app.Labels["scenarios"]
 				assert.False(t, hasScenarios)
 			})
 
@@ -3684,7 +3684,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 
 				actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
-				scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+				_, hasScenarios = actualRtmCtx.Labels["scenarios"]
 				assert.False(t, hasScenarios)
 
 				t.Logf("Check that application with ID %q is still assigned to formation %s", app1.ID, providerFormationName)
@@ -4191,7 +4191,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			t.Logf("Check that the application with ID: %q is unassigned from formation %s from formation after resyonchronization", app1.ID, providerFormationName)
 			assert.Contains(t, scenarios, providerFormationName)
 			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
-			scenarios, hasScenarios = app.Labels["scenarios"]
+			_, hasScenarios = app.Labels["scenarios"]
 			assert.False(t, hasScenarios)
 
 			t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -4454,7 +4454,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 				t.Logf("Check that application with ID %q is unassigned from formation %s", app1.ID, providerFormationName)
 				app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID)
-				scenarios, hasScenarios = app.Labels["scenarios"]
+				_, hasScenarios = app.Labels["scenarios"]
 				require.False(t, hasScenarios)
 
 				t.Logf("Check that runtime context with ID %q is still assigned to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -4470,7 +4470,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 				t.Logf("Check that runtime context with ID %q is actually unassigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 				actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
-				scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+				_, hasScenarios = actualRtmCtx.Labels["scenarios"]
 				require.False(t, hasScenarios)
 			})
 			t.Run("Resynchronize when in INITIAL and DELETING should resend notifications and succeed", func(t *testing.T) {

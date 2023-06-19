@@ -162,18 +162,6 @@ type ApplicationTemplatePage struct {
 
 func (ApplicationTemplatePage) IsPageable() {}
 
-type ApplicationTemplateUpdateInput struct {
-	// **Validation:** ASCII printable characters, max=100
-	Name string `json:"name"`
-	// **Validation:** max=2000
-	Description          *string                        `json:"description"`
-	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
-	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
-	Labels               Labels                         `json:"labels"`
-	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
-	ApplicationNamespace *string                        `json:"applicationNamespace"`
-}
-
 type ApplicationUpdateInput struct {
 	// **Validation:** max=256
 	ProviderName *string `json:"providerName"`

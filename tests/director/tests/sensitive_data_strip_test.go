@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
@@ -36,14 +35,14 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 
-	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
+	t.Logf("Registering runtime %q", runtimeName)
 	runtimeRegInput := fixRuntimeInput(runtimeName)
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtimeRegInput, conf.GatewayOauth)
 
-	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
+	t.Logf("Requesting OAuth client for runtime %q", runtimeName)
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -51,7 +50,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 	runtimeOAuthGraphQLClient := gqlClient(t, rtmOauthCredentialData, token.RuntimeScopes)
 
-	t.Log(fmt.Sprintf("Registering application %q", appName))
+	t.Logf("Registering application %q", appName)
 	appInput := appWithAPIsAndEvents(appName)
 	appInput.Labels = map[string]interface{}{
 		conf.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
@@ -63,7 +62,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	ott := fixtures.RequestOneTimeTokenForApplication(t, ctx, certSecuredGraphQLClient, app.ID)
 	assert.NotEmpty(t, ott)
 
-	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
+	t.Logf("Asserting document, event and api definitions are present")
 	require.Len(t, app.Bundles.Data, 1)
 	bndl := app.Bundles.Data[0]
 
@@ -71,7 +70,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.Len(t, bndl.APIDefinitions.Data, 1)
 	require.Len(t, bndl.Documents.Data, 1)
 
-	t.Log(fmt.Sprintf("Requesting application OAuth client for application %q", appName))
+	t.Logf("Requesting application OAuth client for application %q", appName)
 	appAuth := fixtures.RequestClientCredentialsForApplication(t, context.Background(), certSecuredGraphQLClient, tenantId, app.ID)
 	appOauthCredentialData, ok := appAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -79,13 +78,13 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, appOauthCredentialData.ClientID)
 	applicationOAuthGraphQLClient := gqlClient(t, appOauthCredentialData, token.ApplicationScopes)
 
-	t.Log(fmt.Sprintf("Registering integration system %q", intSysName))
+	t.Logf("Registering integration system %q", intSysName)
 	integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSysName)
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem)
 	require.NoError(t, err)
 	require.NotEmpty(t, integrationSystem.ID)
 
-	t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
+	t.Logf("Registering OAuth client for integration system %q", intSysName)
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), certSecuredGraphQLClient, tenantId, integrationSystem.ID)
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -93,19 +92,19 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
 	intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 
-	t.Log(fmt.Sprintf("assign runtime and app to scenario: %q", testScenario))
+	t.Logf("assign runtime and app to scenario: %q", testScenario)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
-	t.Log(fmt.Sprintf("Setting application scenarios label: %s", ScenariosLabel))
+	t.Logf("Setting application scenarios label: %s", ScenariosLabel)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, tenantId)
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, tenantId)
 
-	t.Log(fmt.Sprintf("Setting runtime scenarios label: %s", ScenariosLabel))
+	t.Logf("Setting runtime scenarios label: %s", ScenariosLabel)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 
-	t.Log(fmt.Sprintf("Creating bundle instance auths %q with bundle with APIDefinition and ", appName))
+	t.Logf("Creating bundle instance auths %q with bundle with APIDefinition and ", appName)
 	instanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
 	require.NotNil(t, instanceAuth)
 

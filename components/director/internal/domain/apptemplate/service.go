@@ -282,7 +282,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 }
 
 // Update missing godoc
-func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error {
 	oldAppTemplate, err := s.Get(ctx, id)
 	if err != nil {
 		return err

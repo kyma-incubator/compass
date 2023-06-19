@@ -65,7 +65,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", test.tenant))
+			t.Logf("Trying to create application in account tenant %s", test.tenant)
 			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), test.tenant)
 			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, test.tenant, &app)
 			if test.expectErr {
@@ -75,7 +75,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				require.NotEmpty(t, app.ID)
 			}
 
-			t.Log(fmt.Sprintf("Trying to list applications in account tenant %s", test.tenant))
+			t.Logf("Trying to list applications in account tenant %s", test.tenant)
 			getAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 			apps := graphql.ApplicationPage{}
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, test.tenant, getAppReq, &apps)
@@ -86,7 +86,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				require.NotEmpty(t, apps.Data)
 			}
 
-			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
+			t.Logf("Trying to register runtime in account tenant %s", test.tenant)
 			rtmInput := fixRuntimeInput(fmt.Sprintf("runtime-%s", test.resourceSuffix))
 			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &rtmInput)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, &rt)
@@ -97,7 +97,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				require.NotEmpty(t, rt.ID)
 			}
 
-			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
+			t.Logf("Trying to create application template in account tenant %s via client certificate", test.tenant)
 
 			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
 			appTemplateName := createAppTemplateName(name)

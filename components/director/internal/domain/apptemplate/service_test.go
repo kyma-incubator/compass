@@ -1099,17 +1099,17 @@ func TestService_Update(t *testing.T) {
 	appInputJSONWithNewAppType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, updatedAppTemplateTestName)
 
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, nil)
-	modelAppTemplateWithNewName := fixModelAppTemplateWithAppInputJSON(testID, updatedAppTemplateTestName, appInputJSONWithNewAppType, nil)
+	modelAppTemplateWithNewName := fixModelAppTemplateWithAppInputJSON(testID, updatedAppTemplateTestName, appInputJSONWithNewAppType, []*model.Webhook{})
 	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
-	modelAppTemplateWithLabels := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testName, appInputJSON, nil, newTestLabels)
-	modelAppTemplateUpdateInput := fixModelAppTemplateUpdateInputWithLabels(testName, appInputJSON, newTestLabels)
+	modelAppTemplateWithLabels := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testName, appInputJSON, []*model.Webhook{}, nil)
+	modelAppTemplateInput := fixModelAppTemplateInputWithLabels(testName, appInputJSON, newTestLabels)
 
 	modelApplicationFromTemplate := fixModelApplication(testAppID, testAppName)
 	modelLabelInput := fixLabelInput(testLabelInputKey, updatedAppTemplateTestName, testAppID, model.ApplicationLabelableObject)
 
 	testCases := []struct {
 		Name              string
-		Input             func() *model.ApplicationTemplateUpdateInput
+		Input             func() *model.ApplicationTemplateInput
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		WebhookRepoFn     func() *automock.WebhookRepository
 		LabelUpsertSvcFn  func() *automock.LabelUpsertService
@@ -1119,8 +1119,8 @@ func TestService_Update(t *testing.T) {
 	}{
 		{
 			Name: "Success",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return modelAppTemplateUpdateInput
+			Input: func() *model.ApplicationTemplateInput {
+				return modelAppTemplateInput
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1131,7 +1131,7 @@ func TestService_Update(t *testing.T) {
 			WebhookRepoFn: UnusedWebhookRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, modelAppTemplateUpdateInput.Labels).Return(nil).Once()
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, modelAppTemplateInput.Labels).Return(nil).Once()
 				return labelUpsertService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -1143,9 +1143,9 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Success - app input json without labels",
-			Input: func() *model.ApplicationTemplateUpdateInput {
+			Input: func() *model.ApplicationTemplateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
+				return fixModelAppTemplateInput(testName, appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1168,8 +1168,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Success update of app template - no applications registered from the app template with changed name",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1197,8 +1197,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error while listing applications from this app template when app template name is changed",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1227,8 +1227,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Success update of app template with changed name and the applicationType labels of applications registered from the app template",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1257,8 +1257,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error while updating applicationType label of applications registered from the app template with changed name",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(updatedAppTemplateTestName, appInputJSONWithNewAppType)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1288,8 +1288,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when getting application template",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(testName, appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1304,9 +1304,9 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when func enriching app input json with applicationType label - labels are not map[string]interface{}",
-			Input: func() *model.ApplicationTemplateUpdateInput {
+			Input: func() *model.ApplicationTemplateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":123,"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
+				return fixModelAppTemplateInput(testName, appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1325,9 +1325,9 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when func enriching app input json with applicationType label - application type is not string",
-			Input: func() *model.ApplicationTemplateUpdateInput {
+			Input: func() *model.ApplicationTemplateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":123,"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
+				return fixModelAppTemplateInput(testName, appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1346,9 +1346,9 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when func enriching app input json with applicationType label - application type value does not match the application template name",
-			Input: func() *model.ApplicationTemplateUpdateInput {
+			Input: func() *model.ApplicationTemplateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
+				return fixModelAppTemplateInput(testName, appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1367,15 +1367,15 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "No error in func enriching app input json with applicationType label when application type value does not match the application template name for Other System Type",
-			Input: func() *model.ApplicationTemplateUpdateInput {
+			Input: func() *model.ApplicationTemplateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInputWithLabels(testNameOtherSystemType, appInputJSON, newTestLabels)
+				return fixModelAppTemplateInputWithLabels(testNameOtherSystemType, appInputJSON, newTestLabels)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
-				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testNameOtherSystemType, appInputJSON, nil, newTestLabels)
+				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testNameOtherSystemType, appInputJSON, []*model.Webhook{}, nil)
 				appTemplateRepo.On("Get", ctx, modelAppTemplateOtherSystemType.ID).Return(modelAppTemplateOtherSystemType, nil).Once()
 				appTemplateRepo.On("Update", ctx, *modelOtherSystemTypeUpdate).Return(nil).Once()
 				return appTemplateRepo
@@ -1397,8 +1397,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when updating application template - retrieve region failed",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSON)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(testName+"test", appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1417,8 +1417,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when updating application template - exists check failed",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSONString)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(testName+"test", appInputJSONString)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1439,8 +1439,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when application template already exists",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSONString)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(testName+"test", appInputJSONString)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1461,8 +1461,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when updating application template - update failed",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return fixModelAppTemplateUpdateInputWithLabels(testName, appInputJSON, newTestLabels)
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInputWithLabels(testName, appInputJSON, newTestLabels)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1482,8 +1482,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Error when updating labels of application template - upsert failed",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				return modelAppTemplateUpdateInput
+			Input: func() *model.ApplicationTemplateInput {
+				return modelAppTemplateInput
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -1494,7 +1494,7 @@ func TestService_Update(t *testing.T) {
 			WebhookRepoFn: UnusedWebhookRepo,
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, modelAppTemplateUpdateInput.Labels).Return(testError).Once()
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, testID, modelAppTemplateInput.Labels).Return(testError).Once()
 				return labelUpsertService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {

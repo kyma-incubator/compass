@@ -523,7 +523,7 @@ type ComplexityRoot struct {
 		UnsubscribeTenant                            func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) int
 		UpdateAPIDefinition                          func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
-		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
+		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateInput) int
 		UpdateBundle                                 func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateBundleInstanceAuth                     func(childComplexity int, id string, bundleID string, in BundleInstanceAuthUpdateInput) int
 		UpdateCertificateSubjectMapping              func(childComplexity int, id string, in CertificateSubjectMappingInput) int
@@ -803,7 +803,7 @@ type MutationResolver interface {
 	UnpairApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
-	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
+	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	MergeApplications(ctx context.Context, destinationID string, sourceID string) (*Application, error)
 	RegisterRuntime(ctx context.Context, in RuntimeRegisterInput) (*Runtime, error)
@@ -3567,7 +3567,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateUpdateInput)), true
+		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateInput)), true
 
 	case "Mutation.updateBundle":
 		if e.complexity.Mutation.UpdateBundle == nil {
@@ -5408,22 +5408,6 @@ input ApplicationTemplateInput {
 	applicationNamespace: String
 }
 
-input ApplicationTemplateUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	applicationInput: ApplicationJSONInput!
-	placeholders: [PlaceholderDefinitionInput!]
-	labels: Labels @hasScopes(path: "graphql.input.application_template.labels")
-	accessLevel: ApplicationTemplateAccessLevel!
-	applicationNamespace: String
-}
-
 input ApplicationUpdateInput {
 	"""
 	**Validation:** max=256
@@ -6694,7 +6678,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
@@ -8911,10 +8895,10 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 		}
 	}
 	args["id"] = arg0
-	var arg1 ApplicationTemplateUpdateInput
+	var arg1 ApplicationTemplateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateUpdateInput(ctx, tmp)
+			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Validate == nil {
@@ -8927,10 +8911,10 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(ApplicationTemplateUpdateInput); ok {
+		if data, ok := tmp.(ApplicationTemplateInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateUpdateInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -19194,7 +19178,7 @@ func (ec *executionContext) _Mutation_updateApplicationTemplate(ctx context.Cont
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateApplicationTemplate(rctx, args["id"].(string), args["in"].(ApplicationTemplateUpdateInput))
+			return ec.resolvers.Mutation().UpdateApplicationTemplate(rctx, args["id"].(string), args["in"].(ApplicationTemplateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateApplicationTemplate")
@@ -31363,81 +31347,6 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx context.Context, obj interface{}) (ApplicationTemplateUpdateInput, error) {
-	var it ApplicationTemplateUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "description":
-			var err error
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "applicationInput":
-			var err error
-			it.ApplicationInput, err = ec.unmarshalNApplicationJSONInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationJSONInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "placeholders":
-			var err error
-			it.Placeholders, err = ec.unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "labels":
-			var err error
-			directive0 := func(ctx context.Context) (interface{}, error) {
-				return ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
-			}
-			directive1 := func(ctx context.Context) (interface{}, error) {
-				path, err := ec.unmarshalNString2string(ctx, "graphql.input.application_template.labels")
-				if err != nil {
-					return nil, err
-				}
-				if ec.directives.HasScopes == nil {
-					return nil, errors.New("directive hasScopes is not implemented")
-				}
-				return ec.directives.HasScopes(ctx, obj, directive0, path)
-			}
-
-			tmp, err := directive1(ctx)
-			if err != nil {
-				return it, err
-			}
-			if data, ok := tmp.(Labels); ok {
-				it.Labels = data
-			} else if tmp == nil {
-				it.Labels = nil
-			} else {
-				return it, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.Labels`, tmp)
-			}
-		case "accessLevel":
-			var err error
-			it.AccessLevel, err = ec.unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "applicationNamespace":
-			var err error
-			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Context, obj interface{}) (ApplicationUpdateInput, error) {
 	var it ApplicationUpdateInput
 	var asMap = obj.(map[string]interface{})
@@ -37773,10 +37682,6 @@ func (ec *executionContext) marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋky
 		return graphql.Null
 	}
 	return ec._ApplicationTemplatePage(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNApplicationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateUpdateInput(ctx context.Context, v interface{}) (ApplicationTemplateUpdateInput, error) {
-	return ec.unmarshalInputApplicationTemplateUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx context.Context, v interface{}) (ApplicationUpdateInput, error) {

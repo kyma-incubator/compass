@@ -117,28 +117,6 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	}, nil
 }
 
-// UpdateInputFromGraphQL missing godoc
-func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateInput) (model.ApplicationTemplateUpdateInput, error) {
-	var appCreateInput string
-	var err error
-	if in.ApplicationInput != nil {
-		appCreateInput, err = c.appConverter.CreateJSONInputGQLToJSON(in.ApplicationInput)
-		if err != nil {
-			return model.ApplicationTemplateUpdateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL update input to Application Template model with name %s", in.Name)
-		}
-	}
-
-	return model.ApplicationTemplateUpdateInput{
-		Name:                 in.Name,
-		Description:          in.Description,
-		ApplicationNamespace: in.ApplicationNamespace,
-		ApplicationInputJSON: appCreateInput,
-		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
-		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
-		Labels:               in.Labels,
-	}, nil
-}
-
 // ApplicationFromTemplateInputFromGraphQL missing godoc
 func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error) {
 	values := make([]*model.ApplicationTemplateValueInput, 0, len(in.Values))

@@ -2,7 +2,6 @@ package tests
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -32,7 +31,7 @@ func TestHealthAPI(t *testing.T) {
 			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return errors.New(fmt.Sprintf("Health api returned non 200 response: %d", resp.StatusCode))
+			return fmt.Errorf("Health api returned non 200 response: %d", resp.StatusCode)
 		}
 		return nil
 	}, retry.Attempts(3), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {

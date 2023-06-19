@@ -423,22 +423,6 @@ input ApplicationTemplateInput {
 	applicationNamespace: String
 }
 
-input ApplicationTemplateUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	applicationInput: ApplicationJSONInput!
-	placeholders: [PlaceholderDefinitionInput!]
-	labels: Labels @hasScopes(path: "graphql.input.application_template.labels")
-	accessLevel: ApplicationTemplateAccessLevel!
-	applicationNamespace: String
-}
-
 input ApplicationUpdateInput {
 	"""
 	**Validation:** max=256
@@ -1709,7 +1693,7 @@ type Mutation {
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
 	"""
-	updateApplicationTemplate(id: ID!, in: ApplicationTemplateUpdateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
+	updateApplicationTemplate(id: ID!, in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.updateApplicationTemplate")
 	"""
 	**Examples**
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)

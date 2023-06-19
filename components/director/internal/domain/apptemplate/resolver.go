@@ -50,7 +50,7 @@ type ApplicationTemplateService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
 	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
-	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
+	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 	ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error)
@@ -64,7 +64,6 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
 	InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error)
-	UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateInput) (model.ApplicationTemplateUpdateInput, error)
 	ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error)
 }
 
@@ -451,7 +450,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 }
 
 // UpdateApplicationTemplate missing godoc
-func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateUpdateInput) (*graphql.ApplicationTemplate, error) {
+func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -468,7 +467,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
-	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
+	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, err
 	}

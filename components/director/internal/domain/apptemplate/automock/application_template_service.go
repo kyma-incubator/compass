@@ -276,11 +276,11 @@ func (_m *ApplicationTemplateService) PrepareApplicationCreateInputJSON(appTempl
 }
 
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *ApplicationTemplateService) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+func (_m *ApplicationTemplateService) Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationTemplateUpdateInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationTemplateInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

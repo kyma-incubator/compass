@@ -329,7 +329,7 @@ func TestLoadData(t *testing.T) {
 				}
 				appTmplSvc := &automock.AppTmplService{}
 				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
-				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(testErr).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateInput")).Return(testErr).Once()
 				return appTmplSvc
 			},
 			intSysSvc: func() *automock.IntSysSvc {
@@ -420,7 +420,7 @@ func TestLoadData(t *testing.T) {
 				}
 				appTmplSvc := &automock.AppTmplService{}
 				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
-				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateInput")).Return(nil).Once()
 				return appTmplSvc
 			},
 			intSysSvc: func() *automock.IntSysSvc {
@@ -468,7 +468,7 @@ func TestLoadData(t *testing.T) {
 				}
 				appTmplSvc := &automock.AppTmplService{}
 				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
-				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateInput")).Return(nil).Once()
 				return appTmplSvc
 			},
 			intSysSvc: func() *automock.IntSysSvc {
@@ -558,7 +558,7 @@ func TestLoadData(t *testing.T) {
 				}
 				appTmplSvc := &automock.AppTmplService{}
 				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
-				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateInput")).Return(nil).Once()
 				return appTmplSvc
 			},
 			intSysSvc: func() *automock.IntSysSvc {
@@ -610,7 +610,7 @@ func TestLoadData(t *testing.T) {
 				}
 				appTmplSvc := &automock.AppTmplService{}
 				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
-				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateInput")).Return(nil).Once()
 				return appTmplSvc
 			},
 			intSysSvc: func() *automock.IntSysSvc {

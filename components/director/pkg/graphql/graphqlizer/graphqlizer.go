@@ -167,30 +167,6 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 	}`)
 }
 
-// ApplicationTemplateUpdateInputToGQL missing godoc
-func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.ApplicationTemplateUpdateInput) (string, error) {
-	return g.genericToGQL(in, `{
-		name: "{{.Name}}",
-		{{- if .Description }}
-		description: "{{.Description}}",
-		{{- end }}
-		{{- if .ApplicationNamespace }}
-		applicationNamespace: "{{.ApplicationNamespace}}",
-		{{- end }}
-		applicationInput: {{ ApplicationJSONInputToGQL .ApplicationInput}},
-		{{- if .Placeholders }}
-		placeholders: [
-			{{- range $i, $e := .Placeholders }}
-				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
-			{{- end }} ],
-		{{- end }}
-		{{- if .Labels }}
-		labels: {{ LabelsToGQL .Labels}},
-		{{- end }}
-		accessLevel: {{.AccessLevel}},
-	}`)
-}
-
 // DocumentInputToGQL missing godoc
 func (g *Graphqlizer) DocumentInputToGQL(in *graphql.DocumentInput) (string, error) {
 	return g.genericToGQL(in, `{

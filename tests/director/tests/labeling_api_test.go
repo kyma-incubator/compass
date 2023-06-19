@@ -83,6 +83,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 
 	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
+	require.NoError(t, err)
 
 	t.Log("Check if scenarios LabelDefinition exists")
 	labelKey := "scenarios"

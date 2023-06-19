@@ -32,7 +32,7 @@ const (
 type appTmplService interface {
 	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
-	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
+	Update(ctx context.Context, id string, in model.ApplicationTemplateInput) error
 }
 
 //go:generate mockery --name=intSysSvc --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -230,7 +230,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 
 		if !areAppTemplatesEqual(appTemplate, appTmplInput) {
 			log.C(ctx).Infof("Updating application template with id %q", appTemplate.ID)
-			appTemplateUpdateInput := model.ApplicationTemplateUpdateInput{
+			appTemplateInput := model.ApplicationTemplateInput{
 				Name:                 appTmplInput.Name,
 				Description:          appTmplInput.Description,
 				ApplicationNamespace: appTmplInput.ApplicationNamespace,
@@ -238,8 +238,9 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 				Placeholders:         appTmplInput.Placeholders,
 				AccessLevel:          appTmplInput.AccessLevel,
 				Labels:               appTmplInput.Labels,
+				Webhooks:             appTmplInput.Webhooks,
 			}
-			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, appTemplateUpdateInput); err != nil {
+			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, appTemplateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
 			}
 			log.C(ctx).Infof("Successfully updated application template with id %q", appTemplate.ID)

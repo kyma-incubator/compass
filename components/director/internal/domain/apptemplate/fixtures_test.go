@@ -168,28 +168,15 @@ func fixModelAppTemplateWithIDInput(name, appInputString string, id *string) *mo
 	return model
 }
 
-func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.ApplicationTemplateUpdateInput {
-	desc := testDescription
-
-	return &model.ApplicationTemplateUpdateInput{
-		Name:                 name,
-		Description:          &desc,
-		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInputJSON: appInputString,
-		Placeholders:         fixModelPlaceholders(),
-		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
-	}
-}
-
-func fixModelAppTemplateUpdateInputWithPlaceholders(name string, appInputString string, placeholders []model.ApplicationTemplatePlaceholder) *model.ApplicationTemplateUpdateInput {
-	out := fixModelAppTemplateUpdateInput(name, appInputString)
+func fixModelAppTemplateInputWithPlaceholders(name string, appInputString string, placeholders []model.ApplicationTemplatePlaceholder) *model.ApplicationTemplateInput {
+	out := fixModelAppTemplateInput(name, appInputString)
 	out.Placeholders = placeholders
 
 	return out
 }
 
-func fixModelAppTemplateUpdateInputWithLabels(name string, appInputString string, labels map[string]interface{}) *model.ApplicationTemplateUpdateInput {
-	out := fixModelAppTemplateUpdateInput(name, appInputString)
+func fixModelAppTemplateInputWithLabels(name string, appInputString string, labels map[string]interface{}) *model.ApplicationTemplateInput {
+	out := fixModelAppTemplateInput(name, appInputString)
 	out.Labels = labels
 
 	return out
@@ -205,6 +192,9 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
+			Labels: graphql.Labels{
+				"displayName": "test",
+			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		Labels:       map[string]interface{}{"test": "test"},
@@ -222,6 +212,9 @@ func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemp
 		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:        "foo",
 			Description: &desc,
+			Labels: graphql.Labels{
+				"displayName": "test",
+			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
@@ -239,6 +232,9 @@ func fixGQLAppTemplateInputWithPlaceholderAndProvider(name string) *graphql.Appl
 			Name:         "foo",
 			Description:  &desc,
 			ProviderName: str.Ptr("SAP"),
+			Labels: graphql.Labels{
+				"displayName": "test",
+			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
@@ -261,39 +257,6 @@ func fixGQLAppTemplateInputInvalidAppInputURLTemplateMethod(name string) *graphq
 					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
 				},
 			},
-		},
-		Placeholders: fixGQLPlaceholderDefinitionInput(),
-		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
-	}
-}
-
-func fixGQLAppTemplateUpdateInput(name string) *graphql.ApplicationTemplateUpdateInput {
-	desc := testDescription
-
-	return &graphql.ApplicationTemplateUpdateInput{
-		Name:                 name,
-		Description:          &desc,
-		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationJSONInput{
-			Name:        "foo",
-			Description: &desc,
-		},
-		Placeholders: fixGQLPlaceholderDefinitionInput(),
-		Labels:       map[string]interface{}{"label1": "test"},
-		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
-	}
-}
-
-func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.ApplicationTemplateUpdateInput {
-	desc := testDescriptionWithPlaceholder
-
-	return &graphql.ApplicationTemplateUpdateInput{
-		Name:                 name,
-		Description:          &desc,
-		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationJSONInput{
-			Name:        "foo",
-			Description: &desc,
 			Labels: graphql.Labels{
 				"displayName": "test",
 			},
@@ -303,27 +266,10 @@ func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.Applicati
 	}
 }
 
-func fixGQLAppTemplateUpdateInputWithPlaceholderAndProvider(name string) *graphql.ApplicationTemplateUpdateInput {
+func fixGQLAppTemplateInputInvalidAppInput(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescriptionWithPlaceholder
 
-	return &graphql.ApplicationTemplateUpdateInput{
-		Name:                 name,
-		Description:          &desc,
-		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationJSONInput{
-			Name:         "foo",
-			Description:  &desc,
-			ProviderName: str.Ptr("SAP"),
-		},
-		Placeholders: fixGQLPlaceholderDefinitionInput(),
-		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
-	}
-}
-
-func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.ApplicationTemplateUpdateInput {
-	desc := testDescriptionWithPlaceholder
-
-	return &graphql.ApplicationTemplateUpdateInput{
+	return &graphql.ApplicationTemplateInput{
 		Name:                 name,
 		Description:          &desc,
 		ApplicationNamespace: str.Ptr("ns"),
@@ -335,6 +281,9 @@ func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.Applicati
 					Type:        graphql.WebhookTypeUnregisterApplication,
 					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
 				},
+			},
+			Labels: graphql.Labels{
+				"displayName": "test",
 			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),

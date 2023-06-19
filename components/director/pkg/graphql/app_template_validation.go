@@ -27,19 +27,6 @@ func (i ApplicationTemplateInput) Validate() error {
 }
 
 // Validate missing godoc
-func (i ApplicationTemplateUpdateInput) Validate() error {
-	return validation.Errors{
-		"Rule.ValidPlaceholders": validPlaceholders(i.Placeholders, i.ApplicationInput),
-		"appInput":               validation.Validate(i.ApplicationInput),
-		"name":                   validation.Validate(i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
-		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
-		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
-		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
-		"applicationNamespace":   validation.Validate(i.ApplicationNamespace, validation.Length(1, longStringLengthLimit)),
-	}.Filter()
-}
-
-// Validate missing godoc
 func (i PlaceholderDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),

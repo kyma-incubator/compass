@@ -103,18 +103,18 @@ func (_m *ApplicationTemplateConverter) ToGraphQL(in *model.ApplicationTemplate)
 }
 
 // UpdateInputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationTemplateConverter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateInput) (model.ApplicationTemplateUpdateInput, error) {
+func (_m *ApplicationTemplateConverter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error) {
 	ret := _m.Called(in)
 
-	var r0 model.ApplicationTemplateUpdateInput
-	if rf, ok := ret.Get(0).(func(graphql.ApplicationTemplateUpdateInput) model.ApplicationTemplateUpdateInput); ok {
+	var r0 model.ApplicationTemplateInput
+	if rf, ok := ret.Get(0).(func(graphql.ApplicationTemplateInput) model.ApplicationTemplateInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.ApplicationTemplateUpdateInput)
+		r0 = ret.Get(0).(model.ApplicationTemplateInput)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.ApplicationTemplateUpdateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(graphql.ApplicationTemplateInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

@@ -46,6 +46,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	intSysOutput := graphql.IntegrationSystemExt{}
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getIntegrationSystemRequest, &intSysOutput)
+	require.NoError(t, err)
 
 	require.NotEmpty(t, intSysOutput)
 	assertions.AssertIntegrationSystem(t, intSysInput, intSysOutput)
@@ -69,6 +70,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 
 	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
 	intSysGQL, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
+	require.NoError(t, err)
 	updateIntegrationSystemRequest := fixtures.FixUpdateIntegrationSystemRequest(intSys.ID, intSysGQL)
 	updateOutput := graphql.IntegrationSystemExt{}
 

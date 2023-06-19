@@ -1635,18 +1635,18 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
-	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONString)
+	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
-	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
-	gqlAppTemplateUpdateInputWithoutNameProperty := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
-	gqlAppTemplateUpdateInputWithoutNameProperty.ApplicationInput.Name = ""
-	gqlAppTemplateUpdateInputWithoutDisplayNameLabel := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
-	gqlAppTemplateUpdateInputWithoutDisplayNameLabel.ApplicationInput.Labels = graphql.Labels{}
-	gqlAppTemplateUpdateInputWithNonStringDisplayLabel := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
-	gqlAppTemplateUpdateInputWithNonStringDisplayLabel.ApplicationInput.Labels = graphql.Labels{
+	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
+	gqlAppTemplateInputWithoutNameProperty := fixGQLAppTemplateInputWithPlaceholder(testName)
+	gqlAppTemplateInputWithoutNameProperty.ApplicationInput.Name = ""
+	gqlAppTemplateInputWithoutDisplayNameLabel := fixGQLAppTemplateInputWithPlaceholder(testName)
+	gqlAppTemplateInputWithoutDisplayNameLabel.ApplicationInput.Labels = graphql.Labels{}
+	gqlAppTemplateInputWithNonStringDisplayLabel := fixGQLAppTemplateInputWithPlaceholder(testName)
+	gqlAppTemplateInputWithNonStringDisplayLabel.ApplicationInput.Labels = graphql.Labels{
 		"displayName": false,
 	}
-	gqlAppTemplateUpdateInputWithProvider := fixGQLAppTemplateUpdateInputWithPlaceholderAndProvider(testName)
+	gqlAppTemplateInputWithProvider := fixGQLAppTemplateInputWithPlaceholderAndProvider(testName)
 
 	labels := map[string]*model.Label{
 		"test": {
@@ -1665,7 +1665,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		SelfRegManagerFn  func() *automock.SelfRegisterManager
 		WebhookSvcFn      func() *automock.WebhookService
 		WebhookConvFn     func() *automock.WebhookConverter
-		Input             *graphql.ApplicationTemplateUpdateInput
+		Input             *graphql.ApplicationTemplateInput
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
@@ -1681,7 +1681,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
@@ -1692,7 +1692,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
-			Input:          gqlAppTemplateUpdateInput,
+			Input:          gqlAppTemplateInput,
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -1712,7 +1712,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 					},
 				}
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
-				modelAppTemplateInput := fixModelAppTemplateUpdateInputWithPlaceholders("SAP app-template", appInputJSONString, placeholders)
+				modelAppTemplateInput := fixModelAppTemplateInputWithPlaceholders("SAP app-template", appInputJSONString, placeholders)
 
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
@@ -1734,10 +1734,10 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 					},
 				}
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
-				modelAppTemplateInput := fixModelAppTemplateUpdateInputWithPlaceholders("SAP app-template", appInputJSONString, placeholders)
+				modelAppTemplateInput := fixModelAppTemplateInputWithPlaceholders("SAP app-template", appInputJSONString, placeholders)
 
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
@@ -1748,7 +1748,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
-			Input:          gqlAppTemplateUpdateInput,
+			Input:          gqlAppTemplateInput,
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -1757,13 +1757,13 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: UnusedAppTemplateSvc,
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(model.ApplicationTemplateUpdateInput{}, testError).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(model.ApplicationTemplateInput{}, testError).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: UnusedSelfRegManager,
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
-			Input:            gqlAppTemplateUpdateInput,
+			Input:            gqlAppTemplateInput,
 			ExpectedError:    testError,
 		},
 		{
@@ -1777,7 +1777,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1787,7 +1787,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateInput,
 			ExpectedError: testError,
 		},
 		{
@@ -1802,7 +1802,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1812,7 +1812,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateInput,
 			ExpectedError: testError,
 		},
 		{
@@ -1825,13 +1825,13 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: UnusedSelfRegManager,
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
-			Input:            gqlAppTemplateUpdateInput,
+			Input:            gqlAppTemplateInput,
 			ExpectedError:    testError,
 		},
 		{
@@ -1844,7 +1844,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1854,7 +1854,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateInput,
 			ExpectedError: testError,
 		},
 		{
@@ -1874,7 +1874,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInputWithoutNameProperty,
+			Input:         gqlAppTemplateInputWithoutNameProperty,
 			ExpectedError: errors.New("appInput: (name: cannot be blank.)"),
 		},
 		{
@@ -1887,7 +1887,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInputWithoutDisplayNameLabel).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONWithoutDisplayNameLabelString), nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithoutDisplayNameLabel).Return(*fixModelAppTemplateInput(testName, appInputJSONWithoutDisplayNameLabelString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1897,7 +1897,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInputWithoutDisplayNameLabel,
+			Input:         gqlAppTemplateInputWithoutDisplayNameLabel,
 			ExpectedError: errors.New("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed."),
 		},
 		{
@@ -1910,7 +1910,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInputWithNonStringDisplayLabel).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONNonStringDisplayNameLabelString), nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithNonStringDisplayLabel).Return(*fixModelAppTemplateInput(testName, appInputJSONNonStringDisplayNameLabelString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1920,7 +1920,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInputWithNonStringDisplayLabel,
+			Input:         gqlAppTemplateInputWithNonStringDisplayLabel,
 			ExpectedError: errors.New("\"displayName\" label value must be string"),
 		},
 		{
@@ -1931,7 +1931,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn:  UnusedSelfRegManager,
 			WebhookConvFn:     UnusedWebhookConv,
 			WebhookSvcFn:      UnusedWebhookSvc,
-			Input:             gqlAppTemplateUpdateInputWithProvider,
+			Input:             gqlAppTemplateInputWithProvider,
 			ExpectedError:     errors.New("application template name \"bar\" does not comply with the following naming convention: \"SAP <product name>\""),
 		},
 		{
@@ -1942,7 +1942,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn:  UnusedSelfRegManager,
 			WebhookConvFn:     UnusedWebhookConv,
 			WebhookSvcFn:      UnusedWebhookSvc,
-			Input:             gqlAppTemplateUpdateInput,
+			Input:             gqlAppTemplateInput,
 			ExpectedError:     testError,
 		},
 		{
@@ -1957,7 +1957,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1967,7 +1967,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateInput,
 			ExpectedError: testError,
 		},
 		{
@@ -1982,7 +1982,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
@@ -1993,7 +1993,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateInput,
 			ExpectedError: testError,
 		},
 	}
@@ -2026,14 +2026,14 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	}
 
 	t.Run("Returns error when application template inputs url template has invalid method", func(t *testing.T) {
-		gqlAppTemplateUpdateInputInvalid := fixGQLAppTemplateUpdateInputInvalidAppInput(testName)
+		gqlAppTemplateInputInvalid := fixGQLAppTemplateInputInvalidAppInput(testName)
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
 		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, "")
 
 		// WHEN
-		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInputInvalid)
+		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateInputInvalid)
 
 		// THEN
 		require.Error(t, err)
