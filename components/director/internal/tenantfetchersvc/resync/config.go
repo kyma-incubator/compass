@@ -59,6 +59,7 @@ type EventsConfig struct {
 	RegionalAuthConfigSecret AuthProviderConfig          `envconfig:"SECRET"`
 	RegionalAPIConfigs       map[string]*EventsAPIConfig `ignored:"true"`
 	APIConfig                EventsAPIConfig             `envconfig:"API"`
+	PageWorkers              int                         `envconfig:"PAGE_WORKERS" default:"2"`
 	TenantOperationChunkSize int                         `envconfig:"TENANT_INSERT_CHUNK_SIZE" default:"500"`
 	RetryAttempts            uint                        `envconfig:"RETRY_ATTEMPTS" default:"7"`
 }
