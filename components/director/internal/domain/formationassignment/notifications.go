@@ -114,7 +114,7 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		return nil, errors.Wrapf(err, "An error occurred while getting formation with ID %q in tenant %q", fa.FormationID, tenantID)
 	}
 
-	reverseFa, err := fan.getReverseBySourceAndTarget(ctx, formation.ID, fa.Source, fa.Target)
+	reverseFa, err := fan.getReverseBySourceAndTarget(ctx, tenantID, formation.ID, fa.Source, fa.Target)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Errorf("An error occurred while getting reverse formation assignment: %v", err)
@@ -226,15 +226,10 @@ func (fan *formationAssignmentNotificationService) getObjectSubtype(ctx context.
 	}
 }
 
-func (fan *formationAssignmentNotificationService) getReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+func (fan *formationAssignmentNotificationService) getReverseBySourceAndTarget(ctx context.Context, tnt, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
 	log.C(ctx).Infof("Getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
 
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, formationID, sourceID, targetID)
+	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tnt, formationID, sourceID, targetID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
 	}
