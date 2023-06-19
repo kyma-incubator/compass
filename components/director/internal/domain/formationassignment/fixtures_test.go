@@ -253,6 +253,22 @@ func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.Formatio
 	}
 }
 
+func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, reverseAssignment *model.FormationAssignment, req, reverseReq *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             req,
+				FormationAssignment: assignment,
+			},
+			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             reverseReq,
+				FormationAssignment: reverseAssignment,
+			},
+		},
+		Operation: model.AssignFormation,
+	}
+}
+
 func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.FormationAssignmentNotificationRequest, fa *webhook.FormationAssignment) *webhookclient.FormationAssignmentNotificationRequestExt {
 	return &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: reqWebhook,
@@ -625,5 +641,17 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
 		Value:       config,
+	}
+}
+
+func fixFormationAssignmentInput(fa *model.FormationAssignment) *model.FormationAssignmentInput {
+	return &model.FormationAssignmentInput{
+		FormationID: fa.FormationID,
+		Source:      fa.Source,
+		SourceType:  fa.SourceType,
+		Target:      fa.Target,
+		TargetType:  fa.TargetType,
+		State:       fa.State,
+		Value:       fa.Value,
 	}
 }

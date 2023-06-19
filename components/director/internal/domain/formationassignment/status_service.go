@@ -15,21 +15,17 @@ import (
 
 // formationAssignmentStatusService service encapsulates all the specifics around persisting the state reported by notification receiver for a formation assignment
 type formationAssignmentStatusService struct {
-	repo                        FormationAssignmentRepository
-	constraintEngine            constraintEngine
-	formationRepository         formationRepository
-	formationTemplateRepository formationTemplateRepository
-	faNotificationService       faNotificationService
+	repo                  FormationAssignmentRepository
+	constraintEngine      constraintEngine
+	faNotificationService faNotificationService
 }
 
 // NewFormationAssignmentStatusService creates formation assignment status service
-func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, constraintEngine constraintEngine, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository, faNotificationService faNotificationService) *formationAssignmentStatusService {
+func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, constraintEngine constraintEngine, faNotificationService faNotificationService) *formationAssignmentStatusService {
 	return &formationAssignmentStatusService{
-		repo:                        repo,
-		constraintEngine:            constraintEngine,
-		formationRepository:         formationRepository,
-		formationTemplateRepository: formationTemplateRepository,
-		faNotificationService:       faNotificationService,
+		repo:                  repo,
+		constraintEngine:      constraintEngine,
+		faNotificationService: faNotificationService,
 	}
 }
 

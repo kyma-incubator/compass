@@ -44,11 +44,6 @@ type FormationAssignmentRepository interface {
 	Exists(ctx context.Context, id, tenantID string) (bool, error)
 }
 
-//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentConverter interface {
-	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
-}
-
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
@@ -112,11 +107,6 @@ type constraintEngine interface {
 	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error
 }
 
-//go:generate mockery --exported --name=formationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationTemplateRepository interface {
-	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-}
-
 //go:generate mockery --exported --name=statusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type statusService interface {
 	UpdateWithConstraints(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
@@ -126,42 +116,40 @@ type statusService interface {
 
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
-	CreateExtendedFARequest(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
+	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
 	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
 }
 
 type service struct {
-	repo                         FormationAssignmentRepository
-	uidSvc                       UIDService
-	applicationRepository        applicationRepository
-	runtimeRepo                  runtimeRepository
-	runtimeContextRepo           runtimeContextRepository
-	formationAssignmentConverter formationAssignmentConverter
-	notificationService          notificationService
-	faNotificationService        faNotificationService
-	labelService                 labelService
-	formationRepository          formationRepository
-	statusService                statusService
-	runtimeTypeLabelKey          string
-	applicationTypeLabelKey      string
+	repo                    FormationAssignmentRepository
+	uidSvc                  UIDService
+	applicationRepository   applicationRepository
+	runtimeRepo             runtimeRepository
+	runtimeContextRepo      runtimeContextRepository
+	notificationService     notificationService
+	faNotificationService   faNotificationService
+	labelService            labelService
+	formationRepository     formationRepository
+	statusService           statusService
+	runtimeTypeLabelKey     string
+	applicationTypeLabelKey string
 }
 
 // NewService creates a FormationTemplate service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentConverter formationAssignmentConverter, notificationService notificationService, faNotificationService faNotificationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		repo:                         repo,
-		uidSvc:                       uidSvc,
-		applicationRepository:        applicationRepository,
-		runtimeRepo:                  runtimeRepository,
-		runtimeContextRepo:           runtimeContextRepo,
-		formationAssignmentConverter: formationAssignmentConverter,
-		notificationService:          notificationService,
-		faNotificationService:        faNotificationService,
-		labelService:                 labelService,
-		formationRepository:          formationRepository,
-		statusService:                statusService,
-		runtimeTypeLabelKey:          runtimeTypeLabelKey,
-		applicationTypeLabelKey:      applicationTypeLabelKey,
+		repo:                    repo,
+		uidSvc:                  uidSvc,
+		applicationRepository:   applicationRepository,
+		runtimeRepo:             runtimeRepository,
+		runtimeContextRepo:      runtimeContextRepo,
+		notificationService:     notificationService,
+		faNotificationService:   faNotificationService,
+		labelService:            labelService,
+		formationRepository:     formationRepository,
+		statusService:           statusService,
+		runtimeTypeLabelKey:     runtimeTypeLabelKey,
+		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 }
 
@@ -359,7 +347,7 @@ func (s *service) ListFormationAssignmentsForObjectIDs(ctx context.Context, form
 }
 
 // Update updates a Formation Assignment matching ID `id` using `in`
-func (s *service) Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error {
+func (s *service) Update(ctx context.Context, id string, fa *model.FormationAssignment) error {
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
 
 	tenantID, err := tenant.LoadFromContext(ctx)
@@ -373,7 +361,7 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationAssi
 		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
-	if err = s.repo.Update(ctx, in.ToModel(id, tenantID)); err != nil {
+	if err = s.repo.Update(ctx, fa); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 	return nil
@@ -614,13 +602,13 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	if assignmentClone.Request == nil {
 		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		assignment.State = string(model.ReadyAssignmentState)
-		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
 		return nil
 	}
 
-	extendedRequest, err := s.faNotificationService.CreateExtendedFARequest(ctx, assignmentClone, reverseClone, mappingPair.Operation)
+	extendedRequest, err := s.faNotificationService.GenerateFormationAssignmentNotificationExt(ctx, assignmentClone, reverseClone, mappingPair.Operation)
 	if err != nil {
 		return errors.Wrap(err, "while creating extended formation assignment request")
 	}
@@ -653,7 +641,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
 		assignment.State = string(model.InitialFormationState)
 		assignment.Value = nil
-		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
 
@@ -763,7 +751,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
-	extendedRequest, err := s.faNotificationService.CreateExtendedFARequest(ctx, mappingPair.Assignment, mappingPair.ReverseAssignment, mappingPair.Operation)
+	extendedRequest, err := s.faNotificationService.GenerateFormationAssignmentNotificationExt(ctx, mappingPair.Assignment, mappingPair.ReverseAssignment, mappingPair.Operation)
 	if err != nil {
 		return false, errors.Wrap(err, "while creating extended formation assignment request")
 	}
@@ -791,7 +779,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", mappingPair.Assignment.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
 		assignment.State = string(model.DeletingAssignmentState)
 		assignment.Value = nil
-		if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+		if err = s.Update(ctx, assignment.ID, assignment); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
@@ -887,7 +875,7 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
 	}
 	assignment.Value = marshaled
-	if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+	if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 	}
 	log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)

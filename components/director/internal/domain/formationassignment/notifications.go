@@ -92,6 +92,21 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	var targetType model.ResourceType
+	switch fa.TargetType {
+	case model.FormationAssignmentTypeApplication:
+		targetType = model.ApplicationResourceType
+	case model.FormationAssignmentTypeRuntime:
+		targetType = model.RuntimeResourceType
+	case model.FormationAssignmentTypeRuntimeContext:
+		targetType = model.RuntimeContextResourceType
+	}
+
+	targetSubtype, err := fan.getObjectSubtype(ctx, fa.TenantID, fa.Target, fa.TargetType)
+	if err != nil {
+		return nil, err
+	}
+
 	formation, err := fan.formationRepository.Get(ctx, fa.FormationID, tenantID)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation with ID %q in tenant %q: %v", fa.FormationID, tenantID, err)
@@ -108,8 +123,8 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}
 
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               model.FormationResourceType,
-		ResourceSubtype:            "todo",
+		ResourceType:               targetType,
+		ResourceSubtype:            targetSubtype,
 		Operation:                  operation,
 		FormationAssignment:        convertFormationAssignmentFromModel(fa),
 		ReverseFormationAssignment: convertFormationAssignmentFromModel(reverseFa),
@@ -117,7 +132,7 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 	}, nil
 }
 
-func (fan *formationAssignmentNotificationService) CreateExtendedFARequest(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
 	targetSubtype, err := fan.getObjectSubtype(ctx, faRequestMapping.FormationAssignment.TenantID, faRequestMapping.FormationAssignment.Target, faRequestMapping.FormationAssignment.TargetType)
 	if err != nil {
 		return nil, err

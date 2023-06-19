@@ -2,6 +2,7 @@ package formationassignment_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -59,7 +60,6 @@ var (
 		ID:   "testFTID",
 		Name: "testFTName",
 	}
-	reverseFa        = fixReverseFormationAssignment(fa)
 	reverseWebhookFa = fixReverseWebhookFormationAssignment(webhookFa)
 
 	rtmTypeLabelKey = "rtmTypeLabelKey"
@@ -86,8 +86,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctxWithTenant, faModel).Return(nil).Once()
 				return repo
 			},
-			ExpectedOutput:   TestID,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: TestID,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -158,8 +157,7 @@ func TestService_CreateIfNotExists(t *testing.T) {
 				repo.On("Create", ctxWithTenant, faModel).Return(nil).Once()
 				return repo
 			},
-			ExpectedOutput:   TestID,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: TestID,
 		},
 		{
 			Name:                     "error when fetching formation assignment returns error different from not found",
@@ -183,8 +181,7 @@ func TestService_CreateIfNotExists(t *testing.T) {
 				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID, faModel.FormationID).Return(faModel, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   TestID,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: TestID,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -243,8 +240,7 @@ func TestService_Get(t *testing.T) {
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(faModel, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModel,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModel,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -308,8 +304,7 @@ func TestService_GetGlobalByID(t *testing.T) {
 				repo.On("GetGlobalByID", ctxWithTenant, TestID).Return(faModel, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModel,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModel,
 		},
 		{
 			Name:    "Error when getting formation assignment globally",
@@ -367,8 +362,7 @@ func TestService_GetGlobalByIDAndFormationID(t *testing.T) {
 				repo.On("GetGlobalByIDAndFormationID", ctxWithTenant, TestID, TestFormationID).Return(faModel, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModel,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModel,
 		},
 		{
 			Name:    "Error when getting formation assignment globally",
@@ -426,8 +420,7 @@ func TestService_GetForFormation(t *testing.T) {
 				repo.On("GetForFormation", ctxWithTenant, TestTenantID, TestID, TestFormationID).Return(faModel, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModel,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModel,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -491,8 +484,7 @@ func TestService_GetReverseBySourceAndTarget(t *testing.T) {
 				repo.On("GetReverseBySourceAndTarget", ctxWithTenant, TestTenantID, TestFormationID, TestSource, TestTarget).Return(faModel, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModel,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModel,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -571,8 +563,7 @@ func TestService_List(t *testing.T) {
 				repo.On("List", ctxWithTenant, first, after, TestTenantID).Return(faModelPage, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModelPage,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModelPage,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -665,8 +656,7 @@ func TestService_ListByFormationIDs(t *testing.T) {
 				repo.On("ListByFormationIDs", ctxWithTenant, TestTenantID, formationsIDs, first, after).Return(faModelPages, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModelPages,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModelPages,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -745,8 +735,7 @@ func TestService_ListByFormationIDsNoPaging(t *testing.T) {
 				repo.On("ListByFormationIDsNoPaging", ctxWithTenant, TestTenantID, formationsIDs).Return(faModels, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModels,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModels,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -811,8 +800,7 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestStateInitial}).Return(faModels, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   faModels,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: faModels,
 		},
 		{
 			Name: "Error when listing formation assignments by formations IDs",
@@ -875,8 +863,7 @@ func TestService_ListFormationAssignmentsForObjectID(t *testing.T) {
 				repo.On("ListAllForObject", ctxWithTenant, TestTenantID, formationID, objectID).Return(result, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   result,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: result,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -946,8 +933,7 @@ func TestService_ListFormationAssignmentsForObjectIDs(t *testing.T) {
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formationID, []string{objectID}).Return(result, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   result,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: result,
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -998,23 +984,22 @@ func TestService_ListFormationAssignmentsForObjectIDs(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
-		Name                     string
-		Context                  context.Context
-		FormationAssignmentInput *model.FormationAssignmentInput
-		FormationAssignmentRepo  func() *automock.FormationAssignmentRepository
-		ExpectedErrorMsg         string
+		Name                    string
+		Context                 context.Context
+		FormationAssignment     *model.FormationAssignment
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedErrorMsg        string
 	}{
 		{
-			Name:                     "Success",
-			Context:                  ctxWithTenant,
-			FormationAssignmentInput: faInput,
+			Name:                "Success",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
 				repo.On("Update", ctxWithTenant, faModel).Return(nil).Once()
 				return repo
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -1022,9 +1007,9 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrorMsg: "while loading tenant from context: cannot read tenant from context",
 		},
 		{
-			Name:                     "Error when checking for formation assignment existence",
-			Context:                  ctxWithTenant,
-			FormationAssignmentInput: faInput,
+			Name:                "Error when checking for formation assignment existence",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(false, testErr).Once()
@@ -1033,9 +1018,9 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrorMsg: fmt.Sprintf("while ensuring formation assignment with ID: %q exists", TestID),
 		},
 		{
-			Name:                     "Error when formation assignment does not exists",
-			Context:                  ctxWithTenant,
-			FormationAssignmentInput: faInput,
+			Name:                "Error when formation assignment does not exists",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(false, nil).Once()
@@ -1044,9 +1029,9 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrorMsg: "Object not found",
 		},
 		{
-			Name:                     "Error when updating formation assignment",
-			Context:                  ctxWithTenant,
-			FormationAssignmentInput: faInput,
+			Name:                "Error when updating formation assignment",
+			Context:             ctxWithTenant,
+			FormationAssignment: fa,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
@@ -1067,7 +1052,7 @@ func TestService_Update(t *testing.T) {
 			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
 
 			// WHEN
-			err := svc.Update(testCase.Context, TestID, testCase.FormationAssignmentInput)
+			err := svc.Update(testCase.Context, TestID, testCase.FormationAssignment)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -1096,7 +1081,6 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(nil).Once()
 				return repo
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -1154,7 +1138,6 @@ func TestService_DeleteAssignmentsForObjectID(t *testing.T) {
 				repo.On("DeleteAssignmentsForObjectID", ctxWithTenant, TestTenantID, TestID, TestSource).Return(nil).Once()
 				return repo
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -1212,7 +1195,6 @@ func TestService_Exists(t *testing.T) {
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
 				return repo
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:             "Error when loading tenant from context",
@@ -1330,8 +1312,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   formationAssignmentsForApplication,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: formationAssignmentsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for entity that is being unassigned asynchronously",
@@ -1371,8 +1352,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   formationAssignmentsForApplication,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: formationAssignmentsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for application and itself",
@@ -1411,8 +1391,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   formationAssignmentsForApplication,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: formationAssignmentsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime and itself",
@@ -1451,8 +1430,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput:   formationAssignmentsForRuntime,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: formationAssignmentsForRuntime,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and itself",
@@ -1492,8 +1470,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: "random"}, nil)
 				return repo
 			},
-			ExpectedOutput:   formationAssignmentsForRuntimeContext,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: formationAssignmentsForRuntimeContext,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and it's parent runtime",
@@ -1533,8 +1510,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: runtimes[0].ID}, nil)
 				return repo
 			},
-			ExpectedOutput:   formationAssignmentsForRuntimeContextWithParentInTheFormation,
-			ExpectedErrorMsg: "",
+			ExpectedOutput: formationAssignmentsForRuntimeContextWithParentInTheFormation,
 		},
 		{
 			Name:                    "Error while listing applications",
@@ -1882,7 +1858,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					Operation: assignOperation,
 				},
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:                 "Success when match assignment for application when webhook comes from applicationTemplate",
@@ -1922,7 +1897,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					Operation: assignOperation,
 				},
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:                 "Does not process assignments multiple times",
@@ -1948,7 +1922,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					Operation: assignOperation,
 				},
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:                           "Success when match assignment for runtimeContext",
@@ -1988,7 +1961,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					Operation: assignOperation,
 				},
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:                 "Success when no matching assignment for source found",
@@ -2033,7 +2005,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					Operation: assignOperation,
 				},
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:                 "Success when no match assignment for target found",
@@ -2072,7 +2043,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					Operation: assignOperation,
 				},
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:                 "Fails on executing operation",
@@ -2125,6 +2095,25 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		TargetType:  model.FormationAssignmentTypeApplication,
 		FormationID: formation.ID,
 		State:       string(model.DeletingAssignmentState),
+	}
+	marshaledErrTechnicalError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:   testErr.Error(),
+			ErrorCode: 1,
+		},
+	})
+	require.NoError(t, err)
+
+	createErrorStateAssignment := &model.FormationAssignment{
+		ID:          TestID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  model.FormationAssignmentTypeApplication,
+		Target:      TestTarget,
+		TargetType:  model.FormationAssignmentTypeApplication,
+		FormationID: formation.ID,
+		State:       string(model.CreateErrorAssignmentState),
+		Value:       marshaledErrTechnicalError,
 	}
 	initialStateAssignment := &model.FormationAssignment{
 		ID:          TestID,
@@ -2240,15 +2229,18 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		CorrelationID: "",
 	}
 
+	extendedFaNotificationInitialReq := fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)
+	extendedFaNotificationInitialReqAsync := fixExtendedFormationAssignmentNotificationReq(reqWebhookWithAsyncCallbackMode, initialStateWebhookAssignment)
+
 	testCases := []struct {
 		Name                                 string
 		Context                              context.Context
 		FormationAssignmentRepo              func() *automock.FormationAssignmentRepository
 		NotificationService                  func() *automock.NotificationService
 		FormationAssignmentPairWithOperation *formationassignment.AssignmentMappingPairWithOperation
-		LabelService                         func() *automock.LabelService
 		FormationRepo                        func() *automock.FormationRepository
-		FAUpdater                            func() *automock.StatusService
+		FAStatusService                      func() *automock.StatusService
+		FANotificationSvc                    func() *automock.FaNotificationService
 		ExpectedIsReverseProcessed           bool
 		ExpectedErrorMsg                     string
 	}{
@@ -2265,7 +2257,6 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				},
 				Operation: model.AssignFormation,
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "Success: ready state assignment with no request",
@@ -2274,18 +2265,18 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
 						Request:             nil,
-						FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment),
+						FormationAssignment: initialStateAssignment.Clone(),
 					},
 					ReverseAssignment: nil,
 				},
 				Operation: model.AssignFormation,
 			},
-			FAUpdater: func() *automock.StatusService {
-				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, readyStateAssignment, assignOperation).Return(nil).Once()
-				return updater
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateAssignment).Return(nil).Once()
+				return repo
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "Error when there is no request and update fails",
@@ -2294,16 +2285,17 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
 						Request:             nil,
-						FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment),
+						FormationAssignment: initialStateAssignment.Clone(),
 					},
 					ReverseAssignment: nil,
 				},
 				Operation: model.AssignFormation,
 			},
-			FAUpdater: func() *automock.StatusService {
-				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, readyStateAssignment, assignOperation).Return(testErr).Once()
-				return updater
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateAssignment).Return(testErr).Once()
+				return repo
 			},
 			ExpectedErrorMsg: testErr.Error(),
 		},
@@ -2312,12 +2304,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment.Clone(), nil).Once()
 				return repo
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
@@ -2325,27 +2317,18 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment.Clone(), reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, configPendingStateAssignment, assignOperation).Return(nil).Once()
+				updater.On("UpdateWithConstraints", ctxWithTenant, configPendingStateAssignment, assignOperation).Return(nil).Once()
 				return updater
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     "",
 		},
 		{
 			Name:    "Success: incomplete state assignment",
@@ -2357,34 +2340,25 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, configPendingStateAssignment, assignOperation).Return(nil).Once()
+				updater.On("UpdateWithConstraints", ctxWithTenant, configPendingStateAssignment, assignOperation).Return(nil).Once()
 				return updater
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     "",
 		},
 		{
 			Name:    "Success: do not update assignment if already in ready state",
@@ -2396,61 +2370,29 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     "",
 		},
 		{
-			Name:    "Error: can't get object subtype",
+			Name:    "Error: can't generate formation assignment extended notification",
 			Context: ctxWithTenant,
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(nil, testErr).Once()
-				return lblSvc
-			},
-			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     testErr.Error(),
-		},
-		{
-			Name:    "Error: can't get formation",
-			Context: ctxWithTenant,
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(nil, testErr).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment.Clone(), reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(nil, testErr).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
 			ExpectedErrorMsg:                     testErr.Error(),
@@ -2460,7 +2402,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
@@ -2468,19 +2410,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
 			ExpectedErrorMsg:                     fmt.Sprintf("The provided state in the response %q is not valid.", invalidState),
@@ -2498,19 +2432,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(deletingStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(reqWebhook, convertFormationAssignmentFromModel(deletingStateAssignment)), nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(deletingStateAssignment, reqWebhook),
 			ExpectedErrorMsg:                     fmt.Sprintf("The provided state in the response %q is not valid.", initialState),
@@ -2520,7 +2446,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
@@ -2528,19 +2454,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
 			ExpectedErrorMsg:                     fmt.Sprintf("The provided state in the response %q is not valid.", deleteErrorState),
@@ -2555,26 +2473,18 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
 			ExpectedErrorMsg:                     testErr.Error(),
@@ -2589,34 +2499,25 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &ok,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, readyStateAssignment, assignOperation).Return(nil).Once()
+				updater.On("UpdateWithConstraints", ctxWithTenant, readyStateAssignment, assignOperation).Return(nil).Once()
 				return updater
 			},
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "Error: incomplete state assignment fails on update",
@@ -2628,30 +2529,22 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, configPendingStateAssignment, assignOperation).Return(testErr).Once()
+				updater.On("UpdateWithConstraints", ctxWithTenant, configPendingStateAssignment, assignOperation).Return(testErr).Once()
 				return updater
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2662,62 +2555,45 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					ActualStatusCode: &incomplete,
 					Error:            str.Ptr(testErr.Error()),
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("SetAssignmentToErrorState", ctxWithTenant, initialStateAssignment, testErr.Error(), formationassignment.AssignmentErrorCode(2), model.CreateErrorAssignmentState, assignOperation).Return(nil).Once()
+				updater.On("SetAssignmentToErrorStateWithConstraints", ctxWithTenant, initialStateAssignment, testErr.Error(), formationassignment.AssignmentErrorCode(2), model.CreateErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     "",
 		},
 		{
 			Name:    "Error with error from response while updating formation assignment",
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					ActualStatusCode: &incomplete,
 					Error:            str.Ptr(testErr.Error()),
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("SetAssignmentToErrorState", ctxWithTenant, initialStateAssignment, testErr.Error(), formationassignment.AssignmentErrorCode(2), model.CreateErrorAssignmentState, assignOperation).Return(testErr).Once()
+				updater.On("SetAssignmentToErrorStateWithConstraints", ctxWithTenant, initialStateAssignment, testErr.Error(), formationassignment.AssignmentErrorCode(2), model.CreateErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2726,59 +2602,44 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "Success while sending notification failing to update state to create error",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, createErrorStateAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(nil, testErr).Once()
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(nil, testErr).Once()
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
-				updater := &automock.StatusService{}
-				updater.On("SetAssignmentToErrorState", ctxWithTenant, initialStateAssignment, testErr.Error(), formationassignment.AssignmentErrorCode(1), model.CreateErrorAssignmentState, assignOperation).Return(nil).Once()
-				return updater
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     "",
 		},
 		{
 			Name:    "Error while sending notification while updating state to create error",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, createErrorStateAssignment).Return(testErr).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(nil, testErr).Once()
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(nil, testErr).Once()
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
-				updater := &automock.StatusService{}
-				updater.On("SetAssignmentToErrorState", ctxWithTenant, initialStateAssignment, testErr.Error(), formationassignment.AssignmentErrorCode(1), model.CreateErrorAssignmentState, assignOperation).Return(testErr).Once()
-				return updater
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
 			ExpectedErrorMsg:                     testErr.Error(),
@@ -2786,67 +2647,52 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		{
 			Name:    "Success: webhook has mode ASYNC_CALLBACK",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(nil).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhookWithAsyncCallbackMode, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReqAsync).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &ok,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
-				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, initialStateAssignment, assignOperation).Return(nil).Once()
-				return updater
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
-			ExpectedErrorMsg:                     "",
 		},
 		{
 			Name:    "ERROR: webhook has mode ASYNC_CALLBACK but fails on update",
 			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(testErr).Once()
+				return repo
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhookWithAsyncCallbackMode, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReqAsync).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &ok,
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
-			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
-				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, initialStateAssignment, assignOperation).Return(testErr).Once()
-				return updater
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
+				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
 			ExpectedErrorMsg:                     testErr.Error(),
@@ -2861,7 +2707,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialReq).Return(&webhook.Response{
 					Config:               &config,
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
@@ -2869,27 +2715,18 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			LabelService: func() *automock.LabelService {
-				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
-					Key:        appTypeLabelKey,
-					ObjectID:   TestTarget,
-					ObjectType: model.ApplicationLabelableObject,
-				}).Return(appLbl, nil).Once()
-				return lblSvc
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				return faNotificationSvc
 			},
-			FormationRepo: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
-				updater.On("Update", ctxWithTenant, configAssignment, assignOperation).Return(nil).Once()
+				updater.On("UpdateWithConstraints", ctxWithTenant, configAssignment, assignOperation).Return(nil).Once()
 				return updater
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
-			ExpectedErrorMsg:                     "",
 		},
 	}
 
@@ -2903,20 +2740,20 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			if testCase.NotificationService != nil {
 				notificationSvc = testCase.NotificationService()
 			}
-			lblSvc := &automock.LabelService{}
-			if testCase.LabelService != nil {
-				lblSvc = testCase.LabelService()
-			}
 			formationRepo := &automock.FormationRepository{}
 			if testCase.FormationRepo != nil {
 				formationRepo = testCase.FormationRepo()
 			}
-			faUpdater := &automock.StatusService{}
-			if testCase.FAUpdater != nil {
-				faUpdater = testCase.FAUpdater()
+			faStatusService := &automock.StatusService{}
+			if testCase.FAStatusService != nil {
+				faStatusService = testCase.FAStatusService()
+			}
+			faNotificationSvc := &automock.FaNotificationService{}
+			if testCase.FANotificationSvc != nil {
+				faNotificationSvc = testCase.FANotificationSvc()
 			}
 
-			svc := formationassignment.NewService(repo, nil, nil, nil, nil, nil, notificationSvc, lblSvc, formationRepo, faUpdater, rtmTypeLabelKey, appTypeLabelKey)
+			svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, nil, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
 			///WHEN
 			isReverseProcessed, err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPairWithOperation)
@@ -2930,7 +2767,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			}
 
 			//// THEN
-			mock.AssertExpectationsForObjects(t, repo, notificationSvc, lblSvc, formationRepo, faUpdater)
+			mock.AssertExpectationsForObjects(t, repo, notificationSvc, formationRepo, faStatusService, faNotificationSvc)
 		})
 	}
 
@@ -2980,7 +2817,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 				Assignment: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             mappingRequest,
-					FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment),
+					FormationAssignment: initialStateAssignment,
 				},
 				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             reverseMappingRequest,
@@ -3016,18 +2853,25 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Times(2)
 
-		faUpdater := &automock.StatusService{}
-		faUpdater.On("Update", ctxWithTenant, configAssignment, assignOperation).Return(nil).Once()
-		faUpdater.On("Update", ctxWithTenant, reverseConfigAssignment, assignOperation).Return(nil).Once()
+		faStatusService := &automock.StatusService{}
+		faStatusService.On("UpdateWithConstraints", ctxWithTenant, configAssignment, assignOperation).Return(nil).Once()
+		faStatusService.On("UpdateWithConstraints", ctxWithTenant, reverseConfigAssignment, assignOperation).Return(nil).Once()
 
-		svc := formationassignment.NewService(repo, nil, nil, nil, nil, nil, notificationSvc, lblSvc, formationRepo, faUpdater, rtmTypeLabelKey, appTypeLabelKey)
+		faNotificationSvc := &automock.FaNotificationService{}
+		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
+
+		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configAssignment, reverseMappingRequest, mappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
+
+		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, lblSvc, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
 		///WHEN
 		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
 		require.True(t, isReverseProcessed)
 
-		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, faUpdater)
+		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, faStatusService, faNotificationSvc)
 	})
 	t.Run("error when updating to database in recursion call", func(t *testing.T) {
 		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
@@ -3075,7 +2919,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 				Assignment: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             mappingRequest,
-					FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment),
+					FormationAssignment: initialStateAssignment,
 				},
 				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             reverseMappingRequest,
@@ -3105,11 +2949,18 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Times(2)
 
-		faUpdater := &automock.StatusService{}
-		faUpdater.On("Update", ctxWithTenant, configAssignment, assignOperation).Return(nil).Once()
-		faUpdater.On("Update", ctxWithTenant, reverseConfigAssignment, assignOperation).Return(testErr).Once()
+		faStatusService := &automock.StatusService{}
+		faStatusService.On("UpdateWithConstraints", ctxWithTenant, configAssignment, assignOperation).Return(nil).Once()
+		faStatusService.On("UpdateWithConstraints", ctxWithTenant, reverseConfigAssignment, assignOperation).Return(testErr).Once()
 
-		svc := formationassignment.NewService(repo, nil, nil, nil, nil, nil, notificationSvc, lblSvc, formationRepo, faUpdater, rtmTypeLabelKey, appTypeLabelKey)
+		faNotificationSvc := &automock.FaNotificationService{}
+		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
+
+		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configAssignment, reverseMappingRequest, mappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
+
+		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, lblSvc, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
 		///WHEN
 		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
@@ -3117,7 +2968,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		require.Contains(t, err.Error(), testErr.Error())
 		require.True(t, isReverseProcessed)
 
-		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, faUpdater)
+		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, faStatusService, faNotificationSvc)
 	})
 	t.Run("success when reaching the maximum depth limit with two config pending assignments that return unfinished configurations", func(t *testing.T) {
 		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
@@ -3185,7 +3036,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 				Assignment: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             mappingRequest,
-					FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment),
+					FormationAssignment: initialStateAssignment.Clone(),
 				},
 				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             reverseMappingRequest,
@@ -3219,18 +3070,34 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil)
 
-		faUpdater := &automock.StatusService{}
-		faUpdater.On("Update", ctxWithTenant, configPendingStateWithConfigAssignment, assignOperation).Return(nil)
-		faUpdater.On("Update", ctxWithTenant, reverseConfigPendingAssignment, assignOperation).Return(nil)
+		faStatusService := &automock.StatusService{}
+		faStatusService.On("UpdateWithConstraints", ctxWithTenant, configPendingStateWithConfigAssignment, assignOperation).Return(nil)
+		faStatusService.On("UpdateWithConstraints", ctxWithTenant, reverseConfigPendingAssignment, assignOperation).Return(nil)
 
-		svc := formationassignment.NewService(repo, nil, nil, nil, nil, nil, notificationSvc, lblSvc, formationRepo, faUpdater, rtmTypeLabelKey, appTypeLabelKey)
+		faNotificationSvc := &automock.FaNotificationService{}
+		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFA, nil)
+
+		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configAssignment, reverseMappingRequest, mappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil)
+
+		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configPendingStateWithConfigAssignment, reverseMappingRequest, mappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil)
+
+		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(configPendingStateWithConfigAssignment, reverseConfigPendingAssignment, mappingRequest, reverseMappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotificationSecond, nil)
+
+		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseConfigPendingAssignment, configPendingStateWithConfigAssignment, reverseMappingRequest, mappingRequest)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotificationThird, nil)
+
+		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, lblSvc, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
 		///WHEN
 		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
 		require.True(t, isReverseProcessed)
 
-		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, faUpdater)
+		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, faStatusService)
 	})
 }
 
@@ -3289,7 +3156,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		LabelService                                func() *automock.LabelService
 		FormationRepo                               func() *automock.FormationRepository
 		RuntimeContextRepo                          func() *automock.RuntimeContextRepository
-		FAUpdater                                   func() *automock.StatusService
+		FAStatusService                             func() *automock.StatusService
 		FormationAssignmentMappingPairWithOperation *formationassignment.AssignmentMappingPairWithOperation
 		ExpectedErrorMsg                            string
 	}{
@@ -3302,7 +3169,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return repo
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithID(TestID),
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "success delete assignment when response code matches success status code",
@@ -3332,7 +3198,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return formationRepo
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID, req),
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "success delete assignment when there is a READY state in response",
@@ -3362,7 +3227,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return formationRepo
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "sets assignment in deleting state when webhook is async callback",
@@ -3386,13 +3250,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState, assignOperation).Return(nil).Once()
 				return updater
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
-			ExpectedErrorMsg: "",
 		},
 		{
 			Name:    "incomplete response code matches actual response code",
@@ -3416,7 +3279,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "Error while deleting assignment: config propagation is not supported on unassign notifications", formationassignment.AssignmentErrorCode(2), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
@@ -3498,7 +3361,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3528,7 +3391,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), testErr.Error(), formationassignment.AssignmentErrorCode(2), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
@@ -3541,14 +3404,14 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, convertFormationAssignmentFromModel(configAssignmentWithTenantAndID))).Return(successResponse, nil).Once()
 				return svc
 			},
 			LabelService: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
 				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
 					Key:        appTypeLabelKey,
-					ObjectID:   target,
+					ObjectID:   TestTarget,
 					ObjectType: model.ApplicationLabelableObject,
 				}).Return(appLbl, nil).Once()
 				return lblSvc
@@ -3558,8 +3421,8 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.FormationAssignmentUpdater {
-				updater := &automock.FormationAssignmentUpdater{}
+			FAStatusService: func() *automock.StatusService {
+				updater := &automock.StatusService{}
 				updater.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState, assignOperation).Return(notFoundError).Once()
 				return updater
 			},
@@ -3573,7 +3436,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
 				return repo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), fmt.Sprintf("while deleting formation assignment with ID: %q: Test Error", TestID), formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
@@ -3589,7 +3452,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
 				return repo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), fmt.Sprintf("while deleting formation assignment with ID: %q: Test Error", TestID), formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3629,7 +3492,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(nil, testErr).Once()
 				return svc
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), testErr.Error(), formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
@@ -3659,7 +3522,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(nil, testErr).Once()
 				return svc
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), testErr.Error(), formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3689,7 +3552,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "Error while deleting assignment: config propagation is not supported on unassign notifications", formationassignment.AssignmentErrorCode(2), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3719,7 +3582,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), testErr.Error(), formationassignment.AssignmentErrorCode(2), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3754,7 +3617,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "error while deleting assignment", formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(nil).Once()
 				return updater
@@ -3772,14 +3635,14 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, convertFormationAssignmentFromModel(configAssignmentWithTenantAndID))).Return(successResponse, nil).Once()
 				return svc
 			},
 			LabelService: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
 				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
 					Key:        appTypeLabelKey,
-					ObjectID:   target,
+					ObjectID:   TestTarget,
 					ObjectType: model.ApplicationLabelableObject,
 				}).Return(appLbl, nil).Once()
 				return lblSvc
@@ -3818,7 +3681,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "error while deleting assignment", formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3836,14 +3699,14 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, convertFormationAssignmentFromModel(configAssignmentWithTenantAndID))).Return(successResponse, nil).Once()
 				return svc
 			},
 			LabelService: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
 				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
 					Key:        appTypeLabelKey,
-					ObjectID:   target,
+					ObjectID:   TestTarget,
 					ObjectType: model.ApplicationLabelableObject,
 				}).Return(appLbl, nil).Once()
 				return lblSvc
@@ -3853,8 +3716,8 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.FormationAssignmentUpdater {
-				updater := &automock.FormationAssignmentUpdater{}
+			FAStatusService: func() *automock.StatusService {
+				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "error while deleting assignment", formationassignment.AssignmentErrorCode(1), model.DeleteErrorAssignmentState, assignOperation).Return(notFoundError).Once()
 				return updater
 			},
@@ -3890,14 +3753,14 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(deleteErrorResponseWithStateInBody, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, convertFormationAssignmentFromModel(configAssignmentWithTenantAndID))).Return(deleteErrorResponseWithStateInBody, nil).Once()
 				return svc
 			},
 			LabelService: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
 				lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
 					Key:        appTypeLabelKey,
-					ObjectID:   target,
+					ObjectID:   TestTarget,
 					ObjectType: model.ApplicationLabelableObject,
 				}).Return(appLbl, nil).Once()
 				return lblSvc
@@ -3907,8 +3770,8 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.FormationAssignmentUpdater {
-				updater := &automock.FormationAssignmentUpdater{}
+			FAStatusService: func() *automock.StatusService {
+				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "", formationassignment.AssignmentErrorCode(2), model.DeleteErrorAssignmentState, assignOperation).Return(notFoundError).Once()
 				return updater
 			},
@@ -3936,7 +3799,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return formationRepo
 			},
-			FAUpdater: func() *automock.StatusService {
+			FAStatusService: func() *automock.StatusService {
 				updater := &automock.StatusService{}
 				updater.On("SetAssignmentToErrorState", ctxWithTenant, configAssignmentWithTenantAndID.Clone(), "", formationassignment.AssignmentErrorCode(2), model.DeleteErrorAssignmentState, assignOperation).Return(testErr).Once()
 				return updater
@@ -3969,11 +3832,11 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				rtmCtxRepo = testCase.RuntimeContextRepo()
 			}
 			updater := &automock.StatusService{}
-			if testCase.FAUpdater != nil {
-				updater = testCase.FAUpdater()
+			if testCase.FAStatusService != nil {
+				updater = testCase.FAStatusService()
 			}
 
-			svc := formationassignment.NewService(repo, nil, nil, nil, rtmCtxRepo, nil, notificationSvc, lblSvc, formationRepo, updater, rtmTypeLabelKey, appTypeLabelKey)
+			svc := formationassignment.NewService(repo, nil, nil, nil, rtmCtxRepo, notificationSvc, nil, lblSvc, formationRepo, updater, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
 			isReverseProcessed, err := svc.CleanupFormationAssignment(testCase.Context, testCase.FormationAssignmentMappingPairWithOperation)
