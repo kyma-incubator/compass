@@ -125,20 +125,20 @@ func (fau *formationAssignmentUpdaterService) prepareDetailsForNotificationStatu
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
-	// todo::: temp workaround
-	var resourceType model.ResourceType
-	if operation == model.AssignFormation || operation == model.UnassignFormation {
-		resourceType, err = fromFormationAssignmentTypeToResourceType(fa.TargetType)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		resourceType = model.FormationResourceType
-	}
+	//// todo::: temp workaround
+	//var resourceType model.ResourceType
+	//if operation == model.AssignFormation || operation == model.UnassignFormation {
+	//	resourceType, err = fromFormationAssignmentTypeToResourceType(fa.TargetType)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//} else {
+	//	resourceType = model.FormationResourceType
+	//}
 
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               resourceType,
-		ResourceSubtype:            "SAP Cloud for Customer",
+		ResourceType:               model.FormationResourceType,
+		ResourceSubtype:            template.Name,
 		Operation:                  operation,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,

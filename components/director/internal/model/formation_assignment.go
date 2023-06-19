@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
@@ -111,4 +112,9 @@ func (f *FormationAssignment) Clone() *FormationAssignment {
 		State:       f.State,
 		Value:       f.Value,
 	}
+}
+
+// GetAddress todo::: add go doc
+func (f *FormationAssignment) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(f))
 }

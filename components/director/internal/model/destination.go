@@ -19,7 +19,7 @@ type DestinationInput struct {
 	XSystemBaseURL    string `json:"x-system-base-url"`
 }
 
-// Destination todo::: add godoc
+// Destination is an internal model representation of the destination entity
 type Destination struct {
 	ID                    string                      `json:"id"`
 	Name                  string                      `json:"name"`

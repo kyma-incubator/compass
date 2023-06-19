@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -31,9 +34,13 @@ type automaticScenarioAssignmentService interface {
 //go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
-	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
+	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (statusCode int, err error)
+	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error)
+	CreateCertificateInDestinationService(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (defaultCertData destinationcreator.CertificateResponse, defaultStatusCode int, err error)
 	DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error
 	DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error
+	DeleteCertificateFromDestinationService(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) error
+	EnrichAssignmentConfigWithCertificateData(assignmentConfig string, certData destinationcreator.CertificateResponse, destinationIndex int) (string, error)
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -70,6 +77,12 @@ type formationTemplateRepo interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 }
 
+// FormationAssignmentRepository represents the Formation Assignment repository layer
+//go:generate mockery --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentRepository interface {
+	Update(ctx context.Context, model *model.FormationAssignment) error
+}
+
 // OperatorInput represents the input needed by the constraint operator
 type OperatorInput interface{}
 
@@ -84,6 +97,7 @@ type OperatorInputConstructor func() OperatorInput
 
 // ConstraintEngine determines which constraints are applicable to the reached join point and enforces them
 type ConstraintEngine struct {
+	transact                  persistence.Transactioner
 	constraintSvc             formationConstraintSvc
 	tenantSvc                 tenantService
 	asaSvc                    automaticScenarioAssignmentService
@@ -94,6 +108,7 @@ type ConstraintEngine struct {
 	applicationRepository     applicationRepository
 	runtimeContextRepo        runtimeContextRepo
 	formationTemplateRepo     formationTemplateRepo
+	formationAssignmentRepo   formationAssignmentRepository
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
 	runtimeTypeLabelKey       string
@@ -101,18 +116,20 @@ type ConstraintEngine struct {
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	c := &ConstraintEngine{
-		constraintSvc:         constraintSvc,
-		tenantSvc:             tenantSvc,
-		asaSvc:                asaSvc,
-		destinationSvc:        destinationSvc,
-		formationRepo:         formationRepo,
-		labelRepo:             labelRepo,
-		labelService:          labelService,
-		applicationRepository: applicationRepository,
-		runtimeContextRepo:    runtimeContextRepo,
-		formationTemplateRepo: formationTemplateRepo,
+		transact:                transact,
+		constraintSvc:           constraintSvc,
+		tenantSvc:               tenantSvc,
+		asaSvc:                  asaSvc,
+		destinationSvc:          destinationSvc,
+		formationRepo:           formationRepo,
+		labelRepo:               labelRepo,
+		labelService:            labelService,
+		applicationRepository:   applicationRepository,
+		runtimeContextRepo:      runtimeContextRepo,
+		formationTemplateRepo:   formationTemplateRepo,
+		formationAssignmentRepo: formationAssignmentRepo,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator:            NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:              NewDoesNotContainResourceOfSubtypeInput,

@@ -297,12 +297,23 @@ export APP_PAIRING_ADAPTER_CM_NAMESPACE="default"
 export APP_PAIRING_ADAPTER_CM_KEY="config.json"
 export APP_PAIRING_ADAPTER_WATCHER_ID="pairing-adapter-watcher-id"
 
-# Destination Properties
-export APP_DESTINATION_BASE_URL="https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
-export APP_DESTINATION_PATH="/regions/{region}/subaccounts/{subaccountId}/destinations"
-export APP_DESTINATION_REGION_PARAMETER="region"
-export APP_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
-export APP_DESTINATION_NAME_PARAMETER="destinationName"
+# Destination Creator Service Configuration
+export APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY="correlationIds"
+
+export APP_DESTINATION_CREATOR_DESTINATION_BASE_URL="https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
+export APP_DESTINATION_CREATOR_DESTINATION_PATH="/regions/{region}/subaccounts/{subaccountId}/destinations"
+export APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER="region"
+export APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
+export APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER="destinationName"
+
+export APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL="https://cert.staging.extensions.ondemand.com/destinationservice/certificate/api/v1" # todo::: revert to local value
+export APP_DESTINATION_CREATOR_CERTIFICATE_PATH="/regions/{region}/subaccounts/{subaccountId}/certificates"
+export APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER="region"
+export APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER="subaccountId"
+export APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER="certificateName"
+export APP_DESTINATION_CREATOR_CERTIFICATE_FILE_NAME_KEY="fileName"
+export APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY="commonName"
+export APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY="certificateChain"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig

@@ -313,12 +313,23 @@ global:
     applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
-    destination:
-      baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
-      path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
-      regionParam: "region"
-      subaccountIDParam: "subaccountId"
-      nameParam: "destinationName"
+    destinationCreator:
+      correlationIDsKey: "correlationIds"
+      destinationAPI:
+        baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
+        path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
+        regionParam: "region"
+        subaccountIDParam: "subaccountId"
+        nameParam: "destinationName"
+      certificateAPI:
+        baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/certificate/api/v1" # todo::: revert to local value
+        path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
+        regionParam: "region"
+        subaccountIDParam: "subaccountId"
+        nameParam: "certificateName"
+        fileNameKey: "fileName"
+        commonNameKey: "commonName"
+        certChainKey: "certificateChain"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
