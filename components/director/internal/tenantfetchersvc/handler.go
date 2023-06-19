@@ -38,7 +38,8 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"` // FIX ROUTE
+	TenantOnDemandHandlerEndpoint2     string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{tenantId}"`                  // FIX ROUTE
 	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
 	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
 	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
@@ -107,6 +108,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 	ctx := request.Context()
 
 	vars := mux.Vars(request)
+	log.C(ctx).Infof("fetch tenant req params: %v", vars)
 	tenantID, ok := vars[h.config.TenantPathParam]
 	if !ok || len(tenantID) == 0 {
 		log.C(ctx).Error("Tenant path parameter is missing from request")
@@ -114,6 +116,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 		return
 	}
 
+	// TODO
 	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
 	if !ok || len(parentTenantID) == 0 {
 		log.C(ctx).Error("Parent tenant path parameter is missing from request")

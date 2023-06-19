@@ -123,7 +123,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
+	// hydrator
 	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
 	if err != nil && apperrors.IsNotFoundError(err) {
 		tx, err = r.fetchTenant(tx, externalID)
@@ -326,6 +326,8 @@ func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) 
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	//TODO fix this
 	if err := r.fetcher.FetchOnDemand(externalID, ""); err != nil { // will always fail
 		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
 	}

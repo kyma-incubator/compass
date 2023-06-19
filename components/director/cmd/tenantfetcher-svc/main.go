@@ -317,6 +317,7 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, han
 	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", handlerCfg.TenantOnDemandHandlerEndpoint)
 	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(subaccountSynchronizer, handlerCfg)
 	router.HandleFunc(handlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+	router.HandleFunc(handlerCfg.TenantOnDemandHandlerEndpoint2, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
