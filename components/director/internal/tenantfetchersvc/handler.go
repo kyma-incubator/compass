@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -119,14 +120,20 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 	// TODO
 	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
 	if !ok || len(parentTenantID) == 0 {
-		log.C(ctx).Error("Parent tenant path parameter is missing from request")
-		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
-		return
+		//log.C(ctx).Error("Parent tenant path parameter is missing from request")
+		//http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
+		//return
+		parentTenantID = ""
 	}
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
 	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
+		if strings.Contains(err.Error(), "parent is empty") {
+			log.C(ctx).Error("kalo failed %v", err)
+			http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
+			return
+		}
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return

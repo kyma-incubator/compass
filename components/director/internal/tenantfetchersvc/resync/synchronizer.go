@@ -221,6 +221,10 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return err
 	}
 
+	if fetchedTenant == nil && parentTenantID == "" {
+		// fail with 400
+		return fmt.Errorf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
+	}
 	if fetchedTenant == nil {
 		log.C(ctx).Infof("Tenant with ID %s was not found, it will be stored lazily", tenantID)
 		fetchedTenant := model.BusinessTenantMappingInput{
