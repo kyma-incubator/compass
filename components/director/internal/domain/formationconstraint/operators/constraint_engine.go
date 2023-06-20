@@ -2,6 +2,7 @@ package operators
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
@@ -12,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 )
 
@@ -33,14 +33,14 @@ type automaticScenarioAssignmentService interface {
 
 //go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationService interface {
-	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (statusCode int, err error)
-	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (statusCode int, err error)
-	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error)
-	CreateCertificateInDestinationService(ctx context.Context, destinationDetails Destination, formationAssignment *webhook.FormationAssignment) (defaultCertData destinationcreator.CertificateResponse, defaultStatusCode int, err error)
-	DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *webhook.FormationAssignment) error
-	DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error
-	DeleteCertificateFromDestinationService(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) error
-	EnrichAssignmentConfigWithCertificateData(assignmentConfig string, certData destinationcreator.CertificateResponse, destinationIndex int) (string, error)
+	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment) (statusCode int, err error)
+	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (statusCode int, err error)
+	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error)
+	CreateCertificateInDestinationService(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment) (defaultCertData destinationcreator.CertificateResponse, defaultStatusCode int, err error)
+	DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *model.FormationAssignment) error
+	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error
+	DeleteCertificateFromDestinationService(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error
+	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData destinationcreator.CertificateResponse, destinationIndex int) (json.RawMessage, error)
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string

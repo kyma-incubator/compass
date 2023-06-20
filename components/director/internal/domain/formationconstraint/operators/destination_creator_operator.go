@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime/debug"
-	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -49,8 +46,8 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Operation)
 
-	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.SendNotificationOperation { // todo::: we should check for READY state and use notification-status-returned location when Lacho's PR is finished
-		log.C(ctx).Infof("Handling %s operation for formation with ID: %q", model.UnassignFormation, di.FormationAssignment.ID)
+	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && di.FormationAssignment != nil && di.FormationAssignment.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, di.FormationAssignment.ID)
 		if di.FormationAssignment == nil {
 			return false, errors.New("The operator's formation assignment cannot be nil")
 		}
@@ -67,45 +64,30 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	if di.FormationAssignment != nil && di.FormationAssignment.Value != "" && di.Location.OperationName == model.NotificationStatusReturned {
-		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
+	if di.Operation == model.AssignFormation {
+		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.AssignFormation, di.FormationAssignment.ID)
 
-		var assignmentConfig Configuration
-		if err := json.Unmarshal([]byte(di.FormationAssignment.Value), &assignmentConfig); err != nil {
-			return false, errors.Wrapf(err, "while unmarshaling tenant mapping response configuration from assignment with ID: %q", di.FormationAssignment.ID)
-		}
+		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
+			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
-		formationAssignment, err := UpdateOperatorAssignmentMemoryAddress(ctx, di.FormationAssignment, di.JointPointDetailsFAMemoryAddress)
-		if err != nil {
-			return false, err
-		}
+			var assignmentConfig Configuration
+			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshaling tenant mapping response configuration from assignment with ID: %q", di.FormationAssignment.ID)
+			}
 
-		log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
-		for _, destDetails := range assignmentConfig.Destinations {
-			statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment)
+			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
 			if err != nil {
-				log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-				if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-					formationAssignment.State = string(model.CreateErrorAssignmentState)
-					if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-						return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-					}
-					return nil
-				}); transactionErr != nil {
-					return false, transactionErr
-				}
-
-				return true, nil
+				return false, err
 			}
 
-			if statusCode == http.StatusConflict {
-				log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-				if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-					log.C(ctx).Warnf("An error occurred while deleting design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
+			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
+			for _, destDetails := range assignmentConfig.Destinations {
+				statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment)
+				if err != nil {
+					log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
 					if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-						formationAssignment.State = string(model.CreateErrorAssignmentState)
-						if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil { // todo::: consider using the new "SetAssignmentToErrorState" func on all places
-							return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+						if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+							return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
 						}
 						return nil
 					}); transactionErr != nil {
@@ -115,35 +97,144 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					return true, nil
 				}
 
-				if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
-					log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-					if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-						formationAssignment.State = string(model.CreateErrorAssignmentState)
-						if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-							return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+				if statusCode == http.StatusConflict {
+					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
+					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
+						log.C(ctx).Warnf("An error occurred while deleting design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
+						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+							}
+							return nil
+						}); transactionErr != nil {
+							return false, transactionErr
 						}
-						return nil
-					}); transactionErr != nil {
-						return false, transactionErr
+
+						return true, nil
 					}
 
-					return true, nil
+					if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
+						log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
+						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+							}
+							return nil
+						}); transactionErr != nil {
+							return false, transactionErr
+						}
+
+						return true, nil
+					}
 				}
 			}
+
+			if assignmentConfig.Credentials.InboundCommunicationDetails != nil {
+				samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
+				if isSAMLDetailsExists := samlAssertionDetails; isSAMLDetailsExists != nil {
+					log.C(ctx).Infof("There is/are %d SAML Assertion destination details in the configuration response", len(samlAssertionDetails.Destinations))
+					for i, destDetails := range samlAssertionDetails.Destinations {
+						certData, statusCode, err := e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment)
+						if err != nil {
+							log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
+							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+								}
+								return nil
+							}); transactionErr != nil {
+								return false, transactionErr
+							}
+
+							return true, nil
+						}
+
+						if statusCode == http.StatusConflict {
+							log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
+							if err := e.destinationSvc.DeleteCertificateFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
+								log.C(ctx).Warnf("An error occurred while deleting SAML assertion certificate with name: %q from the destination service: %v", destDetails.Name, err)
+								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+									if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+										return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+									}
+									return nil
+								}); transactionErr != nil {
+									return false, transactionErr
+								}
+
+								return true, nil
+							}
+
+							if certData, _, err = e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment); err != nil {
+								log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
+								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+									if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+										return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+									}
+									return nil
+								}); transactionErr != nil {
+									return false, transactionErr
+								}
+
+								return true, nil
+							}
+						}
+
+						err = certData.Validate()
+						if err != nil {
+							return false, errors.Wrapf(err, "while validation SAML assertion certificate data")
+						}
+
+						config, err := e.destinationSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
+						if err != nil {
+							return false, err
+						}
+
+						formationAssignment.Value = config
+					}
+				}
+			}
+
+			return true, nil
 		}
 
-		if assignmentConfig.Credentials.InboundCommunicationDetails != nil {
-			samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-			if isSAMLDetailsExists := samlAssertionDetails; isSAMLDetailsExists != nil {
-				log.C(ctx).Infof("There is/are %d SAML Assertion destination details in the configuration response", len(samlAssertionDetails.Destinations))
-				for i, destDetails := range samlAssertionDetails.Destinations {
-					certData, statusCode, err := e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment)
+		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.ReverseFormationAssignment != nil && string(di.ReverseFormationAssignment.Value) != "" && string(di.ReverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
+			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
+
+			var assignmentConfig Configuration
+			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
+			}
+
+			var reverseAssigmentConfig Configuration
+			if err := json.Unmarshal(di.ReverseFormationAssignment.Value, &reverseAssigmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
+			}
+
+			if assignmentConfig.Credentials.InboundCommunicationDetails == nil {
+				return false, errors.New("The inbound communication destination details could not be empty")
+			}
+
+			if reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials == nil {
+				return false, errors.New("The outbound communication credentials could not be empty")
+			}
+
+			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
+			if err != nil {
+				return false, err
+			}
+
+			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
+			basicAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
+			if basicAuthDetails != nil && basicAuthCreds != nil {
+				log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
+				for _, destDetails := range basicAuthDetails.Destinations {
+					statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs)
 					if err != nil {
-						log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
+						log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
 						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							formationAssignment.State = string(model.CreateErrorAssignmentState)
-							if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-								return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
 							}
 							return nil
 						}); transactionErr != nil {
@@ -155,12 +246,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 					if statusCode == http.StatusConflict {
 						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-						if err := e.destinationSvc.DeleteCertificateFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							log.C(ctx).Warnf("An error occurred while deleting SAML assertion certificate with name: %q from the destination service: %v", destDetails.Name, err)
+						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
+							log.C(ctx).Warnf("An error occurred while deleting basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
 							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								formationAssignment.State = string(model.CreateErrorAssignmentState)
-								if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-									return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
 								}
 								return nil
 							}); transactionErr != nil {
@@ -170,12 +260,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 							return true, nil
 						}
 
-						if certData, _, err = e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment); err != nil {
-							log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
+						if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
+							log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
 							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								formationAssignment.State = string(model.CreateErrorAssignmentState)
-								if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-									return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
 								}
 								return nil
 							}); transactionErr != nil {
@@ -185,80 +274,20 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 							return true, nil
 						}
 					}
+				}
+			}
 
-					err = certData.Validate()
+			samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
+			samlAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
+			if samlAssertionDetails != nil && samlAuthCreds != nil {
+				log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
+				for _, destDetails := range samlAssertionDetails.Destinations {
+					statusCode, err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs)
 					if err != nil {
-						return false, errors.Wrapf(err, "while validation SAML assertion certificate data")
-					}
-
-					config, err := e.destinationSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
-					if err != nil {
-						return false, err
-					}
-
-					formationAssignment.Value = config
-				}
-			}
-		}
-
-		return true, nil
-	}
-
-	if di.FormationAssignment != nil && di.FormationAssignment.Value != "" && di.ReverseFormationAssignment != nil && di.ReverseFormationAssignment.Value != "" && di.Location.OperationName == model.SendNotificationOperation {
-		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
-
-		var assignmentConfig Configuration
-		if err := json.Unmarshal([]byte(di.FormationAssignment.Value), &assignmentConfig); err != nil {
-			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
-		}
-
-		var reverseAssigmentConfig Configuration
-		if err := json.Unmarshal([]byte(di.ReverseFormationAssignment.Value), &reverseAssigmentConfig); err != nil {
-			return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
-		}
-
-		if assignmentConfig.Credentials.InboundCommunicationDetails == nil {
-			return false, errors.New("The inbound communication destination details could not be empty")
-		}
-
-		if reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials == nil {
-			return false, errors.New("The outbound communication credentials could not be empty")
-		}
-
-		formationAssignment, err := UpdateOperatorAssignmentMemoryAddress(ctx, di.FormationAssignment, di.JointPointDetailsFAMemoryAddress)
-		if err != nil {
-			return false, err
-		}
-
-		basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
-		basicAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
-		if basicAuthDetails != nil && basicAuthCreds != nil {
-			log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
-			for _, destDetails := range basicAuthDetails.Destinations {
-				statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs)
-				if err != nil {
-					log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-					if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-						formationAssignment.State = string(model.CreateErrorAssignmentState)
-						if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-							return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-						}
-						return nil
-					}); transactionErr != nil {
-						return false, transactionErr
-					}
-
-					return true, nil
-				}
-
-				if statusCode == http.StatusConflict {
-					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-						log.C(ctx).Warnf("An error occurred while deleting basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
+						log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
 						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							formationAssignment.State = string(model.CreateErrorAssignmentState)
-							if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-								return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
 							}
 							return nil
 						}); transactionErr != nil {
@@ -268,138 +297,45 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 						return true, nil
 					}
 
-					if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
-						log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							formationAssignment.State = string(model.CreateErrorAssignmentState)
-							if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-								return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+					if statusCode == http.StatusConflict {
+						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
+						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
+							log.C(ctx).Warnf("An error occurred while deleting SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
+							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+								}
+								return nil
+							}); transactionErr != nil {
+								return false, transactionErr
 							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
+
+							return true, nil
 						}
 
-						return true, nil
+						if _, err = e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
+							log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
+							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
+								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
+									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
+								}
+								return nil
+							}); transactionErr != nil {
+								return false, transactionErr
+							}
+
+							return true, nil
+						}
 					}
 				}
 			}
+
+			return true, nil
 		}
-
-		samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-		samlAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
-		if samlAssertionDetails != nil && samlAuthCreds != nil {
-			log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
-			for _, destDetails := range samlAssertionDetails.Destinations {
-				statusCode, err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs)
-				if err != nil {
-					log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-					if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-						formationAssignment.State = string(model.CreateErrorAssignmentState)
-						if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-							return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-						}
-						return nil
-					}); transactionErr != nil {
-						return false, transactionErr
-					}
-
-					return true, nil
-				}
-
-				if statusCode == http.StatusConflict {
-					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-						log.C(ctx).Warnf("An error occurred while deleting SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							formationAssignment.State = string(model.CreateErrorAssignmentState)
-							if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-								return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
-					}
-
-					if _, err = e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
-						log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							formationAssignment.State = string(model.CreateErrorAssignmentState)
-							if err = e.formationAssignmentRepo.Update(ctx, convertFormationAssignmentFromWebhookToModel(formationAssignment)); err != nil {
-								return errors.Wrapf(err, "while updating formation assignment with ID: %q to state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
-					}
-				}
-			}
-		}
-
-		return true, nil
 	}
 
 	log.C(ctx).Infof("Finished executing operator: %q", DestinationCreatorOperator)
 	return true, nil
-}
-
-// UpdateOperatorAssignmentMemoryAddress todo::: add detailed go doc
-func UpdateOperatorAssignmentMemoryAddress(ctx context.Context, operatorAssignment *webhook.FormationAssignment, jointPointDetailsAssignmentAddress uintptr) (*webhook.FormationAssignment, error) {
-	if jointPointDetailsAssignmentAddress == 0 {
-		return nil, errors.New("The joint point details' assignment address cannot be 0")
-	}
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.C(ctx).WithField(logrus.ErrorKey, err).Panicf("A panic occurred while converting joint point details' assignment address: %d to type: %T", jointPointDetailsAssignmentAddress, &webhook.FormationAssignment{})
-			debug.PrintStack()
-		}
-	}()
-	operatorAssignment = (*webhook.FormationAssignment)(unsafe.Pointer(jointPointDetailsAssignmentAddress))
-
-	return operatorAssignment, nil
-}
-
-func (e *ConstraintEngine) transaction(ctx context.Context, dbCall func(ctxWithTransact context.Context) error) error {
-	tx, err := e.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to begin DB transaction")
-		return err
-	}
-	defer e.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err = dbCall(ctx); err != nil {
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("Failed to commit database transaction")
-		return err
-	}
-	return nil
-}
-
-// todo::: consider using SetToErrorState method instead of "plain" update. In that case most probably this func won't be needed
-func convertFormationAssignmentFromWebhookToModel(formationAssignment *webhook.FormationAssignment) *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:          formationAssignment.ID,
-		FormationID: formationAssignment.FormationID,
-		TenantID:    formationAssignment.TenantID,
-		Source:      formationAssignment.Source,
-		SourceType:  formationAssignment.SourceType,
-		Target:      formationAssignment.Target,
-		TargetType:  formationAssignment.TargetType,
-		State:       formationAssignment.State,
-		Value:       json.RawMessage(formationAssignment.Value),
-	}
 }
 
 // Destination Creator Operator types

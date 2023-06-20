@@ -15,6 +15,7 @@ const (
 	revisionColumn              = "revision"
 	tenantIDColumn              = "tenant_id"
 	formationAssignmentIDColumn = "formation_assignment_id"
+	destinationNameColumn       = "name"
 )
 
 var (
@@ -84,6 +85,7 @@ func (r *repository) DeleteOld(ctx context.Context, latestRevision, tenantID str
 	return r.globalDeleter.DeleteManyGlobal(ctx, conditions)
 }
 
+// CreateDestination todo::: go doc
 func (r *repository) CreateDestination(ctx context.Context, destination *model.Destination) error {
 	if destination == nil {
 		return apperrors.NewInternalError("destination model can not be empty")
@@ -92,6 +94,7 @@ func (r *repository) CreateDestination(ctx context.Context, destination *model.D
 	return r.globalCreator.Create(ctx, r.conv.ToEntity(destination))
 }
 
+// ListByTenantIDAndAssignmentID todo::: go doc
 func (r *repository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error) {
 	log.C(ctx).Infof("Listing destinations by tenant ID: %q and assignment ID: %q from the DB", tenantID, formationAssignmentID)
 	var destCollection EntityCollection
@@ -108,8 +111,9 @@ func (r *repository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID
 	return items, nil
 }
 
-func (r *repository) DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) error {
-	log.C(ctx).Infof("Deleting destination(s) by tenant ID: %q and assignment ID: %q from the DB", tenantID, formationAssignmentID)
-	conditions := repo.Conditions{repo.NewEqualCondition(formationAssignmentIDColumn, formationAssignmentID)}
+// DeleteByDestinationNameAndAssignmentID todo::: go doc
+func (r *repository) DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName, formationAssignmentID, tenantID string) error {
+	log.C(ctx).Infof("Deleting destination(s) by name: %q, assignment ID: %q and tenant ID: %q from the DB", destinationName, tenantID, formationAssignmentID)
+	conditions := repo.Conditions{repo.NewEqualCondition(destinationNameColumn, destinationName), repo.NewEqualCondition(formationAssignmentIDColumn, formationAssignmentID)}
 	return r.deleter.DeleteMany(ctx, resource.Destination, tenantID, conditions)
 }

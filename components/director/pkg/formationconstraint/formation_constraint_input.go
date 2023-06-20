@@ -2,7 +2,6 @@ package formationconstraint
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
 // IsNotAssignedToAnyFormationOfTypeInput input for IsNotAssignedToAnyFormationOfType operator
@@ -39,12 +38,12 @@ type DoNotGenerateFormationAssignmentNotificationInput struct {
 
 // DestinationCreatorInput input for DestinationCreator operator
 type DestinationCreatorInput struct {
-	Operation                               model.FormationOperation     `json:"operation"`
-	ResourceType                            model.ResourceType           `json:"resource_type"`
-	ResourceSubtype                         string                       `json:"resource_subtype"`
-	FormationAssignment                     *webhook.FormationAssignment `json:"formation_assignment"`
-	JointPointDetailsFAMemoryAddress        uintptr                      `json:"details_formation_assignment_memory_address"` // contains the memory address of the joint point details' formation assignment in form of an integer
-	ReverseFormationAssignment              *webhook.FormationAssignment `json:"reverse_formation_assignment"`
-	JointPointDetailsReverseFAMemoryAddress uintptr                      `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the joint point details' reverse formation assignment in form of an integer
-	Location                                JoinPointLocation            `json:"join_point_location"`
+	Operation                               model.FormationOperation   `json:"operation"`
+	ResourceType                            model.ResourceType         `json:"resource_type"`
+	ResourceSubtype                         string                     `json:"resource_subtype"`
+	FormationAssignment                     *model.FormationAssignment `json:"formation_assignment"`
+	JointPointDetailsFAMemoryAddress        uintptr                    `json:"details_formation_assignment_memory_address"` // contains the memory address of the joint point details' formation assignment in form of an integer
+	ReverseFormationAssignment              *model.FormationAssignment `json:"reverse_formation_assignment"`
+	JointPointDetailsReverseFAMemoryAddress uintptr                    `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the joint point details' reverse formation assignment in form of an integer
+	Location                                JoinPointLocation          `json:"join_point_location"`
 }

@@ -15,13 +15,13 @@ type DestinationRepository struct {
 	mock.Mock
 }
 
-// DeleteByTenantIDAndAssignmentID provides a mock function with given fields: ctx, tenantID, formationAssignmentID
-func (_m *DestinationRepository) DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID string, formationAssignmentID string) error {
-	ret := _m.Called(ctx, tenantID, formationAssignmentID)
+// DeleteByDestinationNameAndAssignmentID provides a mock function with given fields: ctx, destinationName, formationAssignmentID, tenantID
+func (_m *DestinationRepository) DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName string, formationAssignmentID string, tenantID string) error {
+	ret := _m.Called(ctx, destinationName, formationAssignmentID, tenantID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, tenantID, formationAssignmentID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, destinationName, formationAssignmentID, tenantID)
 	} else {
 		r0 = ret.Error(0)
 	}

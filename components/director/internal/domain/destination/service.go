@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -20,14 +20,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 )
 
 const (
 	clientUserHeaderKey        = "CLIENT_USER"
 	contentTypeHeaderKey       = "Content-Type"
-	contentTypeApplicationJson = "application/json;charset=UTF-8"
+	contentTypeApplicationJSON = "application/json;charset=UTF-8"
 	globalSubaccountLabelKey   = "global_subaccount_id"
 	regionLabelKey             = "region"
 	javaKeyStoreFileExtension  = ".jks"
@@ -59,7 +58,7 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=destinationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationRepository interface {
-	DeleteByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) error
+	DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName, formationAssignmentID, tenantID string) error
 	ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error)
 	UpsertWithEmbeddedTenant(ctx context.Context, destination *model.Destination) error
 }
@@ -107,7 +106,7 @@ func NewService(mtlsHTTPClient *http.Client, destinationCreatorCfg *destinationc
 }
 
 // CreateBasicCredentialDestinations is responsible to create a basic destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error) {
+func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
 		return defaultStatusCode, err
@@ -167,7 +166,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 }
 
 // CreateDesignTimeDestinations is responsible to create so-called design time(destinationcreator.AuthTypeNoAuth) destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) (defaultStatusCode int, err error) {
+func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
 		return defaultStatusCode, err
@@ -237,7 +236,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 }
 
 // CreateSAMLAssertionDestination is responsible to create SAML assertion destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error) {
+func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
 		return defaultStatusCode, err
@@ -333,7 +332,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 }
 
 // CreateCertificateInDestinationService is responsible to create certificate resource in the remote destination service
-func (s *Service) CreateCertificateInDestinationService(ctx context.Context, destinationDetails operators.Destination, formationAssignment *webhook.FormationAssignment) (defaultCertData destinationcreator.CertificateResponse, defaultStatusCode int, err error) {
+func (s *Service) CreateCertificateInDestinationService(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment) (defaultCertData destinationcreator.CertificateResponse, defaultStatusCode int, err error) {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
 		return defaultCertData, defaultStatusCode, err
@@ -376,7 +375,7 @@ func (s *Service) CreateCertificateInDestinationService(ctx context.Context, des
 }
 
 // DeleteDestinations is responsible to delete all type of destinations associated with the given `formationAssignment` from the DB as well as from the remote destination service
-func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *webhook.FormationAssignment) error {
+func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error {
 	externalDestSubaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
 	if err != nil {
 		return err
@@ -408,22 +407,22 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *w
 		if err := s.DeleteDestinationFromDestinationService(ctx, destination.Name, externalDestSubaccountID, formationAssignment); err != nil {
 			return err
 		}
-	}
 
-	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err := s.destinationRepo.DeleteByTenantIDAndAssignmentID(ctx, t.ID, formationAssignmentID); err != nil {
-			return errors.Wrapf(err, "while deleting destination(s) by internal tenant ID: %q and assignment ID: %q from the DB", t.ID, formationAssignmentID)
+		if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
+			if err := s.destinationRepo.DeleteByDestinationNameAndAssignmentID(ctx, destination.Name, formationAssignmentID, t.ID); err != nil {
+				return errors.Wrapf(err, "while deleting destination(s) by name: %q, internal tenant ID: %q and assignment ID: %q from the DB", destination.Name, t.ID, formationAssignmentID)
+			}
+			return nil
+		}); transactionErr != nil {
+			return transactionErr
 		}
-		return nil
-	}); transactionErr != nil {
-		return transactionErr
 	}
 
 	return nil
 }
 
 // DeleteDestinationFromDestinationService is responsible to delete destination resource from the remote destination service
-func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, destinationName, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) error {
+func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, destinationName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
 	if err != nil {
 		return err
@@ -449,7 +448,7 @@ func (s *Service) DeleteDestinationFromDestinationService(ctx context.Context, d
 }
 
 // DeleteCertificateFromDestinationService is responsible to delete certificate resource from the remote destination service
-func (s *Service) DeleteCertificateFromDestinationService(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) error {
+func (s *Service) DeleteCertificateFromDestinationService(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
 	subaccountID, err := s.validateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
 	if err != nil {
 		return err
@@ -474,31 +473,33 @@ func (s *Service) DeleteCertificateFromDestinationService(ctx context.Context, c
 	return nil
 }
 
-func (s *Service) EnrichAssignmentConfigWithCertificateData(assignmentConfig string, certData destinationcreator.CertificateResponse, destinationIndex int) (string, error) {
+// EnrichAssignmentConfigWithCertificateData todo::: go doc
+func (s *Service) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData destinationcreator.CertificateResponse, destinationIndex int) (json.RawMessage, error) {
 	certAPIConfig := s.destinationCreatorCfg.CertificateAPIConfig
+	configStr := string(assignmentConfig)
 
 	path := fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.FileNameKey)
-	assignmentConfig, err := sjson.Set(assignmentConfig, path, certData.FileName)
+	configStr, err := sjson.Set(configStr, path, certData.FileName)
 	if err != nil {
-		return "", errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.FileNameKey)
+		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.FileNameKey)
 	}
 
 	path = fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.CommonNameKey)
-	assignmentConfig, err = sjson.Set(assignmentConfig, path, certData.CommonName)
+	configStr, err = sjson.Set(configStr, path, certData.CommonName)
 	if err != nil {
-		return "", errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.CommonNameKey)
+		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.CommonNameKey)
 	}
 
 	path = fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.CertificateChainKey)
-	assignmentConfig, err = sjson.Set(assignmentConfig, path, certData.CertificateChain)
+	configStr, err = sjson.Set(configStr, path, certData.CertificateChain)
 	if err != nil {
-		return "", errors.Wrapf(err, "while enriching SAML assertion destination with %q key", certAPIConfig.CertificateChainKey)
+		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with %q key", certAPIConfig.CertificateChainKey)
 	}
 
-	return assignmentConfig, nil
+	return json.RawMessage(configStr), nil
 }
 
-func (s *Service) validateDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *webhook.FormationAssignment) (string, error) {
+func (s *Service) validateDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) (string, error) {
 	var subaccountID string
 	if externalDestSubaccountID == "" {
 		consumerSubaccountID, err := s.getConsumerTenant(ctx, formationAssignment)
@@ -545,7 +546,7 @@ func (s *Service) validateDestinationSubaccount(ctx context.Context, externalDes
 	return subaccountID, nil
 }
 
-func (s *Service) getConsumerTenant(ctx context.Context, formationAssignment *webhook.FormationAssignment) (string, error) {
+func (s *Service) getConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error) {
 	labelableObjType, err := determineLabelableObjectType(formationAssignment.TargetType)
 	if err != nil {
 		return "", err
@@ -587,7 +588,7 @@ func (s *Service) getRegionLabel(ctx context.Context, tenantID string) (string, 
 	return region, nil
 }
 
-func (s *Service) validateAppTemplateProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, externalDestSubaccountID string) error {
+func (s *Service) validateAppTemplateProviderSubaccount(ctx context.Context, formationAssignment *model.FormationAssignment, externalDestSubaccountID string) error {
 	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
 		return err
@@ -646,7 +647,7 @@ func (s *Service) validateRuntimeProviderSubaccount(ctx context.Context, runtime
 	return nil
 }
 
-func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, formationAssignment *webhook.FormationAssignment, externalDestSubaccountID string) error {
+func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, formationAssignment *model.FormationAssignment, externalDestSubaccountID string) error {
 	rtmCtxID, err := s.runtimeCtxRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
 		return err
@@ -693,7 +694,7 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 		return defaultRespBody, defaultStatusCode, errors.Wrap(err, "while preparing destination service creation request")
 	}
 	req.Header.Set(clientUserHeaderKey, clientUser)
-	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJson)
+	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
 
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
@@ -701,7 +702,7 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return defaultRespBody, defaultStatusCode, errors.Errorf("Failed to read response body: %v", err)
 	}
@@ -731,7 +732,7 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 		return errors.Wrap(err, "while preparing destination service deletion request")
 	}
 	req.Header.Set(clientUserHeaderKey, clientUser)
-	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJson)
+	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
 
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
@@ -739,7 +740,7 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 	}
 	defer closeResponseBody(ctx, resp)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Errorf("Failed to read destination delete response body: %v", err)
 	}
@@ -753,7 +754,7 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 	return nil
 }
 
-func (s *Service) prepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *webhook.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicRequestBody, error) {
+func (s *Service) prepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicRequestBody, error) {
 	reqBody := &destinationcreator.BasicRequestBody{
 		BaseDestinationRequestBody: destinationcreator.BaseDestinationRequestBody{
 			Name:               destinationDetails.Name,
