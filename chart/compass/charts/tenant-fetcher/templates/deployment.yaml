@@ -349,6 +349,8 @@ spec:
             # Sync tenants config
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_FETCHER_JOB_INTERVAL
               value: {{ default "1m" $config.job.interval}}
+            - name: APP_{{ $tenantFetcherJobName }}_PAGE_WORKERS
+              value: {{ default "2" $config.pageWorkers | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_INSERT_CHUNK_SIZE
               value: {{ default "500" $config.tenantInsertChunkSize | quote }}
             # API Regional config

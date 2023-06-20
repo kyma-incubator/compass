@@ -42,10 +42,11 @@ type FormationAssignmentService interface {
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 }
 
-//go:generate mockery --exported --name=formationAssignmentUpdater --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentUpdater interface {
-	Update(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
-	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+//go:generate mockery --exported --name=formationAssignmentStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentStatusService interface {
+	UpdateWithConstraints(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) error
+	SetAssignmentToErrorStateWithConstraints(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState, operation model.FormationOperation) error
+	DeleteWithConstraints(ctx context.Context, id string) error
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
@@ -62,10 +63,14 @@ type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
-	SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error
-	DeleteFormationEntityAndScenarios(ctx context.Context, tnt, formationName string) error
-	Update(ctx context.Context, model *model.Formation) error
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
+}
+
+//go:generate mockery --exported --name=formationStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationStatusService interface {
+	UpdateWithConstraints(ctx context.Context, formation *model.Formation, operation model.FormationOperation) error
+	SetFormationToErrorStateWithConstraints(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState, operation model.FormationOperation) error
+	DeleteFormationEntityAndScenariosWithConstraints(ctx context.Context, tnt string, formation *model.Formation) error
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations

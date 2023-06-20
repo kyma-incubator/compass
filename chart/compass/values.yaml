@@ -143,11 +143,11 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3108"
+      version: "PR-3120"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3094"
+      version: "PR-3123"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -960,6 +960,7 @@ global:
       tenantType: "subaccount"
       schedule: "*/5 * * * *"
       tenantInsertChunkSize: "500"
+      pageWorkers: "2"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: 2s
