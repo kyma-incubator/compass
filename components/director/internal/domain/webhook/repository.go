@@ -356,7 +356,7 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, appli
 	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }
 
-// DeleteAllByApplicationID missing godoc
+// DeleteAllByApplicationTemplateID missing godoc
 func (r *repository) DeleteAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) error {
 	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_template_id", applicationTemplateID)})
 }

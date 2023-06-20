@@ -416,6 +416,11 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	t.Log("Create application template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTmplInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url.com"),
+	}}
+
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
 	require.NoError(t, err)
