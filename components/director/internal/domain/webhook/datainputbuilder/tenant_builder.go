@@ -62,13 +62,13 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplates(ctx context.Cont
 
 // GetTenantForApplicationTemplate builds tenant with labels for application template
 func (b *WebhookTenantBuilder) GetTenantForApplicationTemplate(ctx context.Context, tenant string, labels map[string]string) (*webhook.TenantWithLabels, error) {
-	if subaccountId, ok := labels[globalSubaccountIDLabelKey]; ok {
-		tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountId)
+	if subaccountID, ok := labels[globalSubaccountIDLabelKey]; ok {
+		tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while getting tenant by external id %q", subaccountId)
+			return nil, errors.Wrapf(err, "while getting tenant by external id %q", subaccountID)
 		}
 
-		tenantLabels, err := b.labelInputBuilder.GetLabelsForObject(ctx, tenant, subaccountId, model.TenantLabelableObject)
+		tenantLabels, err := b.labelInputBuilder.GetLabelsForObject(ctx, tenant, subaccountID, model.TenantLabelableObject)
 		if err != nil {
 			return nil, errors.Wrap(err, "while listing tenant labels")
 		}
