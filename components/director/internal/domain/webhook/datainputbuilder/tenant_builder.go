@@ -122,7 +122,7 @@ func (b *WebhookTenantBuilder) GetTenantForObject(ctx context.Context, objectID 
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantID)
 	}
-	tenantModel, err := b.tenantRepository.Get(ctx, tenantId)
+	tenantModel, err := b.tenantRepository.Get(ctx, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantID)
 	}
