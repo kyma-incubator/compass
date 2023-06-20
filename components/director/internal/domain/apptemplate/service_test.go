@@ -1130,7 +1130,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1160,7 +1160,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1190,7 +1190,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1224,7 +1224,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1259,7 +1259,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1294,7 +1294,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1412,7 +1412,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
@@ -1528,7 +1528,7 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, "", modelAppTemplateWithLabels.ID).Return(nil).Once()
+				webhookRepo.On("DeleteAllByApplicationTemplateID", ctx, modelAppTemplateWithLabels.ID).Return(nil).Once()
 				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},

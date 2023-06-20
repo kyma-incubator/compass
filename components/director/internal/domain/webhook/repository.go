@@ -357,8 +357,8 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, appli
 }
 
 // DeleteAllByApplicationTemplateID missing godoc
-func (r *repository) DeleteAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) error {
-	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_template_id", applicationTemplateID)})
+func (r *repository) DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error {
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("app_template_id", applicationTemplateID)})
 }
 
 func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {

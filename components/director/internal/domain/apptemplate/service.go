@@ -55,7 +55,7 @@ type UIDService interface {
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
-	DeleteAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) error
+	DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error
 }
 
 // LabelUpsertService missing godoc
@@ -316,7 +316,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
 
-	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, "", appTemplate.ID); err != nil {
+	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
 		return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
 	}
 

@@ -364,8 +364,8 @@ func TestRepositoryDeleteAllByApplicatioTemplateID(t *testing.T) {
 		Name: "Webhook Delete by ApplicationTemplateID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`DELETE FROM public.webhooks WHERE app_template_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2 AND owner = true))`),
-				Args:          []driver.Value{givenApplicationID(), givenTenant()},
+				Query:         regexp.QuoteMeta(`DELETE FROM public.webhooks WHERE app_template_id = $1`),
+				Args:          []driver.Value{givenApplicationID()},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
@@ -374,7 +374,7 @@ func TestRepositoryDeleteAllByApplicatioTemplateID(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: webhook.NewRepository,
-		MethodArgs:          []interface{}{givenTenant(), givenApplicationID()},
+		MethodArgs:          []interface{}{givenApplicationID()},
 		MethodName:          "DeleteAllByApplicationTemplateID",
 		IsDeleteMany:        true,
 	}
