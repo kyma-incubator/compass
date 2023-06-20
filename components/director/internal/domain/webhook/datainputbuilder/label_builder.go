@@ -14,6 +14,7 @@ type labelRepository interface {
 	ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error)
 }
 
+// WebhookLabelBuilder takes care to get and build labels for objects
 type WebhookLabelBuilder struct {
 	labelRepository labelRepository
 }
@@ -25,6 +26,7 @@ func NewWebhookLabelBuilder(labelRepository labelRepository) *WebhookLabelBuilde
 	}
 }
 
+// GetLabelsForObject builds labels for object with ID objectID
 func (b *WebhookLabelBuilder) GetLabelsForObject(ctx context.Context, tenant, objectID string, objectType model.LabelableObject) (map[string]string, error) {
 	labels, err := b.labelRepository.ListForObject(ctx, tenant, objectType, objectID)
 	if err != nil {
@@ -48,6 +50,7 @@ func (b *WebhookLabelBuilder) GetLabelsForObject(ctx context.Context, tenant, ob
 	return labelsMap, nil
 }
 
+// GetLabelsForObjects builds labels for objects with IDs objectIDs
 func (b *WebhookLabelBuilder) GetLabelsForObjects(ctx context.Context, tenant string, objectIDs []string, objectType model.LabelableObject) (map[string]map[string]string, error) {
 	labelsForResources, err := b.labelRepository.ListForObjectIDs(ctx, tenant, objectType, objectIDs)
 	if err != nil {

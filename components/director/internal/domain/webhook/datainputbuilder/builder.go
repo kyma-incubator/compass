@@ -70,7 +70,6 @@ type WebhookDataInputBuilder struct {
 	runtimeRepo                   runtimeRepository
 	runtimeContextRepo            runtimeContextRepository
 	labelRepository               labelRepository
-	tenantRepository              tenantRepository
 	labelInputBuilder             labelInputBuilder
 	tenantInputBuilder            tenantInputBuilder
 }
