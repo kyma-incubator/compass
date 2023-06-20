@@ -222,7 +222,7 @@ func (fan *formationAssignmentNotificationService) getObjectSubtype(ctx context.
 		return runtimeType, nil
 
 	default:
-		return "", errors.Errorf("unknown formation type %s", objectType)
+		return "", errors.Errorf("unknown object type %q", objectType)
 	}
 }
 

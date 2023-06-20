@@ -52,13 +52,8 @@ var (
 		ID:                  TestFormationID,
 		TenantID:            TestTenantID,
 		FormationTemplateID: TestFormationTemplateID,
-		Name:                "test-formation",
-		State:               "READY",
-		Error:               nil,
-	}
-	formationTemplate = &model.FormationTemplate{
-		ID:   "testFTID",
-		Name: "testFTName",
+		Name:                TestFormationName,
+		State:               TestReadyState,
 	}
 	reverseWebhookFa = fixReverseWebhookFormationAssignment(webhookFa)
 

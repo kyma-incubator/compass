@@ -20,6 +20,7 @@ import (
 
 const (
 	TestID                  = "c861c3db-1265-4143-a05c-1ced1291d816"
+	TestFormationName       = "test-formation"
 	TestFormationID         = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestFormationTemplateID = "jjc0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID            = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
@@ -528,16 +529,15 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(fa, reverseFa *webhook.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *webhook.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               model.FormationResourceType,
-		ResourceSubtype:            formationTemplate.Name,
+		ResourceType:               resourceType,
+		ResourceSubtype:            resourceSubtype,
 		Location:                   location,
 		Operation:                  assignOperation,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,
 		Formation:                  formation,
-		FormationTemplate:          formationTemplate,
 	}
 }
 
