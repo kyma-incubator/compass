@@ -55,6 +55,7 @@ type UIDService interface {
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
+	DeleteAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) error
 }
 
 // LabelUpsertService missing godoc
@@ -313,6 +314,18 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
+	}
+
+	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, "", appTemplate.ID); err != nil {
+		return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
+	}
+
+	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
+	for _, item := range in.Webhooks {
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplate.ID, model.ApplicationTemplateWebhookReference))
+	}
+	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
+		return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, id, in.Labels)

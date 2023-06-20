@@ -28,6 +28,20 @@ func (_m *WebhookRepository) CreateMany(ctx context.Context, tenant string, item
 	return r0
 }
 
+// DeleteAllByApplicationTemplateID provides a mock function with given fields: ctx, tenant, applicationTemplateID
+func (_m *WebhookRepository) DeleteAllByApplicationTemplateID(ctx context.Context, tenant string, applicationTemplateID string) error {
+	ret := _m.Called(ctx, tenant, applicationTemplateID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenant, applicationTemplateID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewWebhookRepository interface {
 	mock.TestingT
 	Cleanup(func())

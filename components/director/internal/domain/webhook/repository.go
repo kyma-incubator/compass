@@ -356,6 +356,11 @@ func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, appli
 	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }
 
+// DeleteAllByApplicationID missing godoc
+func (r *repository) DeleteAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) error {
+	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_template_id", applicationTemplateID)})
+}
+
 func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {
 	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
