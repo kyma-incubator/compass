@@ -134,7 +134,6 @@ var (
 )
 
 func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *testing.T) {
-
 	testCases := []struct {
 		name                          string
 		appRepo                       func() *automock.ApplicationRepository

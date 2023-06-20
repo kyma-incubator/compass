@@ -118,16 +118,16 @@ func (b *WebhookTenantBuilder) GetTenantForObjects(ctx context.Context, tenant s
 
 // GetTenantForObject builds tenant with labels for object of type runtime, runtime context or application
 func (b *WebhookTenantBuilder) GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error) {
-	tenantId, err := b.tenantRepository.GetLowestOwnerForResource(ctx, resourceType, objectID)
+	tenantID, err := b.tenantRepository.GetLowestOwnerForResource(ctx, resourceType, objectID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantId)
+		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantID)
 	}
 	tenantModel, err := b.tenantRepository.Get(ctx, tenantId)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantId)
+		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantID)
 	}
 
-	tenantLabels, err := b.labelInputBuilder.GetLabelsForObject(ctx, tenantId, tenantId, model.TenantLabelableObject)
+	tenantLabels, err := b.labelInputBuilder.GetLabelsForObject(ctx, tenantID, tenantID, model.TenantLabelableObject)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing tenant labels")
 	}
