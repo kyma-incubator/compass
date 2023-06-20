@@ -102,6 +102,20 @@ func fixFormationAssignmentModelWithFormationID(formationID string) *model.Forma
 	}
 }
 
+func fixWebhookFormationAssignmentWithFormationID(formationID string) *webhook.FormationAssignment {
+	return convertFormationAssignmentFromModel(&model.FormationAssignment{
+		ID:          TestID,
+		FormationID: formationID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  TestSourceType,
+		Target:      TestTarget,
+		TargetType:  TestTargetType,
+		State:       TestStateInitial,
+		Value:       TestConfigValueRawJSON,
+	})
+}
+
 func fixFormationAssignmentModelWithIDAndTenantID(fa *model.FormationAssignment) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          TestID,
@@ -196,28 +210,11 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 	}
 }
 
-func fixFormationAssignmentOnlyWithSourceAndTarget() *model.FormationAssignment {
-	return &model.FormationAssignment{Source: "source", Target: "target"}
-}
-
 func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 			Assignment: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             nil,
-				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
-			},
-			ReverseAssignment: nil,
-		},
-		Operation: model.AssignFormation,
-	}
-}
-
-func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
-				Request:             req,
 				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
 			},
 			ReverseAssignment: nil,
@@ -239,44 +236,49 @@ func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.Formatio
 	}
 }
 
-func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.FormationAssignmentNotificationRequest, fa *model.FormationAssignment) *formationassignment.FormationAssignmentRequestExt {
-	return &formationassignment.FormationAssignmentRequestExt{
+func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, reverseAssignment *model.FormationAssignment, req, reverseReq *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             req,
+				FormationAssignment: assignment,
+			},
+			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             reverseReq,
+				FormationAssignment: reverseAssignment,
+			},
+		},
+		Operation: model.AssignFormation,
+	}
+}
+
+func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.FormationAssignmentNotificationRequest, fa *webhook.FormationAssignment) *webhookclient.FormationAssignmentNotificationRequestExt {
+	return &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: reqWebhook,
 		Operation:                              assignOperation,
 		FormationAssignment:                    fa,
+		ReverseFormationAssignment:             convertFormationAssignmentFromModel(&model.FormationAssignment{}),
 		Formation:                              formation,
 		TargetSubtype:                          appSubtype,
 	}
 }
 
-func fixFormationAssignmentWithConfigAndState(assignment *model.FormationAssignment, state model.FormationAssignmentState, value json.RawMessage) *model.FormationAssignment {
+func fixReverseFormationAssignment(assignment *model.FormationAssignment) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
 		TenantID:    assignment.TenantID,
-		Source:      assignment.Source,
-		SourceType:  assignment.SourceType,
-		Target:      assignment.Target,
-		TargetType:  assignment.TargetType,
-		State:       string(state),
-		Value:       value,
+		Source:      assignment.Target,
+		SourceType:  assignment.TargetType,
+		Target:      assignment.Source,
+		TargetType:  assignment.SourceType,
+		State:       assignment.State,
+		Value:       assignment.Value,
 	}
 }
 
-func fixFormationAssignmentWithConfigAndStateInput(assignment *model.FormationAssignmentInput, state model.FormationAssignmentState, value json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: assignment.FormationID,
-		Source:      assignment.Source,
-		SourceType:  assignment.SourceType,
-		Target:      assignment.Target,
-		TargetType:  assignment.TargetType,
-		State:       string(state),
-		Value:       value,
-	}
-}
-
-func fixReverseFormationAssignment(assignment *model.FormationAssignment) *model.FormationAssignment {
-	return &model.FormationAssignment{
+func fixReverseWebhookFormationAssignment(assignment *webhook.FormationAssignment) *webhook.FormationAssignment {
+	return &webhook.FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
 		TenantID:    assignment.TenantID,
@@ -526,7 +528,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(fa, reverseFa *webhook.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:               model.FormationResourceType,
 		ResourceSubtype:            formationTemplate.Name,
