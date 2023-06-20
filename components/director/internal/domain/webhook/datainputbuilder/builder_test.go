@@ -88,6 +88,7 @@ var (
 		Name: "testAppTenant",
 	}
 	testApplicationTemplateTenantOwner = &model.BusinessTenantMapping{
+		ID:   ApplicationTemplateTenantID,
 		Name: "testAppTenant",
 	}
 

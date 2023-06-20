@@ -37,12 +37,12 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplates(ctx context.Cont
 	objectTenantMapping := make(map[string]string)
 	for _, objectID := range objectIDs {
 		if subaccountID, ok := labels[objectID][globalSubaccountIDLabelKey]; ok {
-			objectTenantMapping[objectID] = subaccountID
 			if tenantModel, ok := tenantIDsMap[subaccountID]; ok {
 				tenantsForObjects[objectID] = &webhook.TenantWithLabels{
 					BusinessTenantMapping: tenantModel,
 					Labels:                nil,
 				}
+				objectTenantMapping[objectID] = tenantModel.ID
 				continue
 			}
 			tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountID)
@@ -54,8 +54,9 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplates(ctx context.Cont
 				BusinessTenantMapping: tenantModel,
 				Labels:                nil,
 			}
-			tenantIDs = append(tenantIDs, subaccountID)
-			tenantIDsMap[subaccountID] = tenantModel
+			tenantIDs = append(tenantIDs, tenantModel.ID)
+			tenantIDsMap[tenantModel.ID] = tenantModel
+			objectTenantMapping[objectID] = tenantModel.ID
 		}
 	}
 
