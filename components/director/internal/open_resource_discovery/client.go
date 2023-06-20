@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"io"
 	"net/http"
@@ -43,7 +44,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping) (Documents, string, error)
 }
 
 type client struct {
@@ -64,7 +65,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
@@ -109,7 +110,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 				<-workers
 			}()
 
-			documentURL, err := buildDocumentURL(docDetails.URL, baseURL, str.PtrStrToStr(webhook.ProxyURL), c.ORDProxyBaseURL)
+			documentURL, err := buildDocumentURL(docDetails.URL, baseURL, str.PtrStrToStr(webhook.ProxyURL), c.ORDProxyBaseURL, ordWebhookMapping)
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
@@ -246,7 +247,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	return &config, nil
 }
 
-func buildDocumentURL(docURL, appBaseURL, proxyURL, proxyBaseURL string) (string, error) {
+func buildDocumentURL(docURL, appBaseURL, proxyURL, proxyBaseURL string, ordWebhookMapping application.ORDWebhookMapping) (string, error) {
 	docURLParsed, err := url.Parse(docURL)
 	if err != nil {
 		return "", err
@@ -256,7 +257,7 @@ func buildDocumentURL(docURL, appBaseURL, proxyURL, proxyBaseURL string) (string
 	}
 
 	if proxyURL != "" {
-		return proxyBaseURL + docURL, nil
+		return proxyBaseURL + str.PtrStrToStr(ordWebhookMapping.ProxySuffix) + docURL, nil
 	}
 
 	return appBaseURL + docURL, nil

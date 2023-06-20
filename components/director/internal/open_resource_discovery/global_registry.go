@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -60,7 +61,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, &model.Webhook{
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  &s.config.URL,
-	})
+	}, application.ORDWebhookMapping{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}

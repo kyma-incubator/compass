@@ -3,6 +3,8 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strconv"
 	"strings"
 	"sync"
@@ -103,15 +105,18 @@ type Service struct {
 	vendorSvc          VendorService
 	tombstoneSvc       TombstoneService
 	tenantSvc          TenantService
+	labelSvc           LabelService
 
 	webhookConverter WebhookConverter
+
+	ordWebhookMapping []application.ORDWebhookMapping
 
 	globalRegistrySvc GlobalRegistryService
 	ordClient         Client
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, labelSvc LabelService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, ordWebhookMapping []application.ORDWebhookMapping) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
@@ -128,9 +133,11 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		vendorSvc:          vendorSvc,
 		tombstoneSvc:       tombstoneSvc,
 		tenantSvc:          tenantSvc,
+		labelSvc:           labelSvc,
 		globalRegistrySvc:  globalRegistrySvc,
 		ordClient:          client,
 		webhookConverter:   webhookConverter,
+		ordWebhookMapping:  ordWebhookMapping,
 	}
 }
 
@@ -1458,7 +1465,7 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, bundlDataFromDB, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var documents Documents
 	var baseURL string
 	var err error
@@ -1474,7 +1481,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
 		ctx = addFieldToLogger(ctx, "app_id", app.ID)
-		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
+		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook, ordWebhookMapping)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1615,15 +1622,42 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 	localTenantID := str.PtrStrToStr(app.LocalTenantID)
 	ctx = tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
 
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appTypeLbl, err := s.labelSvc.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, "applicationType")
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return errors.Wrapf(err, "while getting label %q for %s with id %q", "applicationType", model.ApplicationLabelableObject, app.ID)
+		}
+	}
+
+	var ordWebhookMapping application.ORDWebhookMapping
+	if appTypeLbl != nil {
+		ordWebhookMapping, _ = s.getMappingORDConfiguration(appTypeLbl.Value.(string))
+	}
+
 	if err = tx.Commit(); err != nil {
 		return err
 	}
 
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, app, globalResourcesOrdIDs); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, app, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Service) getMappingORDConfiguration(applicationType string) (application.ORDWebhookMapping, bool) {
+	for _, wm := range s.ordWebhookMapping {
+
+		if wm.Type == applicationType {
+			return wm, true
+		}
+	}
+	return application.ORDWebhookMapping{}, false
 }
 
 func excludeUnnecessaryFetchRequests(fetchRequests []*ordFetchRequest, frIdxToExclude []int) []*ordFetchRequest {

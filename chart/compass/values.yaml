@@ -314,8 +314,8 @@ global:
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
-    ordWebhookMappings: '[]'
-    ordProxyURL: "http://proxy"
+    ordWebhookMappings: '[{ "PpmsProductVersions": ["73555000100900005841", "73554900100900006373", "73555000100900006562"],"ProxySuffix": "/s4/api/v1", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP S/4HANA Cloud" }]'
+    ordProxyURL: "https://cert.staging.extensions.ondemand.com/ord/proxy"
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:
