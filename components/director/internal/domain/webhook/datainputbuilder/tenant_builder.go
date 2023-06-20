@@ -33,12 +33,21 @@ func NewWebhookTenantBuilder(labelInputBuilder labelInputBuilder, tenantReposito
 func (b *WebhookTenantBuilder) GetTenantForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
 	tenantsForObjects := make(map[string]*webhook.TenantWithLabels)
 	tenantIDs := make([]string, 0)
+	tenantIDsMap := make(map[string]*model.BusinessTenantMapping)
 	objectTenantMapping := make(map[string]string)
 	for _, objectID := range objectIDs {
 		if subaccountID, ok := labels[objectID][globalSubaccountIDLabelKey]; ok {
+			objectTenantMapping[objectID] = subaccountID
+			if tenantModel, ok := tenantIDsMap[subaccountID]; ok {
+				tenantsForObjects[objectID] = &webhook.TenantWithLabels{
+					BusinessTenantMapping: tenantModel,
+					Labels:                nil,
+				}
+				continue
+			}
 			tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountID)
 			if err != nil {
-				return nil, errors.Wrapf(err, "while getting tenant by external id %q", subaccountID)
+				return nil, errors.Wrapf(err, "while getting tenant by external ID %q", subaccountID)
 			}
 
 			tenantsForObjects[objectID] = &webhook.TenantWithLabels{
@@ -46,7 +55,7 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplates(ctx context.Cont
 				Labels:                nil,
 			}
 			tenantIDs = append(tenantIDs, subaccountID)
-			objectTenantMapping[objectID] = subaccountID
+			tenantIDsMap[subaccountID] = tenantModel
 		}
 	}
 
@@ -65,7 +74,7 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplate(ctx context.Conte
 	if subaccountID, ok := labels[globalSubaccountIDLabelKey]; ok {
 		tenantModel, err := b.tenantRepository.GetByExternalTenant(ctx, subaccountID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while getting tenant by external id %q", subaccountID)
+			return nil, errors.Wrapf(err, "while getting tenant by external ID %q", subaccountID)
 		}
 
 		tenantLabels, err := b.labelInputBuilder.GetLabelsForObject(ctx, tenant, subaccountID, model.TenantLabelableObject)
@@ -86,12 +95,24 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplate(ctx context.Conte
 func (b *WebhookTenantBuilder) GetTenantForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error) {
 	tenantsForObjects := make(map[string]*webhook.TenantWithLabels)
 	tenantIDs := make([]string, 0)
+	tenantIDsMap := make(map[string]*model.BusinessTenantMapping)
 	objectTenantMapping := make(map[string]string)
 	for _, objectID := range objectIDs {
 		tenantID, err := b.tenantRepository.GetLowestOwnerForResource(ctx, resourceType, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantID)
+			return nil, errors.Wrapf(err, "while getting tenant for object with ID %q", objectID)
 		}
+		objectTenantMapping[objectID] = tenantID
+
+		// Check if we have loaded the tenant already, if so, no need for extra queries
+		if tenantModel, ok := tenantIDsMap[tenantID]; ok {
+			tenantsForObjects[objectID] = &webhook.TenantWithLabels{
+				BusinessTenantMapping: tenantModel,
+				Labels:                nil,
+			}
+			continue
+		}
+
 		tenantModel, err := b.tenantRepository.Get(ctx, tenantID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting tenant with ID %q", tenantID)
@@ -102,12 +123,12 @@ func (b *WebhookTenantBuilder) GetTenantForObjects(ctx context.Context, tenant s
 			Labels:                nil,
 		}
 		tenantIDs = append(tenantIDs, tenantID)
-		objectTenantMapping[objectID] = tenantID
+		tenantIDsMap[tenantID] = tenantModel
 	}
 
 	tenantLabels, err := b.labelInputBuilder.GetLabelsForObjects(ctx, tenant, tenantIDs, model.TenantLabelableObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "while listing tenant labels")
+		return nil, errors.Wrap(err, "while building tenant labels")
 	}
 	for _, objectID := range objectIDs {
 		tenantsForObjects[objectID].Labels = tenantLabels[objectTenantMapping[objectID]]
@@ -120,7 +141,7 @@ func (b *WebhookTenantBuilder) GetTenantForObjects(ctx context.Context, tenant s
 func (b *WebhookTenantBuilder) GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error) {
 	tenantID, err := b.tenantRepository.GetLowestOwnerForResource(ctx, resourceType, objectID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting tenant for object with id %q", tenantID)
+		return nil, errors.Wrapf(err, "while getting tenant lowest owner for object with id %q", objectID)
 	}
 	tenantModel, err := b.tenantRepository.Get(ctx, tenantID)
 	if err != nil {
