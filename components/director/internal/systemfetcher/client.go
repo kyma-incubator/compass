@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,6 +41,7 @@ type APIConfig struct {
 type Client struct {
 	apiConfig  APIConfig
 	httpClient APIClient
+	mutex      sync.Mutex
 }
 
 // NewClient missing godoc
@@ -54,7 +56,9 @@ var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
+	c.mutex.Lock()
 	qp := c.buildFilter()
+	c.mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
 	var systems []System
