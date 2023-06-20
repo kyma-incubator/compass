@@ -453,7 +453,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Log("Update application template")
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, updateAppTemplateRequest, &updateOutput)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
 
 	require.NoError(t, err)
@@ -608,7 +608,7 @@ func TestUpdateApplicationTypeLabelOfApplicationsWhenAppTemplateNameIsUpdated(t 
 
 	// WHEN
 	t.Log("Update application template")
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, secondTenantId, updateAppTemplateRequest, &updateOutput)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
 
 	require.NoError(t, err)
