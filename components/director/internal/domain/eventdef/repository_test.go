@@ -25,7 +25,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
 
 	suite := testdb.RepoGetTestSuite{
-		Name: "Get Document",
+		Name: "Get Event Definition",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
@@ -52,6 +52,44 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ExpectedDBEntity:          eventDefEntity,
 		MethodArgs:                []interface{}{tenantID, eventID},
 		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_GetByIDGlobal(t *testing.T) {
+	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
+	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Event Definition Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1`),
+				Args:     []driver.Value{eventID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()).
+							AddRow(fixEventDefinitionRow(eventID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ExpectedModelEntity:       eventDefModel,
+		ExpectedDBEntity:          eventDefEntity,
+		MethodArgs:                []interface{}{eventID},
+		DisableConverterErrorTest: true,
+		MethodName:                "GetByIDGlobal",
 	}
 
 	suite.Run(t)
@@ -220,6 +258,36 @@ func TestPgRepository_Create(t *testing.T) {
 		NilModelEntity:            nilEventDefModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_CreateGlobal(t *testing.T) {
+	// GIVEN
+	var nilEventDefModel *model.EventDefinition
+	eventDefModel, _, _ := fixFullEventDefinitionModel("placeholder")
+	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
+
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Event Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       `^INSERT INTO "public"."event_api_definitions" \(.+\) VALUES \(.+\)$`,
+				Args:        fixEventCreateArgs(eventID, &eventDefModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ModelEntity:               &eventDefModel,
+		DBEntity:                  eventDefEntity,
+		NilModelEntity:            nilEventDefModel,
+		DisableConverterErrorTest: true,
+		IsGlobal:                  true,
+		MethodName:                "CreateGlobal",
 	}
 
 	suite.Run(t)

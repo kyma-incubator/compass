@@ -20,10 +20,11 @@ import (
 const eventAPIDefTable string = `"public"."event_api_definitions"`
 
 var (
-	idColumn        = "id"
-	appColumn       = "app_id"
-	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, appColumn, "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	idColumn                 = "id"
+	appColumn                = "app_id"
+	appTemplateVersionColumn = "app_template_version_id"
+	bundleColumn             = "bundle_id"
+	eventDefColumns          = []string{idColumn, appColumn, "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels"}
@@ -88,7 +89,7 @@ func (r EventAPIDefCollection) Len() int {
 // GetByID retrieves the EventDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
 	}
@@ -100,7 +101,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 // GetByIDGlobal retrieves the EventDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
 	}
@@ -125,7 +126,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	var conditions repo.Conditions
 	if len(eventDefIDs) > 0 {
 		conditions = repo.Conditions{
-			repo.NewInConditionForStringValues("id", eventDefIDs),
+			repo.NewInConditionForStringValues(idColumn, eventDefIDs),
 		}
 	}
 
@@ -165,17 +166,17 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return eventDefPages, nil
 }
 
-// ListByResourceID lists all EventDefinitions for a given application ID.
+// ListByResourceID lists all EventDefinitions for a given resource ID and resource.Type
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EventDefinition, error) {
 	eventCollection := EventAPIDefCollection{}
 
 	var condition repo.Condition
 	var err error
 	if resourceType == resource.Application {
-		condition = repo.NewEqualCondition("app_id", resourceID)
+		condition = repo.NewEqualCondition(appColumn, resourceID)
 		err = r.lister.ListWithSelectForUpdate(ctx, resource.EventDefinition, tenantID, &eventCollection, condition)
 	} else {
-		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		condition = repo.NewEqualCondition(appTemplateVersionColumn, resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &eventCollection, condition)
 	}
 	if err != nil {
@@ -207,7 +208,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 	return nil
 }
 
-// CreateGlobal creates an EventDefinition.
+// CreateGlobal creates an EventDefinition without tenant isolation.
 func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")

@@ -110,7 +110,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.eventAPIRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
 }
 
-// ListByApplicationTemplateVersionID lists all EventDefinitions for a given application ID.
+// ListByApplicationTemplateVersionID lists all EventDefinitions for a given application template version ID.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error) {
 	return s.eventAPIRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
@@ -182,7 +182,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 		return errors.Wrapf(err, "while getting EventDefinition with ID %s", id)
 	}
 
-	_, resourceID := getParentResource(eventDef)
+	resourceID := getParentResourceID(eventDef)
 	eventDef = in.ToEventDefinition(id, resourceType, resourceID, eventDef.PackageID, eventHash)
 
 	if err = s.updateEventDef(ctx, eventDef, resourceType); err != nil {
@@ -378,12 +378,12 @@ func (s *service) deleteEventDef(ctx context.Context, id string, resourceType re
 	return s.eventAPIRepo.Delete(ctx, tnt, id)
 }
 
-func getParentResource(api *model.EventDefinition) (resource.Type, string) {
+func getParentResourceID(api *model.EventDefinition) string {
 	if api.ApplicationTemplateVersionID != nil {
-		return resource.ApplicationTemplateVersion, *api.ApplicationTemplateVersionID
+		return *api.ApplicationTemplateVersionID
 	} else if api.ApplicationID != nil {
-		return resource.Application, *api.ApplicationID
+		return *api.ApplicationID
 	}
 
-	return "", ""
+	return ""
 }

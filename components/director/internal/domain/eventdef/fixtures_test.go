@@ -32,8 +32,9 @@ const (
 )
 
 var (
-	fixedTimestamp = time.Now()
-	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	fixedTimestamp       = time.Now()
+	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	appTemplateVersionID = "aaaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa"
 )
 
 func fixEventDefinitionModel(id string, name string) *model.EventDefinition {
