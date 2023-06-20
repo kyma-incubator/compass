@@ -1511,11 +1511,11 @@ func buildWebhookURL(suffix string, ordPath string, baseURL *string) (string, er
 }
 
 func buildWebhookProxyURL(proxyBaseURL string, mappingCfg ORDWebhookMapping) string {
-	if !mappingCfg.UseProxy {
+	if mappingCfg.ProxySuffix == nil {
 		return ""
 	}
 
-	return fmt.Sprintf("%s%s", proxyBaseURL, mappingCfg.OrdURLPath)
+	return fmt.Sprintf("%s%s%s", proxyBaseURL, *mappingCfg.ProxySuffix, mappingCfg.OrdURLPath)
 }
 
 func createMapFromFormationsSlice(formations []string) map[string]struct{} {
