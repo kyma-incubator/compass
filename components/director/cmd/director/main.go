@@ -954,7 +954,9 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
+	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder)
 
 	labelDefinitionConverter := labeldef.NewConverter()
 	asaConverter := scenarioassignment.NewConverter()
