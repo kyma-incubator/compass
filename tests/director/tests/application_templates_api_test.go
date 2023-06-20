@@ -420,6 +420,10 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
+	require.NotEmpty(t, appTemplate.Webhooks)
+	oldWebhokCount := len(appTemplate.Webhooks)
+	oldWebhokID := appTemplate.Webhooks[0].ID
+	oldWebhokUrl := appTemplate.Webhooks[0].URL
 
 	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
 	appTemplateInput := graphql.ApplicationTemplateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
@@ -431,6 +435,11 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 			Name: "display-name",
 		},
 	}
+	appTemplateInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url2.com"),
+	}}
+
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 	require.NoError(t, err)
 
@@ -439,11 +448,20 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Log("Update application template")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, updateAppTemplateRequest, &updateOutput)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
 
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
+
+	require.NotEmpty(t, updateOutput.Webhooks)
+	newWebhokCount := len(updateOutput.Webhooks)
+	newWebhokID := updateOutput.Webhooks[0].ID
+	newWebhokUrl := updateOutput.Webhooks[0].URL
+
+	require.Equal(t, oldWebhokCount, newWebhokCount)
+	require.NotEqual(t, oldWebhokID, newWebhokID)
+	require.NotEqual(t, oldWebhokUrl, newWebhokUrl)
 
 	//THEN
 	t.Log("Check if application template was updated")
