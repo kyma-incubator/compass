@@ -29,10 +29,12 @@ var (
 		ApplicationID: {
 			Application: fixApplicationModel(ApplicationID),
 			Labels:      fixLabelsMapForApplicationWithLabels(),
+			Tenant:      testAppTenantWithLabels,
 		},
 		Application2ID: {
 			Application: fixApplicationModelWithoutTemplate(Application2ID),
 			Labels:      fixLabelsMapForApplicationWithLabels(),
+			Tenant:      testAppTenantWithLabels,
 		},
 	}
 
@@ -51,6 +53,7 @@ var (
 		ApplicationTemplateID: {
 			ApplicationTemplate: fixApplicationTemplateModel(),
 			Labels:              fixLabelsMapForApplicationTemplateWithLabels(),
+			Tenant:              testAppTemplateTenantWithLabels,
 		},
 	}
 
@@ -58,10 +61,18 @@ var (
 		RuntimeContextRuntimeID: {
 			Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
 			Labels:  fixLabelsMapForRuntimeWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 		RuntimeID: {
 			Runtime: fixRuntimeModel(RuntimeID),
 			Labels:  fixLabelsMapForRuntimeWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 	}
 
@@ -69,14 +80,20 @@ var (
 		RuntimeContextRuntimeID: {
 			RuntimeContext: fixRuntimeContextModel(),
 			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeCtxOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 		RuntimeID: {
 			RuntimeContext: fixRuntimeContextModelWithRuntimeID(RuntimeID),
 			Labels:         fixLabelsMapForRuntimeContextWithLabels(),
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: testRuntimeCtxOwner,
+				Labels:                convertLabels(testTenantLabels),
+			},
 		},
 	}
-	applicationTenant  = &model.BusinessTenantMapping{ID: ApplicationTenantID}
-	application2Tenant = &model.BusinessTenantMapping{ID: Application2TenantID}
 )
 
 func fixApplicationLabelsMap() map[string]interface{} {
@@ -230,4 +247,12 @@ func unusedLabelRepo() *automock.LabelRepository {
 
 func unusedTenantRepo() *automock.TenantRepository {
 	return &automock.TenantRepository{}
+}
+
+func unusedLabelBuilder() *automock.LabelInputBuilder {
+	return &automock.LabelInputBuilder{}
+}
+
+func unusedTenantBuilder() *automock.TenantInputBuilder {
+	return &automock.TenantInputBuilder{}
 }
