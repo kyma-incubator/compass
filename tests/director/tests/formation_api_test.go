@@ -2880,6 +2880,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 	certSecuredHTTPClient := fixtures.FixCertSecuredHTTPClient(cc, conf.ExternalClientCertSecretName, conf.SkipSSLValidation)
 
+	subscriptionSubdomain := conf.SelfRegisterSubdomainPlaceholderValue
 	subscriptionConsumerAccountID := conf.TestConsumerAccountID
 	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
@@ -3011,7 +3012,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			webhookType := graphql.WebhookTypeApplicationTenantMapping
 			webhookMode := graphql.WebhookModeSync
 			urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"subdomain\\\": \\\"{{ if eq .TargetApplication.Tenant.Type \\\\\"subaccount\\\\\"}}{{ .TargetApplication.Tenant.Labels.subdomain }}{{end}}\\\"}]}"
+			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"subdomain\\\": \\\"{{ if eq .TargetApplication.Tenant.Type \\\"subaccount\\\"}}{{ .TargetApplication.Tenant.Labels.subdomain }}{{end}}\\\"}]}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate)
@@ -3068,6 +3069,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 			assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
 			assertFormationAssignmentsNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotificationSubdomain(t, assignNotificationAboutApp2, subscriptionSubdomain)
 
 			t.Logf("Unassign Application 1 from formation %s", formationName)
 			unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -3092,6 +3094,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				if op == unassignOperation {
 					unassignNotificationFound = true
 					assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+					assertFormationAssignmentsNotificationSubdomain(t, notification, subscriptionSubdomain)
 				}
 			}
 			require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -3127,6 +3130,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				if op == assignOperation {
 					assignNotificationsFound++
 					assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+					assertFormationAssignmentsNotificationSubdomain(t, notification, subscriptionSubdomain)
 				}
 			}
 			require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
@@ -5003,6 +5007,15 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 
 func assertFormationAssignmentsNotification(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
 	assertFormationAssignmentsNotificationWithConfig(t, notification, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID, nil)
+}
+
+func assertFormationAssignmentsNotificationSubdomain(t *testing.T, notification gjson.Result, expectedSubdomain string) {
+	notificationItems := notification.Get("RequestBody.items")
+	require.True(t, notificationItems.Exists())
+	require.Len(t, notificationItems.Array(), 1)
+
+	app1FromNotification := notificationItems.Array()[0]
+	require.Equal(t, expectedSubdomain, app1FromNotification.Get("subdomain").String())
 }
 
 func assertFormationAssignmentsNotificationWithConfig(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string, expectedConfig *string) {

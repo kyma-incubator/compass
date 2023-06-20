@@ -27,7 +27,8 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	Application: &webhook.ApplicationWithLabels{
@@ -36,21 +37,24 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 		},
 		Labels: map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	Runtime: &webhook.RuntimeWithLabels{
 		Runtime: &model.Runtime{},
 		Labels:  map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	RuntimeContext: &webhook.RuntimeContextWithLabels{
 		RuntimeContext: &model.RuntimeContext{},
 		Labels:         map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
@@ -67,7 +71,8 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	SourceApplication: &webhook.ApplicationWithLabels{
@@ -76,14 +81,16 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		},
 		Labels: map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	TargetApplication: &webhook.ApplicationWithLabels{
@@ -92,7 +99,8 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		},
 		Labels: map[string]string{},
 		Tenant: &webhook.TenantWithLabels{
-			Labels: map[string]string{},
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
 		},
 	},
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
