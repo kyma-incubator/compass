@@ -47,6 +47,7 @@ type PageConfig struct {
 	TotalPagesField   string
 	TotalResultsField string
 	PageNumField      string
+	PageWorkers       int
 }
 
 // EventsType missing godoc

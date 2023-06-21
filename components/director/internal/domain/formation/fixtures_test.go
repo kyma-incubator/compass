@@ -581,15 +581,12 @@ var (
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
-	}
-
-	formationWithInitialState                 = fixFormationModelWithState(model.InitialFormationState)
-	formationNotificationSyncCreateExtRequest = &webhookclient.FormationNotificationRequestExt{
-		Request:       formationNotificationSyncCreateRequest.Request,
 		Operation:     model.CreateFormation,
-		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		Formation:     fixFormationModelWithoutError(),
 		FormationType: testFormationTemplateName,
 	}
+
+	formationWithInitialState              = fixFormationModelWithState(model.InitialFormationState)
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
@@ -603,11 +600,8 @@ var (
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
-	}
-	formationNotificationAsyncCreateExtRequest = &webhookclient.FormationNotificationRequestExt{
-		Request:       formationNotificationAsyncCreateRequest.Request,
 		Operation:     model.CreateFormation,
-		Formation:     fixFormationModelWithState(model.InitialFormationState),
+		Formation:     fixFormationModelWithoutError(),
 		FormationType: testFormationTemplateName,
 	}
 
@@ -617,9 +611,6 @@ var (
 			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
-	}
-	formationNotificationAsyncDeleteExtRequest = &webhookclient.FormationNotificationRequestExt{
-		Request:       formationNotificationAsyncDeleteRequest.Request,
 		Operation:     model.DeleteFormation,
 		Formation:     fixFormationModelWithState(model.ReadyFormationState),
 		FormationType: testFormationTemplateName,
@@ -1387,6 +1378,18 @@ func fixFormationAssignmentModelWithParameters(id, formationID, source, target s
 	}
 }
 
+func fixWebhookFormationAssignmentWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *webhook.FormationAssignment {
+	return &webhook.FormationAssignment{
+		ID:          id,
+		FormationID: formationID,
+		Source:      source,
+		SourceType:  sourceType,
+		Target:      target,
+		TargetType:  targetType,
+		State:       string(state),
+	}
+}
+
 func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
 	res := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
@@ -1498,5 +1501,15 @@ func fixAssignTenantDetails(formationName string) *formationconstraint.AssignFor
 		FormationTemplateID: FormationTemplateID,
 		FormationID:         FormationID,
 		TenantID:            TntInternalID,
+	}
+}
+
+func fixDetailsForNotificationStatusReturned(formationType string, operation model.FormationOperation, location formationconstraint.JoinPointLocation, formation *model.Formation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+	return &formationconstraint.NotificationStatusReturnedOperationDetails{
+		ResourceType:    model.FormationResourceType,
+		ResourceSubtype: formationType,
+		Location:        location,
+		Operation:       operation,
+		Formation:       formation,
 	}
 }

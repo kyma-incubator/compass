@@ -136,6 +136,8 @@ func resyncTimestamps(ctx context.Context, client KubeClient, fullResyncInterval
 		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", fullResyncInterval)
 		lastConsumedTenantTimestamp = "1"
 		lastFullResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
+	} else {
+		log.C(ctx).Infof("Last full resync was %s ago. Will perform a delta resync.", fullResyncInterval)
 	}
 	return &startTime, lastConsumedTenantTimestamp, lastFullResyncTimestamp, nil
 }

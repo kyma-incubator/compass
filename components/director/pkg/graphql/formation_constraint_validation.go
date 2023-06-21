@@ -155,11 +155,11 @@ func emptySendNotificationOperationDetails() *formationconstraint.SendNotificati
 			CreatedAt: &time.Time{},
 		},
 		TemplateInput: nil,
-		FormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
+		FormationAssignment: &webhook.FormationAssignment{
+			Value: "\"\"",
 		},
-		ReverseFormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
+		ReverseFormationAssignment: &webhook.FormationAssignment{
+			Value: "\"\"",
 		},
 		Formation: &model.Formation{
 			Error: json.RawMessage("\"\""),
@@ -170,11 +170,11 @@ func emptySendNotificationOperationDetails() *formationconstraint.SendNotificati
 func emptyNotificationStatusReturnedOperationDetails() *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		Location: formationconstraint.JoinPointLocation{},
-		FormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
+		FormationAssignment: &webhook.FormationAssignment{
+			Value: "\"\"",
 		},
-		ReverseFormationAssignment: &model.FormationAssignment{
-			Value: json.RawMessage("\"\""),
+		ReverseFormationAssignment: &webhook.FormationAssignment{
+			Value: "\"\"",
 		},
 		Formation: &model.Formation{
 			Error: json.RawMessage("\"\""),
