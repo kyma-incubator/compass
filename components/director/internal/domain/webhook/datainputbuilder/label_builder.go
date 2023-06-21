@@ -3,9 +3,10 @@ package datainputbuilder
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
-	"strconv"
 )
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string

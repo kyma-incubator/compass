@@ -1,8 +1,9 @@
 package datainputbuilder_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
