@@ -98,7 +98,7 @@ func (s *service) Update(ctx context.Context, fr *model.FetchRequest) error {
 	return nil
 }
 
-// UpdateGlobal is identical to HandleSpec with the difference that the fetch request is only updated in DB without being re-executed
+// UpdateGlobal is identical to HandleSpec with the difference that the fetch request is only updated in DB without being re-executed and there is no tenant isolation
 func (s *service) UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error {
 	if err := s.repo.UpdateGlobal(ctx, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request: %v", err)

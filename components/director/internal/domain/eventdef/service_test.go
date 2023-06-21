@@ -791,9 +791,16 @@ func TestService_Update(t *testing.T) {
 		return event.Name == modelInput.Name
 	})
 
-	eventDefinitionModel := &model.EventDefinition{
-		Name:    "Bar",
-		Version: &model.Version{},
+	eventDefinitionModelForApp := &model.EventDefinition{
+		Name:          "Bar",
+		Version:       &model.Version{},
+		ApplicationID: &appID,
+	}
+
+	eventDefinitionModelForAppTemplateVersion := &model.EventDefinition{
+		Name:                         "Bar",
+		Version:                      &model.Version{},
+		ApplicationTemplateVersionID: &appTemplateVersionID,
 	}
 
 	ctx := context.TODO()
@@ -810,10 +817,30 @@ func TestService_Update(t *testing.T) {
 		ExpectedErr   error
 	}{
 		{
-			Name: "Success When Spec is Found should update it",
+			Name: "Success When Spec is Found should update it for Application Template Version",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModelForAppTemplateVersion, nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, resource.Application, model.EventSpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, resource.Application, model.EventSpecReference, id).Return(nil).Once()
+				return svc
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			SpecInput:    &modelSpecInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Success When Spec is Found should update it for Application",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -833,7 +860,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Success When Spec is not found should create in",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -853,7 +880,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Update Error",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(testErr).Once()
 				return repo
 			},
@@ -870,7 +897,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Get Spec Error",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -889,7 +916,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Spec Creation Error",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -909,7 +936,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Spec Update Error",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
+				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},

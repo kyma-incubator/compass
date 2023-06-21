@@ -11,7 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const packageTable string = `public.packages`
+const (
+	packageTable               string = `public.packages`
+	appTemplateVersionIDColumn        = "app_template_version_id"
+	appIDColumn                       = "app_id"
+)
 
 var (
 	packageColumns = []string{"id", "app_id", "app_template_version_id", "ord_id", "vendor", "title", "short_description",
@@ -106,6 +110,7 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.Package, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// DeleteGlobal deletes a Package without tenant isolation
 func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	log.C(ctx).Debugf("Deleting Package entity with id %q", id)
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -148,17 +153,17 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Pac
 	return pkgModel, nil
 }
 
-// ListByResourceID missing godoc
+// ListByResourceID lists Packages by a given resource type and resource ID
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Package, error) {
 	pkgCollection := pkgCollection{}
 
 	var condition repo.Condition
 	var err error
 	if resourceType == resource.Application {
-		condition = repo.NewEqualCondition("app_id", resourceID)
+		condition = repo.NewEqualCondition(appIDColumn, resourceID)
 		err = r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, condition)
 	} else {
-		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		condition = repo.NewEqualCondition(appTemplateVersionIDColumn, resourceID)
 		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &pkgCollection, condition)
 	}
 	if err != nil {

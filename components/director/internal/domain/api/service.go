@@ -116,7 +116,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.repo.ListByResourceID(ctx, tnt, resource.Application, appID)
 }
 
-// ListByApplicationTemplateVersionID lists all APIDefinitions for a given application ID.
+// ListByApplicationTemplateVersionID lists all APIDefinitions for a given application template version ID.
 func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.APIDefinition, error) {
 	return s.repo.ListByResourceID(ctx, "", resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
@@ -190,8 +190,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 		return errors.Wrapf(err, "while getting API with ID %s for %s", id, resourceType)
 	}
 
-	_, resourceID := getParentResource(api)
-
+	resourceID := getParentResourceID(api)
 	api = in.ToAPIDefinition(id, resourceType, resourceID, api.PackageID, apiHash)
 
 	err = s.updateAPI(ctx, api, resourceType)
@@ -417,14 +416,14 @@ func (s *service) deleteAPI(ctx context.Context, apiID string, resourceType reso
 	return s.repo.Delete(ctx, tnt, apiID)
 }
 
-func getParentResource(api *model.APIDefinition) (resource.Type, string) {
+func getParentResourceID(api *model.APIDefinition) string {
 	if api.ApplicationTemplateVersionID != nil {
-		return resource.ApplicationTemplateVersion, *api.ApplicationTemplateVersionID
+		return *api.ApplicationTemplateVersionID
 	} else if api.ApplicationID != nil {
-		return resource.Application, *api.ApplicationID
+		return *api.ApplicationID
 	}
 
-	return "", ""
+	return ""
 }
 
 func enrichAPIProtocol(api *model.APIDefinition, specs []*model.SpecInput) {

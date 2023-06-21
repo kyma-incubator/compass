@@ -131,9 +131,9 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.tombstoneRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
 }
 
-// ListByApplicationTemplateVersionID missing godoc
-func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error) {
-	return s.tombstoneRepo.ListByResourceID(ctx, "", appID, resource.ApplicationTemplateVersion)
+// ListByApplicationTemplateVersionID lists Tombstones by Application Template Version ID
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, id string) ([]*model.Tombstone, error) {
+	return s.tombstoneRepo.ListByResourceID(ctx, "", id, resource.ApplicationTemplateVersion)
 }
 
 func (s *service) createTombstone(ctx context.Context, tombstone *model.Tombstone, resourceType resource.Type) error {

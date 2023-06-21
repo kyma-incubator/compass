@@ -133,7 +133,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return apiDefPages, nil
 }
 
-// ListByResourceID lists all APIDefinitions for a given application ID.
+// ListByResourceID lists all APIDefinitions for a given resource ID and resource type.
 func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
 
@@ -172,6 +172,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return apiDefModel, nil
 }
 
+// GetByIDGlobal gets an APIDefinition by ID without tenant isolation
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
 	err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)

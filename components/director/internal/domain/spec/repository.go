@@ -103,6 +103,7 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string, ob
 	return specModel, nil
 }
 
+// GetByIDGlobal gets a Spec by ID without tenant isolation
 func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error) {
 	var specEntity Entity
 	err := r.getterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &specEntity)
@@ -296,6 +297,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Spec
 	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
+// UpdateGlobal updates a Spec without tenant isolation
 func (r *repository) UpdateGlobal(ctx context.Context, item *model.Spec) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")

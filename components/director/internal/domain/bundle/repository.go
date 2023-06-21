@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	bundleTable    string = `public.bundles`
-	correlationIDs string = "correlation_ids"
-	appIDColumn    string = "app_id"
+	bundleTable                string = `public.bundles`
+	correlationIDs             string = "correlation_ids"
+	appIDColumn                string = "app_id"
+	appTemplateVersionIDColumn string = "app_template_version_id"
 )
 
 var (
@@ -249,17 +250,17 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 	return bundlePages, nil
 }
 
-// ListByResourceIDNoPaging missing godoc
+// ListByResourceIDNoPaging lists bundles by resource type are resource ID without paging
 func (r *pgRepository) ListByResourceIDNoPaging(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Bundle, error) {
 	var condition repo.Condition
 	var err error
 	bundleCollection := BundleCollection{}
 
 	if resourceType == resource.Application {
-		condition = repo.NewEqualCondition("app_id", resourceID)
+		condition = repo.NewEqualCondition(appIDColumn, resourceID)
 		err = r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, condition)
 	} else {
-		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		condition = repo.NewEqualCondition(appTemplateVersionIDColumn, resourceID)
 		err = r.globalLister.ListGlobalWithSelectForUpdate(ctx, &bundleCollection, condition)
 	}
 	if err != nil {

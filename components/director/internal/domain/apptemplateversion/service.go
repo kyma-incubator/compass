@@ -2,6 +2,7 @@ package apptemplateversion
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -21,6 +22,13 @@ type ApplicationTemplateVersionRepository interface {
 	Update(ctx context.Context, model model.ApplicationTemplateVersion) error
 }
 
+// ApplicationTemplateService is responsible for repo-layer ApplicationTemplate operations
+//
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	Exists(ctx context.Context, id string) (bool, error)
+}
+
 // UIDService is responsible for UID operations
 //
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -37,14 +45,16 @@ type TimeService interface {
 
 type service struct {
 	appTemplateVersionRepo ApplicationTemplateVersionRepository
+	appTemplateService     ApplicationTemplateService
 	uidService             UIDService
 	timeService            directortime.Service
 }
 
 // NewService returns a new object responsible for service-layer ApplicationTemplateVersion operations.
-func NewService(appTemplateVersionRepo ApplicationTemplateVersionRepository, uidService UIDService, timeService TimeService) *service {
+func NewService(appTemplateVersionRepo ApplicationTemplateVersionRepository, appTemplateSvc ApplicationTemplateService, uidService UIDService, timeService TimeService) *service {
 	return &service{
 		appTemplateVersionRepo: appTemplateVersionRepo,
+		appTemplateService:     appTemplateSvc,
 		uidService:             uidService,
 		timeService:            timeService,
 	}
@@ -53,7 +63,7 @@ func NewService(appTemplateVersionRepo ApplicationTemplateVersionRepository, uid
 // Create creates an ApplicationTemplateVersion for a given applicationTemplateID
 func (s *service) Create(ctx context.Context, applicationTemplateID string, in *model.ApplicationTemplateVersionInput) (string, error) {
 	if in == nil {
-		return "", nil
+		return "", errors.New("Application Template Version input cannot be null")
 	}
 
 	id := s.uidService.Generate()
@@ -90,6 +100,15 @@ func (s *service) Update(ctx context.Context, id, appTemplateID string, in model
 
 // GetByAppTemplateIDAndVersion gets an ApplicationTemplateVersion by a given Application Template ID and a version
 func (s *service) GetByAppTemplateIDAndVersion(ctx context.Context, appTemplateID, version string) (*model.ApplicationTemplateVersion, error) {
+	exists, err := s.appTemplateService.Exists(ctx, appTemplateID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking if Application Template exits")
+	}
+
+	if !exists {
+		return nil, apperrors.NewInvalidDataError("Application Template with ID %s does not exist", appTemplateID)
+	}
+
 	applicationTemplateVersion, err := s.appTemplateVersionRepo.GetByAppTemplateIDAndVersion(ctx, appTemplateID, version)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application Template Version with Version %q and Application Template ID: %q", version, appTemplateID)

@@ -1098,10 +1098,18 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 		return api.Name == modelInput.Name
 	})
 
-	apiDefinitionModel := &model.APIDefinition{
-		Name:       "Bar",
-		TargetURLs: api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
-		Version:    &model.Version{},
+	apiDefinitionModelForApp := &model.APIDefinition{
+		Name:          "Bar",
+		TargetURLs:    api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
+		Version:       &model.Version{},
+		ApplicationID: &appID,
+	}
+
+	apiDefinitionModelForAppTemplateVersion := &model.APIDefinition{
+		Name:                         "Bar",
+		TargetURLs:                   api.ConvertTargetURLToJSONArray("https://test-url-updated.com"),
+		Version:                      &model.Version{},
+		ApplicationTemplateVersionID: &appTemplateVersionID,
 	}
 
 	bundleReferenceInput := &model.BundleReferenceInput{
@@ -1148,7 +1156,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			Name: "Success in ORD case for Application",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -1179,7 +1187,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			Name: "Success in ORD case for Application Template Version",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByIDGlobal", ctx, id).Return(apiDefinitionModelForAppTemplateVersion, nil).Once()
 				repo.On("UpdateGlobal", ctx, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -1211,7 +1219,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			Name: "Success in ORD case when there is defaultBundle for BundleReference that has to be created",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -1242,7 +1250,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			Name: "Error on BundleReference Update",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -1267,7 +1275,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			Name: "Error on BundleReference Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
@@ -1293,7 +1301,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			Name: "Error on BundleReference Deletion",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModel, nil).Once()
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(apiDefinitionModelForApp, nil).Once()
 				repo.On("Update", ctxWithTenant, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},

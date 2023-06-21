@@ -112,7 +112,7 @@ func (s *service) Delete(ctx context.Context, resourceType resource.Type, id str
 		return errors.Wrapf(err, "while deleting Vendor with id %s", id)
 	}
 
-	log.C(ctx).Infof("Successfully deleted Vendir with id %s", id)
+	log.C(ctx).Infof("Successfully deleted Vendor with id %s", id)
 
 	return nil
 }

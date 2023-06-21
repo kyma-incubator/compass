@@ -41,12 +41,12 @@ func TestService_Create(t *testing.T) {
 			ExpectedOutput: appTemplateVersionID,
 		},
 		{
-			Name:                     "Nothing happens when input is empty",
+			Name:                     "Error when input is empty",
 			Input:                    nil,
-			AppTemplateVersionRepoFn: fixEmptyappTemplateVersionRepo,
+			AppTemplateVersionRepoFn: fixEmptyAppTemplateVersionRepo,
 			UIDSvcFn:                 fixEmptyUIDService,
 			TimeSvcFn:                fixEmptyTimeService,
-			ExpectedOutput:           "",
+			ExpectedError:            errors.New("Application Template Version input cannot be null"),
 		},
 		{
 			Name:  "Returns error when repo layer cannot create Application Template Version",
@@ -67,9 +67,10 @@ func TestService_Create(t *testing.T) {
 			appTemplateVersionRepo := testCase.AppTemplateVersionRepoFn()
 			idSvc := testCase.UIDSvcFn()
 			timeSvc := testCase.TimeSvcFn()
-			svc := apptemplateversion.NewService(appTemplateVersionRepo, idSvc, timeSvc)
+			appTemplateSvc := fixEmptyAppTemplateService()
+			svc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, idSvc, timeSvc)
 
-			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc)
+			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc, appTemplateSvc)
 
 			// WHEN
 			result, err := svc.Create(ctx, appTemplateID, testCase.Input)
@@ -148,9 +149,10 @@ func TestService_Update(t *testing.T) {
 			appTemplateVersionRepo := testCase.AppTemplateVersionRepoFn()
 			idSvc := fixEmptyUIDService()
 			timeSvc := fixEmptyTimeService()
-			svc := apptemplateversion.NewService(appTemplateVersionRepo, idSvc, timeSvc)
+			appTemplateSvc := fixEmptyAppTemplateService()
+			svc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, idSvc, timeSvc)
 
-			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc)
+			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc, appTemplateSvc)
 
 			// WHEN
 			err := svc.Update(ctx, appTemplateVersionID, appTemplateID, testCase.Input)
@@ -174,6 +176,7 @@ func TestService_GetByAppTemplateIDAndVersion(t *testing.T) {
 	testCases := []struct {
 		Name                     string
 		AppTemplateVersionRepoFn func() *automock.ApplicationTemplateVersionRepository
+		AppTemplateServiceFn     func() *automock.ApplicationTemplateService
 		ExpectedError            error
 		ExpectedOutput           *model.ApplicationTemplateVersion
 	}{
@@ -184,7 +187,32 @@ func TestService_GetByAppTemplateIDAndVersion(t *testing.T) {
 				appTemplateVersionRepo.On("GetByAppTemplateIDAndVersion", ctx, appTemplateID, testVersion).Return(modelApplicationTemplateVersion, nil).Once()
 				return appTemplateVersionRepo
 			},
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Exists", ctx, appTemplateID).Return(true, nil).Once()
+				return appTemplateSvc
+			},
 			ExpectedOutput: modelApplicationTemplateVersion,
+		},
+		{
+			Name: "Returns an error when cannot verify if App Template exists",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Exists", ctx, appTemplateID).Return(false, testError).Once()
+				return appTemplateSvc
+			},
+			AppTemplateVersionRepoFn: fixEmptyAppTemplateVersionRepo,
+			ExpectedError:            testError,
+		},
+		{
+			Name: "Returns an error when App Template does not exist",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Exists", ctx, appTemplateID).Return(false, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateVersionRepoFn: fixEmptyAppTemplateVersionRepo,
+			ExpectedError:            errors.New("Application Template with ID 58963c6f-24f6-4128-a05c-51d5356e7e09 does not exist"),
 		},
 		{
 			Name: "Returns an error when getting the Application Template Version",
@@ -193,6 +221,11 @@ func TestService_GetByAppTemplateIDAndVersion(t *testing.T) {
 				appTemplateVersionRepo.On("GetByAppTemplateIDAndVersion", ctx, appTemplateID, testVersion).Return(nil, testError).Once()
 				return appTemplateVersionRepo
 			},
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Exists", ctx, appTemplateID).Return(true, nil).Once()
+				return appTemplateSvc
+			},
 			ExpectedError: testError,
 		},
 	}
@@ -200,11 +233,12 @@ func TestService_GetByAppTemplateIDAndVersion(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateVersionRepo := testCase.AppTemplateVersionRepoFn()
+			appTemplateSvc := testCase.AppTemplateServiceFn()
 			idSvc := fixEmptyUIDService()
 			timeSvc := fixEmptyTimeService()
-			svc := apptemplateversion.NewService(appTemplateVersionRepo, idSvc, timeSvc)
+			svc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, idSvc, timeSvc)
 
-			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc)
+			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc, appTemplateSvc)
 
 			// WHEN
 			result, err := svc.GetByAppTemplateIDAndVersion(ctx, appTemplateID, testVersion)
@@ -258,9 +292,10 @@ func TestService_ListByAppTemplateID(t *testing.T) {
 			appTemplateVersionRepo := testCase.AppTemplateVersionRepoFn()
 			idSvc := fixEmptyUIDService()
 			timeSvc := fixEmptyTimeService()
-			svc := apptemplateversion.NewService(appTemplateVersionRepo, idSvc, timeSvc)
+			appTemplateSvc := fixEmptyAppTemplateService()
+			svc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, idSvc, timeSvc)
 
-			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc)
+			defer mock.AssertExpectationsForObjects(t, idSvc, appTemplateVersionRepo, timeSvc, appTemplateSvc)
 
 			// WHEN
 			result, err := svc.ListByAppTemplateID(ctx, appTemplateID)
@@ -290,7 +325,7 @@ func fixTimeService() *automock.TimeService {
 	return timeSvc
 }
 
-func fixEmptyappTemplateVersionRepo() *automock.ApplicationTemplateVersionRepository {
+func fixEmptyAppTemplateVersionRepo() *automock.ApplicationTemplateVersionRepository {
 	return &automock.ApplicationTemplateVersionRepository{}
 }
 
@@ -300,4 +335,8 @@ func fixEmptyUIDService() *automock.UIDService {
 
 func fixEmptyTimeService() *automock.TimeService {
 	return &automock.TimeService{}
+}
+
+func fixEmptyAppTemplateService() *automock.ApplicationTemplateService {
+	return &automock.ApplicationTemplateService{}
 }
