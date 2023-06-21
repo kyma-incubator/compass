@@ -1029,6 +1029,67 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
+func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
+	appTemplateName := createAppTemplateName("template")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "name",
+			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
+		},
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	appTmpl1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl1)
+	require.NoError(t, err)
+	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl2)
+	require.NoError(t, err)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{
+		ID:           &appTmpl2.ID,
+		TemplateName: appTemplateName,
+		Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "name",
+				Value:       "new-name",
+			},
+			{
+				Placeholder: "display-name",
+				Value:       "new-display-name",
+			},
+		},
+	}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, outputApp)
+	require.NotNil(t, outputApp.Application.Description)
+	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
+	require.Equal(t, appTmpl2.ID, *outputApp.Application.ApplicationTemplateID)
+	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+}
+
 func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
