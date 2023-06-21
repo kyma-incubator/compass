@@ -238,6 +238,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 				Placeholders:         appTmplInput.Placeholders,
 				AccessLevel:          appTmplInput.AccessLevel,
 				Labels:               appTmplInput.Labels,
+				Webhooks:             appTmplInput.Webhooks,
 			}
 			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, appTemplateUpdateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
