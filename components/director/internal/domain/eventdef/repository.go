@@ -95,10 +95,10 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 	return r.GetByID(ctx, tenant, id)
 }
 
-// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+// ListByApplicationIDPage lists all EventDefinitions for a given application ID with paging.
 func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	var apiDefCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EventDefinition, tenantID, pageSize, cursor, "id", &apiDefCollection, repo.NewEqualCondition("app_id", appID))
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.EventDefinition, tenantID, pageSize, cursor, idColumn, &apiDefCollection, repo.NewEqualCondition("app_id", appID))
 
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")

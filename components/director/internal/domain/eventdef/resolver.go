@@ -81,7 +81,7 @@ func NewResolver(transact persistence.Transactioner, svc EventDefService, bndlSv
 	}
 }
 
-// EventDefinitionsForApplication lists all APIDefinitions for a given application ID with paging.
+// EventDefinitionsForApplication lists all EventDefinitions for a given application ID with paging.
 func (r *Resolver) EventDefinitionsForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

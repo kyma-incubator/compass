@@ -449,10 +449,12 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 	return r.viewer.Viewer(ctx)
 }
 
+// ApisForApplication resolves to APIDefinition page for a given application ID
 func (r *queryResolver) ApisForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	return r.api.APIDefinitionsForApplication(ctx, appID, first, after)
 }
 
+// EventsForApplication resolves to EventDefinition page for a given application ID
 func (r *queryResolver) EventsForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	return r.eventAPI.EventDefinitionsForApplication(ctx, appID, first, after)
 }
@@ -742,6 +744,7 @@ func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, i
 	return r.api.UpdateAPIDefinition(ctx, id, in)
 }
 
+// UpdateAPIDefinitionForApplication updates an API Definition for a given application ID
 func (r *mutationResolver) UpdateAPIDefinitionForApplication(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	return r.api.UpdateAPIDefinitionForApplication(ctx, id, in)
 }
@@ -761,7 +764,7 @@ func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string,
 	return r.eventAPI.UpdateEventDefinition(ctx, id, in)
 }
 
-// UpdateEventDefinitionForApplication TODO
+// UpdateEventDefinitionForApplication updates an Event Definition for a given application ID
 func (r *mutationResolver) UpdateEventDefinitionForApplication(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.UpdateEventDefinitionForApplication(ctx, id, in)
 }
@@ -924,6 +927,7 @@ func (r *mutationResolver) AddAPIDefinitionToBundle(ctx context.Context, bundleI
 	return r.api.AddAPIDefinitionToBundle(ctx, bundleID, in)
 }
 
+// AddAPIDefinitionToApplication adds an API Definition to a given application ID
 func (r *mutationResolver) AddAPIDefinitionToApplication(ctx context.Context, appID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	return r.api.AddAPIDefinitionToApplication(ctx, appID, in)
 }
@@ -933,7 +937,7 @@ func (r *mutationResolver) AddEventDefinitionToBundle(ctx context.Context, bundl
 	return r.eventAPI.AddEventDefinitionToBundle(ctx, bundleID, in)
 }
 
-// AddEventDefinitionToApplication missing godoc
+// AddEventDefinitionToApplication adds an Event Definition to a given application ID
 func (r *mutationResolver) AddEventDefinitionToApplication(ctx context.Context, appID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.AddEventDefinitionToApplication(ctx, appID, in)
 }

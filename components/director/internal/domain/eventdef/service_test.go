@@ -1428,6 +1428,23 @@ func TestService_UpdateForApplication(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "Success without specs",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				return svc
+			},
+			SpecInput:   nil,
+			InputID:     "foo",
+			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
 			Name: "Error when getting Event",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}

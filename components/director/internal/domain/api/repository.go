@@ -140,7 +140,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 // ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
 func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	var apiDefCollection APIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.API, tenantID, pageSize, cursor, "id", &apiDefCollection, repo.NewEqualCondition("app_id", appID))
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.API, tenantID, pageSize, cursor, idColumn, &apiDefCollection, repo.NewEqualCondition("app_id", appID))
 	if err != nil {
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}

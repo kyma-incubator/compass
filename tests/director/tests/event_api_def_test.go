@@ -16,7 +16,7 @@ func TestEventDefinitionInApplication(t *testing.T) {
 	ctx := context.Background()
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-	appName := "app-test-bundle"
+	appName := "app-test-event-def-in-application"
 
 	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
@@ -40,14 +40,14 @@ func TestAddEventDefinitionToApplication(t *testing.T) {
 	ctx := context.Background()
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-	appName := "app-test-bundle"
+	appName := "app-test-event-def-in-application"
 
 	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	inputGQL, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(fixtures.FixEventAPIDefinitionInput())
+	inputGQL, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(fixtures.FixEventDefinitionInput())
 	require.NoError(t, err)
 
 	eventAddRequest := fixtures.FixAddEventToApplicationRequest(application.ID, inputGQL)
@@ -62,8 +62,8 @@ func TestAddEventDefinitionToApplication(t *testing.T) {
 func TestUpdateEventDefinitionToApplication(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-bundle"
-	newName := "TestUpdatePIDefinitionToApplication"
+	appName := "app-test-event-def-in-application"
+	newName := "TestUpdateAPIDefinitionToApplication"
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)

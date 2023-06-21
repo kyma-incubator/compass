@@ -104,7 +104,7 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 	return s.eventAPIRepo.ListByApplicationID(ctx, tnt, appID)
 }
 
-// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+// ListByApplicationIDPage lists all EventDefinitions for a given application ID with paging.
 func (s *service) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

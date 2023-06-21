@@ -23,5 +23,5 @@ func AddEventToApplicationWithInput(t require.TestingT, ctx context.Context, gql
 }
 
 func AddEventToApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, appID string) graphql.EventAPIDefinitionExt {
-	return AddEventToApplicationWithInput(t, ctx, gqlClient, tenant.TestTenants.GetDefaultTenantID(), appID, FixEventAPIDefinitionInput())
+	return AddEventToApplicationWithInput(t, ctx, gqlClient, tenant.TestTenants.GetDefaultTenantID(), appID, FixEventDefinitionInput())
 }
