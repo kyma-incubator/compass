@@ -363,20 +363,14 @@ func areWebhooksEqual(webhooksModel []model.Webhook, webhooksInput []*model.Webh
 	if len(webhooksModel) != len(webhooksInput) {
 		return false
 	}
-
+	foundWebhooksCounter := 0
 	for _, whModel := range webhooksModel {
-		isEqual := false
-
 		for _, whInput := range webhooksInput {
-			if whModel.ID == whInput.ID {
-				isEqual = reflect.DeepEqual(whModel, *whInput.ToWebhook(whModel.ID, whModel.ObjectID, whModel.ObjectType))
+			if reflect.DeepEqual(whModel, *whInput.ToWebhook(whModel.ID, whModel.ObjectID, whModel.ObjectType)) {
+				foundWebhooksCounter++
+				break
 			}
 		}
-
-		if !isEqual {
-			return false
-		}
 	}
-
-	return true
+	return foundWebhooksCounter == len(webhooksModel)
 }
