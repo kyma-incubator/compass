@@ -20,6 +20,9 @@ const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
 // DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 const DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 
+// DestinationCreator contains the name of the DestinationCreator operator
+const DestinationCreator = "DestinationCreator"
+
 // OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
 
@@ -28,6 +31,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType:                    &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:                      &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
 	DoNotGenerateFormationAssignmentNotificationOperator: &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
+	DestinationCreator:                                   &formationconstraint.DestinationCreatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
@@ -150,9 +154,13 @@ func emptySendNotificationOperationDetails() *formationconstraint.SendNotificati
 			},
 			CreatedAt: &time.Time{},
 		},
-		TemplateInput:              nil,
-		FormationAssignment:        &webhook.FormationAssignment{},
-		ReverseFormationAssignment: &webhook.FormationAssignment{},
+		TemplateInput: nil,
+		FormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
+		ReverseFormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
 		Formation: &model.Formation{
 			Error: json.RawMessage("\"\""),
 		},
@@ -161,9 +169,13 @@ func emptySendNotificationOperationDetails() *formationconstraint.SendNotificati
 
 func emptyNotificationStatusReturnedOperationDetails() *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		Location:                   formationconstraint.JoinPointLocation{},
-		FormationAssignment:        &webhook.FormationAssignment{},
-		ReverseFormationAssignment: &webhook.FormationAssignment{},
+		Location: formationconstraint.JoinPointLocation{},
+		FormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
+		ReverseFormationAssignment: &model.FormationAssignment{
+			Value: json.RawMessage("\"\""),
+		},
 		Formation: &model.Formation{
 			Error: json.RawMessage("\"\""),
 		},

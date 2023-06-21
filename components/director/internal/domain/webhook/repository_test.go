@@ -363,6 +363,29 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 	testListByObjectID(t, "ListByReferenceObjectID", repo.NoLock, []interface{}{givenTenant(), givenApplicationID(), model.ApplicationWebhookReference})
 }
 
+func TestRepositoryDeleteAllByApplicatioTemplateID(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Webhook Delete by ApplicationTemplateID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.webhooks WHERE app_template_id = $1`),
+				Args:          []driver.Value{givenApplicationID()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: webhook.NewRepository,
+		MethodArgs:          []interface{}{givenApplicationID()},
+		MethodName:          "DeleteAllByApplicationTemplateID",
+		IsDeleteMany:        true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepositoryListByApplicationIDWithSelectForUpdate(t *testing.T) {
 	testListByObjectID(t, "ListByApplicationIDWithSelectForUpdate", " "+repo.ForUpdateLock, []interface{}{givenTenant(), givenApplicationID()})
 }

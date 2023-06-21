@@ -127,8 +127,8 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		ResourceType:               targetType,
 		ResourceSubtype:            targetSubtype,
 		Operation:                  operation,
-		FormationAssignment:        convertFormationAssignmentFromModel(fa),
-		ReverseFormationAssignment: convertFormationAssignmentFromModel(reverseFa),
+		FormationAssignment:        fa,
+		ReverseFormationAssignment: reverseFa,
 		Formation:                  formation,
 	}, nil
 }
@@ -153,8 +153,8 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	return &webhookclient.FormationAssignmentNotificationRequestExt{
 		Operation:                              operation,
 		FormationAssignmentNotificationRequest: faRequestMapping.Request,
-		FormationAssignment:                    convertFormationAssignmentFromModel(faRequestMapping.FormationAssignment),
-		ReverseFormationAssignment:             convertFormationAssignmentFromModel(reverseFa),
+		FormationAssignment:                    faRequestMapping.FormationAssignment,
+		ReverseFormationAssignment:             reverseFa,
 		Formation:                              formation,
 		TargetSubtype:                          targetSubtype,
 	}, nil

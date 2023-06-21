@@ -16,8 +16,8 @@ import (
 )
 
 func TestStatusService_UpdateWithConstraints(t *testing.T) {
-	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, webhookFa, reverseWebhookFa, formationconstraint.PreNotificationStatusReturned)
-	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, webhookFa, reverseWebhookFa, formationconstraint.PostNotificationStatusReturned)
+	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PreNotificationStatusReturned)
+	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PostNotificationStatusReturned)
 
 	// GIVEN
 	testCases := []struct {
@@ -236,8 +236,8 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 
 	reverseFaErrorState := fixReverseFormationAssignment(faErrorState)
 
-	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, convertFormationAssignmentFromModel(faErrorState), convertFormationAssignmentFromModel(reverseFaErrorState), formationconstraint.PreNotificationStatusReturned)
-	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, convertFormationAssignmentFromModel(faErrorState), convertFormationAssignmentFromModel(reverseFaErrorState), formationconstraint.PostNotificationStatusReturned)
+	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faErrorState, reverseFaErrorState, formationconstraint.PreNotificationStatusReturned)
+	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faErrorState, reverseFaErrorState, formationconstraint.PostNotificationStatusReturned)
 
 	testCases := []struct {
 		Name                    string
@@ -335,8 +335,8 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 }
 
 func TestStatusService_DeleteWithConstraints(t *testing.T) {
-	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, webhookFa, reverseWebhookFa, formationconstraint.PreNotificationStatusReturned)
-	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, webhookFa, reverseWebhookFa, formationconstraint.PostNotificationStatusReturned)
+	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PreNotificationStatusReturned)
+	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PostNotificationStatusReturned)
 
 	// GIVEN
 	testCases := []struct {
