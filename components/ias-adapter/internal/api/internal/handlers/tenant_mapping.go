@@ -30,13 +30,13 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
-	logProcessing(ctx, tenantMapping)
 
 	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
 		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
+	logProcessing(ctx, tenantMapping)
 
 	if err := tenantMapping.Validate(); err != nil {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)

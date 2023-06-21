@@ -21,6 +21,7 @@ import (
 
 func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 	ctx := context.TODO()
+	ctxWithRegion := context.WithValue(ctx, resync.TenantRegionCtxKey, "central")
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -62,7 +63,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 	kubeClientFn := func() *automock.KubeClient {
 		client := &automock.KubeClient{}
 		client.On("GetTenantFetcherConfigMapData", ctx).Return(lastConsumedTenantTimestamp, lastResyncTimestamp, nil)
-		client.On("UpdateTenantFetcherConfigMapData", ctx, mock.Anything, mock.Anything).Return(nil)
+		client.On("UpdateTenantFetcherConfigMapData", ctxWithRegion, mock.Anything, mock.Anything).Return(nil)
 		return client
 	}
 
@@ -74,7 +75,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 
 	noOpMoverFn := func() *automock.TenantMover {
 		svc := &automock.TenantMover{}
-		svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
+		svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
 		return svc
 	}
 
@@ -101,20 +102,20 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
-				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{newAccountTenant}).Return(nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
+				svc.On("CreateTenants", ctxWithRegion, []model.BusinessTenantMappingInput{newAccountTenant}).Return(nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{movedAccountTenant}, nil)
-				svc.On("MoveTenants", ctx, []model.MovedSubaccountMappingInput{movedAccountTenant}).Return(nil)
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{movedAccountTenant}, nil)
+				svc.On("MoveTenants", ctxWithRegion, []model.MovedSubaccountMappingInput{movedAccountTenant}).Return(nil)
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
-				svc.On("DeleteTenants", ctx, []model.BusinessTenantMappingInput{deletedAccountTenant}).Return(nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
+				svc.On("DeleteTenants", ctxWithRegion, []model.BusinessTenantMappingInput{deletedAccountTenant}).Return(nil)
 				return svc
 			},
 			KubeClientFn: kubeClientFn,
@@ -126,17 +127,17 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn: kubeClientFn,
@@ -152,13 +153,13 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
 				return svc
 			},
 			TenantMoverFn: noOpMoverFn,
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
 				return svc
 			},
 			KubeClientFn: kubeClientFn,
@@ -188,14 +189,14 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 					Type:           string(tenant.Account),
 					Provider:       provider,
 				}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{tenantWithParent}, nil)
-				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{expectedParentTenant, tenantWithParent}).Return(nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{tenantWithParent}, nil)
+				svc.On("CreateTenants", ctxWithRegion, []model.BusinessTenantMappingInput{expectedParentTenant, tenantWithParent}).Return(nil)
 				return svc
 			},
 			TenantMoverFn: noOpMoverFn,
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn: kubeClientFn,
@@ -226,14 +227,14 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				expectedTenantWithParent := tenantWithParent
 				expectedTenantWithParent.Parent = internalParentTenantID
 
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{tenantWithParent}, nil)
-				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{expectedTenantWithParent}).Return(nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{tenantWithParent}, nil)
+				svc.On("CreateTenants", ctxWithRegion, []model.BusinessTenantMappingInput{expectedTenantWithParent}).Return(nil)
 				return svc
 			},
 			TenantMoverFn: noOpMoverFn,
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn: kubeClientFn,
@@ -245,7 +246,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchNewTenantsErrMsg))
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchNewTenantsErrMsg))
 				return svc
 			},
 			TenantMoverFn:   func() *automock.TenantMover { return &automock.TenantMover{} },
@@ -260,12 +261,12 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchMovedTenantsErrMsg))
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchMovedTenantsErrMsg))
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter { return &automock.TenantDeleter{} },
@@ -279,13 +280,13 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			TenantMoverFn: noOpMoverFn,
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchDeletedTenantsErrMsg))
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchDeletedTenantsErrMsg))
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,
@@ -302,14 +303,14 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
-				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{newAccountTenant}).Return(errors.New(failedToCreateTenantsErrMsg))
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
+				svc.On("CreateTenants", ctxWithRegion, []model.BusinessTenantMappingInput{newAccountTenant}).Return(errors.New(failedToCreateTenantsErrMsg))
 				return svc
 			},
 			TenantMoverFn: noOpMoverFn,
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,
@@ -322,18 +323,18 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{movedAccountTenant}, nil)
-				svc.On("MoveTenants", ctx, []model.MovedSubaccountMappingInput{movedAccountTenant}).Return(errors.New(failedToMoveTenantsErrMsg))
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{movedAccountTenant}, nil)
+				svc.On("MoveTenants", ctxWithRegion, []model.MovedSubaccountMappingInput{movedAccountTenant}).Return(errors.New(failedToMoveTenantsErrMsg))
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,
@@ -350,18 +351,18 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
-				svc.On("DeleteTenants", ctx, []model.BusinessTenantMappingInput{deletedAccountTenant}).Return(errors.New(failedToDeleteTenantsErrMsg))
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
+				svc.On("DeleteTenants", ctxWithRegion, []model.BusinessTenantMappingInput{deletedAccountTenant}).Return(errors.New(failedToDeleteTenantsErrMsg))
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,
@@ -378,17 +379,17 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,
@@ -401,17 +402,17 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,
@@ -428,17 +429,17 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantCreatorFn: func() *automock.TenantCreator {
 				svc := &automock.TenantCreator{}
-				svc.On("TenantsToCreate", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
+				svc.On("TenantsToCreate", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{newAccountTenant}, nil)
 				return svc
 			},
 			TenantMoverFn: func() *automock.TenantMover {
 				svc := &automock.TenantMover{}
-				svc.On("TenantsToMove", ctx, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
+				svc.On("TenantsToMove", ctxWithRegion, region, lastConsumedTenantTimestamp).Return([]model.MovedSubaccountMappingInput{}, nil)
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter {
 				svc := &automock.TenantDeleter{}
-				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
+				svc.On("TenantsToDelete", ctxWithRegion, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
 			KubeClientFn:   kubeClientWithResyncTimestampFn,

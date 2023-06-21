@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	formationconstraint "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	mock "github.com/stretchr/testify/mock"
@@ -60,6 +62,29 @@ func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Conte
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation) error); ok {
 		r1 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, _a1, operation
+func (_m *NotificationsService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, _a1 *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	ret := _m.Called(ctx, _a1, operation)
+
+	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, model.FormationOperation) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
+		r0 = rf(ctx, _a1, operation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*formationconstraint.NotificationStatusReturnedOperationDetails)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.Formation, model.FormationOperation) error); ok {
+		r1 = rf(ctx, _a1, operation)
 	} else {
 		r1 = ret.Error(1)
 	}
