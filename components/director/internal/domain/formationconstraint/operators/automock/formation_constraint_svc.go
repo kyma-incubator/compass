@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	formationconstraint "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"

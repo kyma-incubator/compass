@@ -468,6 +468,15 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
+	webhooks, err := r.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks(in.Webhooks)
+	if err != nil {
+		return nil, err
+	}
+
+	if in.Webhooks != nil {
+		in.Webhooks = webhooks
+	}
+
 	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
 		return nil, err

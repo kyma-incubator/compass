@@ -5,31 +5,53 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 const (
-	destinationTable = "public.destinations"
-	revisionColumn   = "revision"
-	tenantIDColumn   = "tenant_id"
+	destinationTable            = "public.destinations"
+	revisionColumn              = "revision"
+	tenantIDColumn              = "tenant_id"
+	formationAssignmentIDColumn = "formation_assignment_id"
+	destinationNameColumn       = "name"
 )
 
 var (
-	destinationColumns = []string{"id", "name", "type", "url", "authentication", "tenant_id", "bundle_id", "revision"}
+	destinationColumns = []string{"id", "name", "type", "url", "authentication", "tenant_id", "bundle_id", "revision", "formation_assignment_id"}
 	conflictingColumns = []string{"name", "tenant_id"}
 	updateColumns      = []string{"name", "type", "url", "authentication", "revision"}
 )
 
+// EntityConverter missing godoc
+//
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EntityConverter interface {
+	ToEntity(in *model.Destination) *Entity
+	FromEntity(entity *Entity) *model.Destination
+}
+
 type repository struct {
-	deleter  repo.DeleterGlobal
-	upserter repo.UpserterGlobal
+	conv                       EntityConverter
+	globalCreator              repo.CreatorGlobal
+	deleter                    repo.Deleter
+	globalDeleter              repo.DeleterGlobal
+	upserterWithEmbeddedTenant repo.UpserterGlobal
+	upserterGlobal             repo.UpserterGlobal
+	lister                     repo.Lister
 }
 
 // NewRepository returns new destination repository
-func NewRepository() *repository {
+func NewRepository(converter EntityConverter) *repository {
 	return &repository{
-		deleter:  repo.NewDeleterGlobal(resource.Destination, destinationTable),
-		upserter: repo.NewUpserterGlobal(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns),
+		conv:                       converter,
+		globalCreator:              repo.NewCreatorGlobal(resource.Destination, destinationTable, destinationColumns),
+		deleter:                    repo.NewDeleterWithEmbeddedTenant(destinationTable, tenantIDColumn),
+		globalDeleter:              repo.NewDeleterGlobal(resource.Destination, destinationTable),
+		upserterWithEmbeddedTenant: repo.NewUpserterWithEmbeddedTenant(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns, tenantIDColumn),
+		upserterGlobal:             repo.NewUpserterGlobal(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns),
+		lister:                     repo.NewListerWithEmbeddedTenant(destinationTable, tenantIDColumn, destinationColumns),
 	}
 }
 
@@ -41,15 +63,57 @@ func (r *repository) Upsert(ctx context.Context, in model.DestinationInput, id, 
 		Type:           in.Type,
 		URL:            in.URL,
 		Authentication: in.Authentication,
-		BundleID:       bundleID,
+		BundleID:       repo.NewNullableString(&bundleID),
 		TenantID:       tenantID,
-		Revision:       revisionID,
+		Revision:       repo.NewNullableString(&revisionID),
 	}
-	return r.upserter.UpsertGlobal(ctx, destination)
+	return r.upserterGlobal.UpsertGlobal(ctx, destination)
+}
+
+// UpsertWithEmbeddedTenant upserts a destination entity in th DB with embedded tenant
+func (r *repository) UpsertWithEmbeddedTenant(ctx context.Context, destination *model.Destination) error {
+	if destination == nil {
+		return apperrors.NewInternalError("destination model can not be empty")
+	}
+
+	return r.upserterWithEmbeddedTenant.UpsertGlobal(ctx, r.conv.ToEntity(destination))
 }
 
 // DeleteOld deletes all destinations in a given tenant that do not have latestRevision
 func (r *repository) DeleteOld(ctx context.Context, latestRevision, tenantID string) error {
-	conditions := repo.Conditions{repo.NewNotEqualCondition(revisionColumn, latestRevision), repo.NewEqualCondition(tenantIDColumn, tenantID)}
-	return r.deleter.DeleteManyGlobal(ctx, conditions)
+	conditions := repo.Conditions{repo.NewNotEqualCondition(revisionColumn, latestRevision), repo.NewEqualCondition(tenantIDColumn, tenantID), repo.NewNotNullCondition(revisionColumn)}
+	return r.globalDeleter.DeleteManyGlobal(ctx, conditions)
+}
+
+// CreateDestination creates destination in the DB with the provided `destination` data
+func (r *repository) CreateDestination(ctx context.Context, destination *model.Destination) error {
+	if destination == nil {
+		return apperrors.NewInternalError("destination model can not be empty")
+	}
+
+	return r.globalCreator.Create(ctx, r.conv.ToEntity(destination))
+}
+
+// ListByTenantIDAndAssignmentID returns all destinations for a given `tenantID` and `formationAssignmentID`
+func (r *repository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error) {
+	log.C(ctx).Infof("Listing destinations by tenant ID: %q and assignment ID: %q from the DB", tenantID, formationAssignmentID)
+	var destCollection EntityCollection
+	conditions := repo.Conditions{repo.NewEqualCondition(formationAssignmentIDColumn, formationAssignmentID)}
+	if err := r.lister.List(ctx, resource.Destination, tenantID, &destCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Destination, 0, destCollection.Len())
+	for _, destEntity := range destCollection {
+		items = append(items, r.conv.FromEntity(&destEntity))
+	}
+
+	return items, nil
+}
+
+// DeleteByDestinationNameAndAssignmentID deletes all destinations for a given `destinationName`, `formationAssignmentID` and `tenantID` from the DB
+func (r *repository) DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName, formationAssignmentID, tenantID string) error {
+	log.C(ctx).Infof("Deleting destination(s) by name: %q, assignment ID: %q and tenant ID: %q from the DB", destinationName, tenantID, formationAssignmentID)
+	conditions := repo.Conditions{repo.NewEqualCondition(destinationNameColumn, destinationName), repo.NewEqualCondition(formationAssignmentIDColumn, formationAssignmentID)}
+	return r.deleter.DeleteMany(ctx, resource.Destination, tenantID, conditions)
 }

@@ -267,6 +267,34 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY
+              value: "{{ .Values.global.director.destinationCreator.correlationIDsKey }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_BASE_URL
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.baseURL }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_PATH
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.subaccountIDParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.nameParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.baseURL }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_PATH
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.subaccountIDParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.nameParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_FILE_NAME_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.fileNameKey }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.commonNameKey }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.certChainKey }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

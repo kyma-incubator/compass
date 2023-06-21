@@ -416,10 +416,18 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	t.Log("Create application template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTmplInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url.com"),
+	}}
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
+	require.NotEmpty(t, appTemplate.Webhooks)
+	oldWebhokCount := len(appTemplate.Webhooks)
+	oldWebhokID := appTemplate.Webhooks[0].ID
+	oldWebhokUrl := appTemplate.Webhooks[0].URL
 
 	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
 	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
@@ -431,7 +439,13 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 			Name: "display-name",
 		},
 	}
+	appTemplateInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  ptr.String("http://url2.com"),
+	}}
+
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
 
 	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
 	updateOutput := graphql.ApplicationTemplate{}
@@ -443,6 +457,15 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
+
+	require.NotEmpty(t, updateOutput.Webhooks)
+	newWebhokCount := len(updateOutput.Webhooks)
+	newWebhokID := updateOutput.Webhooks[0].ID
+	newWebhokUrl := updateOutput.Webhooks[0].URL
+
+	require.Equal(t, oldWebhokCount, newWebhokCount)
+	require.NotEqual(t, oldWebhokID, newWebhokID)
+	require.NotEqual(t, oldWebhokUrl, newWebhokUrl)
 
 	//THEN
 	t.Log("Check if application template was updated")
@@ -483,6 +506,7 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 		},
 	}
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
 
 	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
 	updateOutput := graphql.ApplicationTemplate{}

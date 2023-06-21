@@ -41,7 +41,6 @@ type APIConfig struct {
 type Client struct {
 	apiConfig  APIConfig
 	httpClient APIClient
-	mutex      sync.Mutex
 }
 
 // NewClient missing godoc
@@ -55,10 +54,10 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	c.mutex.Lock()
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error) {
+	mutex.Lock()
 	qp := c.buildFilter()
-	c.mutex.Unlock()
+	mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
 	var systems []System
