@@ -1691,7 +1691,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn:  UnusedWebhookConv,
-			WebhookSvcFn:   UnusedWebhookSvc,
+			WebhookSvcFn:   SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:          gqlAppTemplateUpdateInput,
 			ExpectedOutput: gqlAppTemplate,
 		},
@@ -1747,7 +1747,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn:  UnusedWebhookConv,
-			WebhookSvcFn:   UnusedWebhookSvc,
+			WebhookSvcFn:   SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:          gqlAppTemplateUpdateInput,
 			ExpectedOutput: gqlAppTemplate,
 		},
@@ -1762,7 +1762,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			SelfRegManagerFn: UnusedSelfRegManager,
 			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
+			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:            gqlAppTemplateUpdateInput,
 			ExpectedError:    testError,
 		},
@@ -1786,7 +1786,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInput,
 			ExpectedError: testError,
 		},
@@ -1811,7 +1811,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInput,
 			ExpectedError: testError,
 		},
@@ -1830,7 +1830,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			SelfRegManagerFn: UnusedSelfRegManager,
 			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
+			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:            gqlAppTemplateUpdateInput,
 			ExpectedError:    testError,
 		},
@@ -1853,7 +1853,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInput,
 			ExpectedError: testError,
 		},
@@ -1873,7 +1873,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInputWithoutNameProperty,
 			ExpectedError: errors.New("appInput: (name: cannot be blank.)"),
 		},
@@ -1896,7 +1896,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInputWithoutDisplayNameLabel,
 			ExpectedError: errors.New("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed."),
 		},
@@ -1919,7 +1919,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInputWithNonStringDisplayLabel,
 			ExpectedError: errors.New("\"displayName\" label value must be string"),
 		},
@@ -1966,7 +1966,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:   SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInput,
 			ExpectedError: testError,
 		},
@@ -1992,7 +1992,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
+			WebhookSvcFn:   SuccessfulWebhookSvc(gqlAppTemplateUpdateInputWithProvider.Webhooks, gqlAppTemplateUpdateInputWithProvider.Webhooks),
 			Input:         gqlAppTemplateUpdateInput,
 			ExpectedError: testError,
 		},

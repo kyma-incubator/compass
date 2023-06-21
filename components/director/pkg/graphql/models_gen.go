@@ -166,6 +166,7 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
+	Webhooks             []*WebhookInput                `json:"webhooks"`
 	Description          *string                        `json:"description"`
 	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
