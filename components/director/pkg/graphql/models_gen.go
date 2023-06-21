@@ -75,6 +75,7 @@ type ApplicationEventingConfiguration struct {
 
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
+	ID *string `json:"id"`
 	// **Validation:** ASCII printable characters, max=100
 	TemplateName string `json:"templateName"`
 	// **Validation:** if provided, placeholdersPayload not required
