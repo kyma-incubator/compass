@@ -101,6 +101,7 @@ var (
 		ObjectType: model.ApplicationLabelableObject,
 	}
 	applicationTypeLabel = &model.Label{Value: appSubtype}
+	runtimeTypeLabel     = &model.Label{Value: rtmSubtype}
 )
 
 func Test_GenerateFormationAssignmentNotification(t *testing.T) {
@@ -1929,10 +1930,10 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			},
 			labelSvc: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(applicationTypeLabel, nil).Once()
+				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(runtimeTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, appSubtype, webhookFaWithTargetRuntime, reverseWebhookFaWithTargetRuntime, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, webhookFaWithTargetRuntime, reverseWebhookFaWithTargetRuntime, formationconstraint.JoinPointLocation{}),
 		},
 		{
 			name:                "Success for FA with target type runtime context",
@@ -1949,7 +1950,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			},
 			labelSvc: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(applicationTypeLabel, nil).Once()
+				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(runtimeTypeLabel, nil).Once()
 				return lblSvc
 			},
 			runtimeCtxRepo: func() *automock.RuntimeContextRepository {
@@ -1957,7 +1958,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, appSubtype, webhookFaWithTargetRuntimeCtx, reverseWebhookFaWithTargetRuntimeCtx, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, webhookFaWithTargetRuntimeCtx, reverseWebhookFaWithTargetRuntimeCtx, formationconstraint.JoinPointLocation{}),
 		},
 		{
 			name:                "Success for application when there is no reverse fa",

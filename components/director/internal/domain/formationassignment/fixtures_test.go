@@ -46,7 +46,8 @@ var (
 	faModel  = fixFormationAssignmentModel(TestConfigValueRawJSON)
 	faEntity = fixFormationAssignmentEntity(TestConfigValueStr)
 
-	appSubtype = "subtype"
+	appSubtype = "app-subtype"
+	rtmSubtype = "rtm-subtype"
 )
 
 func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssignment {
