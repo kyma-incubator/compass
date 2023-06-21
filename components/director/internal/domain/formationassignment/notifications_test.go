@@ -1863,19 +1863,13 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 	emptyCtx = context.TODO()
 
 	faWithTargetTypeApplication := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), nil)
-	webhookFaWithTargetApplication := convertFormationAssignmentFromModel(faWithTargetTypeApplication)
 	reverseFaWithTargetTypeApplication := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), nil)
-	reverseWebhookFaWithTargetApplication := convertFormationAssignmentFromModel(reverseFaWithTargetTypeApplication)
 
 	faWithTargetTypeRuntime := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntime, string(model.ReadyAssignmentState), nil)
-	webhookFaWithTargetRuntime := convertFormationAssignmentFromModel(faWithTargetTypeRuntime)
 	reverseFaWithTargetTypeRuntime := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntime, string(model.ReadyAssignmentState), nil)
-	reverseWebhookFaWithTargetRuntime := convertFormationAssignmentFromModel(reverseFaWithTargetTypeRuntime)
 
 	faWithTargetTypeRuntimeCtx := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, string(model.ReadyAssignmentState), nil)
-	webhookFaWithTargetRuntimeCtx := convertFormationAssignmentFromModel(faWithTargetTypeRuntimeCtx)
 	reverseFaWithTargetTypeRuntimeCtx := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, string(model.ReadyAssignmentState), nil)
-	reverseWebhookFaWithTargetRuntimeCtx := convertFormationAssignmentFromModel(reverseFaWithTargetTypeRuntimeCtx)
 
 	runtimeLabelInput := &model.LabelInput{
 		Key:        rtmTypeLabelKey,
@@ -1883,7 +1877,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, webhookFaWithTargetApplication, reverseWebhookFaWithTargetApplication, formationconstraint.JoinPointLocation{})
+	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{})
 
 	testCases := []struct {
 		name                    string
@@ -1933,7 +1927,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(runtimeTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, webhookFaWithTargetRuntime, reverseWebhookFaWithTargetRuntime, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}),
 		},
 		{
 			name:                "Success for FA with target type runtime context",
@@ -1958,7 +1952,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, webhookFaWithTargetRuntimeCtx, reverseWebhookFaWithTargetRuntimeCtx, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}),
 		},
 		{
 			name:                "Success for application when there is no reverse fa",
@@ -1978,7 +1972,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(applicationTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, webhookFaWithTargetApplication, convertFormationAssignmentFromModel(&model.FormationAssignment{}), formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}),
 		},
 		{
 			name:                "Error when can't get reverse fa",
@@ -2120,8 +2114,8 @@ func Test_GenerateFormationAssignmentNotificationExt(t *testing.T) {
 	expectedExtNotificationReq := &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: faRequestMapping.Request,
 		Operation:                              model.AssignFormation,
-		FormationAssignment:                    webhookFaWithSourceAppAndTargetApp,
-		ReverseFormationAssignment:             webhookFaWithSourceAppAndTargetAppReverse,
+		FormationAssignment:                    faWithSourceAppAndTargetApp,
+		ReverseFormationAssignment:             faWithSourceAppAndTargetAppReverse,
 		Formation:                              formation,
 		TargetSubtype:                          appSubtype,
 	}
@@ -2167,8 +2161,8 @@ func Test_GenerateFormationAssignmentNotificationExt(t *testing.T) {
 			expectedExtNotificationReq: &webhookclient.FormationAssignmentNotificationRequestExt{
 				FormationAssignmentNotificationRequest: faRequestMapping.Request,
 				Operation:                              model.AssignFormation,
-				FormationAssignment:                    webhookFaWithSourceAppAndTargetApp,
-				ReverseFormationAssignment:             convertFormationAssignmentFromModel(&model.FormationAssignment{}),
+				FormationAssignment:                    faWithSourceAppAndTargetApp,
+				ReverseFormationAssignment:             nil,
 				Formation:                              formation,
 				TargetSubtype:                          appSubtype,
 			},
