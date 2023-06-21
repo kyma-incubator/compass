@@ -394,7 +394,6 @@ global:
             outputTemplate: '{"error":"{{.Body.error}}","success_status_code": 202}'
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    protocol: HTTP
     host: compass-external-services-mock.compass-system.svc.cluster.local
     port: 8080
     mtlsTokenPath: "/cert/token"
