@@ -1,14 +1,14 @@
-package formationconstraint_test
+package operators_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -16,15 +16,11 @@ import (
 
 func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	testCases := []struct {
 		Name                         string
 		Location                     formationconstraintpkg.JoinPointLocation
 		Details                      formationconstraintpkg.JoinPointDetails
-		OperatorFunc                 func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error)
+		OperatorFunc                 func(ctx context.Context, input operators.OperatorInput) (bool, error)
 		SetEmptyOperatorInputBuilder bool
 		FormationConstraintService   func() *automock.FormationConstraintSvc
 		ExpectedErrorMsg             string
@@ -33,7 +29,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 			Name:     "Success",
 			Location: location,
 			Details:  &details,
-			OperatorFunc: func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error) {
+			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
 				return true, nil
 			},
 			FormationConstraintService: func() *automock.FormationConstraintSvc {
@@ -74,7 +70,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
-			OperatorFunc: func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error) {
+			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
 				return true, nil
 			},
 			SetEmptyOperatorInputBuilder: true,
@@ -89,7 +85,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
-			OperatorFunc: func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error) {
+			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
 				return false, testErr
 			},
 			ExpectedErrorMsg: "An error occurred while executing operator",
@@ -103,7 +99,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{formationConstraintModel}, nil).Once()
 				return svc
 			},
-			OperatorFunc: func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error) {
+			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
 				return false, nil
 			},
 			ExpectedErrorMsg: "Operator \"IsNotAssignedToAnyFormationOfType\" is not satisfied",
@@ -117,7 +113,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 				svc.On("ListMatchingConstraints", ctx, formationTemplateID, location, details.GetMatchingDetails()).Return([]*model.FormationConstraint{{Operator: operatorName, InputTemplate: "{invalid template"}}, nil).Once()
 				return svc
 			},
-			OperatorFunc: func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error) {
+			OperatorFunc: func(ctx context.Context, input operators.OperatorInput) (bool, error) {
 				return false, nil
 			},
 			ExpectedErrorMsg: "Failed to parse operator input template for operator",
@@ -128,7 +124,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			formationConstraintSvc := testCase.FormationConstraintService()
 
-			engine := formationconstraint.NewConstraintEngine(formationConstraintSvc, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, formationConstraintSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 			if testCase.OperatorFunc != nil {
 				engine.SetOperator(testCase.OperatorFunc)
 			} else {
