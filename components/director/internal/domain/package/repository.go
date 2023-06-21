@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	packageTable               string = `public.packages`
-	appTemplateVersionIDColumn        = "app_template_version_id"
-	appIDColumn                       = "app_id"
+	packageTable               = `public.packages`
+	appTemplateVersionIDColumn = "app_template_version_id"
+	appIDColumn                = "app_id"
 )
 
 var (
