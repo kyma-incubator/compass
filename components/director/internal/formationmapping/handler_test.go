@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// todo::: revert and fix unit tests
+// todo::: revert and fix unit test
 //func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 //	url := fmt.Sprintf("/v1/businessIntegrations/{%s}/assignments/{%s}/status", fm.FormationIDParam, fm.FormationAssignmentIDParam)
 //	testValidConfig := `{"testK":"testV"}`

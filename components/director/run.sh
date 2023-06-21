@@ -300,13 +300,13 @@ export APP_PAIRING_ADAPTER_WATCHER_ID="pairing-adapter-watcher-id"
 # Destination Creator Service Configuration
 export APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY="correlationIds"
 
-export APP_DESTINATION_CREATOR_DESTINATION_BASE_URL="https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
+export APP_DESTINATION_CREATOR_DESTINATION_BASE_URL="https://destination-creator-local-destination-api-url.com"
 export APP_DESTINATION_CREATOR_DESTINATION_PATH="/regions/{region}/subaccounts/{subaccountId}/destinations"
 export APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER="region"
 export APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
 export APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER="destinationName"
 
-export APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL="https://cert.staging.extensions.ondemand.com/destinationservice/certificate/api/v1" # todo::: revert to local value
+export APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL="https://destination-creator-local-certificate-api-url.com"
 export APP_DESTINATION_CREATOR_CERTIFICATE_PATH="/regions/{region}/subaccounts/{subaccountId}/certificates"
 export APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER="region"
 export APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER="subaccountId"

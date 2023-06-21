@@ -213,6 +213,13 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	// The formation assignment notifications processing is independent of the status update request handling.
 	// That's why we're executing it in a go routine and in parallel to this returning a response to the client
 	go func() {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
+
+		correlationIDKey := correlation.RequestIDHeaderKey
+		correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+		ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
 		log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")
 
 		tx, err = h.transact.Begin()

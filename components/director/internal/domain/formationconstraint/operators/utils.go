@@ -14,9 +14,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// RetrieveFormationAssignmentPointer todo::: add detailed go doc
+// RetrieveFormationAssignmentPointer converts the provided uninterpreted memory address in form of an integer back to the model.FormationAssignment pointer structure
 func RetrieveFormationAssignmentPointer(ctx context.Context, jointPointDetailsAssignmentMemoryAddress uintptr) (*model.FormationAssignment, error) {
-	if jointPointDetailsAssignmentMemoryAddress == 0 {
+	if jointPointDetailsAssignmentMemoryAddress == 0 { // the default value of uintptr is 0
 		return nil, errors.New("The joint point details' assignment memory address cannot be 0")
 	}
 

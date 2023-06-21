@@ -193,16 +193,12 @@ func ParseCertificate(cert string, key string) (*tls.Certificate, error) {
 
 // ParseCertificateBytes creates a tls.Certificate from certificate and key
 func ParseCertificateBytes(cert []byte, key []byte) (*tls.Certificate, error) {
-	// todo::: temp workaround; remove
-	certChainBytes := util.TryDecodeBase64(string(cert))
-	privateKeyBytes := util.TryDecodeBase64(string(key))
-
-	certs, err := DecodeCertificates(certChainBytes)
+	certs, err := DecodeCertificates(cert)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error while decoding certificate pem block")
 	}
 
-	privateKeyPem, _ := pem.Decode(privateKeyBytes)
+	privateKeyPem, _ := pem.Decode(key)
 	if privateKeyPem == nil {
 		return nil, errors.New("Error while decoding private key pem block")
 	}

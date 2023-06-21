@@ -473,7 +473,7 @@ func (s *Service) DeleteCertificateFromDestinationService(ctx context.Context, c
 	return nil
 }
 
-// EnrichAssignmentConfigWithCertificateData todo::: go doc
+// EnrichAssignmentConfigWithCertificateData is responsible to enrich the assignment configuration with the created certificate resource for the SAML assertion destination
 func (s *Service) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData destinationcreator.CertificateResponse, destinationIndex int) (json.RawMessage, error) {
 	certAPIConfig := s.destinationCreatorCfg.CertificateAPIConfig
 	configStr := string(assignmentConfig)

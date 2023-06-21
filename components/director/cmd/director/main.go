@@ -123,7 +123,7 @@ type config struct {
 	AppURL          string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
-	ServerTimeout time.Duration `envconfig:"default=900s"` // todo::: revert
+	ServerTimeout time.Duration `envconfig:"default=110s"`
 
 	Database                persistence.DatabaseConfig
 	APIEndpoint             string `envconfig:"default=/graphql"`

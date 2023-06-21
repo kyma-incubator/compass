@@ -320,13 +320,13 @@ global:
     destinationCreator:
       correlationIDsKey: "correlationIds"
       destinationAPI:
-        baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/destination/api/v1" # todo::: revert to local value
+        baseURL: "https://destination-creator-local-destination-api-url.com"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
-        baseURL: "https://cert.staging.extensions.ondemand.com/destinationservice/certificate/api/v1" # todo::: revert to local value
+        baseURL: "https://destination-creator-local-certificate-api-url.com"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
