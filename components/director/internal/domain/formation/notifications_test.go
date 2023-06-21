@@ -541,8 +541,8 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 
 	subtype := "subtype"
 
-	fa := fixWebhookFormationAssignmentWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
-	reverseFa := fixWebhookFormationAssignmentWithParameters("id2", FormationID, ApplicationID, RuntimeID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InitialFormationState)
+	fa := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
+	reverseFa := fixFormationAssignmentModelWithParameters("id2", FormationID, ApplicationID, RuntimeID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.InitialFormationState)
 
 	templateInput := &webhook.FormationConfigurationChangeInput{
 		Operation:   model.AssignFormation,
