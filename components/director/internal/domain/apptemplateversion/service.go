@@ -2,8 +2,9 @@ package apptemplateversion
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
