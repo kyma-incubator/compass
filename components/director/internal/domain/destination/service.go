@@ -508,7 +508,7 @@ func (s *Service) validateDestinationSubaccount(ctx context.Context, externalDes
 		}
 		subaccountID = consumerSubaccountID
 
-		log.C(ctx).Info("There was no subaccount ID provided in the destination but the consumer is validated successfully")
+		log.C(ctx).Infof("There was no subaccount ID provided in the destination but the consumer: %q is validated successfully", subaccountID)
 		return subaccountID, nil
 	}
 
