@@ -3,6 +3,7 @@ package resync
 import (
 	"context"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"math"
 	"strconv"
 	"sync"
@@ -346,68 +347,23 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 	var m sync.Mutex
 	eventPages := make([]*EventsPage, 0)
 	queryParamsQueue := make(chan QueryParams)
-	wg := sync.WaitGroup{}
-	var globalErr safeError
+	g, errCtx := errgroup.WithContext(context.Background())
 
 	log.C(ctx).Infof("Initializing %d page fetching workers: starting concurrent retrieval of pages.", pageConfig.PageWorkers)
 	for worker := 0; worker < pageConfig.PageWorkers; worker++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			for qParams := range queryParamsQueue {
-				if globalErr.GetError() != nil {
-					continue
-				}
-
-				var res *EventsPage
-				err := retry.Do(func() error {
-					res, err = eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
-					if err != nil {
-						return errors.Wrap(err, "while fetching tenant events page")
-					}
-					if res == nil {
-						return apperrors.NewInternalError("next page was expected but response was empty")
-					}
-
-					return nil
-				}, []retry.Option{retry.Attempts(5)}...)
-
-				if err != nil {
-					log.C(ctx).WithError(err).Errorf("Error occurred while fetching page.")
-					if globalErr.GetError() == nil {
-						globalErr.SetError(err)
-					}
-					continue
-				}
-
-				m.Lock()
-				eventPages = append(eventPages, &EventsPage{
-					FieldMapping:                 res.FieldMapping,
-					MovedSubaccountsFieldMapping: res.MovedSubaccountsFieldMapping,
-					ProviderName:                 res.ProviderName,
-					Payload:                      res.Payload,
-				})
-				m.Unlock()
-			}
-		}()
+		g.Go(func() error {
+			return consumeQueryParams(ctx, errCtx, &m, eventAPIClient, eventsType, &eventPages, queryParamsQueue)
+		})
 	}
 
-	wgParams := sync.WaitGroup{}
-	wgParams.Add(1)
+	log.C(ctx).Infof("Starting produce query params go routine.")
+	g.Go(func() error {
+		return produceQueryParams(errCtx, pageStart, totalPages, params, pageConfig, queryParamsQueue)
+	})
 
-	log.C(ctx).Infof("Starting a goroutine to prepare query parameters.")
-	go createParamsForFetching(&wgParams, pageStart, totalPages, params, pageConfig, queryParamsQueue)
-
-	log.C(ctx).Infof("Waiting for the goroutine to prepare all query parameters.")
-	wgParams.Wait()
-
-	close(queryParamsQueue)
-	log.C(ctx).Infof("Waiting for all page fetching workers to finish.")
-	wg.Wait()
-
-	if globalErr.GetError() != nil {
-		return globalErr.GetError()
+	log.C(ctx).Infof("Waiting for query params producer and all consumers to finish.")
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	log.C(ctx).Infof("Successfully fetched %d event pages for region %s. Starting processing...", len(eventPages), region)
@@ -429,8 +385,45 @@ func getRegionFromCtx(ctx context.Context) string {
 	return region
 }
 
-func createParamsForFetching(wg *sync.WaitGroup, pageStart int64, totalPages int64, params QueryParams, config PageConfig, queue chan QueryParams) {
-	defer wg.Done()
+func consumeQueryParams(ctx context.Context, errCtx context.Context, m *sync.Mutex, eventAPIClient EventAPIClient, eventsType EventsType, eventPages *[]*EventsPage, queryParamsQueue chan QueryParams) error {
+	for qParams := range queryParamsQueue {
+		select {
+		case <-errCtx.Done():
+			return errCtx.Err()
+		default:
+			var res *EventsPage
+			err := retry.Do(func() error {
+				var err error
+				res, err = eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
+				if err != nil {
+					return errors.Wrap(err, "while fetching tenant events page")
+				}
+				if res == nil {
+					return apperrors.NewInternalError("next page was expected but response was empty")
+				}
+
+				return nil
+			}, []retry.Option{retry.Attempts(5)}...)
+
+			if err != nil {
+				return errors.Wrap(err, "Error occurred while fetching page.")
+			}
+
+			m.Lock()
+			*eventPages = append(*eventPages, &EventsPage{
+				FieldMapping:                 res.FieldMapping,
+				MovedSubaccountsFieldMapping: res.MovedSubaccountsFieldMapping,
+				ProviderName:                 res.ProviderName,
+				Payload:                      res.Payload,
+			})
+			m.Unlock()
+		}
+	}
+	return nil
+}
+
+func produceQueryParams(ctx context.Context, pageStart int64, totalPages int64, params QueryParams, config PageConfig, queue chan QueryParams) error {
+	defer close(queue)
 
 	for i := pageStart + 1; i <= totalPages; i++ {
 		qParams := make(map[string]string)
@@ -438,8 +431,14 @@ func createParamsForFetching(wg *sync.WaitGroup, pageStart int64, totalPages int
 			qParams[k] = v
 		}
 		qParams[config.PageNumField] = strconv.FormatInt(i, 10)
-		queue <- qParams
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case queue <- qParams:
+		}
 	}
+	return nil
 }
 
 func runInChunks(ctx context.Context, maxChunkSize int, tenants []graphql.BusinessTenantMappingInput, storeTenantsFunc func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error) error {
@@ -453,21 +452,4 @@ func runInChunks(ctx context.Context, maxChunkSize int, tenants []graphql.Busine
 	}
 
 	return nil
-}
-
-type safeError struct {
-	mu    sync.Mutex
-	Error error
-}
-
-func (se *safeError) SetError(err error) {
-	se.mu.Lock()
-	defer se.mu.Unlock()
-	se.Error = err
-}
-
-func (se *safeError) GetError() error {
-	se.mu.Lock()
-	defer se.mu.Unlock()
-	return se.Error
 }
