@@ -17,13 +17,13 @@ type FormationAssignmentNotificationsService struct {
 	mock.Mock
 }
 
-// GenerateFormationAssignmentNotification provides a mock function with given fields: ctx, formationAssignment
-func (_m *FormationAssignmentNotificationsService) GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
-	ret := _m.Called(ctx, formationAssignment)
+// GenerateFormationAssignmentNotification provides a mock function with given fields: ctx, formationAssignment, operation
+func (_m *FormationAssignmentNotificationsService) GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+	ret := _m.Called(ctx, formationAssignment, operation)
 
 	var r0 *webhookclient.FormationAssignmentNotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) *webhookclient.FormationAssignmentNotificationRequest); ok {
-		r0 = rf(ctx, formationAssignment)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, model.FormationOperation) *webhookclient.FormationAssignmentNotificationRequest); ok {
+		r0 = rf(ctx, formationAssignment, operation)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*webhookclient.FormationAssignmentNotificationRequest)
@@ -31,8 +31,8 @@ func (_m *FormationAssignmentNotificationsService) GenerateFormationAssignmentNo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationAssignment) error); ok {
-		r1 = rf(ctx, formationAssignment)
+	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationAssignment, model.FormationOperation) error); ok {
+		r1 = rf(ctx, formationAssignment, operation)
 	} else {
 		r1 = ret.Error(1)
 	}
