@@ -608,9 +608,9 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 	if assignmentClone.FormationAssignment.Source == assignmentClone.FormationAssignment.Target {
 		assignment.State = string(model.ReadyAssignmentState)
-		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
+		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q is self-referenced. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
+			return errors.Wrapf(err, "while updating self-referenced formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
 		return nil
 	}
