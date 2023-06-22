@@ -562,7 +562,6 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 //
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
-
 func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	var errs *multierror.Error
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests)
@@ -663,6 +662,9 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
+		}
+		if *response.State == string(model.ReadyAssignmentState) {
+			assignment.Value = nil
 		}
 		assignment.State = *response.State
 	} else {

@@ -33,9 +33,8 @@ var (
 	testErr       = errors.New("Test Error")
 	notFoundError = apperrors.NewNotFoundError(resource.FormationAssignment, TestID)
 
-	faInput   = fixFormationAssignmentModelInput(TestConfigValueRawJSON)
-	fa        = fixFormationAssignmentModelWithFormationID(TestFormationID)
-	webhookFa = fixWebhookFormationAssignmentWithFormationID(TestFormationID)
+	faInput = fixFormationAssignmentModelInput(TestConfigValueRawJSON)
+	fa      = fixFormationAssignmentModelWithFormationID(TestFormationID)
 
 	assignOperation = model.AssignFormation
 
@@ -52,15 +51,10 @@ var (
 		ID:                  TestFormationID,
 		TenantID:            TestTenantID,
 		FormationTemplateID: TestFormationTemplateID,
-		Name:                "test-formation",
-		State:               "READY",
-		Error:               nil,
+		Name:                TestFormationName,
+		State:               TestReadyState,
 	}
-	formationTemplate = &model.FormationTemplate{
-		ID:   "testFTID",
-		Name: "testFTName",
-	}
-	reverseWebhookFa = fixReverseWebhookFormationAssignment(webhookFa)
+	reverseFa = fixReverseFormationAssignment(fa)
 
 	rtmTypeLabelKey = "rtmTypeLabelKey"
 	appTypeLabelKey = "appTypeLabelKey"
@@ -2183,7 +2177,6 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		FormationID: formation.ID,
 		State:       string(model.InitialAssignmentState),
 	}
-	initialStateWebhookAssignment := convertFormationAssignmentFromModel(initialStateAssignment)
 	reverseInitialStateAssignment := &model.FormationAssignment{
 		ID:          TestID,
 		TenantID:    TestTenantID,
@@ -2194,7 +2187,6 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		FormationID: formation.ID,
 		State:       string(model.InitialAssignmentState),
 	}
-	reverseInitialStateWebhookAssignment := convertFormationAssignmentFromModel(reverseInitialStateAssignment)
 	readyStateAssignment := &model.FormationAssignment{
 		ID:          TestID,
 		TenantID:    TestTenantID,
@@ -2287,8 +2279,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		CorrelationID: "",
 	}
 
-	extendedFaNotificationInitialReq := fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateWebhookAssignment)
-	extendedFaNotificationInitialReqAsync := fixExtendedFormationAssignmentNotificationReq(reqWebhookWithAsyncCallbackMode, initialStateWebhookAssignment)
+	extendedFaNotificationInitialReq := fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateAssignment)
+	extendedFaNotificationInitialReqAsync := fixExtendedFormationAssignmentNotificationReq(reqWebhookWithAsyncCallbackMode, initialStateAssignment)
 
 	testCases := []struct {
 		Name                                 string
@@ -2482,7 +2474,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
-				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, convertFormationAssignmentFromModel(deletingStateAssignment))).Return(&webhook.Response{
+				notificationSvc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(reqWebhook, deletingStateAssignment)).Return(&webhook.Response{
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
@@ -2493,7 +2485,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(deletingStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(reqWebhook, convertFormationAssignmentFromModel(deletingStateAssignment)), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(reqWebhook, deletingStateAssignment), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(deletingStateAssignment, reqWebhook),
@@ -2849,8 +2841,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		reverseMappingRequest.Object = reverseInputMock
 
 		notificationSvc := &automock.NotificationService{}
-		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateWebhookAssignment)
-		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateWebhookAssignment
+		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateAssignment)
+		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateAssignment
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFA).Return(&webhook.Response{
 			Config:               &config,
 			SuccessStatusCode:    &ok,
@@ -2858,8 +2850,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ActualStatusCode:     &ok,
 		}, nil)
 
-		extendedReqWithReverseFAForReverseNotification := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseInitialStateWebhookAssignment)
-		extendedReqWithReverseFAForReverseNotification.ReverseFormationAssignment = convertFormationAssignmentFromModel(configAssignment)
+		extendedReqWithReverseFAForReverseNotification := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseInitialStateAssignment)
+		extendedReqWithReverseFAForReverseNotification.ReverseFormationAssignment = configAssignment
 
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFAForReverseNotification).Return(&webhook.Response{
 			Config:               &config,
@@ -2951,8 +2943,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		reverseMappingRequest.Object = reverseInputMock
 
 		notificationSvc := &automock.NotificationService{}
-		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateWebhookAssignment)
-		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateWebhookAssignment
+		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateAssignment)
+		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateAssignment
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFA).Return(&webhook.Response{
 			Config:               &config,
 			SuccessStatusCode:    &ok,
@@ -2960,8 +2952,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ActualStatusCode:     &ok,
 		}, nil)
 
-		extendedReqWithReverseFAForReverseNotification := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseInitialStateWebhookAssignment)
-		extendedReqWithReverseFAForReverseNotification.ReverseFormationAssignment = convertFormationAssignmentFromModel(configAssignment)
+		extendedReqWithReverseFAForReverseNotification := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseInitialStateAssignment)
+		extendedReqWithReverseFAForReverseNotification.ReverseFormationAssignment = configAssignment
 
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFAForReverseNotification).Return(&webhook.Response{
 			Config:               &config,
@@ -3048,8 +3040,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		reverseMappingRequest.Object = reverseInputMock
 
 		notificationSvc := &automock.NotificationService{}
-		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateWebhookAssignment)
-		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateWebhookAssignment
+		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateAssignment)
+		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateAssignment
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFA).Return(&webhook.Response{
 			Config:               &config,
 			SuccessStatusCode:    &ok,
@@ -3057,8 +3049,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ActualStatusCode:     &incomplete,
 		}, nil)
 
-		extendedReqWithReverseFAForReverseNotification := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseInitialStateWebhookAssignment)
-		extendedReqWithReverseFAForReverseNotification.ReverseFormationAssignment = convertFormationAssignmentFromModel(configPendingStateWithConfigAssignment)
+		extendedReqWithReverseFAForReverseNotification := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseInitialStateAssignment)
+		extendedReqWithReverseFAForReverseNotification.ReverseFormationAssignment = configPendingStateWithConfigAssignment
 
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFAForReverseNotification).Return(&webhook.Response{
 			Config:               &config,
@@ -3067,8 +3059,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ActualStatusCode:     &incomplete,
 		}, nil)
 
-		extendedReqWithReverseFAForReverseNotificationSecond := fixExtendedFormationAssignmentNotificationReq(mappingRequest, convertFormationAssignmentFromModel(configPendingStateWithConfigAssignment))
-		extendedReqWithReverseFAForReverseNotificationSecond.ReverseFormationAssignment = convertFormationAssignmentFromModel(reverseConfigPendingAssignment)
+		extendedReqWithReverseFAForReverseNotificationSecond := fixExtendedFormationAssignmentNotificationReq(mappingRequest, configPendingStateWithConfigAssignment)
+		extendedReqWithReverseFAForReverseNotificationSecond.ReverseFormationAssignment = reverseConfigPendingAssignment
 
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFAForReverseNotificationSecond).Return(&webhook.Response{
 			Config:               &config,
@@ -3077,8 +3069,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ActualStatusCode:     &incomplete,
 		}, nil)
 
-		extendedReqWithReverseFAForReverseNotificationThird := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, convertFormationAssignmentFromModel(reverseConfigPendingAssignment))
-		extendedReqWithReverseFAForReverseNotificationThird.ReverseFormationAssignment = convertFormationAssignmentFromModel(configPendingStateWithConfigAssignment)
+		extendedReqWithReverseFAForReverseNotificationThird := fixExtendedFormationAssignmentNotificationReq(reverseMappingRequest, reverseConfigPendingAssignment)
+		extendedReqWithReverseFAForReverseNotificationThird.ReverseFormationAssignment = configPendingStateWithConfigAssignment
 
 		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFAForReverseNotificationThird).Return(&webhook.Response{
 			Config:               &config,
@@ -3184,7 +3176,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	errMsg := "Test Error"
 
 	configAssignmentWithTenantAndID := fixFormationAssignmentModelWithParameters(TestID, formation.ID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), []byte(config))
-	configWebhookAssignmentWithTenantAndID := convertFormationAssignmentFromModel(configAssignmentWithTenantAndID)
 
 	assignmentWithTenantAndIDInDeletingState := &model.FormationAssignment{
 		ID:          TestID,
@@ -3273,13 +3264,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3294,7 +3285,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(successResponseWithStateInBody, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponseWithStateInBody, nil).Once()
 				return svc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3305,7 +3296,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3321,13 +3312,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
@@ -3343,13 +3334,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(incompleteResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(incompleteResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3378,13 +3369,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
@@ -3395,13 +3386,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(errorResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(errorResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3423,13 +3414,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, convertFormationAssignmentFromModel(configAssignmentWithTenantAndID))).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
@@ -3481,13 +3472,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(nil, testErr).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(nil, testErr).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3504,13 +3495,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(nil, testErr).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(nil, testErr).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3527,13 +3518,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(incompleteResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(incompleteResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3544,13 +3535,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(errorResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(errorResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3572,13 +3563,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3594,13 +3585,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3621,13 +3612,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3649,13 +3640,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			},
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(successResponse, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3670,13 +3661,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(responseWithInvalidStateInBody, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(responseWithInvalidStateInBody, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3687,13 +3678,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, convertFormationAssignmentFromModel(configAssignmentWithTenantAndID))).Return(deleteErrorResponseWithStateInBody, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(deleteErrorResponseWithStateInBody, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3708,13 +3699,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			NotificationService: func() *automock.NotificationService {
 				svc := &automock.NotificationService{}
-				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID)).Return(deleteErrorResponseWithStateInBody, nil).Once()
+				svc.On("SendNotification", ctxWithTenant, fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID)).Return(deleteErrorResponseWithStateInBody, nil).Once()
 				return svc
 			},
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configWebhookAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {

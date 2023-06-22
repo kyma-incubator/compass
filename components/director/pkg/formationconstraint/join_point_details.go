@@ -136,8 +136,8 @@ type SendNotificationOperationDetails struct {
 	Webhook                    *model.Webhook
 	CorrelationID              string
 	TemplateInput              webhook.TemplateInput
-	FormationAssignment        *webhook.FormationAssignment
-	ReverseFormationAssignment *webhook.FormationAssignment
+	FormationAssignment        *model.FormationAssignment
+	ReverseFormationAssignment *model.FormationAssignment
 	Formation                  *model.Formation
 }
 
@@ -155,8 +155,8 @@ type NotificationStatusReturnedOperationDetails struct {
 	ResourceSubtype            string
 	Location                   JoinPointLocation
 	Operation                  model.FormationOperation
-	FormationAssignment        *webhook.FormationAssignment
-	ReverseFormationAssignment *webhook.FormationAssignment
+	FormationAssignment        *model.FormationAssignment
+	ReverseFormationAssignment *model.FormationAssignment
 	Formation                  *model.Formation
 	FormationTemplate          *model.FormationTemplate
 }
