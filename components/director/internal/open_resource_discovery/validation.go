@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
+
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/mitchellh/hashstructure/v2"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -53,8 +53,8 @@ const (
 	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
 	LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
-	// DocumentationLabelsKeyRegex represents the valid structure of the field
-	DocumentationLabelsKeyRegex = "^[^\\n]*$"
+	// NoNewLineRegex represents the valid structure of the field
+	NoNewLineRegex = "^[^\\n]*$"
 	// CustomImplementationStandardRegex represents the valid structure of the field
 	CustomImplementationStandardRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// VendorPartnersRegex represents the valid structure of the field
@@ -76,6 +76,10 @@ const (
 	MinLocalTenantIDLength = 1
 	// MaxLocalTenantIDLength represents the minimal accepted length of the LocalID field
 	MaxLocalTenantIDLength = 255
+	// MinSystemVersionTitleLength represents the minimal accepted length of the LocalID field
+	MinSystemVersionTitleLength = 1
+	// MaxSystemVersionTitleLength represents the minimal accepted length of the LocalID field
+	MaxSystemVersionTitleLength = 255
 )
 
 const (
@@ -227,6 +231,14 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&app.DocumentationLabels, validation.By(validateDocumentationLabels)),
+	)
+}
+
+// ValidateSystemVersionInput validates the given SystemVersion
+func ValidateSystemVersionInput(appTemplateVersion *model.ApplicationTemplateVersionInput) error {
+	return validation.ValidateStruct(appTemplateVersion,
+		validation.Field(&appTemplateVersion.Title, validation.NilOrNotEmpty, validation.Length(MinSystemVersionTitleLength, MaxSystemVersionTitleLength), validation.Match(regexp.MustCompile(NoNewLineRegex))),
+		validation.Field(&appTemplateVersion.ReleaseDate, validation.Required),
 	)
 }
 
@@ -512,7 +524,7 @@ func validateORDLabels(val interface{}) error {
 }
 
 func validateDocumentationLabels(val interface{}) error {
-	return validateLabels(val, DocumentationLabelsKeyRegex)
+	return validateLabels(val, NoNewLineRegex)
 }
 
 func validateLabels(val interface{}, regex string) error {

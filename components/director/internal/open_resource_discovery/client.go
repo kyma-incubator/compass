@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -26,6 +28,15 @@ type ClientConfig struct {
 	maxParallelDocumentsPerApplication int
 }
 
+// Resource represents a resource that is being aggregated. This would be an Application or Application Template
+type Resource struct {
+	Type          directorresource.Type
+	ID            string
+	ParentID      *string
+	Name          string
+	LocalTenantID *string
+}
+
 // NewClientConfig creates new ClientConfig from the supplied parameters
 func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 	return ClientConfig{
@@ -34,9 +45,10 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 }
 
 // Client represents ORD documents client
+//
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error)
 }
 
 type client struct {
@@ -55,10 +67,10 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error) {
 	var tenantValue string
 
-	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
+	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
 		tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template webhook flow")
@@ -67,7 +79,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	config, err := c.fetchConfig(ctx, app, webhook, tenantValue)
+	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue)
 	if err != nil {
 		return nil, "", err
 	}
@@ -115,6 +127,11 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 				return
 			}
 
+			if docDetails.Perspective == SystemVersionPerspective {
+				doc.Perspective = SystemVersionPerspective
+			} else {
+				doc.Perspective = SystemInstancePerspective
+			}
 			addDocument(&docs, doc, &docMutex)
 		}(docDetails)
 	}
@@ -184,11 +201,11 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
-		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.Auth.AccessStrategy)
+		log.C(ctx).Infof("%s %q (id = %q) ORD webhook is configured with %q access strategy.", resource.Type, resource.Name, resource.ID, *webhook.Auth.AccessStrategy)
 		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
@@ -198,13 +215,13 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
 	} else if webhook.Auth != nil {
-		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
+		log.C(ctx).Infof("%s %q (id = %q) configuration endpoint is secured and webhook credentials will be used", resource.Type, resource.Name, resource.ID)
 		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, *webhook.URL, tenantValue, webhook.Auth)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
 		}
 	} else {
-		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, app.Type)
+		log.C(ctx).Infof("%s %q (id = %q) configuration endpoint is not secured", resource.Type, resource.Name, resource.ID)
 		resp, err = httputil.GetRequestWithoutCredentials(c.Client, *webhook.URL, tenantValue)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")

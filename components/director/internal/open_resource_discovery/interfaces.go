@@ -36,10 +36,11 @@ type ApplicationService interface {
 //
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
-	CreateBundle(ctx context.Context, applicationID string, in model.BundleCreateInput, bndlHash uint64) (string, error)
-	UpdateBundle(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error
-	Delete(ctx context.Context, id string) error
+	CreateBundle(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput, bndlHash uint64) (string, error)
+	UpdateBundle(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput, bndlHash uint64) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error)
+	ListByApplicationTemplateVersionIDNoPaging(ctx context.Context, appTemplateVersionID string) ([]*model.Bundle, error)
 }
 
 // BundleReferenceService is responsible for the service-layer BundleReference operations.
@@ -53,34 +54,38 @@ type BundleReferenceService interface {
 //
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
-	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error)
-	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error)
+	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.APIDefinition, error)
 }
 
 // EventService is responsible for the service-layer Event operations.
 //
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventService interface {
-	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error)
-	UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error)
+	UpdateInManyBundles(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.EventDefinition, error)
 }
 
 // SpecService is responsible for the service-layer Specification operations.
 //
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
-	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
-	CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error)
-	DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
+	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, error)
+	CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error)
+	DeleteByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
+	ListFetchRequestsByReferenceObjectIDsGlobal(ctx context.Context, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 	UpdateSpecOnly(ctx context.Context, spec model.Spec) error
-	ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
-	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	UpdateSpecOnlyGlobal(ctx context.Context, spec model.Spec) error
+	ListIDByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
+	GetByIDGlobal(ctx context.Context, id string) (*model.Spec, error)
 }
 
 // FetchRequestService is responsible for executing specification fetch requests.
@@ -89,26 +94,29 @@ type SpecService interface {
 type FetchRequestService interface {
 	FetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus)
 	Update(ctx context.Context, fr *model.FetchRequest) error
+	UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error
 }
 
 // PackageService is responsible for the service-layer Package operations.
 //
 //go:generate mockery --name=PackageService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PackageService interface {
-	Create(ctx context.Context, applicationID string, in model.PackageInput, pkgHash uint64) (string, error)
-	Update(ctx context.Context, id string, in model.PackageInput, pkgHash uint64) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error)
 }
 
 // ProductService is responsible for the service-layer Product operations.
 //
 //go:generate mockery --name=ProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ProductService interface {
-	Create(ctx context.Context, applicationID string, in model.ProductInput) (string, error)
-	Update(ctx context.Context, id string, in model.ProductInput) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error)
 }
 
 // GlobalProductService is responsible for the service-layer operations for Global Product (with NULL app_id) without tenant isolation.
@@ -125,10 +133,11 @@ type GlobalProductService interface {
 //
 //go:generate mockery --name=VendorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VendorService interface {
-	Create(ctx context.Context, applicationID string, in model.VendorInput) (string, error)
-	Update(ctx context.Context, id string, in model.VendorInput) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error)
 }
 
 // GlobalVendorService is responsible for the service-layer operations for Global Vendors (with NULL app_id) without tenant isolation.
@@ -145,10 +154,10 @@ type GlobalVendorService interface {
 //
 //go:generate mockery --name=TombstoneService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TombstoneService interface {
-	Create(ctx context.Context, applicationID string, in model.TombstoneInput) (string, error)
-	Update(ctx context.Context, id string, in model.TombstoneInput) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.TombstoneInput) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.TombstoneInput) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
+	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Tombstone, error)
 }
 
 // TenantService missing godoc
@@ -157,6 +166,23 @@ type TombstoneService interface {
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
+// ApplicationTemplateVersionService is responsible for the service-layer Application Template Version operations
+//
+//go:generate mockery --name=ApplicationTemplateVersionService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateVersionService interface {
+	GetByAppTemplateIDAndVersion(ctx context.Context, id, version string) (*model.ApplicationTemplateVersion, error)
+	ListByAppTemplateID(ctx context.Context, appTemplateID string) ([]*model.ApplicationTemplateVersion, error)
+	Create(ctx context.Context, appTemplateID string, item *model.ApplicationTemplateVersionInput) (string, error)
+	Update(ctx context.Context, id, appTemplateID string, in model.ApplicationTemplateVersionInput) error
+}
+
+// ApplicationTemplateService is responsible for the service-layer Application Template operations
+//
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 }
 
 // WebhookConverter is responsible for converting webhook structs

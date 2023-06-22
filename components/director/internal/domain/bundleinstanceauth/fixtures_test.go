@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -334,7 +336,7 @@ func fixSimpleGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 
 func fixModelBundle(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Bundle {
 	return &model.Bundle{
-		ApplicationID:                  "foo",
+		ApplicationID:                  str.Ptr("foo"),
 		Name:                           "test-bundle",
 		InstanceAuthRequestInputSchema: requestInputSchema,
 		DefaultInstanceAuth:            defaultAuth,
