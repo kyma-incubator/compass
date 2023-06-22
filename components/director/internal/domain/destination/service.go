@@ -685,8 +685,12 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 
 	clientUser, err := client.LoadFromContext(ctx)
 	if err != nil || clientUser == "" {
-		log.C(ctx).Warn("unable to provide client_user. Using correlation ID as client_user header...")
+		log.C(ctx).Warn("Unable to provide client_user. Using correlation ID as client_user header...")
 		clientUser = correlation.CorrelationIDFromContext(ctx)
+		if clientUser == "" {
+			log.C(ctx).Warnf("The correlation ID is empty, generating random UUID and using it as client user")
+			clientUser = s.uidSvc.Generate()
+		}
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBodyBytes))
