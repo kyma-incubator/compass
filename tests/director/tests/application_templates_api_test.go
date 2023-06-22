@@ -1030,8 +1030,9 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 }
 
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
+	//GIVEN
 	ctx := context.Background()
-	appTemplateName := "SAP app-template"
+	appTemplateName := createAppTemplateName("template")
 
 	t.Log("Create application template in the first region")
 	appTemplateOneInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
@@ -1091,7 +1092,7 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	require.Equal(t, appTemplateTwo.ID, *outputApp.Application.ApplicationTemplateID)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test app-display-name", *outputApp.Application.Description)
-	saveExample(t, createAppFromTmplRequest.Query(), "register application from template using template namd and id")
+	saveExample(t, createAppFromTmplRequest.Query(), "register application from template using template name and id")
 }
 
 func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
