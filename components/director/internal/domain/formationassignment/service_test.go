@@ -2109,6 +2109,16 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		State:       string(model.CreateErrorAssignmentState),
 		Value:       marshaledErrTechnicalError,
 	}
+	initialStateSelfReferencingAssignment := &model.FormationAssignment{
+		ID:          TestID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  model.FormationAssignmentTypeApplication,
+		Target:      TestSource,
+		TargetType:  model.FormationAssignmentTypeApplication,
+		FormationID: formation.ID,
+		State:       string(model.InitialAssignmentState),
+	}
 	initialStateAssignment := &model.FormationAssignment{
 		ID:          TestID,
 		TenantID:    TestTenantID,
@@ -2135,6 +2145,16 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		Source:      TestSource,
 		SourceType:  model.FormationAssignmentTypeApplication,
 		Target:      TestTarget,
+		TargetType:  model.FormationAssignmentTypeApplication,
+		FormationID: formation.ID,
+		State:       string(model.ReadyAssignmentState),
+	}
+	readyStateSelfReferencingAssignment := &model.FormationAssignment{
+		ID:          TestID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  model.FormationAssignmentTypeApplication,
+		Target:      TestSource,
 		TargetType:  model.FormationAssignmentTypeApplication,
 		FormationID: formation.ID,
 		State:       string(model.ReadyAssignmentState),
@@ -2376,6 +2396,29 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
+		},
+		{
+			Name:    "Success: update assignment to ready state if it is self-referenced formation assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateSelfReferencingAssignment).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment.Clone(), reqWebhook),
+		},
+		{
+			Name:    "Error: update assignment to ready state if it is self-referenced formation assignment fails on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateSelfReferencingAssignment).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment.Clone(), reqWebhook),
+			ExpectedErrorMsg:                     testErr.Error(),
 		},
 		{
 			Name:    "Error: can't generate formation assignment extended notification",
