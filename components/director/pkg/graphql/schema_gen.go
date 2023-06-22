@@ -6983,6 +6983,7 @@ type Mutation {
 	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
+	- [create formation template with reset](examples/create-formation-template/create-formation-template-with-reset.graphql)
 	- [create formation template with webhooks](examples/create-formation-template/create-formation-template-with-webhooks.graphql)
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
 	"""
