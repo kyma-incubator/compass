@@ -231,7 +231,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		ctx = persistence.SaveToContext(ctx, tx)
 
 		log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-		notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
+		notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
 			return
@@ -248,7 +248,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		}
 
 		log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
-		reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA)
+		reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
 			return

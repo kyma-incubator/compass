@@ -14,7 +14,7 @@ import (
 const vendorTable string = `public.vendors`
 
 var (
-	vendorColumns    = []string{"ord_id", "app_id", "title", "labels", "partners", "id", "tags", "documentation_labels"}
+	vendorColumns    = []string{"ord_id", "app_id", "app_template_version_id", "title", "labels", "partners", "id", "tags", "documentation_labels"}
 	updatableColumns = []string{"title", "labels", "partners", "tags", "documentation_labels"}
 )
 
@@ -146,12 +146,23 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Ven
 	return vendorModel, nil
 }
 
-// ListByApplicationID gets a list of Vendors by given application id
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error) {
+// ListByResourceID gets a list of Vendors by given resource id and type
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Vendor, error) {
 	vendorCollection := vendorCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Vendor, tenantID, &vendorCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+
+	var condition repo.Condition
+	var err error
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.Vendor, tenantID, &vendorCollection, condition)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &vendorCollection, condition)
+	}
+	if err != nil {
 		return nil, err
 	}
+
 	vendors := make([]*model.Vendor, 0, vendorCollection.Len())
 	for _, vendor := range vendorCollection {
 		vendorModel, err := r.conv.FromEntity(&vendor)

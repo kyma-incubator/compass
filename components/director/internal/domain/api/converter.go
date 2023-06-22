@@ -142,7 +142,8 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 // FromEntity converts the provided Entity repo-layer representation of an APIDefinition to the service-layer representation model.APIDefinition.
 func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 	return &model.APIDefinition{
-		ApplicationID:                           entity.ApplicationID,
+		ApplicationID:                           repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID:            repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Name:                                    entity.Name,
 		Description:                             repo.StringPtrFromNullableString(entity.Description),
@@ -197,7 +198,8 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 	}
 
 	return &Entity{
-		ApplicationID:                           apiModel.ApplicationID,
+		ApplicationID:                           repo.NewNullableString(apiModel.ApplicationID),
+		ApplicationTemplateVersionID:            repo.NewNullableString(apiModel.ApplicationTemplateVersionID),
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),

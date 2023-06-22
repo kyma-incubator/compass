@@ -1108,7 +1108,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 
 	if in.Bundles != nil {
-		if err = s.bndlService.CreateMultiple(ctx, id, in.Bundles); err != nil {
+		if err = s.bndlService.CreateMultiple(ctx, resource.Application, id, in.Bundles); err != nil {
 			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
 		}
 	}

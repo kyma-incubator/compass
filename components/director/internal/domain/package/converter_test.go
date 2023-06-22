@@ -10,13 +10,13 @@ import (
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		pkgModel := fixPackageModel()
+		pkgModel := fixPackageModelForApp()
 		require.NotNil(t, pkgModel)
 		conv := ordpackage.NewConverter()
 
 		entity := conv.ToEntity(pkgModel)
 
-		assert.Equal(t, fixEntityPackage(), entity)
+		assert.Equal(t, fixEntityPackageForApp(), entity)
 	})
 
 	t.Run("Returns nil if package model is nil", func(t *testing.T) {
@@ -30,13 +30,13 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		entity := fixEntityPackage()
+		entity := fixEntityPackageForApp()
 		conv := ordpackage.NewConverter()
 
 		pkgModel, err := conv.FromEntity(entity)
 
 		require.NoError(t, err)
-		assert.Equal(t, fixPackageModel(), pkgModel)
+		assert.Equal(t, fixPackageModelForApp(), pkgModel)
 	})
 
 	t.Run("Returns error if Entity is nil", func(t *testing.T) {

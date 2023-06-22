@@ -2688,10 +2688,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2720,10 +2720,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2753,10 +2753,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2791,10 +2791,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2833,10 +2833,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2858,7 +2858,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2880,8 +2880,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil)
-				svc.On("GenerateFormationAssignmentNotification", ctx, reverseAssignment).Return(nil, testErr)
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil)
+				svc.On("GenerateFormationAssignmentNotification", ctx, reverseAssignment, model.AssignFormation).Return(nil, testErr)
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2901,7 +2901,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(nil, testErr).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(nil, testErr).Once()
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2959,10 +2959,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
 				svc := &automock.FormationAssignmentNotificationsService{}
 
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {

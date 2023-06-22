@@ -18,7 +18,7 @@ const apiDefTable string = `"public"."api_definitions"`
 var (
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
-	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	apiDefColumns = []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}
@@ -39,12 +39,17 @@ type APIDefinitionConverter interface {
 
 type pgRepository struct {
 	creator               repo.Creator
+	creatorGlobal         repo.CreatorGlobal
 	singleGetter          repo.SingleGetter
+	singleGetterGlobal    repo.SingleGetterGlobal
 	pageableQuerier       repo.PageableQuerier
 	bundleRefQueryBuilder repo.QueryBuilderGlobal
 	lister                repo.Lister
+	listerGlobal          repo.ListerGlobal
 	updater               repo.Updater
+	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
+	deleterGlobal         repo.DeleterGlobal
 	existQuerier          repo.ExistQuerier
 	conv                  APIDefinitionConverter
 }
@@ -53,12 +58,17 @@ type pgRepository struct {
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:          repo.NewSingleGetter(apiDefTable, apiDefColumns),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.API, apiDefTable, apiDefColumns),
 		pageableQuerier:       repo.NewPageableQuerier(apiDefTable, apiDefColumns),
 		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.APIDefIDColumn}),
 		lister:                repo.NewLister(apiDefTable, apiDefColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.API, apiDefTable, apiDefColumns),
 		creator:               repo.NewCreator(apiDefTable, apiDefColumns),
+		creatorGlobal:         repo.NewCreatorGlobal(resource.API, apiDefTable, apiDefColumns),
 		updater:               repo.NewUpdater(apiDefTable, updatableColumns, idColumns),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.API, apiDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(apiDefTable),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.API, apiDefTable),
 		existQuerier:          repo.NewExistQuerier(apiDefTable),
 		conv:                  conv,
 	}
@@ -123,17 +133,29 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return apiDefPages, nil
 }
 
-// ListByApplicationID lists all APIDefinitions for a given application ID.
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
+// ListByResourceID lists all APIDefinitions for a given resource ID and resource type.
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+
+	var condition repo.Condition
+	var err error
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition("app_id", resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, condition)
+	} else {
+		condition = repo.NewEqualCondition("app_template_version_id", resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &apiCollection, condition)
+	}
+	if err != nil {
 		return nil, err
 	}
+
 	apis := make([]*model.APIDefinition, 0, apiCollection.Len())
 	for _, api := range apiCollection {
 		apiModel := r.conv.FromEntity(&api)
 		apis = append(apis, apiModel)
 	}
+
 	return apis, nil
 }
 
@@ -141,6 +163,19 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting APIDefinition")
+	}
+
+	apiDefModel := r.conv.FromEntity(&apiDefEntity)
+
+	return apiDefModel, nil
+}
+
+// GetByIDGlobal gets an APIDefinition by ID without tenant isolation
+func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.APIDefinition, error) {
+	var apiDefEntity Entity
+	err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
@@ -164,6 +199,21 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.AP
 
 	entity := r.conv.ToEntity(item)
 	err := r.creator.Create(ctx, resource.API, tenant, entity)
+	if err != nil {
+		return errors.Wrap(err, "while saving entity to db")
+	}
+
+	return nil
+}
+
+// CreateGlobal creates an APIDefinition.
+func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.APIDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+	err := r.creatorGlobal.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -196,6 +246,17 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.AP
 	return r.updater.UpdateSingle(ctx, resource.API, tenant, entity)
 }
 
+// UpdateGlobal updates an existing APIDefinition without tenant isolation.
+func (r *pgRepository) UpdateGlobal(ctx context.Context, item *model.APIDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+}
+
 // Exists checks if an APIDefinition with a given ID exists.
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -204,6 +265,11 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 // Delete deletes an APIDefinition by its ID.
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// DeleteGlobal deletes an APIDefinition by its ID without tenant isolation.
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // DeleteAllByBundleID deletes all APIDefinitions for a given bundle ID.
