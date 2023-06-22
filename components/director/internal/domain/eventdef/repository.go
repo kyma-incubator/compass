@@ -20,10 +20,11 @@ import (
 const eventAPIDefTable string = `"public"."event_api_definitions"`
 
 var (
-	idColumn        = "id"
-	appColumn       = "app_id"
-	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
+	idColumn                 = "id"
+	appColumn                = "app_id"
+	appTemplateVersionColumn = "app_template_version_id"
+	bundleColumn             = "bundle_id"
+	eventDefColumns          = []string{idColumn, appColumn, "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels"}
@@ -44,11 +45,16 @@ type EventAPIDefinitionConverter interface {
 
 type pgRepository struct {
 	singleGetter          repo.SingleGetter
+	singleGetterGlobal    repo.SingleGetterGlobal
 	bundleRefQueryBuilder repo.QueryBuilderGlobal
 	lister                repo.Lister
+	listerGlobal          repo.ListerGlobal
 	creator               repo.Creator
+	creatorGlobal         repo.CreatorGlobal
 	updater               repo.Updater
+	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
+	deleterGlobal         repo.DeleterGlobal
 	existQuerier          repo.ExistQuerier
 	pageableQuerier       repo.PageableQuerier
 	conv                  EventAPIDefinitionConverter
@@ -58,11 +64,16 @@ type pgRepository struct {
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:          repo.NewSingleGetter(eventAPIDefTable, eventDefColumns),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.EventDefIDColumn}),
 		lister:                repo.NewLister(eventAPIDefTable, eventDefColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		creator:               repo.NewCreator(eventAPIDefTable, eventDefColumns),
+		creatorGlobal:         repo.NewCreatorGlobal(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:               repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
 		deleter:               repo.NewDeleter(eventAPIDefTable),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.EventDefinition, eventAPIDefTable),
 		existQuerier:          repo.NewExistQuerier(eventAPIDefTable),
 		pageableQuerier:       repo.NewPageableQuerier(eventAPIDefTable, eventDefColumns),
 		conv:                  conv,
@@ -80,7 +91,19 @@ func (r EventAPIDefCollection) Len() int {
 // GetByID retrieves the EventDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
+	}
+
+	eventAPIDefModel := r.conv.FromEntity(&eventAPIDefEntity)
+	return eventAPIDefModel, nil
+}
+
+// GetByIDGlobal retrieves the EventDefinition with matching ID from the Compass storage.
+func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.EventDefinition, error) {
+	var eventAPIDefEntity Entity
+	err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
 	}
@@ -127,7 +150,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	var conditions repo.Conditions
 	if len(eventDefIDs) > 0 {
 		conditions = repo.Conditions{
-			repo.NewInConditionForStringValues("id", eventDefIDs),
+			repo.NewInConditionForStringValues(idColumn, eventDefIDs),
 		}
 	}
 
@@ -167,12 +190,23 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return eventDefPages, nil
 }
 
-// ListByApplicationID lists all EventDefinitions for a given application ID.
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
+// ListByResourceID lists all EventDefinitions for a given resource ID and resource.Type
+func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EventDefinition, error) {
 	eventCollection := EventAPIDefCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.EventDefinition, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+
+	var condition repo.Condition
+	var err error
+	if resourceType == resource.Application {
+		condition = repo.NewEqualCondition(appColumn, resourceID)
+		err = r.lister.ListWithSelectForUpdate(ctx, resource.EventDefinition, tenantID, &eventCollection, condition)
+	} else {
+		condition = repo.NewEqualCondition(appTemplateVersionColumn, resourceID)
+		err = r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &eventCollection, condition)
+	}
+	if err != nil {
 		return nil, err
 	}
+
 	events := make([]*model.EventDefinition, 0, eventCollection.Len())
 	for _, event := range eventCollection {
 		eventModel := r.conv.FromEntity(&event)
@@ -191,6 +225,23 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 
 	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
 	err := r.creator.Create(ctx, resource.EventDefinition, tenant, entity)
+	if err != nil {
+		return errors.Wrap(err, "while saving entity to db")
+	}
+
+	return nil
+}
+
+// CreateGlobal creates an EventDefinition without tenant isolation.
+func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.EventDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
+	err := r.creatorGlobal.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -222,6 +273,16 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ev
 	return r.updater.UpdateSingle(ctx, resource.EventDefinition, tenant, entity)
 }
 
+func (r *pgRepository) UpdateGlobal(ctx context.Context, item *model.EventDefinition) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	entity := r.conv.ToEntity(item)
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+}
+
 // Exists checks if an EventDefinition with a given ID exists.
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
@@ -230,6 +291,11 @@ func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, e
 // Delete deletes an EventDefinition by its ID.
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
+}
+
+// DeleteGlobal deletes an EventDefinition by its ID without tenant isolation.
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // DeleteAllByBundleID deletes all EventDefinitions for a given bundle ID.

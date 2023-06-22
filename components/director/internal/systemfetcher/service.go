@@ -75,7 +75,7 @@ type tenantBusinessTypeService interface {
 
 //go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsAPIClient interface {
-	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
+	FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error)
 }
 
 //go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -172,6 +172,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
 	wgDB := sync.WaitGroup{}
 	wgDB.Add(1)
+	var mutex sync.Mutex
 	go func() {
 		defer func() {
 			wgDB.Done()
@@ -186,6 +187,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 				continue
 			}
 
+			mutex.Lock()
 			if SystemSynchronizationTimestamps == nil {
 				SystemSynchronizationTimestamps = make(map[string]map[string]SystemSynchronizationTimestamp, 0)
 			}
@@ -214,6 +216,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 
 				SystemSynchronizationTimestamps[currentTenant][productID] = currentTimestamp
 			}
+			mutex.Unlock()
 
 			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantSystems.tenant.ExternalTenant))
 		}
@@ -233,7 +236,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					wg.Done()
 					<-s.workers
 				}()
-				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
+				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant, &mutex)
 				if err != nil {
 					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
 					return

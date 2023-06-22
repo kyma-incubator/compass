@@ -162,7 +162,7 @@ func (c *universalCreator) createChildEntity(ctx context.Context, tenant string,
 
 	insertStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", insertStmt)
+	log.C(ctx).Infof("Executing DB query: %s", insertStmt)
 	_, err = persist.NamedExecContext(ctx, insertStmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
@@ -179,10 +179,15 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 		return errors.Errorf("unknown parent for entity type %s", resourceType)
 	}
 
+	if _, ok := parentResourceType.IgnoredTenantAccessTable(); ok {
+		log.C(ctx).Debugf("parent entity %s does not need a tenant access table", parentResourceType)
+		return nil
+	}
+
 	tenantAccessResourceType := resource.TenantAccess
 	parentAccessTable, ok := parentResourceType.TenantAccessTable()
 	if !ok {
-		log.C(ctx).Debugf("parent entity %s does not have access table. Will check if it has table with embedded tenant...", parentResourceType)
+		log.C(ctx).Infof("parent entity %s does not have access table. Will check if it has table with embedded tenant...", parentResourceType)
 		var ok bool
 		parentAccessTable, ok = parentResourceType.EmbeddedTenantTable()
 		if !ok {

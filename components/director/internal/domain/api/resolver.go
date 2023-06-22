@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -19,12 +22,12 @@ import (
 //
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	CreateInApplication(ctx context.Context, appID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	UpdateForApplication(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
 	ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
@@ -126,7 +129,7 @@ func (r *Resolver) APIDefinitionsForApplication(ctx context.Context, appID strin
 
 	gqlAPIs := make([]*graphql.APIDefinition, 0, len(apisPage.Data))
 	for _, api := range apisPage.Data {
-		spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 		}
@@ -179,7 +182,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, errors.Wrapf(err, "while getting Bundle with id %s when adding APIDefinition", bundleID)
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, resource.Application, str.PtrStrToStr(bndl.ApplicationID), bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Bundle with id %s", bundleID)
 	}
@@ -189,11 +192,11 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, err
 	}
 
-	if err = r.appSvc.UpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
+	if err = r.appSvc.UpdateBaseURL(ctx, str.PtrStrToStr(api.ApplicationID), in.TargetURL); err != nil {
 		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
@@ -244,11 +247,11 @@ func (r *Resolver) AddAPIDefinitionToApplication(ctx context.Context, appID stri
 		return nil, err
 	}
 
-	if err = r.appSvc.UpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
+	if err = r.appSvc.UpdateBaseURL(ctx, str.PtrStrToStr(api.ApplicationID), in.TargetURL); err != nil {
 		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
@@ -283,7 +286,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, errors.Wrapf(err, "while converting GraphQL input to APIDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
+	err = r.svc.Update(ctx, resource.Application, id, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +296,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
@@ -343,7 +346,7 @@ func (r *Resolver) UpdateAPIDefinitionForApplication(ctx context.Context, id str
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
@@ -378,7 +381,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
@@ -393,7 +396,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
 
-	err = r.svc.Delete(ctx, id)
+	err = r.svc.Delete(ctx, resource.Application, id)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +422,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, apiID)
+	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, apiID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", apiID)
 	}
