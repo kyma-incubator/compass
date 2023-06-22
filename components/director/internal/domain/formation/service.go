@@ -99,7 +99,7 @@ type statusService interface {
 // FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
 //go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationsService interface {
-	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -1016,8 +1016,12 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(resyncableFormationAssignments))
 	var errs *multierror.Error
 	for _, fa := range resyncableFormationAssignments {
+		operation := model.AssignFormation
+		if fa.State == string(model.DeleteErrorAssignmentState) || fa.State == string(model.DeletingAssignmentState) {
+			operation = model.UnassignFormation
+		}
 		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
-		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
+		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa, operation)
 		if err != nil {
 			return nil, err
 		}
@@ -1027,7 +1031,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			return nil, err
 		}
 		if reverseFA != nil {
-			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA)
+			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, operation)
 			if err != nil && !apperrors.IsNotFoundError(err) {
 				return nil, err
 			}
