@@ -417,9 +417,9 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 	}
 }
 
-func fixModelBundle(id, tenantID, appID, name, description string) *model.Bundle {
+func fixModelBundle(id, appID, name, description string) *model.Bundle {
 	return &model.Bundle{
-		ApplicationID:                  appID,
+		ApplicationID:                  &appID,
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
@@ -428,7 +428,7 @@ func fixModelBundle(id, tenantID, appID, name, description string) *model.Bundle
 	}
 }
 
-func fixGQLBundle(id, appID, name, description string) *graphql.Bundle {
+func fixGQLBundle(id, name, description string) *graphql.Bundle {
 	return &graphql.Bundle{
 		BaseEntity: &graphql.BaseEntity{
 			ID: id,

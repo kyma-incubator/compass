@@ -3,6 +3,9 @@ package eventdef
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -18,16 +21,18 @@ import (
 )
 
 // EventDefService is responsible for the service-layer EventDefinition operations.
+//
 //go:generate mockery --name=EventDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventDefService interface {
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	Update(ctx context.Context, resourceType resource.Type, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListFetchRequests(ctx context.Context, eventDefIDs []string) ([]*model.FetchRequest, error)
 }
 
 // EventDefConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the graphql-layer representation.
+//
 //go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventDefConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
@@ -37,12 +42,14 @@ type EventDefConverter interface {
 }
 
 // FetchRequestConverter converts FetchRequest from the model.FetchRequest service-layer representation to the graphql-layer one.
+//
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 }
 
 // BundleService is responsible for the service-layer Bundle operations.
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
@@ -99,7 +106,7 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, errors.Wrapf(err, "while checking existence of Bundle with id %s when adding EventDefinition", bundleID)
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn, convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, resource.Application, str.PtrStrToStr(bndl.ApplicationID), bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating EventDefinition in Bundle with id %s", bundleID)
 	}
@@ -109,7 +116,7 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, event.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
@@ -150,7 +157,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
+	err = r.svc.Update(ctx, resource.Application, id, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +167,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, event.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
@@ -201,7 +208,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, event.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
@@ -216,7 +223,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
 
-	err = r.svc.Delete(ctx, id)
+	err = r.svc.Delete(ctx, resource.Application, id)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +249,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventID)
+	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, eventID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventID)
 	}

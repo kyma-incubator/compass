@@ -52,7 +52,8 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	}
 
 	output := &Entity{
-		ApplicationID:                 in.ApplicationID,
+		ApplicationID:                 repo.NewNullableString(in.ApplicationID),
+		ApplicationTemplateVersionID:  repo.NewNullableString(in.ApplicationTemplateVersionID),
 		Name:                          in.Name,
 		Description:                   repo.NewNullableString(in.Description),
 		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
@@ -93,7 +94,8 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	}
 
 	output := &model.Bundle{
-		ApplicationID:                  entity.ApplicationID,
+		ApplicationID:                  repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID:   repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		Name:                           entity.Name,
 		Description:                    repo.StringPtrFromNullableString(entity.Description),
 		Version:                        repo.StringPtrFromNullableString(entity.Version),
