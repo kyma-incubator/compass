@@ -1030,47 +1030,50 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 }
 
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
-	//GIVEN
-	ctx := context.TODO()
-	nameJSONPath := "$.name-json-path"
-	displayNameJSONPath := "$.display-name-json-path"
-	appTemplateName := createAppTemplateName("template")
-	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
-	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
-	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
-		{
-			Name:        "name",
-			Description: ptr.String("name"),
-			JSONPath:    &nameJSONPath,
-		},
-		{
-			Name:        "display-name",
-			Description: ptr.String("display-name"),
-			JSONPath:    &displayNameJSONPath,
-		},
-	}
+	ctx := context.Background()
+	appTemplateName := "SAP app-template"
 
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	t.Log("Create application template in the first region")
+	appTemplateOneInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne)
 
-	appTmpl1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	require.NoError(t, err)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl1)
-	appTmplInput2 := fixAppTemplateInputWithDistinguishLabel(appTemplateName, "other-distinguished-label")
-	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
-	require.NoError(t, err)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl2)
+	require.NotEmpty(t, appTemplateOne.ID)
+	require.Equal(t, appTemplateName, appTemplateOne.Name)
 
+	t.Log("Check if application template in the first region was created")
+	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
+	require.NotEmpty(t, appTemplateOneOutput)
+
+	t.Log("Create application template in the second region")
+	appTemplateTwoInput := fixAppTemplateInputWithDistinguishLabel(appTemplateName, "other-distinguished-label")
+	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplateTwo.ID)
+	require.Equal(t, appTemplateName, appTemplateTwo.Name)
+
+	t.Log("Check if application template in the second region was created")
+	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
+	require.NotEmpty(t, appTemplateTwoOutput)
+
+	require.NotEqual(t, appTemplateOne.ID, appTemplateTwo.ID)
+
+	t.Log("Create application using template id")
 	appFromTmpl := graphql.ApplicationFromTemplateInput{
-		ID:           &appTmpl2.ID,
-		TemplateName: appTemplateName,
+		ID:           &appTemplateTwo.ID,
+		TemplateName: appTemplateTwo.Name,
 		Values: []*graphql.TemplateValueInput{
 			{
 				Placeholder: "name",
-				Value:       "new-name",
+				Value:       "app-name",
 			},
 			{
 				Placeholder: "display-name",
-				Value:       "new-display-name",
+				Value:       "app-display-name",
 			},
 		},
 	}
@@ -1078,17 +1081,17 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	require.NoError(t, err)
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 	outputApp := graphql.ApplicationExt{}
+
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
 	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
-	require.NotEmpty(t, outputApp)
+	require.Equal(t, appTemplateTwo.ID, *outputApp.Application.ApplicationTemplateID)
 	require.NotNil(t, outputApp.Application.Description)
-	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
-	require.Equal(t, appTmpl2.ID, *outputApp.Application.ApplicationTemplateID)
-	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+	require.Equal(t, "test app-display-name", *outputApp.Application.Description)
+	saveExample(t, createAppFromTmplRequest.Query(), "register application from template using template namd and id")
 }
 
 func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
