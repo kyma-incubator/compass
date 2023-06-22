@@ -98,6 +98,15 @@ func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Req
 			}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
+func FixResynchronizeFormationNotificationsRequestWithReset(formationID string, reset bool) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: resynchronizeFormationNotifications(formationID:"%s", reset:%t){
+				%s
+			  }
+			}`, formationID, reset, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
 func FixFormationInput(formationName string, formationTemplateName *string) graphql.FormationInput {
 	return graphql.FormationInput{
 		Name:         formationName,
