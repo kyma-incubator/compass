@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
@@ -1221,38 +1222,74 @@ func TestApplicationsForRuntime(t *testing.T) {
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, otherTenant, scenario)
 	}
 
+	//create runtime without normalization
+	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
+	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
+	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
+	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithoutNormalization)
+	runtimeWithoutNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithoutNormalization, conf.GatewayOauth)
+
+	// create an oauth graphql client for requesting bundle instance auth on behalf of the runtime
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
+	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	applications := []struct {
 		ApplicationName string
-		Tenant          string
-		WithinTenant    bool
-		Scenarios       []string
+		BundlesData     []struct {
+			Name       string
+			AuthsCount int
+		}
+		Tenant       string
+		WithinTenant bool
+		Scenarios    []string
 	}{
 		{
-			Tenant:          tenantID,
 			ApplicationName: "second",
-			WithinTenant:    true,
-			Scenarios:       scenarios[:1],
+			BundlesData: []struct {
+				Name       string
+				AuthsCount int
+			}{
+				{Name: "bundleWithTwoAuths", AuthsCount: 2},
+				{Name: "bundleWithNoAuths", AuthsCount: 0},
+			},
+			Tenant:       tenantID,
+			WithinTenant: true,
+			Scenarios:    scenarios[:1],
 		},
 		{
-			Tenant:          tenantID,
 			ApplicationName: "third",
-			WithinTenant:    true,
-			Scenarios:       scenarios,
+			BundlesData: []struct {
+				Name       string
+				AuthsCount int
+			}{
+				{Name: "bundleWithOneAuth", AuthsCount: 1},
+			},
+			Tenant:       tenantID,
+			WithinTenant: true,
+			Scenarios:    scenarios,
 		},
 		{
-			Tenant:          tenantID,
 			ApplicationName: "allscenarios",
+			Tenant:          tenantID,
 			WithinTenant:    true,
 			Scenarios:       scenarios,
 		},
 		{
-			Tenant:          otherTenant,
 			ApplicationName: "test",
+			Tenant:          otherTenant,
 			WithinTenant:    false,
 			Scenarios:       scenarios[:1],
 		},
 	}
 
+	var expectedBundles []*graphql.Bundle
 	for i, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
@@ -1276,19 +1313,34 @@ func TestApplicationsForRuntime(t *testing.T) {
 			normalizedApp.Name = conf.DefaultNormalizationPrefix + normalizedApp.Name
 			tenantNormalizedApplications = append(tenantNormalizedApplications, &normalizedApp)
 		}
-	}
 
-	//create runtime without normalization
-	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
-	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
-	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
-	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
-	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithoutNormalization)
-	runtimeWithoutNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithoutNormalization, conf.GatewayOauth)
+		for _, data := range testApp.BundlesData {
+			bundleExt := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, testApp.Tenant, application.ID, data.Name)
+
+			var expectedBIA *graphql.BundleInstanceAuth
+			for i := 0; i < data.AuthsCount; i++ {
+				currentBundleInstanceAuth := fixtures.CreateBundleInstanceAuthForRuntime(t, ctx, oauthGraphQLClient, tenantID, bundleExt.ID)
+				// For a single bundle there may be more than one bundle instance auth created for specific runtime.
+				// When the Kyma runtime lists the bundles it reads only the defaultInstanceAuth property of the bundle.
+				// We are overriding defaultInstanceAuth field of the bundle with on of the BIAs created for the runtime.
+				// When fetching the BIAs they are ordered by ID so that every time one and the same BIA is returned to
+				// the Kyma runtime
+				if expectedBIA == nil || strings.Compare(expectedBIA.ID, currentBundleInstanceAuth.ID) == 1 {
+					expectedBIA = currentBundleInstanceAuth
+				}
+			}
+
+			expectedBundle := &bundleExt.Bundle
+			if expectedBIA != nil {
+				expectedBundle.DefaultInstanceAuth = expectedBIA.Auth
+			}
+			expectedBundles = append(expectedBundles, expectedBundle)
+		}
+	}
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
-		applicationPage := graphql.ApplicationPage{}
+		applicationPage := graphql.ApplicationPageExt{}
 
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
 		saveExample(t, request.Query(), "query applications for runtime")
@@ -1296,7 +1348,17 @@ func TestApplicationsForRuntime(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, applicationPage.Data, len(tenantUnnormalizedApplications))
-		assert.ElementsMatch(t, tenantUnnormalizedApplications, applicationPage.Data)
+
+		var actualApplications []*graphql.Application
+		var actualBundles []*graphql.Bundle
+		for _, applicationExt := range applicationPage.Data {
+			actualApplications = append(actualApplications, &applicationExt.Application)
+			for _, bundleExt := range applicationExt.Bundles.Data {
+				actualBundles = append(actualBundles, &bundleExt.Bundle)
+			}
+		}
+		assert.ElementsMatch(t, tenantUnnormalizedApplications, actualApplications)
+		assert.ElementsMatch(t, expectedBundles, actualBundles)
 
 	})
 
