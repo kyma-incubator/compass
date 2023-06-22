@@ -58,7 +58,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	log.C(ctx).Infof("Tenant mapping request body: %s", reqBody)
 
-	formationID := gjson.Get(string(reqBody), "context.btp.uclFormationId").String()
+	formationID := gjson.Get(string(reqBody), "context.uclFormationId").String()
 	if formationID == "" {
 		log.C(ctx).Error("Failed to get the formation ID from the tenant mapping request body")
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New("Failed to get the formation ID from the tenant mapping request body"))
@@ -80,9 +80,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	h.tenantID = tm.ReceiverTenant.SubaccountID
 
-	if tm.Items[0].Operation == AssignOperation && tm.Items[0].Configuration != nil && string(tm.Items[0].Configuration) != "{}" && string(tm.Items[0].Configuration) != "\"\"" && string(tm.Items[0].Configuration) != "null" {
+	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.Configuration != nil && string(tm.AssignedTenant.Configuration) != "{}" && string(tm.AssignedTenant.Configuration) != "\"\"" && string(tm.AssignedTenant.Configuration) != "null" {
 		log.C(ctx).Infof("The configuration in the tenant mapping body is provided during %q operation and no service instance/binding will be created. Returning...", AssignOperation)
-		httputil.Respond(w, http.StatusOK)
+		body := `{"state":"READY"}`
+		var jsonRawMsg json.RawMessage
+		err = json.Unmarshal([]byte(body), &jsonRawMsg)
+		if err != nil {
+			log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
+			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		httputil.RespondWithBody(ctx, w, http.StatusOK, jsonRawMsg)
 		return
 	}
 
@@ -95,13 +103,21 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	svcInstanceNameIAS := catalogNameIAS + "-instance-" + formationID
 
 	var serviceKeyIAS *types.ServiceKey
-	if tm.Items[0].Operation == UnassignOperation {
+	if tm.Context.Operation == UnassignOperation {
 		if err := h.handleUnassignOperation(ctx, svcInstanceNameProcurement, svcInstanceNameIAS); err != nil {
 			log.C(ctx).Error(err)
 			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
-		httputil.Respond(w, http.StatusOK)
+		body := `{"state":"READY"}`
+		var jsonRawMsg json.RawMessage
+		err = json.Unmarshal([]byte(body), &jsonRawMsg)
+		if err != nil {
+			log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
+			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		httputil.RespondWithBody(ctx, w, http.StatusOK, jsonRawMsg)
 		return
 	} else {
 		serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS)
@@ -159,7 +175,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	body := `{"configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","x-corelation-ids":["SAP_COM_0A00"]},"clientCredentialsAuthentication":{"url":"{{ .URL }}","tokenServiceUrl":"{{ .TokenURL }}","clientId":"{{ .ClientID }}","clientSecret":"{{ .ClientSecret }}","x-corelation-ids":["SAP_COM_0545"]}},"inboundCommunication":{"basicAuthentication":{"destinations":[{"name":"ngproc-consys","subaccountId":"{{ .SubaccountID }}","additionalAttributes":{"x-corelation-ids":["SAP_COM_0545"]}}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"businessSystem","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
+	body := `{"state":"CONFIG_PENDING","configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","correlationIds":["SAP_COM_0A00"]},"oauth2ClientCredentials":{"url":"{{ .URL }}","tokenServiceUrl":"{{ .TokenURL }}","clientId":"{{ .ClientID }}","clientSecret":"{{ .ClientSecret }}","correlationIds":["SAP_COM_0545"]}},"inboundCommunication":{"basicAuthentication":{"correlationIds":["SAP_COM_0545"],"destinations":[{"name":"ngproc-consys"}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"businessSystem","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
 
 	t, err := template.New("").Parse(body)
 	if err != nil {
@@ -194,15 +210,11 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 }
 
 func validate(tm types.TenantMapping) error {
-	if len(tm.Items) != 1 {
-		return errors.New("The items in the tenant mapping request body should consists of one element")
-	}
-
 	if tm.ReceiverTenant.SubaccountID == "" {
 		return errors.New("The subaccount ID in the tenant mapping request body should not be empty")
 	}
 
-	if tm.Items[0].Operation != AssignOperation && tm.Items[0].Operation != UnassignOperation {
+	if tm.Context.Operation != AssignOperation && tm.Context.Operation != UnassignOperation {
 		return errors.New("The operation in the tenant mapping request body is invalid")
 	}
 
