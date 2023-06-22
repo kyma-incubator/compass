@@ -8,8 +8,7 @@ spec:
     - {{ .Values.global.auditlog.host }}
   ports:
     - number: {{ .Values.global.auditlog.port }}
-      name: http
-      # always http as there is TLS origination
-      protocol: HTTP
+      name: {{ .Values.global.auditlog.protocol }}
+      protocol: {{ .Values.global.auditlog.protocol }}
   location: MESH_EXTERNAL
   resolution: DNS

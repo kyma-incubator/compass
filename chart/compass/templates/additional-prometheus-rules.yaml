@@ -122,6 +122,7 @@ spec:
             > 0.3
           labels:
             severity: warning
+      {{- if eq .Values.global.auditlog.tlsOrigination true }}
         - alert: Auditlog-WorkloadFailures-5xx
           annotations:
             description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to external Audit Log service ({{`{{`}}
@@ -132,6 +133,7 @@ spec:
           for: 10m
           labels:
             severity: warning
+      {{- end }}
       {{- if eq .Values.global.portieris.isEnabled true }}
         - alert: CompassPortierisDeniedImage
           annotations:

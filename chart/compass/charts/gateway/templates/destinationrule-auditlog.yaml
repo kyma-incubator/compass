@@ -6,6 +6,7 @@ metadata:
 spec:
   host: {{ .Values.global.auditlog.host }}
   trafficPolicy:
+  {{- if eq .Values.global.auditlog.tlsOrigination true }}
     portLevelSettings:
     # Enable TLS origination on audit log for better metrics
     - port:
@@ -13,6 +14,7 @@ spec:
       tls:
         mode: SIMPLE
         sni: {{ .Values.global.auditlog.host }}
+  {{- end }}
     outlierDetection:
       consecutive5xxErrors: 15
       interval: 10s
