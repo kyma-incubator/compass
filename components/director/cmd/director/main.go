@@ -870,7 +870,8 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	bundleRepo := bundle.NewRepository(bundleConverter)
 
-	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo(), uidSvc)
+	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	formationRepo := formation.NewRepository(formationConv)

@@ -38,6 +38,7 @@ type BundleConverter interface {
 //go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleInstanceAuthService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.BundleInstanceAuth, error)
+	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	List(ctx context.Context, id string) ([]*model.BundleInstanceAuth, error)
 }
 

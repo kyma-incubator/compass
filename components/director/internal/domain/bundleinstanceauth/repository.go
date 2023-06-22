@@ -49,10 +49,15 @@ func NewRepository(conv EntityConverter) *repository {
 		//  in the pkg/scenario/directive.go. Once formation redesign in in place we can remove this directive and here we can use non-global creator.
 		creator:      repo.NewCreatorGlobal(resource.BundleInstanceAuth, tableName, tableColumns),
 		singleGetter: repo.NewSingleGetter(tableName, tableColumns),
-		lister:       repo.NewLister(tableName, tableColumns),
-		deleter:      repo.NewDeleter(tableName),
-		updater:      repo.NewUpdater(tableName, updatableColumns, idColumns),
-		conv:         conv,
+		lister: repo.NewListerWithOrderBy(tableName, tableColumns, repo.OrderByParams{
+			{
+				Field: "id",
+				Dir:   repo.AscOrderBy,
+			},
+		}),
+		deleter: repo.NewDeleter(tableName),
+		updater: repo.NewUpdater(tableName, updatableColumns, idColumns),
+		conv:    conv,
 	}
 }
 

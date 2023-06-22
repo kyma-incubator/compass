@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -38,17 +39,19 @@ type service struct {
 	apiSvc      APIService
 	eventSvc    EventService
 	documentSvc DocumentService
+	biaSvc      BundleInstanceAuthService
 
 	uidService UIDService
 }
 
 // NewService missing godoc
-func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
+func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, biaSvc BundleInstanceAuthService, uidService UIDService) *service {
 	return &service{
 		bndlRepo:    bndlRepo,
 		apiSvc:      apiSvc,
 		eventSvc:    eventSvc,
 		documentSvc: documentSvc,
+		biaSvc:      biaSvc,
 		uidService:  uidService,
 	}
 }
@@ -204,11 +207,50 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 		return nil, err
 	}
 
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
+	bundlePages, err := s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	if consumerInfo.ConsumerType != consumer.Runtime {
+		return bundlePages, nil
+	}
+
+	bundleIDtoBundleObject := make(map[string]*model.Bundle, 200)
+	for _, page := range bundlePages {
+		for i, _ := range page.Data {
+			bundleIDtoBundleObject[page.Data[i].ID] = page.Data[i]
+		}
+	}
+
+	bundleInstanceAuths, err := s.biaSvc.ListByRuntimeID(ctx, consumerInfo.ConsumerID)
+	if err != nil {
+		return nil, err
+	}
+
+	bundleIDToBundleInstanceAuths := make(map[string][]*model.BundleInstanceAuth, len(bundleIDtoBundleObject))
+	for i, auth := range bundleInstanceAuths {
+		if _, ok := bundleIDToBundleInstanceAuths[auth.BundleID]; !ok {
+			bundleIDToBundleInstanceAuths[auth.BundleID] = []*model.BundleInstanceAuth{bundleInstanceAuths[i]}
+		} else {
+			bundleIDToBundleInstanceAuths[auth.BundleID] = append(bundleIDToBundleInstanceAuths[auth.BundleID], bundleInstanceAuths[i])
+		}
+	}
+
+	for bundleID, auths := range bundleIDToBundleInstanceAuths {
+		bundleIDtoBundleObject[bundleID].DefaultInstanceAuth = auths[0].Auth
+	}
+
+	return bundlePages, nil
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID, appID string) error {
