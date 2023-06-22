@@ -666,8 +666,10 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context,
 	}
 
 	if appTemplateID != nil {
+		log.C(ctx).Infof("searching for application template with ID: %s", *appTemplateID)
 		for _, appTemplate := range appTemplates {
 			if appTemplate.ID == *appTemplateID {
+				log.C(ctx).Infof("found application template with ID: %s", *appTemplateID)
 				return appTemplate, nil
 			}
 		}
