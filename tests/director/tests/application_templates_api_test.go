@@ -1053,11 +1053,12 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appTmpl1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	require.NoError(t, err)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl1)
+	appTmplInput2 := fixAppTemplateInputWithDistinguishLabel(appTemplateName, "other-distinguished-label")
+	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
 	require.NoError(t, err)
-	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl2)
-	require.NoError(t, err)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{
 		ID:           &appTmpl2.ID,
