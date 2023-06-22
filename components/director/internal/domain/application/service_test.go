@@ -126,7 +126,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -173,7 +173,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -215,7 +215,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -269,7 +269,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, normalizedModelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, normalizedModelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -472,7 +472,7 @@ func TestService_Create(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(testErr).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -645,7 +645,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -687,7 +687,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -729,7 +729,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -788,7 +788,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, normalizedModelInput.Bundles).Return(nil).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, normalizedModelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -958,7 +958,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(testErr).Once()
+				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {

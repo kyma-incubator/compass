@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
@@ -111,4 +112,10 @@ func (f *FormationAssignment) Clone() *FormationAssignment {
 		State:       f.State,
 		Value:       f.Value,
 	}
+}
+
+// GetAddress returns the memory address of the FormationAssignment in form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
+func (f *FormationAssignment) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(f))
 }

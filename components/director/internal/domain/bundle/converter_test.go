@@ -38,7 +38,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 
-		expectedBndl := fixEntityBundle(bundleID, name, desc)
+		expectedBndl := fixEntityBundleWithAppID(bundleID, name, desc)
 		expectedBndl.Error = sql.NullString{
 			String: testErrMsg,
 			Valid:  true,
@@ -49,7 +49,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		// GIVEN
 		name := "foo"
 		bndlModel := &model.Bundle{
-			ApplicationID:                  appID,
+			ApplicationID:                  &appID,
 			Name:                           name,
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
@@ -58,7 +58,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		}
 
 		expectedEntity := &bundle.Entity{
-			ApplicationID:                 appID,
+			ApplicationID:                 repo.NewValidNullableString(appID),
 			Name:                          name,
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
@@ -83,7 +83,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		name := "foo"
 		desc := "bar"
 		testErrMsg := "test-err"
-		entity := fixEntityBundle(bundleID, name, desc)
+		entity := fixEntityBundleWithAppID(bundleID, name, desc)
 		entity.Error = sql.NullString{
 			String: testErrMsg,
 			Valid:  true,
@@ -102,7 +102,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		// GIVEN
 		name := "foo"
 		entity := &bundle.Entity{
-			ApplicationID:                 appID,
+			ApplicationID:                 repo.NewValidNullableString(appID),
 			Name:                          name,
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
@@ -110,7 +110,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			BaseEntity:                    &repo.BaseEntity{ID: bundleID},
 		}
 		expectedModel := &model.Bundle{
-			ApplicationID:                  appID,
+			ApplicationID:                  &appID,
 			Name:                           name,
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,

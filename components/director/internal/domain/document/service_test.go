@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
@@ -23,7 +23,7 @@ func TestService_Get(t *testing.T) {
 
 	id := "foo"
 
-	documentModel := fixModelDocument("1", id)
+	documentModel := fixModelDocumentForApp("1", id)
 	tnt := givenTenant()
 	externalTnt := "external-tnt"
 
@@ -94,7 +94,7 @@ func TestService_GetForBundle(t *testing.T) {
 	externalTenantID := "external-tenant"
 
 	bundleID := "test"
-	doc := fixModelDocument(id, bndlID)
+	doc := fixModelDocumentForApp(id, bndlID)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -175,13 +175,13 @@ func TestService_CreateToBundle(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
-	appID := "appID"
 	bundleID := "foo"
 	frURL := "foo.bar"
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithinBundle(id, bundleID, appID)
+	modelAppDoc := modelInput.ToDocumentWithinBundle(id, bundleID, resource.Application, appID)
+	modelAppTemplateVersionDoc := modelInput.ToDocumentWithinBundle(id, bundleID, resource.ApplicationTemplateVersion, appTemplateVersionID)
 
 	testCases := []struct {
 		Name               string
@@ -189,13 +189,15 @@ func TestService_CreateToBundle(t *testing.T) {
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		UIDServiceFn       func() *automock.UIDService
 		Input              model.DocumentInput
+		ResourceType       resource.Type
+		ResourceID         string
 		ExpectedErr        error
 	}{
 		{
-			Name: "Success",
+			Name: "Success for Application",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, tnt, modelDoc).Return(nil).Once()
+				repo.On("Create", ctx, tnt, modelAppDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -209,14 +211,39 @@ func TestService_CreateToBundle(t *testing.T) {
 				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
-			Input:       *modelInput,
-			ExpectedErr: nil,
+			Input:        *modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   appID,
+			ExpectedErr:  nil,
 		},
 		{
-			Name: "Returns error when document creation failed",
+			Name: "Success for Application Template Version",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, tnt, modelDoc).Return(testErr).Once()
+				repo.On("CreateGlobal", ctx, modelAppTemplateVersionDoc).Return(nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("CreateGlobal", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			Input:        *modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Returns error when document creation failed for Application",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("Create", ctx, tnt, modelAppDoc).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -228,14 +255,37 @@ func TestService_CreateToBundle(t *testing.T) {
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			Input:       *modelInput,
-			ExpectedErr: testErr,
+			Input:        *modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   appID,
+			ExpectedErr:  testErr,
 		},
 		{
-			Name: "Error - Fetch Request Creation",
+			Name: "Returns error when document creation failed for Application Template Version",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, tnt, modelDoc).Return(nil).Once()
+				repo.On("CreateGlobal", ctx, modelAppTemplateVersionDoc).Return(testErr).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			Input:        *modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Error - Fetch Request Creation for Application",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("Create", ctx, tnt, modelAppDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -249,8 +299,33 @@ func TestService_CreateToBundle(t *testing.T) {
 				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
-			Input:       *modelInput,
-			ExpectedErr: testErr,
+			Input:        *modelInput,
+			ResourceType: resource.Application,
+			ResourceID:   appID,
+			ExpectedErr:  testErr,
+		},
+		{
+			Name: "Error - Fetch Request Creation for Application Template Version",
+			RepositoryFn: func() *automock.DocumentRepository {
+				repo := &automock.DocumentRepository{}
+				repo.On("CreateGlobal", ctx, modelAppTemplateVersionDoc).Return(nil).Once()
+				return repo
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				repo := &automock.FetchRequestRepository{}
+				repo.On("CreateGlobal", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			Input:        *modelInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
+			ExpectedErr:  testErr,
 		},
 	}
 
@@ -263,7 +338,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
-			result, err := svc.CreateInBundle(ctx, appID, bundleID, testCase.Input)
+			result, err := svc.CreateInBundle(ctx, testCase.ResourceType, testCase.ResourceID, bundleID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -281,10 +356,10 @@ func TestService_CreateToBundle(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := document.NewService(nil, nil, nil)
+		svc := document.NewService(nil, nil, fixUIDSvc())
 		// WHEN
-		_, err := svc.CreateInBundle(context.TODO(), "appID", "bndlID", model.DocumentInput{})
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		_, err := svc.CreateInBundle(context.TODO(), resource.Application, "appID", "bndlID", model.DocumentInput{})
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 func TestService_Delete(t *testing.T) {
@@ -362,8 +437,8 @@ func TestService_ListByBundleIDs(t *testing.T) {
 	secondBundleID := "bar2"
 	bundleIDs := []string{firstBundleID, secondBundleID}
 
-	docFirstBundle := fixModelDocument(firstDocID, firstBundleID)
-	docSecondBundle := fixModelDocument(secondDocID, secondBundleID)
+	docFirstBundle := fixModelDocumentForApp(firstDocID, firstBundleID)
+	docSecondBundle := fixModelDocumentForApp(secondDocID, secondBundleID)
 
 	docsFirstBundle := []*model.Document{docFirstBundle}
 	docsSecondBundle := []*model.Document{docSecondBundle}
@@ -552,4 +627,10 @@ func TestService_ListFetchRequests(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+}
+
+func fixUIDSvc() *automock.UIDService {
+	svc := &automock.UIDService{}
+	svc.On("Generate").Return(docID)
+	return svc
 }

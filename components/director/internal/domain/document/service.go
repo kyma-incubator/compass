@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -13,6 +15,7 @@ import (
 )
 
 // DocumentRepository missing godoc
+//
 //go:generate mockery --name=DocumentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -20,18 +23,22 @@ type DocumentRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 	Create(ctx context.Context, tenant string, item *model.Document) error
+	CreateGlobal(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
 // FetchRequestRepository missing godoc
+//
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
+	CreateGlobal(ctx context.Context, item *model.FetchRequest) error
 	Delete(ctx context.Context, tenant, id string, objectType model.FetchRequestReferenceObjectType) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -85,16 +92,11 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 // CreateInBundle missing godoc
-func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
+func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.DocumentInput) (string, error) {
 	id := s.uidService.Generate()
+	document := in.ToDocumentWithinBundle(id, bundleID, resourceType, resourceID)
 
-	document := in.ToDocumentWithinBundle(id, bundleID, appID)
-	if err = s.repo.Create(ctx, tnt, document); err != nil {
+	if err := s.createDocument(ctx, document, resourceType); err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}
 
@@ -102,7 +104,8 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 		generatedID := s.uidService.Generate()
 		fetchRequestID := &generatedID
 		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
-		if err := s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel); err != nil {
+
+		if err := s.createFetchRequest(ctx, fetchRequestModel, resourceType); err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}
 	}
@@ -147,4 +150,30 @@ func (s *service) ListFetchRequests(ctx context.Context, documentIDs []string) (
 	}
 
 	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.DocumentFetchRequestReference, documentIDs)
+}
+
+func (s *service) createDocument(ctx context.Context, document *model.Document, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.repo.CreateGlobal(ctx, document)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Create(ctx, tnt, document)
+}
+
+func (s *service) createFetchRequest(ctx context.Context, fetchRequest *model.FetchRequest, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.fetchRequestRepo.CreateGlobal(ctx, fetchRequest)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.fetchRequestRepo.Create(ctx, tnt, fetchRequest)
 }

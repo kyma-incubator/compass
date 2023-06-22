@@ -1,6 +1,7 @@
 package tombstone
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -21,10 +22,11 @@ func (c *converter) ToEntity(in *model.Tombstone) *Entity {
 	}
 
 	output := &Entity{
-		ID:            in.ID,
-		OrdID:         in.OrdID,
-		ApplicationID: in.ApplicationID,
-		RemovalDate:   in.RemovalDate,
+		ID:                           in.ID,
+		OrdID:                        in.OrdID,
+		ApplicationID:                repo.NewNullableString(in.ApplicationID),
+		ApplicationTemplateVersionID: repo.NewNullableString(in.ApplicationTemplateVersionID),
+		RemovalDate:                  in.RemovalDate,
 	}
 
 	return output
@@ -37,10 +39,11 @@ func (c *converter) FromEntity(entity *Entity) (*model.Tombstone, error) {
 	}
 
 	output := &model.Tombstone{
-		ID:            entity.ID,
-		OrdID:         entity.OrdID,
-		ApplicationID: entity.ApplicationID,
-		RemovalDate:   entity.RemovalDate,
+		ID:                           entity.ID,
+		OrdID:                        entity.OrdID,
+		ApplicationID:                repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID: repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
+		RemovalDate:                  entity.RemovalDate,
 	}
 
 	return output, nil

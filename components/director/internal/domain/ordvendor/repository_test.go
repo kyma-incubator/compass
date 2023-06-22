@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor/automock"
@@ -204,7 +206,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{vendorID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -232,7 +234,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Global Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE id = $1`),
 				Args:     []driver.Value{vendorID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -256,16 +258,16 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ListByApplicationID(t *testing.T) {
-	suite := testdb.RepoListTestSuite{
-		Name: "List Vendors",
+func TestPgRepository_ListByResourceID(t *testing.T) {
+	suiteForApp := testdb.RepoListTestSuite{
+		Name: "List Vendors for Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns()).AddRow(fixVendorRowWithTitle("title1")...).AddRow(fixVendorRowWithTitle("title2")...)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns()).AddRow(fixVendorRowWithTitleForApp("title1")...).AddRow(fixVendorRowWithTitleForApp("title2")...)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns())}
@@ -276,13 +278,39 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:   ordvendor.NewRepository,
-		ExpectedModelEntities: []interface{}{fixVendorModelWithTitle("title1"), fixVendorModelWithTitle("title2")},
-		ExpectedDBEntities:    []interface{}{fixEntityVendorWithTitle("title1"), fixEntityVendorWithTitle("title2")},
-		MethodArgs:            []interface{}{tenantID, appID},
-		MethodName:            "ListByApplicationID",
+		ExpectedModelEntities: []interface{}{fixVendorModelWithTitleForApp("title1"), fixVendorModelWithTitleForApp("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityVendorWithTitleForApp("title1"), fixEntityVendorWithTitleForApp("title2")},
+		MethodArgs:            []interface{}{tenantID, appID, resource.Application},
+		MethodName:            "ListByResourceID",
 	}
 
-	suite.Run(t)
+	suiteForAppTemplateVersion := testdb.RepoListTestSuite{
+		Name: "List Vendors for Application Template Version",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_template_version_id = $1`),
+				Args:     []driver.Value{appTemplateVersionID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns()).AddRow(fixVendorRowWithTitleForAppTemplateVersion("title1")...).AddRow(fixVendorRowWithTitleForAppTemplateVersion("title2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   ordvendor.NewRepository,
+		ExpectedModelEntities: []interface{}{fixVendorModelWithTitleForAppTemplateVersion("title1"), fixVendorModelWithTitleForAppTemplateVersion("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityVendorWithTitleForAppTemplateVersion("title1"), fixEntityVendorWithTitleForAppTemplateVersion("title2")},
+		MethodArgs:            []interface{}{tenantID, appTemplateVersionID, resource.ApplicationTemplateVersion},
+		MethodName:            "ListByResourceID",
+	}
+
+	suiteForApp.Run(t)
+	suiteForAppTemplateVersion.Run(t)
 }
 
 func TestPgRepository_ListGlobal(t *testing.T) {
@@ -290,11 +318,11 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 		Name: "List Global Vendors",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_id IS NULL FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_id IS NULL FOR UPDATE`),
 				Args:     []driver.Value{},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns()).AddRow(fixVendorRowWithTitle("title1")...).AddRow(fixVendorRowWithTitle("title2")...)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns()).AddRow(fixVendorRowWithTitleForApp("title1")...).AddRow(fixVendorRowWithTitleForApp("title2")...)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns())}
@@ -305,8 +333,8 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:   ordvendor.NewRepository,
-		ExpectedModelEntities: []interface{}{fixVendorModelWithTitle("title1"), fixVendorModelWithTitle("title2")},
-		ExpectedDBEntities:    []interface{}{fixEntityVendorWithTitle("title1"), fixEntityVendorWithTitle("title2")},
+		ExpectedModelEntities: []interface{}{fixVendorModelWithTitleForApp("title1"), fixVendorModelWithTitleForApp("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityVendorWithTitleForApp("title1"), fixEntityVendorWithTitleForApp("title2")},
 		MethodArgs:            []interface{}{},
 		MethodName:            "ListGlobal",
 	}

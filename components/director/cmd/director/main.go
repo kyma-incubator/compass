@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	mp_authenticator "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -46,6 +46,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
+
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	mp_authenticator "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -174,6 +177,8 @@ type config struct {
 
 	RetryConfig retry.Config
 
+	DestinationCreatorConfig *destinationcreator.Config
+
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
@@ -298,6 +303,7 @@ func main() {
 		tenantMappingConfig,
 		cfg.TenantMappingCallbackURL,
 		cfg.ApplicationTemplateProductLabel,
+		cfg.DestinationCreatorConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -683,11 +689,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	appRepo := application.NewRepository(appConverter)
-	webhookRepo := webhook.NewRepository(webhookConverter)
-
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
-	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelConverter := label.NewConverter()
 	labelDefinitionConverter := labeldef.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
@@ -697,7 +699,11 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	formationAssignmentConv := formationassignment.NewConverter()
 
+	appRepo := application.NewRepository(appConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	asaRepo := scenarioassignment.NewRepository(asaConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
@@ -708,27 +714,26 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
-
-	formationAssignmentConv := formationassignment.NewConverter()
-	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, asaSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter)
-	formationAssignmentUpdater := formationassignment.NewFormationAssignmentUpdaterService(formationAssignmentRepo, constraintEngine, formationRepo, formationTemplateRepo)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, labelSvc, formationRepo, formationAssignmentUpdater, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
-	formationSvc := formation.NewService(transact, appRepo, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefinitionRepo, labelDefinitionSvc, notificationSvc, constraintEngine)
+	formationSvc := formation.NewService(transact, appRepo, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
 	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(tenantMappingConfig, cfg.TenantMappingCallbackURL), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue, cfg.Features.KymaApplicationNamespaceValue)
@@ -781,14 +786,15 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, asaSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter)
-	formationAssignmentUpdater := formationassignment.NewFormationAssignmentUpdaterService(formationAssignmentRepo, constraintEngine, formationRepo, formationTemplateRepo)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, labelSvc, formationRepo, formationAssignmentUpdater, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
-	formationSvc := formation.NewService(transact, appRepo, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefinitionRepo, labelDefinitionSvc, notificationSvc, constraintEngine)
+	formationSvc := formation.NewService(transact, appRepo, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
@@ -899,14 +905,15 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tntSvc, scenarioAssignmentSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tntSvc, scenarioAssignmentSvc, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter)
-	formationAssignmentUpdater := formationassignment.NewFormationAssignmentUpdaterService(formationAssignmentRepo, constraintEngine, formationRepo, formationTemplateRepo)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, labelSvc, formationRepo, formationAssignmentUpdater, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
-	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
+	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 }
@@ -938,12 +945,14 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	labelRepo := label.NewRepository(label.NewConverter())
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
+	webhookRepo := webhook.NewRepository(webhookConverter)
 	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 
 	labelDefinitionConverter := labeldef.NewConverter()
 	asaConverter := scenarioassignment.NewConverter()
@@ -959,10 +968,12 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, asaSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, nil, constraintEngine, webhookConverter)
-	formationAssignmentUpdater := formationassignment.NewFormationAssignmentUpdaterService(formationAssignmentRepo, constraintEngine, formationRepo, formationTemplateRepo)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, labelSvc, formationRepo, formationAssignmentUpdater, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, nil, constraintEngine, webhookConverter, formationTemplateRepo)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return formationmapping.NewFormationMappingAuthenticator(transact, formationAssignmentSvc, runtimeRepo, runtimeContextRepo, appRepo, appTemplateRepo, labelRepo, formationRepo, formationTemplateRepo, tenantRepo, cfg.SubscriptionConfig.ConsumerSubaccountLabelKey)
 }
@@ -1012,16 +1023,17 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, asaSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter)
-	formationAssignmentUpdater := formationassignment.NewFormationAssignmentUpdaterService(formationAssignmentRepo, constraintEngine, formationRepo, formationTemplateRepo)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, labelSvc, formationRepo, formationAssignmentUpdater, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder)
-	formationSvc := formation.NewService(transact, appRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, labelDefinitionSvc, notificationSvc, constraintEngine)
+	formationSvc := formation.NewService(transact, appRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
-	fmHandler := formationmapping.NewFormationMappingHandler(transact, formationAssignmentSvc, formationAssignmentUpdater, faNotificationSvc, formationSvc)
+	fmHandler := formationmapping.NewFormationMappingHandler(transact, formationAssignmentSvc, formationAssignmentStatusSvc, faNotificationSvc, formationSvc, formationStatusSvc)
 
 	return fmHandler
 }

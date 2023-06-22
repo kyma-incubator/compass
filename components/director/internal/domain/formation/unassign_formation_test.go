@@ -2977,7 +2977,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)

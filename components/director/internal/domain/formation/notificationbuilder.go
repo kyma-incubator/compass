@@ -97,6 +97,9 @@ func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 				formationTemplateInput,
 				correlation.CorrelationIDFromContext(ctx),
 			),
+			Operation:     joinPointDetails.Operation,
+			Formation:     formation,
+			FormationType: joinPointDetails.FormationType,
 		}
 		requests = append(requests, req)
 	}
