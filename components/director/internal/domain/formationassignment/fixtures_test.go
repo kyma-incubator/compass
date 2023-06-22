@@ -20,6 +20,7 @@ import (
 
 const (
 	TestID                  = "c861c3db-1265-4143-a05c-1ced1291d816"
+	TestFormationName       = "test-formation"
 	TestFormationID         = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestFormationTemplateID = "jjc0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID            = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
@@ -45,7 +46,8 @@ var (
 	faModel  = fixFormationAssignmentModel(TestConfigValueRawJSON)
 	faEntity = fixFormationAssignmentEntity(TestConfigValueStr)
 
-	appSubtype = "subtype"
+	appSubtype = "app-subtype"
+	rtmSubtype = "rtm-subtype"
 )
 
 func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssignment {
@@ -100,20 +102,6 @@ func fixFormationAssignmentModelWithFormationID(formationID string) *model.Forma
 		State:       TestStateInitial,
 		Value:       TestConfigValueRawJSON,
 	}
-}
-
-func fixWebhookFormationAssignmentWithFormationID(formationID string) *webhook.FormationAssignment {
-	return convertFormationAssignmentFromModel(&model.FormationAssignment{
-		ID:          TestID,
-		FormationID: formationID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       TestConfigValueRawJSON,
-	})
 }
 
 func fixFormationAssignmentModelWithIDAndTenantID(fa *model.FormationAssignment) *model.FormationAssignment {
@@ -252,12 +240,12 @@ func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, rev
 	}
 }
 
-func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.FormationAssignmentNotificationRequest, fa *webhook.FormationAssignment) *webhookclient.FormationAssignmentNotificationRequestExt {
+func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.FormationAssignmentNotificationRequest, fa *model.FormationAssignment) *webhookclient.FormationAssignmentNotificationRequestExt {
 	return &webhookclient.FormationAssignmentNotificationRequestExt{
 		FormationAssignmentNotificationRequest: reqWebhook,
 		Operation:                              assignOperation,
 		FormationAssignment:                    fa,
-		ReverseFormationAssignment:             convertFormationAssignmentFromModel(&model.FormationAssignment{}),
+		ReverseFormationAssignment:             &model.FormationAssignment{},
 		Formation:                              formation,
 		TargetSubtype:                          appSubtype,
 	}
@@ -265,20 +253,6 @@ func fixExtendedFormationAssignmentNotificationReq(reqWebhook *webhookclient.For
 
 func fixReverseFormationAssignment(assignment *model.FormationAssignment) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:          assignment.ID,
-		FormationID: assignment.FormationID,
-		TenantID:    assignment.TenantID,
-		Source:      assignment.Target,
-		SourceType:  assignment.TargetType,
-		Target:      assignment.Source,
-		TargetType:  assignment.SourceType,
-		State:       assignment.State,
-		Value:       assignment.Value,
-	}
-}
-
-func fixReverseWebhookFormationAssignment(assignment *webhook.FormationAssignment) *webhook.FormationAssignment {
-	return &webhook.FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
 		TenantID:    assignment.TenantID,
@@ -528,16 +502,15 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
-func fixNotificationStatusReturnedDetails(fa, reverseFa *webhook.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
+func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               model.FormationResourceType,
-		ResourceSubtype:            formationTemplate.Name,
+		ResourceType:               resourceType,
+		ResourceSubtype:            resourceSubtype,
 		Location:                   location,
 		Operation:                  assignOperation,
 		FormationAssignment:        fa,
 		ReverseFormationAssignment: reverseFa,
 		Formation:                  formation,
-		FormationTemplate:          formationTemplate,
 	}
 }
 
