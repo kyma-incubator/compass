@@ -1079,7 +1079,7 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 			},
 		},
 	}
-	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputWithTemplateIDToGQL(appFromTmpl)
 	require.NoError(t, err)
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 	outputApp := graphql.ApplicationExt{}
