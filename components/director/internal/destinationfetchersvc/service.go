@@ -29,7 +29,6 @@ type UUIDService interface {
 // DestinationRepo destinations repository
 //
 //go:generate mockery --name=DestinationRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
-//go:generate mockery --name=DestinationRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DestinationRepo interface {
 	Upsert(ctx context.Context, in model.DestinationInput, id, tenantID, bundleID, revision string) error
 	DeleteOld(ctx context.Context, latestRevision, tenantID string) error

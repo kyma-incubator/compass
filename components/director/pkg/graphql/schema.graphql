@@ -431,6 +431,7 @@ input ApplicationTemplateUpdateInput {
 	"""
 	**Validation:** max=2000
 	"""
+	webhooks: [WebhookInput!]
 	description: String
 	applicationInput: ApplicationJSONInput!
 	placeholders: [PlaceholderDefinitionInput!]

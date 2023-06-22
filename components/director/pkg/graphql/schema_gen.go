@@ -5416,6 +5416,7 @@ input ApplicationTemplateUpdateInput {
 	"""
 	**Validation:** max=2000
 	"""
+	webhooks: [WebhookInput!]
 	description: String
 	applicationInput: ApplicationJSONInput!
 	placeholders: [PlaceholderDefinitionInput!]
@@ -31380,6 +31381,12 @@ func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx con
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "webhooks":
+			var err error
+			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}

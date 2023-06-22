@@ -114,6 +114,7 @@ global:
       job:
         interval: "10s"
       tenantType: "account"
+      pageWorkers: "2"
       dbPool:
         maxIdleConnections: "1"
         maxOpenConnections: "1"
@@ -166,6 +167,7 @@ global:
       job:
         interval: "10s"
       tenantType: "subaccount"
+      pageWorkers: "2"
       dbPool:
         maxIdleConnections: "1"
         maxOpenConnections: "1"

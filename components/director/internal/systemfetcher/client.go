@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -53,8 +54,10 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error) {
+	mutex.Lock()
 	qp := c.buildFilter()
+	mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
 	var systems []System
