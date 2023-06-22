@@ -649,6 +649,9 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
 		{{- end}}
+		{{- if .SupportsReset }}
+		supportsReset: {{.SupportsReset}}
+		{{- end}}
 	}`)
 }
 
