@@ -63,7 +63,7 @@ type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
-	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 }
 
 //go:generate mockery --exported --name=formationStatusService --output=automock --outpkg=automock --case=underscore --disable-version-string

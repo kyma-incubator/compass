@@ -494,7 +494,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 	}
 
 	log.C(ctx).Infof("Resynchronizing formation with ID: %q and name: %q", formation.ID, formation.Name)
-	if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID); err != nil {
+	if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID, false); err != nil {
 		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
 	}
 

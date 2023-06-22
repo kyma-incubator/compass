@@ -27,6 +27,7 @@ type FormationTemplate struct {
 	TenantID               *string              `json:"tenant_id"`
 	Webhooks               []*Webhook           `json:"webhooks"`
 	LeadingProductIDs      []string             `json:"leadingProductIDs"`
+	SupportsReset          bool                 `json:"supportsReset"`
 }
 
 // FormationTemplateInput missing godoc
@@ -38,6 +39,7 @@ type FormationTemplateInput struct {
 	RuntimeArtifactKind    *RuntimeArtifactKind `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput      `json:"webhooks"`
 	LeadingProductIDs      []string             `json:"leadingProductIDs"`
+	SupportsReset          bool                 `json:"supportsReset"`
 }
 
 // FormationTemplatePage missing godoc

@@ -1202,7 +1202,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
+				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID, false).Return(nil, nil).Once()
 				return formationSvc
 			},
 			formationStatusSvcFn: func() *automock.FormationStatusService {
@@ -1298,7 +1298,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil, testErr).Once()
+				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID, false).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			formationStatusSvcFn: func() *automock.FormationStatusService {
@@ -1319,7 +1319,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
+				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID, false).Return(nil, nil).Once()
 				return formationSvc
 			},
 			formationStatusSvcFn: func() *automock.FormationStatusService {

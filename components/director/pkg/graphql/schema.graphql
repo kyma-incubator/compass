@@ -738,6 +738,7 @@ input FormationTemplateInput {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
+	supportsReset: Boolean
 }
 
 input IntegrationSystemInput {
@@ -1300,6 +1301,7 @@ type FormationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
+	supportsReset: Boolean!
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1846,7 +1848,7 @@ type Mutation {
 	**Examples**
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
-	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)

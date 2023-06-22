@@ -10,6 +10,7 @@ type FormationTemplate struct {
 	RuntimeArtifactKind    *ArtifactType `json:"runtimeArtifactKind"`
 	Webhooks               []*Webhook    `json:"webhooks"`
 	LeadingProductIDs      []string      `json:"leadingProductIDs"`
+	SupportsReset          bool          `json:"supportsReset"`
 }
 
 // FormationTemplateExt  is an extended types used by external API

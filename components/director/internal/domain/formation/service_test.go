@@ -3273,7 +3273,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			svc := formation.NewServiceWithAsaEngine(nil, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, asaEngine, statusService)
 
 			// WHEN
-			_, err := svc.ResynchronizeFormationNotifications(ctx, FormationID)
+			_, err := svc.ResynchronizeFormationNotifications(ctx, FormationID, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -3287,7 +3287,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	}
 	t.Run("returns error when empty tenant", func(t *testing.T) {
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
-		_, err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID)
+		_, err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID, false)
 		require.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }

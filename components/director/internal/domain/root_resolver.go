@@ -621,8 +621,8 @@ func (r *mutationResolver) UpdateFormationConstraint(ctx context.Context, id str
 	return r.formationConstraint.UpdateFormationConstraint(ctx, id, in)
 }
 
-func (r *mutationResolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
-	return r.formation.ResynchronizeFormationNotifications(ctx, formationID)
+func (r *mutationResolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*graphql.Formation, error) {
+	return r.formation.ResynchronizeFormationNotifications(ctx, formationID, reset)
 }
 
 func (r *mutationResolver) AttachConstraintToFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*graphql.ConstraintReference, error) {

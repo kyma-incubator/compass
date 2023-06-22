@@ -1517,7 +1517,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(&modelFormation, nil).Once()
 
 				return svc
 			},
@@ -1534,7 +1534,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil, testErr)
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(nil, testErr)
 
 				return svc
 			},
@@ -1546,7 +1546,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(&modelFormation, nil).Once()
 
 				return svc
 			},
@@ -1573,7 +1573,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			resolver := formation.NewResolver(transact, formationService, conv, nil, nil, nil)
 
 			// WHEN
-			resultFormationModel, err := resolver.ResynchronizeFormationNotifications(ctx, FormationID)
+			resultFormationModel, err := resolver.ResynchronizeFormationNotifications(ctx, FormationID, nil)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
