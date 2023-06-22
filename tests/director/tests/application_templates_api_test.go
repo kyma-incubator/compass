@@ -1033,32 +1033,33 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 	appTemplateName := createAppTemplateName("template")
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template in the first region")
 	appTemplateOneInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
-	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne)
+	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateOneInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateOne)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOne.ID)
 	require.Equal(t, appTemplateName, appTemplateOne.Name)
 
 	t.Log("Check if application template in the first region was created")
-	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
+	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateOne.ID)
 	require.NotEmpty(t, appTemplateOneOutput)
 
 	t.Log("Create application template in the second region")
 	appTemplateTwoInput := fixAppTemplateInputWithDistinguishLabel(appTemplateName, "other-distinguished-label")
 	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
-	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo)
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenantId, appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientForAnotherRegion, tenantId, appTemplateTwo)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateTwo.ID)
 	require.Equal(t, appTemplateName, appTemplateTwo.Name)
 
 	t.Log("Check if application template in the second region was created")
-	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
+	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateTwo.ID)
 	require.NotEmpty(t, appTemplateTwoOutput)
 
 	require.NotEqual(t, appTemplateOne.ID, appTemplateTwo.ID)
