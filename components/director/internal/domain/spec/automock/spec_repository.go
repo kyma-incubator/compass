@@ -89,16 +89,13 @@ func (_m *SpecRepository) Exists(ctx context.Context, tenantID string, id string
 	ret := _m.Called(ctx, tenantID, id, objectType)
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SpecReferenceObjectType) (bool, error)); ok {
-		return rf(ctx, tenantID, id, objectType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SpecReferenceObjectType) bool); ok {
 		r0 = rf(ctx, tenantID, id, objectType)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenantID, id, objectType)
 	} else {
@@ -113,10 +110,6 @@ func (_m *SpecRepository) GetByID(ctx context.Context, tenantID string, id strin
 	ret := _m.Called(ctx, tenantID, id, objectType)
 
 	var r0 *model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SpecReferenceObjectType) (*model.Spec, error)); ok {
-		return rf(ctx, tenantID, id, objectType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SpecReferenceObjectType) *model.Spec); ok {
 		r0 = rf(ctx, tenantID, id, objectType)
 	} else {
@@ -125,6 +118,7 @@ func (_m *SpecRepository) GetByID(ctx context.Context, tenantID string, id strin
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenantID, id, objectType)
 	} else {
@@ -139,10 +133,6 @@ func (_m *SpecRepository) GetByIDGlobal(ctx context.Context, id string) (*model.
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Spec, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Spec); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -151,6 +141,7 @@ func (_m *SpecRepository) GetByIDGlobal(ctx context.Context, id string) (*model.
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -165,10 +156,6 @@ func (_m *SpecRepository) ListByReferenceObjectID(ctx context.Context, tenant st
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 []*model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, string) ([]*model.Spec, error)); ok {
-		return rf(ctx, tenant, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, string) []*model.Spec); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -177,6 +164,7 @@ func (_m *SpecRepository) ListByReferenceObjectID(ctx context.Context, tenant st
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -191,10 +179,6 @@ func (_m *SpecRepository) ListByReferenceObjectIDGlobal(ctx context.Context, obj
 	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 []*model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) ([]*model.Spec, error)); ok {
-		return rf(ctx, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) []*model.Spec); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
@@ -203,6 +187,7 @@ func (_m *SpecRepository) ListByReferenceObjectIDGlobal(ctx context.Context, obj
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {
@@ -217,10 +202,6 @@ func (_m *SpecRepository) ListByReferenceObjectIDs(ctx context.Context, tenant s
 	ret := _m.Called(ctx, tenant, objectType, objectIDs)
 
 	var r0 []*model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, []string) ([]*model.Spec, error)); ok {
-		return rf(ctx, tenant, objectType, objectIDs)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, []string) []*model.Spec); ok {
 		r0 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
@@ -229,6 +210,7 @@ func (_m *SpecRepository) ListByReferenceObjectIDs(ctx context.Context, tenant s
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType, []string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
@@ -243,10 +225,6 @@ func (_m *SpecRepository) ListIDByReferenceObjectID(ctx context.Context, tenant 
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 []string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, string) ([]string, error)); ok {
-		return rf(ctx, tenant, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, string) []string); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -255,6 +233,7 @@ func (_m *SpecRepository) ListIDByReferenceObjectID(ctx context.Context, tenant 
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -269,10 +248,6 @@ func (_m *SpecRepository) ListIDByReferenceObjectIDGlobal(ctx context.Context, o
 	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 []string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) ([]string, error)); ok {
-		return rf(ctx, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SpecReferenceObjectType, string) []string); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
@@ -281,6 +256,7 @@ func (_m *SpecRepository) ListIDByReferenceObjectIDGlobal(ctx context.Context, o
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {

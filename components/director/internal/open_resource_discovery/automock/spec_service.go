@@ -21,16 +21,13 @@ func (_m *SpecService) CreateByReferenceObjectID(ctx context.Context, in model.S
 	ret := _m.Called(ctx, in, resourceType, objectType, objectID)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) (string, error)); ok {
-		return rf(ctx, in, resourceType, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) string); ok {
 		r0 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
@@ -45,17 +42,13 @@ func (_m *SpecService) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx cont
 	ret := _m.Called(ctx, in, resourceType, objectType, objectID)
 
 	var r0 string
-	var r1 *model.FetchRequest
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) (string, *model.FetchRequest, error)); ok {
-		return rf(ctx, in, resourceType, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) string); ok {
 		r0 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 *model.FetchRequest
 	if rf, ok := ret.Get(1).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) *model.FetchRequest); ok {
 		r1 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
@@ -64,6 +57,7 @@ func (_m *SpecService) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx cont
 		}
 	}
 
+	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, model.SpecInput, resource.Type, model.SpecReferenceObjectType, string) error); ok {
 		r2 = rf(ctx, in, resourceType, objectType, objectID)
 	} else {
@@ -92,10 +86,6 @@ func (_m *SpecService) GetByID(ctx context.Context, id string, objectType model.
 	ret := _m.Called(ctx, id, objectType)
 
 	var r0 *model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) (*model.Spec, error)); ok {
-		return rf(ctx, id, objectType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) *model.Spec); ok {
 		r0 = rf(ctx, id, objectType)
 	} else {
@@ -104,6 +94,7 @@ func (_m *SpecService) GetByID(ctx context.Context, id string, objectType model.
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, id, objectType)
 	} else {
@@ -118,10 +109,6 @@ func (_m *SpecService) GetByIDGlobal(ctx context.Context, id string) (*model.Spe
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Spec
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Spec, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Spec); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -130,6 +117,7 @@ func (_m *SpecService) GetByIDGlobal(ctx context.Context, id string) (*model.Spe
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -144,10 +132,6 @@ func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context
 	ret := _m.Called(ctx, tenant, objectIDs, objectType)
 
 	var r0 []*model.FetchRequest
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.SpecReferenceObjectType) ([]*model.FetchRequest, error)); ok {
-		return rf(ctx, tenant, objectIDs, objectType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.SpecReferenceObjectType) []*model.FetchRequest); ok {
 		r0 = rf(ctx, tenant, objectIDs, objectType)
 	} else {
@@ -156,6 +140,7 @@ func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenant, objectIDs, objectType)
 	} else {
@@ -170,10 +155,6 @@ func (_m *SpecService) ListFetchRequestsByReferenceObjectIDsGlobal(ctx context.C
 	ret := _m.Called(ctx, objectIDs, objectType)
 
 	var r0 []*model.FetchRequest
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string, model.SpecReferenceObjectType) ([]*model.FetchRequest, error)); ok {
-		return rf(ctx, objectIDs, objectType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, model.SpecReferenceObjectType) []*model.FetchRequest); ok {
 		r0 = rf(ctx, objectIDs, objectType)
 	} else {
@@ -182,6 +163,7 @@ func (_m *SpecService) ListFetchRequestsByReferenceObjectIDsGlobal(ctx context.C
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, model.SpecReferenceObjectType) error); ok {
 		r1 = rf(ctx, objectIDs, objectType)
 	} else {
@@ -196,10 +178,6 @@ func (_m *SpecService) ListIDByReferenceObjectID(ctx context.Context, resourceTy
 	ret := _m.Called(ctx, resourceType, objectType, objectID)
 
 	var r0 []string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) ([]string, error)); ok {
-		return rf(ctx, resourceType, objectType, objectID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) []string); ok {
 		r0 = rf(ctx, resourceType, objectType, objectID)
 	} else {
@@ -208,6 +186,7 @@ func (_m *SpecService) ListIDByReferenceObjectID(ctx context.Context, resourceTy
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, resourceType, objectType, objectID)
 	} else {

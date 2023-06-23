@@ -159,6 +159,27 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, re
 	return apis, nil
 }
 
+// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	var apiDefCollection APIDefCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.API, tenantID, pageSize, cursor, idColumn, &apiDefCollection, repo.NewEqualCondition("app_id", appID))
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	items := make([]*model.APIDefinition, 0, len(apiDefCollection))
+	for _, api := range apiDefCollection {
+		m := r.conv.FromEntity(&api)
+		items = append(items, m)
+	}
+
+	return &model.APIDefinitionPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
+}
+
 // GetByID retrieves the APIDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity

@@ -23,10 +23,14 @@ import (
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
 	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	CreateInApplication(ctx context.Context, appID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, resourceType resource.Type, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
+	UpdateForApplication(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, resourceType resource.Type, id string) error
 	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
+	ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 }
 
 // RuntimeService is responsible for the service-layer Runtime operations.
@@ -98,6 +102,61 @@ func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc Runt
 	}
 }
 
+// APIDefinitionsForApplication lists all APIDefinitions for a given application ID with paging.
+func (r *Resolver) APIDefinitionsForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Listing APIDefinitions for Application with ID %s", appID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	apisPage, err := r.svc.ListByApplicationIDPage(ctx, appID, *first, cursor)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing APIDefinitions for Application with ID %s", appID)
+	}
+
+	gqlAPIs := make([]*graphql.APIDefinition, 0, len(apisPage.Data))
+	for _, api := range apisPage.Data {
+		spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+		}
+
+		gqlAPI, err := r.converter.ToGraphQL(api, spec, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+		}
+
+		gqlAPIs = append(gqlAPIs, gqlAPI)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &graphql.APIDefinitionPage{
+		Data:       gqlAPIs,
+		TotalCount: apisPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
+			HasNextPage: apisPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
 // AddAPIDefinitionToBundle adds an APIDefinition to a Bundle with a given ID,
 func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
@@ -161,6 +220,55 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 	return gqlAPI, nil
 }
 
+// AddAPIDefinitionToApplication adds an APIDefinition in the context of an Application without Bundle
+func (r *Resolver) AddAPIDefinitionToApplication(ctx context.Context, appID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Adding APIDefinition to application with id %s", appID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting GraphQL input to APIDefinition")
+	}
+
+	id, err := r.svc.CreateInApplication(ctx, appID, *convertedIn, convertedSpec)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Application with id %s", appID)
+	}
+
+	api, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = r.appSvc.UpdateBaseURL(ctx, str.PtrStrToStr(api.ApplicationID), in.TargetURL); err != nil {
+		return nil, errors.Wrapf(err, "while trying to update baseURL")
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("APIDefinition with id %s successfully added to Application with id %s", id, appID)
+	return gqlAPI, nil
+}
+
 // UpdateAPIDefinition updates an APIDefinition by its ID.
 func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
@@ -205,6 +313,50 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 
 	err = tx.Commit()
 	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("APIDefinition with id %s successfully updated.", id)
+	return gqlAPI, nil
+}
+
+// UpdateAPIDefinitionForApplication updates an APIDefinition for Application without being in a Bundle
+func (r *Resolver) UpdateAPIDefinitionForApplication(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Updating APIDefinition with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting GraphQL input to APIDefinition with id %s", id)
+	}
+
+	if err = r.svc.UpdateForApplication(ctx, id, *convertedIn, convertedSpec); err != nil {
+		return nil, err
+	}
+
+	api, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
