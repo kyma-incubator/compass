@@ -86,7 +86,8 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		Application: &webhook.ApplicationWithLabels{
@@ -95,21 +96,24 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 			},
 			Labels: map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		Runtime: &webhook.RuntimeWithLabels{
 			Runtime: &model.Runtime{},
 			Labels:  map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		RuntimeContext: &webhook.RuntimeContextWithLabels{
 			RuntimeContext: &model.RuntimeContext{},
 			Labels:         map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		Assignment: &webhook.FormationAssignment{
@@ -122,7 +126,8 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		SourceApplication: &webhook.ApplicationWithLabels{
@@ -131,14 +136,16 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 			},
 			Labels: map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 		TargetApplication: &webhook.ApplicationWithLabels{
@@ -147,7 +154,8 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 			},
 			Labels: map[string]string{},
 			Tenant: &webhook.TenantWithLabels{
-				Labels: map[string]string{},
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
 			},
 		},
 	}

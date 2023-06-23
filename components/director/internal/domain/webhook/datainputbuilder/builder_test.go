@@ -339,7 +339,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *t
 				builder.On("GetTenantForApplicationTemplate", emptyCtx, testTenantID, testExpectedAppTemplateWithLabels.Labels).Return(nil, testErr).Once()
 				return builder
 			},
-			expectedErrMsg: fmt.Sprintf("while building tenants with labels for application template with ID %q", testAppTemplateID),
+			expectedErrMsg: fmt.Sprintf("while building tenant with labels for application template with ID %q", testAppTemplateID),
 		},
 	}
 

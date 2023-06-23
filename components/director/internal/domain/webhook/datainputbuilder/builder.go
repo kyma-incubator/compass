@@ -121,15 +121,15 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 			return nil, nil, errors.Wrapf(err, "while building labels for application template with ID %q", appTemplate.ID)
 		}
 
-		tenantsWithLabelsForApplicationTemplate, err := b.tenantInputBuilder.GetTenantForApplicationTemplate(ctx, tenant, applicationTemplateLabels)
+		tenantWithLabelsForApplicationTemplate, err := b.tenantInputBuilder.GetTenantForApplicationTemplate(ctx, tenant, applicationTemplateLabels)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "while building tenants with labels for application template with ID %q", appTemplate.ID)
+			return nil, nil, errors.Wrapf(err, "while building tenant with labels for application template with ID %q", appTemplate.ID)
 		}
 
 		appTemplateWithLabels = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: appTemplate,
 			Labels:              applicationTemplateLabels,
-			Tenant:              tenantsWithLabelsForApplicationTemplate,
+			Tenant:              tenantWithLabelsForApplicationTemplate,
 		}
 	}
 	return applicationWithLabels, appTemplateWithLabels, nil
@@ -344,7 +344,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrap(err, "while listing labels for application templates")
 	}
 
-	tenantsWithLabelsForApplicationTemplates, err := b.tenantInputBuilder.GetTenantForApplicationTemplates(ctx, tenant, applicationTemplatesLabels, applicationsTemplateIDs)
+	tenantWithLabelsForApplicationTemplates, err := b.tenantInputBuilder.GetTenantForApplicationTemplates(ctx, tenant, applicationTemplatesLabels, applicationsTemplateIDs)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for application templates")
 	}
@@ -354,7 +354,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		applicationTemplatesMapping[appTemplate.ID] = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: applicationTemplates[i],
 			Labels:              applicationTemplatesLabels[appTemplate.ID],
-			Tenant:              tenantsWithLabelsForApplicationTemplates[appTemplate.ID],
+			Tenant:              tenantWithLabelsForApplicationTemplates[appTemplate.ID],
 		}
 	}
 
