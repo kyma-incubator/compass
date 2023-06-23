@@ -66,7 +66,7 @@ func NewFormationAssignmentNotificationService(formationAssignmentRepo Formation
 }
 
 // GenerateFormationAssignmentNotification generates formation assignment notification by provided model.FormationAssignment
-func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotification(ctx context.Context, fa *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	log.C(ctx).Infof("Generating notification for formation assignment with ID: %q and target type: %q and target ID: %q", fa.ID, fa.TargetType, fa.Target)
 
 	customerTenantContext, err := fan.extractCustomerTenantContext(ctx, fa.TenantID)
@@ -81,11 +81,11 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
-		return fan.generateApplicationFANotification(ctx, fa, referencedFormation, customerTenantContext)
+		return fan.generateApplicationFANotification(ctx, fa, referencedFormation, customerTenantContext, operation)
 	case model.FormationAssignmentTypeRuntime:
-		return fan.generateRuntimeFANotification(ctx, fa, referencedFormation, customerTenantContext)
+		return fan.generateRuntimeFANotification(ctx, fa, referencedFormation, customerTenantContext, operation)
 	case model.FormationAssignmentTypeRuntimeContext:
-		return fan.generateRuntimeContextFANotification(ctx, fa, referencedFormation, customerTenantContext)
+		return fan.generateRuntimeContextFANotification(ctx, fa, referencedFormation, customerTenantContext, operation)
 	default:
 		return nil, errors.Errorf("Unknown formation assignment type: %q", fa.TargetType)
 	}
@@ -222,7 +222,7 @@ func (fan *formationAssignmentNotificationService) getObjectSubtype(ctx context.
 		return runtimeType, nil
 
 	default:
-		return "", errors.Errorf("unknown formation type %s", objectType)
+		return "", errors.Errorf("unknown object type %q", objectType)
 	}
 }
 
@@ -238,7 +238,7 @@ func (fan *formationAssignmentNotificationService) getReverseBySourceAndTarget(c
 }
 
 // generateApplicationFANotification generates application formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	tenantID := fa.TenantID
 	appID := fa.Target
 
@@ -271,7 +271,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 
 		log.C(ctx).Infof("Preparing join point details for application tenant mapping notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
-			model.AssignFormation,
+			operation,
 			fa.FormationID,
 			referencedFormation.FormationTemplateID,
 			reverseAppTemplateWithLabels,
@@ -321,7 +321,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 
 		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
-			model.AssignFormation,
+			operation,
 			fa.FormationID,
 			referencedFormation.FormationTemplateID,
 			appTemplateWithLabels,
@@ -379,7 +379,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 
 		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
-			model.AssignFormation,
+			operation,
 			fa.FormationID,
 			referencedFormation.FormationTemplateID,
 			appTemplateWithLabels,
@@ -416,7 +416,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 }
 
 // generateRuntimeFANotification generates runtime formation assignment notification based on the reverse(source) type of the formation
-func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	tenantID := fa.TenantID
 	runtimeID := fa.Target
 
@@ -457,7 +457,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 
 	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
-		model.AssignFormation,
+		operation,
 		fa.FormationID,
 		referencedFormation.FormationTemplateID,
 		appTemplateWithLabels,
@@ -485,7 +485,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 }
 
 // generateRuntimeContextFANotification generates runtime context formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	tenantID := fa.TenantID
 	runtimeCtxID := fa.Target
 
@@ -533,7 +533,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 
 	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
-		model.AssignFormation,
+		operation,
 		fa.FormationID,
 		referencedFormation.FormationTemplateID,
 		appTemplateWithLabels,

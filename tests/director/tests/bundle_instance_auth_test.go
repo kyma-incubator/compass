@@ -3,10 +3,11 @@ package tests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	gcli "github.com/machinebox/graphql"
-	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 

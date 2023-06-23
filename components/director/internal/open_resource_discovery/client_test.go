@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -376,6 +378,12 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooksForApplication()[0]
+			testResource := ord.Resource{
+				Type:          resource.Application,
+				ID:            testApp.ID,
+				Name:          testApp.Name,
+				LocalTenantID: testApp.LocalTenantID,
+			}
 
 			testWebhook.Auth = test.Credentials
 
@@ -392,7 +400,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}
 
-			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
+			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testResource, testWebhook)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

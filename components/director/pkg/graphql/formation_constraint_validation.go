@@ -116,12 +116,8 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 				Labels:                map[string]string{},
 			},
 		},
-		Assignment: &webhook.FormationAssignment{
-			Value: "\"\"",
-		},
-		ReverseAssignment: &webhook.FormationAssignment{
-			Value: "\"\"",
-		},
+		Assignment:        &webhook.FormationAssignment{},
+		ReverseAssignment: &webhook.FormationAssignment{},
 		SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},

@@ -3,6 +3,9 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -18,15 +21,17 @@ import (
 )
 
 // DocumentService missing godoc
+//
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentService interface {
-	CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error)
+	CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 	ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error)
 }
 
 // DocumentConverter missing godoc
+//
 //go:generate mockery --name=DocumentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
@@ -34,6 +39,7 @@ type DocumentConverter interface {
 }
 
 // FetchRequestConverter missing godoc
+//
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
@@ -41,12 +47,14 @@ type FetchRequestConverter interface {
 }
 
 // ApplicationService missing godoc
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 // BundleService missing godoc
+//
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
@@ -97,7 +105,7 @@ func (r *Resolver) AddDocumentToBundle(ctx context.Context, bundleID string, in 
 		return nil, errors.Wrapf(err, "while getting bundle %s", bundleID)
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn)
+	id, err := r.svc.CreateInBundle(ctx, resource.Application, str.PtrStrToStr(bndl.ApplicationID), bundleID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

@@ -53,6 +53,20 @@ func (_m *FetchRequestService) Update(ctx context.Context, fr *model.FetchReques
 	return r0
 }
 
+// UpdateGlobal provides a mock function with given fields: ctx, fr
+func (_m *FetchRequestService) UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error {
+	ret := _m.Called(ctx, fr)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest) error); ok {
+		r0 = rf(ctx, fr)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewFetchRequestService interface {
 	mock.TestingT
 	Cleanup(func())

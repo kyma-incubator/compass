@@ -27,7 +27,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelDocument("1", "foo"),
+			Input:    fixModelDocumentForApp("1", "foo"),
 			Expected: fixGQLDocument("1", "foo"),
 		},
 		{
@@ -60,8 +60,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
 	input := []*model.Document{
-		fixModelDocument("1", "foo"),
-		fixModelDocument("2", "bar"),
+		fixModelDocumentForApp("1", "foo"),
+		fixModelDocumentForApp("2", "bar"),
 		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
@@ -157,7 +157,7 @@ func TestToEntity(t *testing.T) {
 
 	modelWithRequiredFields := model.Document{
 		BundleID:    "givenBundleID",
-		AppID:       "givenAppID",
+		AppID:       str.Ptr("givenAppID"),
 		Title:       "givenTitle",
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
@@ -180,7 +180,7 @@ func TestToEntity(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, &document.Entity{
 			BndlID:      givenModel.BundleID,
-			AppID:       givenModel.AppID,
+			AppID:       repo.NewNullableString(givenModel.AppID),
 			Title:       givenModel.Title,
 			Description: givenModel.Description,
 			DisplayName: givenModel.DisplayName,
@@ -214,7 +214,7 @@ func TestFromEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 	entityWithRequiredFields := document.Entity{
 		BndlID:      "givenBundleID",
-		AppID:       "givenAppID",
+		AppID:       repo.NewValidNullableString("givenAppID"),
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
@@ -232,7 +232,7 @@ func TestFromEntity(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, &model.Document{
 			BundleID:    "givenBundleID",
-			AppID:       "givenAppID",
+			AppID:       str.Ptr("givenAppID"),
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",
