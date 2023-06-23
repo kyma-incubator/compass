@@ -49,7 +49,7 @@ type labelInputBuilder interface {
 type tenantInputBuilder interface {
 	GetTenantsForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error)
 	GetTenantForApplicationTemplate(ctx context.Context, tenant string, labels map[string]string) (*webhook.TenantWithLabels, error)
-	GetTenantForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error)
+	GetTenantsForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error)
 	GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error)
 }
 
@@ -256,7 +256,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		return nil, nil, errors.Wrap(err, "while listing runtime labels")
 	}
 
-	tenantsWithLabelsForRuntimes, err := b.tenantInputBuilder.GetTenantForObjects(ctx, tenant, runtimesIDs, resource.Runtime)
+	tenantsWithLabelsForRuntimes, err := b.tenantInputBuilder.GetTenantsForObjects(ctx, tenant, runtimesIDs, resource.Runtime)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for runtimes")
 	}
@@ -275,7 +275,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		return nil, nil, errors.Wrap(err, "while listing labels for runtime contexts")
 	}
 
-	tenantsWithLabelsForRuntimeContexts, err := b.tenantInputBuilder.GetTenantForObjects(ctx, tenant, runtimeContextsIDs, resource.RuntimeContext)
+	tenantsWithLabelsForRuntimeContexts, err := b.tenantInputBuilder.GetTenantsForObjects(ctx, tenant, runtimeContextsIDs, resource.RuntimeContext)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for runtime contexts")
 	}
@@ -320,7 +320,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrap(err, "while listing labels for applications")
 	}
 
-	tenantsWithLabelsForApplication, err := b.tenantInputBuilder.GetTenantForObjects(ctx, tenant, applicationsToBeNotifiedForIDs, resource.Application)
+	tenantsWithLabelsForApplication, err := b.tenantInputBuilder.GetTenantsForObjects(ctx, tenant, applicationsToBeNotifiedForIDs, resource.Application)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for applications")
 	}

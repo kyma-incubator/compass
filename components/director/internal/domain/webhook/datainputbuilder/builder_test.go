@@ -846,13 +846,13 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
 				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
 					RuntimeID:               testRuntimeTenantWithLabels,
 					RuntimeContextRuntimeID: testRuntimeTenantWithLabels,
 				}, nil)
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
 				}), resource.RuntimeContext).Return(map[string]*webhook.TenantWithLabels{
 					RuntimeContextID:  testRuntimeContextTenantWithLabels,
@@ -899,13 +899,13 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
 				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
 					RuntimeID:               testRuntimeTenantWithLabels,
 					RuntimeContextRuntimeID: testRuntimeTenantWithLabels,
 				}, nil)
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
 				}), resource.RuntimeContext).Return(nil, testErr)
 				return builder
@@ -944,7 +944,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
 				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
 					RuntimeID:               testRuntimeTenantWithLabels,
@@ -1008,7 +1008,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
 				}), resource.Runtime).Return(nil, testErr)
 				return builder
@@ -1145,7 +1145,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
 				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
 					ApplicationID:  testAppTenantWithLabels,
@@ -1189,7 +1189,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
 				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
 					ApplicationID:  testAppTenantWithLabels,
@@ -1229,7 +1229,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
 				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
 					ApplicationID:  testAppTenantWithLabels,
@@ -1291,7 +1291,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
 				}), resource.Application).Return(nil, testErr)
 				return builder
@@ -1323,7 +1323,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			},
 			TenantBuilderFN: func() *automock.TenantInputBuilder {
 				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
 				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
 					ApplicationID:  testAppTenantWithLabels,

@@ -111,7 +111,7 @@ func TestWebhookTenantBuilder_GetTenantForObject(t *testing.T) {
 	}
 }
 
-func TestWebhookTenantBuilder_GetTenantForObjects(t *testing.T) {
+func TestWebhookTenantBuilder_GetTenantsForObjects(t *testing.T) {
 	testCases := []struct {
 		name                      string
 		labelBuilder              func() *automock.LabelInputBuilder
@@ -198,7 +198,7 @@ func TestWebhookTenantBuilder_GetTenantForObjects(t *testing.T) {
 			webhookDataInputBuilder := databuilder.NewWebhookTenantBuilder(labelBuilder, tenantRepo)
 
 			// WHEN
-			tenantsWithLabels, err := webhookDataInputBuilder.GetTenantForObjects(emptyCtx, testTenantID, tCase.objectIDs, tCase.objectType)
+			tenantsWithLabels, err := webhookDataInputBuilder.GetTenantsForObjects(emptyCtx, testTenantID, tCase.objectIDs, tCase.objectType)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {

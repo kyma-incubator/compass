@@ -93,8 +93,8 @@ func (b *WebhookTenantBuilder) GetTenantForApplicationTemplate(ctx context.Conte
 	return nil, nil
 }
 
-// GetTenantForObjects builds tenants with labels for objects of type runtime, runtime context or application
-func (b *WebhookTenantBuilder) GetTenantForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error) {
+// GetTenantsForObjects builds tenants with labels for objects of type runtime, runtime context or application
+func (b *WebhookTenantBuilder) GetTenantsForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error) {
 	tenantsForObjects := make(map[string]*webhook.TenantWithLabels)
 	tenantIDs := make([]string, 0)
 	tenantIDsMap := make(map[string]*model.BusinessTenantMapping)
