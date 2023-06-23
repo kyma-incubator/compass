@@ -5304,6 +5304,7 @@ input APISpecInput {
 **Validation:** provided placeholders' names are unique
 """
 input ApplicationFromTemplateInput {
+	id: ID
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -31087,6 +31088,12 @@ func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx conte
 
 	for k, v := range asMap {
 		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "templateName":
 			var err error
 			it.TemplateName, err = ec.unmarshalNString2string(ctx, v)
