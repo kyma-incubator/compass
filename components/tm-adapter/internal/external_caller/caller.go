@@ -16,7 +16,7 @@ type ExternalSvcCaller interface { // todo::: improvement: the code in director 
 
 type Caller struct {
 	httpClient  *http.Client
-	credentials auth.Credentials
+	Credentials auth.Credentials
 }
 
 func NewCaller(httpClient *http.Client, oauthConfig config.OAuthConfig) *Caller {
@@ -28,7 +28,7 @@ func NewCaller(httpClient *http.Client, oauthConfig config.OAuthConfig) *Caller 
 
 	return &Caller{
 		httpClient:  httpClient,
-		credentials: credentials,
+		Credentials: credentials,
 	}
 }
 
@@ -45,6 +45,6 @@ func (c *Caller) Call(req *http.Request) (*http.Response, error) {
 
 func (c *Caller) addCredentialsToContext(req *http.Request) *http.Request {
 	authCtx := req.Context()
-	authCtx = auth.SaveToContext(authCtx, c.credentials)
+	authCtx = auth.SaveToContext(authCtx, c.Credentials)
 	return req.WithContext(authCtx)
 }

@@ -104,6 +104,46 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.tenantMappingAdapter.oauthSecret.name }}
                   key: {{ .Values.global.tenantMappingAdapter.oauthSecret.smUrlKey }}
+            - name: APP_SM_SVC_CLIENT_ID_EU11
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.eu11Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.clientIdKey }}
+            - name: APP_SM_SVC_CLIENT_SECRET_EU11
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.eu11Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.clientSecretKey }}
+            - name: APP_SM_SVC_OAUTH_URL_EU11
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.eu11Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.oauthUrlKey}}
+            - name: APP_SM_SVC_URL_EU11
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.eu11Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.smUrlKey }}
+            - name: APP_SM_SVC_CLIENT_ID_US10
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.us10Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.clientIdKey }}
+            - name: APP_SM_SVC_CLIENT_SECRET_US10
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.us10Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.clientSecretKey }}
+            - name: APP_SM_SVC_OAUTH_URL_US10
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.us10Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.oauthUrlKey}}
+            - name: APP_SM_SVC_URL_US10
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantMappingAdapter.oauthSecret.us10Name }}
+                  key: {{ .Values.global.tenantMappingAdapter.oauthSecret.smUrlKey }}
             - name: APP_SM_SVC_OAUTH_TOKEN_PATH
               value: {{ .Values.global.tenantMappingAdapter.oauthSecret.oauthTokenPath }}
           livenessProbe:

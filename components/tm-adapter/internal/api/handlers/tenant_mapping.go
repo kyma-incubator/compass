@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tm-adapter/internal/api/paths"
@@ -17,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -78,7 +80,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New(""))
 		return
 	}
-	h.tenantID = tm.ReceiverTenant.SubaccountID
+	h.tenantID = tm.ReceiverTenant.ApplicationTenantID
+
+	// only for live landscapes
+	h.adaptCredsBasedOnRegion(ctx, tm)
 
 	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.Configuration != nil && string(tm.AssignedTenant.Configuration) != "{}" && string(tm.AssignedTenant.Configuration) != "\"\"" && string(tm.AssignedTenant.Configuration) != "null" {
 		log.C(ctx).Infof("The configuration in the tenant mapping body is provided during %q operation and no service instance/binding will be created. Returning...", AssignOperation)
@@ -94,8 +99,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	catalogNameProcurement := "procurement-service-test" // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
-	planNameProcurement := "apiaccess"                   // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+	//catalogNameProcurement := "procurement-service-test" // todo::: that's the value for the CANARY env;; most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+	catalogNameProcurement := "procurement-service" // todo::: that's the value for the LIVE env;; most probably should be provided as label on the runtime/app-template and will be used through TM notification body
+	planNameProcurement := "apiaccess"              // todo::: most probably should be provided as label on the runtime/app-template and will be used through TM notification body
 	svcInstanceNameProcurement := catalogNameProcurement + "-instance-" + formationID
 
 	//catalogNameIAS := "identity" // IAS
@@ -203,6 +209,68 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	httputil.RespondWithBody(ctx, w, http.StatusOK, jsonRawMsg)
 }
 
+func (h *Handler) adaptCredsBasedOnRegion(ctx context.Context, tm types.TenantMapping) {
+	if tm.ReceiverTenant.DeploymentRegion == "cf-eu11" {
+		clientID, found := os.LookupEnv("APP_SM_SVC_CLIENT_ID_EU11")
+		if !found {
+			log.C(ctx).Warnf("The client ID env for eu11 not found")
+		}
+
+		clientSecret, found := os.LookupEnv("APP_SM_SVC_CLIENT_SECRET_EU11")
+		if !found {
+			log.C(ctx).Warnf("The client secret env for eu11 not found")
+		}
+
+		oauthURL, found := os.LookupEnv("APP_SM_SVC_OAUTH_URL_EU11")
+		if !found {
+			log.C(ctx).Warnf("The client OAuth URL env for eu11 not found")
+		}
+
+		h.caller.Credentials = &auth.OAuthCredentials{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
+		}
+		log.C(ctx).Infof("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
+
+		smURL, found := os.LookupEnv("APP_SM_SVC_URL_EU11")
+		if !found {
+			log.C(ctx).Warnf("The service manager URL for EU11 not found")
+		}
+		h.cfg.ServiceManagerURL = smURL
+	} else if tm.ReceiverTenant.DeploymentRegion == "cf-us10" {
+		clientID, found := os.LookupEnv("APP_SM_SVC_CLIENT_ID_US10")
+		if !found {
+			log.C(ctx).Warnf("The client ID env for us10 not found")
+		}
+
+		clientSecret, found := os.LookupEnv("APP_SM_SVC_CLIENT_SECRET_US10")
+		if !found {
+			log.C(ctx).Warnf("The client secret env for us10 not found")
+		}
+
+		oauthURL, found := os.LookupEnv("APP_SM_SVC_OAUTH_URL_US10")
+		if !found {
+			log.C(ctx).Warnf("The client OAuth URL env for us10 not found")
+		}
+
+		h.caller.Credentials = &auth.OAuthCredentials{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			TokenURL:     oauthURL + h.cfg.OAuthProvider.OAuthTokenPath,
+		}
+		log.C(ctx).Warnf("The credentials are adapted for the %q region", tm.ReceiverTenant.DeploymentRegion)
+
+		smURL, found := os.LookupEnv("APP_SM_SVC_URL_US10")
+		if !found {
+			log.C(ctx).Warnf("The service manager URL for US10 not found")
+		}
+		h.cfg.ServiceManagerURL = smURL
+	} else {
+		log.C(ctx).Infof("The deployment region is not cf-eu11 nor cf-us10 so the default credentials from eu10 will be used")
+	}
+}
+
 func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if err := resp.Body.Close(); err != nil {
 		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
@@ -210,8 +278,8 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 }
 
 func validate(tm types.TenantMapping) error {
-	if tm.ReceiverTenant.SubaccountID == "" {
-		return errors.New("The subaccount ID in the tenant mapping request body should not be empty")
+	if tm.ReceiverTenant.ApplicationTenantID == "" {
+		return errors.New("The application tenant ID/subaccount ID in the tenant mapping request body should not be empty")
 	}
 
 	if tm.Context.Operation != AssignOperation && tm.Context.Operation != UnassignOperation {

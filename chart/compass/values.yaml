@@ -499,6 +499,8 @@ global:
     oauthSecret:
       manage: false
       name: "sm-credentials"
+      eu11Name: "sm-credentials-eu11"
+      us10Name: "sm-credentials-us10"
       clientIdKey: client-id
       clientSecretKey: client-secret
       oauthUrlKey: url
