@@ -697,6 +697,25 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 	}`)
 }
 
+// ApplicationFromTemplateInputWithTemplateIDToGQL missing godoc
+func (g *Graphqlizer) ApplicationFromTemplateInputWithTemplateIDToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .ID }}
+		id: "{{ .ID }}"
+		{{- end }}
+		templateName: "{{.TemplateName}}"
+		{{- if .Values }}
+		values: [
+			{{- range $i, $e := .Values }}
+				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
+			{{- end }} ],
+		{{- end }}
+		{{- if .PlaceholdersPayload }}
+		placeholdersPayload:  "{{.PlaceholdersPayload}}"
+		{{- end }}
+	}`)
+}
+
 // BundleCreateInputToGQL missing godoc
 func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (string, error) {
 	return g.genericToGQL(in, `{

@@ -319,6 +319,7 @@ input APISpecInput {
 **Validation:** provided placeholders' names are unique
 """
 input ApplicationFromTemplateInput {
+	id: ID
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
