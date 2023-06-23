@@ -2183,7 +2183,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Nil(t, nonexistentFormation)
 	})
 
-	t.Run("Resynchronize synchronous formation notifications with reset with tenant mapping notifications", func(t *testing.T) {
+	t.Run("Resynchronize tenant mapping notifications with reset", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
