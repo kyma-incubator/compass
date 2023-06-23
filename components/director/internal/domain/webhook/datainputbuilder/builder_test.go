@@ -1151,7 +1151,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 					ApplicationID:  testAppTenantWithLabels,
 					Application2ID: testAppTenantWithLabels,
 				}, nil)
-				builder.On("GetTenantForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
+				builder.On("GetTenantsForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
 					ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
 				}, []string{ApplicationTemplateID}).Return(map[string]*webhook.TenantWithLabels{
 					ApplicationTemplateID: testAppTemplateTenantWithLabels,
@@ -1235,7 +1235,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 					ApplicationID:  testAppTenantWithLabels,
 					Application2ID: testAppTenantWithLabels,
 				}, nil)
-				builder.On("GetTenantForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
+				builder.On("GetTenantsForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
 					ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
 				}, []string{ApplicationTemplateID}).Return(nil, testErr)
 				return builder

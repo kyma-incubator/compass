@@ -47,7 +47,7 @@ type labelInputBuilder interface {
 
 //go:generate mockery --exported --name=tenantInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantInputBuilder interface {
-	GetTenantForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error)
+	GetTenantsForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error)
 	GetTenantForApplicationTemplate(ctx context.Context, tenant string, labels map[string]string) (*webhook.TenantWithLabels, error)
 	GetTenantForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error)
 	GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error)
@@ -344,7 +344,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrap(err, "while listing labels for application templates")
 	}
 
-	tenantWithLabelsForApplicationTemplates, err := b.tenantInputBuilder.GetTenantForApplicationTemplates(ctx, tenant, applicationTemplatesLabels, applicationsTemplateIDs)
+	tenantsWithLabelsForApplicationTemplates, err := b.tenantInputBuilder.GetTenantsForApplicationTemplates(ctx, tenant, applicationTemplatesLabels, applicationsTemplateIDs)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for application templates")
 	}
@@ -354,7 +354,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		applicationTemplatesMapping[appTemplate.ID] = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: applicationTemplates[i],
 			Labels:              applicationTemplatesLabels[appTemplate.ID],
-			Tenant:              tenantWithLabelsForApplicationTemplates[appTemplate.ID],
+			Tenant:              tenantsWithLabelsForApplicationTemplates[appTemplate.ID],
 		}
 	}
 

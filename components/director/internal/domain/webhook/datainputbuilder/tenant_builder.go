@@ -30,8 +30,8 @@ func NewWebhookTenantBuilder(labelInputBuilder labelInputBuilder, tenantReposito
 	}
 }
 
-// GetTenantForApplicationTemplates builds tenants with labels for application templates
-func (b *WebhookTenantBuilder) GetTenantForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
+// GetTenantsForApplicationTemplates builds tenants with labels for application templates
+func (b *WebhookTenantBuilder) GetTenantsForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
 	tenantsForObjects := make(map[string]*webhook.TenantWithLabels)
 	tenantIDs := make([]string, 0)
 	tenantIDsMap := make(map[string]*model.BusinessTenantMapping)

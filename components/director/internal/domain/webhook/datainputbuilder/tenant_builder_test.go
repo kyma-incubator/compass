@@ -397,7 +397,7 @@ func TestWebhookTenantBuilder_GetTenantsForApplicationTemplates(t *testing.T) {
 			webhookDataInputBuilder := databuilder.NewWebhookTenantBuilder(labelBuilder, tenantRepo)
 
 			// WHEN
-			tenantsWithLabels, err := webhookDataInputBuilder.GetTenantForApplicationTemplates(emptyCtx, testTenantID, tCase.objectLabels, tCase.objectIDs)
+			tenantsWithLabels, err := webhookDataInputBuilder.GetTenantsForApplicationTemplates(emptyCtx, testTenantID, tCase.objectLabels, tCase.objectIDs)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {

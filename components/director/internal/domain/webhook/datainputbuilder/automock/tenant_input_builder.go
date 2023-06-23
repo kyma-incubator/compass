@@ -40,29 +40,6 @@ func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Contex
 	return r0, r1
 }
 
-// GetTenantForApplicationTemplates provides a mock function with given fields: ctx, tenant, labels, objectIDs
-func (_m *TenantInputBuilder) GetTenantForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
-	ret := _m.Called(ctx, tenant, labels, objectIDs)
-
-	var r0 map[string]*webhook.TenantWithLabels
-	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) map[string]*webhook.TenantWithLabels); ok {
-		r0 = rf(ctx, tenant, labels, objectIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]*webhook.TenantWithLabels)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]map[string]string, []string) error); ok {
-		r1 = rf(ctx, tenant, labels, objectIDs)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetTenantForObject provides a mock function with given fields: ctx, objectID, resourceType
 func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, objectID, resourceType)
@@ -102,6 +79,29 @@ func (_m *TenantInputBuilder) GetTenantForObjects(ctx context.Context, tenant st
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, resource.Type) error); ok {
 		r1 = rf(ctx, tenant, objectIDs, resourceType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTenantsForApplicationTemplates provides a mock function with given fields: ctx, tenant, labels, objectIDs
+func (_m *TenantInputBuilder) GetTenantsForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
+	ret := _m.Called(ctx, tenant, labels, objectIDs)
+
+	var r0 map[string]*webhook.TenantWithLabels
+	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) map[string]*webhook.TenantWithLabels); ok {
+		r0 = rf(ctx, tenant, labels, objectIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*webhook.TenantWithLabels)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]map[string]string, []string) error); ok {
+		r1 = rf(ctx, tenant, labels, objectIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
