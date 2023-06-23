@@ -51,6 +51,7 @@ const (
 
 // ApplicationFromTemplateInput missing godoc
 type ApplicationFromTemplateInput struct {
+	ID                  *string
 	TemplateName        string
 	Values              ApplicationFromTemplateInputValues
 	PlaceholdersPayload *string
