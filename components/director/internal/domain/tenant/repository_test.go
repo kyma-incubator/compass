@@ -924,7 +924,10 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		for range resource.TopLevelEntities {
+		for topLvlEntity := range resource.TopLevelEntities {
+			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+				continue
+			}
 			tenantAccesses := fixTenantAccesses()
 
 			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
@@ -1100,7 +1103,10 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		for range resource.TopLevelEntities {
+		for topLvlEntity := range resource.TopLevelEntities {
+			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+				continue
+			}
 			tenantAccesses := fixTenantAccesses()
 
 			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
@@ -1247,7 +1253,10 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		for range resource.TopLevelEntities {
+		for topLvlEntity := range resource.TopLevelEntities {
+			if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+				continue
+			}
 			tenantAccesses := fixTenantAccesses()
 
 			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).

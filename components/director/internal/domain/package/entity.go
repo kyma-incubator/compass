@@ -8,28 +8,29 @@ import (
 
 // Entity represents the ORD package entity.
 type Entity struct {
-	ID                  string         `db:"id"`
-	ApplicationID       string         `db:"app_id"`
-	OrdID               string         `db:"ord_id"`
-	Vendor              sql.NullString `db:"vendor"`
-	Title               string         `db:"title"`
-	ShortDescription    string         `db:"short_description"`
-	Description         string         `db:"description"`
-	Version             string         `db:"version"`
-	PackageLinks        sql.NullString `db:"package_links"`
-	Links               sql.NullString `db:"links"`
-	LicenseType         sql.NullString `db:"licence_type"`
-	SupportInfo         sql.NullString `db:"support_info"`
-	Tags                sql.NullString `db:"tags"`
-	Countries           sql.NullString `db:"countries"`
-	Labels              sql.NullString `db:"labels"`
-	PolicyLevel         string         `db:"policy_level"`
-	CustomPolicyLevel   sql.NullString `db:"custom_policy_level"`
-	PartOfProducts      sql.NullString `db:"part_of_products"`
-	LineOfBusiness      sql.NullString `db:"line_of_business"`
-	Industry            sql.NullString `db:"industry"`
-	ResourceHash        sql.NullString `db:"resource_hash"`
-	DocumentationLabels sql.NullString `db:"documentation_labels"`
+	ID                           string         `db:"id"`
+	ApplicationID                sql.NullString `db:"app_id"`
+	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`
+	OrdID                        string         `db:"ord_id"`
+	Vendor                       sql.NullString `db:"vendor"`
+	Title                        string         `db:"title"`
+	ShortDescription             string         `db:"short_description"`
+	Description                  string         `db:"description"`
+	Version                      string         `db:"version"`
+	PackageLinks                 sql.NullString `db:"package_links"`
+	Links                        sql.NullString `db:"links"`
+	LicenseType                  sql.NullString `db:"licence_type"`
+	SupportInfo                  sql.NullString `db:"support_info"`
+	Tags                         sql.NullString `db:"tags"`
+	Countries                    sql.NullString `db:"countries"`
+	Labels                       sql.NullString `db:"labels"`
+	PolicyLevel                  string         `db:"policy_level"`
+	CustomPolicyLevel            sql.NullString `db:"custom_policy_level"`
+	PartOfProducts               sql.NullString `db:"part_of_products"`
+	LineOfBusiness               sql.NullString `db:"line_of_business"`
+	Industry                     sql.NullString `db:"industry"`
+	ResourceHash                 sql.NullString `db:"resource_hash"`
+	DocumentationLabels          sql.NullString `db:"documentation_labels"`
 }
 
 // GetID returns the ID of the entity.
@@ -39,7 +40,13 @@ func (e *Entity) GetID() string {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	return resource.Application, e.ApplicationID
+	if e.ApplicationID.Valid {
+		return resource.Application, e.ApplicationID.String
+	} else if e.ApplicationTemplateVersionID.Valid {
+		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String
+	}
+
+	return "", ""
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

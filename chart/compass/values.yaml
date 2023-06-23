@@ -147,11 +147,11 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3123"
+      version: "PR-3116"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3090"
+      version: "PR-3116"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
@@ -167,7 +167,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3092"
+      version: "PR-3088"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/

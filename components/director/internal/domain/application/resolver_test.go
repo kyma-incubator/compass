@@ -2365,19 +2365,18 @@ func TestResolver_Bundles(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("test error")
 
-	tenantID := "1"
 	firstAppID := "appID"
 	secondAppID := "appID2"
 	appIDs := []string{firstAppID, secondAppID}
 
-	bundleFirstApp := fixModelBundle("foo", tenantID, firstAppID, "Foo", "Lorem Ipsum")
-	bundleSecondApp := fixModelBundle("foo", tenantID, secondAppID, "Foo", "Lorem Ipsum")
+	bundleFirstApp := fixModelBundle("foo", firstAppID, "Foo", "Lorem Ipsum")
+	bundleSecondApp := fixModelBundle("foo", secondAppID, "Foo", "Lorem Ipsum")
 
 	bundlesFirstApp := []*model.Bundle{bundleFirstApp}
 	bundlesSecondApp := []*model.Bundle{bundleSecondApp}
 
-	gqlBundleFirstApp := fixGQLBundle("foo", firstAppID, "Foo", "Lorem Ipsum")
-	gqlBundleSecondApp := fixGQLBundle("foo", secondAppID, "Foo", "Lorem Ipsum")
+	gqlBundleFirstApp := fixGQLBundle("foo", "Foo", "Lorem Ipsum")
+	gqlBundleSecondApp := fixGQLBundle("foo", "Foo", "Lorem Ipsum")
 
 	gqlBundlesFirstApp := []*graphql.Bundle{gqlBundleFirstApp}
 	gqlBundlesSecondApp := []*graphql.Bundle{gqlBundleSecondApp}
@@ -2537,9 +2536,8 @@ func TestResolver_Bundle(t *testing.T) {
 	// GIVEN
 	id := "foo"
 	appID := "bar"
-	tenantID := "baz"
-	modelBundle := fixModelBundle(id, tenantID, appID, "name", "bar")
-	gqlBundle := fixGQLBundle(id, appID, "name", "bar")
+	modelBundle := fixModelBundle(id, appID, "name", "bar")
+	gqlBundle := fixGQLBundle(id, "name", "bar")
 	app := fixGQLApplication("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -50,14 +51,12 @@ func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalR
 // SyncGlobalResources syncs global resources (products and vendors) provided via global registry.
 func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[string]bool, error) {
 	// dummy app used only for logging
-	app := &model.Application{
+	resource := Resource{
+		ID:   "global-registry",
 		Name: "global-registry",
-		Type: "global-registry",
-		BaseEntity: &model.BaseEntity{
-			ID: "global-registry",
-		},
+		Type: directorresource.Application,
 	}
-	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, &model.Webhook{
+	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  &s.config.URL,
 	})
@@ -65,7 +64,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
+	if err := documents.Validate(s.config.URL, ResourcesFromDB{}, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 
