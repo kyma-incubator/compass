@@ -221,15 +221,9 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 		return nil, err
 	}
 
+	// override the default instance auth only for runtime consumers
 	if consumerInfo.ConsumerType != consumer.Runtime {
 		return bundlePages, nil
-	}
-
-	bundleIDtoBundleObject := make(map[string]*model.Bundle, 200)
-	for _, page := range bundlePages {
-		for i, _ := range page.Data {
-			bundleIDtoBundleObject[page.Data[i].ID] = page.Data[i]
-		}
 	}
 
 	bundleInstanceAuths, err := s.biaSvc.ListByRuntimeID(ctx, consumerInfo.ConsumerID)
@@ -237,7 +231,12 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 		return nil, err
 	}
 
-	bundleIDToBundleInstanceAuths := make(map[string][]*model.BundleInstanceAuth, len(bundleIDtoBundleObject))
+	bundlesCount := 0
+	for _, page := range bundlePages {
+		bundlesCount += len(page.Data)
+	}
+
+	bundleIDToBundleInstanceAuths := make(map[string][]*model.BundleInstanceAuth, bundlesCount)
 	for i, auth := range bundleInstanceAuths {
 		if _, ok := bundleIDToBundleInstanceAuths[auth.BundleID]; !ok {
 			bundleIDToBundleInstanceAuths[auth.BundleID] = []*model.BundleInstanceAuth{bundleInstanceAuths[i]}
@@ -246,8 +245,13 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 		}
 	}
 
-	for bundleID, auths := range bundleIDToBundleInstanceAuths {
-		bundleIDtoBundleObject[bundleID].DefaultInstanceAuth = auths[0].Auth
+	for _, page := range bundlePages {
+		for _, bundle := range page.Data {
+			if auths, ok := bundleIDToBundleInstanceAuths[bundle.ID]; ok {
+				log.C(ctx).Infof("Overrinding default instance auth for runtime with ID: %s", bundle.ID)
+				bundle.DefaultInstanceAuth = auths[0].Auth
+			}
+		}
 	}
 
 	return bundlePages, nil

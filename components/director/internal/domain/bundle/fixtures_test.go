@@ -168,15 +168,23 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 }
 
 const (
-	bundleID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	ordID            = "com.compass.v1"
-	localTenantID    = "localTenantID"
-	correlationIDs   = `["id1", "id2"]`
-	version          = "1.2.2"
-	resourceHash     = "123456"
+	bundleID             = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	secondBundleID       = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID             = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	externalTenantID     = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	consumerID           = "consumerID"
+	bundleAuthName       = "bundleAuthName"
+	bundleAuthID         = "bundleAuthID"
+	otherBundleAuthName  = "otherBundleAuthName"
+	otherBundleAuthID    = "otherBundleAuthID"
+	unusedBundleAuthName = "unusedBundleAuthName"
+	unusedBundleAuthID   = "unusedBundleAuthID"
+	ordID                = "com.compass.v1"
+	localTenantID        = "localTenantID"
+	correlationIDs       = `["id1", "id2"]`
+	version              = "1.2.2"
+	resourceHash         = "123456"
 )
 
 func fixBundleModel(name, desc string) *model.Bundle {
@@ -184,13 +192,17 @@ func fixBundleModel(name, desc string) *model.Bundle {
 }
 
 func fixBundleModelWithID(id, name, desc string) *model.Bundle {
+	return fixBundleModelWithAuth(id, name, desc, fixModelAuth())
+}
+
+func fixBundleModelWithAuth(id, name, desc string, auth *model.Auth) *model.Bundle {
 	return &model.Bundle{
 		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &desc,
 		Version:                        str.Ptr(version),
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            fixModelAuth(),
+		DefaultInstanceAuth:            auth,
 		OrdID:                          str.Ptr(ordID),
 		LocalTenantID:                  str.Ptr(localTenantID),
 		ShortDescription:               str.Ptr("short_description"),
@@ -369,6 +381,32 @@ func fixModelAuth() *model.Auth {
 	}
 }
 
+func fixModelAuthWithUsername(username string) *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
+				Username: username,
+				Password: "bar",
+			},
+		},
+		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
+		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
+		RequestAuth: &model.CredentialRequestAuth{
+			Csrf: &model.CSRFTokenCredentialRequestAuth{
+				TokenEndpointURL: "foo.url",
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
+						Username: "boo",
+						Password: "far",
+					},
+				},
+				AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
+				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
+			},
+		},
+	}
+}
+
 func fixGQLAuth() *graphql.Auth {
 	return &graphql.Auth{
 		Credential: &graphql.BasicCredentialData{
@@ -485,6 +523,26 @@ func fixModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
 		Context:     &context,
 		InputParams: &params,
 		Auth:        fixModelAuth(),
+		Status:      &status,
+	}
+}
+
+func fixModelBundleInstanceAuthWithCustomAuth(id, bundleID string, auth *model.Auth) *model.BundleInstanceAuth {
+	status := model.BundleInstanceAuthStatus{
+		Condition: model.BundleInstanceAuthStatusConditionPending,
+		Timestamp: time.Time{},
+		Message:   "test-message",
+		Reason:    "test-reason",
+	}
+
+	context := "ctx"
+	params := "test-param"
+	return &model.BundleInstanceAuth{
+		ID:          id,
+		BundleID:    bundleID,
+		Context:     &context,
+		InputParams: &params,
+		Auth:        auth,
 		Status:      &status,
 	}
 }
