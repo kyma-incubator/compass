@@ -21,16 +21,13 @@ func (_m *TombstoneService) Create(ctx context.Context, resourceType resource.Ty
 	ret := _m.Called(ctx, resourceType, resourceID, in)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.TombstoneInput) (string, error)); ok {
-		return rf(ctx, resourceType, resourceID, in)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.TombstoneInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, model.TombstoneInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, in)
 	} else {
@@ -45,10 +42,6 @@ func (_m *TombstoneService) ListByApplicationID(ctx context.Context, appID strin
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Tombstone
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Tombstone, error)); ok {
-		return rf(ctx, appID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Tombstone); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -57,6 +50,7 @@ func (_m *TombstoneService) ListByApplicationID(ctx context.Context, appID strin
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -71,10 +65,6 @@ func (_m *TombstoneService) ListByApplicationTemplateVersionID(ctx context.Conte
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Tombstone
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Tombstone, error)); ok {
-		return rf(ctx, appID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Tombstone); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -83,6 +73,7 @@ func (_m *TombstoneService) ListByApplicationTemplateVersionID(ctx context.Conte
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
