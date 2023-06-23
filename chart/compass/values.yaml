@@ -127,15 +127,15 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3093"
+      version: "PR-3116"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3093"
+      version: "PR-3116"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3093"
+      version: "PR-3116"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -143,23 +143,23 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3120"
+      version: "PR-3116"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3123"
+      version: "PR-3116"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3090"
+      version: "PR-3116"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
-      version: "PR-3093"
+      version: "PR-3116"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3093"
+      version: "PR-3116"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -171,7 +171,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3093"
+      version: "PR-3116"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3088"
+      version: "PR-3116"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/

@@ -153,6 +153,61 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 	suiteForApplicationTemplateVersion.Run(t)
 }
 
+func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
+	pageSize := 1
+	cursor := ""
+
+	firstAPIDefID := "firstAPIDefID"
+	firstAPIDef, _, _ := fixFullAPIDefinitionModelWithAppID("placeholder")
+	firstEntity := fixFullEntityAPIDefinitionWithAppID(firstAPIDefID, "placeholder")
+
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List APIs with paging",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash, hierarchy, supported_use_cases, documentation_labels FROM "public"."api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns()).AddRow(fixAPIDefinitionRow(firstAPIDefID, "placeholder")...)}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM "public"."api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{&firstAPIDef},
+				ExpectedDBEntities:    []interface{}{&firstEntity},
+				ExpectedPage: &model.APIDefinitionPage{
+					Data: []*model.APIDefinition{&firstAPIDef},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		MethodName:                "ListByApplicationIDPage",
+		MethodArgs:                []interface{}{tenantID, appID, pageSize, cursor},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_ListAllForBundle(t *testing.T) {
 	pageSize := 1
 	cursor := ""

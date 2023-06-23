@@ -127,12 +127,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2023060
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230607082115-977757624f7e/go.mod h1:wu4vtgHm698Rf6A52QI0+EkO8rlS7kAOSsoHtzKraD8=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20230607082115-977757624f7e h1:gcJyTTwZyUvEDhSQ/VcfVWWaLam6Ht/HH1Npv03G520=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20230607082115-977757624f7e/go.mod h1:K740+tPkGSt9EDSesTwrtHPfRHAiFnj/wJyYaLvuDYU=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230621103719-f9ce0ce57f1c h1:9eQ4jCTpOSFL4KY0R3Zz7ZSDlgmtO1MnDcgBLKhTwyo=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230621103719-f9ce0ce57f1c/go.mod h1:F0ddNAyJvaLwGGzR/jo7KMzVUWAn7dhzYAGfvTs2zXs=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230622072236-ae11f90d3d0d h1:0QEyWUL3uo6r/Emi1T/5vlhULrDPsMEpw6bHnKlf9Jw=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230622072236-ae11f90d3d0d/go.mod h1:F0ddNAyJvaLwGGzR/jo7KMzVUWAn7dhzYAGfvTs2zXs=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230622104658-d20ba3b7206e h1:7/3SBhm+fJq6lvia8vby6HZormtJIWTHqKfEXuuw7bA=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230622104658-d20ba3b7206e/go.mod h1:F0ddNAyJvaLwGGzR/jo7KMzVUWAn7dhzYAGfvTs2zXs=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230623062623-379874454a89 h1:cYx4STaTZ2LwVunULG/3nVDr6xrp5Dj8AiKFTC9Iprg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230623062623-379874454a89/go.mod h1:F0ddNAyJvaLwGGzR/jo7KMzVUWAn7dhzYAGfvTs2zXs=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230607082115-977757624f7e h1:9iWqUgbVTFyX94Eeg6Sl/CraWScoq22+1xo3Vw+kR4g=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230607082115-977757624f7e/go.mod h1:FZ3omoYpzcGNWatm1rQavxzZmUN3Z4UyhCSXjT+4ZNM=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230607082115-977757624f7e h1:anb5oeC6tjN8gjiyDAaekGh1XWLfPx1HnmY5NIRrdA4=

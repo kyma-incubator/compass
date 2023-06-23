@@ -1,6 +1,8 @@
 # Required scopes for specific GraphQL operations
 graphql:
   query:
+    apisForApplication: ["application:read"]
+    eventsForApplication: ["application:read"]
     applications: ["application:read"]
     application: ["application:read"]
     applicationBySystemNumber: ["application:read"]
@@ -60,11 +62,15 @@ graphql:
     updateWebhook: ["webhook:write"]
     deleteWebhook: ["webhook:write"]
     addAPIDefinitionToBundle: ["application:write"]
+    addAPIDefinitionToApplication: ["application:write"]
     updateAPIDefinition: ["application:write"]
+    updateAPIDefinitionForApplication: ["application:write"]
     deleteAPIDefinition: ["application:write"]
     refetchAPISpec: ["application:write"]
     addEventDefinitionToBundle: ["application:write"]
+    addEventDefinitionToApplication: ["application:write"]
     updateEventDefinition: ["application:write"]
+    updateEventDefinitionForApplication: ["application:write"]
     deleteEventDefinition: ["application:write"]
     refetchEventAPISpec: ["application:write"]
     addDocumentToBundle: ["application:write"]
