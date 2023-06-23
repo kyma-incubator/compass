@@ -2,6 +2,7 @@ package eventdef
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -24,6 +25,7 @@ type EventAPIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EventDefinition, error)
+	ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, tenant string, item *model.EventDefinition) error
 	CreateGlobal(ctx context.Context, item *model.EventDefinition) error
 	Update(ctx context.Context, tenant string, item *model.EventDefinition) error
@@ -115,6 +117,20 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 	return s.eventAPIRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
+// ListByApplicationIDPage lists all EventDefinitions for a given application ID with paging.
+func (s *service) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.eventAPIRepo.ListByApplicationIDPage(ctx, tnt, appID, pageSize, cursor)
+}
+
 // Get returns the EventDefinition by its ID.
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -148,6 +164,11 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 // CreateInBundle creates an EventDefinition. This function is used in the graphQL flow.
 func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
 	return s.Create(ctx, resourceType, resourceID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
+}
+
+// CreateInApplication creates an EventDefinition in the context of an Application without Bundle
+func (s *service) CreateInApplication(ctx context.Context, appID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, resource.Application, appID, nil, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
 // Create creates EventDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
@@ -195,6 +216,31 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 
 	if specIn != nil {
 		return s.handleSpecsInEvent(ctx, resourceType, eventDef.ID, specIn)
+	}
+
+	return nil
+}
+
+// UpdateForApplication updates an EventDefinition for Application without being in a Bundle
+func (s *service) UpdateForApplication(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	event, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	event = in.ToEventDefinition(id, resource.Application, str.PtrStrToStr(event.ApplicationID), event.PackageID, 0)
+
+	if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
+		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
+	}
+
+	if specIn != nil {
+		return s.handleSpecsInEvent(ctx, resource.Application, id, specIn)
 	}
 
 	return nil
@@ -309,7 +355,7 @@ func (s *service) processSpecs(ctx context.Context, eventID string, specs []*mod
 }
 
 func (s *service) createBundleReferenceObject(ctx context.Context, eventID string, bundleID *string, defaultBundleID string, bundleIDs []string) error {
-	if bundleIDs == nil {
+	if bundleIDs == nil && bundleID != nil {
 		if err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventID, bundleID); err != nil {
 			return err
 		}
