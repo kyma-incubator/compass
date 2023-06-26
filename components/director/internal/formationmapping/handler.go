@@ -216,9 +216,13 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		ctx, cancel := context.WithCancel(context.TODO())
 		defer cancel()
 
-		correlationIDKey := correlation.RequestIDHeaderKey
-		correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
 		ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
+		correlationIDKey := correlation.RequestIDHeaderKey
+		ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+		logger := log.C(ctx).WithField(correlation.RequestIDHeaderKey, correlationID)
+		ctx = log.ContextWithLogger(ctx, logger)
 
 		log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")
 
