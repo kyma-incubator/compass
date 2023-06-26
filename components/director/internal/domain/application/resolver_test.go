@@ -2865,7 +2865,6 @@ func TestResolver_APIDefinition(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-
 		})
 	}
 
@@ -3051,7 +3050,6 @@ func TestResolver_EventDefinition(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-
 		})
 	}
 
