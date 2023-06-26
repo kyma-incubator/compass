@@ -158,14 +158,14 @@ func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
 
 	expectedErrorMsg := "graphql: The operation is not allowed [reason=formation template \"create-formation-template-name\" does not support resetting]"
 	t.Logf("Resynchronize formation %q with reset should fail", formation.Name)
-	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithReset(formation.ID, true)
+	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, reset)
 	saveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications with reset")
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
 	require.NotNil(t, err)
 	require.Equal(t, err.Error(), expectedErrorMsg)
 
 	t.Logf("Resynchronize formation %q without reset should succeed", formation.Name)
-	resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequestWithReset(formation.ID, false)
+	resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, dontReset)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
 	require.Nil(t, err)
 }
