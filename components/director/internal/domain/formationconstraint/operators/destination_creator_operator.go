@@ -150,7 +150,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 						}
 
 						if statusCode == http.StatusConflict {
-							log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
+							log.C(ctx).Infof("The certificate with name: %q already exists. Will be deleted and created again...", destDetails.Name)
 							if err := e.destinationSvc.DeleteCertificateFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
 								log.C(ctx).Warnf("An error occurred while deleting SAML assertion certificate with name: %q from the destination service: %v", destDetails.Name, err)
 								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {

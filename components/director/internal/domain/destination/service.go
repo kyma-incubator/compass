@@ -688,8 +688,7 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 		log.C(ctx).Warn("Unable to provide client_user. Using correlation ID as client_user header...")
 		clientUser = correlation.CorrelationIDFromContext(ctx)
 		if clientUser == "" {
-			log.C(ctx).Warnf("The correlation ID is empty, generating random UUID and using it as client user")
-			clientUser = s.uidSvc.Generate()
+			return defaultRespBody, defaultStatusCode, errors.New("The correlation ID is empty and cannot be used as value for the client user header since the request will fail")
 		}
 	}
 
@@ -729,6 +728,9 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 	if err != nil || clientUser == "" {
 		log.C(ctx).Warn("unable to provide client_user. Using correlation ID as client_user header...")
 		clientUser = correlation.CorrelationIDFromContext(ctx)
+		if clientUser == "" {
+			return errors.New("The correlation ID is empty and cannot be used as value for the client user header since the request will fail")
+		}
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)

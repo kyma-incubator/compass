@@ -218,6 +218,9 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 
 		ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
+		correlationIDKey := correlation.RequestIDHeaderKey
+		ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
 		logger := log.C(ctx).WithField(correlation.RequestIDHeaderKey, correlationID)
 		ctx = log.ContextWithLogger(ctx, logger)
 
