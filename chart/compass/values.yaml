@@ -140,7 +140,6 @@ global:
     director:
       dir: dev/incubator/
       version: "PR-3127"
-
       name: compass-director
     hydrator:
       dir: dev/incubator/
