@@ -118,7 +118,7 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 	return r.GetByID(ctx, tenant, id)
 }
 
-// GetByApplicationID retrieves the APIDefinition with matching ID and Application ID from the Compass storage.
+// GetByApplicationID retrieves the EventDefinition with matching ID and Application ID from the Compass storage.
 func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.EventDefinition, error) {
 	var eventDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(appColumn, appID)}, repo.NoOrderBy, &eventDefEntity)
