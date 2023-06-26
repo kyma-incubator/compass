@@ -1243,8 +1243,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 	applications := []struct {
 		ApplicationName string
 		BundlesData     []struct {
-			Name       string
-			AuthsCount int
+			Name           string
+			AuthsClientIDs []string
 		}
 		Tenant       string
 		WithinTenant bool
@@ -1253,11 +1253,11 @@ func TestApplicationsForRuntime(t *testing.T) {
 		{
 			ApplicationName: "second",
 			BundlesData: []struct {
-				Name       string
-				AuthsCount int
+				Name           string
+				AuthsClientIDs []string
 			}{
-				{Name: "bundleWithTwoAuths", AuthsCount: 2},
-				{Name: "bundleWithNoAuths", AuthsCount: 0},
+				{Name: "bundleWithTwoAuths", AuthsClientIDs: []string{"test2", "test3"}},
+				{Name: "bundleWithNoAuths", AuthsClientIDs: nil},
 			},
 			Tenant:       tenantID,
 			WithinTenant: true,
@@ -1266,10 +1266,10 @@ func TestApplicationsForRuntime(t *testing.T) {
 		{
 			ApplicationName: "third",
 			BundlesData: []struct {
-				Name       string
-				AuthsCount int
+				Name           string
+				AuthsClientIDs []string
 			}{
-				{Name: "bundleWithOneAuth", AuthsCount: 1},
+				{Name: "bundleWithOneAuth", AuthsClientIDs: []string{"test1"}},
 			},
 			Tenant:       tenantID,
 			WithinTenant: true,
@@ -1318,8 +1318,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 			bundleExt := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, testApp.Tenant, application.ID, data.Name)
 
 			var expectedBIA *graphql.BundleInstanceAuth
-			for i := 0; i < data.AuthsCount; i++ {
+			for _, clientID := range data.AuthsClientIDs {
 				currentBundleInstanceAuth := fixtures.CreateBundleInstanceAuthForRuntime(t, ctx, oauthGraphQLClient, tenantID, bundleExt.ID)
+				currentBundleInstanceAuth = fixtures.SetBundleInstanceAuthForRuntime(t, ctx, certSecuredGraphQLClient, tenantID, currentBundleInstanceAuth.ID, clientID)
 				// For a single bundle there may be more than one bundle instance auth created for specific runtime.
 				// When the Kyma runtime lists the bundles it reads only the defaultInstanceAuth property of the bundle.
 				// We are overriding defaultInstanceAuth field of the bundle with on of the BIAs created for the runtime.
@@ -1342,7 +1343,17 @@ func TestApplicationsForRuntime(t *testing.T) {
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
 		applicationPage := graphql.ApplicationPageExt{}
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
+		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
+		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		err := testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
 		saveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN

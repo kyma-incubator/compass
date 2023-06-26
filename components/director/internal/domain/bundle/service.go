@@ -248,7 +248,7 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 	for _, page := range bundlePages {
 		for _, bundle := range page.Data {
 			if auths, ok := bundleIDToBundleInstanceAuths[bundle.ID]; ok {
-				log.C(ctx).Infof("Overrinding default instance auth for runtime with ID: %s", bundle.ID)
+				log.C(ctx).Infof("Overrinding default instance auth for bundle with ID: %s", bundle.ID)
 				bundle.DefaultInstanceAuth = auths[0].Auth
 			}
 		}
