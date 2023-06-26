@@ -234,6 +234,11 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 
 	if tntFromDB.Parent != model.Parent {
 		for topLevelEntity := range resource.TopLevelEntities {
+			if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
+				log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
+				continue
+			}
+
 			m2mTable, ok := topLevelEntity.TenantAccessTable()
 			if !ok {
 				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
@@ -285,6 +290,11 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	}
 
 	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
+		if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
+			log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
+			continue
+		}
+
 		m2mTable, ok := topLevelEntity.TenantAccessTable()
 		if !ok {
 			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)

@@ -110,6 +110,53 @@ func TestService_Update(t *testing.T) {
 	}
 }
 
+func TestService_UpdateGlobal(t *testing.T) {
+	fetchReq := &model.FetchRequest{
+		ID:   "test",
+		Mode: model.FetchModeSingle,
+	}
+
+	testCases := []struct {
+		Name                 string
+		FetchRequest         *model.FetchRequest
+		FetchRequestRepoMock *automock.FetchRequestRepository
+		ExpectedError        error
+	}{
+
+		{
+			Name:         "Success",
+			FetchRequest: fetchReq,
+			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
+				fetchReqRepoMock := automock.FetchRequestRepository{}
+				fetchReqRepoMock.On("UpdateGlobal", mock.Anything, fetchReq).Return(nil).Once()
+				return &fetchReqRepoMock
+			}(),
+			ExpectedError: nil,
+		},
+		{
+			Name:         "Fails when repo update fails",
+			FetchRequest: fetchReq,
+			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
+				fetchReqRepoMock := automock.FetchRequestRepository{}
+				fetchReqRepoMock.On("UpdateGlobal", mock.Anything, fetchReq).Return(testErr).Once()
+				return &fetchReqRepoMock
+			}(),
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.FetchRequestRepoMock
+			svc := fetchrequest.NewService(repo, nil, nil)
+			resultErr := svc.UpdateGlobal(context.TODO(), testCase.FetchRequest)
+			assert.Equal(t, testCase.ExpectedError, resultErr)
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_HandleSpec(t *testing.T) {
 	const username = "username"
 	const password = "password"

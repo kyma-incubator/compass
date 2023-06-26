@@ -22,4 +22,5 @@ type OpenResourceDiscoveryV1 struct {
 type DocumentDetails struct {
 	URL              string                          `json:"url"`
 	AccessStrategies accessstrategy.AccessStrategies `json:"accessStrategies"`
+	Perspective      string                          `json:"perspective"`
 }

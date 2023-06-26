@@ -13,10 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+type contextKey string
+
 const (
 	retryDelaySeconds = 3
 	// TenantOnDemandProvider is the name of the business tenant mapping provider used when the tenant is not found in the events service
 	TenantOnDemandProvider = "lazily-tenant-fetcher"
+	// TenantRegionCtxKey region context key
+	TenantRegionCtxKey contextKey = "tenantsRegion"
 )
 
 // TenantStorageService missing godoc
@@ -137,6 +141,7 @@ func (ts *TenantsSynchronizer) synchronizeTenants(ctx context.Context) error {
 	}
 
 	for _, region := range ts.supportedRegions {
+		ctx = context.WithValue(ctx, TenantRegionCtxKey, region)
 		log.C(ctx).Printf("Processing new events for region: %s...", region)
 		tenantsToCreate, err := ts.creator.TenantsToCreate(ctx, region, lastConsumedTenantTimestamp)
 		if err != nil {

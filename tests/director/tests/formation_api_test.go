@@ -4777,8 +4777,8 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	require.Equal(t, formationID, notificationForFormationDetails.Get("id").String())
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 
-	t.Logf("Sleeping for %d seconds while the async formation status is proccessed...", conf.FormationMappingAsyncResponseDelay+1)
-	time.Sleep(time.Second * time.Duration(conf.FormationMappingAsyncResponseDelay+2))
+	t.Logf("Sleeping for %d seconds while the async formation status is proccessed...", conf.FormationMappingAsyncResponseDelay+3)
+	time.Sleep(time.Second * time.Duration(conf.FormationMappingAsyncResponseDelay+3))
 
 	t.Log("Assert formation lifecycle notifications are successfully processed...")
 	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
@@ -5076,8 +5076,8 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 }
 
 func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
-	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", conf.FormationMappingAsyncResponseDelay+1)
-	time.Sleep(time.Second * time.Duration(conf.FormationMappingAsyncResponseDelay+1))
+	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", conf.FormationMappingAsyncResponseDelay+2)
+	time.Sleep(time.Second * time.Duration(conf.FormationMappingAsyncResponseDelay+2))
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
