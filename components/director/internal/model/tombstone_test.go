@@ -3,6 +3,8 @@ package model_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,15 +14,18 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 	id := "test"
 	ordID := "foo"
 	appID := "bar"
+	appTemplateVersionID := "nar"
 	removalDate := "Sample"
 
 	testCases := []struct {
-		Name     string
-		Input    *model.TombstoneInput
-		Expected *model.Tombstone
+		Name         string
+		Input        *model.TombstoneInput
+		ResourceType resource.Type
+		ResourceID   string
+		Expected     *model.Tombstone
 	}{
 		{
-			Name: "All properties given",
+			Name: "All properties given for App",
 			Input: &model.TombstoneInput{
 				OrdID:       ordID,
 				RemovalDate: removalDate,
@@ -28,9 +33,26 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 			Expected: &model.Tombstone{
 				ID:            id,
 				OrdID:         ordID,
-				ApplicationID: appID,
+				ApplicationID: &appID,
 				RemovalDate:   removalDate,
 			},
+			ResourceType: resource.Application,
+			ResourceID:   appID,
+		},
+		{
+			Name: "All properties given for App Template Version",
+			Input: &model.TombstoneInput{
+				OrdID:       ordID,
+				RemovalDate: removalDate,
+			},
+			Expected: &model.Tombstone{
+				ID:                           id,
+				OrdID:                        ordID,
+				ApplicationTemplateVersionID: &appTemplateVersionID,
+				RemovalDate:                  removalDate,
+			},
+			ResourceType: resource.ApplicationTemplateVersion,
+			ResourceID:   appTemplateVersionID,
 		},
 		{
 			Name:     "Nil",
@@ -42,7 +64,7 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			result := testCase.Input.ToTombstone(id, appID)
+			result := testCase.Input.ToTombstone(id, testCase.ResourceType, testCase.ResourceID)
 
 			// THEN
 			assert.Equal(t, testCase.Expected, result)

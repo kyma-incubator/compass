@@ -107,7 +107,7 @@ func AddEventToBundleWithInput(t require.TestingT, ctx context.Context, gqlClien
 }
 
 func AddEventToBundle(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.EventDefinition {
-	return AddEventToBundleWithInput(t, ctx, gqlClient, bndlID, FixEventAPIDefinitionInput())
+	return AddEventToBundleWithInput(t, ctx, gqlClient, bndlID, FixEventDefinitionInput())
 }
 
 func AddDocumentToBundleWithInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, bndlID string, input graphql.DocumentInput) graphql.DocumentExt {

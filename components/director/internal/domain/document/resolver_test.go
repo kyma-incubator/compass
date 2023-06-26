@@ -38,7 +38,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 	bundleID := "bar"
 	id := "bar"
 	modelBundle := fixModelBundle(bundleID)
-	modelDocument := fixModelDocument(id, bundleID)
+	modelDocument := fixModelDocumentForApp(id, bundleID)
 	gqlDocument := fixGQLDocument(id, bundleID)
 	gqlInput := fixGQLDocumentInput(id)
 	modelInput := fixModelDocumentInput(id)
@@ -63,7 +63,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, resource.Application, appID, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
@@ -140,7 +140,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", contextParam, resource.Application, appID, bundleID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
@@ -165,7 +165,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, resource.Application, appID, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -222,7 +222,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 
 	id := "bar"
 	bundleID := "bar"
-	modelDocument := fixModelDocument(id, bundleID)
+	modelDocument := fixModelDocumentForApp(id, bundleID)
 	gqlDocument := fixGQLDocument(id, bundleID)
 
 	testCases := []struct {

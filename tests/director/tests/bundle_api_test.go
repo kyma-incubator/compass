@@ -144,7 +144,7 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	input := fixtures.FixEventAPIDefinitionInput()
+	input := fixtures.FixEventDefinitionInput()
 	inStr, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(input)
 	require.NoError(t, err)
 

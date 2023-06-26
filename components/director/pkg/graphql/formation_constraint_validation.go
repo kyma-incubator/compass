@@ -20,6 +20,9 @@ const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
 // DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 const DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 
+// DestinationCreator contains the name of the DestinationCreator operator
+const DestinationCreator = "DestinationCreator"
+
 // OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
 
@@ -28,6 +31,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType:                    &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:                      &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
 	DoNotGenerateFormationAssignmentNotificationOperator: &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
+	DestinationCreator:                                   &formationconstraint.DestinationCreatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
@@ -96,12 +100,8 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 			RuntimeContext: &model.RuntimeContext{},
 			Labels:         map[string]string{},
 		},
-		Assignment: &webhook.FormationAssignment{
-			Value: "\"\"",
-		},
-		ReverseAssignment: &webhook.FormationAssignment{
-			Value: "\"\"",
-		},
+		Assignment:        &webhook.FormationAssignment{},
+		ReverseAssignment: &webhook.FormationAssignment{},
 		SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},

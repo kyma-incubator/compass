@@ -128,6 +128,11 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 		}
 	}
 
+	webhooks, err := c.webhookConverter.MultipleInputFromGraphQL(in.Webhooks)
+	if err != nil {
+		return model.ApplicationTemplateUpdateInput{}, errors.Wrapf(err, "error occurred while converting webhooks og GraphQL input to Application Template model with name %s", in.Name)
+	}
+
 	return model.ApplicationTemplateUpdateInput{
 		Name:                 in.Name,
 		Description:          in.Description,
@@ -136,6 +141,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
 		Labels:               in.Labels,
+		Webhooks:             webhooks,
 	}, nil
 }
 

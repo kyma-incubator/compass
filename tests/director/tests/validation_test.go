@@ -399,7 +399,7 @@ func TestAddEventAPI_Validation(t *testing.T) {
 	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, "bndl")
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	eventAPI := fixtures.FixEventAPIDefinitionInput()
+	eventAPI := fixtures.FixEventDefinitionInput()
 	longDesc := strings.Repeat("a", 2001)
 	eventAPI.Description = &longDesc
 	evenApiGQL, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(eventAPI)
@@ -427,7 +427,7 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, "bndl")
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	eventAPIUpdate := fixtures.FixEventAPIDefinitionInput()
+	eventAPIUpdate := fixtures.FixEventDefinitionInput()
 	eventAPI := fixtures.AddEventToBundleWithInput(t, ctx, certSecuredGraphQLClient, bndl.ID, eventAPIUpdate)
 
 	longDesc := strings.Repeat("a", 2001)
