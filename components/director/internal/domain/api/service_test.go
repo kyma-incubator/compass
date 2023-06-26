@@ -2,9 +2,10 @@ package api_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

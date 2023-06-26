@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
@@ -230,8 +230,9 @@ func NewRootResolver(
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, constraintReferencesRepo, uidSvc, formationConstraintConverter)
-	destinationSvc := destination.NewService(mtlsHTTPClient, destinationCreatorConfig, transact, applicationRepo, runtimeRepo, runtimeContextRepo, labelRepo, destinationRepo, tenantRepo, uidSvc)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, destinationSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	destinationCreatorSvc := destinationcreator.NewService(mtlsHTTPClient, destinationCreatorConfig, applicationRepo, runtimeRepo, runtimeContextRepo, labelRepo, tenantRepo)
+	destinationSvc := destination.NewService(destinationCreatorConfig, transact, destinationRepo, tenantRepo, uidSvc, destinationCreatorSvc)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, destinationSvc, destinationCreatorSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)

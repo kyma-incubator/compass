@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
+
+	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
@@ -726,7 +727,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
@@ -787,7 +788,7 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, nil, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
@@ -906,7 +907,7 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tntSvc, scenarioAssignmentSvc, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tntSvc, scenarioAssignmentSvc, nil, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
@@ -971,8 +972,9 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	destinationSvc := destination.NewService(mtlsHTTPClient, destinationCreatorConfig, transact, applicationRepo(), runtimeRepo, runtimeContextRepo, labelRepo, destinationRepo, tenantRepo, uidSvc)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, destinationSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	destinationCreatorSvc := destinationcreator.NewService(mtlsHTTPClient, destinationCreatorConfig, applicationRepo(), runtimeRepo, runtimeContextRepo, labelRepo, tenantRepo)
+	destinationSvc := destination.NewService(destinationCreatorConfig, transact, destinationRepo, tenantRepo, uidSvc, destinationCreatorSvc)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, destinationSvc, destinationCreatorSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, nil, constraintEngine, webhookConverter, formationTemplateRepo)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
@@ -1029,8 +1031,9 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	destinationSvc := destination.NewService(mtlsHTTPClient, destinationCreatorConfig, transact, applicationRepo(), runtimeRepo, runtimeContextRepo, labelRepo, destinationRepo, tenantRepo, uidSvc)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, destinationSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	destinationCreatorSvc := destinationcreator.NewService(mtlsHTTPClient, destinationCreatorConfig, applicationRepo(), runtimeRepo, runtimeContextRepo, labelRepo, tenantRepo)
+	destinationSvc := destination.NewService(destinationCreatorConfig, transact, destinationRepo, tenantRepo, uidSvc, destinationCreatorSvc)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, destinationSvc, destinationCreatorSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
