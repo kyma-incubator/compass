@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"strings"
 
 	"github.com/stretchr/testify/require"
@@ -203,6 +204,19 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 					%s
 				}
 			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixGetApplicationWithAPIEventDefinitionRequest(applicationID, apiID, eventID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, testctx.Tc.GQLFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.apiDefinition": fmt.Sprintf(`apiDefinition(id: "%s") {%s}`, apiID, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()),
+		}, graphqlizer.FieldCtx{
+			"Application.eventDefinition": fmt.Sprintf(`eventDefinition(id: "%s") {%s}`, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()),
+		})))
 }
 
 func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
