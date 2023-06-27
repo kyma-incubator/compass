@@ -13,7 +13,11 @@ spec:
         number: {{ .Values.global.auditlog.port }}
       tls:
         mode: SIMPLE
+        # use the system CA certificates to trust
+        caCertificates: system
         sni: {{ .Values.global.auditlog.host }}
+        subjectAltNames:
+        - {{ .Values.global.auditlog.host | quote }}
   {{- end }}
     outlierDetection:
       consecutive5xxErrors: 15
