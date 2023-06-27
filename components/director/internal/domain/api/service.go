@@ -26,6 +26,7 @@ type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
+	GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
@@ -161,6 +162,21 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	apiDefinition, err := s.repo.GetForBundle(ctx, tnt, id, bundleID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting API definition with id %q", id)
+	}
+
+	return apiDefinition, nil
+}
+
+// GetForApplication returns an APIDefinition by its ID and Application ID.
+func (s *service) GetForApplication(ctx context.Context, id string, appID string) (*model.APIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	apiDefinition, err := s.repo.GetByApplicationID(ctx, tnt, id, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting API Definition with id %q", id)
 	}
 
 	return apiDefinition, nil
