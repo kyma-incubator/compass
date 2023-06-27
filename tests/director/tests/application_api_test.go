@@ -1924,3 +1924,31 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	t.Logf("Source application should not be deleted")
 	assert.NotEmpty(t, srcApp.BaseEntity)
 }
+
+func TestGetApplicationsAPIEventDefinitions(t *testing.T) {
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	appName := "app-test-get-api-event"
+
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	api := fixtures.AddAPIToApplication(t, ctx, certSecuredGraphQLClient, application.ID)
+	event := fixtures.AddEventToApplication(t, ctx, certSecuredGraphQLClient, application.ID)
+	require.NotEmpty(t, api.ID)
+	require.NotEmpty(t, event.ID)
+
+	queryAPIForApplication := fixtures.FixGetApplicationWithAPIEventDefinitionRequest(application.ID, api.ID, event.ID)
+
+	app := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &app)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, app.APIDefinition)
+	require.NotEmpty(t, app.EventDefinition)
+	assert.Equal(t, app.APIDefinition.ID, api.ID)
+	assert.Equal(t, app.EventDefinition.ID, event.ID)
+}
