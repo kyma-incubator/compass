@@ -221,6 +221,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 
 // CreateApplicationTemplate missing godoc
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	log.C(ctx).Infof("App template placeholders: %s", in.Placeholders)
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
