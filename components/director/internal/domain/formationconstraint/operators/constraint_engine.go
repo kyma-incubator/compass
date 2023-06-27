@@ -36,12 +36,12 @@ type destinationService interface {
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
 	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
 	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error
-	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData *CertificateData, destinationIndex int) (json.RawMessage, error)
 }
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
 	CreateCertificate(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment, depth uint8) (*CertificateData, error)
+	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData *CertificateData, destinationIndex int) (json.RawMessage, error)
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string

@@ -115,7 +115,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 							return true, nil
 						}
 
-						config, err := e.destinationSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
+						config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
 						if err != nil {
 							return false, err
 						}

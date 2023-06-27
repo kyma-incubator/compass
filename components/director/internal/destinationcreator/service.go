@@ -336,6 +336,32 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationDetails oper
 	return certData, nil
 }
 
+// DeleteCertificate is responsible to delete certificate resource from the remote destination service
+func (s *Service) DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
+	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
+	if err != nil {
+		return err
+	}
+
+	region, err := s.getRegionLabel(ctx, subaccountID)
+	if err != nil {
+		return err
+	}
+
+	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, certificateName, true)
+	if err != nil {
+		return errors.Wrapf(err, "while building certificate URL")
+	}
+
+	log.C(ctx).Infof("Deleting SAML assertion certificate with name: %q and subaccount ID: %q from destination service", certificateName, subaccountID)
+	err = s.executeDeleteRequest(ctx, strURL, certificateName, subaccountID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DeleteDestination is responsible to delete destination resource from the remote destination service
 func (s *Service) DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
 	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
@@ -362,30 +388,30 @@ func (s *Service) DeleteDestination(ctx context.Context, destinationName, extern
 	return nil
 }
 
-// DeleteCertificate is responsible to delete certificate resource from the remote destination service
-func (s *Service) DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
+// EnrichAssignmentConfigWithCertificateData is responsible to enrich the assignment configuration with the created certificate resource for the SAML assertion destination
+func (s *Service) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData *operators.CertificateData, destinationIndex int) (json.RawMessage, error) {
+	certAPIConfig := s.config.CertificateAPIConfig
+	configStr := string(assignmentConfig)
+
+	path := fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.FileNameKey)
+	configStr, err := sjson.Set(configStr, path, certData.FileName)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.FileNameKey)
 	}
 
-	region, err := s.getRegionLabel(ctx, subaccountID)
+	path = fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.CommonNameKey)
+	configStr, err = sjson.Set(configStr, path, certData.CommonName)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.CommonNameKey)
 	}
 
-	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, certificateName, true)
+	path = fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.CertificateChainKey)
+	configStr, err = sjson.Set(configStr, path, certData.CertificateChain)
 	if err != nil {
-		return errors.Wrapf(err, "while building certificate URL")
+		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with %q key", certAPIConfig.CertificateChainKey)
 	}
 
-	log.C(ctx).Infof("Deleting SAML assertion certificate with name: %q and subaccount ID: %q from destination service", certificateName, subaccountID)
-	err = s.executeDeleteRequest(ctx, strURL, certificateName, subaccountID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return json.RawMessage(configStr), nil
 }
 
 // ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one. If it's not provided then we validate the subaccount ID from the formation assignment.
