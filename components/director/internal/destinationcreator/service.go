@@ -253,7 +253,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	log.C(ctx).Infof("Creating SAML assertion destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
 	if err != nil {
-		return errors.Wrapf(err, "while creating design time destination with name: %q in the destination service", destinationName)
+		return errors.Wrapf(err, "while creating SAML assertion destination with name: %q in the destination service", destinationName)
 	}
 
 	if statusCode == http.StatusConflict {
