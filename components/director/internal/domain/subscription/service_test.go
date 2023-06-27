@@ -2077,7 +2077,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 			for count := 0; count < testCase.Repeats; count++ {
 				// WHEN
-				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, testCase.Region, subscriptionAppName, subscriptionID2, testCase.SubscriptionPayload)
+				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, testCase.Region, subscriptionAppName, subscriptionID2, testCase.SubscriptionPayload)
 
 				// THEN
 				if len(testCase.ExpectedErrorOutput) > 0 {
@@ -2510,7 +2510,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			service := subscription.NewService(nil, nil, tenantSvc, lblSvc, appTemplateSvc, nil, nil, appSvc, nil, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			// WHEN
-			successful, err := service.UnsubscribeTenantFromApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, tenantRegion, subscriptionID2)
+			successful, err := service.UnsubscribeTenantFromApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionID2)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
