@@ -118,6 +118,19 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 	return r.GetByID(ctx, tenant, id)
 }
 
+// GetByApplicationID retrieves the EventDefinition with matching ID and Application ID from the Compass storage.
+func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.EventDefinition, error) {
+	var eventDefEntity Entity
+	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(appColumn, appID)}, repo.NoOrderBy, &eventDefEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting EventDefinition for Application ID %s", appID)
+	}
+
+	eventDefModel := r.conv.FromEntity(&eventDefEntity)
+
+	return eventDefModel, nil
+}
+
 // ListByApplicationIDPage lists all EventDefinitions for a given application ID with paging.
 func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	var apiDefCollection EventAPIDefCollection
