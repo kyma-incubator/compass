@@ -51,13 +51,8 @@ var (
 		ID:                  TestFormationID,
 		TenantID:            TestTenantID,
 		FormationTemplateID: TestFormationTemplateID,
-		Name:                "test-formation",
-		State:               "READY",
-		Error:               nil,
-	}
-	formationTemplate = &model.FormationTemplate{
-		ID:   "testFTID",
-		Name: "testFTName",
+		Name:                TestFormationName,
+		State:               TestReadyState,
 	}
 	reverseFa = fixReverseFormationAssignment(fa)
 
@@ -2114,94 +2109,16 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		State:       string(model.CreateErrorAssignmentState),
 		Value:       marshaledErrTechnicalError,
 	}
-	initialStateAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestTarget,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.InitialAssignmentState),
-	}
-	reverseInitialStateAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestTarget,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestSource,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.InitialAssignmentState),
-	}
-	readyStateAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestTarget,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.ReadyAssignmentState),
-	}
-
-	configPendingStateWithConfigAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestTarget,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		State:       string(model.ConfigPendingAssignmentState),
-		FormationID: formation.ID,
-		Value:       []byte(config),
-	}
-
-	configPendingStateAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestTarget,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.ConfigPendingAssignmentState),
-	}
-
-	configAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestTarget,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.ReadyAssignmentState),
-		Value:       []byte(config),
-	}
-	reverseConfigAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestTarget,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestSource,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.ReadyAssignmentState),
-		Value:       []byte(config),
-	}
-
-	reverseConfigPendingAssignment := &model.FormationAssignment{
-		ID:          TestID,
-		TenantID:    TestTenantID,
-		Source:      TestTarget,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      TestSource,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		FormationID: formation.ID,
-		State:       string(model.ConfigPendingAssignmentState),
-		Value:       []byte(config),
-	}
+	initialStateSelfReferencingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil)
+	initialStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil)
+	reverseInitialStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.InitialAssignmentState), nil)
+	readyStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), nil)
+	readyStateSelfReferencingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), nil)
+	configPendingStateWithConfigAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ConfigPendingAssignmentState), []byte(config))
+	configPendingStateAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ConfigPendingAssignmentState), nil)
+	configAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), []byte(config))
+	reverseConfigAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), []byte(config))
+	reverseConfigPendingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ConfigPendingAssignmentState), []byte(config))
 
 	input := &webhook.FormationConfigurationChangeInput{
 		Operation: model.AssignFormation,
@@ -2381,6 +2298,29 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
+		},
+		{
+			Name:    "Success: update assignment to ready state if it is self-referenced formation assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateSelfReferencingAssignment).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment.Clone(), reqWebhook),
+		},
+		{
+			Name:    "Error: update assignment to ready state if it is self-referenced formation assignment fails on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateSelfReferencingAssignment).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment.Clone(), reqWebhook),
+			ExpectedErrorMsg:                     testErr.Error(),
 		},
 		{
 			Name:    "Error: can't generate formation assignment extended notification",

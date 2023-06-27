@@ -46,7 +46,7 @@ func removeDoubleQuotesFromJSONKeys(in string) string {
 	return validRegex.ReplaceAllString(in, `$1:`)
 }
 
-func FixEventAPIDefinitionInput() graphql.EventDefinitionInput {
+func FixEventDefinitionInput() graphql.EventDefinitionInput {
 	data := graphql.CLOB("data")
 	return graphql.EventDefinitionInput{Name: "name",
 		Spec: &graphql.EventSpecInput{

@@ -243,7 +243,7 @@ func (l *universalLister) list(ctx context.Context, resourceType resource.Type, 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.SelectContext(ctx, dest, query, args...)
 
-	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
+	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table '%+v'", l.tableName, err)
 }
 
 func (l *universalLister) listWithConditionTree(ctx context.Context, resourceType resource.Type, dest Collection, lockClause string, conditionTree *ConditionTree) error {

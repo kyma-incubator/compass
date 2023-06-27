@@ -257,7 +257,7 @@ func NewRootResolver(
 
 	return &RootResolver{
 		appNameNormalizer:   appNameNormalizer,
-		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
+		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, appTemplateProductLabel),
 		api:                 api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
@@ -456,6 +456,16 @@ func (r *queryResolver) FormationTemplates(ctx context.Context, first *int, afte
 // Viewer missing godoc
 func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 	return r.viewer.Viewer(ctx)
+}
+
+// ApisForApplication resolves to APIDefinition page for a given application ID
+func (r *queryResolver) ApisForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+	return r.api.APIDefinitionsForApplication(ctx, appID, first, after)
+}
+
+// EventsForApplication resolves to EventDefinition page for a given application ID
+func (r *queryResolver) EventsForApplication(ctx context.Context, appID string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+	return r.eventAPI.EventDefinitionsForApplication(ctx, appID, first, after)
 }
 
 // Applications missing godoc
@@ -743,6 +753,11 @@ func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, i
 	return r.api.UpdateAPIDefinition(ctx, id, in)
 }
 
+// UpdateAPIDefinitionForApplication updates an API Definition for a given application ID
+func (r *mutationResolver) UpdateAPIDefinitionForApplication(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return r.api.UpdateAPIDefinitionForApplication(ctx, id, in)
+}
+
 // DeleteAPIDefinition missing godoc
 func (r *mutationResolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	return r.api.DeleteAPIDefinition(ctx, id)
@@ -756,6 +771,11 @@ func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*g
 // UpdateEventDefinition missing godoc
 func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.UpdateEventDefinition(ctx, id, in)
+}
+
+// UpdateEventDefinitionForApplication updates an Event Definition for a given application ID
+func (r *mutationResolver) UpdateEventDefinitionForApplication(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return r.eventAPI.UpdateEventDefinitionForApplication(ctx, id, in)
 }
 
 // DeleteEventDefinition missing godoc
@@ -916,9 +936,19 @@ func (r *mutationResolver) AddAPIDefinitionToBundle(ctx context.Context, bundleI
 	return r.api.AddAPIDefinitionToBundle(ctx, bundleID, in)
 }
 
+// AddAPIDefinitionToApplication adds an API Definition to a given application ID
+func (r *mutationResolver) AddAPIDefinitionToApplication(ctx context.Context, appID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	return r.api.AddAPIDefinitionToApplication(ctx, appID, in)
+}
+
 // AddEventDefinitionToBundle missing godoc
 func (r *mutationResolver) AddEventDefinitionToBundle(ctx context.Context, bundleID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	return r.eventAPI.AddEventDefinitionToBundle(ctx, bundleID, in)
+}
+
+// AddEventDefinitionToApplication adds an Event Definition to a given application ID
+func (r *mutationResolver) AddEventDefinitionToApplication(ctx context.Context, appID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	return r.eventAPI.AddEventDefinitionToApplication(ctx, appID, in)
 }
 
 // AddDocumentToBundle missing godoc
@@ -1044,6 +1074,16 @@ func (r *applicationResolver) Bundles(ctx context.Context, obj *graphql.Applicat
 // Bundle missing godoc
 func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
 	return r.app.Bundle(ctx, obj, id)
+}
+
+// APIDefinition fetches an API and its spec for Application and APIDefinition with a given ID
+func (r *applicationResolver) APIDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
+	return r.app.APIDefinition(ctx, obj, id)
+}
+
+// EventDefinition fetches an Event and its spec for Application and EventDefinition with a given ID
+func (r *applicationResolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
+	return r.app.EventDefinition(ctx, obj, id)
 }
 
 // ApplicationTemplate resolves application template for application object
