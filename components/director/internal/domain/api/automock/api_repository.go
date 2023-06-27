@@ -121,6 +121,29 @@ func (_m *APIRepository) Exists(ctx context.Context, tenant string, id string) (
 	return r0, r1
 }
 
+// GetByApplicationID provides a mock function with given fields: ctx, tenantID, id, appID
+func (_m *APIRepository) GetByApplicationID(ctx context.Context, tenantID string, id string, appID string) (*model.APIDefinition, error) {
+	ret := _m.Called(ctx, tenantID, id, appID)
+
+	var r0 *model.APIDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.APIDefinition); ok {
+		r0 = rf(ctx, tenantID, id, appID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.APIDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenantID, id, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: ctx, tenantID, id
 func (_m *APIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, tenantID, id)
@@ -183,6 +206,29 @@ func (_m *APIRepository) GetForBundle(ctx context.Context, tenant string, id str
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByApplicationIDPage provides a mock function with given fields: ctx, tenantID, appID, pageSize, cursor
+func (_m *APIRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, appID, pageSize, cursor)
+
+	var r0 *model.APIDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.APIDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, appID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.APIDefinitionPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, appID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

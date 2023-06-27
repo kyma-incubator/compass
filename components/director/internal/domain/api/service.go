@@ -26,8 +26,10 @@ type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
+	GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
+	ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	ListByResourceID(ctx context.Context, tenantID string, resourceType resource.Type, resourceID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
@@ -121,6 +123,20 @@ func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTem
 	return s.repo.ListByResourceID(ctx, "", resource.ApplicationTemplateVersion, appTemplateVersionID)
 }
 
+// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+func (s *service) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListByApplicationIDPage(ctx, tnt, appID, pageSize, cursor)
+}
+
 // Get returns the APIDefinition by its ID.
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -151,9 +167,29 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
+// GetForApplication returns an APIDefinition by its ID and Application ID.
+func (s *service) GetForApplication(ctx context.Context, id string, appID string) (*model.APIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	apiDefinition, err := s.repo.GetByApplicationID(ctx, tnt, id, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting API Definition with id %q", id)
+	}
+
+	return apiDefinition, nil
+}
+
 // CreateInBundle creates an APIDefinition. This function is used in the graphQL flow.
 func (s *service) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
 	return s.Create(ctx, resourceType, resourceID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
+}
+
+// CreateInApplication creates an APIDefinition in the context of an Application without Bundle
+func (s *service) CreateInApplication(ctx context.Context, appID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, resource.Application, appID, nil, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
 // Create creates APIDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
@@ -212,6 +248,31 @@ func (s *service) UpdateInManyBundles(ctx context.Context, resourceType resource
 
 	if specIn != nil {
 		return s.handleSpecsInAPI(ctx, api.ID, specIn, resourceType)
+	}
+
+	return nil
+}
+
+// UpdateForApplication updates an APIDefinition for Application without being in a Bundle
+func (s *service) UpdateForApplication(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	api, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	api = in.ToAPIDefinition(id, resource.Application, str.PtrStrToStr(api.ApplicationID), api.PackageID, 0)
+
+	if err = s.repo.Update(ctx, tnt, api); err != nil {
+		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
+	}
+
+	if specIn != nil {
+		return s.handleSpecsInAPI(ctx, id, specIn, resource.Application)
 	}
 
 	return nil
@@ -349,7 +410,7 @@ func (s *service) processSpecs(ctx context.Context, apiID string, specs []*model
 
 func (s *service) createBundleReferenceObject(ctx context.Context, apiID string, bundleID *string, defaultBundleID string, targetURLs json.RawMessage, defaultTargetURLPerBundle map[string]string) error {
 	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
-	if defaultTargetURLPerBundle == nil {
+	if defaultTargetURLPerBundle == nil && bundleID != nil {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(targetURLs)),
 		}

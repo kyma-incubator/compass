@@ -20,6 +20,44 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 )
 
+func TestPgRepository_GetForApplication(t *testing.T) {
+	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
+	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Event Definition for Application",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
+				Args:     []driver.Value{eventID, appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()).
+							AddRow(fixEventDefinitionRow(eventID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ExpectedModelEntity:       eventDefModel,
+		ExpectedDBEntity:          eventDefEntity,
+		MethodArgs:                []interface{}{tenantID, eventID, appID},
+		DisableConverterErrorTest: true,
+		MethodName:                "GetByApplicationID",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetByID(t *testing.T) {
 	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
@@ -126,6 +164,61 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		ExpectedDBEntities:        []interface{}{firstEventDefEntity, secondEventDefEntity},
 		MethodArgs:                []interface{}{tenantID, appID, resource.Application},
 		MethodName:                "ListByResourceID",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
+	pageSize := 1
+	cursor := ""
+
+	firstEventDefID := "firstEventDefID"
+	firstEventDef, _, _ := fixFullEventDefinitionModelWithID(firstEventDefID, "placeholder")
+	firstEntity := fixFullEntityEventDefinition(firstEventDefID, "placeholder")
+
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List Events with paging",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixEventDefinitionColumns()).AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...)}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM "public"."event_api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{&firstEventDef},
+				ExpectedDBEntities:    []interface{}{firstEntity},
+				ExpectedPage: &model.EventDefinitionPage{
+					Data: []*model.EventDefinition{&firstEventDef},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		MethodName:                "ListByApplicationIDPage",
+		MethodArgs:                []interface{}{tenantID, appID, pageSize, cursor},
 		DisableConverterErrorTest: true,
 	}
 

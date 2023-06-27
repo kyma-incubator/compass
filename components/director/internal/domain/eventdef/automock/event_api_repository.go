@@ -87,6 +87,29 @@ func (_m *EventAPIRepository) DeleteGlobal(ctx context.Context, id string) error
 	return r0
 }
 
+// GetByApplicationID provides a mock function with given fields: ctx, tenantID, id, appID
+func (_m *EventAPIRepository) GetByApplicationID(ctx context.Context, tenantID string, id string, appID string) (*model.EventDefinition, error) {
+	ret := _m.Called(ctx, tenantID, id, appID)
+
+	var r0 *model.EventDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventDefinition); ok {
+		r0 = rf(ctx, tenantID, id, appID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.EventDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenantID, id, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: ctx, tenantID, id
 func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	ret := _m.Called(ctx, tenantID, id)
@@ -149,6 +172,29 @@ func (_m *EventAPIRepository) GetForBundle(ctx context.Context, tenant string, i
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByApplicationIDPage provides a mock function with given fields: ctx, tenantID, appID, pageSize, cursor
+func (_m *EventAPIRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, appID, pageSize, cursor)
+
+	var r0 *model.EventDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventDefinitionPage); ok {
+		r0 = rf(ctx, tenantID, appID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.EventDefinitionPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, appID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

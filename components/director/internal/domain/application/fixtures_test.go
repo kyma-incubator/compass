@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -464,6 +466,84 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 	}
 }
 
+func fixModelAPIDef(id, appID, name, description string) *model.APIDefinition {
+	return &model.APIDefinition{
+		ApplicationID: &appID,
+		Name:          name,
+		Description:   &description,
+		BaseEntity:    &model.BaseEntity{ID: id},
+	}
+}
+
+func fixGQLAPIDefWithSpec(id, name, description string) *graphql.APIDefinition {
+	data := graphql.CLOB("spec_data")
+	return &graphql.APIDefinition{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Spec: &graphql.APISpec{
+			ID:     id,
+			Type:   graphql.APISpecTypeOdata,
+			Format: graphql.SpecFormatJSON,
+			Data:   &data,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}
+
+func fixModelAPISpecWithID(id, apiID string) *model.Spec {
+	var specData = "specData"
+	var apiType = model.APISpecTypeOdata
+	return &model.Spec{
+		ID:         id,
+		ObjectType: model.APISpecReference,
+		ObjectID:   apiID,
+		APIType:    &apiType,
+		Format:     model.SpecFormatXML,
+		Data:       &specData,
+	}
+}
+
+func fixModelEventDef(id, appID, name, description string) *model.EventDefinition {
+	return &model.EventDefinition{
+		ApplicationID: &appID,
+		Name:          name,
+		Description:   &description,
+		BaseEntity:    &model.BaseEntity{ID: id},
+	}
+}
+
+func fixModelEventSpecWithID(id, eventID string) *model.Spec {
+	var specData = "specData"
+	var eventType = model.EventSpecTypeAsyncAPI
+	return &model.Spec{
+		ID:         id,
+		ObjectType: model.EventSpecReference,
+		ObjectID:   eventID,
+		EventType:  &eventType,
+		Format:     model.SpecFormatXML,
+		Data:       &specData,
+	}
+}
+
+func fixGQLEventDefWithSpec(id, name, description string) *graphql.EventDefinition {
+	data := graphql.CLOB("spec_data")
+	return &graphql.EventDefinition{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Spec: &graphql.EventSpec{
+			ID:     id,
+			Type:   graphql.EventSpecTypeAsyncAPI,
+			Format: graphql.SpecFormatJSON,
+			Data:   &data,
+		},
+		Name:        name,
+		Description: &description,
+	}
+}
+
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
@@ -537,4 +617,29 @@ func fixGQLApplicationWithAppTemplate(id, name, description, appTemplateID strin
 		ApplicationNamespace:  &appNamespace,
 		ApplicationTemplateID: str.Ptr(appTemplateID),
 	}
+}
+
+func fixUnusedEventDefinitionService() *automock.EventDefinitionService {
+	svc := &automock.EventDefinitionService{}
+	return svc
+}
+
+func fixUnusedAPIDefinitionService() *automock.APIDefinitionService {
+	svc := &automock.APIDefinitionService{}
+	return svc
+}
+
+func fixUnusedSpecService() *automock.SpecService {
+	svc := &automock.SpecService{}
+	return svc
+}
+
+func fixUnusedAPIDefinitionConverted() *automock.APIDefinitionConverter {
+	conv := &automock.APIDefinitionConverter{}
+	return conv
+}
+
+func fixUnusedEventDefinitionConverted() *automock.EventDefinitionConverter {
+	conv := &automock.EventDefinitionConverter{}
+	return conv
 }

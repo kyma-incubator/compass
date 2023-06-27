@@ -319,6 +319,7 @@ input APISpecInput {
 **Validation:** provided placeholders' names are unique
 """
 input ApplicationFromTemplateInput {
+	id: ID
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -975,6 +976,8 @@ type Application {
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	applicationNamespace: String
@@ -1533,8 +1536,10 @@ type Webhook {
 }
 
 type Query {
+	apisForApplication(appID: ID!, first: Int = 200, after: PageCursor): APIDefinitionPage @hasScopes(path: "graphql.query.apisForApplication")
+	eventsForApplication(appID: ID!, first: Int = 200, after: PageCursor): EventDefinitionPage @hasScopes(path: "graphql.query.eventsForApplication")
 	"""
-	Maximum `first` parameter value is 100
+	Maximum `first` parameter value is 10
 	
 	**Examples**
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
@@ -1788,9 +1793,15 @@ type Mutation {
 	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
 	"""
 	**Examples**
+	- [add api definition to application](examples/add-api-definition-to-application/add-api-definition-to-application.graphql)
+	"""
+	addAPIDefinitionToApplication(appID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToApplication")
+	"""
+	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
 	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+	updateAPIDefinitionForApplication(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinitionForApplication")
 	"""
 	**Examples**
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
@@ -1818,9 +1829,15 @@ type Mutation {
 	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
 	"""
 	**Examples**
+	- [add event definition to application](examples/add-event-definition-to-application/add-event-definition-to-application.graphql)
+	"""
+	addEventDefinitionToApplication(appID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToApplication")
+	"""
+	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
 	"""
 	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+	updateEventDefinitionForApplication(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinitionForApplication")
 	"""
 	**Examples**
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)

@@ -18,16 +18,13 @@ func (_m *ApplicationTemplateService) Exists(ctx context.Context, id string) (bo
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {

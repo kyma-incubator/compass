@@ -18,6 +18,7 @@ const apiDefTable string = `"public"."api_definitions"`
 var (
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
+	appIDColumn   = "app_id"
 	apiDefColumns = []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
@@ -159,12 +160,46 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, re
 	return apis, nil
 }
 
+// ListByApplicationIDPage lists all APIDefinitions for a given application ID with paging.
+func (r *pgRepository) ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	var apiDefCollection APIDefCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.API, tenantID, pageSize, cursor, idColumn, &apiDefCollection, repo.NewEqualCondition("app_id", appID))
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	items := make([]*model.APIDefinition, 0, len(apiDefCollection))
+	for _, api := range apiDefCollection {
+		m := r.conv.FromEntity(&api)
+		items = append(items, m)
+	}
+
+	return &model.APIDefinitionPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
+}
+
 // GetByID retrieves the APIDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
+	}
+
+	apiDefModel := r.conv.FromEntity(&apiDefEntity)
+
+	return apiDefModel, nil
+}
+
+// GetByApplicationID retrieves the APIDefinition with matching ID and Application ID from the Compass storage.
+func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.APIDefinition, error) {
+	var apiDefEntity Entity
+	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(appIDColumn, appID)}, repo.NoOrderBy, &apiDefEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting APIDefinition for Application ID %s", appID)
 	}
 
 	apiDefModel := r.conv.FromEntity(&apiDefEntity)

@@ -16,6 +16,27 @@ type APIService struct {
 	mock.Mock
 }
 
+// CreateInApplication provides a mock function with given fields: ctx, appID, in, spec
+func (_m *APIService) CreateInApplication(ctx context.Context, appID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	ret := _m.Called(ctx, appID, in, spec)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) string); ok {
+		r0 = rf(ctx, appID, in, spec)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
+		r1 = rf(ctx, appID, in, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateInBundle provides a mock function with given fields: ctx, resourceType, resourceID, bundleID, in, spec
 func (_m *APIService) CreateInBundle(ctx context.Context, resourceType resource.Type, resourceID string, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, in, spec)
@@ -74,6 +95,52 @@ func (_m *APIService) Get(ctx context.Context, id string) (*model.APIDefinition,
 	return r0, r1
 }
 
+// ListByApplicationID provides a mock function with given fields: ctx, appID
+func (_m *APIService) ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
+	ret := _m.Called(ctx, appID)
+
+	var r0 []*model.APIDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.APIDefinition); ok {
+		r0 = rf(ctx, appID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.APIDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByApplicationIDPage provides a mock function with given fields: ctx, appID, pageSize, cursor
+func (_m *APIService) ListByApplicationIDPage(ctx context.Context, appID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	ret := _m.Called(ctx, appID, pageSize, cursor)
+
+	var r0 *model.APIDefinitionPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.APIDefinitionPage); ok {
+		r0 = rf(ctx, appID, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.APIDefinitionPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, appID, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListFetchRequests provides a mock function with given fields: ctx, specIDs
 func (_m *APIService) ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error) {
 	ret := _m.Called(ctx, specIDs)
@@ -104,6 +171,20 @@ func (_m *APIService) Update(ctx context.Context, resourceType resource.Type, id
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
 		r0 = rf(ctx, resourceType, id, in, spec)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateForApplication provides a mock function with given fields: ctx, id, in, specIn
+func (_m *APIService) UpdateForApplication(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
+	ret := _m.Called(ctx, id, in, specIn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
+		r0 = rf(ctx, id, in, specIn)
 	} else {
 		r0 = ret.Error(0)
 	}
