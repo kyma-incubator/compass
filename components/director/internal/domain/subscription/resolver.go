@@ -32,8 +32,8 @@ type DependentServiceInstancesInfo struct {
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, error)
-	UnsubscribeTenantFromApplication(ctx context.Context, providerID, subaccountTenantID, region, subscriptionID string) (bool, error)
+	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, error)
+	UnsubscribeTenantFromApplication(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
 
@@ -51,7 +51,7 @@ func NewResolver(transact persistence.Transactioner, subscriptionSvc Subscriptio
 	}
 }
 
-// SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
+// SubscribeTenant subscribes tenant to runtime or application template labeled with `providerID` and `region`
 func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string, subscriptionPayload string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -84,7 +84,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		switch flowType {
 		case resource.ApplicationTemplate:
 			log.C(ctx).Infof("Entering application subscription flow")
-			success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscriptionAppName, subscriptionID, subscriptionPayload)
+			success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID, subscriptionPayload)
 			if err != nil {
 				return false, err
 			}
@@ -106,7 +106,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	return success, nil
 }
 
-// UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
+// UnsubscribeTenant unsubscribes tenant from runtime or application template labeled with `providerID` and `region`
 func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionPayload string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -137,7 +137,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 		switch flowType {
 		case resource.ApplicationTemplate:
 			log.C(ctx).Infof("Entering application subscription flow")
-			success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, subaccountTenantID, region, subscriptionID)
+			success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
 			if err != nil {
 				return false, err
 			}
