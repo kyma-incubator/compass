@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -381,13 +382,11 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Eventually(t, func() bool {
 			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+		subscriptionGUID := gjson.GetBytes(body, subscriptionGUIDPath).String()
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
 		t.Log("Assert the runtime context has subscriptions label")
-		consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		subscriptionsLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
-		require.True(t, ok)
-		require.Equal(t, 1, len(subscriptionsLabel))
+		assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, []string{subscriptionGUID})
 
 		t.Logf("Creating a second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err = httpClient.Do(subscribeReq)
@@ -408,21 +407,22 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Eventually(t, func() bool {
 			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+		secondSubscriptionGUID := gjson.GetBytes(body, subscriptionGUIDPath).String()
 		t.Logf("Successfully created second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
 		t.Log("Assert runtime context subscriptions label has new value added")
-		consumerSubaccountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		subscriptionsLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
-		require.True(t, ok)
-		require.Equal(t, 2, len(subscriptionsLabel))
+		assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, []string{subscriptionGUID, secondSubscriptionGUID})
 
-		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		removedSubscriptionGUID := subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		t.Log("Assert runtime context subscriptions label has one value less")
-		consumerSubaccountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		subscriptionsLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
-		require.True(t, ok)
-		require.Equal(t, 1, len(subscriptionsLabel))
+		expectedSubscriptionGUID := ""
+		if removedSubscriptionGUID == subscriptionGUID {
+			expectedSubscriptionGUID = secondSubscriptionGUID
+		} else {
+			expectedSubscriptionGUID = subscriptionGUID
+		}
+		assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, []string{expectedSubscriptionGUID})
 
 		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -434,4 +434,16 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		t.Log("Assert there is no runtime context(subscription) after successful unsubscribe request")
 		require.Len(t, consumerSubaccountRtms.Data[0].RuntimeContexts.Data, 0)
 	})
+}
+
+func assertRuntimeContextFromSubscription(t *testing.T, tenantID, runtimeID string, expectedSubscriptions []string) {
+	consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeID)
+	subscriptionsLabelInterface, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
+	require.True(t, ok)
+	subscriptionsLabelValue := make([]string, len(subscriptionsLabelInterface))
+	for i, v := range subscriptionsLabelInterface {
+		subscriptionsLabelValue[i], ok = v.(string)
+		require.True(t, ok)
+	}
+	require.ElementsMatch(t, subscriptionsLabelValue, expectedSubscriptions)
 }
