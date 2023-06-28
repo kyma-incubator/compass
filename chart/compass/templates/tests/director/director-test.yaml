@@ -77,6 +77,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_REGION2

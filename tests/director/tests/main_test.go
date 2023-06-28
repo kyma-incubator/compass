@@ -48,6 +48,8 @@ type DirectorConfig struct {
 	TestConsumerSubaccountIDTenantHierarchy            string
 	TestConsumerTenantID                               string
 	TestProviderSubaccountIDRegion2                    string
+	SelfRegisterDirectDependencyDistinguishLabelValue  string `envconfig:"APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE"`
+	SelfRegisterSubdomainPlaceholderValue              string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE"`
 	ExternalServicesMockBaseURL                        string
 	ExternalServicesMockMtlsSecuredURL                 string
 	TokenPath                                          string
