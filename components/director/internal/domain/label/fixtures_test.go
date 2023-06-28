@@ -36,7 +36,8 @@ func fixModelLabelWithRefID(id, key string, objectType model.LabelableObject, re
 		Version:    42,
 	}
 	if objectType == model.TenantLabelableObject {
-		result.Tenant = str.Ptr(tenantID)
+		result.ObjectID = ""
+		result.Tenant = str.Ptr(refID)
 	}
 	return result
 }

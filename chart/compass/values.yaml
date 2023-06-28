@@ -180,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3144"
+      version: "PR-3119"
       name: compass-external-services-mock
     console:
       dir: dev/incubator/
@@ -412,6 +412,7 @@ global:
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     protocol: HTTP
+    tlsOrigination: false
     host: compass-external-services-mock.compass-system.svc.cluster.local
     port: 8080
     mtlsTokenPath: "/cert/token"

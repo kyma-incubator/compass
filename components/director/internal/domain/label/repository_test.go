@@ -2000,11 +2000,11 @@ func TestRepository_ListForObjectIDs(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE tenant_id = $1 AND tenant_id IN ($2, $3) AND app_id IS NULL AND runtime_context_id IS NULL AND runtime_id IS NULL`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE tenant_id IN ($1, $2) AND app_id IS NULL AND runtime_context_id IS NULL AND runtime_id IS NULL`)
 		mockedRows := sqlmock.NewRows(fixColumns).
 			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version).
 			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label2Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version)
-		dbMock.ExpectQuery(escapedQuery).WithArgs(tenantID, sql.NullString{Valid: true, String: labelIDs[0]}, sql.NullString{Valid: true, String: labelIDs[1]}).WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: labelIDs[0]}, sql.NullString{Valid: true, String: labelIDs[1]}).WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
