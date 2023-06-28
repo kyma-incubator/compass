@@ -3,6 +3,8 @@ package product
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -10,6 +12,7 @@ import (
 )
 
 // ProductRepository missing godoc
+//
 //go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ProductRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Product) error
@@ -21,11 +24,12 @@ type ProductRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Product, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Product, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error)
+	ListByResourceID(ctx context.Context, tenantID, appID string, resourceType resource.Type) ([]*model.Product, error)
 	ListGlobal(ctx context.Context) ([]*model.Product, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -45,19 +49,15 @@ func NewService(productRepo ProductRepository, uidService UIDService) *service {
 }
 
 // Create creates a new product.
-func (s *service) Create(ctx context.Context, applicationID string, in model.ProductInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error) {
 	id := s.uidService.Generate()
-	product := in.ToProduct(id, &applicationID)
+	product := in.ToProduct(id, resourceType, resourceID)
 
-	if err = s.productRepo.Create(ctx, tnt, product); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
+	if err := s.createProduct(ctx, product, resourceType); err != nil {
+		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for %v with id %s", id, product.Title, resourceType, resourceID)
 	}
-	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
+
+	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for %s with id %s", id, product.Title, resourceType, resourceID)
 
 	return product.OrdID, nil
 }
@@ -65,7 +65,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pro
 // CreateGlobal creates a new global product (with NULL app_id).
 func (s *service) CreateGlobal(ctx context.Context, in model.ProductInput) (string, error) {
 	id := s.uidService.Generate()
-	product := in.ToProduct(id, nil)
+	product := in.ToProduct(id, "", "")
 
 	if err := s.productRepo.CreateGlobal(ctx, product); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating Global Product with id %s and title %s", id, product.Title)
@@ -76,22 +76,18 @@ func (s *service) CreateGlobal(ctx context.Context, in model.ProductInput) (stri
 }
 
 // Update updates an existing product.
-func (s *service) Update(ctx context.Context, id string, in model.ProductInput) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	product, err := s.productRepo.GetByID(ctx, tnt, id)
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error {
+	product, err := s.getProduct(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Product with id %s", id)
 	}
 
 	product.SetFromUpdateInput(in)
 
-	if err = s.productRepo.Update(ctx, tnt, product); err != nil {
+	if err = s.updateProduct(ctx, product, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Product with id %s", id)
 	}
+
 	return nil
 }
 
@@ -111,16 +107,12 @@ func (s *service) UpdateGlobal(ctx context.Context, id string, in model.ProductI
 }
 
 // Delete deletes an existing product.
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
-	}
-
-	err = s.productRepo.Delete(ctx, tnt, id)
-	if err != nil {
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	if err := s.deleteProduct(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Product with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted Product with id %s", id)
 
 	return nil
 }
@@ -171,10 +163,62 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.productRepo.ListByApplicationID(ctx, tnt, appID)
+	return s.productRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionID returns a list of products for a given application ID.
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error) {
+	return s.productRepo.ListByResourceID(ctx, "", appID, resource.ApplicationTemplateVersion)
 }
 
 // ListGlobal returns a list of global products (with NULL app_id).
 func (s *service) ListGlobal(ctx context.Context) ([]*model.Product, error) {
 	return s.productRepo.ListGlobal(ctx)
+}
+
+func (s *service) createProduct(ctx context.Context, product *model.Product, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.CreateGlobal(ctx, product)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.productRepo.Create(ctx, tnt, product)
+}
+
+func (s *service) getProduct(ctx context.Context, id string, resourceType resource.Type) (*model.Product, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateProduct(ctx context.Context, product *model.Product, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.UpdateGlobal(ctx, product)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.productRepo.Update(ctx, tnt, product)
+}
+
+func (s *service) deleteProduct(ctx context.Context, id string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.productRepo.DeleteGlobal(ctx, id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	return s.productRepo.Delete(ctx, tnt, id)
 }

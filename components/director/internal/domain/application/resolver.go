@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -125,7 +127,42 @@ type RuntimeService interface {
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
-	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
+	CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error
+}
+
+// APIDefinitionService missing godoc
+//
+//go:generate mockery --name=APIDefinitionService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type APIDefinitionService interface {
+	GetForApplication(ctx context.Context, id string, appID string) (*model.APIDefinition, error)
+}
+
+// EventDefinitionService missing godoc
+//
+//go:generate mockery --name=EventDefinitionService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EventDefinitionService interface {
+	GetForApplication(ctx context.Context, id string, appID string) (*model.EventDefinition, error)
+}
+
+// APIDefinitionConverter missing godoc
+//
+//go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type APIDefinitionConverter interface {
+	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
+}
+
+// EventDefinitionConverter missing godoc
+//
+//go:generate mockery --name=EventDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type EventDefinitionConverter interface {
+	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.EventDefinition, error)
+}
+
+// SpecService is responsible for the service-layer Specification operations.
+//
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SpecService interface {
+	GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 }
 
 // BundleConverter missing godoc
@@ -191,6 +228,13 @@ type Resolver struct {
 	sysAuthSvc SystemAuthService
 	bndlSvc    BundleService
 
+	apiDefinitionSvc    APIDefinitionService
+	eventDefinitionSvc  EventDefinitionService
+	apiDefinitionConv   APIDefinitionConverter
+	eventDefinitionConv EventDefinitionConverter
+
+	specService SpecService
+
 	webhookConverter WebhookConverter
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
@@ -212,6 +256,11 @@ func NewResolver(transact persistence.Transactioner,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
 	bndlConverter BundleConverter,
+	specSvc SpecService,
+	apiDefinitionSvc APIDefinitionService,
+	eventDefinitionSvc EventDefinitionService,
+	apiDefinitionConverter APIDefinitionConverter,
+	eventDefinitionConverter EventDefinitionConverter,
 	appTemplateSvc ApplicationTemplateService,
 	appTemplateConverter ApplicationTemplateConverter,
 	tenantBusinessTypeSvc TenantBusinessTypeService,
@@ -228,6 +277,11 @@ func NewResolver(transact persistence.Transactioner,
 		sysAuthConv:                     sysAuthConv,
 		eventingSvc:                     eventingSvc,
 		bndlSvc:                         bndlSvc,
+		specService:                     specSvc,
+		apiDefinitionSvc:                apiDefinitionSvc,
+		eventDefinitionSvc:              eventDefinitionSvc,
+		apiDefinitionConv:               apiDefinitionConverter,
+		eventDefinitionConv:             eventDefinitionConverter,
 		bndlConv:                        bndlConverter,
 		appTemplateSvc:                  appTemplateSvc,
 		appTemplateConverter:            appTemplateConverter,
@@ -818,6 +872,86 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	}
 
 	gqlBundle, err := r.bndlConv.ToGraphQL(bndl)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlBundle, nil
+}
+
+// APIDefinition fetches an API and its spec for Application and APIDefinition with a given ID
+func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.APIDefinition, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	api, err := r.apiDefinitionSvc.GetForApplication(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlBundle, err := r.apiDefinitionConv.ToGraphQL(api, spec, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlBundle, nil
+}
+
+// EventDefinition fetches an API and its spec for Application and EventDefinition with a given ID
+func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Application, id string) (*graphql.EventDefinition, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	event, err := r.eventDefinitionSvc.GetForApplication(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, event.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+	}
+
+	gqlBundle, err := r.eventDefinitionConv.ToGraphQL(event, spec, nil)
 	if err != nil {
 		return nil, err
 	}

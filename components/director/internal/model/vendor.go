@@ -2,18 +2,20 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Vendor missing godoc
 type Vendor struct {
-	ID                  string
-	OrdID               string
-	ApplicationID       *string
-	Title               string
-	Partners            json.RawMessage
-	Tags                json.RawMessage
-	Labels              json.RawMessage
-	DocumentationLabels json.RawMessage
+	ID                           string
+	OrdID                        string
+	ApplicationID                *string
+	ApplicationTemplateVersionID *string
+	Title                        string
+	Partners                     json.RawMessage
+	Tags                         json.RawMessage
+	Labels                       json.RawMessage
+	DocumentationLabels          json.RawMessage
 }
 
 // VendorInput missing godoc
@@ -27,21 +29,28 @@ type VendorInput struct {
 }
 
 // ToVendor missing godoc
-func (i *VendorInput) ToVendor(id string, appID *string) *Vendor {
+func (i *VendorInput) ToVendor(id string, resourceType resource.Type, resourceID string) *Vendor {
 	if i == nil {
 		return nil
 	}
 
-	return &Vendor{
+	vendor := &Vendor{
 		ID:                  id,
 		OrdID:               i.OrdID,
-		ApplicationID:       appID,
 		Title:               i.Title,
 		Partners:            i.Partners,
 		Tags:                i.Tags,
 		Labels:              i.Labels,
 		DocumentationLabels: i.DocumentationLabels,
 	}
+
+	if resourceType == resource.ApplicationTemplateVersion {
+		vendor.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		vendor.ApplicationID = &resourceID
+	}
+
+	return vendor
 }
 
 // SetFromUpdateInput missing godoc

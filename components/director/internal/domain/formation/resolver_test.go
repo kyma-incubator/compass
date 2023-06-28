@@ -1501,10 +1501,13 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	ctx := tenant.SaveToContext(context.TODO(), TntInternalID, TntExternalID)
+	shouldReset := true
+	shouldNotReset := false
 
 	testCases := []struct {
 		Name              string
 		Context           context.Context
+		ShouldReset       *bool
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		FormationService  func() *automock.Service
 		Converter         func() *automock.Converter
@@ -1517,7 +1520,43 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(&modelFormation, nil).Once()
+
+				return svc
+			},
+			Converter: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil).Once()
+				return conv
+			},
+			ExpectedFormation: &graphqlFormation,
+		},
+		{
+			Name:        "successfully resynchronized formation notifications with reset false",
+			TxFn:        txGen.ThatSucceeds,
+			ShouldReset: &shouldNotReset,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(&modelFormation, nil).Once()
+
+				return svc
+			},
+			Converter: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil).Once()
+				return conv
+			},
+			ExpectedFormation: &graphqlFormation,
+		},
+		{
+			Name:        "successfully resynchronized formation notifications with reset",
+			TxFn:        txGen.ThatSucceeds,
+			ShouldReset: &shouldReset,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, true).Return(&modelFormation, nil).Once()
 
 				return svc
 			},
@@ -1534,7 +1573,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil, testErr)
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(nil, testErr)
 
 				return svc
 			},
@@ -1546,7 +1585,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID, false).Return(&modelFormation, nil).Once()
 
 				return svc
 			},
@@ -1573,7 +1612,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			resolver := formation.NewResolver(transact, formationService, conv, nil, nil, nil)
 
 			// WHEN
-			resultFormationModel, err := resolver.ResynchronizeFormationNotifications(ctx, FormationID)
+			resultFormationModel, err := resolver.ResynchronizeFormationNotifications(ctx, FormationID, testCase.ShouldReset)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

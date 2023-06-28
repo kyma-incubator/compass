@@ -12,6 +12,7 @@ type Entity struct {
 	RuntimeArtifactKind    sql.NullString `db:"runtime_artifact_kind"`
 	LeadingProductIDs      sql.NullString `db:"leading_product_ids"`
 	TenantID               sql.NullString `db:"tenant_id"`
+	SupportsReset          bool           `db:"supports_reset"`
 }
 
 // EntityCollection is a collection of formation template entities.

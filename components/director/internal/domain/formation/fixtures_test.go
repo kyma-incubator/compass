@@ -1031,6 +1031,12 @@ func fixFormationTemplateModel() *model.FormationTemplate {
 	}
 }
 
+func fixFormationTemplateModelThatSupportsReset() *model.FormationTemplate {
+	ftModel := fixFormationTemplateModel()
+	ftModel.SupportsReset = true
+	return ftModel
+}
+
 func fixApplicationModelWithoutTemplate(applicationID string) *model.Application {
 	appModel := fixApplicationModel(applicationID)
 	appModel.ApplicationTemplateID = nil
@@ -1368,18 +1374,6 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 
 func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:          id,
-		FormationID: formationID,
-		Source:      source,
-		SourceType:  sourceType,
-		Target:      target,
-		TargetType:  targetType,
-		State:       string(state),
-	}
-}
-
-func fixWebhookFormationAssignmentWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *webhook.FormationAssignment {
-	return &webhook.FormationAssignment{
 		ID:          id,
 		FormationID: formationID,
 		Source:      source,

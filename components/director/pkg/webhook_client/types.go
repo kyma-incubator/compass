@@ -44,12 +44,12 @@ func (fnr *FormationNotificationRequest) GetOperation() model.FormationOperation
 }
 
 // GetFormationAssignment returns FormationNotificationRequest formation assignment
-func (fnr *FormationNotificationRequest) GetFormationAssignment() *webhook.FormationAssignment {
+func (fnr *FormationNotificationRequest) GetFormationAssignment() *model.FormationAssignment {
 	return nil
 }
 
 // GetReverseFormationAssignment returns FormationNotificationRequest reverse formation assignment
-func (fnr *FormationNotificationRequest) GetReverseFormationAssignment() *webhook.FormationAssignment {
+func (fnr *FormationNotificationRequest) GetReverseFormationAssignment() *model.FormationAssignment {
 	return nil
 }
 
@@ -69,8 +69,8 @@ type FormationAssignmentNotificationRequest struct {
 type FormationAssignmentNotificationRequestExt struct {
 	*FormationAssignmentNotificationRequest
 	Operation                  model.FormationOperation
-	FormationAssignment        *webhook.FormationAssignment
-	ReverseFormationAssignment *webhook.FormationAssignment
+	FormationAssignment        *model.FormationAssignment
+	ReverseFormationAssignment *model.FormationAssignment
 	Formation                  *model.Formation
 	TargetSubtype              string
 }
@@ -101,12 +101,12 @@ func (f *FormationAssignmentNotificationRequestExt) GetOperation() model.Formati
 }
 
 // GetFormationAssignment returns FormationAssignmentNotificationRequestExt formation assignment
-func (f *FormationAssignmentNotificationRequestExt) GetFormationAssignment() *webhook.FormationAssignment {
+func (f *FormationAssignmentNotificationRequestExt) GetFormationAssignment() *model.FormationAssignment {
 	return f.FormationAssignment
 }
 
 // GetReverseFormationAssignment returns FormationAssignmentNotificationRequestExt reverse formation assignment
-func (f *FormationAssignmentNotificationRequestExt) GetReverseFormationAssignment() *webhook.FormationAssignment {
+func (f *FormationAssignmentNotificationRequestExt) GetReverseFormationAssignment() *model.FormationAssignment {
 	return f.ReverseFormationAssignment
 }
 
@@ -197,7 +197,7 @@ type WebhookExtRequest interface {
 	GetObjectType() model.ResourceType
 	GetObjectSubtype() string
 	GetOperation() model.FormationOperation
-	GetFormationAssignment() *webhook.FormationAssignment
-	GetReverseFormationAssignment() *webhook.FormationAssignment
+	GetFormationAssignment() *model.FormationAssignment
+	GetReverseFormationAssignment() *model.FormationAssignment
 	GetFormation() *model.Formation
 }

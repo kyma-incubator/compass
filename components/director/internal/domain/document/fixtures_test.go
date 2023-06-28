@@ -12,20 +12,21 @@ import (
 )
 
 var (
-	docKind        = "fookind"
-	docTitle       = "footitle"
-	docData        = "foodata"
-	docDisplayName = "foodisplay"
-	docDescription = "foodesc"
-	docCLOB        = graphql.CLOB(docData)
-	appID          = "appID"
-	fixedTimestamp = time.Now()
+	docKind              = "fookind"
+	docTitle             = "footitle"
+	docData              = "foodata"
+	docDisplayName       = "foodisplay"
+	docDescription       = "foodesc"
+	docCLOB              = graphql.CLOB(docData)
+	appID                = "appID"
+	appTemplateVersionID = "appTemplateVersionID"
+	fixedTimestamp       = time.Now()
+	docID                = "foo"
 )
 
 func fixModelDocument(id, bundleID string) *model.Document {
 	return &model.Document{
 		BundleID:    bundleID,
-		AppID:       appID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
 		Description: docDescription,
@@ -43,10 +44,23 @@ func fixModelDocument(id, bundleID string) *model.Document {
 	}
 }
 
+func fixModelDocumentForApp(id, bundleID string) *model.Document {
+	doc := fixModelDocument(id, bundleID)
+	doc.AppID = &appID
+
+	return doc
+}
+
+func fixModelDocumentForAppTemplateVersion(id, bundleID string) *model.Document {
+	doc := fixModelDocument(id, bundleID)
+	doc.ApplicationTemplateVersionID = &appTemplateVersionID
+
+	return doc
+}
+
 func fixEntityDocument(id, bundleID string) *document.Entity {
 	return &document.Entity{
 		BndlID:      bundleID,
-		AppID:       appID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
 		Description: docDescription,
@@ -62,6 +76,18 @@ func fixEntityDocument(id, bundleID string) *document.Entity {
 			DeletedAt: &time.Time{},
 		},
 	}
+}
+
+func fixEntityDocumentForApp(id, bundleID string) *document.Entity {
+	entity := fixEntityDocument(id, bundleID)
+	entity.AppID = repo.NewValidNullableString(appID)
+	return entity
+}
+
+func fixEntityDocumentForAppTemplateVersion(id, bundleID string) *document.Entity {
+	entity := fixEntityDocument(id, bundleID)
+	entity.ApplicationTemplateVersionID = repo.NewValidNullableString(appTemplateVersionID)
+	return entity
 }
 
 func fixGQLDocument(id, bundleID string) *graphql.Document {
@@ -151,7 +177,7 @@ func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 
 func fixModelBundle(id string) *model.Bundle {
 	return &model.Bundle{
-		ApplicationID: appID,
+		ApplicationID: &appID,
 		Name:          "name",
 		BaseEntity: &model.BaseEntity{
 			ID:        id,

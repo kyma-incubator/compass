@@ -19,7 +19,8 @@ import (
 
 // APIDefinition missing godoc
 type APIDefinition struct {
-	ApplicationID                           string
+	ApplicationID                           *string
+	ApplicationTemplateVersionID            *string
 	PackageID                               *string
 	Name                                    string
 	Description                             *string
@@ -172,13 +173,8 @@ type APIDefinitionPage struct {
 // IsPageable missing godoc
 func (APIDefinitionPage) IsPageable() {}
 
-// ToAPIDefinitionWithinBundle missing godoc
-func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID string, apiHash uint64) *APIDefinition {
-	return a.ToAPIDefinition(id, appID, nil, apiHash)
-}
-
 // ToAPIDefinition missing godoc
-func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, apiHash uint64) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Type, resourceID string, packageID *string, apiHash uint64) *APIDefinition {
 	if a == nil {
 		return nil
 	}
@@ -188,8 +184,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		hash = str.Ptr(strconv.FormatUint(apiHash, 10))
 	}
 
-	return &APIDefinition{
-		ApplicationID:       appID,
+	api := &APIDefinition{
 		PackageID:           packageID,
 		Name:                a.Name,
 		Description:         a.Description,
@@ -227,4 +222,12 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 			Ready: true,
 		},
 	}
+
+	if resourceType.IsTenantIgnorable() {
+		api.ApplicationTemplateVersionID = &resourceID
+	} else if resourceType == resource.Application {
+		api.ApplicationID = &resourceID
+	}
+
+	return api
 }

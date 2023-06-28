@@ -184,10 +184,16 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
+		accessLevel: {{.AccessLevel}},
 		{{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
 		{{- end }}
-		accessLevel: {{.AccessLevel}},
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }}
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
 	}`)
 }
 
@@ -643,6 +649,9 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
 		{{- end}}
+		{{- if .SupportsReset }}
+		supportsReset: {{.SupportsReset}}
+		{{- end}}
 	}`)
 }
 
@@ -678,6 +687,25 @@ func (g *Graphqlizer) FormationTemplateConstraintReferenceToGQL(in graphql.Const
 // ApplicationFromTemplateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
+		templateName: "{{.TemplateName}}"
+		{{- if .Values }}
+		values: [
+			{{- range $i, $e := .Values }}
+				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
+			{{- end }} ],
+		{{- end }}
+		{{- if .PlaceholdersPayload }}
+		placeholdersPayload:  "{{.PlaceholdersPayload}}"
+		{{- end }}
+	}`)
+}
+
+// ApplicationFromTemplateInputWithTemplateIDToGQL missing godoc
+func (g *Graphqlizer) ApplicationFromTemplateInputWithTemplateIDToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .ID }}
+		id: "{{ .ID }}"
+		{{- end }}
 		templateName: "{{.TemplateName}}"
 		{{- if .Values }}
 		values: [

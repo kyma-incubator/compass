@@ -75,6 +75,7 @@ type ApplicationEventingConfiguration struct {
 
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
+	ID *string `json:"id"`
 	// **Validation:** ASCII printable characters, max=100
 	TemplateName string `json:"templateName"`
 	// **Validation:** if provided, placeholdersPayload not required
@@ -166,6 +167,7 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
+	Webhooks             []*WebhookInput                `json:"webhooks"`
 	Description          *string                        `json:"description"`
 	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
@@ -596,6 +598,7 @@ type FormationTemplateInput struct {
 	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
+	SupportsReset          *bool           `json:"supportsReset"`
 }
 
 type FormationTemplatePage struct {

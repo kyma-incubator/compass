@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// ApplicationTemaplteInput
+// ApplicationTemplateInput
 
 func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) {
 	testPlaceholderName := "test"
@@ -362,7 +362,7 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
-// ApplicationTemaplteInput
+// ApplicationTemplateUpdateInput
 
 func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testing.T) {
 	testPlaceholderName := "test"
