@@ -71,11 +71,12 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 	return ft
 }
 
-func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string, leadingProductIDs []string) graphql.FormationTemplate {
+func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string, leadingProductIDs []string, supportsReset bool) graphql.FormationTemplate {
 	formationTmplInput := graphql.FormationTemplateInput{
 		Name:              formationTemplateName,
 		ApplicationTypes:  applicationTypes,
 		LeadingProductIDs: leadingProductIDs,
+		SupportsReset:     &supportsReset,
 	}
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
