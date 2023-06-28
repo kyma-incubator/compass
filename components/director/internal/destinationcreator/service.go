@@ -238,9 +238,9 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	}
 	destReqBody.AdditionalProperties = enrichedProperties
 
-	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
+	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Source)
 	if err != nil {
-		return errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Target)
+		return errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Source)
 	}
 	if app.BaseURL != nil {
 		destReqBody.Audience = *app.BaseURL

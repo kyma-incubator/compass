@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -969,7 +968,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 }
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
-func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error) {
+func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, shouldReset bool) (*model.Formation, error) {
 	log.C(ctx).Infof("Resynchronizing formation with ID: %q", formationID)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -980,6 +979,28 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
 	}
+	if shouldReset {
+		formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
+		}
+		if !formationTemplate.SupportsReset {
+			return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("formation template %q does not support resetting", formationTemplate.Name))
+		}
+		assignmentsForFormation, err := s.formationAssignmentService.GetAssignmentsForFormation(ctx, tenantID, formationID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting formation assignments for formation with ID %q", formationID)
+		}
+		for _, assignment := range assignmentsForFormation {
+			assignment.State = string(model.InitialAssignmentState)
+			assignment.Value = nil
+			err = s.formationAssignmentService.Update(ctx, assignment.ID, assignment)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if formation.State != model.ReadyFormationState {
 		previousState := formation.State
 		updatedFormation, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation)

@@ -24,6 +24,7 @@ type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
+	GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.EventDefinition, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.EventDefinition, error)
 	ListByApplicationIDPage(ctx context.Context, tenantID string, appID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
@@ -160,6 +161,21 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	}
 
 	return eventAPI, nil
+}
+
+// GetForApplication returns an EventDefinition by its ID and Application ID.
+func (s *service) GetForApplication(ctx context.Context, id string, appID string) (*model.EventDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventDefinition, err := s.eventAPIRepo.GetByApplicationID(ctx, tnt, id, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Event Definition with id %q", id)
+	}
+
+	return eventDefinition, nil
 }
 
 // CreateInBundle creates an EventDefinition. This function is used in the graphQL flow.

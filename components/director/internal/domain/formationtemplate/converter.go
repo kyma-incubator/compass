@@ -43,6 +43,11 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		runtimeArtifactKind = &kind
 	}
 
+	supportsReset := false
+	if in.SupportsReset != nil {
+		supportsReset = *in.SupportsReset
+	}
+
 	return &model.FormationTemplateInput{
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
@@ -51,6 +56,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		RuntimeArtifactKind:    runtimeArtifactKind,
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
+		SupportsReset:          supportsReset,
 	}, nil
 }
 
@@ -82,6 +88,7 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id, 
 		TenantID:               tntID,
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
+		SupportsReset:          in.SupportsReset,
 	}
 }
 
@@ -116,6 +123,7 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTe
 		RuntimeArtifactKind:    runtimeArtifactKind,
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
+		SupportsReset:          in.SupportsReset,
 	}, nil
 }
 
@@ -174,6 +182,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		RuntimeArtifactKind:    runtimeArtifactKind,
 		LeadingProductIDs:      repo.NewValidNullableString(string(marshalledLeadingProductIDs)),
 		TenantID:               repo.NewNullableString(in.TenantID),
+		SupportsReset:          in.SupportsReset,
 	}, nil
 }
 
@@ -222,5 +231,6 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		RuntimeArtifactKind:    runtimeArtifactKind,
 		LeadingProductIDs:      unmarshalledLeadingProductIDs,
 		TenantID:               repo.StringPtrFromNullableString(in.TenantID),
+		SupportsReset:          in.SupportsReset,
 	}, nil
 }
