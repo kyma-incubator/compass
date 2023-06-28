@@ -294,7 +294,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	httputils.Respond(w, http.StatusOK)
 }
 
-// UpdateFormationStatus handles asynchronous formation status updates
+// UpdateFormationStatus handles formation status updates
 func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -348,10 +348,10 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	ctx = tenant.SaveToContext(ctx, f.TenantID, "")
 
 	if f.State == model.DeletingFormationState {
-		log.C(ctx).Infof("Processing asynchronous formation status update for %q operation...", model.DeleteFormation)
-		err = h.processAsynchronousFormationDelete(ctx, f, reqBody)
+		log.C(ctx).Infof("Processing formation status update for %q operation...", model.DeleteFormation)
+		err = h.processFormationDeleteStatusUpdate(ctx, f, reqBody)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while processing asynchronous formation status update for %q operation. X-Request-Id: %s", model.DeleteFormation, correlationID)
+			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation status update for %q operation. X-Request-Id: %s", model.DeleteFormation, correlationID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
@@ -362,15 +362,15 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		log.C(ctx).Infof("The status update for formation with ID: %q was successfully processed asynchronously for %q operation", formationID, model.DeleteFormation)
+		log.C(ctx).Infof("The status update for formation with ID: %q was successfully processed for %q operation", formationID, model.DeleteFormation)
 		httputils.Respond(w, http.StatusOK)
 		return
 	}
 
-	log.C(ctx).Infof("Processing asynchronous formation status update for %q operation...", model.CreateFormation)
-	err = h.processAsynchronousFormationCreate(ctx, f, reqBody)
+	log.C(ctx).Infof("Processing formation status update for %q operation...", model.CreateFormation)
+	err = h.processFormationCreateStatusUpdate(ctx, f, reqBody)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while processing asynchronous formation status update for %q operation. X-Request-Id: %s", model.CreateFormation, correlationID)
+		log.C(ctx).WithError(err).Errorf("An error occurred while processing formation status update for %q operation. X-Request-Id: %s", model.CreateFormation, correlationID)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
@@ -380,8 +380,42 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
+	log.C(ctx).Infof("The status update for formation with ID: %q was successfully processed for %q operation", formationID, model.CreateFormation)
 
-	log.C(ctx).Infof("The status update for formation with ID: %q was successfully processed asynchronously for %q operation", formationID, model.CreateFormation)
+	go func() {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
+
+		ctx = tenant.SaveToContext(ctx, f.TenantID, "")
+
+		correlationIDKey := correlation.RequestIDHeaderKey
+		ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+		logger := log.C(ctx).WithField(correlation.RequestIDHeaderKey, correlationID)
+		ctx = log.ContextWithLogger(ctx, logger)
+
+		tx, err = h.transact.Begin()
+		if err != nil {
+			log.C(ctx).WithError(err).Error("unable to establish connection with database")
+			return
+		}
+		defer h.transact.RollbackUnlessCommitted(ctx, tx)
+		ctx = persistence.SaveToContext(ctx, tx)
+
+		log.C(ctx).Infof("Starting asynchronous resynchronization for formation with ID: %q and name: %q...", f.ID, f.Name)
+		if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, f.ID); err != nil {
+			log.C(ctx).WithError(err).Errorf("while resynchronize formation notifications for formation with ID: %q", f.ID)
+			return
+		}
+
+		if err = tx.Commit(); err != nil {
+			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+			return
+		}
+
+		log.C(ctx).Infof("Finished asynchronous formation resynchronization processing for formation with ID: %q and name: %q", f.ID, f.Name)
+	}()
+
 	httputils.Respond(w, http.StatusOK)
 }
 
@@ -475,8 +509,8 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 	return true, nil
 }
 
-// processAsynchronousFormationDelete handles the async delete formation status update
-func (h *Handler) processAsynchronousFormationDelete(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) error {
+// processFormationDeleteStatusUpdate handles the async delete formation status update
+func (h *Handler) processFormationDeleteStatusUpdate(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) error {
 	if reqBody.State != model.ReadyFormationState && reqBody.State != model.DeleteErrorFormationState {
 		return errors.Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.DeleteFormation)
 	}
@@ -496,8 +530,8 @@ func (h *Handler) processAsynchronousFormationDelete(ctx context.Context, format
 	return nil
 }
 
-// processAsynchronousFormationCreate handles the async create formation status update
-func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) error {
+// processFormationCreateStatusUpdate handles the async create formation status update
+func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) error {
 	if reqBody.State != model.ReadyFormationState && reqBody.State != model.CreateErrorFormationState {
 		return errors.Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.CreateFormation)
 	}
@@ -513,11 +547,6 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 	formation.State = model.ReadyFormationState
 	if err := h.formationStatusService.UpdateWithConstraints(ctx, formation, model.CreateFormation); err != nil {
 		return errors.Wrapf(err, "while updating formation with ID: %q to: %q state", formation.ID, model.ReadyFormationState)
-	}
-
-	log.C(ctx).Infof("Resynchronizing formation with ID: %q and name: %q", formation.ID, formation.Name)
-	if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID); err != nil {
-		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
 	}
 
 	return nil

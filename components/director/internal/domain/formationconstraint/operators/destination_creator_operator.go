@@ -46,10 +46,6 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && di.FormationAssignment != nil && di.FormationAssignment.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, di.FormationAssignment.ID)
-		if di.FormationAssignment == nil {
-			return false, errors.New("The operator's formation assignment cannot be nil")
-		}
-
 		if err := e.destinationSvc.DeleteDestinations(ctx, di.FormationAssignment); err != nil {
 			return false, err
 		}
