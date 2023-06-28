@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -43,6 +44,10 @@ type ProviderSubscriptionInfo struct {
 	ProviderSubscriptionsIds []string
 }
 
+type Response struct {
+	SubscriptionGUID string `json:"subscriptionGUID"`
+}
+
 var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
@@ -59,25 +64,42 @@ func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig Pro
 // Subscribe build and execute subscribe request to tenant fetcher. This method is invoked on local setup,
 // on real environment an external service with the same path but different host is called and then the request is propagated to tenant fetcher component as callbacks
 func (h *handler) Subscribe(writer http.ResponseWriter, r *http.Request) {
-	if statusCode, err := h.executeSubscriptionRequest(r, http.MethodPut); err != nil {
+	statusCode, subscriptionID, err := h.executeSubscriptionRequest(r, http.MethodPut)
+	if err != nil {
 		log.C(r.Context()).Errorf("while executing subscribe request: %v", err)
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing subscribe request"), statusCode)
 		return
 	}
 	writer.Header().Set("Location", fmt.Sprintf("/api/v1/jobs/%s", h.jobID))
 	writer.WriteHeader(http.StatusAccepted)
+	responseBody := Response{
+		SubscriptionGUID: subscriptionID,
+	}
+	err = json.NewEncoder(writer).Encode(responseBody)
+	if err != nil {
+		log.C(r.Context()).Errorf("Failed to encode response body: %s", err)
+	}
 }
 
 // Unsubscribe build and execute unsubscribe request to tenant fetcher. This method is invoked on local setup,
 // on real environment an external service with the same path but different host is called and then the request is propagated to tenant fetcher component as callbacks
 func (h *handler) Unsubscribe(writer http.ResponseWriter, r *http.Request) {
-	if statusCode, err := h.executeSubscriptionRequest(r, http.MethodDelete); err != nil {
+	statusCode, subscriptionID, err := h.executeSubscriptionRequest(r, http.MethodDelete)
+	if err != nil {
 		log.C(r.Context()).Errorf("while executing unsubscribe request: %v", err)
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing unsubscribe request"), statusCode)
 		return
 	}
 	writer.Header().Set("Location", fmt.Sprintf("/api/v1/jobs/%s", h.jobID))
 	writer.WriteHeader(http.StatusAccepted)
+	responseBody := Response{
+		SubscriptionGUID: subscriptionID,
+	}
+	spew.Dump("SUBSCRIPTION ID: ", responseBody)
+	err = json.NewEncoder(writer).Encode(responseBody)
+	if err != nil {
+		log.C(r.Context()).Errorf("Failed to encode response body: %s", err)
+	}
 }
 
 // JobStatus returns mock status of the asynchronous subscription job for testing purposes
@@ -125,30 +147,30 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	log.C(ctx).Info("Successfully handled subscription job status request")
 }
 
-func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (int, error) {
+func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (int, string, error) {
 	ctx := r.Context()
 	authorization := r.Header.Get("Authorization")
 
 	if len(authorization) == 0 {
-		return http.StatusUnauthorized, errors.New("authorization header is required")
+		return http.StatusUnauthorized, "", errors.New("authorization header is required")
 	}
 
 	token := strings.TrimPrefix(authorization, "Bearer ")
 
 	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
-		return http.StatusUnauthorized, errors.New("token value is required")
+		return http.StatusUnauthorized, "", errors.New("token value is required")
 	}
 
 	appName := mux.Vars(r)["app_name"]
 	if appName == "" {
 		log.C(ctx).Error("parameter [app_name] not provided")
-		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
+		return http.StatusBadRequest, "", errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
 	isIndirectDependency := r.Header.Get("isIndirectDependency")
 	subscriptionID := getSubscriptionID(httpMethod, appName)
 	if subscriptionID == "" {
-		return http.StatusOK, nil
+		return http.StatusOK, "", nil
 	}
 
 	// Build a request for consumer subscribe/unsubscribe
@@ -156,7 +178,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, isIndirectDependency)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
-		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
+		return http.StatusInternalServerError, "", errors.Wrap(err, "while creating subscription request")
 	}
 
 	if httpMethod == http.MethodPut {
@@ -167,7 +189,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	resp, err := h.httpClient.Do(request)
 	if err != nil {
 		log.C(ctx).Errorf("while executing subscription request: %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, "", err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -177,12 +199,12 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.C(ctx).Errorf("while reading response body: %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, "", err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		log.C(ctx).Errorf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK)
-		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
+		return http.StatusInternalServerError, "", errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 	if httpMethod == http.MethodPut {
 		addSubscription(appName, providerSubaccID, subscriptionID)
@@ -190,7 +212,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		removeSubscription(appName)
 	}
 
-	return http.StatusOK, nil
+	return http.StatusOK, subscriptionID, nil
 }
 
 func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, isIndirectDependency string) (*http.Request, error) {
