@@ -85,6 +85,35 @@ type FormationAssignmentResponseConfig struct {
 	} `json:"key2"`
 }
 
+type KymaMappingsBasicAuthentication struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type KymaMappingsOauthAuthentication struct {
+	TokenServiceUrl string `json:"tokenServiceUrl"`
+	ClientId        string `json:"clientId"`
+	ClientSecret    string `json:"clientSecret"`
+}
+
+type KymaMappingsOutboundCommunication struct {
+	BasicAuthentication KymaMappingsBasicAuthentication `json:"basicAuthentication,omitempty"`
+	OauthAuthentication KymaMappingsOauthAuthentication `json:"oauth2ClientCredentials,omitempty"`
+}
+
+type KymaMappingsCredentials struct {
+	OutboundCommunication KymaMappingsOutboundCommunication `json:"outboundCommunication"`
+}
+
+type KymaMappingsConfiguration struct {
+	Credentials KymaMappingsCredentials `json:"credentials"`
+}
+
+type KymaMappingsResponseBody struct {
+	State         string                    `json:"state"`
+	Configuration KymaMappingsConfiguration `json:"configuration"`
+}
+
 // FormationAssignmentState is a type that represents formation assignments state
 type FormationAssignmentState string
 
@@ -653,6 +682,37 @@ func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
 		operation = DeleteFormation
 	}
 	h.asyncFormationResponse(writer, r, operation, "", NoopFormationResponseFn)
+}
+
+func (h *Handler) KymaBasicCredentials(writer http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPatch {
+		username := "user"
+		password := "pass"
+		response := KymaMappingsResponseBody{
+			State:         string(ReadyAssignmentState),
+			Configuration: KymaMappingsConfiguration{Credentials: KymaMappingsCredentials{OutboundCommunication: KymaMappingsOutboundCommunication{BasicAuthentication: KymaMappingsBasicAuthentication{Username: username, Password: password}}}},
+		}
+
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	} else if r.Method == http.MethodDelete {
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func (h *Handler) KymaOauthCredentials(writer http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPatch {
+		tokenUrl := "url"
+		clientId := "id"
+		clientSecret := "secret"
+		response := KymaMappingsResponseBody{
+			State:         string(ReadyAssignmentState),
+			Configuration: KymaMappingsConfiguration{Credentials: KymaMappingsCredentials{OutboundCommunication: KymaMappingsOutboundCommunication{OauthAuthentication: KymaMappingsOauthAuthentication{TokenServiceUrl: tokenUrl, ClientId: clientId, ClientSecret: clientSecret}}}},
+		}
+
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	} else if r.Method == http.MethodDelete {
+		writer.WriteHeader(http.StatusOK)
+	}
 }
 
 // executeFormationStatusUpdateRequest prepares a request with the given inputs and sends it to the formation status API

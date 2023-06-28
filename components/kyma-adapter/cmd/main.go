@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	gqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/director_gql_client"
+
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/handler"
 
 	"github.com/gorilla/mux"
@@ -77,10 +79,13 @@ func main() {
 	adapter.Use(tokenValidationMiddleware.KymaAdapterHandler())
 	adapter.Use(tenantValidationMiddleware.Handler())
 
-	gqlClient := graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient))
-	a := handler.AdapterHandler{DirectorGqlClient: gqlClient}
+	directorGqlClient := gqlClient.Client{Client: graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient))}
+	directorGqlClient.Log = func(s string) {
+		log.D().Info(s)
+	}
+	a := handler.AdapterHandler{DirectorGqlClient: directorGqlClient}
 
-	adapter.HandleFunc("/", a.HandlerFunc)
+	adapter.HandleFunc(cfg.APITenantMappingsEndpoint, a.HandlerFunc).Methods(http.MethodPatch)
 	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)

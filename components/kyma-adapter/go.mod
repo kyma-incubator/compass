@@ -3,6 +3,8 @@ module github.com/kyma-incubator/compass/components/kyma-adapter
 go 1.18
 
 require (
+	github.com/go-openapi/runtime v0.25.0
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20230531080032-40c3e4ac143e
 	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230505075253-b6e2a3035e6a
@@ -24,7 +26,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
-	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

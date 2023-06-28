@@ -340,6 +340,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncDeleteFormation).Methods(http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async-no-response/{uclFormationId}", notificationHandler.AsyncNoResponse).Methods(http.MethodPost, http.MethodDelete)
+	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
+	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),

@@ -267,6 +267,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_KYMA_ADAPTER_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}:443"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

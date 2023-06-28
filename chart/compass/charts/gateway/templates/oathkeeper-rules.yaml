@@ -492,7 +492,7 @@ spec:
     - DELETE
     - PATCH
     - POST
-    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.kymaAdapter.apiRootPath }}/
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.kymaAdapter.apiRootPath }}/<.*>
   authenticators:
     - handler: noop
   authorizer:
