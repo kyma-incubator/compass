@@ -403,7 +403,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 		ctx = persistence.SaveToContext(ctx, tx)
 
 		log.C(ctx).Infof("Starting asynchronous resynchronization for formation with ID: %q and name: %q...", f.ID, f.Name)
-		if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, f.ID); err != nil {
+		if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, f.ID, false); err != nil {
 			log.C(ctx).WithError(err).Errorf("while resynchronize formation notifications for formation with ID: %q", f.ID)
 			return
 		}
