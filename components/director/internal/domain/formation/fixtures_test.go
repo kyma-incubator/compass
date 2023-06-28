@@ -1031,6 +1031,12 @@ func fixFormationTemplateModel() *model.FormationTemplate {
 	}
 }
 
+func fixFormationTemplateModelThatSupportsReset() *model.FormationTemplate {
+	ftModel := fixFormationTemplateModel()
+	ftModel.SupportsReset = true
+	return ftModel
+}
+
 func fixApplicationModelWithoutTemplate(applicationID string) *model.Application {
 	appModel := fixApplicationModel(applicationID)
 	appModel.ApplicationTemplateID = nil

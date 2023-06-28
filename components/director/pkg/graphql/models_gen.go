@@ -598,6 +598,7 @@ type FormationTemplateInput struct {
 	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
+	SupportsReset          *bool           `json:"supportsReset"`
 }
 
 type FormationTemplatePage struct {

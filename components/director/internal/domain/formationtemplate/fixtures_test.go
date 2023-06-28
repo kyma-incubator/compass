@@ -39,6 +39,7 @@ var (
 	applicationTypes            = []string{"some-application-type"}
 	runtimeTypes                = []string{"some-runtime-type"}
 	leadingProductIDs           = []string{"leading-product-id", "leading-product-id-2"}
+	shouldReset                 = true
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
@@ -48,6 +49,16 @@ var (
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixModelWebhookInput(),
 	}
+	formationTemplateModelWithResetInput = model.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		Webhooks:               fixModelWebhookInput(),
+		SupportsReset:          shouldReset,
+	}
 	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
@@ -56,6 +67,16 @@ var (
 		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixGQLWebhookInput(),
+	}
+	formationTemplateWithResetGraphQLInput = graphql.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		Webhooks:               fixGQLWebhookInput(),
+		SupportsReset:          &shouldReset,
 	}
 
 	formationTemplateModelInputAppOnly = model.FormationTemplateInput{
