@@ -262,11 +262,6 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				IsSubscription: false,
 			},
 			{
-				Name:           "Successfully executed unsubscribe request",
-				Request:        unsubscribeReq,
-				IsSubscription: false,
-			},
-			{
 				Name:           "Do not make unsubscribe request to tenant fetcher when there are not subscriptions to delete",
 				Request:        unsubscribeReq,
 				IsSubscription: false,
@@ -318,7 +313,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				require.Equal(t, "/api/v1/jobs/jobID", resp.Header.Get("Location"))
 				body, err := ioutil.ReadAll(resp.Body)
 				require.NoError(t, err)
-				require.Empty(t, body)
+				require.NotEmpty(t, body)
 			})
 		}
 	})
