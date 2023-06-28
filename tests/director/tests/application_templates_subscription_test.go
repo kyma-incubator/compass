@@ -483,7 +483,7 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+		appTemplateInput := fixAppTemplateInputWithDistinguishLabel(appTemplateName, conf.SelfRegisterDirectDependencyDistinguishLabelValue)
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}

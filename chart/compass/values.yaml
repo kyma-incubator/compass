@@ -1174,6 +1174,7 @@ global:
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
+      directDependencySubscriptionProviderIdValue: "direct-dep-id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
       indirectDependencySubscriptionProviderAppNameValue: "indirectDependencySubscriptionProviderAppNameValue"
     namespace: kyma-system
