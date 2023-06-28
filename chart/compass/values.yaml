@@ -151,7 +151,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3144"
+      version: "PR-3121"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
@@ -412,6 +412,7 @@ global:
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     protocol: HTTP
+    tlsOrigination: false
     host: compass-external-services-mock.compass-system.svc.cluster.local
     port: 8080
     mtlsTokenPath: "/cert/token"
