@@ -514,7 +514,7 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 		log.C(ctx).WithError(err).Infof("An error occurred while deleting the assignment with ID: %q with constraints", fa.ID)
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Infof("Assignment with ID %q has already been deleted", fa.ID)
-			return false, nil
+			return true, nil
 		}
 
 		if updateError := h.faService.SetAssignmentToErrorState(ctx, fa, err.Error(), formationassignment.TechnicalError, model.DeleteErrorAssignmentState); updateError != nil {

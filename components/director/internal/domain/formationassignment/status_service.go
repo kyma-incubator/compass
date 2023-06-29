@@ -102,6 +102,7 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	}
 
 	fa.State = string(model.ReadyAssignmentState)
+	fa.Value = nil
 	if err := fau.repo.Update(ctx, fa); err != nil {
 		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}

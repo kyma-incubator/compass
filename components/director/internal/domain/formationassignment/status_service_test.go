@@ -338,8 +338,8 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PreNotificationStatusReturned)
 	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PostNotificationStatusReturned)
 
-	faWithReadyState := fixFormationAssignmentModelWithFormationID(TestFormationID)
-	faWithReadyState.State = string(model.ReadyAssignmentState)
+	faWithReadyStateAndNoConfig := fixFormationAssignmentModel(nil)
+	faWithReadyStateAndNoConfig.State = string(model.ReadyAssignmentState)
 
 	// GIVEN
 	testCases := []struct {
@@ -359,7 +359,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(nil).Once()
-				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -398,7 +398,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
-				repo.On("Update", ctxWithTenant, faWithReadyState).Return(testErr).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErrorMsg: testErr.Error(),
@@ -410,8 +410,8 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(nil).Once()
-				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -434,8 +434,8 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
-				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -457,7 +457,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
-				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -479,7 +479,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
-				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyStateAndNoConfig).Return(nil).Once()
 				return repo
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
