@@ -87,13 +87,8 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		FormationAssignmentID: &formationAssignment.ID,
 	}
 
-	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
-			return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
-		}
-		return nil
-	}); transactionErr != nil {
-		return transactionErr
+	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
+		return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
 	}
 
 	return nil
@@ -115,28 +110,23 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		return err
 	}
 
-	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
-		}
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+	}
 
-		destModel := &model.Destination{
-			ID:                    s.uidSvc.Generate(),
-			Name:                  basicReqBody.Name,
-			Type:                  string(basicReqBody.Type),
-			URL:                   basicReqBody.URL,
-			Authentication:        string(basicReqBody.AuthenticationType),
-			SubaccountID:          t.ID,
-			FormationAssignmentID: &formationAssignment.ID,
-		}
+	destModel := &model.Destination{
+		ID:                    s.uidSvc.Generate(),
+		Name:                  basicReqBody.Name,
+		Type:                  string(basicReqBody.Type),
+		URL:                   basicReqBody.URL,
+		Authentication:        string(basicReqBody.AuthenticationType),
+		SubaccountID:          t.ID,
+		FormationAssignmentID: &formationAssignment.ID,
+	}
 
-		if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
-			return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
-		}
-		return nil
-	}); transactionErr != nil {
-		return transactionErr
+	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
+		return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
 	}
 
 	return nil
@@ -168,13 +158,8 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		FormationAssignmentID: &formationAssignment.ID,
 	}
 
-	if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
-			return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
-		}
-		return nil
-	}); transactionErr != nil {
-		return transactionErr
+	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
+		return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
 	}
 
 	return nil
@@ -214,36 +199,10 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *m
 			return err
 		}
 
-		if transactionErr := s.transaction(ctx, func(ctxWithTransact context.Context) error {
-			if err := s.destinationRepo.DeleteByDestinationNameAndAssignmentID(ctx, destination.Name, formationAssignmentID, t.ID); err != nil {
-				return errors.Wrapf(err, "while deleting destination(s) by name: %q, internal tenant ID: %q and assignment ID: %q from the DB", destination.Name, t.ID, formationAssignmentID)
-			}
-			return nil
-		}); transactionErr != nil {
-			return transactionErr
+		if err := s.destinationRepo.DeleteByDestinationNameAndAssignmentID(ctx, destination.Name, formationAssignmentID, t.ID); err != nil {
+			return errors.Wrapf(err, "while deleting destination(s) by name: %q, internal tenant ID: %q and assignment ID: %q from the DB", destination.Name, t.ID, formationAssignmentID)
 		}
 	}
 
-	return nil
-}
-
-func (s *Service) transaction(ctx context.Context, dbCall func(ctxWithTransact context.Context) error) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to begin DB transaction")
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err = dbCall(ctx); err != nil {
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("Failed to commit database transaction")
-		return err
-	}
 	return nil
 }
