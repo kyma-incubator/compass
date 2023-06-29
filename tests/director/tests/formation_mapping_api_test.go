@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -16,15 +15,13 @@ import (
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -177,38 +174,10 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
-		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
-		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
-		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
-
-		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
-		// In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
-		resp, err := httpClient.Do(subscribeReq)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-
-		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
-		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
-		require.Eventually(t, func() bool {
-			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
-		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
+		createRuntimeSubscription(t, ctx, httpClient, providerRuntime, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, true, subscription.StandardFlow)
 
 		rtmRequest := fixtures.FixGetRuntimeContextsRequest(providerRuntime.ID)
 		rtm := graphql.RuntimeExt{}
@@ -400,8 +369,8 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, false)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
+		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
 
 		actualAppPage := graphql.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()

@@ -287,7 +287,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 				if testCase.isIndirectDep {
-					req.Header.Add("isIndirectDependency", "true")
+					req.Header.Add(subscriptionFlowHeaderKey, standardFlow)
 				}
 				req = mux.SetURLVars(req, map[string]string{"app_name": appName})
 

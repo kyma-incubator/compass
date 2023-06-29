@@ -19,6 +19,7 @@ type Config struct {
 	TenantPathParam                         string
 	RegionPathParam                         string
 	SubscriptionProviderID                  string
+	DirectDependencySubscriptionProviderID  string
 	TenantFetcherFullRegionalURL            string `envconfig:"-"`
 	TestConsumerAccountID                   string
 	TestConsumerSubaccountID                string
