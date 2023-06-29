@@ -338,6 +338,9 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 	preJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PreNotificationStatusReturned)
 	postJoinPointDetails := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, fa, reverseFa, formationconstraint.PostNotificationStatusReturned)
 
+	faWithReadyState := fixFormationAssignmentModelWithFormationID(TestFormationID)
+	faWithReadyState.State = string(model.ReadyAssignmentState)
+
 	// GIVEN
 	testCases := []struct {
 		Name                    string
@@ -356,6 +359,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -371,6 +375,35 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			},
 		},
 		{
+			Name:             "Returns error when there is no tenant in the context",
+			Context:          emptyCtx,
+			InputID:          TestID,
+			ExpectedErrorMsg: "while loading tenant from context",
+		},
+		{
+			Name:    "Returns error when can't get the formation assignment",
+			Context: ctxWithTenant,
+			InputID: TestID,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:    "Returns error when can't update the formation assignment",
+			Context: ctxWithTenant,
+			InputID: TestID,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyState).Return(testErr).Once()
+				return repo
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
 			Name:    "Returns error when can't enforce post constraints",
 			Context: ctxWithTenant,
 			InputID: TestID,
@@ -378,6 +411,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -401,6 +435,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
 				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -422,6 +457,7 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
@@ -443,23 +479,13 @@ func TestStatusService_DeleteWithConstraints(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(fa, nil).Once()
+				repo.On("Update", ctxWithTenant, faWithReadyState).Return(nil).Once()
 				return repo
 			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
 				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.UnassignFormation).Return(nil, testErr).Once()
 				return notificationSvc
-			},
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:    "Returns error when can't get the formation assignment",
-			Context: ctxWithTenant,
-			InputID: TestID,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(nil, testErr).Once()
-				return repo
 			},
 			ExpectedErrorMsg: testErr.Error(),
 		},
