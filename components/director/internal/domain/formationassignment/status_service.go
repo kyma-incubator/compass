@@ -101,6 +101,11 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while getting formation assignment with id %q for tenant with id %q", id, tenantID)
 	}
 
+	fa.State = string(model.ReadyAssignmentState)
+	if err := fau.repo.Update(ctx, fa); err != nil {
+		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
+	}
+
 	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
