@@ -25,6 +25,11 @@ const (
 	subscribedProviderIdValue           = "subscribedProviderID"
 	subscribedProviderAppNameValue      = "subscribedProviderAppName"
 	subscribedProviderSubaccountIdValue = "subscribedProviderSubaccountID"
+	standardFlow                        = "standard"
+	directDependencyFlow                = "direct dependency"
+	indirectDependencyFlow              = "indirect dependency"
+	// subscriptionFlowHeaderKey is the key for header in which the subscription flow for local test execution is specified
+	subscriptionFlowHeaderKey = "subscriptionFlow"
 )
 
 type handler struct {
@@ -167,7 +172,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusBadRequest, "", errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
-	isIndirectDependency := r.Header.Get("isIndirectDependency")
+	subscriptionFlow := r.Header.Get(subscriptionFlowHeaderKey)
 	subscriptionID := getSubscriptionID(httpMethod, appName)
 	if subscriptionID == "" {
 		return http.StatusOK, "", nil
@@ -175,7 +180,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, isIndirectDependency)
+	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, subscriptionFlow)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, "", errors.Wrap(err, "while creating subscription request")
@@ -215,7 +220,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	return http.StatusOK, subscriptionID, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, isIndirectDependency string) (*http.Request, error) {
+func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, subscriptionFlow string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -246,7 +251,13 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	body, err = sjson.Set(body, h.providerConfig.DependentServiceInstancesInfoProperty, []map[string]string{{h.providerConfig.DependentServiceInstancesInfoAppIDProperty: h.tenantConfig.SubscriptionProviderID, h.providerConfig.DependentServiceInstancesInfoAppNameProperty: h.tenantConfig.SubscriptionProviderAppNameValue, h.providerConfig.DependentServiceInstancesInfoProviderSubaccountIDProperty: providerSubaccID}})
+	subscribedProviderId := ""
+	if subscriptionFlow == standardFlow {
+		subscribedProviderId = h.tenantConfig.SubscriptionProviderID
+	} else {
+		subscribedProviderId = h.tenantConfig.DirectDependencySubscriptionProviderID
+	}
+	body, err = sjson.Set(body, h.providerConfig.DependentServiceInstancesInfoProperty, []map[string]string{{h.providerConfig.DependentServiceInstancesInfoAppIDProperty: subscribedProviderId, h.providerConfig.DependentServiceInstancesInfoAppNameProperty: h.tenantConfig.SubscriptionProviderAppNameValue, h.providerConfig.DependentServiceInstancesInfoProviderSubaccountIDProperty: providerSubaccID}})
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
@@ -269,13 +280,18 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
-	if isIndirectDependency != "" { // is indirect dependency
+	if subscriptionFlow == indirectDependencyFlow { // is indirect dependency
 		body, err = h.setProviderValues(body, subscribedProviderIdValue, subscribedProviderAppNameValue, subscribedProviderSubaccountIdValue)
 		if err != nil {
 			return nil, err
 		}
-	} else { // is direct dependency
+	} else if subscriptionFlow == standardFlow { // is direct dependency
 		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
+		if err != nil {
+			return nil, err
+		}
+	} else if subscriptionFlow == directDependencyFlow {
+		body, err = h.setProviderValues(body, h.tenantConfig.DirectDependencySubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
 		if err != nil {
 			return nil, err
 		}
