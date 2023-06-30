@@ -83,7 +83,7 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	input := fixRuntimeInput("runtime-eventing")
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
-	//defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
