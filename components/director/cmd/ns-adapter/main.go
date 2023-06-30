@@ -103,11 +103,7 @@ func main() {
 	mtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache, conf.ExternalClientCertSecretName)
 	extSvcMtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache, conf.ExtSvcClientCertSecretName)
 
-	uidSvc := uid.NewService()
-
 	tenantConv := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConv)
-
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -126,7 +122,13 @@ func main() {
 	runtimeContextConverter := runtimectx.NewConverter()
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
+	assignmentConv := scenarioassignment.NewConverter()
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	formationConstraintConverter := formationconstraint.NewConverter()
+	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	formationAssignmentConv := formationassignment.NewConverter()
 
+	tenantRepo := tenant.NewRepository(tenantConv)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -143,10 +145,15 @@ func main() {
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
-
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
+	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+
+	uidSvc := uid.NewService()
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider(certCache, conf.ExternalClientCertSecretName, conf.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -154,25 +161,12 @@ func main() {
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConv)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-
-	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
-	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
-
-	formationConstraintConverter := formationconstraint.NewConverter()
-	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
-
-	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
-	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
-
-	formationAssignmentConv := formationassignment.NewConverter()
-	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
 	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tntSvc, scenarioAssignmentSvc, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)

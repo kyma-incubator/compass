@@ -2,7 +2,6 @@ package bundle_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/bundletest"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer/consumertest"
 	"testing"
@@ -1125,12 +1124,12 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			repo := bundletest.UnusedBundleRepository()
+			repo := UnusedBundleRepository()
 			if testCase.RepositoryFn != nil {
 				repo = testCase.RepositoryFn()
 			}
 
-			biaSvc := bundletest.UnusedBundleInstanceAuthService()
+			biaSvc := UnusedBundleInstanceAuthService()
 			if testCase.BIASvcFn != nil {
 				biaSvc = testCase.BIASvcFn()
 			}

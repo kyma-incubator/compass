@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 
 	"time"
 
@@ -631,4 +632,14 @@ func fixBasicModelBundle(id, name string) *model.Bundle {
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
+}
+
+// UnusedBundleRepository returns BundleRepository mock that does not expect to be invoked
+func UnusedBundleRepository() *automock.BundleRepository {
+	return &automock.BundleRepository{}
+}
+
+// UnusedBundleInstanceAuthService returns BundleInstanceAuthService mock that does not expect to be invoked
+func UnusedBundleInstanceAuthService() *automock.BundleInstanceAuthService {
+	return &automock.BundleInstanceAuthService{}
 }
