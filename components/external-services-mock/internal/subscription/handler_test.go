@@ -313,7 +313,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				require.Equal(t, "/api/v1/jobs/jobID", resp.Header.Get("Location"))
 				body, err := ioutil.ReadAll(resp.Body)
 				require.NoError(t, err)
-				require.NotEmpty(t, body)
+				require.Empty(t, body)
 			})
 		}
 	})
