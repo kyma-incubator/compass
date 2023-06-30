@@ -45,7 +45,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230627070240-51e4cac94e94
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230630113916-f8e7fa356af9
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
