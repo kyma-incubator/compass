@@ -248,7 +248,6 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
-	fmt.Printf("subscriptions: %v", Subscriptions)
 
 	body, err = sjson.Set(body, h.providerConfig.LicenseTypeProperty, DefaultLicenseType)
 	if err != nil {
@@ -262,18 +261,19 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
-	if subscriptionFlow == indirectDependencyFlow { // is indirect dependency
+	if subscriptionFlow == indirectDependencyFlow { // indirect dependency flow: Indirect dependency SAAS app <- direct dependency SAAS app <- CMP
+		fmt.Printf("subscriptions: %v", Subscriptions)
 		body, err = h.setProviderValues(body, subscribedProviderIdValue, subscribedProviderAppNameValue, subscribedProviderSubaccountIdValue)
 		if err != nil {
 			return nil, err
 		}
-	} else if subscriptionFlow == standardFlow { // is direct dependency
-		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
+	} else if subscriptionFlow == directDependencyFlow { // indirect dependency flow: Indirect dependency SAAS app <- direct dependency SAAS app <- CMP
+		body, err = h.setProviderValues(body, h.tenantConfig.DirectDependencySubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
 		if err != nil {
 			return nil, err
 		}
-	} else if subscriptionFlow == directDependencyFlow {
-		body, err = h.setProviderValues(body, h.tenantConfig.DirectDependencySubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
+	} else if subscriptionFlow == standardFlow { // standard dependency flow: SAAS app <- CMP
+		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
 		if err != nil {
 			return nil, err
 		}

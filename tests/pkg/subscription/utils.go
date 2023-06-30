@@ -24,7 +24,6 @@ const (
 	EventuallyTimeout         = 60 * time.Second
 	EventuallyTick            = 2 * time.Second
 	SubscriptionsLabelKey     = "subscriptions"
-	subscriptionGUIDPath      = "subscriptionGUID"
 	// StandardFlow subscribes to saas-instance which has CMP declared as dependency
 	StandardFlow = "standard"
 	// DirectDependencyFlow is used in subscription tests for subscribing to a SAAS applications that have CMP as indirect dependency.

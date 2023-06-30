@@ -32,7 +32,6 @@ const (
 	baseURLTemplate       = "http://%s.%s.subscription.com"
 	regionPrefix          = "cf-"
 	subscriptionsLabelKey = "subscriptions"
-	subscriptionGUIDPath  = "subscriptionGUID"
 )
 
 func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
