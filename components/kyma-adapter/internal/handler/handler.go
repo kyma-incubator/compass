@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/tenant_mapping_request"
 
 	"github.com/go-openapi/runtime/middleware/header"
-	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -20,9 +19,6 @@ import (
 )
 
 const (
-	// TenantIdParam is tenant-id URL path parameter placeholder
-	TenantIdParam = "tenant-id"
-
 	assignOperation   = "assign"
 	unassignOperation = "unassign"
 
@@ -59,14 +55,7 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while validating the request body"))
 		return
 	}
-
-	routeVars := mux.Vars(r)
-	tenantId := routeVars[TenantIdParam]
-
-	if tenantId == "" {
-		respondWithError(ctx, w, http.StatusBadRequest, "", errors.Errorf("Missing required parameter: %q", tenantId))
-		return
-	}
+	tenantId := reqBody.ReceiverTenant.OwnerTenant
 	log.C(ctx).Infof("The request has tenant with id %q", tenantId)
 
 	if reqBody.Context.Operation == assignOperation {

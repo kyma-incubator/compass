@@ -41,6 +41,7 @@ type Configuration struct {
 
 type ReceiverTenant struct {
 	UclSystemTenantId string `json:"uclSystemTenantId,omitempty"`
+	OwnerTenant       string `json:"ownerTenant,omitempty"`
 }
 
 type AssignedTenant struct {
@@ -57,6 +58,10 @@ type Body struct {
 func (b Body) Validate() error {
 	if b.Context.Operation != assignOperation && b.Context.Operation != unassignOperation {
 		return apperrors.NewInvalidDataError(fmt.Sprintf("Context operation must be either %q or %q", assignOperation, unassignOperation))
+	}
+
+	if len(b.ReceiverTenant.OwnerTenant) == 0 {
+		return apperrors.NewInvalidDataError("Receiver tenant owner tenant must be provided.")
 	}
 
 	if b.GetApplicationConfiguration() != (Configuration{}) {
