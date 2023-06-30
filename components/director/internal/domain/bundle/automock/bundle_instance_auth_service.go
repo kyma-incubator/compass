@@ -60,6 +60,29 @@ func (_m *BundleInstanceAuthService) List(ctx context.Context, id string) ([]*mo
 	return r0, r1
 }
 
+// ListByRuntimeID provides a mock function with given fields: ctx, runtimeID
+func (_m *BundleInstanceAuthService) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error) {
+	ret := _m.Called(ctx, runtimeID)
+
+	var r0 []*model.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BundleInstanceAuth); ok {
+		r0 = rf(ctx, runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BundleInstanceAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewBundleInstanceAuthService interface {
 	mock.TestingT
 	Cleanup(func())
