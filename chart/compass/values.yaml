@@ -1245,6 +1245,7 @@ global:
         - "webhook:write"
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
+        - "certificate_subject_mapping:read"
       managed_application_consumer: []
       landscape_resource_operator:
         - "application:read"
