@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"regexp"
 	"strings"
 
@@ -417,7 +418,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if appCreateInputModel.Labels == nil {
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
-	appCreateInputModel.Labels["managed"] = "false"
+
+	if _, exists := appCreateInputModel.Labels[application.ManagedLabelKey]; !exists {
+		appCreateInputModel.Labels[application.ManagedLabelKey] = "false"
+	}
 
 	if convertedIn.Labels != nil {
 		for k, v := range in.Labels {
