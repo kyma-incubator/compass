@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -417,7 +419,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if appCreateInputModel.Labels == nil {
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
-	appCreateInputModel.Labels["managed"] = "false"
+
+	if _, exists := appCreateInputModel.Labels[application.ManagedLabelKey]; !exists {
+		appCreateInputModel.Labels[application.ManagedLabelKey] = "false"
+	}
 
 	if convertedIn.Labels != nil {
 		for k, v := range in.Labels {

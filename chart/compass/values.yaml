@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3140"
+      version: "PR-3155"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -1245,6 +1245,7 @@ global:
         - "webhook:write"
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
+        - "certificate_subject_mapping:read"
       managed_application_consumer: []
       landscape_resource_operator:
         - "application:read"
