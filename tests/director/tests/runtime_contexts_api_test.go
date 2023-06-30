@@ -165,19 +165,22 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		FirstSubscriptionFlow       string
 		SecondSubscriptionFlow      string
 		SubscriptionProviderID      string
-		SubscriptionProviderAppName string
+		SubscribedToProviderAppName string // this is provider app name which we subscribe for
+		ExpectedProviderAppName     string // this is the value of runtimeType label of the runtime from which we create runtime context. For the tests where we are subscribing for an indirect dependency this should be the app name of the direct dependency.
 	}{
 		{
 			FirstSubscriptionFlow:       subscription.StandardFlow,
 			SecondSubscriptionFlow:      subscription.StandardFlow,
 			SubscriptionProviderID:      conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			SubscriptionProviderAppName: conf.SubscriptionProviderAppNameValue,
+			SubscribedToProviderAppName: conf.SubscriptionProviderAppNameValue,
+			ExpectedProviderAppName:     conf.SubscriptionProviderAppNameValue,
 		},
 		{
 			FirstSubscriptionFlow:       subscription.IndirectDependencyFlow,
 			SecondSubscriptionFlow:      subscription.DirectDependencyFlow,
 			SubscriptionProviderID:      conf.SelfRegisterDirectDependencyDistinguishLabelValue,
-			SubscriptionProviderAppName: conf.IndirectDependencySubscriptionProviderAppNameValue,
+			SubscribedToProviderAppName: conf.IndirectDependencySubscriptionProviderAppNameValue,
+			ExpectedProviderAppName:     conf.DirectDependencySubscriptionProviderAppNameValue,
 		},
 	}
 
@@ -236,9 +239,9 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			require.Equal(t, http.StatusOK, response.StatusCode)
 
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testCase.SubscriptionProviderAppName)
+			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testCase.SubscribedToProviderAppName)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow)
-			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscriptionProviderAppName, true, testCase.FirstSubscriptionFlow)
+			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, true, testCase.FirstSubscriptionFlow)
 
 			t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
 			consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
@@ -247,7 +250,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			t.Log("Assert subscription provider application name label of the provider runtime exists and it is the correct one")
 			subProviderAppNameValue, ok := consumerSubaccountRuntime.Labels[conf.RuntimeTypeLabelKey].(string)
 			require.True(t, ok)
-			require.Equal(t, conf.SubscriptionProviderAppNameValue, subProviderAppNameValue)
+			require.Equal(t, testCase.ExpectedProviderAppName, subProviderAppNameValue)
 
 			t.Log("Assert there is a runtime context(subscription) as part of the provider runtime")
 			require.Len(t, consumerSubaccountRuntime.RuntimeContexts.Data, 1)
@@ -342,10 +345,10 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			require.Equal(t, http.StatusOK, response.StatusCode)
 
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testCase.SubscriptionProviderAppName)
+			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testCase.SubscribedToProviderAppName)
 
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow)
-			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscriptionProviderAppName, true, testCase.FirstSubscriptionFlow)
+			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, true, testCase.FirstSubscriptionFlow)
 
 			t.Log("Assert the runtime context has subscriptions label")
 			assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, 1)
@@ -353,7 +356,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			t.Logf("Creating a second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.SecondSubscriptionFlow)
-			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscriptionProviderAppName, false, testCase.SecondSubscriptionFlow)
+			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, false, testCase.SecondSubscriptionFlow)
 			t.Logf("Successfully created second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
 			t.Log("Assert runtime context subscriptions label has new value added")

@@ -55,6 +55,7 @@ type DirectorConfig struct {
 	TokenPath                                          string
 	SubscriptionProviderAppNameValue                   string
 	IndirectDependencySubscriptionProviderAppNameValue string `envconfig:"APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
+	DirectDependencySubscriptionProviderAppNameValue   string `envconfig:"APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
 	ConsumerSubaccountLabelKey                         string
 	SubscriptionLabelKey                               string
 	RuntimeTypeLabelKey                                string

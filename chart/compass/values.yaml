@@ -1177,6 +1177,7 @@ global:
       directDependencySubscriptionProviderIdValue: "direct-dep-id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
       indirectDependencySubscriptionProviderAppNameValue: "indirectDependencySubscriptionProviderAppNameValue"
+      directDependencySubscriptionProviderAppNameValue: "subscriptionProviderAppNameValue" # this is used for real env tests where there is a dedicated SAAS svc instance for the indirect dependency flow
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local

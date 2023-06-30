@@ -202,6 +202,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
             - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
             - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
               value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
