@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -44,17 +45,19 @@ type service struct {
 	apiSvc      APIService
 	eventSvc    EventService
 	documentSvc DocumentService
+	biaSvc      BundleInstanceAuthService
 
 	uidService UIDService
 }
 
 // NewService missing godoc
-func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
+func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, biaSvc BundleInstanceAuthService, uidService UIDService) *service {
 	return &service{
 		bndlRepo:    bndlRepo,
 		apiSvc:      apiSvc,
 		eventSvc:    eventSvc,
 		documentSvc: documentSvc,
+		biaSvc:      biaSvc,
 		uidService:  uidService,
 	}
 }
@@ -201,11 +204,54 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 		return nil, err
 	}
 
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
+	bundlePages, err := s.bndlRepo.ListByApplicationIDs(ctx, tnt, applicationIDs, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	// override the default instance auth only for runtime consumers
+	if consumerInfo.ConsumerType != consumer.Runtime {
+		return bundlePages, nil
+	}
+
+	bundleInstanceAuths, err := s.biaSvc.ListByRuntimeID(ctx, consumerInfo.ConsumerID)
+	if err != nil {
+		return nil, err
+	}
+
+	bundlesCount := 0
+	for _, page := range bundlePages {
+		bundlesCount += len(page.Data)
+	}
+
+	bundleIDToBundleInstanceAuths := make(map[string][]*model.BundleInstanceAuth, bundlesCount)
+	for i, auth := range bundleInstanceAuths {
+		if _, ok := bundleIDToBundleInstanceAuths[auth.BundleID]; !ok {
+			bundleIDToBundleInstanceAuths[auth.BundleID] = []*model.BundleInstanceAuth{bundleInstanceAuths[i]}
+		} else {
+			bundleIDToBundleInstanceAuths[auth.BundleID] = append(bundleIDToBundleInstanceAuths[auth.BundleID], bundleInstanceAuths[i])
+		}
+	}
+
+	for _, page := range bundlePages {
+		for _, bundle := range page.Data {
+			if auths, ok := bundleIDToBundleInstanceAuths[bundle.ID]; ok {
+				log.C(ctx).Infof("Overrinding default instance auth for bundle with ID: %s", bundle.ID)
+				bundle.DefaultInstanceAuth = auths[0].Auth
+			}
+		}
+	}
+
+	return bundlePages, nil
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID string, resourceType resource.Type, resourceID string) error {
