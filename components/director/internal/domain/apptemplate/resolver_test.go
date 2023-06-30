@@ -1259,7 +1259,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(testName)
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
-	modelAppWithLabelCreateInput := fixModelApplicationWithLabelCreateInput(testName)
+	modelAppWithLabelCreateInput := fixModelApplicationWithManagedLabelCreateInput(testName, "false")
 	modelAppWithManagedTrueLabelCreateInput := fixModelApplicationWithManagedLabelCreateInput(testName, "true")
 	gqlAppCreateInput := fixGQLApplicationCreateInput(testName)
 	gqlAppCreateWithManagedTrueLabelInput := fixGQLApplicationCreateWithManagedTrueLabelInput(testName, "true")

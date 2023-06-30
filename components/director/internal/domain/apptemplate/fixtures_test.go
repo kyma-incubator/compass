@@ -569,15 +569,6 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 	}
 }
 
-func fixModelApplicationWithLabelCreateInput(name string) model.ApplicationRegisterInput {
-	return model.ApplicationRegisterInput{
-		Name:           name,
-		Description:    &testDescription,
-		HealthCheckURL: &testURL,
-		Labels:         map[string]interface{}{application.ManagedLabelKey: "false", "key": "value"},
-	}
-}
-
 func fixModelApplicationWithManagedLabelCreateInput(name, managedLabel string) model.ApplicationRegisterInput {
 	return model.ApplicationRegisterInput{
 		Name:           name,
