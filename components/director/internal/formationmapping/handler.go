@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -143,6 +145,12 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	if fa.State == string(model.DeletingAssignmentState) {
 		isFADeleted, err := h.processFormationAssignmentUnassignStatusUpdate(ctx, fa, reqBody)
 		if err != nil {
+			if commitErr := tx.Commit(); commitErr != nil {
+				log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+				return
+			}
+
 			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation assignment staus update for %q operation", model.UnassignFormation)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
@@ -469,6 +477,16 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 	}
 
 	if err := h.faStatusService.DeleteWithConstraints(ctx, fa.ID); err != nil {
+		log.C(ctx).WithError(err).Infof("An error occurred while deleting the assignment with ID: %q with constraints", fa.ID)
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("Assignment with ID %q has already been deleted", fa.ID)
+			return true, nil
+		}
+
+		if updateError := h.faService.SetAssignmentToErrorState(ctx, fa, err.Error(), formationassignment.TechnicalError, model.DeleteErrorAssignmentState); updateError != nil {
+			return false, errors.Wrapf(updateError, "while updating error state: %s", errors.Wrapf(err, "while deleting formation assignment with id %q", fa.ID).Error())
+		}
+
 		return false, errors.Wrapf(err, "while deleting formation assignment with ID: %q", fa.ID)
 	}
 
@@ -516,7 +534,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 	}
 
 	log.C(ctx).Infof("Resynchronizing formation with ID: %q and name: %q", formation.ID, formation.Name)
-	if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID); err != nil {
+	if _, err := h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID, false); err != nil {
 		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
 	}
 

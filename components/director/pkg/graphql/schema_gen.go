@@ -100,6 +100,7 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
+		APIDefinition         func(childComplexity int, id string) int
 		ApplicationNamespace  func(childComplexity int) int
 		ApplicationTemplate   func(childComplexity int) int
 		ApplicationTemplateID func(childComplexity int) int
@@ -111,6 +112,7 @@ type ComplexityRoot struct {
 		DeletedAt             func(childComplexity int) int
 		Description           func(childComplexity int) int
 		Error                 func(childComplexity int) int
+		EventDefinition       func(childComplexity int, id string) int
 		EventingConfiguration func(childComplexity int) int
 		HealthCheckURL        func(childComplexity int) int
 		ID                    func(childComplexity int) int
@@ -402,6 +404,7 @@ type ComplexityRoot struct {
 		RuntimeArtifactKind    func(childComplexity int) int
 		RuntimeTypeDisplayName func(childComplexity int) int
 		RuntimeTypes           func(childComplexity int) int
+		SupportsReset          func(childComplexity int) int
 		Webhooks               func(childComplexity int) int
 	}
 
@@ -510,7 +513,7 @@ type ComplexityRoot struct {
 		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
 		RequestOneTimeTokenForApplication            func(childComplexity int, id string, systemAuthID *string) int
 		RequestOneTimeTokenForRuntime                func(childComplexity int, id string, systemAuthID *string) int
-		ResynchronizeFormationNotifications          func(childComplexity int, formationID string) int
+		ResynchronizeFormationNotifications          func(childComplexity int, formationID string, reset *bool) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetBundleInstanceAuth                        func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
@@ -763,6 +766,8 @@ type ApplicationResolver interface {
 
 	Bundles(ctx context.Context, obj *Application, first *int, after *PageCursor) (*BundlePage, error)
 	Bundle(ctx context.Context, obj *Application, id string) (*Bundle, error)
+	APIDefinition(ctx context.Context, obj *Application, id string) (*APIDefinition, error)
+	EventDefinition(ctx context.Context, obj *Application, id string) (*EventDefinition, error)
 	Auths(ctx context.Context, obj *Application) ([]*AppSystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
 }
@@ -849,7 +854,7 @@ type MutationResolver interface {
 	AddDocumentToBundle(ctx context.Context, bundleID string, in DocumentInput) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) (*Document, error)
 	CreateFormation(ctx context.Context, formation FormationInput) (*Formation, error)
-	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*Formation, error)
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*Formation, error)
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
@@ -1137,6 +1142,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AppSystemAuth.Type(childComplexity), true
 
+	case "Application.apiDefinition":
+		if e.complexity.Application.APIDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Application_apiDefinition_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.APIDefinition(childComplexity, args["id"].(string)), true
+
 	case "Application.applicationNamespace":
 		if e.complexity.Application.ApplicationNamespace == nil {
 			break
@@ -1223,6 +1240,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Error(childComplexity), true
+
+	case "Application.eventDefinition":
+		if e.complexity.Application.EventDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Application_eventDefinition_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.EventDefinition(childComplexity, args["id"].(string)), true
 
 	case "Application.eventingConfiguration":
 		if e.complexity.Application.EventingConfiguration == nil {
@@ -2581,6 +2610,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationTemplate.RuntimeTypes(childComplexity), true
 
+	case "FormationTemplate.supportsReset":
+		if e.complexity.FormationTemplate.SupportsReset == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.SupportsReset(childComplexity), true
+
 	case "FormationTemplate.webhooks":
 		if e.complexity.FormationTemplate.Webhooks == nil {
 			break
@@ -3423,7 +3459,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ResynchronizeFormationNotifications(childComplexity, args["formationID"].(string)), true
+		return e.complexity.Mutation.ResynchronizeFormationNotifications(childComplexity, args["formationID"].(string), args["reset"].(*bool)), true
 
 	case "Mutation.setApplicationLabel":
 		if e.complexity.Mutation.SetApplicationLabel == nil {
@@ -5808,6 +5844,7 @@ input FormationTemplateInput {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
+	supportsReset: Boolean
 }
 
 input IntegrationSystemInput {
@@ -6045,6 +6082,8 @@ type Application {
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	applicationNamespace: String
@@ -6370,6 +6409,7 @@ type FormationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
+	supportsReset: Boolean!
 }
 
 type FormationTemplatePage implements Pageable {
@@ -6930,7 +6970,7 @@ type Mutation {
 	**Examples**
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
-	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -7072,6 +7112,7 @@ type Mutation {
 	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
+	- [create formation template with reset](examples/create-formation-template/create-formation-template-with-reset.graphql)
 	- [create formation template with webhooks](examples/create-formation-template/create-formation-template-with-webhooks.graphql)
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
 	"""
@@ -7229,6 +7270,20 @@ func (ec *executionContext) field_ApplicationTemplate_labels_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Application_apiDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Application_bundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -7262,6 +7317,20 @@ func (ec *executionContext) field_Application_bundles_args(ctx context.Context, 
 		}
 	}
 	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Application_eventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -8691,6 +8760,14 @@ func (ec *executionContext) field_Mutation_resynchronizeFormationNotifications_a
 		}
 	}
 	args["formationID"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["reset"]; ok {
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reset"] = arg1
 	return args, nil
 }
 
@@ -11913,6 +11990,82 @@ func (ec *executionContext) _Application_bundle(ctx context.Context, field graph
 	res := resTmp.(*Bundle)
 	fc.Result = res
 	return ec.marshalOBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Application_apiDefinition_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().APIDefinition(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*APIDefinition)
+	fc.Result = res
+	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_eventDefinition(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Application_eventDefinition_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().EventDefinition(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*EventDefinition)
+	fc.Result = res
+	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_auths(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -18088,6 +18241,40 @@ func (ec *executionContext) _FormationTemplate_formationConstraints(ctx context.
 	return ec.marshalOFormationConstraint2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FormationTemplate_supportsReset(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SupportsReset, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -22102,7 +22289,7 @@ func (ec *executionContext) _Mutation_resynchronizeFormationNotifications(ctx co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().ResynchronizeFormationNotifications(rctx, args["formationID"].(string))
+			return ec.resolvers.Mutation().ResynchronizeFormationNotifications(rctx, args["formationID"].(string), args["reset"].(*bool))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.resynchronizeFormationNotifications")
@@ -33136,6 +33323,12 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+		case "supportsReset":
+			var err error
+			it.SupportsReset, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -34201,6 +34394,28 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_bundle(ctx, field, obj)
+				return res
+			})
+		case "apiDefinition":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_apiDefinition(ctx, field, obj)
+				return res
+			})
+		case "eventDefinition":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_eventDefinition(ctx, field, obj)
 				return res
 			})
 		case "auths":
@@ -35806,6 +36021,11 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 				res = ec._FormationTemplate_formationConstraints(ctx, field, obj)
 				return res
 			})
+		case "supportsReset":
+			out.Values[i] = ec._FormationTemplate_supportsReset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

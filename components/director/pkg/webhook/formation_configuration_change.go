@@ -8,28 +8,38 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// TenantWithLabels represents a tenant with its corresponding labels
+type TenantWithLabels struct {
+	*model.BusinessTenantMapping
+	Labels map[string]string
+}
+
 // ApplicationWithLabels represents an application with its corresponding labels
 type ApplicationWithLabels struct {
 	*model.Application
 	Labels map[string]string
+	Tenant *TenantWithLabels
 }
 
 // ApplicationTemplateWithLabels represents an application template with its corresponding labels
 type ApplicationTemplateWithLabels struct {
 	*model.ApplicationTemplate
 	Labels map[string]string
+	Tenant *TenantWithLabels
 }
 
 // RuntimeWithLabels represents a runtime with its corresponding labels
 type RuntimeWithLabels struct {
 	*model.Runtime
 	Labels map[string]string
+	Tenant *TenantWithLabels
 }
 
 // RuntimeContextWithLabels represents runtime context with its corresponding labels
 type RuntimeContextWithLabels struct {
 	*model.RuntimeContext
 	Labels map[string]string
+	Tenant *TenantWithLabels
 }
 
 // CustomerTenantContext represents the tenant hierarchy of the customer creating the formation. Both IDs are the external ones
