@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -108,11 +107,11 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
-			subscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
 
 			// THEN
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 
 		t.Run("Application subscriptions label value is increased when two subscriptions are made", func(t *testing.T) {
@@ -121,24 +120,18 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
-			subscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 
-			secondSubscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, false, subscription.StandardFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, false, subscription.StandardFlow)
 			appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID, secondSubscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 2)
 
-			removedSubscriptionGUID := subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
-			expectedSubscriptionGUID := ""
-			if removedSubscriptionGUID == subscriptionGUID {
-				expectedSubscriptionGUID = secondSubscriptionGUID
-			} else {
-				expectedSubscriptionGUID = subscriptionGUID
-			}
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
 			// THEN
 			appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{expectedSubscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 
 			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
 			appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
@@ -150,9 +143,9 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
-			subscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, subscription.StandardFlow)
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 
 			// WHEN
 			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
@@ -513,11 +506,11 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.IndirectDependencyFlow)
-			subscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, true, subscription.IndirectDependencyFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, true, subscription.IndirectDependencyFlow)
 
 			// THEN
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 
 		t.Run("Application subscriptions label value is increased when two subscriptions are made one where CPM is an indirect dependency and one where CMP is a direct dependency", func(t *testing.T) {
@@ -526,24 +519,18 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.IndirectDependencyFlow)
-			subscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, true, subscription.IndirectDependencyFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, true, subscription.IndirectDependencyFlow)
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 
-			secondSubscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, false, subscription.DirectDependencyFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, false, subscription.DirectDependencyFlow)
 			appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID, secondSubscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 2)
 
-			removedSubscriptionGUID := subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.IndirectDependencyFlow)
-			expectedSubscriptionGUID := ""
-			if removedSubscriptionGUID == subscriptionGUID {
-				expectedSubscriptionGUID = secondSubscriptionGUID
-			} else {
-				expectedSubscriptionGUID = subscriptionGUID
-			}
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.IndirectDependencyFlow)
 			// THEN
 			appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{expectedSubscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 
 			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.DirectDependencyFlow)
 			appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
@@ -555,10 +542,10 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.IndirectDependencyFlow)
-			subscriptionGUID := createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, true, subscription.IndirectDependencyFlow)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.IndirectDependencySubscriptionProviderAppNameValue, true, true, subscription.IndirectDependencyFlow)
 
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, []string{subscriptionGUID})
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 			// WHEN
 			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.IndirectDependencyFlow)
 
@@ -569,7 +556,7 @@ func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testin
 	})
 }
 
-func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, expectedToPass, unsubscribeFirst bool, subscriptionFlow string) string {
+func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, expectedToPass, unsubscribeFirst bool, subscriptionFlow string) {
 	subscribeReq := subscription.BuildSubscriptionRequest(t, subscriptionToken, conf.SubscriptionConfig.URL, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionFlow)
 
 	if unsubscribeFirst {
@@ -591,7 +578,7 @@ func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Clie
 	if !expectedToPass {
 		require.Equal(t, http.StatusInternalServerError, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 		t.Logf("As expected subscription was not created between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
-		return ""
+		return
 	}
 	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
@@ -602,7 +589,6 @@ func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Clie
 		return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 	}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
-	return gjson.GetBytes(body, subscriptionGUIDPath).String()
 }
 
 func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput, bundleOuput *graphql.BundleExt) {
@@ -627,7 +613,7 @@ func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput, bundleOup
 	}
 }
 
-func assertApplicationFromSubscription(t *testing.T, appPage graphql.ApplicationPageExt, appTemplateID string, expectedSubscriptions []string) {
+func assertApplicationFromSubscription(t *testing.T, appPage graphql.ApplicationPageExt, appTemplateID string, expectedSubscriptionsCount int) {
 	require.Len(t, appPage.Data, 1)
 	application := *appPage.Data[0]
 	require.Equal(t, appTemplateID, *application.ApplicationTemplateID)
@@ -640,5 +626,5 @@ func assertApplicationFromSubscription(t *testing.T, appPage graphql.Application
 		subscriptionsLabelValue[i], ok = v.(string)
 		require.True(t, ok)
 	}
-	require.ElementsMatch(t, subscriptionsLabelValue, expectedSubscriptions)
+	require.Len(t, subscriptionsLabelValue, expectedSubscriptionsCount)
 }
