@@ -1260,7 +1260,9 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	jsonAppCreateInput := fixJSONApplicationCreateInput(testName)
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
 	modelAppWithLabelCreateInput := fixModelApplicationWithLabelCreateInput(testName)
+	modelAppWithManagedTrueLabelCreateInput := fixModelApplicationWithManagedLabelCreateInput(testName, "true")
 	gqlAppCreateInput := fixGQLApplicationCreateInput(testName)
+	gqlAppCreateWithManagedTrueLabelInput := fixGQLApplicationCreateWithManagedTrueLabelInput(testName, "true")
 
 	customID := "customTemplateID"
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, jsonAppCreateInput, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
@@ -1270,9 +1272,11 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	gqlApplication := fixGQLApplication(testID, testName)
 
 	gqlAppFromTemplateInput := fixGQLApplicationFromTemplateInput(testName)
+	gqlAppFromTemplateWithManagedLabelInput := fixGQLApplicationFromTemplateWithManagedLabelInput(testName, "true")
 	gqlAppFromTemplateWithIDInput := fixGQLApplicationFromTemplateInput(testName)
 	gqlAppFromTemplateWithIDInput.ID = &customID
 	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(testName)
+	modelAppFromTemplateWithManagedLabelInput := fixModelApplicationFromTemplateWithManagedLabelInput(testName, "true")
 	modelAppFromTemplateWithIDInput := fixModelApplicationFromTemplateInput(testName)
 	modelAppFromTemplateWithIDInput.ID = &customID
 
@@ -1352,6 +1356,41 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppWithLabelCreateInput, nil).Once()
+				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
+				return appConv
+			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: &gqlApplication,
+			ExpectedError:  nil,
+		},
+		{
+			Name:                 "Success when managed label is present",
+			TxFn:                 txGen.ThatSucceeds,
+			AppFromTemplateInput: gqlAppFromTemplateWithManagedLabelInput,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
+				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateWithManagedLabelInput).Return(modelAppFromTemplateWithManagedLabelInput, nil).Once()
+				return appTemplateConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithManagedTrueLabelCreateInput, str.Ptr(testID)).Return(testID, nil).Once()
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
+				return appSvc
+			},
+			AppConvFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateWithManagedTrueLabelInput, nil).Once()
+				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateWithManagedTrueLabelInput).Return(modelAppWithManagedTrueLabelCreateInput, nil).Once()
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
 			},
