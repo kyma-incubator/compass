@@ -14,12 +14,14 @@ type FetchOnDemandAPIConfig struct {
 }
 
 // Fetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//
 //go:generate mockery --name=Fetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Fetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
 }
 
 // Client is responsible for making HTTP requests.
+//
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -45,12 +47,7 @@ func NewFetchOnDemandService(client Client, config FetchOnDemandAPIConfig) Fetch
 
 // FetchOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
 func (s *fetchOnDemandService) FetchOnDemand(tenant, parentTenant string) error {
-	reqURL := ""
-	if parentTenant == "" {
-		reqURL = fmt.Sprintf("%s/%s", s.tenantFetcherURL, tenant)
-	} else {
-		reqURL = fmt.Sprintf("%s/%s/%s", s.tenantFetcherURL, parentTenant, tenant)
-	}
+	reqURL := s.buildRequestURL(tenant, parentTenant)
 	req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 	if err != nil {
 		return err
@@ -67,4 +64,12 @@ func (s *fetchOnDemandService) FetchOnDemand(tenant, parentTenant string) error 
 
 func (s *noopOnDemandService) FetchOnDemand(tenant, parentTenant string) error {
 	return nil
+}
+
+func (s *fetchOnDemandService) buildRequestURL(tenant, parentTenant string) string {
+	if parentTenant == "" {
+		return fmt.Sprintf("%s/%s", s.tenantFetcherURL, tenant)
+	} else {
+		return fmt.Sprintf("%s/%s/%s", s.tenantFetcherURL, parentTenant, tenant)
+	}
 }

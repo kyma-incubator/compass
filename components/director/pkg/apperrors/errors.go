@@ -366,6 +366,15 @@ func NewCannotUnassignObjectComingFromASAError(objectID string) error {
 	}
 }
 
+// NewBadRequestErrorWithMessage returns BadRequestErrorWithMessage error
+func NewBadRequestErrorWithMessage(message string) error {
+	return Error{
+		errorCode: BadRequest,
+		Message:   message,
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -449,6 +458,11 @@ func IsCannotUnassignObjectComingFromASAError(err error) bool {
 		return customErr.errorCode == InvalidOperation && customErr.Message == CannotUnassignObjectFromASA
 	}
 	return false
+}
+
+// IsBadRequestError checks if the error code is bad request
+func IsBadRequestError(err error) bool {
+	return ErrorCode(err) == BadRequest
 }
 
 func sortMapKey(m map[string]string) []string {
