@@ -26,11 +26,13 @@ func TestFetchOnDemand(t *testing.T) {
 
 	testCases := []struct {
 		Name             string
+		ParentTenantID   string
 		Client           func() *automock.Client
 		ExpectedErrorMsg string
 	}{
 		{
-			Name: "Success",
+			Name:           "Success when parent ID is present",
+			ParentTenantID: parentTenantID,
 			Client: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(&http.Response{
@@ -40,7 +42,19 @@ func TestFetchOnDemand(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error when cannot make the request",
+			Name:           "Success when parent ID is missing",
+			ParentTenantID: "",
+			Client: func() *automock.Client {
+				client := &automock.Client{}
+				client.On("Do", mock.Anything).Return(&http.Response{
+					StatusCode: http.StatusOK,
+				}, nil).Once()
+				return client
+			},
+		},
+		{
+			Name:           "Error when cannot make the request",
+			ParentTenantID: parentTenantID,
 			Client: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(nil, testErr).Once()
@@ -49,7 +63,8 @@ func TestFetchOnDemand(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name: "Error when status code is not 200",
+			Name:           "Error when status code is not 200",
+			ParentTenantID: parentTenantID,
 			Client: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(&http.Response{
@@ -71,7 +86,7 @@ func TestFetchOnDemand(t *testing.T) {
 			svc := tenant.NewFetchOnDemandService(httpClient, config)
 
 			// WHEN
-			err := svc.FetchOnDemand(tenantID, parentTenantID)
+			err := svc.FetchOnDemand(tenantID, testCase.ParentTenantID)
 
 			// THEN
 			if len(testCase.ExpectedErrorMsg) > 0 {
