@@ -417,7 +417,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if appCreateInputModel.Labels == nil {
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
-	appCreateInputModel.Labels["managed"] = "false"
+
+	if _, exists := appCreateInputModel.Labels["managed"]; !exists {
+		appCreateInputModel.Labels["managed"] = "false"
+	}
 
 	if convertedIn.Labels != nil {
 		for k, v := range in.Labels {
