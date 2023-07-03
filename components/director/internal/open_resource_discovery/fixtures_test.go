@@ -37,8 +37,6 @@ const (
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
-	appID            = "testApp"
-	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
@@ -71,9 +69,15 @@ const (
 
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
+
+	appTemplateVersionID    = "testAppTemplateVersionID"
+	appTemplateVersionValue = "2303"
+	appTemplateName         = "appTemplateName"
 )
 
 var (
+	appID              = "testApp"
+	appTemplateID      = "testAppTemplate"
 	uidSvc             = uid.NewService()
 	packageLinksFormat = removeWhitespace(`[
         {
@@ -184,6 +188,14 @@ var (
         }
       ]`)
 
+	credentialExchangeStrategiesBasic = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "ns:credential-exchange2:v3",
+		  "type": "custom"
+        }
+      ]`)
+
 	apiResourceLinksFormat = removeWhitespace(`[
         {
           "type": "console",
@@ -277,34 +289,51 @@ func fixORDDocument() *ord.Document {
 	return fixORDDocumentWithBaseURL("")
 }
 
+func fixORDStaticDocument() *ord.Document {
+	doc := fixORDDocumentWithBaseURL("")
+	doc.DescribedSystemInstance = nil
+	doc.DescribedSystemVersion = fixAppTemplateVersionInput()
+	doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
+
+	return doc
+}
+
 func fixSanitizedORDDocument() *ord.Document {
 	sanitizedDoc := fixORDDocumentWithBaseURL(baseURL)
-
-	sanitizedDoc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
-	sanitizedDoc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.APIResources[0].Labels = json.RawMessage(mergedLabels)
-
-	sanitizedDoc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
-	sanitizedDoc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.APIResources[1].Labels = json.RawMessage(mergedLabels)
-
-	sanitizedDoc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
-	sanitizedDoc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.EventResources[0].Labels = json.RawMessage(mergedLabels)
-
-	sanitizedDoc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
-	sanitizedDoc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.EventResources[1].Labels = json.RawMessage(mergedLabels)
-
+	sanitizeResources(sanitizedDoc)
 	return sanitizedDoc
+}
+
+func fixSanitizedStaticORDDocument() *ord.Document {
+	sanitizedDoc := fixORDStaticDocumentWithBaseURL(baseURL)
+	sanitizeResources(sanitizedDoc)
+	return sanitizedDoc
+}
+
+func sanitizeResources(doc *ord.Document) {
+	doc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
+	doc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
+	doc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.APIResources[0].Labels = json.RawMessage(mergedLabels)
+
+	doc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
+	doc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
+	doc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.APIResources[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
+	doc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
+	doc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.EventResources[0].Labels = json.RawMessage(mergedLabels)
+
+	doc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
+	doc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
+	doc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.EventResources[1].Labels = json.RawMessage(mergedLabels)
 }
 
 func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
@@ -312,6 +341,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
+		Perspective:           ord.SystemInstancePerspective,
 		DescribedSystemInstance: &model.Application{
 			BaseURL:             str.Ptr(baseURL),
 			OrdLabels:           json.RawMessage(labels),
@@ -625,6 +655,15 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	}
 }
 
+func fixORDStaticDocumentWithBaseURL(providedBaseURL string) *ord.Document {
+	doc := fixORDDocumentWithBaseURL(providedBaseURL)
+	doc.DescribedSystemInstance = nil
+	doc.DescribedSystemVersion = fixAppTemplateVersionInput()
+	doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
+
+	return doc
+}
+
 func fixApplicationPage() *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: []*model.Application{
@@ -646,6 +685,38 @@ func fixApplicationPage() *model.ApplicationPage {
 		TotalCount: 1,
 	}
 }
+
+func fixAppTemplate() *model.ApplicationTemplate {
+	return &model.ApplicationTemplate{
+		ID:   appTemplateID,
+		Name: appTemplateName,
+	}
+}
+
+func fixAppTemplateVersions() []*model.ApplicationTemplateVersion {
+	return []*model.ApplicationTemplateVersion{
+		fixAppTemplateVersion(),
+	}
+}
+
+func fixAppTemplateVersion() *model.ApplicationTemplateVersion {
+	return &model.ApplicationTemplateVersion{
+		ID:                    appTemplateVersionID,
+		Version:               appTemplateVersionValue,
+		CorrelationIDs:        json.RawMessage(correlationIDs),
+		ApplicationTemplateID: appTemplateID,
+	}
+}
+
+func fixAppTemplateVersionInput() *model.ApplicationTemplateVersionInput {
+	return &model.ApplicationTemplateVersionInput{
+		Version:        appTemplateVersionValue,
+		Title:          str.Ptr("Title"),
+		ReleaseDate:    str.Ptr("2020-12-08T15:47:04+0000"),
+		CorrelationIDs: json.RawMessage(correlationIDs),
+	}
+}
+
 func fixApplications() []*model.Application {
 	return []*model.Application{
 		{
@@ -784,7 +855,7 @@ func fixPackages() []*model.Package {
 	return []*model.Package{
 		{
 			ID:                  packageID,
-			ApplicationID:       appID,
+			ApplicationID:       &appID,
 			OrdID:               packageORDID,
 			Vendor:              str.Ptr(vendorORDID),
 			Title:               "PACKAGE 1 TITLE",
@@ -810,7 +881,7 @@ func fixPackages() []*model.Package {
 func fixBundles() []*model.Bundle {
 	return []*model.Bundle{
 		{
-			ApplicationID:                appID,
+			ApplicationID:                &appID,
 			Name:                         "BUNDLE TITLE",
 			Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
 			Version:                      str.Ptr("1.1.2"),
@@ -828,6 +899,12 @@ func fixBundles() []*model.Bundle {
 			},
 		},
 	}
+}
+
+func fixBundlesWithCredentialExchangeStrategies() []*model.Bundle {
+	bundles := fixBundles()
+	bundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
+	return bundles
 }
 
 func fixBundleCreateInput() []*model.BundleCreateInput {
@@ -910,7 +987,7 @@ func fixBundlesWithHash() []*model.Bundle {
 func fixAPIs() []*model.APIDefinition {
 	return []*model.APIDefinition{
 		{
-			ApplicationID:                           appID,
+			ApplicationID:                           &appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Name:                                    "API TITLE",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -943,7 +1020,7 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 		{
-			ApplicationID:                           appID,
+			ApplicationID:                           &appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Name:                                    "Gateway Sample Service",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -1015,7 +1092,7 @@ func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			ApplicationID:       appID,
+			ApplicationID:       &appID,
 			PackageID:           str.Ptr(packageORDID),
 			Name:                "EVENT TITLE",
 			Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -1042,7 +1119,7 @@ func fixEvents() []*model.EventDefinition {
 			},
 		},
 		{
-			ApplicationID:    appID,
+			ApplicationID:    &appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
@@ -1191,7 +1268,7 @@ func fixTombstones() []*model.Tombstone {
 		{
 			ID:            tombstoneID,
 			OrdID:         api2ORDID,
-			ApplicationID: appID,
+			ApplicationID: &appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
 		},
 	}

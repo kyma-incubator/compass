@@ -26,20 +26,36 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 	ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	Application: &webhook.ApplicationWithLabels{
 		Application: &model.Application{
 			BaseEntity: &model.BaseEntity{},
 		},
 		Labels: map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	Runtime: &webhook.RuntimeWithLabels{
 		Runtime: &model.Runtime{},
 		Labels:  map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	RuntimeContext: &webhook.RuntimeContextWithLabels{
 		RuntimeContext: &model.RuntimeContext{},
 		Labels:         map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
 }
@@ -54,22 +70,38 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 	SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	SourceApplication: &webhook.ApplicationWithLabels{
 		Application: &model.Application{
 			BaseEntity: &model.BaseEntity{},
 		},
 		Labels: map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	TargetApplication: &webhook.ApplicationWithLabels{
 		Application: &model.Application{
 			BaseEntity: &model.BaseEntity{},
 		},
 		Labels: map[string]string{},
+		Tenant: &webhook.TenantWithLabels{
+			BusinessTenantMapping: &model.BusinessTenantMapping{},
+			Labels:                map[string]string{},
+		},
 	},
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
 }

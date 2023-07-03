@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
@@ -19,12 +21,10 @@ func TestService_SyncGlobalResources(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	dummyApp := &model.Application{
+	resource := ord.Resource{
 		Name: "global-registry",
-		Type: "global-registry",
-		BaseEntity: &model.BaseEntity{
-			ID: "global-registry",
-		},
+		Type: directorresource.Application,
+		ID:   "global-registry",
 	}
 
 	testWebhook := &model.Webhook{
@@ -68,7 +68,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 
 	successfulClientFn := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(ord.Documents{fixGlobalRegistryORDDocument()}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook).Return(ord.Documents{fixGlobalRegistryORDDocument()}, baseURL, nil)
 		return client
 	}
 
@@ -124,7 +124,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(nil, "", testErr)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook).Return(nil, "", testErr)
 				return client
 			},
 			ExpectedErr: testErr,
@@ -136,7 +136,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.Vendors[0].OrdID = "invalid-ord-id"
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			ExpectedErr: errors.New("ordId: must be in a valid format."),
@@ -148,7 +148,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.ConsumptionBundles = fixORDDocument().ConsumptionBundles
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			ExpectedErr: errors.New("global registry supports only vendors and products"),

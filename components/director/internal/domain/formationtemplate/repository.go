@@ -20,7 +20,7 @@ const (
 
 var (
 	idTableColumns            = []string{idColumn}
-	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids"}
+	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset"}
 	tenantTableColumn         = []string{tenantIDColumn}
 	tableColumnsWithoutTenant = append(idTableColumns, updatableTableColumns...)
 	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)

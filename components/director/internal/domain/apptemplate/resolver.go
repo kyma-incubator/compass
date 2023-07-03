@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -381,7 +383,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id REDACTED_%x from GraphQL input", in.TemplateName, sha256.Sum256([]byte(consumerInfo.ConsumerID)))
-	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, consumerInfo.ConsumerID)
+	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, consumerInfo.ConsumerID, in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +419,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if appCreateInputModel.Labels == nil {
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
-	appCreateInputModel.Labels["managed"] = "false"
+
+	if _, exists := appCreateInputModel.Labels[application.ManagedLabelKey]; !exists {
+		appCreateInputModel.Labels[application.ManagedLabelKey] = "false"
+	}
 
 	if convertedIn.Labels != nil {
 		for k, v := range in.Labels {
@@ -466,6 +471,15 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 
 	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
 		return nil, err
+	}
+
+	webhooks, err := r.webhookSvc.EnrichWebhooksWithTenantMappingWebhooks(in.Webhooks)
+	if err != nil {
+		return nil, err
+	}
+
+	if in.Webhooks != nil {
+		in.Webhooks = webhooks
 	}
 
 	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
@@ -624,7 +638,8 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	}
 }
 
-func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, consumerID string) (*model.ApplicationTemplate, error) {
+func (r *Resolver) retrieveAppTemplate(ctx context.Context,
+	appTemplateName, consumerID string, appTemplateID *string) (*model.ApplicationTemplate, error) {
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", consumerID)),
 	}
@@ -634,7 +649,8 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	}
 
 	for _, appTemplate := range appTemplates {
-		if appTemplate.Name == appTemplateName {
+		if (appTemplateID == nil && appTemplate.Name == appTemplateName) ||
+			(appTemplateID != nil && *appTemplateID == appTemplate.ID) {
 			return appTemplate, nil
 		}
 	}
@@ -654,6 +670,16 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 		}
 	}
 
+	if appTemplateID != nil {
+		log.C(ctx).Infof("searching for application template with ID: %s", *appTemplateID)
+		for _, appTemplate := range appTemplates {
+			if appTemplate.ID == *appTemplateID {
+				log.C(ctx).Infof("found application template with ID: %s", *appTemplateID)
+				return appTemplate, nil
+			}
+		}
+		return nil, errors.Errorf("application template with id %s and consumer id %q not found", *appTemplateID, consumerID)
+	}
 	if len(templates) < 1 {
 		return nil, errors.Errorf("application template with name %q and consumer id %q not found", appTemplateName, consumerID)
 	}

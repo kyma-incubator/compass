@@ -12,6 +12,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func CreateBundleInstanceAuthForRuntime(t *testing.T, ctx context.Context, oauthGraphQLClient *gcli.Client, tenantID, bundleID string) *graphql.BundleInstanceAuth {
+	authCtx, inputParams := FixBundleInstanceAuthContextAndInputParams(t)
+	bndlInstanceAuthRequestInput := FixBundleInstanceAuthRequestInput(authCtx, inputParams)
+	bndlInstanceAuthRequestInputStr, err := testctx.Tc.Graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	require.NoError(t, err)
+
+	bndlInstanceAuthCreationRequestReq := FixRequestBundleInstanceAuthCreationRequest(bundleID, bndlInstanceAuthRequestInputStr)
+	output := graphql.BundleInstanceAuth{}
+
+	t.Log("Request bundle instance auth creation")
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantID, bndlInstanceAuthCreationRequestReq, &output)
+	require.NoError(t, err)
+
+	return &output
+}
+
+func SetBundleInstanceAuthForRuntime(t *testing.T, ctx context.Context, cli *gcli.Client, tenantID, biaID, clientID string) *graphql.BundleInstanceAuth {
+	authInput := FixCertificateOauthAuthWithCustomCredentials(t, FixCertificateOAuthCredentialWithCustomClientID(clientID))
+	bndlInstanceAuthSetInput := FixBundleInstanceAuthSetInputSucceeded(authInput)
+	bndlInstanceAuthSetInputStr, err := testctx.Tc.Graphqlizer.BundleInstanceAuthSetInputToGQL(bndlInstanceAuthSetInput)
+	require.NoError(t, err)
+
+	setBundleInstanceAuthReq := FixSetBundleInstanceAuthRequest(biaID, bndlInstanceAuthSetInputStr)
+	output := graphql.BundleInstanceAuth{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, cli, tenantID, setBundleInstanceAuthReq, &output)
+	require.NoError(t, err)
+	return &output
+}
+
 func CreateBundleWithInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, appID string, input graphql.BundleCreateInput) graphql.BundleExt {
 	in, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(input)
 	require.NoError(t, err)
@@ -78,7 +107,7 @@ func AddEventToBundleWithInput(t require.TestingT, ctx context.Context, gqlClien
 }
 
 func AddEventToBundle(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, bndlID string) graphql.EventDefinition {
-	return AddEventToBundleWithInput(t, ctx, gqlClient, bndlID, FixEventAPIDefinitionInput())
+	return AddEventToBundleWithInput(t, ctx, gqlClient, bndlID, FixEventDefinitionInput())
 }
 
 func AddDocumentToBundleWithInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, bndlID string, input graphql.DocumentInput) graphql.DocumentExt {

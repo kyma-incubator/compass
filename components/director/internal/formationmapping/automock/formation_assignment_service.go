@@ -121,6 +121,20 @@ func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context
 	return r0, r1
 }
 
+// SetAssignmentToErrorState provides a mock function with given fields: ctx, assignment, errorMessage, errorCode, state
+func (_m *FormationAssignmentService) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error {
+	ret := _m.Called(ctx, assignment, errorMessage, errorCode, state)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, string, formationassignment.AssignmentErrorCode, model.FormationAssignmentState) error); ok {
+		r0 = rf(ctx, assignment, errorMessage, errorCode, state)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewFormationAssignmentService interface {
 	mock.TestingT
 	Cleanup(func())

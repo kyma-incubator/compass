@@ -20,6 +20,9 @@ const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
 // DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 const DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 
+// DestinationCreator contains the name of the DestinationCreator operator
+const DestinationCreator = "DestinationCreator"
+
 // OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
 
@@ -28,6 +31,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType:                    &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
 	DoesNotContainResourceOfSubtype:                      &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
 	DoNotGenerateFormationAssignmentNotificationOperator: &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
+	DestinationCreator:                                   &formationconstraint.DestinationCreatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
@@ -81,46 +85,74 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationco
 		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 		Application: &webhook.ApplicationWithLabels{
 			Application: &model.Application{
 				BaseEntity: &model.BaseEntity{},
 			},
 			Labels: map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 		Runtime: &webhook.RuntimeWithLabels{
 			Runtime: &model.Runtime{},
 			Labels:  map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 		RuntimeContext: &webhook.RuntimeContextWithLabels{
 			RuntimeContext: &model.RuntimeContext{},
 			Labels:         map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
-		Assignment: &webhook.FormationAssignment{
-			Value: "\"\"",
-		},
-		ReverseAssignment: &webhook.FormationAssignment{
-			Value: "\"\"",
-		},
+		Assignment:        &webhook.FormationAssignment{},
+		ReverseAssignment: &webhook.FormationAssignment{},
 		SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 		SourceApplication: &webhook.ApplicationWithLabels{
 			Application: &model.Application{
 				BaseEntity: &model.BaseEntity{},
 			},
 			Labels: map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 		TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 		TargetApplication: &webhook.ApplicationWithLabels{
 			Application: &model.Application{
 				BaseEntity: &model.BaseEntity{},
 			},
 			Labels: map[string]string{},
+			Tenant: &webhook.TenantWithLabels{
+				BusinessTenantMapping: &model.BusinessTenantMapping{},
+				Labels:                map[string]string{},
+			},
 		},
 	}
 }

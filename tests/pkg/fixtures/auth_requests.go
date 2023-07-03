@@ -46,6 +46,10 @@ func FixOauthAuth(t require.TestingT) *graphql.AuthInput {
 }
 
 func FixCertificateOauthAuth(t require.TestingT) *graphql.AuthInput {
+	return FixCertificateOauthAuthWithCustomCredentials(t, FixCertificateOAuthCredential())
+}
+
+func FixCertificateOauthAuthWithCustomCredentials(t require.TestingT, clientCredentials *graphql.CredentialDataInput) *graphql.AuthInput {
 	additionalHeaders, err := graphql.NewHTTPHeadersSerialized(map[string][]string{
 		"header-A": {"ha1", "ha2"},
 		"header-B": {"hb1", "hb2"},
@@ -59,7 +63,7 @@ func FixCertificateOauthAuth(t require.TestingT) *graphql.AuthInput {
 	require.NoError(t, err)
 
 	return &graphql.AuthInput{
-		Credential:                      FixCertificateOAuthCredential(),
+		Credential:                      clientCredentials,
 		AdditionalHeadersSerialized:     &additionalHeaders,
 		AdditionalQueryParamsSerialized: &additionalQueryParams,
 	}
@@ -88,6 +92,15 @@ func FixCertificateOAuthCredential() *graphql.CredentialDataInput {
 			URL:         "https://url.net",
 			Certificate: "cert-data",
 			ClientID:    "clientid-here",
+		}}
+}
+
+func FixCertificateOAuthCredentialWithCustomClientID(clientID string) *graphql.CredentialDataInput {
+	return &graphql.CredentialDataInput{
+		CertificateOAuth: &graphql.CertificateOAuthCredentialDataInput{
+			URL:         "https://url.net",
+			Certificate: "cert-data",
+			ClientID:    clientID,
 		}}
 }
 

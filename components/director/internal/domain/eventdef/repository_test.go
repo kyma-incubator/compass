@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
 
@@ -18,15 +20,53 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 )
 
+func TestPgRepository_GetForApplication(t *testing.T) {
+	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
+	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Event Definition for Application",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
+				Args:     []driver.Value{eventID, appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()).
+							AddRow(fixEventDefinitionRow(eventID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ExpectedModelEntity:       eventDefModel,
+		ExpectedDBEntity:          eventDefEntity,
+		MethodArgs:                []interface{}{tenantID, eventID, appID},
+		DisableConverterErrorTest: true,
+		MethodName:                "GetByApplicationID",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetByID(t *testing.T) {
 	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
 
 	suite := testdb.RepoGetTestSuite{
-		Name: "Get Document",
+		Name: "Get Event Definition",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{eventID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -55,7 +95,45 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ListByApplicationID(t *testing.T) {
+func TestPgRepository_GetByIDGlobal(t *testing.T) {
+	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
+	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Event Definition Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1`),
+				Args:     []driver.Value{eventID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()).
+							AddRow(fixEventDefinitionRow(eventID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ExpectedModelEntity:       eventDefModel,
+		ExpectedDBEntity:          eventDefEntity,
+		MethodArgs:                []interface{}{eventID},
+		DisableConverterErrorTest: true,
+		MethodName:                "GetByIDGlobal",
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ListByResourceID(t *testing.T) {
 	firstEventDefID := "111111111-1111-1111-1111-111111111111"
 	firstEventDefModel := fixEventDefinitionModel(firstEventDefID, "placeholder")
 	firstEventDefEntity := fixFullEntityEventDefinition(firstEventDefID, "placeholder")
@@ -67,7 +145,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		Name: "List APIs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -84,8 +162,63 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		RepoConstructorFunc:       event.NewRepository,
 		ExpectedModelEntities:     []interface{}{firstEventDefModel, secondEventDefModel},
 		ExpectedDBEntities:        []interface{}{firstEventDefEntity, secondEventDefEntity},
-		MethodArgs:                []interface{}{tenantID, appID},
-		MethodName:                "ListByApplicationID",
+		MethodArgs:                []interface{}{tenantID, appID, resource.Application},
+		MethodName:                "ListByResourceID",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ListByApplicationIDPage(t *testing.T) {
+	pageSize := 1
+	cursor := ""
+
+	firstEventDefID := "firstEventDefID"
+	firstEventDef, _, _ := fixFullEventDefinitionModelWithID(firstEventDefID, "placeholder")
+	firstEntity := fixFullEntityEventDefinition(firstEventDefID, "placeholder")
+
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List Events with paging",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixEventDefinitionColumns()).AddRow(fixEventDefinitionRow(firstEventDefID, "placeholder")...)}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM "public"."event_api_definitions" WHERE (app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{&firstEventDef},
+				ExpectedDBEntities:    []interface{}{firstEntity},
+				ExpectedPage: &model.EventDefinitionPage{
+					Data: []*model.EventDefinition{&firstEventDef},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		MethodName:                "ListByApplicationIDPage",
+		MethodArgs:                []interface{}{tenantID, appID, pageSize, cursor},
 		DisableConverterErrorTest: true,
 	}
 
@@ -121,7 +254,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		Name: "List Events for multiple bundles with paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, package_id, name, description, group_name, ord_id, local_tenant_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, documentation_labels FROM "public"."event_api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstEventDefID, secondEventDefID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -223,6 +356,36 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_CreateGlobal(t *testing.T) {
+	// GIVEN
+	var nilEventDefModel *model.EventDefinition
+	eventDefModel, _, _ := fixFullEventDefinitionModel("placeholder")
+	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
+
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Event Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       `^INSERT INTO "public"."event_api_definitions" \(.+\) VALUES \(.+\)$`,
+				Args:        fixEventCreateArgs(eventID, &eventDefModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ModelEntity:               &eventDefModel,
+		DBEntity:                  eventDefEntity,
+		NilModelEntity:            nilEventDefModel,
+		DisableConverterErrorTest: true,
+		IsGlobal:                  true,
+		MethodName:                "CreateGlobal",
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_CreateMany(t *testing.T) {
 	insertQuery := `^INSERT INTO "public"."event_api_definitions" (.+) VALUES (.+)$`
 
@@ -307,6 +470,29 @@ func TestPgRepository_Delete(t *testing.T) {
 		},
 		RepoConstructorFunc: event.NewRepository,
 		MethodArgs:          []interface{}{tenantID, eventID},
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_DeleteGlobal(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Event Delete Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM "public"."event_api_definitions" WHERE id = $1`),
+				Args:          []driver.Value{eventID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc: event.NewRepository,
+		MethodArgs:          []interface{}{eventID},
+		IsGlobal:            true,
+		MethodName:          "DeleteGlobal",
 	}
 
 	suite.Run(t)

@@ -347,6 +347,9 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	for _, webhook := range actual.Webhooks {
 		webhooks = append(webhooks, *webhook)
 	}
+	if in.SupportsReset != nil {
+		assert.Equal(t, *in.SupportsReset, actual.SupportsReset)
+	}
 	AssertWebhooks(t, in.Webhooks, webhooks)
 }
 

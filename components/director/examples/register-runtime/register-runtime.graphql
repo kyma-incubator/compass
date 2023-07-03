@@ -10,6 +10,7 @@ mutation {
     id
     name
     description
+    applicationNamespace
     labels
     status {
       condition
