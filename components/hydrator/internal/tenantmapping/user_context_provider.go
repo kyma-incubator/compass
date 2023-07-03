@@ -2,6 +2,7 @@ package tenantmapping
 
 import (
 	"context"
+	"crypto/sha256"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -54,7 +55,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
-			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", authDetails.AuthID)
+			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: REDACTED_%x", sha256.Sum256([]byte(authDetails.AuthID)))
 		}
 		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
@@ -77,7 +78,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 	authDetails.Region = region
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider)
-	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
+	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
 }
