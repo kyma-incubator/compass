@@ -6,10 +6,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -990,7 +988,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 	return assignmentMappingPairs
 }
 
-func isStateInResponse(response *webhook.Response) bool {
+func isStateInResponse(response *webhookdir.Response) bool {
 	return response.State != nil && *response.State != ""
 }
 
