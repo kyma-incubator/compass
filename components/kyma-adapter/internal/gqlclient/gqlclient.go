@@ -195,6 +195,7 @@ func (c *Client) DeleteBundleInstanceAuth(ctx context.Context, tenant, authID st
 	return nil
 }
 
+// GetBundlesEndCursor returns bundles page end cursor
 func (a *ApplicationBundles) GetBundlesEndCursor() string {
 	if a.Bundles.PageInfo == nil {
 		return ""
@@ -206,7 +207,6 @@ func (a *ApplicationBundles) GetBundlesEndCursor() string {
 func withRetryOnTemporaryConnectionProblems(ctx context.Context, risky func() error) error {
 	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
 		log.C(ctx).Warnf("OnRetry: attempts: %d, error: %v", n, err)
-
 	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
 		return strings.Contains(err.Error(), "connection refused") ||
 			strings.Contains(err.Error(), "connection reset by peer")
