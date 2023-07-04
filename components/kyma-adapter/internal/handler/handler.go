@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/tenant_mapping_request"
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types"
 
 	"github.com/go-openapi/runtime/middleware/header"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	directorGqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/director_gql_client"
+	directorGqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 	"github.com/pkg/errors"
 )
 
@@ -26,9 +26,11 @@ const (
 	configPendingState string = "CONFIG_PENDING"
 	createErrorState   string = "CREATE_ERROR"
 	deleteErrorState   string = "DELETE_ERROR"
+
+	successStatusCode int = http.StatusOK
 )
 
-// AdapterHandler processes received requests
+// AdapterHandler is the Kyma Tenant Mapping Adapter handler which processes the received requests
 type AdapterHandler struct {
 	DirectorGqlClient directorGqlClient.Client
 }
@@ -39,7 +41,7 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 	log.C(ctx).Info("The Kyma Tenant Mapping Adapter was hit.")
 
-	var reqBody tenant_mapping_request.Body
+	var reqBody types.Body
 	if err := decodeJSONBody(w, r, &reqBody); err != nil {
 		var mr *malformedRequest
 		if errors.As(err, &mr) {
@@ -55,52 +57,48 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while validating the request body"))
 		return
 	}
-	tenantId := reqBody.ReceiverTenant.OwnerTenant
-	log.C(ctx).Infof("The request has tenant with id %q", tenantId)
+	tenantID := reqBody.ReceiverTenant.OwnerTenant
+	log.C(ctx).Infof("The request has tenant with id %q", tenantID)
 
 	if reqBody.Context.Operation == assignOperation {
 		log.C(ctx).Infof("The request operation is %q", assignOperation)
-		a.processAssignOperation(ctx, w, reqBody, tenantId)
+		a.processAssignOperation(ctx, w, reqBody, tenantID)
 	} else {
 		log.C(ctx).Infof("The request operation is %q", unassignOperation)
-		a.processUnassignOperation(ctx, w, reqBody, tenantId)
+		a.processUnassignOperation(ctx, w, reqBody, tenantID)
 	}
 
 	log.C(ctx).Info("The Kyma integration was successfully processed")
-	return
 }
 
-func (a AdapterHandler) processAssignOperation(ctx context.Context, w http.ResponseWriter, reqBody tenant_mapping_request.Body, tenant string) {
-	if reqBody.GetApplicationConfiguration() == (tenant_mapping_request.Configuration{}) { // config is missing
-		respondWithSuccess(ctx, w, http.StatusOK, configPendingState, fmt.Sprintf("Configuration is missing. Responding with %q state...", configPendingState))
+func (a AdapterHandler) processAssignOperation(ctx context.Context, w http.ResponseWriter, reqBody types.Body, tenant string) {
+	if reqBody.GetApplicationConfiguration() == (types.Configuration{}) { // config is missing
+		respondWithSuccess(ctx, w, configPendingState, fmt.Sprintf("Configuration is missing. Responding with %q state...", configPendingState))
 		return
 	}
 
-	appId := reqBody.GetApplicationId()
-	rtmId := reqBody.GetRuntimeId()
+	appID := reqBody.GetApplicationId()
+	rtmID := reqBody.GetRuntimeId()
 
-	log.C(ctx).Infof("Getting application bundles for app with id %q and tenant %q", appId, tenant)
-	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appId, tenant)
+	log.C(ctx).Infof("Getting application bundles for app with id %q and tenant %q", appID, tenant)
+	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appID, tenant)
 	if err != nil {
-		respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, "while getting application bundles")) // check which status code to be
+		respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, "while getting application bundles"))
 		return
 	}
 
 	if len(bundles) == 0 {
-		respondWithSuccess(ctx, w, http.StatusOK, readyState, fmt.Sprintf("There are no bundles for application with ID %q", appId))
+		respondWithSuccess(ctx, w, readyState, fmt.Sprintf("There are no bundles for application with ID %q", appID))
 		return
 	}
 
 	// Decide if it is Assign or Resync operation
 	instanceAuthExist := false
-	for _, bundle := range bundles {
-		for _, instanceAuth := range bundle.InstanceAuths {
-			if *instanceAuth.RuntimeID == rtmId {
-				instanceAuthExist = true
-				break
-			}
+	for _, instanceAuth := range bundles[0].InstanceAuths {
+		if *instanceAuth.RuntimeID == rtmID {
+			instanceAuthExist = true
+			break
 		}
-		break
 	}
 
 	if instanceAuthExist { // resync case
@@ -110,29 +108,29 @@ func (a AdapterHandler) processAssignOperation(ctx context.Context, w http.Respo
 	}
 }
 
-func (a AdapterHandler) processUnassignOperation(ctx context.Context, w http.ResponseWriter, reqBody tenant_mapping_request.Body, tenant string) {
-	appId := reqBody.GetApplicationId()
-	rtmId := reqBody.GetRuntimeId()
+func (a AdapterHandler) processUnassignOperation(ctx context.Context, w http.ResponseWriter, reqBody types.Body, tenant string) {
+	appID := reqBody.GetApplicationId()
+	rtmID := reqBody.GetRuntimeId()
 
-	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appId, tenant)
+	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appID, tenant)
 	if err != nil {
-		respondWithError(ctx, w, http.StatusBadRequest, deleteErrorState, errors.Wrapf(err, "while getting application bundles")) // check which status code to be
+		respondWithError(ctx, w, http.StatusBadRequest, deleteErrorState, errors.Wrapf(err, "while getting application bundles"))
 		return
 	}
 
 	if len(bundles) == 0 {
-		respondWithSuccess(ctx, w, http.StatusOK, readyState, fmt.Sprintf("There are no bundles for application with ID %q", reqBody.GetApplicationId()))
+		respondWithSuccess(ctx, w, readyState, fmt.Sprintf("There are no bundles for application with ID %q", reqBody.GetApplicationId()))
 		return
 	}
 
 	instanceAuthExist := false
 	for _, bundle := range bundles {
 		for _, instanceAuth := range bundle.InstanceAuths {
-			if *instanceAuth.RuntimeID == rtmId {
+			if *instanceAuth.RuntimeID == rtmID {
 				instanceAuthExist = true
 
 				if err = a.DirectorGqlClient.DeleteBundleInstanceAuth(ctx, tenant, instanceAuth.ID); err != nil {
-					respondWithError(ctx, w, http.StatusBadRequest, deleteErrorState, errors.Wrapf(err, fmt.Sprintf("while deleting bundle instance auth with id: %q", instanceAuth.ID))) // check which status code to be
+					respondWithError(ctx, w, http.StatusBadRequest, deleteErrorState, errors.Wrapf(err, fmt.Sprintf("while deleting bundle instance auth with id: %q", instanceAuth.ID)))
 					return
 				}
 			}
@@ -140,51 +138,51 @@ func (a AdapterHandler) processUnassignOperation(ctx context.Context, w http.Res
 	}
 
 	if !instanceAuthExist {
-		respondWithSuccess(ctx, w, http.StatusOK, readyState, fmt.Sprintf("There are no bundle instance auths for deletion for runtime with ID %q and application with id %q", rtmId, appId))
+		respondWithSuccess(ctx, w, readyState, fmt.Sprintf("There are no bundle instance auths for deletion for runtime with ID %q and application with id %q", rtmID, appID))
 		return
 	}
 
-	respondWithSuccess(ctx, w, http.StatusOK, readyState, fmt.Sprintf("Successfully deleted the bundle instance auths for runtime with ID %q and application with id %q", rtmId, appId))
+	respondWithSuccess(ctx, w, readyState, fmt.Sprintf("Successfully deleted the bundle instance auths for runtime with ID %q and application with id %q", rtmID, appID))
 }
 
-func (a AdapterHandler) processAuthCreation(ctx context.Context, w http.ResponseWriter, bundles []*graphql.BundleExt, reqBody tenant_mapping_request.Body, tenant string) {
-	rtmId := reqBody.GetRuntimeId()
+func (a AdapterHandler) processAuthCreation(ctx context.Context, w http.ResponseWriter, bundles []*graphql.BundleExt, reqBody types.Body, tenant string) {
+	rtmID := reqBody.GetRuntimeId()
 	basicCreds := reqBody.GetBasicCredentials()
 	oauthCreds := reqBody.GetOauthCredentials()
 
 	for _, bundle := range bundles {
 		if basicCreds.Username != "" { // basic creds
-			if err := a.DirectorGqlClient.CreateBasicBundleInstanceAuth(ctx, tenant, bundle.ID, rtmId, basicCreds.Username, basicCreds.Password); err != nil {
-				respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while creating bundle instance auth for bundle with id: %q", bundle.ID))) // check which status code to be
+			if err := a.DirectorGqlClient.CreateBasicBundleInstanceAuth(ctx, tenant, bundle.ID, rtmID, basicCreds.Username, basicCreds.Password); err != nil {
+				respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while creating bundle instance auth for bundle with id: %q", bundle.ID)))
 				return
 			}
 		} else { // oauth creds
-			if err := a.DirectorGqlClient.CreateOauthBundleInstanceAuth(ctx, tenant, bundle.ID, rtmId, oauthCreds.TokenServiceUrl, oauthCreds.ClientId, oauthCreds.ClientSecret); err != nil {
-				respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while creating bundle instance auth for bundle with id: %q", bundle.ID))) // check which status code to be
+			if err := a.DirectorGqlClient.CreateOauthBundleInstanceAuth(ctx, tenant, bundle.ID, rtmID, oauthCreds.TokenServiceURL, oauthCreds.ClientID, oauthCreds.ClientSecret); err != nil {
+				respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while creating bundle instance auth for bundle with id: %q", bundle.ID)))
 				return
 			}
 		}
 	}
 
-	respondWithSuccess(ctx, w, http.StatusOK, readyState, fmt.Sprintf("Successfully created the bundle instance auths for runtime with ID %q", rtmId))
+	respondWithSuccess(ctx, w, readyState, fmt.Sprintf("Successfully created the bundle instance auths for runtime with ID %q", rtmID))
 }
 
-func (a AdapterHandler) processAuthRotation(ctx context.Context, w http.ResponseWriter, bundles []*graphql.BundleExt, reqBody tenant_mapping_request.Body, tenant string) {
-	rtmId := reqBody.GetRuntimeId()
+func (a AdapterHandler) processAuthRotation(ctx context.Context, w http.ResponseWriter, bundles []*graphql.BundleExt, reqBody types.Body, tenant string) {
+	rtmID := reqBody.GetRuntimeId()
 	basicCreds := reqBody.GetBasicCredentials()
 	oauthCreds := reqBody.GetOauthCredentials()
 
 	for _, bundle := range bundles {
 		for _, instanceAuth := range bundle.InstanceAuths {
-			if *instanceAuth.RuntimeID == rtmId {
+			if *instanceAuth.RuntimeID == rtmID {
 				if basicCreds.Username != "" { // basic creds
 					if err := a.DirectorGqlClient.UpdateBasicBundleInstanceAuth(ctx, tenant, instanceAuth.ID, bundle.ID, basicCreds.Username, basicCreds.Password); err != nil {
-						respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while updating bundle instance auth with id: %q", instanceAuth.ID))) // check which status code to be
+						respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while updating bundle instance auth with id: %q", instanceAuth.ID)))
 						return
 					}
 				} else { // oauth creds
-					if err := a.DirectorGqlClient.UpdateOauthBundleInstanceAuth(ctx, tenant, instanceAuth.ID, bundle.ID, oauthCreds.TokenServiceUrl, oauthCreds.ClientId, oauthCreds.ClientSecret); err != nil {
-						respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while updating bundle instance auth with id: %q", instanceAuth.ID))) // check which status code to be
+					if err := a.DirectorGqlClient.UpdateOauthBundleInstanceAuth(ctx, tenant, instanceAuth.ID, bundle.ID, oauthCreds.TokenServiceURL, oauthCreds.ClientID, oauthCreds.ClientSecret); err != nil {
+						respondWithError(ctx, w, http.StatusBadRequest, createErrorState, errors.Wrapf(err, fmt.Sprintf("while updating bundle instance auth with id: %q", instanceAuth.ID)))
 						return
 					}
 				}
@@ -192,7 +190,7 @@ func (a AdapterHandler) processAuthRotation(ctx context.Context, w http.Response
 		}
 	}
 
-	respondWithSuccess(ctx, w, http.StatusOK, readyState, fmt.Sprintf("Successfully updated the bundle instance auths for runtime with ID %q", rtmId))
+	respondWithSuccess(ctx, w, readyState, fmt.Sprintf("Successfully updated the bundle instance auths for runtime with ID %q", rtmID))
 }
 
 type malformedRequest struct {
@@ -204,11 +202,12 @@ func (mr *malformedRequest) Error() string {
 	return mr.msg
 }
 
+// SuccessResponse structure used for JSON encoded success response
 type SuccessResponse struct {
 	State string `json:"state,omitempty"`
 }
 
-// ErrorResponse structure used for the JSON encoded response
+// ErrorResponse structure used for JSON encoded error response
 type ErrorResponse struct {
 	State   string `json:"state,omitempty"`
 	Message string `json:"error"`
@@ -277,10 +276,10 @@ func respondWithError(ctx context.Context, w http.ResponseWriter, status int, st
 }
 
 // respondWithSuccess writes a http response using with the JSON success wrapped in an SuccessResponse struct
-func respondWithSuccess(ctx context.Context, w http.ResponseWriter, status int, state, msg string) {
+func respondWithSuccess(ctx context.Context, w http.ResponseWriter, state, msg string) {
 	log.C(ctx).Info(msg)
 	w.Header().Add(httputils.HeaderContentTypeKey, httputils.ContentTypeApplicationJSON)
-	w.WriteHeader(status)
+	w.WriteHeader(successStatusCode)
 	successResponse := SuccessResponse{State: state}
-	httputils.RespondWithBody(ctx, w, status, successResponse)
+	httputils.RespondWithBody(ctx, w, successStatusCode, successResponse)
 }

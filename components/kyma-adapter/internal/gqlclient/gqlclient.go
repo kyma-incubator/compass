@@ -1,4 +1,4 @@
-package director_gql_client
+package gqlclient
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 var tenantHeader = "tenant"
 
+// Client is extended graphql.Client with custom requests
 type Client struct {
 	*gcli.Client
 }
@@ -19,10 +20,12 @@ type gqlResult struct {
 	Result interface{} `json:"result"`
 }
 
+// ApplicationBundles contains Bundle page for an application
 type ApplicationBundles struct {
 	Bundles graphql.BundlePageExt `json:"bundles"`
 }
 
+// GetApplicationBundles gets all bundles for an application with appId and tenant using the internal gql client
 func (c *Client) GetApplicationBundles(ctx context.Context, appId, tenant string) ([]*graphql.BundleExt, error) {
 	strReq := `query {
   			result: application(id: "%s") {
@@ -71,6 +74,7 @@ func (c *Client) GetApplicationBundles(ctx context.Context, appId, tenant string
 	return result, nil
 }
 
+// CreateBasicBundleInstanceAuth creates bundle instance auth with basic credentials for bundle with bndlId and runtime with rtmId using the internal gql client
 func (c *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndlId, rtmId, username, password string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: createBundleInstanceAuth(
@@ -95,6 +99,7 @@ func (c *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndl
 	return nil
 }
 
+// CreateOauthBundleInstanceAuth creates bundle instance auth with oauth credentials for bundle with bndlId and runtime with rtmId using the internal gql client
 func (c *Client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndlId, rtmId, tokenServiceUrl, clientId, clientSecret string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: createBundleInstanceAuth(
@@ -119,6 +124,7 @@ func (c *Client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndl
 	return nil
 }
 
+// UpdateBasicBundleInstanceAuth updates bundle instance auth with basic credentials using the internal gql client
 func (c *Client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, authId, bndlId, username, password string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: updateBundleInstanceAuth(
@@ -143,6 +149,7 @@ func (c *Client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, auth
 	return nil
 }
 
+// UpdateOauthBundleInstanceAuth updates bundle instance auth with oauth credentials using the internal gql client
 func (c *Client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, authId, bndlId, tokenServiceUrl, clientId, clientSecret string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: updateBundleInstanceAuth(
@@ -167,6 +174,7 @@ func (c *Client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, auth
 	return nil
 }
 
+// DeleteBundleInstanceAuth deletes bundle instance auth with authId using the internal gql client
 func (c *Client) DeleteBundleInstanceAuth(ctx context.Context, tenant, authId string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 		result: deleteBundleInstanceAuth(

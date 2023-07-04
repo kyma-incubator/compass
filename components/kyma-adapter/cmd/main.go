@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	gqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/director_gql_client"
+	gqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/handler"
 
