@@ -222,6 +222,7 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 	}
 
 	if fetchedTenant == nil && parentTenantID == "" {
+		log.C(ctx).Infof("Tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
 		return apperrors.NewEmptyParentIDErrorWithMessage(fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID))
 	}
 	if fetchedTenant == nil {
