@@ -225,7 +225,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
-		require.EqualError(t, err, "could not parse external ID for user: some-user: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type")
+		require.EqualError(t, err, "could not parse external ID for user: REDACTED_7e90ac329986624ba9929659913354473c6f965d5b559704409e3f933c0643b7: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type")
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock)
 	})

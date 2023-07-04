@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -484,6 +486,20 @@ func fixGQLApplicationFromTemplateInput(name string) graphql.ApplicationFromTemp
 	}
 }
 
+func fixGQLApplicationFromTemplateWithManagedLabelInput(name, managedLabel string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*graphql.TemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+		Labels: map[string]interface{}{
+			"key":                       "value",
+			application.ManagedLabelKey: managedLabel,
+		},
+	}
+}
+
 func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemplateInput {
 	return model.ApplicationFromTemplateInput{
 		TemplateName: name,
@@ -493,6 +509,20 @@ func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemp
 		},
 		Labels: map[string]interface{}{
 			"key": "value",
+		},
+	}
+}
+
+func fixModelApplicationFromTemplateWithManagedLabelInput(name, managedLabel string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "a", Value: "b"},
+			{Placeholder: "c", Value: "d"},
+		},
+		Labels: map[string]interface{}{
+			"key":                       "value",
+			application.ManagedLabelKey: managedLabel,
 		},
 	}
 }
@@ -539,12 +569,12 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 	}
 }
 
-func fixModelApplicationWithLabelCreateInput(name string) model.ApplicationRegisterInput {
+func fixModelApplicationWithManagedLabelCreateInput(name, managedLabel string) model.ApplicationRegisterInput {
 	return model.ApplicationRegisterInput{
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
-		Labels:         map[string]interface{}{"managed": "false", "key": "value"},
+		Labels:         map[string]interface{}{application.ManagedLabelKey: managedLabel, "key": "value"},
 	}
 }
 
@@ -554,6 +584,16 @@ func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput 
 		ProviderName:   &testProviderName,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+	}
+}
+
+func fixGQLApplicationCreateWithManagedTrueLabelInput(name, managedLabel string) graphql.ApplicationRegisterInput {
+	return graphql.ApplicationRegisterInput{
+		Name:           name,
+		ProviderName:   &testProviderName,
+		Description:    &testDescription,
+		HealthCheckURL: &testURL,
+		Labels:         map[string]interface{}{application.ManagedLabelKey: managedLabel},
 	}
 }
 
