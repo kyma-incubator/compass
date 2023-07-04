@@ -366,10 +366,10 @@ func NewCannotUnassignObjectComingFromASAError(objectID string) error {
 	}
 }
 
-// NewBadRequestErrorWithMessage returns BadRequestErrorWithMessage error
-func NewBadRequestErrorWithMessage(message string) error {
+// NewEmptyParentIDErrorWithMessage returns BadRequestErrorWithMessage error
+func NewEmptyParentIDErrorWithMessage(message string) error {
 	return Error{
-		errorCode: BadRequest,
+		errorCode: EmptyParentID,
 		Message:   message,
 		arguments: map[string]string{},
 	}
@@ -460,9 +460,9 @@ func IsCannotUnassignObjectComingFromASAError(err error) bool {
 	return false
 }
 
-// IsBadRequestError checks if the error code is bad request
-func IsBadRequestError(err error) bool {
-	return ErrorCode(err) == BadRequest
+// IsEmptyParentIDError checks if the error code is EmptyParentID
+func IsEmptyParentIDError(err error) bool {
+	return ErrorCode(err) == EmptyParentID
 }
 
 func sortMapKey(m map[string]string) []string {

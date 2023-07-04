@@ -124,7 +124,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
 	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
-		if apperrors.IsBadRequestError(err) {
+		if apperrors.IsEmptyParentIDError(err) {
 			http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
 			return
 		}
