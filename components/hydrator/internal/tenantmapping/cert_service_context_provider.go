@@ -71,7 +71,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)
-	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
+	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil
 }
 

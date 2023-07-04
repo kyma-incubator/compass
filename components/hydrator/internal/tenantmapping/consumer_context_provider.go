@@ -69,7 +69,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	authDetails.Region = region
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
-	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
+	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
 }
