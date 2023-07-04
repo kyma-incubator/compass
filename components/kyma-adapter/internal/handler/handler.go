@@ -77,8 +77,8 @@ func (a AdapterHandler) processAssignOperation(ctx context.Context, w http.Respo
 		return
 	}
 
-	appID := reqBody.GetApplicationId()
-	rtmID := reqBody.GetRuntimeId()
+	appID := reqBody.GetApplicationID()
+	rtmID := reqBody.GetRuntimeID()
 
 	log.C(ctx).Infof("Getting application bundles for app with id %q and tenant %q", appID, tenant)
 	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appID, tenant)
@@ -109,8 +109,8 @@ func (a AdapterHandler) processAssignOperation(ctx context.Context, w http.Respo
 }
 
 func (a AdapterHandler) processUnassignOperation(ctx context.Context, w http.ResponseWriter, reqBody types.Body, tenant string) {
-	appID := reqBody.GetApplicationId()
-	rtmID := reqBody.GetRuntimeId()
+	appID := reqBody.GetApplicationID()
+	rtmID := reqBody.GetRuntimeID()
 
 	bundles, err := a.DirectorGqlClient.GetApplicationBundles(ctx, appID, tenant)
 	if err != nil {
@@ -119,7 +119,7 @@ func (a AdapterHandler) processUnassignOperation(ctx context.Context, w http.Res
 	}
 
 	if len(bundles) == 0 {
-		respondWithSuccess(ctx, w, readyState, fmt.Sprintf("There are no bundles for application with ID %q", reqBody.GetApplicationId()))
+		respondWithSuccess(ctx, w, readyState, fmt.Sprintf("There are no bundles for application with ID %q", reqBody.GetApplicationID()))
 		return
 	}
 
@@ -146,7 +146,7 @@ func (a AdapterHandler) processUnassignOperation(ctx context.Context, w http.Res
 }
 
 func (a AdapterHandler) processAuthCreation(ctx context.Context, w http.ResponseWriter, bundles []*graphql.BundleExt, reqBody types.Body, tenant string) {
-	rtmID := reqBody.GetRuntimeId()
+	rtmID := reqBody.GetRuntimeID()
 	basicCreds := reqBody.GetBasicCredentials()
 	oauthCreds := reqBody.GetOauthCredentials()
 
@@ -168,7 +168,7 @@ func (a AdapterHandler) processAuthCreation(ctx context.Context, w http.Response
 }
 
 func (a AdapterHandler) processAuthRotation(ctx context.Context, w http.ResponseWriter, bundles []*graphql.BundleExt, reqBody types.Body, tenant string) {
-	rtmID := reqBody.GetRuntimeId()
+	rtmID := reqBody.GetRuntimeID()
 	basicCreds := reqBody.GetBasicCredentials()
 	oauthCreds := reqBody.GetOauthCredentials()
 

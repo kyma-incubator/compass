@@ -13,55 +13,55 @@ const (
 
 // Context is a structure used to JSON decode the context in the Body
 type Context struct {
-	Operation string `json:"operation,omitempty"`
+	Operation string `json:"operation"`
 }
 
 // BasicAuthentication is a structure used to JSON decode the basicAuthentication in the OutboundCommunication
 type BasicAuthentication struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // Oauth2ClientCredentials is a structure used to JSON decode the oauth2ClientCredentials in the OutboundCommunication
 type Oauth2ClientCredentials struct {
-	TokenServiceURL string `json:"tokenServiceUrl,omitempty"`
-	ClientID        string `json:"clientId,omitempty"`
-	ClientSecret    string `json:"clientSecret,omitempty"`
+	TokenServiceURL string `json:"tokenServiceUrl"`
+	ClientID        string `json:"clientId"`
+	ClientSecret    string `json:"clientSecret"`
 }
 
 // OutboundCommunication is a structure used to JSON decode the outboundCommunication in the Credentials
 type OutboundCommunication struct {
-	BasicAuthentication     BasicAuthentication     `json:"basicAuthentication,omitempty"`
-	Oauth2ClientCredentials Oauth2ClientCredentials `json:"oauth2ClientCredentials,omitempty"`
+	BasicAuthentication     BasicAuthentication     `json:"basicAuthentication"`
+	Oauth2ClientCredentials Oauth2ClientCredentials `json:"oauth2ClientCredentials"`
 }
 
 // Credentials is a structure used to JSON decode the credentials in the Configuration
 type Credentials struct {
-	OutboundCommunication OutboundCommunication `json:"outboundCommunication,omitempty"`
+	OutboundCommunication OutboundCommunication `json:"outboundCommunication"`
 }
 
 // Configuration is a structure used to JSON decode the configuration in the AssignedTenant
 type Configuration struct {
-	Credentials Credentials `json:"credentials,omitempty"`
+	Credentials Credentials `json:"credentials"`
 }
 
 // ReceiverTenant is a structure used to JSON decode the receiverTenant in the Body
 type ReceiverTenant struct {
-	UclSystemTenantID string `json:"uclSystemTenantId,omitempty"`
-	OwnerTenant       string `json:"ownerTenant,omitempty"`
+	UclSystemTenantID string `json:"uclSystemTenantId"`
+	OwnerTenant       string `json:"ownerTenant"`
 }
 
 // AssignedTenant is a structure used to JSON decode the assignedTenant in the Body
 type AssignedTenant struct {
-	UclSystemTenantID string        `json:"uclSystemTenantId,omitempty"`
-	Configuration     Configuration `json:"configuration,omitempty"`
+	UclSystemTenantID string        `json:"uclSystemTenantId"`
+	Configuration     Configuration `json:"configuration"`
 }
 
 // Body is a structure used to JSON decode the request body sent to the adapter handler
 type Body struct {
-	Context        Context        `json:"context,omitempty"`
-	ReceiverTenant ReceiverTenant `json:"receiverTenant,omitempty"`
-	AssignedTenant AssignedTenant `json:"assignedTenant,omitempty"`
+	Context        Context        `json:"context"`
+	ReceiverTenant ReceiverTenant `json:"receiverTenant"`
+	AssignedTenant AssignedTenant `json:"assignedTenant"`
 }
 
 // Validate validates the request Body
@@ -102,13 +102,13 @@ func (b Body) GetBasicCredentials() BasicAuthentication {
 	return b.AssignedTenant.Configuration.Credentials.OutboundCommunication.BasicAuthentication
 }
 
-// GetRuntimeId returns the Body runtime ID
-func (b Body) GetRuntimeId() string {
+// GetRuntimeID returns the Body runtime ID
+func (b Body) GetRuntimeID() string {
 	return b.ReceiverTenant.UclSystemTenantID
 }
 
-// GetApplicationId returns the Body application ID
-func (b Body) GetApplicationId() string {
+// GetApplicationID returns the Body application ID
+func (b Body) GetApplicationID() string {
 	return b.AssignedTenant.UclSystemTenantID
 }
 

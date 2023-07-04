@@ -3,7 +3,12 @@ package gqlclient
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -25,8 +30,17 @@ type ApplicationBundles struct {
 	Bundles graphql.BundlePageExt `json:"bundles"`
 }
 
-// GetApplicationBundles gets all bundles for an application with appId and tenant using the internal gql client
-func (c *Client) GetApplicationBundles(ctx context.Context, appId, tenant string) ([]*graphql.BundleExt, error) {
+// RunWithTenant executes gql request with tenant header and with retry on connectivity problems
+func (c *Client) RunWithTenant(ctx context.Context, gqlReq *gcli.Request, tenant string, resp interface{}) error {
+	gqlReq.Header.Set(tenantHeader, tenant)
+
+	return withRetryOnTemporaryConnectionProblems(ctx, func() error {
+		return c.Client.Run(ctx, gqlReq, resp)
+	})
+}
+
+// GetApplicationBundles gets all bundles for an application with appID and tenant using the internal gql client
+func (c *Client) GetApplicationBundles(ctx context.Context, appID, tenant string) ([]*graphql.BundleExt, error) {
 	strReq := `query {
   			result: application(id: "%s") {
   			  bundles(first:%d, after:"%s") {
@@ -46,26 +60,24 @@ func (c *Client) GetApplicationBundles(ctx context.Context, appId, tenant string
   			}
 		}`
 	pageSize := 200
-	initialGqlReq := gcli.NewRequest(fmt.Sprintf(strReq, appId, pageSize, ""))
-	initialGqlReq.Header.Set(tenantHeader, tenant)
+	initialGqlReq := gcli.NewRequest(fmt.Sprintf(strReq, appID, pageSize, ""))
 
 	appBundles := ApplicationBundles{}
 	gqlRes := gqlResult{Result: &appBundles}
 
-	if err := c.Client.Run(ctx, initialGqlReq, &gqlRes); err != nil {
-		return nil, errors.Wrapf(err, "Error while getting bundles for application with id %q", appId)
+	if err := c.RunWithTenant(ctx, initialGqlReq, tenant, &gqlRes); err != nil {
+		return nil, errors.Wrapf(err, "Error while getting bundles for application with id %q", appID)
 	}
 
 	result := make([]*graphql.BundleExt, 0, appBundles.Bundles.TotalCount)
 	result = append(result, appBundles.Bundles.Data...)
 
-	for appBundles.Bundles.PageInfo.EndCursor != "" {
-		gqlReq := gcli.NewRequest(fmt.Sprintf(strReq, appId, pageSize, appBundles.Bundles.PageInfo.EndCursor))
-		gqlReq.Header.Set(tenantHeader, tenant)
+	for appBundles.GetBundlesEndCursor() != "" {
+		gqlReq := gcli.NewRequest(fmt.Sprintf(strReq, appID, pageSize, appBundles.GetBundlesEndCursor()))
 
 		appBundles = ApplicationBundles{}
-		if err := c.Client.Run(ctx, gqlReq, &appBundles); err != nil {
-			return nil, errors.Wrapf(err, "Error while getting bundles for application with id %q", appId)
+		if err := c.RunWithTenant(ctx, gqlReq, tenant, &appBundles); err != nil {
+			return nil, errors.Wrapf(err, "Error while getting bundles for application with id %q", appID)
 		}
 
 		result = append(result, appBundles.Bundles.Data...)
@@ -74,8 +86,8 @@ func (c *Client) GetApplicationBundles(ctx context.Context, appId, tenant string
 	return result, nil
 }
 
-// CreateBasicBundleInstanceAuth creates bundle instance auth with basic credentials for bundle with bndlId and runtime with rtmId using the internal gql client
-func (c *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndlId, rtmId, username, password string) error {
+// CreateBasicBundleInstanceAuth creates bundle instance auth with basic credentials for bundle with bndlID and runtime with rtmID using the internal gql client
+func (c *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, username, password string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: createBundleInstanceAuth(
   		  bundleID: "%s"
@@ -88,19 +100,17 @@ func (c *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndl
 		) {
     		id
 		  }
-		}`, bndlId, username, password, rtmId))
+		}`, bndlID, username, password, rtmID))
 
-	gqlReq.Header.Set(tenantHeader, tenant)
-
-	if err := c.Client.Run(ctx, gqlReq, nil); err != nil {
-		return errors.Wrapf(err, "Error while creating Basic bundle instance auth for bundle with id %q and runtime with id %q", bndlId, rtmId)
+	if err := c.RunWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+		return errors.Wrapf(err, "Error while creating Basic bundle instance auth for bundle with id %q and runtime with id %q", bndlID, rtmID)
 	}
 
 	return nil
 }
 
-// CreateOauthBundleInstanceAuth creates bundle instance auth with oauth credentials for bundle with bndlId and runtime with rtmId using the internal gql client
-func (c *Client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndlId, rtmId, tokenServiceUrl, clientId, clientSecret string) error {
+// CreateOauthBundleInstanceAuth creates bundle instance auth with oauth credentials for bundle with bndlID and runtime with rtmID using the internal gql client
+func (c *Client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: createBundleInstanceAuth(
   		  bundleID: "%s"
@@ -113,19 +123,17 @@ func (c *Client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndl
 		) {
     		id
 		  }
-		}`, bndlId, clientId, clientSecret, tokenServiceUrl, rtmId))
+		}`, bndlID, clientID, clientSecret, tokenServiceURL, rtmID))
 
-	gqlReq.Header.Set(tenantHeader, tenant)
-
-	if err := c.Client.Run(ctx, gqlReq, nil); err != nil {
-		return errors.Wrapf(err, "Error while creating Basic bundle instance auth for bundle with id %q and runtime with id %q", bndlId, rtmId)
+	if err := c.RunWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+		return errors.Wrapf(err, "Error while creating Basic bundle instance auth for bundle with id %q and runtime with id %q", bndlID, rtmID)
 	}
 
 	return nil
 }
 
 // UpdateBasicBundleInstanceAuth updates bundle instance auth with basic credentials using the internal gql client
-func (c *Client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, authId, bndlId, username, password string) error {
+func (c *Client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, username, password string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: updateBundleInstanceAuth(
 		  id: "%s"
@@ -138,19 +146,17 @@ func (c *Client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, auth
 		) {
     		id
 		  }
-		}`, authId, bndlId, username, password))
+		}`, authID, bndlID, username, password))
 
-	gqlReq.Header.Set(tenantHeader, tenant)
-
-	if err := c.Client.Run(ctx, gqlReq, nil); err != nil {
-		return errors.Wrapf(err, "Error while updating bundle instance auth with Basic credentials with id %q for bundle with id %q", authId, bndlId)
+	if err := c.RunWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+		return errors.Wrapf(err, "Error while updating bundle instance auth with Basic credentials with id %q for bundle with id %q", authID, bndlID)
 	}
 
 	return nil
 }
 
 // UpdateOauthBundleInstanceAuth updates bundle instance auth with oauth credentials using the internal gql client
-func (c *Client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, authId, bndlId, tokenServiceUrl, clientId, clientSecret string) error {
+func (c *Client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: updateBundleInstanceAuth(
 		  id: "%s"
@@ -163,32 +169,46 @@ func (c *Client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, auth
 		) {
     		id
 		  }
-		}`, authId, bndlId, clientId, clientSecret, tokenServiceUrl))
+		}`, authID, bndlID, clientID, clientSecret, tokenServiceURL))
 
-	gqlReq.Header.Set(tenantHeader, tenant)
-
-	if err := c.Client.Run(ctx, gqlReq, nil); err != nil {
-		return errors.Wrapf(err, "Error while updating bundle instance auth with Oauth credentials with id %q for bundle with id %q", authId, bndlId)
+	if err := c.RunWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+		return errors.Wrapf(err, "Error while updating bundle instance auth with Oauth credentials with id %q for bundle with id %q", authID, bndlID)
 	}
 
 	return nil
 }
 
-// DeleteBundleInstanceAuth deletes bundle instance auth with authId using the internal gql client
-func (c *Client) DeleteBundleInstanceAuth(ctx context.Context, tenant, authId string) error {
+// DeleteBundleInstanceAuth deletes bundle instance auth with authID using the internal gql client
+func (c *Client) DeleteBundleInstanceAuth(ctx context.Context, tenant, authID string) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
 		result: deleteBundleInstanceAuth(
 			authID: "%s"
 		) {
     		id
 		  }
-		}`, authId))
+		}`, authID))
 
-	gqlReq.Header.Set(tenantHeader, tenant)
-
-	if err := c.Client.Run(ctx, gqlReq, nil); err != nil {
-		return errors.Wrapf(err, "Error while deleting bundle instance auth with id %q", authId)
+	if err := c.RunWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+		return errors.Wrapf(err, "Error while deleting bundle instance auth with id %q", authID)
 	}
 
 	return nil
+}
+
+func (a *ApplicationBundles) GetBundlesEndCursor() string {
+	if a.Bundles.PageInfo == nil {
+		return ""
+	}
+
+	return string(a.Bundles.PageInfo.EndCursor)
+}
+
+func withRetryOnTemporaryConnectionProblems(ctx context.Context, risky func() error) error {
+	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
+		log.C(ctx).Warnf("OnRetry: attempts: %d, error: %v", n, err)
+
+	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
+		return strings.Contains(err.Error(), "connection refused") ||
+			strings.Contains(err.Error(), "connection reset by peer")
+	}))
 }
