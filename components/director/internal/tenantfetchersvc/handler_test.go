@@ -544,7 +544,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("SynchronizeTenant", mock.Anything, "", tenantID).Return(apperrors.NewBadRequestErrorWithMessage("error"))
+				svc.On("SynchronizeTenant", mock.Anything, "", tenantID).Return(apperrors.NewEmptyParentIDErrorWithMessage("error"))
 				return svc
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
