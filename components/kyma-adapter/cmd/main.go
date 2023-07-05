@@ -83,9 +83,9 @@ func main() {
 	directorGqlClient.Log = func(s string) {
 		log.D().Info(s)
 	}
-	a := handler.AdapterHandler{DirectorGqlClient: directorGqlClient}
+	h := handler.NewHandler(directorGqlClient)
 
-	adapter.HandleFunc(cfg.APITenantMappingsEndpoint, a.HandlerFunc).Methods(http.MethodPatch)
+	adapter.HandleFunc(cfg.APITenantMappingsEndpoint, h.HandlerFunc).Methods(http.MethodPatch)
 	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)

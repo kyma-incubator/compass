@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	directorGqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 	"github.com/pkg/errors"
 )
 
@@ -30,9 +29,24 @@ const (
 	successStatusCode int = http.StatusOK
 )
 
+// Client is responsible for making internal graphql calls to the director
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
+type Client interface {
+	GetApplicationBundles(ctx context.Context, appID, tenant string) ([]*graphql.BundleExt, error)
+	CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, username, password string) error
+	CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret string) error
+	UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, username, password string) error
+	UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret string) error
+	DeleteBundleInstanceAuth(ctx context.Context, tenant, authID string) error
+}
+
 // AdapterHandler is the Kyma Tenant Mapping Adapter handler which processes the received requests
 type AdapterHandler struct {
-	DirectorGqlClient directorGqlClient.Client
+	DirectorGqlClient Client
+}
+
+func NewHandler(directorGqlClient Client) *AdapterHandler {
+	return &AdapterHandler{DirectorGqlClient: directorGqlClient}
 }
 
 // HandlerFunc is the implementation of AdapterHandler

@@ -16,16 +16,6 @@ import (
 
 var tenantHeader = "tenant"
 
-// Client is responsible for making internal graphql calls to the director
-type Client interface {
-	GetApplicationBundles(ctx context.Context, appID, tenant string) ([]*graphql.BundleExt, error)
-	CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, username, password string) error
-	CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret string) error
-	UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, username, password string) error
-	UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret string) error
-	DeleteBundleInstanceAuth(ctx context.Context, tenant, authID string) error
-}
-
 // NewClient constructs a client
 func NewClient(gqlClient *gcli.Client) *client {
 	return &client{Client: gqlClient}
