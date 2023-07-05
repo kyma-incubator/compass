@@ -95,10 +95,10 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
-	log.C(ctx).Infof("Object context: %+v", objCxt)
+	objCtx := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
+	log.C(ctx).Infof("Object context: %+v", RedactConsumerIDForLogging(objCtx))
 
-	return objCxt, nil
+	return objCtx, nil
 }
 
 func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
