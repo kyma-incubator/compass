@@ -79,7 +79,7 @@ func main() {
 	adapter.Use(tokenValidationMiddleware.KymaAdapterHandler())
 	adapter.Use(tenantValidationMiddleware.Handler())
 
-	directorGqlClient := gqlClient.Client{Client: graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient))}
+	directorGqlClient := gqlClient.NewClient(graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient)))
 	directorGqlClient.Log = func(s string) {
 		log.D().Info(s)
 	}
