@@ -808,7 +808,8 @@ global:
       consumerTenantIdProperty: "consumerTenantIdProperty"
       subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithParentEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithoutParentEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
