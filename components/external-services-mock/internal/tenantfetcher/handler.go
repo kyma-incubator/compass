@@ -3,6 +3,7 @@ package tenantfetcher
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -74,7 +75,8 @@ func (s *Handler) HandleFunc(eventType string) func(rw http.ResponseWriter, req 
 
 		resp := []byte("[]")
 		if isSpecificSubaccountBeingFetched(req, eventType) {
-			resp = getMockEventForSubaccount(req, s.tenantOnDemandID)
+			spew.Dump("darago 123 ???????--------")
+			resp = getMockEventForSubaccount(req, "subaccount-external-tnt")
 		} else if events, found := s.mockedEvents[eventType]; found && len(events) > 0 {
 			resp = events[0]
 			events = events[1:]
@@ -106,18 +108,26 @@ func isSpecificSubaccountBeingFetched(req *http.Request, eventType string) bool 
 
 func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byte {
 	subaccountID := req.URL.Query().Get("entityId")
+	spew.Dump("ENTITY ID: ", subaccountID)
 	mockSubaccountEventPattern := `
 {
-	"eventData": {
-		"guid": "%s",
-		"displayName": "%s",
-		"subdomain": "%s",
-		"licenseType": "%s",
-		"parentGuid": "%s",
-		"region": "%s"
-	},
-	"globalAccountGUID": "%s",
-	"type": "Subaccount"
+    "totalResults": 1,
+	"totalPages": 1,
+	"pageNum": 0,
+	"morePages": false,
+	"events": [
+		{ "eventData": {
+			"guid": "%s",
+			"displayName": "%s",
+			"subdomain": "%s",
+			"licenseType": "%s",
+			"parentGuid": "%s",
+			"region": "%s"
+           },
+			"globalAccountGUID": "%s",
+			"type": "Subaccount"
+		}
+	]
 }`
 	emptyTenantProviderResponse := `
 {
@@ -128,7 +138,8 @@ func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byt
 	"events": []
 }`
 	if subaccountID == tenantOnDemandID {
-		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "LICENSETYPE", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
+		spew.Dump("SUBACC EQUAL TO TNT????") // this is the default tenant
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "LICENSETYPE", "5577cf46-4f78-45fa-b55f-a42a3bdba868", "region", "5577cf46-4f78-45fa-b55f-a42a3bdba868")
 		return []byte(mockedEvent)
 	}
 	return []byte(emptyTenantProviderResponse)

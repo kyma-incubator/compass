@@ -176,26 +176,27 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, clientConfig 
 
 // FetchTenantEventsPage missing godoc
 func (c *Client) FetchTenantEventsPage(ctx context.Context, eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error) {
+	log.C(ctx).Info("START 1")
 	if c.config.APIConfig.isUnassignedOptionalProperty(eventsType) {
 		log.C(ctx).Warnf("Optional property for event type %s was not set", eventsType)
 		return nil, nil
 	}
-
+	log.C(ctx).Info("START 2")
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if endpoint == "" && err == nil {
 		log.C(ctx).Warnf("Endpoint for event %s is not set", eventsType)
 		return nil, nil
 	}
-
+	log.C(ctx).Info("START 3")
 	if err != nil {
 		return nil, err
 	}
-
+	log.C(ctx).Info("START 4")
 	reqURL, err := c.buildRequestURL(endpoint, additionalQueryParams)
 	if err != nil {
 		return nil, err
 	}
-
+	log.C(ctx).Infof("REQUEST URL: %s", reqURL)
 	res, err := c.httpClient.Get(reqURL)
 	if err != nil {
 		return nil, bndlErrors.Wrap(err, "while sending get request")
@@ -211,6 +212,7 @@ func (c *Client) FetchTenantEventsPage(ctx context.Context, eventsType EventsTyp
 	if err != nil {
 		return nil, bndlErrors.Wrap(err, "while reading response body")
 	}
+	log.C(ctx).Infof("RESPONSE BODY: %s", string(bytes[:]))
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
 		return nil, fmt.Errorf("request to %q returned status code %d and body %q", reqURL, res.StatusCode, bytes)

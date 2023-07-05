@@ -952,6 +952,36 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
+func TestGetSubaccountFromEventServiceIfMissingInCMP(t *testing.T) {
+	subaccountExternalTenant := "subaccount-external-tnt"
+	//subaccountName := "subaccount-name"
+	//subaccountSubdoimain := "subaccount-subdomain"
+	//directoryParentGUID := "directory-parent-guid"
+	//subaccountParent := "subaccount-parent"
+
+	//createEvent := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdoimain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath)
+	//setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
+	//defer cleanupMockEvents(t, subaccountCreateSubPath)
+
+	//require.Eventually(t, func() bool {
+	//TODO 1. delete request for tenant
+	// TODO 2. getTenantByExtenralID for tenant - it creates it
+	// TODO 3. delete request for tenant
+	// TODO 4. add logs
+	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
+	if subaccount == nil {
+		t.Logf("Waiting for subaccount %s to be created", subaccountExternalTenant)
+		//return false
+	}
+	assert.NoError(t, err)
+	assert.NotNil(t, subaccount)
+	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
+
+	t.Log("TestGetSubaccountFromEventServiceIfMissingInCMP checks are successful")
+	//return true
+	//}, timeout, checkInterval, "Waiting for tenants retrieval.")
+}
+
 func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain, licenseType string) string {
 	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain, licenseType)
 }
