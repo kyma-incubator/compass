@@ -202,7 +202,7 @@ func Test_HandlerFunc(t *testing.T) {
 			expectedResponseCode: http.StatusBadRequest,
 		},
 		{
-			name: "Error - resync can't update auth wih basic config",
+			name: "Error - resync can't update auth with basic config",
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
