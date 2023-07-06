@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -142,22 +143,21 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if fa.State == string(model.DeletingAssignmentState) {
+	//todo maybe sync with Mitko if we need to add DELETE_ERROR state to the check or if we want something different in that case
+	// as of now we will treat the assignment in DELETE_ERROR state as one that is being assigned
+	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
+	if formationOperation == model.UnassignFormation {
+		log.C(ctx).Infof("Processing formation assignment staus update for %q operation", model.UnassignFormation)
 		isFADeleted, err := h.processFormationAssignmentUnassignStatusUpdate(ctx, fa, reqBody)
-		if err != nil {
-			if commitErr := tx.Commit(); commitErr != nil {
-				log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
-				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
-				return
-			}
 
-			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation assignment staus update for %q operation", model.UnassignFormation)
+		if commitErr := tx.Commit(); commitErr != nil {
+			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
 
-		if err = tx.Commit(); err != nil {
-			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation assignment staus update for %q operation", model.UnassignFormation)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
@@ -175,35 +175,8 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if len(reqBody.State) > 0 && reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
-		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.AssignFormation)
-		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID))
-		return
-	}
-
-	if reqBody.State == model.CreateErrorAssignmentState {
-		if err = h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
-			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, formationAssignmentID)
-			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
-			return
-		}
-	}
-
-	if len(reqBody.State) > 0 {
-		fa.State = string(reqBody.State)
-	} else {
-		log.C(ctx).Infof("State is not provided, proceeding with the current state of the FA %q", fa.State)
-	}
-
-	if len(reqBody.Configuration) > 0 {
-		fa.Value = reqBody.Configuration
-	}
-
-	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
-	if err = h.faStatusService.UpdateWithConstraints(ctx, fa, model.AssignFormation); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
-		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
+	if errorResponse := h.processFormationAssignmentAssignStatusUpdate(ctx, fa, reqBody, correlationID); errorResponse != nil {
+		respondWithError(ctx, w, errorResponse.statusCode, errors.New(errorResponse.errorMessage))
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -220,84 +193,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 
 	// The formation assignment notifications processing is independent of the status update request handling.
 	// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-	go func() {
-		ctx, cancel := context.WithCancel(context.TODO())
-		defer cancel()
-
-		ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
-
-		correlationIDKey := correlation.RequestIDHeaderKey
-		ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
-
-		logger := log.C(ctx).WithField(correlation.RequestIDHeaderKey, correlationID)
-		ctx = log.ContextWithLogger(ctx, logger)
-
-		log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")
-
-		tx, err = h.transact.Begin()
-		if err != nil {
-			log.C(ctx).WithError(err).Error("unable to establish connection with database")
-			return
-		}
-		defer h.transact.RollbackUnlessCommitted(ctx, tx)
-		ctx = persistence.SaveToContext(ctx, tx)
-
-		log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-		notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
-			return
-		}
-		if notificationReq == nil {
-			log.C(ctx).Info("No formation assignment notification is generated. Returning...")
-			return
-		}
-
-		reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting reverse formation assignment by source: %q and target: %q", fa.Source, fa.Target)
-			return
-		}
-
-		log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
-		reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
-			return
-		}
-
-		faReqMapping := formationassignment.FormationAssignmentRequestMapping{
-			Request:             notificationReq,
-			FormationAssignment: fa,
-		}
-
-		reverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
-			Request:             reverseNotificationReq,
-			FormationAssignment: reverseFA,
-		}
-
-		assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
-			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-				Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
-				ReverseAssignment: &faReqMapping,
-			},
-			Operation: model.AssignFormation,
-		}
-
-		log.C(ctx).Infof("Processing formation assignment pairs and their notifications")
-		_, err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
-		if err != nil {
-			log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pairs and their notifications")
-			return
-		}
-
-		if err = tx.Commit(); err != nil {
-			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
-			return
-		}
-
-		log.C(ctx).Info("Finished formation assignment asynchronous notifications processing")
-	}()
+	go h.processNotifications(fa, correlationID)
 
 	httputils.Respond(w, http.StatusOK)
 }
@@ -493,6 +389,47 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 	return true, nil
 }
 
+func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, reqBody FormationAssignmentRequestBody, correlationID string) *responseError {
+	if len(reqBody.State) > 0 && reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
+		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.AssignFormation)
+		return &responseError{
+			statusCode:   http.StatusBadRequest,
+			errorMessage: fmt.Sprintf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID),
+		}
+	}
+
+	if reqBody.State == model.CreateErrorAssignmentState {
+		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
+			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
+			return &responseError{
+				statusCode:   http.StatusInternalServerError,
+				errorMessage: fmt.Sprintf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID),
+			}
+		}
+	}
+
+	if len(reqBody.State) > 0 {
+		fa.State = string(reqBody.State)
+	} else {
+		log.C(ctx).Infof("State is not provided, proceeding with the current state of the FA %q", fa.State)
+	}
+
+	if len(reqBody.Configuration) > 0 {
+		fa.Value = reqBody.Configuration
+	}
+
+	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
+	if err := h.faStatusService.UpdateWithConstraints(ctx, fa, model.AssignFormation); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
+		return &responseError{
+			statusCode:   http.StatusInternalServerError,
+			errorMessage: fmt.Sprintf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID),
+		}
+	}
+
+	return nil
+}
+
 // processAsynchronousFormationDelete handles the async delete formation status update
 func (h *Handler) processAsynchronousFormationDelete(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) error {
 	if reqBody.State != model.ReadyFormationState && reqBody.State != model.DeleteErrorFormationState {
@@ -539,6 +476,85 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 	}
 
 	return nil
+}
+
+func (h *Handler) processNotifications(fa *model.FormationAssignment, correlationID string) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
+	correlationIDKey := correlation.RequestIDHeaderKey
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+	logger := log.C(ctx).WithField(correlation.RequestIDHeaderKey, correlationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
+	log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("unable to establish connection with database")
+		return
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+		return
+	}
+	if notificationReq == nil {
+		log.C(ctx).Info("No formation assignment notification is generated. Returning...")
+		return
+	}
+
+	reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting reverse formation assignment by source: %q and target: %q", fa.Source, fa.Target)
+		return
+	}
+
+	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
+	reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+		return
+	}
+
+	faReqMapping := formationassignment.FormationAssignmentRequestMapping{
+		Request:             notificationReq,
+		FormationAssignment: fa,
+	}
+
+	reverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+		Request:             reverseNotificationReq,
+		FormationAssignment: reverseFA,
+	}
+
+	assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
+			ReverseAssignment: &faReqMapping,
+		},
+		Operation: model.AssignFormation,
+	}
+
+	log.C(ctx).Infof("Processing formation assignment pair and its notifications")
+	_, err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pair and its notifications")
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+		return
+	}
+
+	log.C(ctx).Info("Finished formation assignment asynchronous notifications processing")
 }
 
 func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
@@ -598,6 +614,19 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 	return nil
 }
 
+func determineOperationBasedOnFormationAssignmentState(fa *model.FormationAssignment) model.FormationOperation {
+	unassignOperationStates := []string{string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState)}
+	if str.ValueIn(fa.State, unassignOperationStates) {
+		return model.UnassignFormation
+	}
+	return model.AssignFormation
+}
+
 func (mr *malformedRequest) Error() string {
 	return mr.msg
+}
+
+type responseError struct {
+	statusCode   int
+	errorMessage string
 }

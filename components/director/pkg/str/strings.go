@@ -2,6 +2,7 @@ package str
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -121,4 +122,21 @@ func ContainsInSlice(s []string, str string) bool {
 func CastToBool(i interface{}) (bool, error) {
 	str := CastOrEmpty(i)
 	return strconv.ParseBool(str)
+}
+
+func StringifyJSONRawMessage(rawMessage json.RawMessage) string {
+	str := string(rawMessage)
+	if str == "" {
+		str = "\"\""
+	}
+	return str
+}
+
+func ValueIn(value string, in []string) bool {
+	for _, v := range in {
+		if value == v {
+			return true
+		}
+	}
+	return false
 }

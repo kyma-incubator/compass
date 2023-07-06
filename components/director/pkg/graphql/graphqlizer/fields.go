@@ -192,6 +192,8 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 			targetType
 			state
 			value
+			configuration
+			error
 	`
 }
 

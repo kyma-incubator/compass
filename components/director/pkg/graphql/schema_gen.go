@@ -346,13 +346,15 @@ type ComplexityRoot struct {
 	}
 
 	FormationAssignment struct {
-		ID         func(childComplexity int) int
-		Source     func(childComplexity int) int
-		SourceType func(childComplexity int) int
-		State      func(childComplexity int) int
-		Target     func(childComplexity int) int
-		TargetType func(childComplexity int) int
-		Value      func(childComplexity int) int
+		Configuration func(childComplexity int) int
+		Error         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Source        func(childComplexity int) int
+		SourceType    func(childComplexity int) int
+		State         func(childComplexity int) int
+		Target        func(childComplexity int) int
+		TargetType    func(childComplexity int) int
+		Value         func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -2350,6 +2352,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Formation.Status(childComplexity), true
+
+	case "FormationAssignment.configuration":
+		if e.complexity.FormationAssignment.Configuration == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.Configuration(childComplexity), true
+
+	case "FormationAssignment.error":
+		if e.complexity.FormationAssignment.Error == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.Error(childComplexity), true
 
 	case "FormationAssignment.id":
 		if e.complexity.FormationAssignment.ID == nil {
@@ -6357,6 +6373,8 @@ type FormationAssignment {
 	targetType: FormationAssignmentType!
 	state: String!
 	value: String
+	configuration: String
+	error: String
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -17174,6 +17192,68 @@ func (ec *executionContext) _FormationAssignment_value(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_configuration(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Configuration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_error(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35718,6 +35798,10 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			}
 		case "value":
 			out.Values[i] = ec._FormationAssignment_value(ctx, field, obj)
+		case "configuration":
+			out.Values[i] = ec._FormationAssignment_configuration(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._FormationAssignment_error(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

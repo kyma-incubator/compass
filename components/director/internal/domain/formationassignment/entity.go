@@ -13,6 +13,7 @@ type Entity struct {
 	TargetType  string         `db:"target_type"`
 	State       string         `db:"state"`
 	Value       sql.NullString `db:"value"`
+	Error       sql.NullString `db:"error"`
 }
 
 // EntityCollection is a collection of formation assignments entities.

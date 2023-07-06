@@ -2,6 +2,7 @@ package formationassignment
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -564,10 +565,6 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 	if formationAssignment == nil {
 		return &webhook.FormationAssignment{Value: "\"\""}
 	}
-	config := string(formationAssignment.Value)
-	if config == "" || formationAssignment.State == string(model.CreateErrorAssignmentState) || formationAssignment.State == string(model.DeleteErrorAssignmentState) {
-		config = "\"\""
-	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
 		FormationID: formationAssignment.FormationID,
@@ -577,7 +574,8 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
-		Value:       config,
+		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
+		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
 }
 
