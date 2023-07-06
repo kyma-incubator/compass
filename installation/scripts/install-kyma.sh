@@ -70,3 +70,6 @@ rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/addon
 
 echo "Installing minimal Kyma"
 kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source=local --workspace "$KYMA_WORKSPACE"
+
+echo "Helm install ORY components"
+helm upgrade --install ory -f "${ROOT_PATH}"/chart/ory/values.yaml -n kyma-system "${ROOT_PATH}"/chart/ory
