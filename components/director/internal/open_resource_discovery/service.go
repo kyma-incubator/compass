@@ -1727,7 +1727,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		if err != nil {
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for %s with id %s", resourceType, resourceID)
 		}
-
+		// dummy
 		bundleData, err := s.fetchBundlesFromDB(ctx, resourceType, resourceID)
 		if err != nil {
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for %s with id %s", resourceType, resourceID)
