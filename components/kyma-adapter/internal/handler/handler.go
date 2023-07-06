@@ -45,6 +45,7 @@ type AdapterHandler struct {
 	DirectorGqlClient Client
 }
 
+// NewHandler creates an AdapterHandler
 func NewHandler(directorGqlClient Client) *AdapterHandler {
 	return &AdapterHandler{DirectorGqlClient: directorGqlClient}
 }
