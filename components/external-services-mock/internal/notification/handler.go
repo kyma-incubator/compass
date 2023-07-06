@@ -85,30 +85,36 @@ type FormationAssignmentResponseConfig struct {
 	} `json:"key2"`
 }
 
+// KymaMappingsBasicAuthentication contains the basic credentials used in the KymaMappingsOutboundCommunication
 type KymaMappingsBasicAuthentication struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+// KymaMappingsOauthAuthentication contains the oauth credentials used in the KymaMappingsOutboundCommunication
 type KymaMappingsOauthAuthentication struct {
 	TokenServiceUrl string `json:"tokenServiceUrl"`
 	ClientId        string `json:"clientId"`
 	ClientSecret    string `json:"clientSecret"`
 }
 
+// KymaMappingsOutboundCommunication contains the outbound communication used in the KymaMappingsCredentials
 type KymaMappingsOutboundCommunication struct {
 	BasicAuthentication KymaMappingsBasicAuthentication `json:"basicAuthentication,omitempty"`
 	OauthAuthentication KymaMappingsOauthAuthentication `json:"oauth2ClientCredentials,omitempty"`
 }
 
+// KymaMappingsCredentials contains the credentials used in the KymaMappingsConfiguration
 type KymaMappingsCredentials struct {
 	OutboundCommunication KymaMappingsOutboundCommunication `json:"outboundCommunication"`
 }
 
+// KymaMappingsConfiguration contains the configuration used in KymaMappingsResponseBody
 type KymaMappingsConfiguration struct {
 	Credentials KymaMappingsCredentials `json:"credentials"`
 }
 
+// KymaMappingsResponseBody contains the state and configuration for the Kyma Tenant Mapping flow
 type KymaMappingsResponseBody struct {
 	State         string                    `json:"state"`
 	Configuration KymaMappingsConfiguration `json:"configuration"`
