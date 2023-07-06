@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"io"
 	"net/http"
 	"time"
@@ -38,15 +39,16 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
-	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
-	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	ParentTenantPathParam              string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
-	RegionPathParam                    string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
-	XsAppNamePathParam                 string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
-	OmitDependenciesCallbackParam      string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
-	OmitDependenciesCallbackParamValue string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
+	TenantWithParentOnDemandHandlerEndpoint    string `envconfig:"APP_TENANT_WITH_PARENT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	TenantWithoutParentOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_WITHOUT_PARENT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{tenantId}"`
+	RegionalHandlerEndpoint                    string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint                       string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
+	TenantPathParam                            string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	ParentTenantPathParam                      string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
+	RegionPathParam                            string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	XsAppNamePathParam                         string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
+	OmitDependenciesCallbackParam              string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
+	OmitDependenciesCallbackParamValue         string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
 
 	Database persistence.DatabaseConfig
 
@@ -116,14 +118,16 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
 	if !ok || len(parentTenantID) == 0 {
-		log.C(ctx).Error("Parent tenant path parameter is missing from request")
-		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
-		return
+		parentTenantID = ""
 	}
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
 	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
+		if apperrors.IsEmptyParentIDError(err) {
+			http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
+			return
+		}
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return

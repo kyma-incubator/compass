@@ -18,6 +18,7 @@ import (
 )
 
 // BusinessTenantMappingService is responsible for the service-layer tenant operations.
+//
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
@@ -38,6 +39,7 @@ type BusinessTenantMappingService interface {
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
 // into the external GraphQL representation graphql.Tenant.
+//
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
@@ -123,7 +125,6 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
 	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
 	if err != nil && apperrors.IsNotFoundError(err) {
 		tx, err = r.fetchTenant(tx, externalID)
@@ -326,7 +327,8 @@ func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) 
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	if err := r.fetcher.FetchOnDemand(externalID, ""); err != nil { // will always fail
+
+	if err := r.fetcher.FetchOnDemand(externalID, ""); err != nil {
 		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
 	}
 	tr, err := r.transact.Begin()
