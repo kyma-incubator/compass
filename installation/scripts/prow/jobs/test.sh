@@ -1,0 +1,1 @@
+~/compass/installation/cmd/run.sh
