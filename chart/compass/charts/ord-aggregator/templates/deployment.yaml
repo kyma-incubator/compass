@@ -162,6 +162,8 @@ spec:
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
             - name: APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS
               value: {{ .Values.global.ordAggregator.tenantMappingConfiguration | quote }}
+            - name: APP_KYMA_ADAPTER_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}:443"
           command:
             - "/bin/sh"
           args:
