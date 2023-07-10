@@ -120,7 +120,6 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 	if !ok || len(parentTenantID) == 0 {
 		parentTenantID = ""
 	}
-	log.C(ctx).Infof("DRAGTO 123 PAREINT TENANT ID: %s", parentTenantID)
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
 	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {

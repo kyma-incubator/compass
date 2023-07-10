@@ -952,34 +952,33 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
-func TestGetSubaccountFromEventServiceIfMissingInCMP(t *testing.T) {
-	subaccountExternalTenant := "subaccount-external-tnt"
-	//subaccountName := "subaccount-name"
-	//subaccountSubdoimain := "subaccount-subdomain"
-	//directoryParentGUID := "directory-parent-guid"
-	//subaccountParent := "subaccount-parent"
+func TestGetSubaccountOnDemandIfMissing(t *testing.T) {
+	ctx := context.TODO()
+	subaccountExternalTenant := config.OnDemandTenant
 
-	//createEvent := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdoimain, testLicenseType, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath)
-	//setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
-	//defer cleanupMockEvents(t, subaccountCreateSubPath)
-
-	//require.Eventually(t, func() bool {
-	//TODO 1. delete request for tenant
-	// TODO 2. getTenantByExtenralID for tenant - it creates it
-	// TODO 3. delete request for tenant
-	// TODO 4. add logs
-	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
-	if subaccount == nil {
-		t.Logf("Waiting for subaccount %s to be created", subaccountExternalTenant)
-		//return false
+	tenantsToDelete := []graphql.BusinessTenantMappingInput{
+		{
+			ExternalTenant: subaccountExternalTenant,
+		},
 	}
+
+	defer func() {
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
+		assert.NoError(t, err)
+	}()
+
+	t.Logf("Deleting tenant %q", subaccountExternalTenant)
+	err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
+	assert.NoError(t, err)
+
+	t.Logf("Retrieving tenant %q by external id", subaccountExternalTenant)
+	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
+
 	assert.NoError(t, err)
 	assert.NotNil(t, subaccount)
 	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
 
-	t.Log("TestGetSubaccountFromEventServiceIfMissingInCMP checks are successful")
-	//return true
-	//}, timeout, checkInterval, "Waiting for tenants retrieval.")
+	t.Log("TestGetSubaccountOnDemandIfMissing checks are successful")
 }
 
 func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain, licenseType string) string {

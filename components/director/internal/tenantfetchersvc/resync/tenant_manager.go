@@ -362,7 +362,6 @@ func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, events
 
 				var res *EventsPage
 				err := retry.Do(func() error {
-					log.C(ctx).Info("START FETCHING 1")
 					res, err = eventAPIClient.FetchTenantEventsPage(ctx, eventsType, qParams)
 					if err != nil {
 						return errors.Wrap(err, "while fetching tenant events page")
