@@ -22,11 +22,11 @@ global:
           saJson: ""
         postgresql:
           enabled: true
-        # user: "someUser"
-        # password: "postgres"
-        # dbUrl: "mydb.mynamespace.svc.cluster.local:1234"
-        # dbName: "db4hydra"
-        # dbType: "postgres | mysql | cockroach"
+          # user: "someUser"
+          # password: "postgres"
+          # dbUrl: "mydb.mynamespace.svc.cluster.local:1234"
+          # dbName: "db4hydra"
+          # dbType: "postgres | mysql | cockroach"
   containerRegistry:
     path: eu.gcr.io/kyma-project
   images:
@@ -73,17 +73,14 @@ global:
       name: "alpine"
       version: "3.15.3"
       directory: "external"
-
 headerRewrite:
   enabled: true
   certificateDataHeader: "Certificate-Data"
   workloadLabel: oathkeeper
-
 # Maintenance options
 maintenance:
   podSecurityPolicy:
     enabled: true
-
 # Overrides for the Hydra chart
 hydra:
   ingress:
@@ -111,35 +108,37 @@ hydra:
       targetMemoryUtilizationPercentage: 75
       targetCPUUtilizationPercentage: 80
   hydra:
-    autoMigrate: true
     # The ORY Hydra configuration. For a full list of available settings, check:
     #   https://github.com/ory/hydra/blob/master/docs/config.yaml
+    autoMigrate: true
     config:
+      dsn: memory
+      log:
+        leak_sensitive_values: false
+        level: trace
+      secrets: {}
       serve:
-        public:
-          port: 4444
         admin:
           port: 4445
+        public:
+          port: 4444
         tls:
           allow_termination_from:
             - 10.0.0.0/8
             - 172.16.0.0/12
             - 192.168.0.0/16
-      secrets: {}
       urls:
         self: {}
     dangerousAllowInsecureRedirectUrls: false
     dangerousForceHttp: true
+    # existingSecret: "ory-hydra-credentials"
   secret:
     enabled: true
-  # existingSecret: "ory-hydra-credentials"
-  # Hydra Maester disabled as of now
-  # hydra-maester:
-  #   globalAccess: true
-  #   config:
-  #     # Must be in-sync with hydra.hydra.config.existingSecret
-  #     hydraSecret: "ory-hydra-credentials"
-
+    # hydra-maester:
+    #   globalAccess: true
+    #   config:
+    #     # Must be in-sync with hydra.hydra.config.existingSecret
+    #     hydraSecret: "ory-hydra-credentials"
 # Overrides for the Oathkeeper chart
 oathkeeper:
   oathkeeper:
@@ -150,9 +149,9 @@ oathkeeper:
         unauthorized:
           enabled: true
         anonymous:
-          enabled: true
           config:
             subject: anonymous
+          enabled: true
         cookie_session:
           enabled: false
           config:
@@ -162,7 +161,7 @@ oathkeeper:
             # If unset, all requests are forwarded.
             # If set, only requests that have at least one of the set cookies will be forwarded, others will be passed to the next authenticator
             only:
-            - sessionid
+              - sessionid
         oauth2_client_credentials:
           enabled: true
           config:
@@ -182,13 +181,15 @@ oathkeeper:
           enabled: true
           config:
             jwks_urls:
-            - http://ory-hydra-public.kyma-system.svc.cluster.local:4444/.well-known/jwks.json
+              - http://ory-hydra-public.kyma-system.svc.cluster.local:4444/.well-known/jwks.json
             scope_strategy: wildcard
       authorizers:
         allow:
           enabled: true
         deny:
           enabled: true
+      log:
+        level: trace
       mutators:
         noop:
           enabled: true
@@ -199,17 +200,17 @@ oathkeeper:
             issuer_url: https://oathkeeper.local.kyma.dev/
             # REQUIRED IF ENABLED - Sets the URL where keys should be fetched from. Supports remote locations (http, https) as
             # well as local filesystem paths.
-            jwks_url: "file:///etc/secrets/jwks.json"
+            jwks_url: file:///etc/secrets/jwks.json
             # jwks_url: https://fetch-keys/from/this/location.json
             # jwks_url: file:///from/this/absolute/location.json
             # jwks_url: file://../from/this/relative/location.json
             # Sets the time-to-live of the ID token. Defaults to one minute. Valid time units are: s (second), m (minute), h (hour).
             ttl: 60s
         header:
-          enabled: true
           config:
             headers:
               X-Server: oathkeeper
+          enabled: true
         cookie:
           enabled: true
           config:
@@ -229,8 +230,6 @@ oathkeeper:
             write: 3600s
         api:
           port: 4456
-      log:
-        level: trace
   deployment:
     strategy:
       type: RollingUpdate
@@ -246,10 +245,10 @@ oathkeeper:
         memory: 128Mi
     autoscaling:
       enabled: true
-      minReplicas: 1
-      maxReplicas: 1
+      maxReplicas: "1"
+      minReplicas: "1"
       targetMemoryUtilizationPercentage: 75
-      targetCPUUtilizationPercentage: 80    
+      targetCPUUtilizationPercentage: 80
   oathkeeper-maester:
     deployment:
       annotations:
@@ -261,7 +260,6 @@ oathkeeper:
         requests:
           cpu: 50m
           memory: 64Mi
-
 # Local persistance settings
 postgresql:
   resources:
@@ -274,7 +272,8 @@ postgresql:
   master:
     podAnnotations:
       sidecar.istio.io/inject: "false"
-
+      # Must be in-sync with hydra.hydra.config.existingSecret
+      # existingSecret: "ory-hydra-credentials"
 # Remote persistance settings
 gcloud-sqlproxy:
   rbac:
@@ -284,5 +283,6 @@ gcloud-sqlproxy:
     term_timeout: 30s
   podAnnotations:
     sidecar.istio.io/inject: "false"
+  # Must be in-sync with hydra.hydra.config.existingSecret
   existingSecret: "ory-hydra-credentials"
   existingSecretKey: "gcp-sa.json"
