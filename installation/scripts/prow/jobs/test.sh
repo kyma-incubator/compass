@@ -1,3 +1,5 @@
+readonly TEST_INFRA_SOURCES_DIR="${KYMA_PROJECT_DIR}/test-infra"
+
 # shellcheck source=prow/scripts/lib/log.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 
@@ -11,6 +13,8 @@ chmod +x kyma
 
 log::info "Kyma CLI installed with version: $KYMA_CLI_VERSION"
 log::info "Installing Compass"
+
+ls -R
 
 ~/compass/installation/cmd/run.sh
 
