@@ -33,9 +33,8 @@ fi
 
 trap cleanup_trap EXIT INT TERM
 
-echo "Values are: $VALUES_FILE_ORY"
 echo "Helm install ORY components"
-helm upgrade --install ory -f "${VALUES_FILE_ORY}" -n kyma-system "${ROOT_PATH}"/chart/ory --timeout 10m
+helm upgrade --install ory -f "${VALUES_FILE_ORY}" -n kyma-system "${ROOT_PATH}"/chart/ory --timeout 10m --wait
 
 kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
 kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
