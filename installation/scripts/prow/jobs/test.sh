@@ -10,12 +10,12 @@ PREV_WD=$(pwd)
 git clone https://github.com/kyma-project/cli.git && cd cli && git checkout $KYMA_CLI_VERSION
 make build-linux && cd ./bin && mv ./kyma-linux ./kyma
 chmod +x kyma
-alias kyma="./kyma"
+alias kyma="${pwd}/kyma"
 
 echo "Kyma CLI installed with version: $KYMA_CLI_VERSION"
-echo"Installing Compass"
+echo "Installing Compass"
 
-kyma -v
+kyma version
 
 ../../installation/cmd/run.sh
 
