@@ -14,6 +14,8 @@ chmod +x kyma
 log::info "Kyma CLI installed with version: $KYMA_CLI_VERSION"
 log::info "Installing Compass"
 
+kyma -v
+
 ls -R
 cd ../../installation/cmd && ls
 
