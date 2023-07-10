@@ -16,6 +16,6 @@ log::info "Installing Compass"
 
 ls -R
 
-../../installation/cmd/run.sh
+../../../cmd/run.sh
 
 log::info "Compass installed"
