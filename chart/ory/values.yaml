@@ -22,11 +22,11 @@ global:
           saJson: ""
         postgresql:
           enabled: true
-          # user: "someUser"
-          # password: "postgres"
-          # dbUrl: "mydb.mynamespace.svc.cluster.local:1234"
-          # dbName: "db4hydra"
-          # dbType: "postgres | mysql | cockroach"
+        # user: "someUser"
+        # password: "postgres"
+        # dbUrl: "mydb.mynamespace.svc.cluster.local:1234"
+        # dbName: "db4hydra"
+        # dbType: "postgres | mysql | cockroach"
   containerRegistry:
     path: eu.gcr.io/kyma-project
   images:
@@ -73,14 +73,17 @@ global:
       name: "alpine"
       version: "3.15.3"
       directory: "external"
+
 headerRewrite:
   enabled: true
   certificateDataHeader: "Certificate-Data"
   workloadLabel: oathkeeper
+
 # Maintenance options
 maintenance:
   podSecurityPolicy:
     enabled: true
+
 # Overrides for the Hydra chart
 hydra:
   ingress:
@@ -131,14 +134,15 @@ hydra:
         self: {}
     dangerousAllowInsecureRedirectUrls: false
     dangerousForceHttp: true
-    # existingSecret: "ory-hydra-credentials"
+      # existingSecret: "ory-hydra-credentials"
   secret:
     enabled: true
-    # hydra-maester:
-    #   globalAccess: true
-    #   config:
-    #     # Must be in-sync with hydra.hydra.config.existingSecret
-    #     hydraSecret: "ory-hydra-credentials"
+  # hydra-maester:
+  #   globalAccess: true
+  #   config:
+  #     # Must be in-sync with hydra.hydra.config.existingSecret
+  #     hydraSecret: "ory-hydra-credentials"
+
 # Overrides for the Oathkeeper chart
 oathkeeper:
   oathkeeper:
@@ -189,7 +193,7 @@ oathkeeper:
         deny:
           enabled: true
       log:
-        level: trace
+          level: trace
       mutators:
         noop:
           enabled: true
@@ -248,7 +252,7 @@ oathkeeper:
       maxReplicas: "1"
       minReplicas: "1"
       targetMemoryUtilizationPercentage: 75
-      targetCPUUtilizationPercentage: 80
+      targetCPUUtilizationPercentage: 80    
   oathkeeper-maester:
     deployment:
       annotations:
@@ -260,6 +264,7 @@ oathkeeper:
         requests:
           cpu: 50m
           memory: 64Mi
+
 # Local persistance settings
 postgresql:
   resources:
@@ -272,8 +277,9 @@ postgresql:
   master:
     podAnnotations:
       sidecar.istio.io/inject: "false"
-      # Must be in-sync with hydra.hydra.config.existingSecret
-      # existingSecret: "ory-hydra-credentials"
+  # Must be in-sync with hydra.hydra.config.existingSecret
+  # existingSecret: "ory-hydra-credentials"
+
 # Remote persistance settings
 gcloud-sqlproxy:
   rbac:

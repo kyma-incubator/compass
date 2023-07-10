@@ -35,4 +35,12 @@ trap cleanup_trap EXIT INT TERM
 
 echo "Values are: $VALUES_FILE_ORY"
 echo "Helm install ORY components"
-helm upgrade --install ory -f "${VALUES_FILE_ORY}" -n kyma-system "${ROOT_PATH}"/chart/ory
+helm upgrade --install ory -f "${VALUES_FILE_ORY}" -n kyma-system "${ROOT_PATH}"/chart/ory --timeout 10m
+
+kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
+kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
+until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
+    echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
+    sleep 3
+done
+kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
