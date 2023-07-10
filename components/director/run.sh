@@ -275,7 +275,6 @@ export APP_FORMATION_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/status'
 export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
 export APP_APPLICATION_TEMPLATE_PRODUCT_LABEL="systemRole"
-export APP_KYMA_ADAPTER_URL="url"
 
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback

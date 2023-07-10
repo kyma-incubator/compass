@@ -11,5 +11,5 @@ type Config struct {
 	ApplicationTypeLabelKey       string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	KymaRuntimeTypeLabelValue     string `envconfig:"APP_KYMA_RUNTIME_TYPE_LABEL_VALUE,default=kyma"`
 	KymaApplicationNamespaceValue string `envconfig:"APP_KYMA_APPLICATION_NAMESPACE_VALUE,default=sap.kyma"`
-	KymaAdapterURL                string `envconfig:"APP_KYMA_ADAPTER_URL"`
+	KymaAdapterURL                string `envconfig:"APP_KYMA_ADAPTER_URL,default=https://compass-gateway-sap-mtls.local.kyma.dev:443"`
 }
