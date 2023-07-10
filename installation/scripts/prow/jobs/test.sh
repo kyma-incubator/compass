@@ -15,6 +15,7 @@ log::info "Kyma CLI installed with version: $KYMA_CLI_VERSION"
 log::info "Installing Compass"
 
 ls -R
+cd ../../../ && ls
 
 ../../../cmd/run.sh
 
