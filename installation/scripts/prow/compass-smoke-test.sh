@@ -108,20 +108,6 @@ curl -fLSs -o migrate.tgz "https://github.com/golang-migrate/migrate/releases/do
 tar --extract --file migrate.tgz --directory "${MIGRATE_HOME}" --no-same-owner
 rm migrate.tgz* 
 
-echo "logs-----"
-pwd
-ls -la ${JAVA_HOME}
-ls -la ${JAVA_HOME}/bin
-ls -la ${M2_HOME}
-ls -la ${MIGRATE_HOME}
-ls -la ${COMPASS_DIR}
-ls -la ${ORD_SVC_DIR}
-
-which bash
-
-echo "logs-----"
-
-
 echo "-----------------------------------"
 echo "Environment"
 echo "-----------------------------------"
