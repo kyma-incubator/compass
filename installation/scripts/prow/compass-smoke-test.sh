@@ -111,6 +111,7 @@ rm migrate.tgz*
 echo "logs-----"
 pwd
 ls -la ${JAVA_HOME}
+ls -la ${JAVA_HOME}/bin
 ls -la ${M2_HOME}
 ls -la ${MIGRATE_HOME}
 ls -la ${COMPASS_DIR}
