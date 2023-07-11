@@ -96,8 +96,10 @@ spec:
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT
-              value: "{{ .Values.global.tenantFetcher.server.fetchTenantEndpoint }}"
+            - name: APP_TENANT_WITH_PARENT_ON_DEMAND_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.fetchTenantWithParentEndpoint }}"
+            - name: APP_TENANT_WITHOUT_PARENT_ON_DEMAND_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.fetchTenantWithoutParentEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
             - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT

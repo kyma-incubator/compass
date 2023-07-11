@@ -146,12 +146,12 @@ global:
       version: "PR-3156"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3116"
+      dir: prod/incubator/
+      version: "v20230623-d1d6b3e7"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3121"
+      dir: prod/incubator/
+      version: "v20230628-e9903edf"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
@@ -162,12 +162,12 @@ global:
       version: "PR-3156"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-94"
+      dir: prod/incubator/
+      version: "v20230516-659eedd9"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3135"
+      dir: prod/incubator/
+      version: "v20230628-e2468984"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -183,8 +183,8 @@ global:
       version: "PR-3156"
       name: compass-external-services-mock
     console:
-      dir: dev/incubator/
-      version: "PR-83"
+      dir: prod/incubator/
+      version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
@@ -812,7 +812,8 @@ global:
       dependentServiceInstancesInfoAppNameProperty: "appName"
       dependentServiceInstancesInfoProviderSubaccountIdProperty: "providerSubaccountId"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithParentEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithoutParentEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
