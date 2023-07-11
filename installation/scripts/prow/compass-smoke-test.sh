@@ -69,11 +69,11 @@ check_value() {
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
 BASE_DIR="${1}"
-JAVA_HOME="${BASE_DIR}/openjdk-11"
-M2_HOME="${BASE_DIR}/maven"
-MIGRATE_HOME="${BASE_DIR}/migrate"
+JAVA_HOME="${BASE_DIR}openjdk-11"
+M2_HOME="${BASE_DIR}maven"
+MIGRATE_HOME="${BASE_DIR}migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
-ORD_SVC_DIR="${BASE_DIR}/ord-service"
+ORD_SVC_DIR="${BASE_DIR}ord-service"
 TEST_RESULT=true
 export PATH="/google-cloud-sdk/bin:${PATH}"
 
@@ -91,6 +91,13 @@ export PATH="${MIGRATE_HOME}:${PATH}"
 
 export ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
+
+echo "logs-----"
+pwd
+ls -la
+
+echo "logs-----"
+
 
 echo "Install java"
 curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
