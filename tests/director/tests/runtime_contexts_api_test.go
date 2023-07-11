@@ -162,22 +162,22 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 	testCases := []struct {
-		FirstSubscriptionFlow       string
-		SecondSubscriptionFlow      string
+		FirstSubscriptionFlow       string // For the first subscription in the test. Used by external services mock to determine to which saas application is the subscription.
+		SecondSubscriptionFlow      string // For the second subscription in the tests. Used by external services mock to determine to which saas application is the subscription.
 		SubscriptionProviderID      string
 		SubscribedToProviderAppName string // this is provider app name which we subscribe for
 		ExpectedProviderAppName     string // this is the value of runtimeType label of the runtime from which we create runtime context. For the tests where we are subscribing for an indirect dependency this should be the app name of the direct dependency.
 	}{
 		{
-			FirstSubscriptionFlow:       subscription.StandardFlow,
-			SecondSubscriptionFlow:      subscription.StandardFlow,
+			FirstSubscriptionFlow:       conf.SubscriptionConfig.StandardFlow,
+			SecondSubscriptionFlow:      conf.SubscriptionConfig.StandardFlow,
 			SubscriptionProviderID:      conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
 			SubscribedToProviderAppName: conf.SubscriptionProviderAppNameValue,
 			ExpectedProviderAppName:     conf.SubscriptionProviderAppNameValue,
 		},
 		{
-			FirstSubscriptionFlow:       subscription.IndirectDependencyFlow,
-			SecondSubscriptionFlow:      subscription.DirectDependencyFlow,
+			FirstSubscriptionFlow:       conf.SubscriptionConfig.IndirectDependencyFlow,
+			SecondSubscriptionFlow:      conf.SubscriptionConfig.DirectDependencyFlow,
 			SubscriptionProviderID:      conf.SelfRegisterDirectDependencyDistinguishLabelValue,
 			SubscribedToProviderAppName: conf.IndirectDependencySubscriptionProviderAppNameValue,
 			ExpectedProviderAppName:     conf.DirectDependencySubscriptionProviderAppNameValue,
@@ -240,7 +240,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testCase.SubscribedToProviderAppName)
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, true, testCase.FirstSubscriptionFlow)
 
 			t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
@@ -283,7 +283,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			// We shouldn't be able cleanup the self-registered runtime if there is a subscription
 			require.Contains(t, err.Error(), "received unexpected status code 409")
 
-			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow)
+			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 			t.Log("List runtimes(and runtime contexts) after successful unsubscribe request")
 			consumerSubaccountRtms := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
@@ -347,7 +347,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testCase.SubscribedToProviderAppName)
 
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, true, testCase.FirstSubscriptionFlow)
 
 			t.Log("Assert the runtime context has subscriptions label")
@@ -355,19 +355,19 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 
 			t.Logf("Creating a second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.SecondSubscriptionFlow)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.SecondSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 			createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, false, testCase.SecondSubscriptionFlow)
 			t.Logf("Successfully created second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
 			t.Log("Assert runtime context subscriptions label has new value added")
 			assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, 2)
 
-			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow)
+			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 			t.Log("Assert runtime context subscriptions label has one value less")
 			assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, 1)
 
-			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.SecondSubscriptionFlow)
+			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.SecondSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 			t.Log("List runtimes(and runtime contexts) after successful unsubscribe request")
 			consumerSubaccountRtms := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
@@ -383,7 +383,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 func assertRuntimeContextFromSubscription(t *testing.T, tenantID, runtimeID string, expectedSubscriptionsCount int) {
 	consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeID)
 	require.Len(t, consumerSubaccountRuntime.RuntimeContexts.Data, 1)
-	subscriptionsLabelInterface, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.SubscriptionsLabelKey].([]interface{})
+	subscriptionsLabelInterface, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[conf.SubscriptionConfig.SubscriptionsLabelKey].([]interface{})
 	require.True(t, ok)
 	subscriptionsLabelValue := make([]string, len(subscriptionsLabelInterface))
 	for i, v := range subscriptionsLabelInterface {
@@ -393,13 +393,13 @@ func assertRuntimeContextFromSubscription(t *testing.T, tenantID, runtimeID stri
 	require.Len(t, subscriptionsLabelValue, expectedSubscriptionsCount)
 }
 
-func createRuntimeSubscription(t *testing.T, httpClient *http.Client, providerRuntime graphql.RuntimeExt, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, unsubscribeFirst bool, subscriptionFlow string) {
-	subscribeReq := subscription.BuildSubscriptionRequest(t, subscriptionToken, conf.SubscriptionConfig.URL, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionFlow)
+func createRuntimeSubscription(t *testing.T, httpClient *http.Client, providerRuntime graphql.RuntimeExt, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, shouldUnsubscribeFirst bool, subscriptionFlow string) {
+	subscribeReq := subscription.BuildSubscriptionRequest(t, subscriptionToken, conf.SubscriptionConfig.URL, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
-	if unsubscribeFirst {
+	if shouldUnsubscribeFirst {
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscription.StandardFlow)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 	}
 
 	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)

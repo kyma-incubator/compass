@@ -568,7 +568,7 @@ func (s *service) manageSubscriptionsLabelOnSubscribe(ctx context.Context, tenan
 		return nil
 	}
 
-	log.C(ctx).Infof("Adding new value to the %q label. Current values %v", SubscriptionsLabelKey, subscriptions)
+	log.C(ctx).Infof("Adding new subscription ID: %q to the %q label. Current subscription IDs %v", subscriptionID, SubscriptionsLabelKey, subscriptions)
 	subscriptions = append(subscriptions, subscriptionID)
 	if err := s.labelSvc.UpdateLabel(ctx, tenant, subscriptionsLabel.ID, &model.LabelInput{
 		Key:        subscriptionsLabel.Key,

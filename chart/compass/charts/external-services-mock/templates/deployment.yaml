@@ -163,6 +163,14 @@ spec:
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.tenantIDKey }}
               - name: APP_TENANT_CONFIG_CONSUMER_CLAIMS_SUBDOMAIN_KEY
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
+              - name: APP_TENANT_CONFIG_STANDARD_FLOW
+                value: {{ .Values.global.subscription.standardFlow }}
+              - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_FLOW
+                value: {{ .Values.global.subscription.directDependencyFlow }}
+              - name: APP_TENANT_CONFIG_INDIRECT_DEPENDENCY_FLOW
+                value: {{ .Values.global.subscription.indirectDependencyFlow }}
+              - name: APP_TENANT_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+                value: {{ .Values.global.subscription.subscriptionsFlowHeaderKey }}
               - name: APP_DESTINATION_TENANT_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT

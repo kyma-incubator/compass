@@ -1119,6 +1119,12 @@ global:
       providerAppClientID: "provider-client-id"
       providerAppTenantID: "provider-app-tenant-id"
       apiName: "Test API Name"
+  subscription:
+    labelKey: "subscriptions"
+    standardFlow: "standard"
+    indirectDependencyFlow: "indirectDependency"
+    directDependencyFlow: "directDependency"
+    subscriptionsFlowHeaderKey: "subscriptionFlow"
   tests:
     http:
       client:

@@ -244,6 +244,16 @@ spec:
                   key: password
             - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
               value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.subscription.subscriptionsFlowHeaderKey }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"

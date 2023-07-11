@@ -31,6 +31,18 @@ type Config struct {
 	TestTenantOnDemandID                    string
 	ConsumerClaimsTenantIDKey               string
 	ConsumerClaimsSubdomainKey              string
+	// StandardFlow subscribes to saas-instance which has CMP declared as dependency.
+	// The participants in the scenario and their relationships are: saas-instance -> CMP
+	StandardFlow string
+	// DirectDependencyFlow is used in subscription tests for subscribing to saas-direct-dependency-instance which has CMP declared as dependencya.
+	// The participants in the scenario and their relationships are saas-root-instance -> saas-direct-dependency-instance -> CMP
+	DirectDependencyFlow string
+	// IndirectDependencyFlow is used in subscription tests for subscribing to saas-root-instance that have CMP as indirect dependency.
+	// The participants in the scenario and their relationships are saas-root-instance -> saas-direct-dependency-instance -> CMP.
+	// As saas-root-instance has saas-direct-dependency-instance declared as dependency when subscribing to saas-root-instance, saas-direct-dependency-instance
+	// will also receive a subscription callback.
+	IndirectDependencyFlow    string
+	SubscriptionFlowHeaderKey string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.

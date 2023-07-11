@@ -20,15 +20,10 @@ import (
 
 const (
 	tenantTokenClaimsKey = "tenant"
-	// subscribedProviderIdValue, subscribedProviderAppNameValue and subscribedProviderSubaccountIdValue are used when CMP is an indirect dependency in a subscription flow
-	subscribedProviderIdValue           = "subscribedProviderID"
-	subscribedProviderAppNameValue      = "subscribedProviderAppName"
-	subscribedProviderSubaccountIdValue = "subscribedProviderSubaccountID"
-	standardFlow                        = "standard"
-	directDependencyFlow                = "direct dependency"
-	indirectDependencyFlow              = "indirect dependency"
-	// subscriptionFlowHeaderKey is the key for header in which the subscription flow for local test execution is specified
-	subscriptionFlowHeaderKey = "subscriptionFlow"
+	// subscribedRootProviderIdValue, subscribedRootProviderAppNameValue and subscribedRootProviderSubaccountIdValue are used when CMP is an indirect dependency in a subscription flow
+	subscribedRootProviderIdValue           = "subscribedRootProviderID"
+	subscribedRootProviderAppNameValue      = "subscribedRootProviderAppName"
+	subscribedRootProviderSubaccountIdValue = "subscribedRootProviderSubaccountID"
 )
 
 type handler struct {
@@ -154,7 +149,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
-	subscriptionFlow := r.Header.Get(subscriptionFlowHeaderKey)
+	subscriptionFlow := r.Header.Get(h.tenantConfig.SubscriptionFlowHeaderKey)
 	subscriptionID := getSubscriptionID(httpMethod, appName)
 	if subscriptionID == "" {
 		return http.StatusOK, nil
@@ -234,7 +229,7 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 	}
 
 	subscribedProviderId := ""
-	if subscriptionFlow == standardFlow {
+	if subscriptionFlow == h.tenantConfig.StandardFlow {
 		subscribedProviderId = h.tenantConfig.SubscriptionProviderID
 	} else {
 		subscribedProviderId = h.tenantConfig.DirectDependencySubscriptionProviderID
@@ -261,22 +256,30 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
-	if subscriptionFlow == indirectDependencyFlow { // indirect dependency flow: Indirect dependency SAAS app <- direct dependency SAAS app <- CMP
+	if subscriptionFlow == h.tenantConfig.IndirectDependencyFlow {
+		// When indirect dependency flow the subscribed application is IndirectDependency SAAS app.
+		// Participants in the scenario : Indirect dependency SAAS app <- Direct dependency SAAS app <- CMP
 		fmt.Printf("subscriptions: %v", Subscriptions)
-		body, err = h.setProviderValues(body, subscribedProviderIdValue, subscribedProviderAppNameValue, subscribedProviderSubaccountIdValue)
+		body, err = h.setProviderValues(body, subscribedRootProviderIdValue, subscribedRootProviderAppNameValue, subscribedRootProviderSubaccountIdValue)
 		if err != nil {
 			return nil, err
 		}
-	} else if subscriptionFlow == directDependencyFlow { // indirect dependency flow: Indirect dependency SAAS app <- direct dependency SAAS app <- CMP
+	} else if subscriptionFlow == h.tenantConfig.DirectDependencyFlow {
+		// When direct dependency flow the subscribed application is Direct dependency SAAS app.
+		// Participants in the scenario: Indirect dependency SAAS app <- Direct dependency SAAS app <- CMP
 		body, err = h.setProviderValues(body, h.tenantConfig.DirectDependencySubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
 		if err != nil {
 			return nil, err
 		}
-	} else if subscriptionFlow == standardFlow { // standard dependency flow: SAAS app <- CMP
+	} else if subscriptionFlow == h.tenantConfig.StandardFlow {
+		// When standard dependency flow the subscribed application is SAAS app
+		// Participants in the scenario: SAAS app <- CMP
 		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, errors.Errorf("Unknown subscription flow: %q", subscriptionFlow)
 	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))

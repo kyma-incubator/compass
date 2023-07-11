@@ -17,11 +17,15 @@ import (
 )
 
 var (
-	testErr          = errors.New("test error")
-	url              = "https://target-url.com"
-	token            = "token-value"
-	tokenWithClaim   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnQiOiJ0ZXN0In0.5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"
-	providerSubaccID = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
+	testErr                   = errors.New("test error")
+	url                       = "https://target-url.com"
+	token                     = "token-value"
+	tokenWithClaim            = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnQiOiJ0ZXN0In0.5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"
+	providerSubaccID          = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
+	standardFlow              = "standard"
+	directDependencyFlow      = "directDependency"
+	indirectDependencyFlow    = "indirectDependency"
+	subscriptionFlowHeaderKey = "subscriptionFlow"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response
@@ -67,6 +71,10 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		TestConsumerTenantID:               "consumerTenantID",
 		PropagatedProviderSubaccountHeader: "X-Propagated-Provider",
 		SubscriptionProviderAppNameValue:   "subscriptionProviderAppNameValue",
+		StandardFlow:                       standardFlow,
+		DirectDependencyFlow:               directDependencyFlow,
+		IndirectDependencyFlow:             indirectDependencyFlow,
+		SubscriptionFlowHeaderKey:          subscriptionFlowHeaderKey,
 	}
 
 	providerCfg := ProviderConfig{
@@ -205,6 +213,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
+		subscribeReq.Header.Add(subscriptionFlowHeaderKey, standardFlow)
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 
 		testClient := NewTestClient(func(req *http.Request) *http.Response {
@@ -228,6 +237,30 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		require.Contains(t, string(body), "while executing subscribe request: wrong status code while executing subscription request")
 	})
 
+	t.Run("Error when unknown subscription flow", func(t *testing.T) {
+		//GIVEN
+		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		require.NoError(t, err)
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
+		subscribeReq.Header.Add(subscriptionFlowHeaderKey, "unknown")
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
+
+		h := NewHandler(nil, tenantCfg, providerCfg, "")
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.Subscribe(r, subscribeReq)
+		resp := r.Result()
+
+		//THEN
+		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.NotEmpty(t, body)
+		require.Contains(t, string(body), "Unknown subscription flow:")
+	})
+
 	t.Run("Successful API calls to tenant fetcher", func(t *testing.T) {
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
@@ -236,47 +269,64 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		require.NoError(t, err)
 
 		testCases := []struct {
-			Name           string
-			Request        *http.Request
-			IsSubscription bool
-			isIndirectDep  bool
+			Name             string
+			Request          *http.Request
+			IsSubscription   bool
+			SubscriptionFlow string
 		}{
 			{
-				Name:           "Successfully executed subscribe request",
-				Request:        subscribeReq,
-				IsSubscription: true,
+				Name:             "Successfully executed subscribe request",
+				Request:          subscribeReq,
+				IsSubscription:   true,
+				SubscriptionFlow: standardFlow,
 			},
 			{
-				Name:           "Successfully executed subscribe request when adding second subscription",
-				Request:        subscribeReq,
-				IsSubscription: true,
+				Name:             "Successfully executed subscribe request when adding second subscription",
+				Request:          subscribeReq,
+				IsSubscription:   true,
+				SubscriptionFlow: standardFlow,
 			},
 			{
-				Name:           "Successfully executed unsubscribe request when there are more than one subscriptions",
-				Request:        unsubscribeReq,
-				IsSubscription: false,
+				Name:             "Successfully executed unsubscribe request when there are more than one subscriptions",
+				Request:          unsubscribeReq,
+				IsSubscription:   false,
+				SubscriptionFlow: standardFlow,
 			},
 			{
-				Name:           "Successfully executed unsubscribe request",
-				Request:        unsubscribeReq,
-				IsSubscription: false,
+				Name:             "Successfully executed unsubscribe request",
+				Request:          unsubscribeReq,
+				IsSubscription:   false,
+				SubscriptionFlow: standardFlow,
 			},
 			{
-				Name:           "Do not make unsubscribe request to tenant fetcher when there are not subscriptions to delete",
-				Request:        unsubscribeReq,
-				IsSubscription: false,
+				Name:             "Do not make unsubscribe request to tenant fetcher when there are not subscriptions to delete",
+				Request:          unsubscribeReq,
+				IsSubscription:   false,
+				SubscriptionFlow: standardFlow,
 			},
 			{
-				Name:           "Successfully executed subscribe request when CMP is indirect dependency",
-				Request:        subscribeReq,
-				IsSubscription: true,
-				isIndirectDep:  true,
+				Name:             "Successfully executed subscribe request when indirect dependency flow",
+				Request:          subscribeReq,
+				IsSubscription:   true,
+				SubscriptionFlow: indirectDependencyFlow,
 			},
 			{
-				Name:           "Successfully executed unsubscribe request when CMP is indirect dependency",
-				Request:        unsubscribeReq,
-				IsSubscription: false,
-				isIndirectDep:  true,
+				Name:             "Successfully executed unsubscribe request when indirect dependency flow",
+				Request:          unsubscribeReq,
+				IsSubscription:   false,
+				SubscriptionFlow: indirectDependencyFlow,
+			},
+			{
+				Name:             "Successfully executed subscribe request when direct dependency flow",
+				Request:          subscribeReq,
+				IsSubscription:   true,
+				SubscriptionFlow: directDependencyFlow,
+			},
+			{
+				Name:             "Successfully executed unsubscribe request when direct dependency flow",
+				Request:          unsubscribeReq,
+				IsSubscription:   false,
+				SubscriptionFlow: directDependencyFlow,
 			},
 		}
 
@@ -286,9 +336,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				req := testCase.Request
 				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
-				if testCase.isIndirectDep {
-					req.Header.Add(subscriptionFlowHeaderKey, standardFlow)
-				}
+				req.Header.Add(subscriptionFlowHeaderKey, testCase.SubscriptionFlow)
 				req = mux.SetURLVars(req, map[string]string{"app_name": appName})
 
 				testClient := NewTestClient(func(req *http.Request) *http.Response {

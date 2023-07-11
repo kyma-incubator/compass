@@ -13,6 +13,19 @@ type Config struct {
 	SelfRegisterLabelKey                  string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY"`
 	SelfRegisterLabelValuePrefix          string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX"`
 	PropagatedProviderSubaccountHeader    string `envconfig:"APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER"`
+	SubscriptionsLabelKey                 string `envconfig:"APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY"`
+	// StandardFlow subscribes to saas-instance which has CMP declared as dependency.
+	// The participants in the scenario and their relationships are: saas-instance -> CMP
+	StandardFlow string `envconfig:"APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW"`
+	// DirectDependencyFlow is used in subscription tests for subscribing to saas-direct-dependency-instance which has CMP declared as dependencya.
+	// The participants in the scenario and their relationships are saas-root-instance -> saas-direct-dependency-instance -> CMP
+	DirectDependencyFlow string `envconfig:"APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW"`
+	// IndirectDependencyFlow is used in subscription tests for subscribing to saas-root-instance that have CMP as indirect dependency.
+	// The participants in the scenario and their relationships are saas-root-instance -> saas-direct-dependency-instance -> CMP.
+	// As saas-root-instance has saas-direct-dependency-instance declared as dependency when subscribing to saas-root-instance, saas-direct-dependency-instance
+	// will also receive a subscription callback.
+	IndirectDependencyFlow    string `envconfig:"APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW"`
+	SubscriptionFlowHeaderKey string `envconfig:"APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY"`
 }
 
 type TenantFetcherConfig struct {

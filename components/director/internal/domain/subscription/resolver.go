@@ -69,10 +69,26 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	for _, instance := range dependentSvcInstancesInfo.Instances {
 		log.C(ctx).Infof("Subscription flow for subscribe will be entered. Changing provider ID from %q to %q, provider subaccount id from %q to %q and subscription app name from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID, subscriptionAppName, instance.AppName)
+
 		providerID = instance.AppID
+		if providerID == "" {
+			return false, errors.New("Provider ID should not be empty")
+		}
+
 		providerSubaccountID = instance.ProviderSubaccountID
+		if providerSubaccountID == "" {
+			return false, errors.New("Provider subaccount ID should not be empty")
+		}
+
 		subscriptionAppName = instance.AppName
+		if subscriptionAppName == "" {
+			return false, errors.New("Subscription app name should not be empty")
+		}
+
 		subscriptionID := gjson.GetBytes([]byte(subscriptionPayload), subscriptionIDKey).String()
+		if subscriptionID == "" {
+			return false, errors.New("Subscription ID should not be empty")
+		}
 
 		flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
 		if err != nil {
