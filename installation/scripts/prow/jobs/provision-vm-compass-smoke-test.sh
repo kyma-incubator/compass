@@ -30,7 +30,7 @@ fi
 log::info "Installing google-cloud-cli"
 GCLOUD_CLI_VERSION="437.0.1"
 curl -fLSs -o gc-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz"
-tar xzf gc-sdk.tar.gz -C 
+tar xzf gc-sdk.tar.gz -C /
 rm gc-sdk.tar.gz
 gcloud components install alpha beta kubectl docker-credential-gcr gke-gcloud-auth-plugin
 gcloud config set core/disable_usage_reporting true 
