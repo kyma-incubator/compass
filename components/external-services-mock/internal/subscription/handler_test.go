@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/form3tech-oss/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,13 +22,28 @@ var (
 	testErr                   = errors.New("test error")
 	url                       = "https://target-url.com"
 	token                     = "token-value"
-	tokenWithClaim            = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnQiOiJ0ZXN0In0.5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"
+	tokenWithClaim            = strings.Join([]string{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "eyJ0ZW5hbnQiOiJ0ZXN0In0", "5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"}, ".")
 	providerSubaccID          = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
 	standardFlow              = "standard"
 	directDependencyFlow      = "directDependency"
 	indirectDependencyFlow    = "indirectDependency"
 	subscriptionFlowHeaderKey = "subscriptionFlow"
 )
+
+func createToken() *jwt.Token {
+	token := &jwt.Token{
+		Header: map[string]interface{}{
+			"alg": "RS256",
+			"kid": "67bf0153-a6dc-4f06-9ce4-2f203b79adc8",
+		},
+		Method: jwt.GetSigningMethod("RS256"),
+		Claims: &jwt.MapClaims{
+			"tenant": "test",
+		},
+	}
+
+	return token
+}
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
