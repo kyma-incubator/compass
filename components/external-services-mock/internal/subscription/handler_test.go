@@ -2,48 +2,39 @@ package subscription
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/gorilla/mux"
-	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 )
 
 var (
 	testErr                   = errors.New("test error")
-	url                       = "https://target-url.com"
+	targetURL                 = "https://target-url.com"
 	token                     = "token-value"
-	tokenWithClaim            = strings.Join([]string{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "eyJ0ZW5hbnQiOiJ0ZXN0In0", "5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"}, ".")
+	keysPath                  = "file://testdata/jwks-private.json"
 	providerSubaccID          = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
 	standardFlow              = "standard"
 	directDependencyFlow      = "directDependency"
 	indirectDependencyFlow    = "indirectDependency"
 	subscriptionFlowHeaderKey = "subscriptionFlow"
 )
-
-func createToken() *jwt.Token {
-	token := &jwt.Token{
-		Header: map[string]interface{}{
-			"alg": "RS256",
-			"kid": "67bf0153-a6dc-4f06-9ce4-2f203b79adc8",
-		},
-		Method: jwt.GetSigningMethod("RS256"),
-		Claims: &jwt.MapClaims{
-			"tenant": "test",
-		},
-	}
-
-	return token
-}
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
@@ -62,6 +53,13 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 
 func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	// GIVEN
+	privateJWKS, err := FetchJWK(context.TODO(), keysPath)
+	require.NoError(t, err)
+	key, ok := privateJWKS.Get(0)
+	assert.True(t, ok)
+
+	tokenWithClaim := createTokenWithSigningMethod(t, key)
+
 	appName := "94764028-8cf8-11ec-9ffc-acde48001122"
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", appName)
 	reqBody := "{\"subscriptionParams\": {}}"
@@ -112,7 +110,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when missing authorization header", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
@@ -128,7 +126,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when missing Bearer token", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, "Bearer ")
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
@@ -145,7 +143,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when missing tenant path param", func(t *testing.T) {
 		//GIVEN
-		subReq, err := http.NewRequest(http.MethodPost, url+fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", ""), bytes.NewBuffer([]byte(reqBody)))
+		subReq, err := http.NewRequest(http.MethodPost, targetURL+fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", ""), bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
@@ -162,7 +160,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when extracting tenant claim from token", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
@@ -180,7 +178,13 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when missing propagated provider subaccount header", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		//privateJWKS, err := FetchJWK(context.TODO(), keysPath)
+		//require.NoError(t, err)
+		//key, ok := privateJWKS.Get(0)
+		//assert.True(t, ok)
+		//
+		//tokenWithClaim := createTokenWithSigningMethod(t, key)
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
@@ -198,7 +202,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when subscription request to tenant fetcher fails", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
@@ -226,7 +230,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when tenant fetcher returns unexpected status code on subscribe request", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
@@ -256,7 +260,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when unknown subscription flow", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
@@ -279,10 +283,10 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	})
 
 	t.Run("Successful API calls to tenant fetcher", func(t *testing.T) {
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 
-		unsubscribeReq, err := http.NewRequest(http.MethodDelete, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		unsubscribeReq, err := http.NewRequest(http.MethodDelete, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 
 		testCases := []struct {
@@ -385,7 +389,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when executing unsubscribe request", func(t *testing.T) {
 		//GIVEN
-		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
@@ -449,7 +453,7 @@ func TestHandler_JobStatus(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			getJobReq, err := http.NewRequest(testCase.RequestMethod, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			getJobReq, err := http.NewRequest(testCase.RequestMethod, targetURL+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			getJobReq.Header.Add(testCase.AuthHeader, fmt.Sprintf("Bearer %s", testCase.Token))
 			if testCase.AuthHeader == "" {
@@ -478,4 +482,55 @@ func assertExpectedResponse(t *testing.T, response *http.Response, expectedBody 
 	require.NoError(t, err)
 	require.NotEmpty(t, body)
 	require.Equal(t, expectedBody, string(body))
+}
+
+func createTokenWithSigningMethod(t *testing.T, key jwk.Key) string {
+	tokenClaims := struct {
+		Tenant string `json:"tenant"`
+		jwt.StandardClaims
+	}{
+		Tenant: "test",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, tokenClaims)
+
+	var rawKey interface{}
+	err := key.Raw(&rawKey)
+	require.NoError(t, err)
+
+	signedToken, err := token.SignedString(rawKey)
+	require.NoError(t, err)
+
+	return signedToken
+}
+
+func FetchJWK(ctx context.Context, urlstring string, options ...jwk.FetchOption) (jwk.Set, error) {
+	u, err := url.Parse(urlstring)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse url")
+	}
+
+	switch u.Scheme {
+	case "http", "https":
+		return jwk.Fetch(ctx, urlstring, options...)
+	case "file":
+		filePath := strings.TrimPrefix(urlstring, "file://")
+		f, err := os.Open(filePath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to open jwk file")
+		}
+		defer func() {
+			err := f.Close()
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("An error has occurred while closing file: %v", err)
+			}
+		}()
+
+		buf, err := io.ReadAll(f)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed read content from jwk file")
+		}
+		return jwk.Parse(buf)
+	}
+	return nil, errors.Errorf("invalid url scheme %s", u.Scheme)
 }
