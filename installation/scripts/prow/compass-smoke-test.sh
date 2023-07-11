@@ -92,12 +92,6 @@ export PATH="${MIGRATE_HOME}:${PATH}"
 export ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
 
-echo "logs-----"
-pwd
-ls -la
-
-echo "logs-----"
-
 
 echo "Install java"
 curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
@@ -113,6 +107,17 @@ echo "Install migrate"
 curl -fLSs -o migrate.tgz "https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz"
 tar --extract --file migrate.tgz --directory "${MIGRATE_HOME}" --no-same-owner
 rm migrate.tgz* 
+
+echo "logs-----"
+pwd
+ls -la ${JAVA_HOME}
+ls -la ${M2_HOME}
+ls -la ${MIGRATE_HOME}
+ls -la ${COMPASS_DIR}
+ls -la ${ORD_SVC_DIR}
+
+echo "logs-----"
+
 
 echo "-----------------------------------"
 echo "Environment"
