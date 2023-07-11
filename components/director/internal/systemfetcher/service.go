@@ -26,8 +26,10 @@ import (
 const (
 	// LifecycleAttributeName is the lifecycle status attribute of the application in the external source response for applications retrieval.
 	LifecycleAttributeName string = "lifecycleStatus"
+	ManagedByAttributeName string = "managedBy"
 	// LifecycleDeleted is the string matching the deleted lifecycle state of the application in the external source.
 	LifecycleDeleted string = "DELETED"
+	SAPManagedSystem string = "SAP Cloud"
 
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
@@ -359,6 +361,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			displayName := gjson.GetBytes(systemPayload, displayNameKey).String()
 			systemNumber := gjson.GetBytes(systemPayload, systemNumberKey).String()
 			lifecycleStatus := gjson.GetBytes(systemPayload, additionalAttributesKey+"."+LifecycleAttributeName).String()
+			managedBy := gjson.GetBytes(systemPayload, additionalAttributesKey+"."+ManagedByAttributeName).String()
 
 			log.C(ctx).Infof("Getting system by name %s and system number %s", displayName, systemNumber)
 
@@ -371,7 +374,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				}
 			}
 
-			if lifecycleStatus == LifecycleDeleted && s.config.EnableSystemDeletion {
+			if (lifecycleStatus == LifecycleDeleted && s.config.EnableSystemDeletion) || managedBy == SAPManagedSystem {
 				if app == nil {
 					log.C(ctx).Warnf("System with system number %s is not present. Skipping deletion.", systemNumber)
 					return nil
