@@ -426,6 +426,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	if err != nil {
 		return nil, []error{err}
 	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
 	for i := 0; i < len(keys); i++ {
 		formationAssignments := formationAssignmentsPerFormation[i]
@@ -447,12 +452,13 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
-				if fa.Value == nil {
-					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
-					continue
-				}
+				//TODO should not be possible to be null
+				//if fa.Value == nil {
+				//formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
+				//continue
+				//}
 				var assignmentError formationassignment.AssignmentErrorWrapper
-				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
+				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
 				}
 
@@ -470,10 +476,6 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			Condition: condition,
 			Errors:    formationStatusErrors,
 		})
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, []error{err}
 	}
 
 	return gqlFormationStatuses, nil
