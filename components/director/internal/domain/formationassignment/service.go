@@ -800,8 +800,8 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", mappingPair.Assignment.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
 		assignment.State = string(model.DeletingAssignmentState)
-		// clearing the error as new notification has been sent
-		assignment.Error = nil
+		// clearing the error and configuration as new notification has been sent
+		ResetAssignmentConfigAndError(assignment)
 		if err = s.Update(ctx, assignment.ID, assignment); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)

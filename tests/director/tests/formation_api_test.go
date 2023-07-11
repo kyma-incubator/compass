@@ -4342,7 +4342,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			expectedError := str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")
 			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: expectedError, Error: expectedError},
+					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: expectedConfig, Value: expectedError, Error: expectedError},
 				},
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -4546,7 +4546,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 				},
 				app1.ID: {
-					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: errorConfig, Error: errorConfig},
+					rtCtx.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: syncConfig, Value: errorConfig, Error: errorConfig},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -5516,7 +5516,7 @@ func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context,
 
 		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
 		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
-
+		fmt.Printf("assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
 		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
 
 		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration))
