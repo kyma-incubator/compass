@@ -94,7 +94,7 @@ mkdir -p "${ARTIFACTS}"
 
 
 echo "Install java"
-curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
+curl -fLSs -o adoptopenjdk11.tgz "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19%2B7/OpenJDK11U-jdk_x64_alpine-linux_hotspot_11.0.19_7.tar.gz"
 tar --extract --file adoptopenjdk11.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
 rm adoptopenjdk11.tgz* 
 
