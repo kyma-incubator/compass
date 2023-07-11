@@ -117,6 +117,8 @@ ls -la ${MIGRATE_HOME}
 ls -la ${COMPASS_DIR}
 ls -la ${ORD_SVC_DIR}
 
+which bash
+
 echo "logs-----"
 
 
@@ -135,7 +137,7 @@ echo "Path: ${PATH}"
 echo "-----------------------------------"
 echo "Java version:"
 echo "-----------------------------------"
-java -version
+java --version
 echo "-----------------------------------"
 echo "Migrate version:"
 echo "-----------------------------------"
