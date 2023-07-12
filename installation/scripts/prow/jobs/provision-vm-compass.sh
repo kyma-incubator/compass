@@ -88,7 +88,7 @@ cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 KYMA_CLI_VERSION="2.3.0" # todo::: consider using the version from KYMA_VERSION file
 PREV_WD=$(pwd)
-curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/$(curl -s https://api.github.com/repos/kyma-project/cli/releases/latest | grep tag_name | cut -d '"' -f 4)/kyma_Linux_x86_64.tar.gz" \
+curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \
 && mkdir kyma-release && tar -C kyma-release -zxvf kyma.tar.gz && chmod +x kyma-release/kyma && mv kyma-release/kyma /usr/local/bin \
 && rm -rf kyma-release kyma.tar.gz
 cd "$PREV_WD"
