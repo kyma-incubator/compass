@@ -83,7 +83,7 @@ YQ_VERSION="v4.25.1"
 log::info "Downloading yq version: $YQ_VERSION"
 curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o yq
 chmod +x yq
-sudo cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
+cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 
 log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 KYMA_CLI_VERSION="2.3.0" # todo::: consider using the version from KYMA_VERSION file
