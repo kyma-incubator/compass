@@ -124,6 +124,7 @@ func CastToBool(i interface{}) (bool, error) {
 	return strconv.ParseBool(str)
 }
 
+// StringifyJSONRawMessage if the rawMessage contains value returns it, otherwise return escaped empty string (\"\")
 func StringifyJSONRawMessage(rawMessage json.RawMessage) string {
 	str := string(rawMessage)
 	if str == "" {
@@ -132,6 +133,7 @@ func StringifyJSONRawMessage(rawMessage json.RawMessage) string {
 	return str
 }
 
+// ValueIn checks if the provided value is part of the provided string slice
 func ValueIn(value string, in []string) bool {
 	for _, v := range in {
 		if value == v {

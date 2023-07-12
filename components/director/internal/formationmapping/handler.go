@@ -143,8 +143,6 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	//todo maybe sync with Mitko if we need to add DELETE_ERROR state to the check or if we want something different in that case
-	// as of now we will treat the assignment in DELETE_ERROR state as one that is being assigned
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	if formationOperation == model.UnassignFormation {
 		log.C(ctx).Infof("Processing formation assignment staus update for %q operation", model.UnassignFormation)

@@ -50,7 +50,6 @@ var (
 
 	faModel                    = fixFormationAssignmentModel(TestConfigValueRawJSON)
 	faModelWithConfigAndError  = fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
-	faEntity                   = fixFormationAssignmentEntity(TestConfigValueStr)
 	faEntityWithConfigAndError = fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
 
 	appSubtype = "app-subtype"

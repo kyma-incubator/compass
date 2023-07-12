@@ -992,6 +992,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 	return assignmentMappingPairs
 }
 
+// ResetAssignmentConfigAndError sets the configuration and the error fields of the formation assignment to nil
 func ResetAssignmentConfigAndError(assignment *model.FormationAssignment) {
 	assignment.Value = nil
 	assignment.Error = nil
