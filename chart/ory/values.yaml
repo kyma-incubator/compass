@@ -97,6 +97,8 @@ hydra:
       rollingUpdate:
         maxSurge: "50%"
         maxUnavailable: "0%"
+    serviceAccount:
+      create: false
     resources:
       limits:
         cpu: 1000m
@@ -113,7 +115,9 @@ hydra:
   hydra:
     # The ORY Hydra configuration. For a full list of available settings, check:
     #   https://github.com/ory/hydra/blob/master/docs/config.yaml
-    autoMigrate: true
+    automigration:
+      enabled: true
+      type: initContainer
     config:
       dsn: memory
       log:
@@ -137,11 +141,15 @@ hydra:
       # existingSecret: "ory-hydra-credentials"
   secret:
     enabled: true
+  maester:
+    enabled: false
   # hydra-maester:
   #   globalAccess: true
   #   config:
   #     # Must be in-sync with hydra.hydra.config.existingSecret
   #     hydraSecret: "ory-hydra-credentials"
+  serviceMonitor:
+    enabled: false
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
