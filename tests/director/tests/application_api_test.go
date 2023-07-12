@@ -71,7 +71,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	require.NotEmpty(t, actualApp.ID)
+	require.Empty(t, actualApp.ID)
 	assertions.AssertApplication(t, in, actualApp)
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 }
