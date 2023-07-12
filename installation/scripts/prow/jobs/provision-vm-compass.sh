@@ -47,6 +47,7 @@ chmod +x yq
 cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 log::info "Successfully installed yq version: $YQ_VERSION"
 
+# Install Kyma to be later used in run.sh
 log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 KYMA_CLI_VERSION=$(cat ${COMPASS_SOURCE_DIR}/installation/resources/KYMA_VERSION)
 
@@ -56,6 +57,7 @@ curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KY
 
 log::info "Successfully installed Kyma CLI version: $KYMA_CLI_VERSION"
 
+# Install openssl which is later used in run.sh
 log::info "Installing openssl..."
 apk add openssl
 log::info "Successfully installed openssl"
