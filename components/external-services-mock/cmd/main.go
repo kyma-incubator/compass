@@ -62,6 +62,7 @@ type config struct {
 	SelfRegConfig            selfreg.Config
 	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
+	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -241,7 +242,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
-	tenantFetcherHandler := tenantfetcher.NewHandler(cfg.TenantConfig.TestTenantOnDemandID)
+	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
