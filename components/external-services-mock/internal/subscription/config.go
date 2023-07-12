@@ -34,7 +34,7 @@ type Config struct {
 	// StandardFlow subscribes to saas-instance which has CMP declared as dependency.
 	// The participants in the scenario and their relationships are: saas-instance -> CMP
 	StandardFlow string
-	// DirectDependencyFlow is used in subscription tests for subscribing to saas-direct-dependency-instance which has CMP declared as dependencya.
+	// DirectDependencyFlow is used in subscription tests for subscribing to saas-direct-dependency-instance which has CMP declared as dependency.
 	// The participants in the scenario and their relationships are saas-root-instance -> saas-direct-dependency-instance -> CMP
 	DirectDependencyFlow string
 	// IndirectDependencyFlow is used in subscription tests for subscribing to saas-root-instance that have CMP as indirect dependency.
