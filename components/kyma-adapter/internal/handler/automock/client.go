@@ -6,6 +6,7 @@ import (
 	context "context"
 
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	gqlclient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -15,13 +16,13 @@ type Client struct {
 	mock.Mock
 }
 
-// CreateBasicBundleInstanceAuth provides a mock function with given fields: ctx, tenant, bndlID, rtmID, username, password
-func (_m *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant string, bndlID string, rtmID string, username string, password string) error {
-	ret := _m.Called(ctx, tenant, bndlID, rtmID, username, password)
+// CreateBundleInstanceAuth provides a mock function with given fields: ctx, tenant, input
+func (_m *Client) CreateBundleInstanceAuth(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error {
+	ret := _m.Called(ctx, tenant, input)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, tenant, bndlID, rtmID, username, password)
+	if rf, ok := ret.Get(0).(func(context.Context, string, gqlclient.BundleInstanceAuthInput) error); ok {
+		r0 = rf(ctx, tenant, input)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -29,27 +30,13 @@ func (_m *Client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant stri
 	return r0
 }
 
-// CreateOauthBundleInstanceAuth provides a mock function with given fields: ctx, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret
-func (_m *Client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant string, bndlID string, rtmID string, tokenServiceURL string, clientID string, clientSecret string) error {
-	ret := _m.Called(ctx, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret)
+// DeleteBundleInstanceAuth provides a mock function with given fields: ctx, tenant, input
+func (_m *Client) DeleteBundleInstanceAuth(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error {
+	ret := _m.Called(ctx, tenant, input)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// DeleteBundleInstanceAuth provides a mock function with given fields: ctx, tenant, authID
-func (_m *Client) DeleteBundleInstanceAuth(ctx context.Context, tenant string, authID string) error {
-	ret := _m.Called(ctx, tenant, authID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, tenant, authID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, gqlclient.BundleInstanceAuthInput) error); ok {
+		r0 = rf(ctx, tenant, input)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -80,27 +67,13 @@ func (_m *Client) GetApplicationBundles(ctx context.Context, appID string, tenan
 	return r0, r1
 }
 
-// UpdateBasicBundleInstanceAuth provides a mock function with given fields: ctx, tenant, authID, bndlID, username, password
-func (_m *Client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant string, authID string, bndlID string, username string, password string) error {
-	ret := _m.Called(ctx, tenant, authID, bndlID, username, password)
+// UpdateBundleInstanceAuth provides a mock function with given fields: ctx, tenant, input
+func (_m *Client) UpdateBundleInstanceAuth(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error {
+	ret := _m.Called(ctx, tenant, input)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, tenant, authID, bndlID, username, password)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateOauthBundleInstanceAuth provides a mock function with given fields: ctx, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret
-func (_m *Client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant string, authID string, bndlID string, tokenServiceURL string, clientID string, clientSecret string) error {
-	ret := _m.Called(ctx, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret)
+	if rf, ok := ret.Get(0).(func(context.Context, string, gqlclient.BundleInstanceAuthInput) error); ok {
+		r0 = rf(ctx, tenant, input)
 	} else {
 		r0 = ret.Error(0)
 	}

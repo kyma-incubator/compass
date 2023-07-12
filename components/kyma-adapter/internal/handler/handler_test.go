@@ -9,6 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/credentials"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/handler"
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/handler/automock"
@@ -48,6 +51,69 @@ func Test_HandlerFunc(t *testing.T) {
 		{Bundle: graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: "bndl-1"}}, InstanceAuths: []*graphql.BundleInstanceAuth{{ID: "auth-1", RuntimeID: &receiverTenantID}}},
 	}
 
+	createBasicInputs := []gqlclient.BundleInstanceAuthInput{
+		gqlclient.CreateBundleInstanceAuthInput{
+			BundleID:    bundles[0].ID,
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewBasicCredentials(username, password),
+		},
+		gqlclient.CreateBundleInstanceAuthInput{
+			BundleID:    bundles[1].ID,
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewBasicCredentials(username, password),
+		},
+	}
+
+	createOauthInputs := []gqlclient.BundleInstanceAuthInput{
+		gqlclient.CreateBundleInstanceAuthInput{
+			BundleID:    bundles[0].ID,
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewOauthCredentials(clientID, clientSecret, tokenServiceURL),
+		},
+		gqlclient.CreateBundleInstanceAuthInput{
+			BundleID:    bundles[1].ID,
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewOauthCredentials(clientID, clientSecret, tokenServiceURL),
+		},
+	}
+
+	updateBasicInputs := []gqlclient.BundleInstanceAuthInput{
+		gqlclient.UpdateBundleInstanceAuthInput{
+			Bundle:      bundlesWithAuths[0],
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewBasicCredentials(username, password),
+		},
+		gqlclient.UpdateBundleInstanceAuthInput{
+			Bundle:      bundlesWithAuths[1],
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewBasicCredentials(username, password),
+		},
+	}
+
+	updateOauthInputs := []gqlclient.BundleInstanceAuthInput{
+		gqlclient.UpdateBundleInstanceAuthInput{
+			Bundle:      bundlesWithAuths[0],
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewOauthCredentials(clientID, clientSecret, tokenServiceURL),
+		},
+		gqlclient.UpdateBundleInstanceAuthInput{
+			Bundle:      bundlesWithAuths[1],
+			RuntimeID:   receiverTenantID,
+			Credentials: credentials.NewOauthCredentials(clientID, clientSecret, tokenServiceURL),
+		},
+	}
+
+	deleteInputs := []gqlclient.BundleInstanceAuthInput{
+		gqlclient.DeleteBundleInstanceAuthInput{
+			Bundle:    bundlesWithAuths[0],
+			RuntimeID: receiverTenantID,
+		},
+		gqlclient.DeleteBundleInstanceAuthInput{
+			Bundle:    bundlesWithAuths[1],
+			RuntimeID: receiverTenantID,
+		},
+	}
+
 	testCases := []struct {
 		name                 string
 		clientFn             func() *automock.Client
@@ -77,8 +143,8 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
-				client.On("CreateBasicBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundles[0].Bundle.ID, receiverTenantID, username, password).Return(nil).Once()
-				client.On("CreateBasicBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundles[1].Bundle.ID, receiverTenantID, username, password).Return(nil).Once()
+				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createBasicInputs[0]).Return(nil).Once()
+				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createBasicInputs[1]).Return(nil).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
@@ -90,8 +156,8 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
-				client.On("CreateOauthBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundles[0].Bundle.ID, receiverTenantID, tokenServiceURL, clientID, clientSecret).Return(nil).Once()
-				client.On("CreateOauthBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundles[1].Bundle.ID, receiverTenantID, tokenServiceURL, clientID, clientSecret).Return(nil).Once()
+				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createOauthInputs[0]).Return(nil).Once()
+				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createOauthInputs[1]).Return(nil).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
@@ -103,8 +169,8 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
-				client.On("UpdateBasicBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[0].InstanceAuths[0].ID, bundlesWithAuths[0].Bundle.ID, username, password).Return(nil).Once()
-				client.On("UpdateBasicBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[1].InstanceAuths[0].ID, bundlesWithAuths[1].Bundle.ID, username, password).Return(nil).Once()
+				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateBasicInputs[0]).Return(nil).Once()
+				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateBasicInputs[1]).Return(nil).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
@@ -116,8 +182,8 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
-				client.On("UpdateOauthBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[0].InstanceAuths[0].ID, bundlesWithAuths[0].Bundle.ID, tokenServiceURL, clientID, clientSecret).Return(nil).Once()
-				client.On("UpdateOauthBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[1].InstanceAuths[0].ID, bundlesWithAuths[1].Bundle.ID, tokenServiceURL, clientID, clientSecret).Return(nil).Once()
+				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateOauthInputs[0]).Return(nil).Once()
+				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateOauthInputs[1]).Return(nil).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
@@ -140,8 +206,8 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
-				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[0].InstanceAuths[0].ID).Return(nil).Once()
-				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[1].InstanceAuths[0].ID).Return(nil).Once()
+				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, deleteInputs[0]).Return(nil).Once()
+				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, deleteInputs[1]).Return(nil).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
@@ -184,7 +250,7 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
-				client.On("CreateBasicBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundles[0].Bundle.ID, receiverTenantID, username, password).Return(testErr).Once()
+				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createBasicInputs[0]).Return(testErr).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
@@ -195,7 +261,7 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundles, nil).Once()
-				client.On("CreateOauthBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundles[0].Bundle.ID, receiverTenantID, tokenServiceURL, clientID, clientSecret).Return(testErr).Once()
+				client.On("CreateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, createOauthInputs[0]).Return(testErr).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
@@ -206,7 +272,7 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
-				client.On("UpdateBasicBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[0].InstanceAuths[0].ID, bundlesWithAuths[0].Bundle.ID, username, password).Return(testErr).Once()
+				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateBasicInputs[0]).Return(testErr).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),
@@ -217,7 +283,7 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
-				client.On("UpdateOauthBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[0].InstanceAuths[0].ID, bundlesWithAuths[0].Bundle.ID, tokenServiceURL, clientID, clientSecret).Return(testErr).Once()
+				client.On("UpdateBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, updateOauthInputs[0]).Return(testErr).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, assignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, oauthCredentials),
@@ -238,7 +304,7 @@ func Test_HandlerFunc(t *testing.T) {
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("GetApplicationBundles", mock.Anything, assignedTenantID, receiverOwnerTenantID).Return(bundlesWithAuths, nil).Once()
-				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, bundlesWithAuths[0].InstanceAuths[0].ID).Return(testErr).Once()
+				client.On("DeleteBundleInstanceAuth", mock.Anything, receiverOwnerTenantID, deleteInputs[0]).Return(testErr).Once()
 				return client
 			},
 			requestBody:          fmt.Sprintf(bodyFormatterBasic, platform, unassignOperation, receiverOwnerTenantID, receiverTenantID, assignedTenantID, basicCredentials),

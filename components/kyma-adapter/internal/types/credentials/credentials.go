@@ -2,13 +2,16 @@ package credentials
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/tenantmapping"
 )
 
+// Credentials represents the bundle instance auth credentials
 type Credentials interface {
 	ToString() string
 }
 
+// NewCredentials creates new Credentials
 func NewCredentials(body tenantmapping.Body) Credentials {
 	basicCreds := body.GetBasicCredentials()
 	oauthCreds := body.GetOauthCredentials()
@@ -23,15 +26,18 @@ func NewCredentials(body tenantmapping.Body) Credentials {
 	return creds
 }
 
+// BasicCredentials represents the basic bundle instance auth credentials
 type BasicCredentials struct {
 	username string
 	password string
 }
 
+// ToString stringifies BasicCredentials needed in the graphql request
 func (c *BasicCredentials) ToString() string {
 	return fmt.Sprintf(`basic: { username: "%s", password: "%s" }`, c.username, c.password)
 }
 
+// NewBasicCredentials creates new BasicCredentials
 func NewBasicCredentials(username, password string) *BasicCredentials {
 	return &BasicCredentials{
 		username: username,
@@ -39,16 +45,19 @@ func NewBasicCredentials(username, password string) *BasicCredentials {
 	}
 }
 
+// OauthCredentials represents the basic oauth instance auth credentials
 type OauthCredentials struct {
 	tokenServiceURL string
 	clientID        string
 	clientSecret    string
 }
 
+// ToString stringifies OauthCredentials needed in the graphql request
 func (c *OauthCredentials) ToString() string {
 	return fmt.Sprintf(`oauth: { clientId: "%s" clientSecret: "%s" url: "%s"}`, c.clientID, c.clientSecret, c.tokenServiceURL)
 }
 
+// NewOauthCredentials creates new OauthCredentials
 func NewOauthCredentials(clientID, clientSecret, tokenServiceURL string) *OauthCredentials {
 	return &OauthCredentials{
 		clientID:        clientID,
