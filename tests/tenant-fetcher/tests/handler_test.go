@@ -952,6 +952,35 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
+func TestGetSubaccountOnDemandIfMissing(t *testing.T) {
+	ctx := context.TODO()
+	subaccountExternalTenant := config.OnDemandTenant
+
+	tenantsToDelete := []graphql.BusinessTenantMappingInput{
+		{
+			ExternalTenant: subaccountExternalTenant,
+		},
+	}
+
+	defer func() {
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
+		assert.NoError(t, err)
+	}()
+
+	t.Logf("Deleting tenant %q", subaccountExternalTenant)
+	err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
+	assert.NoError(t, err)
+
+	t.Logf("Retrieving tenant %q by external id", subaccountExternalTenant)
+	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, subaccount)
+	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
+
+	t.Log("TestGetSubaccountOnDemandIfMissing checks are successful")
+}
+
 func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain, licenseType string) string {
 	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain, licenseType)
 }

@@ -1135,6 +1135,7 @@ global:
       supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      missingTenantOnDemandID: "subaccount-external-tnt"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:

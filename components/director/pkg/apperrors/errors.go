@@ -366,7 +366,7 @@ func NewCannotUnassignObjectComingFromASAError(objectID string) error {
 	}
 }
 
-// NewEmptyParentIDErrorWithMessage returns BadRequestErrorWithMessage error
+// NewEmptyParentIDErrorWithMessage returns EmptyParentIDErrorWithMessage error
 func NewEmptyParentIDErrorWithMessage(message string) error {
 	return Error{
 		errorCode: EmptyParentID,
