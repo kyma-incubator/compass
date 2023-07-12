@@ -5,8 +5,6 @@
 
 set -o errexit
 
-echo "current dir: $(pwd)" # todo::: remove
-
 readonly COMPASS_SOURCE_DIR="/home/prow/go/src/github.com/kyma-incubator/compass"
 readonly TEST_INFRA_SOURCES_DIR="${KYMA_PROJECT_DIR}/test-infra"
 
@@ -16,14 +14,6 @@ source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/utils.sh"
 # shellcheck source=prow/scripts/lib/gcp.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/gcp.sh"
-
-LABELS=""
-
-if [[ -z "${PULL_NUMBER}" ]]; then
-    LABELS=(--labels "branch=${PULL_BASE_REF},job-name=compass-integration")
-else
-    LABELS=(--labels "pull-number=${PULL_NUMBER},job-name=compass-integration")
-fi
 
 if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
@@ -58,12 +48,12 @@ cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 log::info "Successfully installed yq version: $YQ_VERSION"
 
 log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
-KYMA_CLI_VERSION="2.3.0" # todo::: consider using the version from KYMA_VERSION file
-PREV_WD=$(pwd)
+KYMA_CLI_VERSION=$(cat ${COMPASS_SOURCE_DIR}/installation/resources/KYMA_VERSION)
+
 curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \
 && mkdir kyma-release && tar -C kyma-release -zxvf kyma.tar.gz && chmod +x kyma-release/kyma && mv kyma-release/kyma /usr/local/bin \
 && rm -rf kyma-release kyma.tar.gz
-cd "$PREV_WD"
+
 log::info "Successfully installed Kyma CLI version: $KYMA_CLI_VERSION"
 
 log::info "Installing openssl..."

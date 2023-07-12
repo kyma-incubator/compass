@@ -20,13 +20,6 @@ if [[ "${BUILD_TYPE}" == "pr" ]]; then
     "${TEST_INFRA_SOURCES_DIR}/development/jobguard/scripts/run.sh"
 fi
 
-LABELS=""
-if [[ -z "${PULL_NUMBER}" ]]; then
-    LABELS=(--labels "branch=$PULL_BASE_REF,job-name=compass-smoke-test")
-else
-    LABELS=(--labels "pull-number=$PULL_NUMBER,job-name=compass-smoke-test")
-fi
-
 log::info "Installing gcloud CLI"
 apk add --no-cache python3 py3-crcmod py3-openssl
 export PATH="/google-cloud-sdk/bin:${PATH}"
