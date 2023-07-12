@@ -222,7 +222,8 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   --timeout "${K3D_TIMEOUT}" \
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
-  sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
+  # todo::: return sudo
+  sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
 usek3d
@@ -280,8 +281,10 @@ echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connec
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-  sudo cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
-  sudo update-ca-certificates
+  # todo::: return sudo
+  cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
+  # todo::: return sudo
+  update-ca-certificates
 fi
 
 echo "Adding Compass entries to /etc/hosts..."
