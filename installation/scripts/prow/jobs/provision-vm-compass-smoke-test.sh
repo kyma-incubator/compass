@@ -27,7 +27,7 @@ else
     LABELS=(--labels "pull-number=$PULL_NUMBER,job-name=compass-smoke-test")
 fi
 
-log::info "Installing google-cloud-cli"
+log::info "Installing gcloud CLI"
 apk add --no-cache python3 py3-crcmod py3-openssl
 export PATH="/google-cloud-sdk/bin:${PATH}"
 GCLOUD_CLI_VERSION="437.0.1"
@@ -40,7 +40,7 @@ gcloud config set component_manager/disable_update_check true
 gcloud config set metrics/environment github_docker_image 
 gcloud --version
 
-log::info "Authenticate"
+log::info "Authenticate to GCP through gcloud"
 gcp::authenticate \
     -c "${GOOGLE_APPLICATION_CREDENTIALS}"
 
