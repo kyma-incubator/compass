@@ -51,6 +51,7 @@ type testConfig struct {
 	SelfRegRegion                    string
 	CertLoaderConfig                 certloader.Config
 	ExternalClientCertSecretName     string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	OnDemandTenant                   string `envconfig:"APP_ON_DEMAND_TENANT"`
 }
 
 type TenantProviderConfig struct {
