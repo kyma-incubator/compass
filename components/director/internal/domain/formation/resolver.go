@@ -452,11 +452,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
-				//TODO should not be possible to be null
-				//if fa.Value == nil {
-				//formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
-				//continue
-				//}
+				if fa.Error == nil {
+					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
+					continue
+				}
+
 				var assignmentError formationassignment.AssignmentErrorWrapper
 				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
