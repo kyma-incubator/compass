@@ -664,7 +664,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if isStateInResponse(response) { // if there is a state in the response
+	if isStateInResponse(response) {
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
@@ -808,7 +808,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
-	if isStateInResponse(response) { // if there is a state in the response
+	if isStateInResponse(response) {
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return false, errors.Errorf("The provided state in the response %q is not valid.", *response.State)

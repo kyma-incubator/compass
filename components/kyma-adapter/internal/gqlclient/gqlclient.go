@@ -3,6 +3,7 @@ package gqlclient
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/types/credentials"
 	"strings"
 	"time"
 
@@ -81,7 +82,8 @@ func (c *client) GetApplicationBundles(ctx context.Context, appID, tenant string
 		gqlReq := gcli.NewRequest(fmt.Sprintf(strReq, appID, pageSize, appBundles.GetBundlesEndCursor()))
 
 		appBundles = ApplicationBundles{}
-		if err := c.runWithTenant(ctx, gqlReq, tenant, &appBundles); err != nil {
+		gqlRes = gqlResult{Result: &appBundles}
+		if err := c.runWithTenant(ctx, gqlReq, tenant, &gqlRes); err != nil {
 			return nil, errors.Wrapf(err, "Error while getting bundles for application with id %q", appID)
 		}
 
@@ -91,93 +93,47 @@ func (c *client) GetApplicationBundles(ctx context.Context, appID, tenant string
 	return result, nil
 }
 
-// CreateBasicBundleInstanceAuth creates bundle instance auth with basic credentials for bundle with bndlID and runtime with rtmID using the internal gql client
-func (c *client) CreateBasicBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, username, password string) error {
+// CreateBundleInstanceAuth creates bundle instance auth with credentials for bundle with bndlID and runtime with rtmID using the internal gql client
+func (c *client) CreateBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID string, credentials credentials.Credentials) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: createBundleInstanceAuth(
   		  bundleID: "%s"
   		  in: {
   		    auth: {
-  		      credential: { basic: { username: "%s", password: "%s" } }
+  		      credential: { %s }
   		    }
   		    runtimeID: "%s"
   		  }
 		) {
     		id
 		  }
-		}`, bndlID, username, password, rtmID))
+		}`, bndlID, credentials.ToString(), rtmID))
 
 	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while creating Basic bundle instance auth for bundle with id %q and runtime with id %q", bndlID, rtmID)
+		return errors.Wrapf(err, "Error while creating bundle instance auth for bundle with id %q and runtime with id %q", bndlID, rtmID)
 	}
 
 	return nil
 }
 
-// CreateOauthBundleInstanceAuth creates bundle instance auth with oauth credentials for bundle with bndlID and runtime with rtmID using the internal gql client
-func (c *client) CreateOauthBundleInstanceAuth(ctx context.Context, tenant, bndlID, rtmID, tokenServiceURL, clientID, clientSecret string) error {
-	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-  		result: createBundleInstanceAuth(
-  		  bundleID: "%s"
-  		  in: {
-  		    auth: {
-  		      credential: { oauth: { clientId: "%s" clientSecret: "%s" url: "%s"} }
-  		    }
-  		    runtimeID: "%s"
-  		  }
-		) {
-    		id
-		  }
-		}`, bndlID, clientID, clientSecret, tokenServiceURL, rtmID))
-
-	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while creating Basic bundle instance auth for bundle with id %q and runtime with id %q", bndlID, rtmID)
-	}
-
-	return nil
-}
-
-// UpdateBasicBundleInstanceAuth updates bundle instance auth with basic credentials using the internal gql client
-func (c *client) UpdateBasicBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, username, password string) error {
+// UpdateBundleInstanceAuth updates bundle instance auth with credentials using the internal gql client
+func (c *client) UpdateBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID string, credentials credentials.Credentials) error {
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: updateBundleInstanceAuth(
 		  id: "%s"
   		  bundleID: "%s"
   		  in: {
   		    auth: {
-  		      credential: { basic: { username: "%s", password: "%s" } }
+  		      credential: { %s }
   		    }
   		  }
 		) {
     		id
 		  }
-		}`, authID, bndlID, username, password))
+		}`, authID, bndlID, credentials.ToString()))
 
 	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while updating bundle instance auth with Basic credentials with id %q for bundle with id %q", authID, bndlID)
-	}
-
-	return nil
-}
-
-// UpdateOauthBundleInstanceAuth updates bundle instance auth with oauth credentials using the internal gql client
-func (c *client) UpdateOauthBundleInstanceAuth(ctx context.Context, tenant, authID, bndlID, tokenServiceURL, clientID, clientSecret string) error {
-	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-  		result: updateBundleInstanceAuth(
-		  id: "%s"
-  		  bundleID: "%s"
-  		  in: {
-  		    auth: {
-  		      credential: { oauth: { clientId: "%s" clientSecret: "%s" url: "%s"} }
-  		    }
-  		  }
-		) {
-    		id
-		  }
-		}`, authID, bndlID, clientID, clientSecret, tokenServiceURL))
-
-	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while updating bundle instance auth with Oauth credentials with id %q for bundle with id %q", authID, bndlID)
+		return errors.Wrapf(err, "Error while updating bundle instance auth with id %q for bundle with id %q", authID, bndlID)
 	}
 
 	return nil

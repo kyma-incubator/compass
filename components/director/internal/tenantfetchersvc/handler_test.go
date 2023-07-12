@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"

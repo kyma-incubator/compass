@@ -2,9 +2,10 @@ package bundle_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer/consumertest"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
