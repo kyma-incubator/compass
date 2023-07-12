@@ -10,7 +10,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR=${CURRENT_DIR}/../../
 
 export ARTIFACTS="/var/log/prow_artifacts"
-sudo mkdir -p "${ARTIFACTS}"
+mkdir -p "${ARTIFACTS}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
