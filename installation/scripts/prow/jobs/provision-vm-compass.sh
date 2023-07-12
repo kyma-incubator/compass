@@ -49,6 +49,27 @@ log::info "Authenticate to GCP through gcloud"
 gcp::authenticate \
     -c "${GOOGLE_APPLICATION_CREDENTIALS}"
 
+# Download yq
+YQ_VERSION="v4.25.1"
+log::info "Downloading yq version: $YQ_VERSION"
+curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o yq
+chmod +x yq
+cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
+log::info "Successfully installed yq version: $YQ_VERSION"
+
+log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
+KYMA_CLI_VERSION="2.3.0" # todo::: consider using the version from KYMA_VERSION file
+PREV_WD=$(pwd)
+curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \
+&& mkdir kyma-release && tar -C kyma-release -zxvf kyma.tar.gz && chmod +x kyma-release/kyma && mv kyma-release/kyma /usr/local/bin \
+&& rm -rf kyma-release kyma.tar.gz
+cd "$PREV_WD"
+log::info "Successfully installed Kyma CLI version: $KYMA_CLI_VERSION"
+
+log::info "Installing openssl..."
+apk add openssl
+log::info "Successfully installed openssl"
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
@@ -77,22 +98,6 @@ do
     esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
-
-# Download yq
-YQ_VERSION="v4.25.1"
-log::info "Downloading yq version: $YQ_VERSION"
-curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o yq
-chmod +x yq
-cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
-
-log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
-KYMA_CLI_VERSION="2.3.0" # todo::: consider using the version from KYMA_VERSION file
-PREV_WD=$(pwd)
-curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \
-&& mkdir kyma-release && tar -C kyma-release -zxvf kyma.tar.gz && chmod +x kyma-release/kyma && mv kyma-release/kyma /usr/local/bin \
-&& rm -rf kyma-release kyma.tar.gz
-cd "$PREV_WD"
-log::info "Successfully installed Kyma CLI version: $KYMA_CLI_VERSION"
 
 log::info "Triggering the compass installation"
 ${COMPASS_SOURCE_DIR}/installation/scripts/prow/provision.sh ${DUMP_DB}
