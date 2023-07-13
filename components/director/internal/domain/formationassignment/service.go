@@ -685,8 +685,6 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 			assignment.State = string(model.ConfigPendingAssignmentState)
 		}
-
-		// TODO what if non of the above is true - status code is neither success nor incomplete?
 	}
 
 	// Notification response has been received. The error should be cleared. The old configuration should be discarded and the new one from the response should be used.
