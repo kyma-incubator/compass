@@ -3,6 +3,8 @@ package tests
 import (
 	"context"
 	"crypto/tls"
+	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"net/http"
 	"os"
 	"testing"
@@ -40,6 +42,9 @@ type DirectorConfig struct {
 	CertLoaderConfig                            certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                              subscription.Config
+	DestinationAPIConfig                            clients.DestinationServiceAPIConfig
+	DestinationsConfig                              cfg.DestinationsConfig
+	DestinationConsumerSubdomain                    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 	TestProviderAccountID                           string
 	TestProviderSubaccountID                        string
 	TestConsumerAccountID                           string

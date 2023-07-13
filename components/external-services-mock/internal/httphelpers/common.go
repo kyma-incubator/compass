@@ -4,25 +4,29 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
 const (
-	HeaderContentTypeKey   = "Content-Type"
-	HeaderContentTypeValue = "application/json;charset=UTF-8"
+	AuthorizationHeaderKey           = "Authorization"
+	ContentTypeHeaderKey             = "Content-Type"
+	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+	ContentTypeApplicationJSON       = "application/json"
 )
 
-func WriteError(writer http.ResponseWriter, errMsg error, statusCode int) {
-	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
 
-	response := model.ErrorResponse{
+func WriteError(writer http.ResponseWriter, errMsg error, statusCode int) {
+	writer.Header().Set(ContentTypeHeaderKey, ContentTypeApplicationJSON)
+
+	response := ErrorResponse{
 		Error: errMsg.Error(),
 	}
 
 	value, err := json.Marshal(&response)
 	if err != nil {
-		log.Fatalf("while wriiting error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
+		log.Fatalf("while writing error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
 	}
 	http.Error(writer, string(value), statusCode)
 }

@@ -72,7 +72,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling subscription job status request...")
 
-	authorization := r.Header.Get("Authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 	if len(authorization) == 0 {
 		log.C(ctx).Error("authorization header is required")
 		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusUnauthorized)
@@ -102,7 +102,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	writer.WriteHeader(http.StatusOK)
 	if _, err = writer.Write(payload); err != nil {
 		log.C(ctx).Errorf("while writing response: %s", err.Error())
@@ -114,7 +114,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (int, error) {
 	ctx := r.Context()
-	authorization := r.Header.Get("Authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 
 	if len(authorization) == 0 {
 		return http.StatusUnauthorized, errors.New("authorization header is required")
@@ -242,7 +242,7 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, err
 	}
 
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	request.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 	return request, nil
 }

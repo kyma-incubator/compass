@@ -1,4 +1,4 @@
-package notification
+package formationnotification
 
 import (
 	"bytes"
@@ -41,7 +41,7 @@ const (
 	DeleteFormation Operation = "deleteFormation"
 )
 
-type NotificationsConfiguration struct {
+type Configuration struct {
 	ExternalClientCertTestSecretName            string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
 	ExternalClientCertTestSecretNamespace       string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
 	ExternalClientCertCertKey                   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
@@ -73,8 +73,8 @@ type FormationAssignmentResponseBody struct {
 // FormationAssignmentResponseBodyWithState contains the synchronous formation assignment notification response body with state in it
 type FormationAssignmentResponseBodyWithState struct {
 	Config FormationAssignmentResponseConfig
-	Error  string         `json:"error,omitempty"`
-	State  FormationState `json:"state"`
+	Error  string                   `json:"error,omitempty"`
+	State  FormationAssignmentState `json:"state"`
 }
 
 // FormationAssignmentResponseConfig contains the configuration of the formation response body
@@ -100,6 +100,9 @@ const CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
 // DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 
+// ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
+const ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
+
 // ReadyFormationState indicates that the formation is in a ready state
 const ReadyFormationState FormationState = "READY"
 
@@ -115,7 +118,7 @@ type Handler struct {
 	// mapped to a particular Response that later will be validated in the E2E tests
 	Mappings          map[string][]Response
 	ShouldReturnError bool
-	config            NotificationsConfiguration
+	config            Configuration
 }
 
 // Response is used to model the response for a given formation or formation assignment notification request.
@@ -127,7 +130,7 @@ type Response struct {
 }
 
 // NewHandler creates a new Handler
-func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
+func NewHandler(notificationConfiguration Configuration) *Handler {
 	return &Handler{
 		Mappings:          make(map[string][]Response),
 		ShouldReturnError: true,
@@ -162,7 +165,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func([]byte) {
 		var response interface{} = FormationAssignmentResponseBodyWithState{
-			State: "CONFIG_PENDING",
+			State: ConfigPendingAssignmentState,
 			Config: FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
@@ -200,9 +203,39 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 	h.syncFAResponse(writer, r, responseFunc)
 }
 
+// RespondWithIncompleteAndDestinationDetails handles synchronous formation assignment notification requests for Assign operation
+// that returns destination details if the config in the request body is NOT provided, and if the config is provided returns READY state without configuration
+func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func(bodyBytes []byte) {
+		if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
+			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"correlationIds\":[\"some-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"http://e2e-basic-url-example.com\",\"authentication\":\"BasicAuthentication\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
+
+			httputils.RespondWithBody(context.TODO(), writer, http.StatusNoContent, response)
+			return
+		}
+
+		response := "{\"state\":\"READY\"}"
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	}
+
+	h.syncFAResponse(writer, r, responseFunc)
+}
+
 // Delete handles synchronous formation assignment notification requests for Unassign operation
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func([]byte) { writer.WriteHeader(http.StatusOK) }
+
+	h.syncFAResponse(writer, r, responseFunc)
+}
+
+// DestinationDelete handles synchronous formation assignment notification requests for destination deletion during Unassign operation
+func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBodyWithState{
+			State: ReadyAssignmentState,
+		}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	}
 
 	h.syncFAResponse(writer, r, responseFunc)
 }
@@ -217,21 +250,6 @@ func (h *Handler) DeleteWithState(writer http.ResponseWriter, r *http.Request) {
 	h.syncFAResponse(writer, r, responseFunc)
 }
 
-// GetResponses returns the notification data saved in the Mappings
-func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
-	if bodyBytes, err := json.Marshal(&h.Mappings); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	} else {
-		writer.WriteHeader(http.StatusOK)
-		_, err = writer.Write(bodyBytes)
-		if err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
 func (h *Handler) FailResponse(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBody{Error: "failed to parse request"}
@@ -240,6 +258,7 @@ func (h *Handler) FailResponse(writer http.ResponseWriter, r *http.Request) {
 	h.syncFAResponse(writer, r, responseFunc)
 }
 
+// todo::: minor: go doc + the other methods as well
 func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
 	if h.ShouldReturnError {
 		responseFunc := func([]byte) {
@@ -264,6 +283,21 @@ func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) 
 func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 	h.ShouldReturnError = true
 	writer.WriteHeader(http.StatusOK)
+}
+
+// GetResponses returns the notification data saved in the Mappings
+func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
+	if bodyBytes, err := json.Marshal(&h.Mappings); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	} else {
+		writer.WriteHeader(http.StatusOK)
+		_, err = writer.Write(bodyBytes)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 // Cleanup deletes/cleanup the notification data saved in the Mappings
@@ -342,8 +376,36 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusAccepted)
 }
 
+// AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
+func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	config := "{\"state\":\"READY\",\"configuration\":{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://basic-destination-url.com\",\"username\":\"basic-destination-username\",\"password\":\"basic-destination-password\"},\"samlAssertion\":{\"url\":\"https://saml-destination-url.com\"}}}}}"
+	h.asyncFAResponse(writer, r, Assign, config, responseFunc)
+
+	writer.WriteHeader(http.StatusAccepted)
+}
+
 // AsyncDelete handles asynchronous formation assignment notification requests for Unassign operation
 func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}
+	h.asyncFAResponse(writer, r, Unassign, "", responseFunc)
+}
+
+// AsyncDestinationDelete handles asynchronous formation assignment notification requests for destination deletion during Unassign operation
+func (h *Handler) AsyncDestinationDelete(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
@@ -424,7 +486,7 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 		return err
 	}
 
-	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }
@@ -466,14 +528,14 @@ func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, o
 
 	h.Mappings[id] = append(h.Mappings[id], response)
 
-	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
-	if formationID == "" {
+	formationID, err := retrieveFormationID(ctx, bodyBytes)
+	if err != nil {
 		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation ID"))
 		return
 	}
 
-	formationAssignmentID := gjson.Get(string(bodyBytes), "formation-assignment-id").String()
-	if formationAssignmentID == "" {
+	formationAssignmentID, err := retrieveFormationAssignmentID(ctx, bodyBytes)
+	if err != nil {
 		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation assignment ID"))
 		return
 	}
@@ -487,6 +549,33 @@ func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, o
 	go responseFunc(ctx, certAuthorizedHTTPClient, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+func retrieveFormationID(ctx context.Context, bodyBytes []byte) (string, error) {
+	return retrieveIDFromJSONPath(ctx, bodyBytes, []string{"ucl-formation-id", "context.uclFormationId"})
+}
+
+func retrieveFormationAssignmentID(ctx context.Context, bodyBytes []byte) (string, error) {
+	return retrieveIDFromJSONPath(ctx, bodyBytes, []string{"formation-assignment-id", "receiverTenant.uclAssignmentId"})
+}
+
+func retrieveIDFromJSONPath(ctx context.Context, bodyBytes []byte, jsonPaths []string) (string, error) {
+	var found bool
+	var id string
+	for _, path := range jsonPaths {
+		id = gjson.Get(string(bodyBytes), path).String()
+		if id == "" {
+			log.C(ctx).Warnf("Couldn't find ID at %q path", path)
+			continue
+		}
+		found = true
+	}
+
+	if !found {
+		return "", errors.New("Couldn't find ID in the provided json paths")
+	}
+
+	return id, nil
 }
 
 // Formation notifications synchronous handlers and helper functions
@@ -673,7 +762,7 @@ func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *htt
 		return err
 	}
 
-	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }

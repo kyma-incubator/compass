@@ -6,6 +6,8 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 	"log"
 	"net/http"
 	"strings"
@@ -16,7 +18,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/ias"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
 	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
@@ -56,7 +57,8 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	NotificationConfig       notification.NotificationsConfiguration
+	NotificationConfig       formationnotification.Configuration
+	DestinationCreatorConfig *destinationcreator.Config
 	DestinationServiceConfig DestinationServiceConfig
 	ORDServers               ORDServers
 	SelfRegConfig            selfreg.Config
@@ -72,8 +74,9 @@ type config struct {
 
 // DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
-	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
-	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+	TenantDestinationsEndpoint           string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	TenantDestinationCertificateEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
+	SensitiveDataEndpoint                string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -222,6 +225,15 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
+	// destination service handlers but the destination creator handler is used
+	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
+	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+	//router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.DeleteDestinationByNameFromDestinationSvc).Methods(http.MethodDelete) // todo::: delete/remove
+
+	tenantDestinationCertificateEndpoint := cfg.DestinationServiceConfig.TenantDestinationCertificateEndpoint
+	router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	//router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.DeleteDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodDelete) // todo::: delete/remove
+
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)
 	exitOnError(err, "while loading IAS adapter config")
@@ -314,32 +326,63 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := notification.NewHandler(cfg.NotificationConfig)
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig)
+	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
-	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
+	// formation assignment notifications async handlers
+	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
+	// formation assignment notifications handler for the destination creation/deletion
+	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async/destinations/{tenantId}", notificationHandler.AsyncDestinationPatch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async/destinations/{tenantId}/{applicationId}", notificationHandler.AsyncDestinationDelete).Methods(http.MethodDelete)
+	// formation(lifecycle) notifications sync handlers
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/fail-once/{uclFormationId}", notificationHandler.FailOnceFormation).Methods(http.MethodPost, http.MethodDelete)
+	// formation(lifecycle) notifications async handlers
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncPostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncDeleteFormation).Methods(http.MethodDelete)
-	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async-no-response/{uclFormationId}", notificationHandler.AsyncNoResponse).Methods(http.MethodPost, http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
+	// "technical" handlers for getting/deleting the FA notifications
+	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
+	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
+
+	// destination creator handlers
+	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
+
+	destinationCreatorPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.Path
+	deleteDestinationCreatorPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+
+	certificatePath := cfg.DestinationCreatorConfig.CertificateAPIConfig.Path
+	deleteCertificatePathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+
+	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateDesignTimeDestination).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteDesignTimeDestination).Methods(http.MethodDelete)
+
+	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateBasicDestination).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteBasicDestination).Methods(http.MethodDelete)
+
+	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateSAMLAssertionDestination).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteSAMLAssertionDestination).Methods(http.MethodDelete)
+
+	router.HandleFunc(certificatePath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
+	router.HandleFunc(certificatePath+deleteCertificatePathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
@@ -496,7 +539,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claims) bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
+			authHeader := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 			if len(authHeader) == 0 {
 				httphelpers.WriteError(w, errors.New("No Authorization header"), http.StatusUnauthorized)
 				return

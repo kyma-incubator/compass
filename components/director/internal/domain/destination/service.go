@@ -2,6 +2,7 @@ package destination
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -13,6 +14,7 @@ import (
 
 //go:generate mockery --exported --name=destinationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationRepository interface {
+	GetDestinationByNameAndTenant(ctx context.Context, destinationName, tenantID string) (*model.Destination, error)
 	DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName, formationAssignmentID, tenantID string) error
 	ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error)
 	UpsertWithEmbeddedTenant(ctx context.Context, destination *model.Destination) error
@@ -63,10 +65,6 @@ func NewService(transact persistence.Transactioner, destinationRepository destin
 
 // CreateDesignTimeDestinations is responsible to create so-called design time(destinationcreator.AuthTypeNoAuth) destination resource in the remote destination service as well as in our DB
 func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment) error {
-	if err := s.destinationCreatorSvc.CreateDesignTimeDestinations(ctx, destinationDetails, formationAssignment, 0); err != nil {
-		return err
-	}
-
 	subaccountID, err := s.destinationCreatorSvc.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
 		return err
@@ -75,6 +73,23 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+	}
+
+	tenantID := t.ID
+	destinationFromDB, err := s.destinationRepo.GetDestinationByNameAndTenant(ctx, destinationDetails.Name, tenantID)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+	}
+
+	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
+		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
+	}
+
+	if err = s.destinationCreatorSvc.CreateDesignTimeDestinations(ctx, destinationDetails, formationAssignment, 0); err != nil {
+		return err
 	}
 
 	destModel := &model.Destination{
@@ -96,16 +111,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 
 // CreateBasicCredentialDestinations is responsible to create a basic destination resource in the remote destination service as well as in our DB
 func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error {
-	if err := s.destinationCreatorSvc.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, 0); err != nil {
-		return err
-	}
-
 	subaccountID, err := s.destinationCreatorSvc.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
-	if err != nil {
-		return err
-	}
-
-	basicReqBody, err := s.destinationCreatorSvc.PrepareBasicRequestBody(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 	if err != nil {
 		return err
 	}
@@ -113,6 +119,28 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+	}
+
+	tenantID := t.ID
+	destinationFromDB, err := s.destinationRepo.GetDestinationByNameAndTenant(ctx, destinationDetails.Name, tenantID)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+	}
+
+	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
+		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
+	}
+
+	if err = s.destinationCreatorSvc.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, 0); err != nil {
+		return err
+	}
+
+	basicReqBody, err := s.destinationCreatorSvc.PrepareBasicRequestBody(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
+	if err != nil {
+		return err
 	}
 
 	destModel := &model.Destination{
@@ -134,10 +162,6 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 
 // CreateSAMLAssertionDestination is responsible to create SAML assertion destination resource in the remote destination service as well as in our DB
 func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error {
-	if err := s.destinationCreatorSvc.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, 0); err != nil {
-		return err
-	}
-
 	subaccountID, err := s.destinationCreatorSvc.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
 		return err
@@ -146,6 +170,23 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
+	}
+
+	tenantID := t.ID
+	destinationFromDB, err := s.destinationRepo.GetDestinationByNameAndTenant(ctx, destinationDetails.Name, tenantID)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+	}
+
+	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
+		return errors.Errorf("Already have destination with name: %q and tenant ID: %q for assignment ID: %q. Could not have second destination with the same name and tenant ID but with different assignment ID: %q", destinationDetails.Name, tenantID, *destinationFromDB.FormationAssignmentID, formationAssignment.ID)
+	}
+
+	if err = s.destinationCreatorSvc.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, 0); err != nil {
+		return err
 	}
 
 	destModel := &model.Destination{

@@ -1,9 +1,8 @@
-package notification_test
+package formationnotification_test
 
 import (
 	"encoding/json"
-
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 )
 
 var (
@@ -21,16 +20,16 @@ var (
 	formationReqBody = `{"details":{"id":"cbdd8a33-125f-48a8-b8d9-deebd0b3c168","name":"my-formation"}}`
 )
 
-func fixFormationMappings(formationOperation notification.Operation, formationID, formationReqBody string) map[string][]notification.Response {
+func fixFormationMappings(formationOperation formationnotification.Operation, formationID, formationReqBody string) map[string][]formationnotification.Response {
 	return fixMappings(formationOperation, formationID, formationReqBody, nil)
 }
 
-func fixFormationAssignmentMappings(formationAssignmentOperation notification.Operation, tenantID, formationAssignmentReqBody string, applicationID *string) map[string][]notification.Response {
+func fixFormationAssignmentMappings(formationAssignmentOperation formationnotification.Operation, tenantID, formationAssignmentReqBody string, applicationID *string) map[string][]formationnotification.Response {
 	return fixMappings(formationAssignmentOperation, tenantID, formationAssignmentReqBody, applicationID)
 }
 
-func fixMappings(operation notification.Operation, objectID, reqBody string, applicationID *string) map[string][]notification.Response {
-	return map[string][]notification.Response{
+func fixMappings(operation formationnotification.Operation, objectID, reqBody string, applicationID *string) map[string][]formationnotification.Response {
+	return map[string][]formationnotification.Response{
 		objectID: {
 			{
 				Operation:     operation,

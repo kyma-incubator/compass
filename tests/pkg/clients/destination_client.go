@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -19,10 +21,11 @@ import (
 )
 
 type DestinationServiceAPIConfig struct {
-	EndpointTenantDestinations string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
-	Timeout                    time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
-	SkipSSLVerify              bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
-	OAuthTokenPath             string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
+	EndpointTenantDestinations            string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
+	EndpointTenantDestinationCertificates string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/subaccountCertificates"`
+	Timeout                               time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
+	SkipSSLVerify                         bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
+	OAuthTokenPath                        string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
 type Destination struct {
@@ -113,4 +116,48 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName string) json.RawMessage {
+	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "/" + url.QueryEscape(destinationName)
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	require.NoError(t, err)
+
+	resp, err := c.httpClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	require.NoError(t, err)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
+	return body
+}
+
+func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName string) json.RawMessage {
+	url := c.apiURL + c.apiConfig.EndpointTenantDestinationCertificates + "/" + url.QueryEscape(certificateName)
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	require.NoError(t, err)
+
+	resp, err := c.httpClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	require.NoError(t, err)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
+	return body
 }

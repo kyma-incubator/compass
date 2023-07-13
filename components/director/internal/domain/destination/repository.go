@@ -34,6 +34,7 @@ type EntityConverter interface {
 
 type repository struct {
 	conv                       EntityConverter
+	getter                     repo.SingleGetter
 	globalCreator              repo.CreatorGlobal
 	deleter                    repo.Deleter
 	globalDeleter              repo.DeleterGlobal
@@ -46,6 +47,7 @@ type repository struct {
 func NewRepository(converter EntityConverter) *repository {
 	return &repository{
 		conv:                       converter,
+		getter:                     repo.NewSingleGetter(destinationTable, destinationColumns),
 		globalCreator:              repo.NewCreatorGlobal(resource.Destination, destinationTable, destinationColumns),
 		deleter:                    repo.NewDeleterWithEmbeddedTenant(destinationTable, tenantIDColumn),
 		globalDeleter:              repo.NewDeleterGlobal(resource.Destination, destinationTable),
@@ -92,6 +94,19 @@ func (r *repository) CreateDestination(ctx context.Context, destination *model.D
 	}
 
 	return r.globalCreator.Create(ctx, r.conv.ToEntity(destination))
+}
+
+// GetDestinationByNameAndTenant todo::: go doc
+func (r *repository) GetDestinationByNameAndTenant(ctx context.Context, destinationName, tenantID string) (*model.Destination, error) {
+	log.C(ctx).Infof("Getting destinations with name: %q and tenant ID: %q", destinationName, tenantID)
+
+	var dest Entity
+	conditions := repo.Conditions{repo.NewEqualCondition(destinationNameColumn, destinationName), repo.NewEqualCondition(tenantIDColumn, tenantID)}
+	if err := r.getter.Get(ctx, resource.Destination, tenantID, conditions, repo.NoOrderBy, &dest); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&dest), nil
 }
 
 // ListByTenantIDAndAssignmentID returns all destinations for a given `tenantID` and `formationAssignmentID`
