@@ -700,7 +700,7 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 
 	dest, exists := h.DestinationSvcDestinations[destinationNameParamValue]
 	if !exists {
-		log.C(ctx).Error("Destination with name: %q doest not exists", destinationNameParamValue)
+		log.C(ctx).Errorf("Destination with name: %q doest not exists", destinationNameParamValue)
 		httphelpers.WriteError(writer, errors.Errorf("Destination with name: %q doest not exists. X-Request-Id: %s", destinationNameParamValue, correlationID), http.StatusNotFound)
 		return
 	}
@@ -786,7 +786,7 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 
 	cert, exists := h.DestinationSvcCertificates[certificateNameParamValue]
 	if !exists {
-		log.C(ctx).Error("Destination with name: %q doest not exists", certificateNameParamValue)
+		log.C(ctx).Errorf("Destination with name: %q doest not exists", certificateNameParamValue)
 		httphelpers.WriteError(writer, errors.Errorf("Destination with name: %q doest not exists. X-Request-Id: %s", certificateNameParamValue, correlationID), http.StatusNotFound)
 		return
 	}
