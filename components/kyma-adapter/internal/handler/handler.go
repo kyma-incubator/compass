@@ -153,22 +153,21 @@ func (a AdapterHandler) determineAuthModifyFunc(authExists bool, operation strin
 }
 
 func buildInstanceAuthInput(authExists bool, operation string, bundle *graphql.BundleExt, rtmID string, credentials credentials.Credentials) gqlclient.BundleInstanceAuthInput {
-	if operation == assignOperation {
-		if authExists {
-			// Update input
-			return gqlclient.UpdateBundleInstanceAuthInput{
-				Bundle:      bundle,
-				RuntimeID:   rtmID,
-				Credentials: credentials,
-			}
-		} else {
-			// Create input
-			return gqlclient.CreateBundleInstanceAuthInput{
-				BundleID:    bundle.ID,
-				RuntimeID:   rtmID,
-				Credentials: credentials,
-			}
+	if operation == assignOperation && authExists {
+		// Update input
+		return gqlclient.UpdateBundleInstanceAuthInput{
+			Bundle:      bundle,
+			RuntimeID:   rtmID,
+			Credentials: credentials,
 		}
+	} else if operation == assignOperation && !authExists {
+		// Create input
+		return gqlclient.CreateBundleInstanceAuthInput{
+			BundleID:    bundle.ID,
+			RuntimeID:   rtmID,
+			Credentials: credentials,
+		}
+
 	} else {
 		// Delete input
 		return gqlclient.DeleteBundleInstanceAuthInput{
