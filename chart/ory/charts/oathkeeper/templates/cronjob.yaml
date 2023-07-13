@@ -16,7 +16,7 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "update", "patch"]
-    resourceNames: ["{{ include "oathkeeper.fullname" . }}-jwks-secret"]
+    resourceNames: ["{{ include "oathkeeper.secretname" . }}"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["create"]
@@ -77,7 +77,7 @@ spec:
             - -c
             - |
               set -e
-              kubectl create secret generic {{ include "oathkeeper.fullname" . }}-jwks-secret \
+              kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
                 --from-file=/etc/secrets/jwks.json \
                 -n kyma-system -o yaml --dry-run | kubectl apply -f -
             securityContext:

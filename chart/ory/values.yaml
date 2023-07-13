@@ -259,7 +259,7 @@ oathkeeper:
         api:
           port: 4456
   secret:
-    enabled: false
+    enabled: true
   deployment:
     strategy:
       type: RollingUpdate
