@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 

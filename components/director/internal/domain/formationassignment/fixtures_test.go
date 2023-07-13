@@ -3,6 +3,7 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
