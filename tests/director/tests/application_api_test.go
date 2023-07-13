@@ -73,7 +73,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, actualApp.ID)
 	assertions.AssertApplication(t, in, actualApp)
-	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
+	require.Equal(t, "aasfd", actualApp.Status.Condition)
 }
 
 func TestRegisterApplicationWithExternalCertificate(t *testing.T) {
