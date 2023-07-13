@@ -265,6 +265,7 @@ type Destination struct {
 	CertificateChain     string          `json:"certificateChain,omitempty"`
 }
 
+// CertificateData contains the data for the certificate resource from the destination creator component
 type CertificateData struct {
 	FileName         string `json:"fileName"`
 	CommonName       string `json:"commonName"`

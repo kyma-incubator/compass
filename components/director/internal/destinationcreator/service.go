@@ -519,6 +519,7 @@ func (s *Service) PrepareBasicRequestBody(ctx context.Context, destinationDetail
 	return reqBody, nil
 }
 
+// GetConsumerTenant is responsible to retrieve the "consumer" tenant ID from the given `formationAssignment`
 func (s *Service) GetConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error) {
 	labelableObjType, err := determineLabelableObjectType(formationAssignment.TargetType)
 	if err != nil {
