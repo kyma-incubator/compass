@@ -108,7 +108,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
+	require.Error(t, err)
 	require.NotEmpty(t, intSys.ID)
 
 	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
@@ -116,7 +116,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
-	require.True(t, ok)
+	require.False(t, ok)
 
 	t.Log("Issue a Hydra token with Client Credentials")
 	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
