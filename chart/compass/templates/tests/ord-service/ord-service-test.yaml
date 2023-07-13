@@ -96,15 +96,15 @@ spec:
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
-              value: {{ .Values.global.subscription.labelKey }}
+              value: {{ .Values.global.tests.subscription.labelKey }}
             - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
-              value: {{ .Values.global.subscription.standardFlow }}
+              value: {{ .Values.global.tests.subscription.standardFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
-              value: {{ .Values.global.subscription.directDependencyFlow }}
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
-              value: {{ .Values.global.subscription.indirectDependencyFlow }}
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
             - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
-              value: {{ .Values.global.subscription.subscriptionsFlowHeaderKey }}
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
             - name: APP_TF_CONFIG_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TF_CONFIG_ROOT_API

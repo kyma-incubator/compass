@@ -1120,12 +1120,6 @@ global:
       providerAppClientID: "provider-client-id"
       providerAppTenantID: "provider-app-tenant-id"
       apiName: "Test API Name"
-  subscription:
-    labelKey: "subscriptions"
-    standardFlow: "standard"
-    indirectDependencyFlow: "indirectDependency"
-    directDependencyFlow: "directDependency"
-    subscriptionsFlowHeaderKey: "subscriptionFlow"
   tests:
     http:
       client:
@@ -1157,6 +1151,11 @@ global:
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
+      labelKey: "subscriptions"
+      standardFlow: "standard"
+      indirectDependencyFlow: "indirectDependency"
+      directDependencyFlow: "directDependency"
+      subscriptionsFlowHeaderKey: "subscriptionFlow"
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants

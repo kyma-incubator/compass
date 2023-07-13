@@ -433,7 +433,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	})
 }
 
-func TestSubscriptionApplicationTemplateFlowWhenIndirectDependency(baseT *testing.T) {
+func TestSubscriptionApplicationTemplateFlowWithIndirectDependency(baseT *testing.T) {
 	t := testingx.NewT(baseT)
 	ctx := context.Background()
 
