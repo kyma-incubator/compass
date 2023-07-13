@@ -167,7 +167,6 @@ func buildInstanceAuthInput(authExists bool, operation string, bundle *graphql.B
 			RuntimeID:   rtmID,
 			Credentials: credentials,
 		}
-
 	} else {
 		// Delete input
 		return gqlclient.DeleteBundleInstanceAuthInput{
