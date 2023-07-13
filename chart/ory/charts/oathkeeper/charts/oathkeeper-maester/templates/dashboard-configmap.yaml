@@ -1,3 +1,4 @@
+# TODO!!! Custom, does not exist in OS, might appear later
 apiVersion: v1
 kind: ConfigMap
 metadata:

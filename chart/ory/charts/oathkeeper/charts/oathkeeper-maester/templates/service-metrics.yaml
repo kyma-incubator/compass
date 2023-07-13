@@ -1,3 +1,4 @@
+# TODO!!! Custom implementation, does not exist in the OS charts
 {{- if eq .Values.global.ory.oathkeeper.maester.mode "controller" }}
 ---
 apiVersion: v1

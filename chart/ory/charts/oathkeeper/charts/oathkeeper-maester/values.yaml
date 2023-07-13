@@ -1,36 +1,43 @@
-# Mode for oathkeeper controller
-# Two possible modes are: controller or sidecar
+# -- Mode for oathkeeper controller
+# -- Two possible modes are: controller or sidecar
 global:
   ory:
     oathkeeper:
       maester:
         mode: controller
 
+# -- Number of controller replicas in deployment mode
 replicaCount: 1
 
 # -- Single namespace mode. If enabled the controller will watch for resources only from namespace it is deployed in, ignoring others
 singleNamespaceMode: false
 
 # oathkeeperFullnameOverride: oathkeeper
-
+# -- Defines the Namespace in which the ConfigMap is stored. Defaults to the same Namespace as the ORY Maester Helm release.
+rulesConfigmapNamespace: ""
 # rulesConfigmapNamespace: some-namespace
+# -- Defines the name of the single root-level ConfigMap key used to store the entire array of Access Rules. 
+# When the ConfigMap is mounted in the Oathkeeper Pod, this becomes also the filename of the "rules file" to the Oathkeeper process. Defaults to `access-rules.json`.
+rulesFileName: ""
 # rulesFileName: access-rules.json
 
 image:
-  # ORY Oathkeeper Rule Controller image
+  # -- ORY Oathkeeper Rule Controller image
   repository: oryd/oathkeeper-maester
-  # ORY Oathkeeper Rule Controller version
-  tag: "v0.1.0"
-  # Image pull policy
+  # -- ORY Oathkeeper Rule Controller version
+  tag: "v0.1.7"
+  # -- Image pull policy
   pullPolicy: IfNotPresent
 
 # -- Image pull secrets
 imagePullSecrets: []
 
+# TODO!!! Custom, does not exist in OS values.yaml
 port:
   metrics: 8080
 
 deployment:
+  # TODO!!! Custom, does not exist, might appear later
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
 
   resources: {}
@@ -54,21 +61,26 @@ deployment:
     allowPrivilegeEscalation: false
     privileged: false
 
-  # Node labels for pod assignment.
+  # -- Node labels for pod assignment.
   nodeSelector: {}
   # If you do want to specify node labels, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
   #   foo: bar
 
-  # Configure node tolerations.
+  # -- Configure node tolerations.
   tolerations: []
 
-  # Configure annotations.
+  # -- Configure annotations.
   annotations: {}
 
+  # -- Configure environment variables.
   envs: {}
+  # https://github.com/kubernetes/kubernetes/issues/57601
+  # This applications connects to the k8s API and requires the permissions
+  # TODO!!! Does not exist in Kyma chart, but exists in OS
+  #automountServiceAccountToken: true
 
-# Configure node affinity
+# -- Configure node affinity
 affinity: {}
 
 # -- PodDistributionBudget configuration

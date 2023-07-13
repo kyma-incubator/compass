@@ -3,6 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # TODO!!! different definition used; in os it is fullname
   name: {{ include "oathkeeper-maester.name" . }}
   {{- if .Release.Namespace }}
   namespace: {{ .Release.Namespace }}
@@ -15,14 +16,17 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      # TODO!!! Different name used; fullname in OS
       app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  # TODO!!! Is hardcoded in OS, might appear later
   strategy:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
         control-plane: controller-manager
+        # TODO!!! Different name used; fullname in OS
         app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
       {{- with .Values.deployment.annotations }}
@@ -33,14 +37,16 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-      {{- end }}    
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          # TODO!!! Custom image from Kyma, a bit confusing how to change this
           image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper) }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /manager
           args:
+            # TODO!!! Kyma has added custom port, it is hardcoded in the OS version to 8080
             - --metrics-addr=0.0.0.0:{{ .Values.port.metrics }}
             - controller
             - --rulesConfigmapName={{ include "oathkeeper-maester.getCM" . }}
@@ -59,7 +65,7 @@ spec:
             {{- end }}
             {{- with .Values.deployment.envs }}
             {{- toYaml . | nindent 12 }}
-            {{- end }}            
+            {{- end }}         
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- if .Values.deployment.securityContext }}
@@ -68,14 +74,14 @@ spec:
           {{- end }}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
-          {{- with .Values.deployment.envs }}
-          env:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+          # TODO!!! ports does not exist in the OS version of Helm charts
           ports:
             - containerPort: {{ .Values.port.metrics }}
               name: metrics
+      # TODO!!! Different name used; fullname in OS
       serviceAccountName: {{ include "oathkeeper-maester.name" . }}-account
+      # TODO!!! exists in OS but not in Kyma
+      #automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext: {}
