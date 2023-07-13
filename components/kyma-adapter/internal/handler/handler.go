@@ -45,7 +45,7 @@ func NewHandler(directorGqlClient Client) *AdapterHandler {
 	return &AdapterHandler{DirectorGqlClient: directorGqlClient}
 }
 
-type modifyBundleInstanceAuthFunc func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) error
+type modifyBundleInstanceAuthFunc func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (string, error)
 
 // HandlerFunc is the implementation of AdapterHandler
 func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +97,12 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	instanceAuthExist := false
-	for _, instanceAuth := range bundles[0].InstanceAuths {
-		if *instanceAuth.RuntimeID == rtmID {
-			instanceAuthExist = true
-			break
+	for _, bundle := range bundles {
+		for _, instanceAuth := range bundle.InstanceAuths {
+			if *instanceAuth.RuntimeID == rtmID {
+				instanceAuthExist = true
+				break
+			}
 		}
 	}
 
@@ -110,10 +112,11 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	creds := credentials.NewCredentials(reqBody)
-	modifyFunc := a.determineAuthModifyFunc(w, instanceAuthExist, operation)
+	modifyFunc := a.determineAuthModifyFunc(instanceAuthExist, operation)
 	for _, bundle := range bundles {
 		input := buildInstanceAuthInput(instanceAuthExist, operation, bundle, rtmID, creds)
-		if err = modifyFunc(ctx, tenantID, input); err != nil {
+		if state, err := modifyFunc(ctx, tenantID, input); err != nil {
+			respondWithError(ctx, w, http.StatusBadRequest, state, err)
 			return
 		}
 	}
@@ -121,32 +124,30 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	respondWithSuccess(ctx, w, readyState, "Successfully processed Kyma integration.")
 }
 
-func (a AdapterHandler) determineAuthModifyFunc(w http.ResponseWriter, authExists bool, operation string) modifyBundleInstanceAuthFunc {
-	if operation == assignOperation {
-		if authExists {
-			// Update func
-			return func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (err error) {
-				if err = a.DirectorGqlClient.UpdateBundleInstanceAuth(ctx, tenant, input); err != nil {
-					respondWithError(ctx, w, http.StatusBadRequest, createErrorState, err)
-				}
-				return err
+func (a AdapterHandler) determineAuthModifyFunc(authExists bool, operation string) modifyBundleInstanceAuthFunc {
+	if operation == assignOperation && authExists {
+		// Update func
+		return func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (string, error) {
+			if err := a.DirectorGqlClient.UpdateBundleInstanceAuth(ctx, tenant, input); err != nil {
+				return createErrorState, err
 			}
-		} else {
-			// Create func
-			return func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (err error) {
-				if err = a.DirectorGqlClient.CreateBundleInstanceAuth(ctx, tenant, input); err != nil {
-					respondWithError(ctx, w, http.StatusBadRequest, createErrorState, err)
-				}
-				return err
+			return "", nil
+		}
+	} else if operation == assignOperation && !authExists {
+		// Create func
+		return func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (string, error) {
+			if err := a.DirectorGqlClient.CreateBundleInstanceAuth(ctx, tenant, input); err != nil {
+				return createErrorState, err
 			}
+			return "", nil
 		}
 	} else {
 		// Delete func
-		return func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (err error) {
-			if err = a.DirectorGqlClient.DeleteBundleInstanceAuth(ctx, tenant, input); err != nil {
-				respondWithError(ctx, w, http.StatusBadRequest, deleteErrorState, err)
+		return func(ctx context.Context, tenant string, input gqlclient.BundleInstanceAuthInput) (string, error) {
+			if err := a.DirectorGqlClient.DeleteBundleInstanceAuth(ctx, tenant, input); err != nil {
+				return deleteErrorState, err
 			}
-			return err
+			return "", nil
 		}
 	}
 }

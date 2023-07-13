@@ -100,7 +100,9 @@ func (c *client) GetApplicationBundles(ctx context.Context, appID, tenant string
 		appBundles = ApplicationBundles{}
 		gqlRes := gqlResult{Result: &appBundles}
 		if err := c.runWithTenant(ctx, gqlReq, tenant, &gqlRes); err != nil {
-			return nil, errors.Wrapf(err, "Error while getting bundles for application with id %q", appID)
+			errMsg := fmt.Sprintf("Error while getting bundles for application with id %q", appID)
+			log.C(ctx).WithError(err).Error(errMsg)
+			return nil, errors.New(errMsg)
 		}
 
 		result = append(result, appBundles.Bundles.Data...)
@@ -111,7 +113,10 @@ func (c *client) GetApplicationBundles(ctx context.Context, appID, tenant string
 
 // CreateBundleInstanceAuth creates bundle instance auth with a given input
 func (c *client) CreateBundleInstanceAuth(ctx context.Context, tenant string, input BundleInstanceAuthInput) error {
-	createInput := input.(CreateBundleInstanceAuthInput)
+	createInput, ok := input.(CreateBundleInstanceAuthInput)
+	if !ok {
+		return fmt.Errorf("while casting input to create input")
+	}
 
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
   		result: createBundleInstanceAuth(
@@ -128,7 +133,9 @@ func (c *client) CreateBundleInstanceAuth(ctx context.Context, tenant string, in
 		}`, createInput.BundleID, createInput.Credentials.ToString(), createInput.RuntimeID))
 
 	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while creating bundle instance auth for bundle with id %q and runtime with id %q", createInput.BundleID, createInput.RuntimeID)
+		errMsg := fmt.Sprintf("Error while creating bundle instance auth for bundle with id %q and runtime with id %q", createInput.BundleID, createInput.RuntimeID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		return errors.New(errMsg)
 	}
 
 	return nil
@@ -136,32 +143,33 @@ func (c *client) CreateBundleInstanceAuth(ctx context.Context, tenant string, in
 
 // UpdateBundleInstanceAuth updates bundle instance auth with a given input
 func (c *client) UpdateBundleInstanceAuth(ctx context.Context, tenant string, input BundleInstanceAuthInput) error {
-	updateInput := input.(UpdateBundleInstanceAuthInput)
-
-	authID := ""
-	for _, instanceAuth := range updateInput.Bundle.InstanceAuths {
-		if *instanceAuth.RuntimeID == updateInput.RuntimeID {
-			authID = instanceAuth.ID
-			break
-		}
+	updateInput, ok := input.(UpdateBundleInstanceAuthInput)
+	if !ok {
+		return fmt.Errorf("while casting input to update input")
 	}
 
-	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
-  		result: updateBundleInstanceAuth(
-		  id: "%s"
-  		  bundleID: "%s"
-  		  in: {
-  		    auth: {
-  		      credential: { %s }
-  		    }
-  		  }
-		) {
-    		id
-		  }
-		}`, authID, updateInput.Bundle.ID, updateInput.Credentials.ToString()))
+	updateMutationFormat := `mutation {
+		result: updateBundleInstanceAuth(
+			id: "%s"
+			bundleID: "%s"
+			in: {
+			auth: {
+				credential: { %s }
+			}
+		}) {
+			id
+		}
+	}`
+	for _, instanceAuth := range updateInput.Bundle.InstanceAuths {
+		if *instanceAuth.RuntimeID == updateInput.RuntimeID {
+			gqlReq := gcli.NewRequest(fmt.Sprintf(updateMutationFormat, instanceAuth.ID, updateInput.Bundle.ID, updateInput.Credentials.ToString()))
 
-	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while updating bundle instance auth with id %q for bundle with id %q", authID, updateInput.Bundle.ID)
+			if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+				errMsg := fmt.Sprintf("Error while updating bundle instance auth with id %q for bundle with id %q", instanceAuth.ID, updateInput.Bundle.ID)
+				log.C(ctx).WithError(err).Error(errMsg)
+				return errors.New(errMsg)
+			}
+		}
 	}
 
 	return nil
@@ -169,26 +177,28 @@ func (c *client) UpdateBundleInstanceAuth(ctx context.Context, tenant string, in
 
 // DeleteBundleInstanceAuth deletes bundle instance auth with a given input
 func (c *client) DeleteBundleInstanceAuth(ctx context.Context, tenant string, input BundleInstanceAuthInput) error {
-	deleteInput := input.(DeleteBundleInstanceAuthInput)
-
-	authID := ""
-	for _, instanceAuth := range deleteInput.Bundle.InstanceAuths {
-		if *instanceAuth.RuntimeID == deleteInput.RuntimeID {
-			authID = instanceAuth.ID
-			break
-		}
+	deleteInput, ok := input.(DeleteBundleInstanceAuthInput)
+	if !ok {
+		return fmt.Errorf("while casting input to delete input")
 	}
 
-	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
+	deleteMutationFormat := `mutation {
 		result: deleteBundleInstanceAuth(
 			authID: "%s"
 		) {
     		id
 		  }
-		}`, authID))
+		}`
+	for _, instanceAuth := range deleteInput.Bundle.InstanceAuths {
+		if *instanceAuth.RuntimeID == deleteInput.RuntimeID {
+			gqlReq := gcli.NewRequest(fmt.Sprintf(deleteMutationFormat, instanceAuth.ID))
 
-	if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
-		return errors.Wrapf(err, "Error while deleting bundle instance auth with id %q", authID)
+			if err := c.runWithTenant(ctx, gqlReq, tenant, nil); err != nil {
+				errMsg := fmt.Sprintf("Error while deleting bundle instance auth with id %q", instanceAuth.ID)
+				log.C(ctx).WithError(err).Error(errMsg)
+				return errors.New(errMsg)
+			}
+		}
 	}
 
 	return nil
