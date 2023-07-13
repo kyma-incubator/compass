@@ -4,11 +4,9 @@ package automock
 
 import (
 	context "context"
-	json "encoding/json"
-
-	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	mock "github.com/stretchr/testify/mock"
 
 	operators "github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 )
@@ -72,29 +70,6 @@ func (_m *DestinationService) DeleteDestinations(ctx context.Context, formationA
 	}
 
 	return r0
-}
-
-// EnrichAssignmentConfigWithCertificateData provides a mock function with given fields: assignmentConfig, certData, destinationIndex
-func (_m *DestinationService) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData *operators.CertificateData, destinationIndex int) (json.RawMessage, error) {
-	ret := _m.Called(assignmentConfig, certData, destinationIndex)
-
-	var r0 json.RawMessage
-	if rf, ok := ret.Get(0).(func(json.RawMessage, *operators.CertificateData, int) json.RawMessage); ok {
-		r0 = rf(assignmentConfig, certData, destinationIndex)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(json.RawMessage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(json.RawMessage, *operators.CertificateData, int) error); ok {
-		r1 = rf(assignmentConfig, certData, destinationIndex)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 type mockConstructorTestingTNewDestinationService interface {

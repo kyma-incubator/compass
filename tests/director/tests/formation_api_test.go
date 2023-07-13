@@ -2113,6 +2113,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
 		require.Equal(t, formationName, assignedFormation.Name)
 
+		t.Logf("Assert formation assignments during %s operation...", assignOperation)
 		noAuthDestinationName := "e2e-design-time-destination-name"
 		noAuthDestinationURL := "http://e2e-design-time-url-example.com"
 		basicDestinationName := "e2e-basic-destination-name"
@@ -2166,13 +2167,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(t, err)
 
+		t.Log("Assert destinations and destination certificates are created...")
 		assertNoAuthDestination(t, destinationClient, noAuthDestinationName, noAuthDestinationURL)
 		assertBasicDestination(t, destinationClient, basicDestinationName, basicDestinationURL)
 		assertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationURL)
 		assertDestinationCertificate(t, destinationClient, destinationCertificateName)
 
-		/////////////////////////////////////////////////////////////////////////////////////////
-
+		t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, app1.ID, 2)
 
@@ -2247,6 +2248,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			},
 		}
 
+		t.Logf("Assert formation assignments during %s operation...", unassignOperation)
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignmentsBySourceID)
 		// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
@@ -2261,6 +2263,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignmentsBySourceID)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
+		t.Logf("Assert formation assignment notifications for %s operation...", unassignOperation)
 		notificationsForApp2 := gjson.GetBytes(body, localTenantID2)
 		unassignNotificationForApp2 := notificationsForApp2.Array()[0]
 		assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
