@@ -1,15 +1,16 @@
 #Kyma resource
-
+# TODO!!! Custom implementations - a lot of added fields, it might be possible that is due to the updated HPA apiVersion
 {{- if .Capabilities.APIVersions.Has "autoscaling/v2beta2" }}
 {{- if .Values.deployment.autoscaling.enabled }}
----
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "oathkeeper.fullname" . }}
+  {{- if .Release.Namespace }}
   namespace: {{ .Release.Namespace }}
+  {{- end }}
   labels:
-{{ include "oathkeeper.labels" . | indent 4 }}
+    {{- include "oathkeeper.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

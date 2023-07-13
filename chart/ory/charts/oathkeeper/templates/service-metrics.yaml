@@ -1,3 +1,4 @@
+# TODO!!! Custom implementation; different labels for some reason???
 {{- if eq .Values.global.ory.oathkeeper.maester.mode "sidecar" }}
 ---
 apiVersion: v1

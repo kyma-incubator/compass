@@ -86,6 +86,9 @@ maintenance:
 
 # Overrides for the Hydra chart
 hydra:
+  image:
+    repository: eu.gcr.io/kyma-project/external/oryd/hydra
+    tag: v1.11.8
   ingress:
     public:
       enabled: false
@@ -153,7 +156,20 @@ hydra:
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
+  image:
+    repository: eu.gcr.io/kyma-project/external/oryd/oathkeeper
+    tag: v0.38.25-beta.1
+  sidecar:
+    image:
+      repository: eu.gcr.io/kyma-project/external/oryd/oathkeeper-maester
+      tag: v0.1.5
+    # Previously was hardcoded by the Kyma chart
+    envs:
+      - name: mutatorsAvailable
+        value: noop,id_token,header,cookie,hydrator
   oathkeeper:
+    # disabled as maester is used
+    managedAccessRules: false
     config:
       authenticators:
         noop:
@@ -242,6 +258,8 @@ oathkeeper:
             write: 3600s
         api:
           port: 4456
+  secret:
+    enabled: false
   deployment:
     strategy:
       type: RollingUpdate

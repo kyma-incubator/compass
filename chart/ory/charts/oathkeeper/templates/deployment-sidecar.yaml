@@ -11,6 +11,7 @@ metadata:
     mode: {{ .Values.global.ory.oathkeeper.maester.mode }}
 {{ include "oathkeeper.labels" . | indent 4 }}
 spec:
+# TODO!!! Custom logic that checks whether autoscaling is enabled, could exist in future Ory versions
 {{- if not .Values.deployment.autoscaling.enabled}}
   replicas: {{ .Values.replicaCount }}
 {{- end }}
@@ -18,6 +19,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  # TODO!!! Strategy does not exist in OS charts
   strategy:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
@@ -25,10 +27,12 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-      {{- with .Values.deployment.annotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+        # important: This did not previously exist, added by OS chart
+        {{- include "oathkeeper.annotations.checksum" . | indent 8 -}}
+        {{- with .Values.deployment.annotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -37,15 +41,19 @@ spec:
       volumes:
         - name: {{ include "oathkeeper.name" . }}-config-volume
           configMap:
+            {{- if .Values.demo }}
+            name: {{ include "oathkeeper.fullname" . }}-config-demo
+            {{- else }}
             name: {{ include "oathkeeper.fullname" . }}-config
+            {{- end }}
         - name: {{ include "oathkeeper.name" . }}-rules-volume
           emptyDir: {}
         - name: {{ include "oathkeeper.name" . }}-secrets-volume
           secret:
-            secretName: {{ include "oathkeeper.fullname" . }}-jwks-secret
+            secretName: {{ include "oathkeeper.secretname" . }}
       initContainers:
         - name: init
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.busybox) }}"
+          image: busybox:1
           volumeMounts:
             - name: {{ include "oathkeeper.name" . }}-rules-volume
               mountPath: /etc/rules
@@ -57,13 +65,15 @@ spec:
               touch /etc/rules/access-rules.json
               chmod 666 /etc/rules/access-rules.json
           securityContext:
+            # TODO!!! Custom implementation of security context; in OS charts it is one, in the Kyma one it is divided by sidecar, controller etc.
             {{- toYaml .Values.deployment.securityContext.sidecar | nindent 12 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper) }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: [ "oathkeeper", "serve", "--config", "/etc/config/config.yaml" ]
           env:
+            # TODO!!! Custom implementation; OS chart only allows file, which is not ideal, should be changed in future Helm charts
             {{- if .Values.oathkeeper.config.mutators.id_token.config.jwks_url }}
             - name: MUTATORS_ID_TOKEN_CONFIG_JWKS_URL
               value: "{{ .Values.oathkeeper.config.mutators.id_token.config.jwks_url }}"
@@ -76,7 +86,7 @@ spec:
               mountPath: /etc/rules
               readOnly: true
             - name: {{ include "oathkeeper.name" . }}-secrets-volume
-              mountPath: /etc/secrets
+              mountPath: {{ .Values.secret.mountPath }}
               readOnly: true
           ports:
             - name: http-api
@@ -85,10 +95,15 @@ spec:
             - name: http-proxy
               containerPort: {{ .Values.oathkeeper.config.serve.proxy.port }}
               protocol: TCP
+            # important: this might be a solution to the metrics collection of oathkeeper
+            - name: http-metrics
+              protocol: TCP
+              containerPort: {{ .Values.oathkeeper.config.serve.prometheus.port }}
           livenessProbe:
             httpGet:
               path: /health/alive
               port: http-api
+            # TODO!!! custom implementation, this(3 lines below) does not exist in OS charts; might exist in future versions
             initialDelaySeconds: 15
             periodSeconds: 10
             failureThreshold: 10
@@ -96,9 +111,11 @@ spec:
             httpGet:
               path: /health/ready
               port: http-api
+            # TODO!!! custom implementation, this(3 lines below) does not exist in OS charts; might exist in future versions
             initialDelaySeconds: 45
             periodSeconds: 10
             failureThreshold: 10
+          # TODO!!! custom implementation, this(startupProbe) does not exist in OS charts; might exist in future versions
           startupProbe:
             httpGet:
               path: /health/alive
@@ -108,10 +125,11 @@ spec:
             failureThreshold: 30
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
+          # TODO!!! this is changed to adapt to the Kyma-specific oathkeeper values.yaml
           securityContext:
             {{- toYaml .Values.deployment.securityContext.oathkeeper | nindent 12 }}
         - name: {{ .Chart.Name }}-maester
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper_maester) }}"
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /manager
@@ -120,10 +138,12 @@ spec:
             - sidecar
             - --rulesFilePath=/etc/rules/access-rules.json
           resources:
+            # TODO!!! Kyma have combine the oathkeeper-maester values in the oathkeeper values, look for a way to divide them back
             {{- index .Values "oathkeeper-maester" "deployment" "resources" | toYaml | nindent 12 }}
+          {{- with .Values.sidecar.envs }}
           env:
-          - name: mutatorsAvailable
-            value: noop,id_token,header,cookie,hydrator
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics
@@ -131,16 +151,21 @@ spec:
             - name: {{ include "oathkeeper.name" . }}-rules-volume
               mountPath: /etc/rules
               readOnly: false
+          # TODO!!! security context is divided in the Kyma values, but is the same in OS chart
           securityContext:
             {{- toYaml .Values.deployment.securityContext.maester | nindent 12 }}
         {{- if .Values.deployment.extraContainers }}
 {{ tpl .Values.deployment.extraContainers . | indent 8 }}
         {{- end }}
+      # TODO!!! the OS chart uses {{ default "maester" .Values.maester.nameOverride }}-account
       serviceAccountName: {{ include "oathkeeper-maester.name" . }}-maester-account
+      # TODO!!! This exists in the OS chart, but not in this one
+      # automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       {{- with .Values.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+    # TODO!!! Does not exist in the OS chart, might be added later
     {{- if .Values.global.priorityClassName }}
       priorityClassName: {{ .Values.global.priorityClassName }}
     {{- end }}

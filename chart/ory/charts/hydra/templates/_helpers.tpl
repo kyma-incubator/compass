@@ -57,6 +57,7 @@ Common labels
 
 {{/*
 Generate the dsn value
+TODO!!! Custom implementation of the dsn value
 */}}
 {{- define "hydra.dsn" -}}
 {{- if .Values.demo -}}
@@ -70,10 +71,11 @@ postgres://{{- .Values.global.postgresql.postgresqlUsername}}:{{- .Values.global
 
 {{/*
 Generate the name of the secret resource containing secrets
+TODO!!! Custom implemetnation of naming by using existingSecret, might be added in future versions
 */}}
 {{- define "hydra.secretname" -}}
-{{- if .Values.secret.nameOverride -}}
-{{- .Values.secret.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- if .Values.hydra.existingSecret -}}
+{{- .Values.hydra.existingSecret | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
 {{ include "hydra.fullname" . }}
 {{- end -}}
@@ -161,6 +163,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Create the name of the service account for the Job to use
+*/}}
+{{- define "hydra.job.serviceAccountName" -}}
+{{- if .Values.job.serviceAccount.create }}
+{{- printf "%s-job" (default (include "hydra.fullname" .) .Values.job.serviceAccount.name) }}
+{{- else }}
+{{- include "hydra.serviceAccountName" . }}
+{{- end }}
+{{- end }}
+
+{{/*
 Checksum annotations generated from configmaps and secrets
 */}}
 {{- define "hydra.annotations.checksum" -}}
@@ -169,5 +182,16 @@ checksum/hydra-config: {{ include (print $.Template.BasePath "/configmap.yaml") 
 {{- end }}
 {{- if and .Values.secret.enabled .Values.secret.hashSumEnabled }}
 checksum/hydra-secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+{{- end }}
+{{- end }}
+
+{{/*
+Check the migration type value and fail if unexpected 
+*/}}
+{{- define "hydra.automigration.typeVerification" -}}
+{{- if and .Values.hydra.automigration.enabled  .Values.hydra.automigration.type }}
+  {{- if and (ne .Values.hydra.automigration.type "initContainer") (ne .Values.hydra.automigration.type "job") }}
+    {{- fail "hydra.automigration.type must be either 'initContainer' or 'job'" -}}
+  {{- end }}  
 {{- end }}
 {{- end }}
