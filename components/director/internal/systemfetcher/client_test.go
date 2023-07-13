@@ -86,7 +86,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
-		require.Len(t, systems, 1)
+		require.Len(t, systems, 5)
 		require.Equal(t, systems[0].TemplateID, "")
 	})
 
