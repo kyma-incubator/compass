@@ -46,6 +46,7 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "oathkeeper.labels" -}}
+# TODO!!! custom field, does not exist in OS
 app: {{ include "oathkeeper.name" . }}
 app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
 helm.sh/chart: {{ include "oathkeeper.chart" . }}
@@ -58,13 +59,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{/*
 Check overrides consistency
+Important: this used to have custom logic
 */}}
 {{- define "oathkeeper.check.override.consistency" -}}
-{{- if and (index .Values "maester" "enabled") .Values.fullnameOverride -}}
-{{- if not (index .Values "maester" "oathkeeperFullnameOverride") -}}
+{{- if and .Values.maester.enabled .Values.fullnameOverride -}}
+{{- if not .Values.maester.oathkeeperFullnameOverride -}}
 {{ fail "oathkeeper fullname has been overridden, but the new value has not been provided to maester. Set maester.oathkeeperFullnameOverride" }}
-{{- else if not (eq (index .Values "maester" "oathkeeperFullnameOverride") .Values.fullnameOverride) -}}
-{{ fail (tpl "oathkeeper fullname has been overridden, but a different value was provided to maester. {{ (index .Values 'oathkeeper-maester' 'oathkeeperFullnameOverride') }} different of {{ .Values.fullnameOverride }}" . ) }}
+{{- else if not (eq .Values.maester.oathkeeperFullnameOverride .Values.fullnameOverride) -}}
+{{ fail (tpl "oathkeeper fullname has been overridden, but a different value was provided to maester. {{ .Values.maester.oathkeeperFullnameOverride }} different of {{ .Values.fullnameOverride }}" . ) }}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -78,7 +80,7 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.deployment.serviceAccount.name }}
 {{- end }}
-{{- end -}}
+{{- end }}
 
 {{/*
 Checksum annotations generated from configmaps and secrets
@@ -92,11 +94,12 @@ checksum/oathkeeper-rules: {{ include (print $.Template.BasePath "/configmap-rul
 {{- if and .Values.secret.enabled .Values.secret.hashSumEnabled }}
 checksum/oauthkeeper-secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
 {{- end }}
-{{- end -}}
+{{- end }}
 
 {{/*
  Common labels for maester sidecar
 */}}
+# TODO!!! Custom definitions, should be removed
 {{- define "oathkeeper-maester-sidecar.labels" -}}
 app.kubernetes.io/name: {{ include "oathkeeper.name" . }}-maester
 helm.sh/chart: {{ include "oathkeeper.chart" . }}
