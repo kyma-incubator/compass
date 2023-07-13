@@ -97,11 +97,13 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	instanceAuthExist := false
+
+out:
 	for _, bundle := range bundles {
 		for _, instanceAuth := range bundle.InstanceAuths {
 			if *instanceAuth.RuntimeID == rtmID {
 				instanceAuthExist = true
-				break
+				break out
 			}
 		}
 	}

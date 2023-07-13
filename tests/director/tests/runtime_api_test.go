@@ -166,8 +166,9 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 	require.NoError(t, err)
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	actualRuntime := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
+	assert.NoError(t, err)
 
 	// add
 	outputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"

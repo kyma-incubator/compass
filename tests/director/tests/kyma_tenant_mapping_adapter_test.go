@@ -99,8 +99,8 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	t.Logf("Creating application from application template with id %s", appTemplate.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTemplateRequest, &app)
-	require.NoError(t, err)
 	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
+	require.NoError(t, err)
 
 	// Add webhook to the application pointing to the external services mock for basic credentials
 	webhookType := graphql.WebhookTypeConfigurationChanged
@@ -140,11 +140,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	t.Logf("Assigning runtime with name %q to formation with name %q", runtime.Name, formationName)
 	newFormationInput := graphql.FormationInput{Name: formationName}
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, runtime.ID, tenantId)
-	assignReq := fixtures.FixAssignFormationRequest(runtime.ID, string(graphql.FormationObjectTypeRuntime), formationName)
-	var assignFormation graphql.Formation
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, formationName, assignFormation.Name)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, runtime.ID, tenantId)
 
 	// Check that there are no bundle instance auths
 	t.Log("Assert that there are no bundle instance auths for application bundles")
@@ -160,12 +156,8 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	// Assign the application to the formation
 	t.Logf("Assigning application with name %q to formation with name %q", app.Name, formationName)
-	assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), formationName)
-	var assignedFormation graphql.Formation
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, assignReq, &assignedFormation)
-	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app.ID, graphql.FormationObjectTypeApplication, tenantId)
-	require.NoError(t, err)
-	require.Equal(t, formationName, assignedFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, app.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, app.ID, tenantId)
 
 	// Check that there are bundle instance auths created for each application bundle by the Kyma Adapter
 	t.Log("Assert that there are bundle instance auths for application bundles")
@@ -203,7 +195,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	t.Logf("Resynchronize formation %q with reset", formationName)
 	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, reset)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Check there are the updated instance auths for the application bundles
 	t.Log("Assert that there are the updated bundle instance auths for application bundles")
@@ -226,6 +218,40 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app.ID, tenantId)
 
 	// Check that there are no instance auths for application bundles
+	t.Log("Assert that there are no bundle instance auths for application bundles")
+	returnedApp = graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	require.NoError(t, err)
+
+	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
+	require.Equal(t, 0, len(returnedApp.Bundles.Data[0].InstanceAuths))
+	require.Equal(t, 0, len(returnedApp.Bundles.Data[1].InstanceAuths))
+
+	// Assign application again
+	t.Logf("Assigning application with name %q to formation with name %q", app.Name, formationName)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, app.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, app.ID, tenantId)
+
+	// Check there are the updated instance auths for the application bundles
+	t.Log("Assert that there are the bundle instance auths for application bundles")
+	returnedApp = graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	require.NoError(t, err)
+
+	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
+	require.Equal(t, 1, len(returnedApp.Bundles.Data[0].InstanceAuths))
+	require.Equal(t, "url", returnedApp.Bundles.Data[0].InstanceAuths[0].Auth.Credential.(*graphql.OAuthCredentialData).URL)
+	require.Equal(t, "id", returnedApp.Bundles.Data[0].InstanceAuths[0].Auth.Credential.(*graphql.OAuthCredentialData).ClientID)
+	require.Equal(t, "secret", returnedApp.Bundles.Data[0].InstanceAuths[0].Auth.Credential.(*graphql.OAuthCredentialData).ClientSecret)
+	require.Equal(t, 1, len(returnedApp.Bundles.Data[1].InstanceAuths))
+	require.Equal(t, "url", returnedApp.Bundles.Data[1].InstanceAuths[0].Auth.Credential.(*graphql.OAuthCredentialData).URL)
+	require.Equal(t, "id", returnedApp.Bundles.Data[1].InstanceAuths[0].Auth.Credential.(*graphql.OAuthCredentialData).ClientID)
+	require.Equal(t, "secret", returnedApp.Bundles.Data[1].InstanceAuths[0].Auth.Credential.(*graphql.OAuthCredentialData).ClientSecret)
+
+	// Unassign runtime
+	t.Logf("Unassigning runtime with name %q from formation with name %q", runtime.Name, formationName)
+	fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, newFormationInput, runtime.ID, tenantId)
+
 	t.Log("Assert that there are no bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
