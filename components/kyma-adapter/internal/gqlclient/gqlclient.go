@@ -115,7 +115,7 @@ func (c *client) GetApplicationBundles(ctx context.Context, appID, tenant string
 func (c *client) CreateBundleInstanceAuth(ctx context.Context, tenant string, input BundleInstanceAuthInput) error {
 	createInput, ok := input.(CreateBundleInstanceAuthInput)
 	if !ok {
-		return fmt.Errorf("while casting input to create input")
+		return errors.New("while casting input to create input")
 	}
 
 	gqlReq := gcli.NewRequest(fmt.Sprintf(`mutation {
@@ -145,7 +145,7 @@ func (c *client) CreateBundleInstanceAuth(ctx context.Context, tenant string, in
 func (c *client) UpdateBundleInstanceAuth(ctx context.Context, tenant string, input BundleInstanceAuthInput) error {
 	updateInput, ok := input.(UpdateBundleInstanceAuthInput)
 	if !ok {
-		return fmt.Errorf("while casting input to update input")
+		return errors.New("while casting input to update input")
 	}
 
 	updateMutationFormat := `mutation {
@@ -179,7 +179,7 @@ func (c *client) UpdateBundleInstanceAuth(ctx context.Context, tenant string, in
 func (c *client) DeleteBundleInstanceAuth(ctx context.Context, tenant string, input BundleInstanceAuthInput) error {
 	deleteInput, ok := input.(DeleteBundleInstanceAuthInput)
 	if !ok {
-		return fmt.Errorf("while casting input to delete input")
+		return errors.New("while casting input to delete input")
 	}
 
 	deleteMutationFormat := `mutation {
