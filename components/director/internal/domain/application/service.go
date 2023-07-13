@@ -39,13 +39,15 @@ const (
 	intSysKey                    = "integrationSystemID"
 	nameKey                      = "name"
 	sccLabelKey                  = "scc"
-	managedKey                   = "managed"
 	subaccountKey                = "Subaccount"
 	locationIDKey                = "LocationID"
 	urlSuffixToBeTrimmed         = "/"
 	applicationTypeLabelKey      = "applicationType"
 	ppmsProductVersionIDLabelKey = "ppmsProductVersionId"
 	urlSubdomainSeparator        = "."
+
+	// ManagedLabelKey is the key of the application label for internally or externally managed applications.
+	ManagedLabelKey = "managed"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -921,7 +923,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	return s.appRepo.GetByID(ctx, appTenant, destID)
 }
 
-// handleMergeLabels merges source labels into destination labels. managedKey label is merged manually.
+// handleMergeLabels merges source labels into destination labels. ManagedLabelKey label is merged manually.
 // It is updated only if the source or destination label have a value "true"
 func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
 	destScenarios, ok := destAppLabels[model.ScenariosKey]
@@ -941,30 +943,30 @@ func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLa
 
 	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
 
-	srcLabelManaged, ok := srcAppLabels[managedKey]
+	srcLabelManaged, ok := srcAppLabels[ManagedLabelKey]
 	if !ok {
-		log.C(ctx).Infof("No %q label found in source object.", managedKey)
+		log.C(ctx).Infof("No %q label found in source object.", ManagedLabelKey)
 		srcLabelManaged = &model.Label{Value: "false"}
 	}
 
 	srcLabelManagedValue, err := str.CastToBool(srcLabelManaged.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
+		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", ManagedLabelKey, srcAppLabels[ManagedLabelKey].ID)
 	}
 
-	destLabelManaged, ok := destAppLabels[managedKey]
+	destLabelManaged, ok := destAppLabels[ManagedLabelKey]
 	if !ok {
-		log.C(ctx).Infof("No %q label found in destination object.", managedKey)
+		log.C(ctx).Infof("No %q label found in destination object.", ManagedLabelKey)
 		destLabelManaged = &model.Label{Value: "false"}
 	}
 
 	destLabelManagedValue, err := str.CastToBool(destLabelManaged.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", ManagedLabelKey, destAppLabels[ManagedLabelKey].ID)
 	}
 
 	if destLabelManagedValue || srcLabelManagedValue {
-		destAppLabels[managedKey].Value = "true"
+		destAppLabels[ManagedLabelKey].Value = "true"
 	}
 
 	conv := make(map[string]interface{}, len(destAppLabels))

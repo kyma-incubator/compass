@@ -126,52 +126,52 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230627-fac0e9b7"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230627-fac0e9b7"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230627-fac0e9b7"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
       version: "PR-3168"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230704-486cdc30"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3116"
+      dir: prod/incubator/
+      version: "v20230623-d1d6b3e7"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3121"
+      dir: prod/incubator/
+      version: "v20230628-e9903edf"
       name: compass-kyma-adapter
     gateway:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230627-fac0e9b7"
       name: compass-gateway
     operations_controller:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230627-fac0e9b7"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-94"
+      dir: prod/incubator/
+      version: "v20230516-659eedd9"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3135"
+      dir: prod/incubator/
+      version: "v20230628-e2468984"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3144"
+      dir: prod/incubator/
+      version: "v20230627-fac0e9b7"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -183,8 +183,8 @@ global:
       version: "PR-3168"
       name: compass-external-services-mock
     console:
-      dir: dev/incubator/
-      version: "PR-83"
+      dir: prod/incubator/
+      version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
@@ -808,7 +808,8 @@ global:
       consumerTenantIdProperty: "consumerTenantIdProperty"
       subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithParentEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithoutParentEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
@@ -1127,6 +1128,7 @@ global:
       supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      missingTenantOnDemandID: "subaccount-external-tnt"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
@@ -1246,6 +1248,7 @@ global:
         - "webhook:write"
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
+        - "certificate_subject_mapping:read"
       managed_application_consumer: []
       landscape_resource_operator:
         - "application:read"

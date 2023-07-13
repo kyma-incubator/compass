@@ -41,6 +41,8 @@ const (
 	CannotUpdateObjectInManyBundles ErrorType = 34
 	// ConcurrentUpdate is the error code for ConcurrentUpdate errors.
 	ConcurrentUpdate ErrorType = 35
+	// EmptyParentID is the error code for EmptyParentID errors.
+	EmptyParentID ErrorType = 36
 	// BadRequest is the error code for BadRequest errors.
 	BadRequest ErrorType = 400
 	// Conflict is the error code for Conflict errors.
