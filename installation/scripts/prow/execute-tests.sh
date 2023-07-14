@@ -10,7 +10,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR=${CURRENT_DIR}/../../
 
 export ARTIFACTS="/var/log/prow_artifacts"
-sudo mkdir -p "${ARTIFACTS}"
+mkdir -p "${ARTIFACTS}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -36,9 +36,9 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 if [[ ${DUMP_DB} ]]; then
-    sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db true
+    ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db true
 else
-    sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db false
+    ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db false
 fi
 
 
