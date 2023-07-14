@@ -134,8 +134,9 @@ func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systems
 }
 
 type tenantSystems struct {
-	tenant  *model.BusinessTenantMapping
-	systems []System
+	tenant        *model.BusinessTenantMapping
+	systems       []System
+	syncTimestamp time.Time
 }
 
 func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, chunkSize int) [][]*model.BusinessTenantMapping {
@@ -196,7 +197,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 				currentTenant := tenantSystems.tenant.ExternalTenant
 				currentTimestamp := SystemSynchronizationTimestamp{
 					ID:                uuid.NewString(),
-					LastSyncTimestamp: time.Now().UTC(),
+					LastSyncTimestamp: tenantSystems.syncTimestamp,
 				}
 
 				if _, ok := SystemSynchronizationTimestamps[currentTenant]; !ok {
@@ -236,6 +237,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					wg.Done()
 					<-s.workers
 				}()
+				currentTime := time.Now()
 				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant, &mutex)
 				if err != nil {
 					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
@@ -249,8 +251,9 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 
 				if len(systems) > 0 {
 					systemsQueue <- tenantSystems{
-						tenant:  t,
-						systems: systems,
+						tenant:        t,
+						systems:       systems,
+						syncTimestamp: currentTime,
 					}
 				}
 			}(t)
