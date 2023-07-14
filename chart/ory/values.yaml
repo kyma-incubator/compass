@@ -253,6 +253,8 @@ oathkeeper:
       minReplicas: "1"
       targetMemoryUtilizationPercentage: 75
       targetCPUUtilizationPercentage: 80    
+  secret:
+    enabled: true
   oathkeeper-maester:
     deployment:
       annotations:
