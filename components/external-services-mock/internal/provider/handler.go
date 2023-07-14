@@ -17,11 +17,14 @@ type Dependency struct {
 }
 
 type handler struct {
-	xsappnameClone string
+	xsappnameClone            string
+	directDependencyXsappname string
 }
 
-func NewHandler() *handler {
-	return &handler{}
+func NewHandler(directDependencyXsappname string) *handler {
+	return &handler{
+		directDependencyXsappname: directDependencyXsappname,
+	}
 }
 
 // OnSubscription handles subscription callback request on real environment. When someone is subscribed to the provider tenant this method will be executed
@@ -99,5 +102,32 @@ func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
+	log.C(ctx).Infof("Successfully configured subscription dependency: %s", h.xsappnameClone)
+
+	log.C(ctx).Info("Successfully handled dependency request")
+}
+
+// DependenciesIndirect is invoked on real environment as part of the subscription request where CMP is indirect dependencies and returns provider's dependencies in the expected format
+func (h *handler) DependenciesIndirect(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log.C(ctx).Info("Handling dependency request for indirect dependency subscription ...")
+
+	deps := []*Dependency{{Xsappname: h.directDependencyXsappname}}
+	depsMarshalled, err := json.Marshal(deps)
+	if err != nil {
+		log.C(ctx).Errorf("while marshalling subscription dependencies: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling subscription dependencies"), http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	if _, err := writer.Write(depsMarshalled); err != nil {
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
+		return
+	}
+	log.C(ctx).Infof("Successfully configured indirect subscription dependency: %s", h.directDependencyXsappname)
+
 	log.C(ctx).Info("Successfully handled dependency request")
 }

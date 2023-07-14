@@ -96,10 +96,10 @@ func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID
 }
 
 // UnsubscribeTenant makes graphql query tenant unsubscription
-func (d *Director) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) error {
+func (d *Director) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionPayload string) error {
 	var res map[string]interface{}
 
-	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionPayload: %q)}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionPayload)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
