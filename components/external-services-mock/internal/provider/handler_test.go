@@ -47,7 +47,7 @@ func TestHandler_OnSubscription(t *testing.T) {
 			//GIVEN
 			onSubReq, err := http.NewRequest(testCase.RequestMethod, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
-			h := NewHandler()
+			h := NewHandler("")
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -100,7 +100,7 @@ func TestHandler_DependenciesConfigure(t *testing.T) {
 			//GIVEN
 			depConfigureReq, err := http.NewRequest(testCase.RequestMethod, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
-			h := NewHandler()
+			h := NewHandler("")
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -128,7 +128,7 @@ func TestHandler_Dependencies(t *testing.T) {
 		require.NoError(t, err)
 		depReq, err := http.NewRequest(http.MethodGet, url+depApiPath, bytes.NewBuffer([]byte{}))
 		require.NoError(t, err)
-		h := NewHandler()
+		h := NewHandler("")
 
 		//WHEN
 		r := httptest.NewRecorder()
@@ -142,6 +142,27 @@ func TestHandler_Dependencies(t *testing.T) {
 		r = httptest.NewRecorder()
 		h.Dependencies(r, depReq)
 		resp = r.Result()
+
+		//THEN
+		expectedBody := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", dependency)
+		assertExpectedResponse(t, resp, expectedBody, http.StatusOK)
+	})
+}
+
+func TestHandler_DependenciesIndirect(t *testing.T) {
+	depApiPath := "/v1/dependencies/indirect"
+	dependency := "direct-dependency-name"
+
+	t.Run("Successfully handled get dependency request", func(t *testing.T) {
+		//GIVEN
+		depReq, err := http.NewRequest(http.MethodGet, url+depApiPath, bytes.NewBuffer([]byte{}))
+		require.NoError(t, err)
+		h := NewHandler(dependency)
+
+		//WHEN
+		r := httptest.NewRecorder()
+		h.DependenciesIndirect(r, depReq)
+		resp := r.Result()
 
 		//THEN
 		expectedBody := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", dependency)

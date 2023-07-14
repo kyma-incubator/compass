@@ -211,6 +211,14 @@ if [[ ${DUMP_DB} ]]; then
     cp -R "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
 fi
 
+# If the script is not run by the root user then 'sudo' should be used for some commands
+# This is necessary as this script is ran for local installation and by PR jobs
+# The PR jobs use alpine that does not have 'sudo' as a command and always executes scripts as the root user
+SUDO=''
+if (( $EUID != 0 )); then
+    SUDO='sudo'
+fi
+
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
   kyma provision k3d \
@@ -222,7 +230,7 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   --timeout "${K3D_TIMEOUT}" \
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
-  sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
+  $SUDO sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
 usek3d
@@ -280,9 +288,9 @@ echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connec
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-  sudo cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
-  sudo update-ca-certificates
+  $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
+  $SUDO update-ca-certificates
 fi
 
 echo "Adding Compass entries to /etc/hosts..."
-sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"
+$SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"
