@@ -150,8 +150,8 @@ global:
       version: "v20230623-d1d6b3e7"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: prod/incubator/
-      version: "v20230628-e9903edf"
+      dir: dev/incubator/
+      version: "PR-3157"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
@@ -166,8 +166,8 @@ global:
       version: "v20230516-659eedd9"
       name: compass-ord-service
     schema_migrator:
-      dir: prod/incubator/
-      version: "v20230628-e2468984"
+      dir: dev/incubator/
+      version: "PR-3157"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -180,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3156"
+      version: "PR-3157"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -188,7 +188,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3156"
+      version: "PR-3157"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -545,8 +545,16 @@ global:
   kymaAdapter:
     port: 8080
     apiRootPath: "/kyma-adapter"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
     tenantInfo:
       requestTimeout: 30s
+    tenantMapping:
+      type: CONFIGURATION_CHANGED
+      mode: SYNC
+      urlTemplate: '{"path":"%s/kyma-adapter/v1/tenantMappings/{{.Runtime.Labels.global_subaccount_id}}","method":"PATCH"}'
+      inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+      headerTemplate: '{"Content-Type": ["application/json"]}'
+      outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -640,7 +648,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:

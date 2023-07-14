@@ -694,3 +694,81 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 		})
 	}
 }
+
+func TestKymaBasicCredentials(t *testing.T) {
+	t.Run("When method is PATCH", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPatch, url, nil)
+		require.NoError(t, err)
+
+		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaBasicCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+		expectedBody := []byte("{\"state\":\"READY\",\"configuration\":{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"username\":\"user\",\"password\":\"pass\"},\"oauth2ClientCredentials\":{\"tokenServiceUrl\":\"\",\"clientId\":\"\",\"clientSecret\":\"\"}}}}}\n")
+		require.Equal(t, expectedBody, body)
+	})
+	t.Run("When method is DELETE", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		require.NoError(t, err)
+
+		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaBasicCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	})
+}
+
+func TestOauthBasicCredentials(t *testing.T) {
+	t.Run("When method is PATCH", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPatch, url, nil)
+		require.NoError(t, err)
+
+		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaOauthCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+		expectedBody := []byte("{\"state\":\"READY\",\"configuration\":{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"username\":\"\",\"password\":\"\"},\"oauth2ClientCredentials\":{\"tokenServiceUrl\":\"url\",\"clientId\":\"id\",\"clientSecret\":\"secret\"}}}}}\n")
+		require.Equal(t, expectedBody, body)
+	})
+	t.Run("When method is DELETE", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		require.NoError(t, err)
+
+		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaOauthCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	})
+}
