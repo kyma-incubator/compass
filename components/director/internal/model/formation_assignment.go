@@ -30,6 +30,7 @@ type FormationAssignment struct {
 	TargetType  FormationAssignmentType `json:"target_type"`
 	State       string                  `json:"state"`
 	Value       json.RawMessage         `json:"value"`
+	Error       json.RawMessage         `json:"error"`
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
@@ -41,6 +42,7 @@ type FormationAssignmentInput struct {
 	TargetType  FormationAssignmentType `json:"target_type"`
 	State       string                  `json:"state"`
 	Value       json.RawMessage         `json:"value"`
+	Error       json.RawMessage         `json:"error"`
 }
 
 // FormationAssignmentPage missing godoc
@@ -96,6 +98,7 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 		TargetType:  i.TargetType,
 		State:       i.State,
 		Value:       i.Value,
+		Error:       i.Error,
 	}
 }
 
@@ -111,6 +114,7 @@ func (f *FormationAssignment) Clone() *FormationAssignment {
 		TargetType:  f.TargetType,
 		State:       f.State,
 		Value:       f.Value,
+		Error:       f.Error,
 	}
 }
 

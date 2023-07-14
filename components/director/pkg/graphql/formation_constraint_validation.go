@@ -189,9 +189,11 @@ func emptySendNotificationOperationDetails() *formationconstraint.SendNotificati
 		TemplateInput: nil,
 		FormationAssignment: &model.FormationAssignment{
 			Value: json.RawMessage("\"\""),
+			Error: json.RawMessage("\"\""),
 		},
 		ReverseFormationAssignment: &model.FormationAssignment{
 			Value: json.RawMessage("\"\""),
+			Error: json.RawMessage("\"\""),
 		},
 		Formation: &model.Formation{
 			Error: json.RawMessage("\"\""),
@@ -204,9 +206,11 @@ func emptyNotificationStatusReturnedOperationDetails() *formationconstraint.Noti
 		Location: formationconstraint.JoinPointLocation{},
 		FormationAssignment: &model.FormationAssignment{
 			Value: json.RawMessage("\"\""),
+			Error: json.RawMessage("\"\""),
 		},
 		ReverseFormationAssignment: &model.FormationAssignment{
 			Value: json.RawMessage("\"\""),
+			Error: json.RawMessage("\"\""),
 		},
 		Formation: &model.Formation{
 			Error: json.RawMessage("\"\""),
