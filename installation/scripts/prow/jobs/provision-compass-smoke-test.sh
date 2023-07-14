@@ -33,6 +33,8 @@ gcloud config set component_manager/disable_update_check true
 gcloud config set metrics/environment github_docker_image 
 gcloud --version
 
+# Added by the prow label 'preset-sa-vm-kyma-integration' which is missing in the prowjob
+GOOGLE_APPLICATION_CREDENTIALS=/etc/credentials/sa-vm-kyma-integration/service-account.json
 log::info "Authenticate to GCP through gcloud"
 gcp::authenticate \
     -c "${GOOGLE_APPLICATION_CREDENTIALS}"
