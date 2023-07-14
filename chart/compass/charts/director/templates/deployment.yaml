@@ -295,6 +295,18 @@ spec:
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.commonNameKey }}"
             - name: APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.certChainKey }}"
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_URL_TEMPLATE
+              value: {{ printf .Values.global.kymaAdapter.tenantMapping.urlTemplate (tpl "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}:443" .) | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_INPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.inputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_HEADER_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.headerTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_OUTPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.outputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_MODE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.mode | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_TYPE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.type | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

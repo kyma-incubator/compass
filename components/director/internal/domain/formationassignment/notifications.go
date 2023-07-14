@@ -432,8 +432,8 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	}
 
 	if fa.SourceType != model.FormationAssignmentTypeApplication {
-		log.C(ctx).Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
-		return nil, errors.Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		log.C(ctx).Debugf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		return nil, nil
 	}
 
 	appID := fa.Source
@@ -508,8 +508,8 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	}
 
 	if fa.SourceType != model.FormationAssignmentTypeApplication {
-		log.C(ctx).Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
-		return nil, errors.Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		log.C(ctx).Debugf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		return nil, nil
 	}
 
 	appID := fa.Source

@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -671,7 +669,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if response.State != nil {
+	if isStateInResponse(response) {
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
@@ -810,7 +808,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
-	if response.State != nil { // if there is a state in the response
+	if isStateInResponse(response) {
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return false, errors.Errorf("The provided state in the response %q is not valid.", *response.State)
@@ -820,7 +818,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	// if there is a state in the body - check if it is READY
 	// if there is no state in the body - check if the status code is 'success'
 	if (response.State != nil && *response.State == string(model.ReadyAssignmentState)) ||
-		(response.State == nil && *response.ActualStatusCode == *response.SuccessStatusCode) {
+		(!isStateInResponse(response) && *response.ActualStatusCode == *response.SuccessStatusCode) {
 		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
@@ -994,6 +992,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 func ResetAssignmentConfigAndError(assignment *model.FormationAssignment) {
 	assignment.Value = nil
 	assignment.Error = nil
+}
+
+func isStateInResponse(response *webhookdir.Response) bool {
+	return response.State != nil && *response.State != ""
 }
 
 // FormationAssignmentRequestMapping represents the mapping between the notification request and formation assignment

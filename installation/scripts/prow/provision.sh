@@ -10,7 +10,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR=${CURRENT_DIR}/../../
 
 export ARTIFACTS="/var/log/prow_artifacts"
-sudo mkdir -p "${ARTIFACTS}"
+mkdir -p "${ARTIFACTS}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -36,7 +36,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 if [[ ${DUMP_DB} ]]; then
-    sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB --dump-db
+    ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB --dump-db
 else
-    sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB
+    ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB
 fi

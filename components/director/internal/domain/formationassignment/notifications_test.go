@@ -1330,7 +1330,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			expectedErrMsg: "while getting configuration changed webhook for runtime with ID:",
 		},
 		{
-			name:                "Error when source type is different than application for runtime target",
+			name:                "Return nil when source type is different than application for runtime target",
 			formationAssignment: faWithSourceInvalidAndTargetRuntime,
 			formationOperation:  model.AssignFormation,
 			tenantRepo: func() *automock.TenantRepository {
@@ -1349,7 +1349,6 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 				repo.On("Get", ctx, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return repo
 			},
-			expectedErrMsg: fmt.Sprintf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", TestID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntime),
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application and runtime target",
@@ -1662,7 +1661,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			expectedErrMsg: "while getting configuration changed webhook for runtime with ID:",
 		},
 		{
-			name:                "Error when source type is different than application for runtime context target",
+			name:                "Return nil when source type is different than application for runtime context target",
 			formationAssignment: faWithSourceInvalidAndTargetRtmCtx,
 			formationOperation:  model.AssignFormation,
 			tenantRepo: func() *automock.TenantRepository {
@@ -1686,7 +1685,6 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 				repo.On("Get", ctx, TestFormationID, TestTenantID).Return(formation, nil).Once()
 				return repo
 			},
-			expectedErrMsg: fmt.Sprintf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", TestID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext),
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application and runtime ctx target",
