@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 
 	"time"
