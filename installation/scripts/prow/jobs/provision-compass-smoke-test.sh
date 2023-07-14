@@ -37,9 +37,6 @@ log::info "Authenticate to GCP through gcloud"
 gcp::authenticate \
     -c "${GOOGLE_APPLICATION_CREDENTIALS}"
 
-#log::info "Start Docker"
-#docker::start
-
 chmod -R 0777 /home/prow/go/src/github.com/kyma-incubator/compass/.git
 mkdir -p /home/prow/go/src/github.com/kyma-incubator/compass/components/console/shared/build
 
