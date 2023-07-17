@@ -269,7 +269,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(istio_requests_total{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m]) * 60)",
+              "expr": "sum(rate(istio_requests_total{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m]) * 60)",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -487,14 +487,14 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "(histogram_quantile(0.50, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le)) / 1000) or histogram_quantile(0.50, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le))",
+              "expr": "(histogram_quantile(0.50, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le)) / 1000) or histogram_quantile(0.50, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le))",
               "interval": "",
               "legendFormat": "50th percentile",
               "refId": "A"
             },
             {
               "exemplar": true,
-              "expr": "(histogram_quantile(0.90, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le)) / 1000) or histogram_quantile(0.90, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le))",
+              "expr": "(histogram_quantile(0.90, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le)) / 1000) or histogram_quantile(0.90, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le))",
               "hide": false,
               "interval": "",
               "legendFormat": "90th percentile",
@@ -502,7 +502,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "(histogram_quantile(0.95, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le)) / 1000) or histogram_quantile(0.95, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le))",
+              "expr": "(histogram_quantile(0.95, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le)) / 1000) or histogram_quantile(0.95, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le))",
               "hide": false,
               "interval": "",
               "legendFormat": "95th percentile",
@@ -510,7 +510,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "(histogram_quantile(0.99, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le)) / 1000) or histogram_quantile(0.99, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=\"500\"}[1m])) by (le))",
+              "expr": "(histogram_quantile(0.99, sum(irate(istio_request_duration_milliseconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le)) / 1000) or histogram_quantile(0.99, sum(irate(istio_request_duration_seconds_bucket{reporter=\"source\",source_app=\"istio-ingressgateway\",response_code=~\"5.*\"}[1m])) by (le))",
               "hide": false,
               "interval": "",
               "legendFormat": "99th percentile",

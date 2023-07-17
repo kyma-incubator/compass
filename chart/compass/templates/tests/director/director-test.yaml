@@ -16,7 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
     spec:
@@ -77,6 +77,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_REGION2
@@ -198,6 +200,10 @@ spec:
                   key: password
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
             - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
               value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
@@ -238,6 +244,16 @@ spec:
                   key: password
             - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
               value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"

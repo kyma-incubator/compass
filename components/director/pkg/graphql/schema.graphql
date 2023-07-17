@@ -739,6 +739,7 @@ input FormationTemplateInput {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
+	supportsReset: Boolean
 }
 
 input IntegrationSystemInput {
@@ -976,6 +977,8 @@ type Application {
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 	applicationNamespace: String
@@ -1249,6 +1252,8 @@ type FormationAssignment {
 	targetType: FormationAssignmentType!
 	state: String!
 	value: String
+	configuration: String
+	error: String
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -1301,6 +1306,7 @@ type FormationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
+	supportsReset: Boolean!
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1861,7 +1867,7 @@ type Mutation {
 	**Examples**
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
-	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -2000,9 +2006,10 @@ type Mutation {
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
+	- [create formation template with reset](examples/create-formation-template/create-formation-template-with-reset.graphql)
 	- [create formation template with webhooks](examples/create-formation-template/create-formation-template-with-webhooks.graphql)
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
 	"""

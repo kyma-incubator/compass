@@ -13,6 +13,7 @@ mutation {
       }
       placeholders: [{ name: "name" }, { name: "display-name" }]
       accessLevel: GLOBAL
+      webhooks: [{ type: CONFIGURATION_CHANGED, url: "http://url2.com" }]
     }
   ) {
     id

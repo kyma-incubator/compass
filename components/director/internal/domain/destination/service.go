@@ -282,9 +282,9 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	}
 	destReqBody.AdditionalProperties = enrichedProperties
 
-	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
+	app, err := s.applicationRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Source)
 	if err != nil {
-		return defaultStatusCode, errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Target)
+		return defaultStatusCode, errors.Wrapf(err, "while getting application with ID: %q", formationAssignment.Source)
 	}
 	if app.BaseURL != nil {
 		destReqBody.Audience = *app.BaseURL
@@ -508,7 +508,7 @@ func (s *Service) validateDestinationSubaccount(ctx context.Context, externalDes
 		}
 		subaccountID = consumerSubaccountID
 
-		log.C(ctx).Info("There was no subaccount ID provided in the destination but the consumer is validated successfully")
+		log.C(ctx).Infof("There was no subaccount ID provided in the destination but the consumer: %q is validated successfully", subaccountID)
 		return subaccountID, nil
 	}
 
@@ -685,8 +685,11 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 
 	clientUser, err := client.LoadFromContext(ctx)
 	if err != nil || clientUser == "" {
-		log.C(ctx).Warn("unable to provide client_user. Using correlation ID as client_user header...")
+		log.C(ctx).Warn("Unable to provide client_user. Using correlation ID as client_user header...")
 		clientUser = correlation.CorrelationIDFromContext(ctx)
+		if clientUser == "" {
+			return defaultRespBody, defaultStatusCode, errors.New("The correlation ID is empty and cannot be used as value for the client user header since the request will fail")
+		}
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBodyBytes))
@@ -725,6 +728,9 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 	if err != nil || clientUser == "" {
 		log.C(ctx).Warn("unable to provide client_user. Using correlation ID as client_user header...")
 		clientUser = correlation.CorrelationIDFromContext(ctx)
+		if clientUser == "" {
+			return errors.New("The correlation ID is empty and cannot be used as value for the client user header since the request will fail")
+		}
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)

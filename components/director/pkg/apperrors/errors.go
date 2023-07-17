@@ -366,6 +366,15 @@ func NewCannotUnassignObjectComingFromASAError(objectID string) error {
 	}
 }
 
+// NewEmptyParentIDErrorWithMessage returns EmptyParentIDErrorWithMessage error
+func NewEmptyParentIDErrorWithMessage(message string) error {
+	return Error{
+		errorCode: EmptyParentID,
+		Message:   message,
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -449,6 +458,11 @@ func IsCannotUnassignObjectComingFromASAError(err error) bool {
 		return customErr.errorCode == InvalidOperation && customErr.Message == CannotUnassignObjectFromASA
 	}
 	return false
+}
+
+// IsEmptyParentIDError checks if the error code is EmptyParentID
+func IsEmptyParentIDError(err error) bool {
+	return ErrorCode(err) == EmptyParentID
 }
 
 func sortMapKey(m map[string]string) []string {

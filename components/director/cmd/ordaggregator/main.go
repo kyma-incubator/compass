@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
@@ -278,6 +280,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	assignmentConv := scenarioassignment.NewConverter()
 	tenantConverter := tenant.NewConverter()
 	appTemplateVersionConv := apptemplateversion.NewConverter()
+	formationAssignmentConv := formationassignment.NewConverter()
+	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -305,6 +309,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	appTemplateVersionRepo := apptemplateversion.NewRepository(appTemplateVersionConv)
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleInstanceAuthConv)
 
 	timeSvc := directorTime.NewService()
 	uidSvc := uid.NewService()
@@ -318,13 +324,14 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, tenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
+	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
+	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
-	formationAssignmentConv := formationassignment.NewConverter()
-	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
-	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
+	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
 	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)

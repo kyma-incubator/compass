@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -31,6 +29,7 @@ type FormationAssignmentRepository interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
 	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
+	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
@@ -209,6 +208,16 @@ func (s *service) GetAssignmentsForFormationWithStates(ctx context.Context, tena
 	formationAssignments, err := s.repo.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID, states)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation assignments with states for formation with ID: %q and tenant: %q", formationID, tenantID)
+	}
+
+	return formationAssignments, nil
+}
+
+// GetAssignmentsForFormation retrieves formation assignments matching formation ID `formationID` for tenant with ID `tenantID`
+func (s *service) GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error) {
+	formationAssignments, err := s.repo.GetAssignmentsForFormation(ctx, tenantID, formationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignments for formation with ID: %q and tenant: %q", formationID, tenantID)
 	}
 
 	return formationAssignments, nil
@@ -500,6 +509,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		TargetType:  model.FormationAssignmentType(objectType),
 		State:       string(model.ReadyAssignmentState),
 		Value:       nil,
+		Error:       nil,
 	})
 
 	ids := make([]string, 0, len(assignments))
@@ -530,6 +540,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 		TargetType:  participantType,
 		State:       string(model.InitialAssignmentState),
 		Value:       nil,
+		Error:       nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
 		FormationID: formation.ID,
@@ -539,6 +550,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 		TargetType:  model.FormationAssignmentType(objectType),
 		State:       string(model.InitialAssignmentState),
 		Value:       nil,
+		Error:       nil,
 	})
 	return assignments
 }
@@ -599,10 +611,19 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	if assignmentClone.Request == nil {
-		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		assignment.State = string(model.ReadyAssignmentState)
+		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
+		}
+		return nil
+	}
+
+	if assignment.Source == assignment.Target {
+		assignment.State = string(model.ReadyAssignmentState)
+		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q is self-referenced. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
+		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
+			return errors.Wrapf(err, "while updating self-referenced formation assignment for formation with ID: %q with source and target: %q", assignment.FormationID, assignment.Source)
 		}
 		return nil
 	}
@@ -639,7 +660,8 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
 		assignment.State = string(model.InitialFormationState)
-		assignment.Value = nil
+		// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
+		assignment.Error = nil
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
@@ -647,24 +669,25 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if response.State != nil { // if there is a state in the response
+	if isStateInResponse(response) {
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return errors.Errorf("The provided state in the response %q is not valid.", *response.State)
-		}
-		if *response.State == string(model.ReadyAssignmentState) {
-			assignment.Value = nil
 		}
 		assignment.State = *response.State
 	} else {
 		if *response.ActualStatusCode == *response.SuccessStatusCode {
 			assignment.State = string(model.ReadyAssignmentState)
-			assignment.Value = nil
 		}
 
 		if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 			assignment.State = string(model.ConfigPendingAssignmentState)
 		}
+	}
+
+	// Notification response has been received. The error should be cleared. The old configuration should be discarded and the new one from the response should be used.
+	if assignment.State == string(model.ReadyAssignmentState) {
+		ResetAssignmentConfigAndError(assignment)
 	}
 
 	var shouldSendReverseNotification bool
@@ -673,17 +696,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		shouldSendReverseNotification = true
 	}
 
-	storedAssignment, err := s.Get(ctx, assignment.ID)
-	if err != nil {
-		return errors.Wrapf(err, "while fetching formation assignment with ID: %q", assignment.ID)
+	if err = s.statusService.UpdateWithConstraints(ctx, assignment, mappingPair.Operation); err != nil {
+		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
-
-	if storedAssignment.State != string(model.ReadyAssignmentState) {
-		if err = s.statusService.UpdateWithConstraints(ctx, assignment, mappingPair.Operation); err != nil {
-			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
-		}
-		log.C(ctx).Infof("Assignment with ID: %q was updated with %q state", assignment.ID, assignment.State)
-	}
+	log.C(ctx).Infof("Assignment with ID: %q was updated with %q state", assignment.ID, assignment.State)
 
 	if shouldSendReverseNotification {
 		if reverseClone == nil {
@@ -780,7 +796,8 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", mappingPair.Assignment.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
 		assignment.State = string(model.DeletingAssignmentState)
-		assignment.Value = nil
+		// clearing the error and configuration as new notification has been sent
+		ResetAssignmentConfigAndError(assignment)
 		if err = s.Update(ctx, assignment.ID, assignment); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
@@ -791,7 +808,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		return false, nil
 	}
 
-	if response.State != nil { // if there is a state in the response
+	if isStateInResponse(response) {
 		log.C(ctx).Info("There is a state in the response. Validating it...")
 		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
 			return false, errors.Errorf("The provided state in the response %q is not valid.", *response.State)
@@ -801,7 +818,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	// if there is a state in the body - check if it is READY
 	// if there is no state in the body - check if the status code is 'success'
 	if (response.State != nil && *response.State == string(model.ReadyAssignmentState)) ||
-		(response.State == nil && *response.ActualStatusCode == *response.SuccessStatusCode) {
+		(!isStateInResponse(response) && *response.ActualStatusCode == *response.SuccessStatusCode) {
 		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
@@ -876,7 +893,7 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	if err != nil {
 		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
 	}
-	assignment.Value = marshaled
+	assignment.Error = marshaled
 	if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 	}
@@ -971,6 +988,16 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 	return assignmentMappingPairs
 }
 
+// ResetAssignmentConfigAndError sets the configuration and the error fields of the formation assignment to nil
+func ResetAssignmentConfigAndError(assignment *model.FormationAssignment) {
+	assignment.Value = nil
+	assignment.Error = nil
+}
+
+func isStateInResponse(response *webhookdir.Response) bool {
+	return response.State != nil && *response.State != ""
+}
+
 // FormationAssignmentRequestMapping represents the mapping between the notification request and formation assignment
 type FormationAssignmentRequestMapping struct {
 	Request             *webhookclient.FormationAssignmentNotificationRequest
@@ -995,6 +1022,7 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 			TargetType:  f.FormationAssignment.TargetType,
 			State:       f.FormationAssignment.State,
 			Value:       f.FormationAssignment.Value,
+			Error:       f.FormationAssignment.Error,
 		},
 	}
 }

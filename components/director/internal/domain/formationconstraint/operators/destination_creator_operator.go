@@ -84,47 +84,17 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			for _, destDetails := range assignmentConfig.Destinations {
 				statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment)
 				if err != nil {
-					log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-					if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-						if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-							return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-						}
-						return nil
-					}); transactionErr != nil {
-						return false, transactionErr
-					}
-
-					return true, nil
+					return false, errors.Wrapf(err, "while creating design time destination with name: %q", destDetails.Name)
 				}
 
 				if statusCode == http.StatusConflict {
 					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
 					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-						log.C(ctx).Warnf("An error occurred while deleting design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
+						return false, errors.Wrapf(err, "while deleting design time destination with name: %q", destDetails.Name)
 					}
 
 					if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
-						log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
+						return false, errors.Wrapf(err, "while creating design time destination with name: %q", destDetails.Name)
 					}
 				}
 			}
@@ -136,47 +106,17 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 					for i, destDetails := range samlAssertionDetails.Destinations {
 						certData, statusCode, err := e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment)
 						if err != nil {
-							log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
+							return false, errors.Wrapf(err, "while creating SAML assertion certificate with name: %q", destDetails.Name)
 						}
 
 						if statusCode == http.StatusConflict {
-							log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
+							log.C(ctx).Infof("The certificate with name: %q already exists. Will be deleted and created again...", destDetails.Name)
 							if err := e.destinationSvc.DeleteCertificateFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-								log.C(ctx).Warnf("An error occurred while deleting SAML assertion certificate with name: %q from the destination service: %v", destDetails.Name, err)
-								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-									if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-										return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-									}
-									return nil
-								}); transactionErr != nil {
-									return false, transactionErr
-								}
-
-								return true, nil
+								return false, errors.Wrapf(err, "while deleting SAML assertion certificate with name: %q", destDetails.Name)
 							}
 
 							if certData, _, err = e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment); err != nil {
-								log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
-								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-									if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-										return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-									}
-									return nil
-								}); transactionErr != nil {
-									return false, transactionErr
-								}
-
-								return true, nil
+								return false, errors.Wrapf(err, "while creating SAML assertion certificate with name: %q", destDetails.Name)
 							}
 						}
 
@@ -231,47 +171,17 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				for _, destDetails := range basicAuthDetails.Destinations {
 					statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs)
 					if err != nil {
-						log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
+						return false, errors.Wrapf(err, "while creating basic destination with name: %q", destDetails.Name)
 					}
 
 					if statusCode == http.StatusConflict {
 						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
 						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							log.C(ctx).Warnf("An error occurred while deleting basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
+							return false, errors.Wrapf(err, "while deleting basic destination with name: %q", destDetails.Name)
 						}
 
 						if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
-							log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
+							return false, errors.Wrapf(err, "while creating basic destination with name: %q", destDetails.Name)
 						}
 					}
 				}
@@ -284,47 +194,17 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				for _, destDetails := range samlAssertionDetails.Destinations {
 					statusCode, err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs)
 					if err != nil {
-						log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
+						return false, errors.Wrapf(err, "while creating SAML assertion destination with name: %q", destDetails.Name)
 					}
 
 					if statusCode == http.StatusConflict {
 						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
 						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							log.C(ctx).Warnf("An error occurred while deleting SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
+							return false, errors.Wrapf(err, "while deleting SAML assertion destination with name: %q", destDetails.Name)
 						}
 
 						if _, err = e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
-							log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
+							return false, errors.Wrapf(err, "while creating SAML assertion destination with name: %q", destDetails.Name)
 						}
 					}
 				}

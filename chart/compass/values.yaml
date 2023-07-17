@@ -127,23 +127,23 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3169"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -151,27 +151,27 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3157"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-94"
+      dir: prod/incubator/
+      version: "v20230516-659eedd9"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3088"
+      version: "PR-3163"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3156"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,15 +180,15 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3157"
       name: compass-external-services-mock
     console:
-      dir: dev/incubator/
-      version: "PR-83"
+      dir: prod/incubator/
+      version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3116"
+      version: "PR-3163"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -412,6 +412,7 @@ global:
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     protocol: HTTP
+    tlsOrigination: false
     host: compass-external-services-mock.compass-system.svc.cluster.local
     port: 8080
     mtlsTokenPath: "/cert/token"
@@ -544,8 +545,16 @@ global:
   kymaAdapter:
     port: 8080
     apiRootPath: "/kyma-adapter"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
     tenantInfo:
       requestTimeout: 30s
+    tenantMapping:
+      type: CONFIGURATION_CHANGED
+      mode: SYNC
+      urlTemplate: '{"path":"%s/kyma-adapter/v1/tenantMappings/{{.Runtime.Labels.global_subaccount_id}}","method":"PATCH"}'
+      inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+      headerTemplate: '{"Content-Type": ["application/json"]}'
+      outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -639,7 +648,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -805,8 +814,14 @@ global:
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
       consumerTenantIdProperty: "consumerTenantIdProperty"
       subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
+      subscriptionIDProperty: "subscriptionGUID"
+      dependentServiceInstancesInfoProperty: "dependentServiceInstancesInfo"
+      dependentServiceInstancesInfoAppIdProperty: "appId"
+      dependentServiceInstancesInfoAppNameProperty: "appName"
+      dependentServiceInstancesInfoProviderSubaccountIdProperty: "providerSubaccountId"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithParentEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithoutParentEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
@@ -1081,6 +1096,7 @@ global:
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    directDependencyXsappname: ""
     saasAppNamesSecret:
       manage: false
     regionInstancesCredentials:
@@ -1125,6 +1141,7 @@ global:
       supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      missingTenantOnDemandID: "subaccount-external-tnt"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
@@ -1142,6 +1159,11 @@ global:
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
+      labelKey: "subscriptions"
+      standardFlow: "standard"
+      indirectDependencyFlow: "indirectDependency"
+      directDependencyFlow: "directDependency"
+      subscriptionsFlowHeaderKey: "subscriptionFlow"
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
@@ -1167,7 +1189,10 @@ global:
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
+      directDependencySubscriptionProviderIdValue: "direct-dep-id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
+      indirectDependencySubscriptionProviderAppNameValue: "indirectDependencySubscriptionProviderAppNameValue"
+      directDependencySubscriptionProviderAppNameValue: "subscriptionProviderAppNameValue" # this is used for real env tests where there is a dedicated SAAS svc instance for the indirect dependency flow
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
@@ -1244,6 +1269,7 @@ global:
         - "webhook:write"
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
+        - "certificate_subject_mapping:read"
       managed_application_consumer: []
       landscape_resource_operator:
         - "application:read"

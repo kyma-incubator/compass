@@ -62,12 +62,15 @@ type config struct {
 	SelfRegConfig            selfreg.Config
 	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
+	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
 
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
+
+	DirectDependencyXsappname string `envconfig:"APP_DIRECT_DEPENDENCY_XSAPPNAME"`
 }
 
 // DestinationServiceConfig configuration for destination service endpoints.
@@ -194,12 +197,13 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
 
 	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
-	providerHandler := provider.NewHandler()
+	providerHandler := provider.NewHandler(cfg.DirectDependencyXsappname)
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
 	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/v1/dependencies/configure", providerHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", providerHandler.Dependencies).Methods(http.MethodGet)
+	router.HandleFunc("/v1/dependencies/indirect", providerHandler.DependenciesIndirect).Methods(http.MethodGet)
 
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
@@ -238,7 +242,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
-	tenantFetcherHandler := tenantfetcher.NewHandler(cfg.TenantConfig.TestTenantOnDemandID)
+	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
@@ -340,6 +345,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncDeleteFormation).Methods(http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async-no-response/{uclFormationId}", notificationHandler.AsyncNoResponse).Methods(http.MethodPost, http.MethodDelete)
+	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
+	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),

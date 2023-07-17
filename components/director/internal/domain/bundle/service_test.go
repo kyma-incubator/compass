@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer/consumertest"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
@@ -314,7 +317,7 @@ func TestService_Create(t *testing.T) {
 			apiSvc := testCase.APIServiceFn()
 			eventSvc := testCase.EventServiceFn()
 			documentSvc := testCase.DocumentServiceFn()
-			svc := bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
+			svc := bundle.NewService(repo, apiSvc, eventSvc, documentSvc, nil, uidService)
 
 			// WHEN
 			result, err := svc.Create(ctx, testCase.ResourceType, testCase.ResourceID, testCase.Input)
@@ -331,7 +334,7 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, fixUIDService())
+		svc := bundle.NewService(nil, nil, nil, nil, nil, fixUIDService())
 		// WHEN
 		_, err := svc.Create(context.TODO(), resource.Application, appID, model.BundleCreateInput{})
 		// THEN
@@ -458,7 +461,7 @@ func TestService_Update(t *testing.T) {
 			// GIVEN
 			repo := testCase.RepositoryFn()
 
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Update(ctx, testCase.ResourceType, testCase.InputID, testCase.Input)
@@ -475,7 +478,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), resource.Application, "", model.BundleUpdateInput{})
 		// THEN
@@ -552,7 +555,7 @@ func TestService_Delete(t *testing.T) {
 			// GIVEN
 			repo := testCase.RepositoryFn()
 
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.ResourceType, testCase.InputID)
@@ -569,7 +572,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), resource.Application, "")
 		// THEN
@@ -614,7 +617,7 @@ func TestService_Exist(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			bndlRepo := testCase.RepoFn()
-			svc := bundle.NewService(bndlRepo, nil, nil, nil, nil)
+			svc := bundle.NewService(bndlRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exist(ctx, id)
@@ -633,7 +636,7 @@ func TestService_Exist(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -690,7 +693,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			bndl, err := svc.Get(ctx, testCase.InputID)
@@ -708,7 +711,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -769,7 +772,7 @@ func TestService_GetForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
@@ -787,7 +790,7 @@ func TestService_GetForApplication(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -844,7 +847,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			docs, err := svc.ListByApplicationIDNoPaging(ctx, appID)
@@ -862,7 +865,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationIDNoPaging(context.TODO(), "")
 		// THEN
@@ -916,7 +919,7 @@ func TestService_ListByApplicationTemplateVersionIDNoPaging(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			svc := bundle.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			docs, err := svc.ListByApplicationTemplateVersionIDNoPaging(ctx, appTemplateVersionID)
@@ -934,7 +937,7 @@ func TestService_ListByApplicationTemplateVersionIDNoPaging(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationIDNoPaging(context.TODO(), "")
 		// THEN
@@ -953,9 +956,9 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 	desc := "bar"
 	appIDs := []string{firstAppID, secondAppID}
 
-	bundleFirstApp := fixBundleModel(name, desc)
+	bundleFirstApp := fixBundleModelWithID(bundleID, name, desc)
 	bundleFirstApp.ApplicationID = &firstAppID
-	bundleSecondApp := fixBundleModel(name, desc)
+	bundleSecondApp := fixBundleModelWithID(secondBundleID, name, desc)
 	bundleSecondApp.ApplicationID = &secondAppID
 
 	bundlesFirstApp := []*model.Bundle{bundleFirstApp}
@@ -982,6 +985,39 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 
 	bundlePages := []*model.BundlePage{bundlePageFirstApp, bundlePageSecondApp}
 
+	b1 := fixBundleModelWithAuth(bundleID, name, desc, fixModelAuthWithUsername(bundleAuthName))
+	b1.ApplicationID = &firstAppID
+	b2 := fixBundleModelWithAuth(secondBundleID, name, desc, fixModelAuthWithUsername(otherBundleAuthName))
+	b2.ApplicationID = &secondAppID
+	bundlePagesWithReplacedAuth := []*model.BundlePage{
+		{
+			Data: []*model.Bundle{
+				b1,
+			},
+			TotalCount: len(bundlesFirstApp),
+			PageInfo: &pagination.Page{
+				HasNextPage: false,
+				EndCursor:   "end",
+				StartCursor: "start",
+			},
+		},
+		{
+			Data: []*model.Bundle{
+				b2,
+			},
+			TotalCount: len(bundlesSecondApp),
+			PageInfo: &pagination.Page{
+				HasNextPage: false,
+				EndCursor:   "end",
+				StartCursor: "start",
+			},
+		},
+	}
+
+	authForFirstBundle := fixModelBundleInstanceAuthWithCustomAuth(bundleAuthID, bundleID, fixModelAuthWithUsername(bundleAuthName))
+	authForSecondBundle := fixModelBundleInstanceAuthWithCustomAuth(otherBundleAuthID, secondBundleID, fixModelAuthWithUsername(otherBundleAuthName))
+	unusedAuthForSecondBundle := fixModelBundleInstanceAuthWithCustomAuth(unusedBundleAuthID, secondBundleID, fixModelAuthWithUsername(unusedBundleAuthName))
+
 	after := "test"
 
 	ctx := context.TODO()
@@ -989,47 +1025,96 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
+		ConsumerInfo       consumer.Consumer
 		PageSize           int
 		RepositoryFn       func() *automock.BundleRepository
+		BIASvcFn           func() *automock.BundleInstanceAuthService
 		ExpectedResult     []*model.BundlePage
 		ExpectedErrMessage string
 	}{
 		{
-			Name: "Success",
+			Name:         "Success",
+			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("ListByApplicationIDs", ctx, tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
+				repo.On("ListByApplicationIDs", consumertest.CtxWithConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
 				return repo
+			},
+
+			PageSize:           2,
+			ExpectedResult:     bundlePages,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:         "Success with runtime consumer type when there are no auths",
+			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: consumerID},
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDs", consumertest.CtxWithRuntimeConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
+				return repo
+			},
+			BIASvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", consumertest.CtxWithRuntimeConsumerMatcher(), consumerID).Return(nil, nil)
+				return svc
 			},
 			PageSize:           2,
 			ExpectedResult:     bundlePages,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Return error when page size is less than 1",
+			Name:         "Success with runtime consumer type when there are auths for bundle",
+			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDs", consumertest.CtxWithRuntimeConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
 				return repo
 			},
+			BIASvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", consumertest.CtxWithRuntimeConsumerMatcher(), consumerID).Return([]*model.BundleInstanceAuth{authForFirstBundle, authForSecondBundle, unusedAuthForSecondBundle}, nil)
+				return svc
+			},
+			PageSize:           2,
+			ExpectedResult:     bundlePagesWithReplacedAuth,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:         "Return error when fail to list bundle instance auths",
+			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: consumerID},
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDs", consumertest.CtxWithRuntimeConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
+				return repo
+			},
+			BIASvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", consumertest.CtxWithRuntimeConsumerMatcher(), consumerID).Return(nil, testErr)
+				return svc
+			},
+			PageSize:           2,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:               "Return error when page size is less than 1",
+			ConsumerInfo:       consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
 			PageSize:           0,
 			ExpectedResult:     bundlePages,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Return error when page size is bigger than 200",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				return repo
-			},
+			Name:               "Return error when page size is bigger than 200",
+			ConsumerInfo:       consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
 			PageSize:           201,
 			ExpectedResult:     bundlePages,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when Bundle listing failed",
+			Name:         "Returns error when Bundle listing failed",
+			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("ListByApplicationIDs", ctx, tenantID, appIDs, 2, after).Return(nil, testErr).Once()
+				repo.On("ListByApplicationIDs", consumertest.CtxWithConsumerMatcher(), tenantID, appIDs, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -1040,32 +1125,52 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
+			repo := UnusedBundleRepository()
+			if testCase.RepositoryFn != nil {
+				repo = testCase.RepositoryFn()
+			}
 
-			svc := bundle.NewService(repo, nil, nil, nil, nil)
+			biaSvc := UnusedBundleInstanceAuthService()
+			if testCase.BIASvcFn != nil {
+				biaSvc = testCase.BIASvcFn()
+			}
+
+			svc := bundle.NewService(repo, nil, nil, nil, biaSvc, nil)
 
 			// WHEN
-			bndls, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
+			ctxWithConsumerInfo := consumer.SaveToContext(ctx, testCase.ConsumerInfo)
+			bndls, err := svc.ListByApplicationIDs(ctxWithConsumerInfo, appIDs, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, bndls)
+				assert.ElementsMatch(t, testCase.ExpectedResult, bndls)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			repo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, biaSvc)
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundle.NewService(nil, nil, nil, nil, nil)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationIDs(context.TODO(), nil, 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+
+	t.Run("Error when consumer not in context", func(t *testing.T) {
+		ctx := context.TODO()
+		ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+		svc := bundle.NewService(nil, nil, nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationIDs(ctx, nil, 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read consumer from context")
 	})
 }
 

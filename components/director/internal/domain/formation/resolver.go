@@ -31,7 +31,7 @@ type Service interface {
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -55,6 +55,8 @@ type formationAssignmentService interface {
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
+	Update(ctx context.Context, id string, fa *model.FormationAssignment) error
 	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 }
@@ -424,6 +426,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	if err != nil {
 		return nil, []error{err}
 	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
 	for i := 0; i < len(keys); i++ {
 		formationAssignments := formationAssignmentsPerFormation[i]
@@ -445,12 +452,13 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
-				if fa.Value == nil {
+				if fa.Error == nil {
 					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
 					continue
 				}
+
 				var assignmentError formationassignment.AssignmentErrorWrapper
-				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
+				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
 				}
 
@@ -470,15 +478,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		})
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, []error{err}
-	}
-
 	return gqlFormationStatuses, nil
 }
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
-func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
+func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -487,7 +491,12 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID)
+	shouldReset := false
+	if reset != nil {
+		shouldReset = *reset
+	}
+
+	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID, shouldReset)
 	if err != nil {
 		return nil, err
 	}
