@@ -4,8 +4,6 @@ global:
   postgresql:
     postgresqlDatabase: db4hydra
     postgresqlUsername: hydra
-    # password needed in .global to create dsn in Hydra Secret
-    postgresqlPassword: compass
   istio:
     gateway:
       name: kyma-gateway
@@ -22,11 +20,6 @@ global:
           saJson: ""
         postgresql:
           enabled: true
-        # user: "someUser"
-        # password: "postgres"
-        # dbUrl: "mydb.mynamespace.svc.cluster.local:1234"
-        # dbName: "db4hydra"
-        # dbType: "postgres | mysql | cockroach"
   containerRegistry:
     path: eu.gcr.io/kyma-project
   images:
@@ -119,7 +112,6 @@ hydra:
       log:
         leak_sensitive_values: false
         level: trace
-      secrets: {}
       serve:
         admin:
           port: 4445
@@ -134,9 +126,7 @@ hydra:
         self: {}
     dangerousAllowInsecureRedirectUrls: false
     dangerousForceHttp: true
-      # existingSecret: "ory-hydra-credentials"
-  secret:
-    enabled: true
+    existingSecret: "ory-hydra-credentials"
   # hydra-maester:
   #   globalAccess: true
   #   config:
@@ -253,8 +243,6 @@ oathkeeper:
       minReplicas: "1"
       targetMemoryUtilizationPercentage: 75
       targetCPUUtilizationPercentage: 80    
-  secret:
-    enabled: true
   oathkeeper-maester:
     deployment:
       annotations:
@@ -280,7 +268,7 @@ postgresql:
     podAnnotations:
       sidecar.istio.io/inject: "false"
   # Must be in-sync with hydra.hydra.config.existingSecret
-  # existingSecret: "ory-hydra-credentials"
+  existingSecret: "ory-hydra-credentials"
 
 # Remote persistance settings
 gcloud-sqlproxy:

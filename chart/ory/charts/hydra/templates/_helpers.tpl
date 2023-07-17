@@ -61,9 +61,7 @@ Generate the dsn value
 {{- define "hydra.dsn" -}}
 {{- if .Values.demo -}}
 memory
-{{- else if .Values.global.postgresql.postgresqlPassword -}}
-postgres://{{- .Values.global.postgresql.postgresqlUsername}}:{{- .Values.global.postgresql.postgresqlPassword}}@ory-postgresql.{{- .Release.Namespace }}.svc.cluster.local:5432/{{- .Values.global.postgresql.postgresqlDatabase }}?sslmode=disable&max_conn_lifetime=10s
-{{- else -}}
+{{- else if .Values.hydra.config.dsn -}}
 {{- .Values.hydra.config.dsn }}
 {{- end -}}
 {{- end -}}

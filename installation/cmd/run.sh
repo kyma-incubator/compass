@@ -44,6 +44,10 @@ do
             SKIP_DB_INSTALL=true
             shift # past argument
         ;;
+        --skip-ory-install)
+            SKIP_ORY_INSTALL=true
+            shift # past argument
+        ;;
         --dump-db)
             DUMP_DB=true
             shift # past argument
@@ -235,8 +239,10 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
-echo "Installing ORY Stack..."
-bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
+if [[ ! ${SKIP_ORY_INSTALL} ]]; then
+  echo "Installing ORY Stack..."
+  bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
+fi
 
 mount_k3d_ca_to_oathkeeper
 
