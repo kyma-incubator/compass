@@ -14,7 +14,7 @@ import (
 func TestKymaTenantMappingAdapter(t *testing.T) {
 	ctx := context.Background()
 
-	tenantId := conf.TestProviderSubaccountID
+	tenantId := conf.TestProviderAccountID
 
 	// Create formation template
 	applicationType := "App1"
@@ -35,7 +35,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	// Create formation from template
-	formationName := "test-formation"
+	formationName := "test-kyma-adapter-formation"
 	t.Logf("Should create formation: %q", formationName)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName)
 	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName, &formationTemplate.Name)
