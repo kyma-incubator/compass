@@ -162,8 +162,8 @@ global:
       version: "PR-3156"
       name: compass-operations-controller
     ord_service:
-      dir: prod/incubator/
-      version: "v20230516-659eedd9"
+      dir: dev/incubator/
+      version: "PR-95"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
