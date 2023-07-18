@@ -40,9 +40,11 @@ fi
 trap cleanup_trap EXIT INT TERM
 
 echo "Helm install ORY components..."
-RELEASE_NS=kyma-system
+RELEASE_NS=ory
 SECRET_NAME=ory-hydra-credentials
-if [[ ! $(kubectl get secret $SECRET_NAME -n kyma-system) ]]; then
+
+kubectl create ns $RELEASE_NS || true
+if [[ ! $(kubectl get secret $SECRET_NAME -n ${RELEASE_NS}) ]]; then
   VALUES_DIR="${ROOT_PATH}"/chart/ory/values.yaml
 
   POSTGRES_USERNAME=$(yq .global.postgresql.postgresqlUsername ${VALUES_DIR})
@@ -77,10 +79,10 @@ fi
 # --wait is excluded as the deployment hangs; it hangs as there is a cronjob that rotates the jwks secret
 helm upgrade --install ory -f "${VALUES_FILE_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
 
-kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
-kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
+kubectl set image -n $RELEASE_NS cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
+kubectl patch cronjob -n $RELEASE_NS oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
+until [[ $(kubectl get cronjob -n $RELEASE_NS oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
     echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
     sleep 3
 done
-kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
+kubectl patch cronjob -n $RELEASE_NS oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'

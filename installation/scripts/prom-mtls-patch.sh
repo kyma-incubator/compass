@@ -275,6 +275,11 @@ function patchKymaServiceMonitorsForMTLS() {
   }'
 
   for sm in "${kymaSvcMonitors[@]}"; do
+    # ory-oathkeeper-maester is in different namespace as it is created by Helm
+    if [ "$sm" = "ory-oathkeeper-maester" ]; then
+      namespace=ory
+    fi
+    
     if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
       kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
 
@@ -290,15 +295,17 @@ function patchKymaServiceMonitorsForMTLS() {
     fi
   done
 
-  kubectl delete servicemonitors.monitoring.coreos.com -n kyma-system ory-hydra-maester || true
+  kubectl delete servicemonitors.monitoring.coreos.com -n ory ory-hydra-maester || true
 }
 
 function removeKymaPeerAuthsForPrometheus() {
   crd="peerauthentications.security.istio.io"
-  namespace="kyma-system"
+
+  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy
+
+  namespace="ory"
 
   allPAs=(
-    monitoring-grafana-policy
     ory-oathkeeper-maester-metrics
     ory-hydra-maester-metrics
   )

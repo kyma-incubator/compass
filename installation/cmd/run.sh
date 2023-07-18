@@ -136,15 +136,15 @@ function mount_k3d_ca_to_oathkeeper() {
   echo "Mounting k3d CA cert into oathkeeper's container..."
 
   docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
-  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
+  kubectl create configmap -n ory k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
 
-  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
-  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n ory | grep oathkeeper | awk '{print $1}')
+  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n ory "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
-  kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+  kubectl -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 
-  kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+  kubectl -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
 }
 

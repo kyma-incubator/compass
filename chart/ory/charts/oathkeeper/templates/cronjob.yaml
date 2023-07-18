@@ -79,7 +79,7 @@ spec:
               set -e
               kubectl create secret generic {{ include "oathkeeper.fullname" . }}-jwks-secret \
                 --from-file=/etc/secrets/jwks.json \
-                -n kyma-system -o yaml --dry-run | kubectl apply -f -
+                -n ory -o yaml --dry-run | kubectl apply -f -
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
