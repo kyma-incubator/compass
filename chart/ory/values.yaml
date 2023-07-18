@@ -135,7 +135,6 @@ hydra:
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
-  nameOverride: "ory-stack-oathkeeper"
   oathkeeper:
     config:
       authenticators:
@@ -245,6 +244,8 @@ oathkeeper:
       targetMemoryUtilizationPercentage: 75
       targetCPUUtilizationPercentage: 80    
   oathkeeper-maester:
+    # Needed to enforce unique names
+    nameOverride: "ory-stack-oathkeeper-maester"
     deployment:
       annotations:
         sidecar.istio.io/inject: "false"
