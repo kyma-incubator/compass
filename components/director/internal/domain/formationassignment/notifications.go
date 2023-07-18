@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -430,8 +432,8 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	}
 
 	if fa.SourceType != model.FormationAssignmentTypeApplication {
-		log.C(ctx).Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
-		return nil, errors.Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		log.C(ctx).Debugf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		return nil, nil
 	}
 
 	appID := fa.Source
@@ -506,8 +508,8 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	}
 
 	if fa.SourceType != model.FormationAssignmentTypeApplication {
-		log.C(ctx).Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
-		return nil, errors.Errorf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		log.C(ctx).Debugf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", fa.ID, fa.TargetType, fa.SourceType)
+		return nil, nil
 	}
 
 	appID := fa.Source
@@ -562,11 +564,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
 	if formationAssignment == nil {
-		return &webhook.FormationAssignment{Value: "\"\""}
-	}
-	config := string(formationAssignment.Value)
-	if config == "" || formationAssignment.State == string(model.CreateErrorAssignmentState) || formationAssignment.State == string(model.DeleteErrorAssignmentState) {
-		config = "\"\""
+		return &webhook.FormationAssignment{Value: "\"\"", Error: "\"\""}
 	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
@@ -577,7 +575,8 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
-		Value:       config,
+		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
+		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
 }
 

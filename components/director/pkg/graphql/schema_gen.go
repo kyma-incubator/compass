@@ -346,13 +346,15 @@ type ComplexityRoot struct {
 	}
 
 	FormationAssignment struct {
-		ID         func(childComplexity int) int
-		Source     func(childComplexity int) int
-		SourceType func(childComplexity int) int
-		State      func(childComplexity int) int
-		Target     func(childComplexity int) int
-		TargetType func(childComplexity int) int
-		Value      func(childComplexity int) int
+		Configuration func(childComplexity int) int
+		Error         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Source        func(childComplexity int) int
+		SourceType    func(childComplexity int) int
+		State         func(childComplexity int) int
+		Target        func(childComplexity int) int
+		TargetType    func(childComplexity int) int
+		Value         func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -525,7 +527,7 @@ type ComplexityRoot struct {
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
 		UnregisterRuntime                            func(childComplexity int, id string) int
 		UnregisterRuntimeContext                     func(childComplexity int, id string) int
-		UnsubscribeTenant                            func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) int
+		UnsubscribeTenant                            func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionPayload string) int
 		UpdateAPIDefinition                          func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateAPIDefinitionForApplication            func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
@@ -885,7 +887,7 @@ type MutationResolver interface {
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
 	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) (bool, error)
-	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionPayload string) (bool, error)
 	CreateFormationTemplate(ctx context.Context, in FormationTemplateInput) (*FormationTemplate, error)
 	DeleteFormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
 	UpdateFormationTemplate(ctx context.Context, id string, in FormationTemplateInput) (*FormationTemplate, error)
@@ -2351,6 +2353,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Formation.Status(childComplexity), true
 
+	case "FormationAssignment.configuration":
+		if e.complexity.FormationAssignment.Configuration == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.Configuration(childComplexity), true
+
+	case "FormationAssignment.error":
+		if e.complexity.FormationAssignment.Error == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.Error(childComplexity), true
+
 	case "FormationAssignment.id":
 		if e.complexity.FormationAssignment.ID == nil {
 			break
@@ -3603,7 +3619,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string), args["subscriptionPayload"].(string)), true
 
 	case "Mutation.updateAPIDefinition":
 		if e.complexity.Mutation.UpdateAPIDefinition == nil {
@@ -6357,6 +6373,8 @@ type FormationAssignment {
 	targetType: FormationAssignmentType!
 	state: String!
 	value: String
+	configuration: String
+	error: String
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -7109,7 +7127,7 @@ type Mutation {
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
 	- [create formation template with reset](examples/create-formation-template/create-formation-template-with-reset.graphql)
@@ -9111,6 +9129,14 @@ func (ec *executionContext) field_Mutation_unsubscribeTenant_args(ctx context.Co
 		}
 	}
 	args["region"] = arg4
+	var arg5 string
+	if tmp, ok := rawArgs["subscriptionPayload"]; ok {
+		arg5, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subscriptionPayload"] = arg5
 	return args, nil
 }
 
@@ -17187,6 +17213,68 @@ func (ec *executionContext) _FormationAssignment_value(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FormationAssignment_configuration(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Configuration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_error(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationAssignmentPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationAssignmentPage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24349,7 +24437,7 @@ func (ec *executionContext) _Mutation_unsubscribeTenant(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string), args["subscriptionPayload"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenant")
@@ -35718,6 +35806,10 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			}
 		case "value":
 			out.Values[i] = ec._FormationAssignment_value(ctx, field, obj)
+		case "configuration":
+			out.Values[i] = ec._FormationAssignment_configuration(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._FormationAssignment_error(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -219,6 +219,25 @@ func FixGetApplicationWithAPIEventDefinitionRequest(applicationID, apiID, eventI
 		})))
 }
 
+func FixGetApplicationWithInstanceAuths(applicationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				bundles(first: 200, after: "") {
+      				data {
+      				  id
+      				  instanceAuths {%s}
+      				}
+      				pageInfo {
+      				  hasNextPage
+      				  endCursor
+      				}
+      				totalCount
+				}
+			}
+		}`, applicationID, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+}
+
 func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {

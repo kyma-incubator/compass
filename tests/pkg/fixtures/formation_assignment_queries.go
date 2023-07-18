@@ -11,6 +11,8 @@ import (
 
 type AssignmentState struct {
 	Config *string
+	Value  *string
+	Error  *string
 	State  string
 }
 

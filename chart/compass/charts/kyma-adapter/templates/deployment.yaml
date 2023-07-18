@@ -60,6 +60,8 @@ spec:
           env:
             - name: APP_API_ROOT_PATH
               value: {{ .Values.global.kymaAdapter.apiRootPath }}
+            - name: API_TENANT_MAPPINGS_ENDPOINT
+              value: {{ .Values.global.kymaAdapter.apiTenantMappingsEndpoint }}
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_DIRECTOR_URL

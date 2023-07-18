@@ -994,7 +994,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 		}
 		for _, assignment := range assignmentsForFormation {
 			assignment.State = string(model.InitialAssignmentState)
-			assignment.Value = nil
+			formationassignment.ResetAssignmentConfigAndError(assignment) // reset the assignments
 			err = s.formationAssignmentService.Update(ctx, assignment.ID, assignment)
 			if err != nil {
 				return nil, err

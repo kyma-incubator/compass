@@ -21,14 +21,14 @@ const (
 	JobSucceededStatus = "COMPLETED"
 	EventuallyTimeout  = 60 * time.Second
 	EventuallyTick     = 2 * time.Second
-	InstancesLabelKey  = "instances"
 )
 
-func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName string, httpClient *http.Client, subscriptionURL, apiPath, subscriptionToken, propagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
+func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName string, httpClient *http.Client, subscriptionURL, apiPath, subscriptionToken, propagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscriptionFlow, subscriptionFlowHeaderKey string) {
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, subscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	unsubscribeReq.Header.Add(propagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+	unsubscribeReq.Header.Add(subscriptionFlowHeaderKey, subscriptionFlow)
 
 	t.Logf("Removing subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, resourceName, resourceID, subscriptionProviderSubaccountID)
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -75,4 +75,18 @@ func GetSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	}
 
 	return status.String()
+}
+
+func BuildSubscriptionRequest(t *testing.T, subscriptionToken, subscriptionUrl, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue, propagatedProviderSubaccountHeader, subscriptionFlow, subscriptionFlowHeaderKey string) *http.Request {
+	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", subscriptionProviderAppNameValue)
+	subscribeReq, err := http.NewRequest(http.MethodPost, subscriptionUrl+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+	require.NoError(t, err)
+	subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+	subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
+	subscribeReq.Header.Add(propagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+
+	// This header is used by external services mock to determine to which saas application is the subscription.
+	subscribeReq.Header.Add(subscriptionFlowHeaderKey, subscriptionFlow)
+
+	return subscribeReq
 }

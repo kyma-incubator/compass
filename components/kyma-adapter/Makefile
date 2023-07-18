@@ -24,3 +24,9 @@ dep-status-local:
 
 #lint-local:
 #	@echo ${SKIP_STEP_MESSAGE}
+
+deploy-on-k3d: build-for-k3d
+	kubectl config use-context k3d-kyma
+	kubectl patch -n $(NAMESPACE) deployment/compass-kyma-adapter -p '{"spec":{"template":{"spec":{"containers":[{"name":"kyma-adapter","imagePullPolicy":"Always"}]}}}}'
+	kubectl set image -n $(NAMESPACE) deployment/compass-kyma-adapter kyma-adapter=k3d-kyma-registry:5001/compass-kyma-adapter:latest
+	kubectl rollout restart -n $(NAMESPACE) deployment/compass-kyma-adapter

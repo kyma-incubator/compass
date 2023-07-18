@@ -3,6 +3,8 @@ module github.com/kyma-incubator/compass/components/kyma-adapter
 go 1.18
 
 require (
+	github.com/avast/retry-go/v4 v4.3.4
+	github.com/go-openapi/runtime v0.25.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20230626120331-7d3f35c39b0d
 	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230607082115-977757624f7e
@@ -57,6 +59,7 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect

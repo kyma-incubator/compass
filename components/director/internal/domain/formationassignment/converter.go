@@ -25,23 +25,41 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 		return nil, nil
 	}
 
-	var strValue *string
+	var configurationStrValue *string
 	if in.Value != nil {
 		marshalledValue, err := json.Marshal(in.Value)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting formation assignment to GraphQL")
+			return nil, errors.Wrap(err, "failed to marshal formation assignment configuration while converting formation assignment to GraphQL")
 		}
-		strValue = str.Ptr(string(marshalledValue))
+		configurationStrValue = str.Ptr(string(marshalledValue))
+	}
+
+	var errorStrValue *string
+	if in.Error != nil {
+		marshalledValue, err := json.Marshal(in.Error)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal formation assignment error while converting formation assignment to GraphQL")
+		}
+		errorStrValue = str.Ptr(string(marshalledValue))
+	}
+
+	var value *string
+	if errorStrValue != nil {
+		value = errorStrValue
+	} else {
+		value = configurationStrValue
 	}
 
 	return &graphql.FormationAssignment{
-		ID:         in.ID,
-		Source:     in.Source,
-		SourceType: graphql.FormationAssignmentType(in.SourceType),
-		Target:     in.Target,
-		TargetType: graphql.FormationAssignmentType(in.TargetType),
-		State:      in.State,
-		Value:      strValue,
+		ID:            in.ID,
+		Source:        in.Source,
+		SourceType:    graphql.FormationAssignmentType(in.SourceType),
+		Target:        in.Target,
+		TargetType:    graphql.FormationAssignmentType(in.TargetType),
+		State:         in.State,
+		Value:         value,
+		Configuration: configurationStrValue,
+		Error:         errorStrValue,
 	}, nil
 }
 
@@ -81,6 +99,7 @@ func (c *converter) ToInput(assignment *model.FormationAssignment) *model.Format
 		TargetType:  assignment.TargetType,
 		State:       assignment.State,
 		Value:       assignment.Value,
+		Error:       assignment.Error,
 	}
 }
 
@@ -98,6 +117,7 @@ func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.Formati
 		TargetType:  in.TargetType,
 		State:       in.State,
 		Value:       in.Value,
+		Error:       in.Error,
 	}
 }
 
@@ -117,6 +137,7 @@ func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 		TargetType:  string(in.TargetType),
 		State:       in.State,
 		Value:       repo.NewNullableStringFromJSONRawMessage(in.Value),
+		Error:       repo.NewNullableStringFromJSONRawMessage(in.Error),
 	}
 }
 
@@ -136,5 +157,6 @@ func (c *converter) FromEntity(e *Entity) *model.FormationAssignment {
 		TargetType:  model.FormationAssignmentType(e.TargetType),
 		State:       e.State,
 		Value:       repo.JSONRawMessageFromNullableString(e.Value),
+		Error:       repo.JSONRawMessageFromNullableString(e.Error),
 	}
 }
