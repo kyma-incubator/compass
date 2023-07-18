@@ -2,6 +2,7 @@ package consumertest
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/stretchr/testify/mock"
 )

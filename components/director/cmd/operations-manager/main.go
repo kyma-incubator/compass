@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 

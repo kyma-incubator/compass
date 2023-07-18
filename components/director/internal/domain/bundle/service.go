@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
