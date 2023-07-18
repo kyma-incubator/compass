@@ -119,6 +119,18 @@ spec:
                 value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
                 value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+              - name: APP_TENANT_PROVIDER_SUBSCRIPTION_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionIDProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_APP_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoAppIdProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_APP_NAME_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoAppNameProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_PROVIDER_SUBACCOUNT_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoProviderSubaccountIdProperty }}
+              - name: APP_DIRECT_DEPENDENCY_XSAPPNAME
+                value: {{ .Values.global.externalServicesMock.directDependencyXsappname }}
               - name: APP_TENANT_CONFIG_TENANT_FETCHER_URL
                 value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_TENANT_CONFIG_ROOT_API
@@ -131,6 +143,8 @@ spec:
                 value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
               - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID
                 value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+              - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_ID
+                value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
@@ -151,6 +165,14 @@ spec:
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.tenantIDKey }}
               - name: APP_TENANT_CONFIG_CONSUMER_CLAIMS_SUBDOMAIN_KEY
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
+              - name: APP_TENANT_CONFIG_STANDARD_FLOW
+                value: {{ .Values.global.tests.subscription.standardFlow }}
+              - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_FLOW
+                value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+              - name: APP_TENANT_CONFIG_INDIRECT_DEPENDENCY_FLOW
+                value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+              - name: APP_TENANT_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+                value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
               - name: APP_DESTINATION_TENANT_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
               - name: APP_DESTINATION_CERTIFICATE_TENANT_ENDPOINT

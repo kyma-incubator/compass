@@ -55,6 +55,11 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			Name:                "Error when can't prepare details",
 			Context:             ctxWithTenant,
 			FormationAssignment: fa,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				return repo
+			},
 			NotificationSvc: func() *automock.FaNotificationService {
 				notificationSvc := &automock.FaNotificationService{}
 				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation).Return(nil, testErr).Once()
@@ -66,6 +71,11 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 			Name:                "Error when enforcing PRE constraints",
 			Context:             ctxWithTenant,
 			FormationAssignment: fa,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				return repo
+			},
 			ConstraintEngine: func() *automock.ConstraintEngine {
 				constraintEngine := &automock.ConstraintEngine{}
 				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(testErr).Once()
@@ -87,16 +97,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(false, testErr).Once()
 				return repo
 			},
-			ConstraintEngine: func() *automock.ConstraintEngine {
-				constraintEngine := &automock.ConstraintEngine{}
-				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
-				return constraintEngine
-			},
-			NotificationSvc: func() *automock.FaNotificationService {
-				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation).Return(preJoinPointDetails, nil).Once()
-				return notificationSvc
-			},
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
@@ -107,16 +107,6 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(false, nil).Once()
 				return repo
-			},
-			ConstraintEngine: func() *automock.ConstraintEngine {
-				constraintEngine := &automock.ConstraintEngine{}
-				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
-				return constraintEngine
-			},
-			NotificationSvc: func() *automock.FaNotificationService {
-				notificationSvc := &automock.FaNotificationService{}
-				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, fa, model.AssignFormation).Return(preJoinPointDetails, nil).Once()
-				return notificationSvc
 			},
 			ExpectedErrorMsg: apperrors.NewNotFoundError(resource.FormationAssignment, fa.ID).Error(),
 		},
@@ -201,6 +191,14 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 
 func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 	errorMsg := "Test Error Message"
+	assignmentError := formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:   errorMsg,
+			ErrorCode: formationassignment.TechnicalError,
+		},
+	}
+	marshaledAssignemntError, err := json.Marshal(assignmentError)
+	require.NoError(t, err)
 
 	fa := &model.FormationAssignment{
 		ID:          TestID,
@@ -223,16 +221,9 @@ func TestUpdater_SetAssignmentToErrorState(t *testing.T) {
 		Target:      TestTarget,
 		TargetType:  TestTargetType,
 		State:       string(model.DeleteErrorFormationState),
+		Value:       TestConfigValueRawJSON,
+		Error:       marshaledAssignemntError,
 	}
-	assignmentError := formationassignment.AssignmentErrorWrapper{
-		Error: formationassignment.AssignmentError{
-			Message:   errorMsg,
-			ErrorCode: formationassignment.TechnicalError,
-		},
-	}
-	marshaled, err := json.Marshal(assignmentError)
-	require.NoError(t, err)
-	faErrorState.Value = marshaled
 
 	reverseFaErrorState := fixReverseFormationAssignment(faErrorState)
 

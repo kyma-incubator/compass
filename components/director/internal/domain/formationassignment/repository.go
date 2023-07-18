@@ -18,8 +18,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"state", "value"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value"}
+	updatableTableColumns = []string{"state", "value", "error"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
 	tenantColumn          = "tenant_id"
 )
 

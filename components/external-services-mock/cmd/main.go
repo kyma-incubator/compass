@@ -71,6 +71,8 @@ type config struct {
 
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
+
+	DirectDependencyXsappname string `envconfig:"APP_DIRECT_DEPENDENCY_XSAPPNAME"`
 }
 
 // DestinationServiceConfig configuration for destination service endpoints.
@@ -198,12 +200,13 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
 
 	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
-	providerHandler := provider.NewHandler()
+	providerHandler := provider.NewHandler(cfg.DirectDependencyXsappname)
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
 	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/v1/dependencies/configure", providerHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", providerHandler.Dependencies).Methods(http.MethodGet)
+	router.HandleFunc("/v1/dependencies/indirect", providerHandler.DependenciesIndirect).Methods(http.MethodGet)
 
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
@@ -340,6 +343,9 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
+	// formation assignment notifications handlers for kyma integration
+	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
+	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	// formation assignment notifications async handlers
 	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)

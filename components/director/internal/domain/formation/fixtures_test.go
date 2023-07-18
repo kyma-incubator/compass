@@ -1408,7 +1408,7 @@ func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.Fo
 	return res
 }
 
-func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMessage, suffix string) *model.FormationAssignment {
+func fixFormationAssignmentModelWithSuffix(state string, configValue, errorValue json.RawMessage, suffix string) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          FormationAssignmentID + suffix,
 		FormationID: FormationAssignmentFormationID + suffix,
@@ -1419,6 +1419,7 @@ func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMes
 		TargetType:  model.FormationAssignmentType(FormationAssignmentTargetType + suffix),
 		State:       state,
 		Value:       configValue,
+		Error:       errorValue,
 	}
 }
 

@@ -59,6 +59,19 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		Type: "type",
 	}
 
+	webhookMode := model.WebhookModeSync
+	kymaWebhookInput := model.WebhookInput{
+		Mode: &webhookMode,
+		Type: model.WebhookTypeConfigurationChanged,
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+		},
+		URLTemplate:    &urlTemplate,
+		InputTemplate:  &inputTemplate,
+		HeaderTemplate: &headerTemplate,
+		OutputTemplate: &outputTemplate,
+	}
+
 	modelInput := func() model.RuntimeRegisterInput {
 		return model.RuntimeRegisterInput{
 			Name:        "foo.bar-not",
@@ -238,7 +251,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			UIDServiceFn: rtmtest.UnusedUUIDService,
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", ctxWithIntSysConsumer, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil).Once()
+				webhookSvc.Mock.On("Create", ctxWithIntSysConsumer, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -258,7 +272,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Success without webhooks",
+			Name: "Success without input webhooks",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
@@ -274,8 +288,12 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithIntSysConsumer, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn:     rtmtest.UnusedUUIDService,
-			WebhookServiceFn: rtmtest.UnusedWebhookService,
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
+				webhookSvc := &automock.WebhookService{}
+				webhookSvc.Mock.On("Create", ctxWithIntSysConsumer, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
+				return webhookSvc
+			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
@@ -315,6 +333,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", ctxWithSubaccountMatcher, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -355,6 +374,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -393,6 +413,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -428,6 +449,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: unusedFormationService,
@@ -533,6 +555,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: unusedFormationService,
@@ -600,6 +623,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -717,6 +741,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -753,6 +778,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, kymaWebhookInput, model.RuntimeWebhookReference).Return("kymaWebhookID", nil).Once()
 				return webhookSvc
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -793,7 +819,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			mandatoryLabels := testCase.MandatoryLabels()
 			webhookSvc := testCase.WebhookServiceFn()
-			svc := runtime.NewService(repo, nil, labelSvc, idSvc, engineSvc, tenantSvc, webhookSvc, nil, protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue, kymaApplicationNamespaceValue)
+			svc := runtime.NewService(repo, nil, labelSvc, idSvc, engineSvc, tenantSvc, webhookSvc, nil, protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue, kymaApplicationNamespaceValue, string(webhookMode), webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			err := svc.CreateWithMandatoryLabels(testCase.Context, testCase.Input, runtimeID, mandatoryLabels)
@@ -815,7 +841,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		uuidSvc := &automock.UidService{}
 		uuidSvc.On("Generate").Return(testUUID).Once()
 
-		svc := runtime.NewService(nil, nil, nil, uuidSvc, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+		svc := runtime.NewService(nil, nil, nil, uuidSvc, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", string(webhookMode), webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.RuntimeRegisterInput{})
 		// then
@@ -1270,7 +1296,7 @@ func TestService_Update(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			labelSvc := testCase.labelServiceFn()
 			engineSvc := testCase.FormationServiceFn()
-			svc := runtime.NewService(repo, labelRepo, labelSvc, nil, engineSvc, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepo, labelSvc, nil, engineSvc, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -1288,7 +1314,7 @@ func TestService_Update(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		err := svc.Update(context.TODO(), "id", model.RuntimeUpdateInput{})
 		// then
@@ -1524,7 +1550,7 @@ func TestService_Delete(t *testing.T) {
 			labelRepo := testCase.LabelRepoFn()
 			engine := testCase.FormationServiceFn()
 			rtmCtxSvc := testCase.RuntimeContextSvcFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, engine, nil, nil, rtmCtxSvc, "", "", "", "", "")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, engine, nil, nil, rtmCtxSvc, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
@@ -1542,7 +1568,7 @@ func TestService_Delete(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		err := svc.Delete(context.TODO(), "id")
 		// then
@@ -1604,7 +1630,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			rtm, err := svc.Get(ctx, testCase.InputID)
@@ -1623,7 +1649,7 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "id")
 		// then
@@ -1685,7 +1711,7 @@ func TestService_GetByTokenIssuer(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			rtm, err := svc.GetByTokenIssuer(ctx, tokenIssuer)
@@ -1758,7 +1784,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			rtmRepo := testCase.RepositoryFn()
-			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputRuntimeID)
@@ -1777,7 +1803,7 @@ func TestService_Exist(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "id")
 		// then
@@ -1873,7 +1899,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -1892,7 +1918,7 @@ func TestService_List(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		_, err := svc.List(context.TODO(), nil, 1, "")
 		// then
@@ -2006,7 +2032,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			l, err := svc.GetLabel(ctx, testCase.InputRuntimeID, testCase.InputLabel.Key)
@@ -2026,7 +2052,7 @@ func TestService_GetLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		_, err := svc.GetLabel(context.TODO(), "id", "key")
 		// then
@@ -2150,7 +2176,7 @@ func TestService_ListLabels(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeID)
@@ -2170,7 +2196,7 @@ func TestService_ListLabels(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		_, err := svc.ListLabels(context.TODO(), "id")
 		// then
@@ -2561,7 +2587,7 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.labelServiceFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			engineSvc := testCase.FormationServiceFn()
-			svc := runtime.NewService(repo, labelRepo, labelSvc, nil, engineSvc, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepo, labelSvc, nil, engineSvc, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -2579,7 +2605,7 @@ func TestService_SetLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		err := svc.SetLabel(context.TODO(), &model.LabelInput{})
 		// then
@@ -2791,7 +2817,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			engineSvc := testCase.FormationServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, engineSvc, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, engineSvc, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -2810,7 +2836,7 @@ func TestService_DeleteLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 		// WHEN
 		err := svc.DeleteLabel(context.TODO(), "id", "key")
 		// then
@@ -2865,7 +2891,7 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			labelService := &automock.LabelService{}
 			formationService := &automock.FormationService{}
 			uidSvc := &automock.UidService{}
-			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			actualRuntime, err := svc.GetByFiltersGlobal(ctx, filters)
@@ -2933,7 +2959,7 @@ func TestService_GetByFilters(t *testing.T) {
 			labelService := &automock.LabelService{}
 			formationService := &automock.FormationService{}
 			uidSvc := &automock.UidService{}
-			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, ".*_defaultEventing$", immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, ".*_defaultEventing$", immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			actualRuntime, err := svc.GetByFilters(testCase.Context, filters)
@@ -2997,7 +3023,7 @@ func TestService_ListByFiltersGlobal(t *testing.T) {
 			labelService := &automock.LabelService{}
 			formationService := &automock.FormationService{}
 			uidSvc := &automock.UidService{}
-			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			actualRuntimes, err := svc.ListByFiltersGlobal(ctx, filters)
@@ -3069,7 +3095,7 @@ func TestService_ListByFilters(t *testing.T) {
 			labelService := &automock.LabelService{}
 			formationService := &automock.FormationService{}
 			uidSvc := &automock.UidService{}
-			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, ".*_defaultEventing$", immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, ".*_defaultEventing$", immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			actualRuntimes, err := svc.ListByFilters(testCase.Context, filters)
@@ -3123,7 +3149,7 @@ func TestService_UnsafeExtractModifiableLabels(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "")
+			svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			extractedLabels, err := svc.UnsafeExtractModifiableLabels(testCase.InputLabels)

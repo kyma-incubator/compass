@@ -154,7 +154,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
-				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region).Return(nil).Once()
+				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, "").Return(nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -166,7 +166,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
-				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region).Return(testError).Once()
+				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, "").Return(testError).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,

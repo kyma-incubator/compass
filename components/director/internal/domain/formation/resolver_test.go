@@ -1155,7 +1155,7 @@ func TestResolver_FormationAssignments(t *testing.T) {
 
 	// Formation Assignments model fixtures
 	faModelFirst := fixFormationAssignmentModel(FormationAssignmentState, TestConfigValueRawJSON)
-	faModelSecond := fixFormationAssignmentModelWithSuffix(FormationAssignmentState, TestConfigValueRawJSON, "-2")
+	faModelSecond := fixFormationAssignmentModelWithSuffix(FormationAssignmentState, TestConfigValueRawJSON, nil, "-2")
 
 	fasFirst := []*model.FormationAssignment{faModelFirst}
 	fasSecond := []*model.FormationAssignment{faModelSecond}
@@ -1321,9 +1321,9 @@ func TestResolver_Status(t *testing.T) {
 
 	// Formation Assignments model fixtures
 	faModelReady := fixFormationAssignmentModel(string(model.ReadyAssignmentState), TestConfigValueRawJSON)
-	faModelInitial := fixFormationAssignmentModelWithSuffix(string(model.InitialAssignmentState), TestConfigValueRawJSON, "-2")
-	faModelError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), json.RawMessage(`{"error": {"message": "failure", "errorCode": 1}}`), "-3")
-	faModelEmptyError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), nil, "-4")
+	faModelInitial := fixFormationAssignmentModelWithSuffix(string(model.InitialAssignmentState), TestConfigValueRawJSON, nil, "-2")
+	faModelError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), nil, json.RawMessage(`{"error": {"message": "failure", "errorCode": 1}}`), "-3")
+	faModelEmptyError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), nil, nil, "-4")
 
 	fasReady := []*model.FormationAssignment{faModelReady}                                         // all are READY -> READY condition
 	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}                    // no errors, but one is INITIAL -> IN_PROGRESS condition
@@ -1332,7 +1332,7 @@ func TestResolver_Status(t *testing.T) {
 
 	fasPerFormation := [][]*model.FormationAssignment{fasReady, fasInProgress, fasError, fasEmptyError}
 
-	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), json.RawMessage(`unmarshallable structure`), "-4")}
+	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), nil, json.RawMessage(`unmarshallable structure`), "-4")}
 
 	faPagesWithUnmarshallableError := [][]*model.FormationAssignment{fasUnmarshallable}
 
@@ -1430,7 +1430,7 @@ func TestResolver_Status(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when can't unmarshal assignment value",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(faPagesWithUnmarshallableError, nil).Once()
