@@ -699,7 +699,7 @@ func TestKymaBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -718,7 +718,7 @@ func TestKymaBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -738,7 +738,7 @@ func TestOauthBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -757,7 +757,7 @@ func TestOauthBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN

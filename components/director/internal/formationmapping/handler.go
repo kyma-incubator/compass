@@ -177,6 +177,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 
 	if errorResponse := h.processFormationAssignmentAssignStatusUpdate(ctx, fa, reqBody, correlationID); errorResponse != nil {
 		respondWithError(ctx, w, errorResponse.statusCode, errors.New(errorResponse.errorMessage))
+		return
 	}
 
 	if err = tx.Commit(); err != nil {

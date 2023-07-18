@@ -8,13 +8,12 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -23,11 +22,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/gorilla/mux"
-	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -268,7 +262,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq.Header.Add(subscriptionFlowHeaderKey, "unknown")
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
