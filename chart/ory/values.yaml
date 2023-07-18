@@ -135,6 +135,7 @@ hydra:
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
+  nameOverride: "ory-stack-oathkeeper"
   oathkeeper:
     config:
       authenticators:
