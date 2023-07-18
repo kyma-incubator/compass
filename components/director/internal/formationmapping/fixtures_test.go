@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/formationmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	m "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -215,11 +214,11 @@ func fixUnusedFormationTemplateRepo() *automock.FormationTemplateRepository {
 	return &automock.FormationTemplateRepository{}
 }
 
-func ThatDoesNotCommitInGoRoutine() (*m.PersistenceTx, *m.Transactioner) {
-	persistTx := &m.PersistenceTx{}
+func ThatDoesNotCommitInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Once()
 
-	transact := &m.Transactioner{}
+	transact := &persistenceautomock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Twice()
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
@@ -227,12 +226,12 @@ func ThatDoesNotCommitInGoRoutine() (*m.PersistenceTx, *m.Transactioner) {
 	return persistTx, transact
 }
 
-func ThatFailsOnCommitInGoRoutine() (*m.PersistenceTx, *m.Transactioner) {
-	persistTx := &m.PersistenceTx{}
+func ThatFailsOnCommitInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Once()
 	persistTx.On("Commit").Return(testErr).Once()
 
-	transact := &m.Transactioner{}
+	transact := &persistenceautomock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Twice()
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
@@ -240,11 +239,11 @@ func ThatFailsOnCommitInGoRoutine() (*m.PersistenceTx, *m.Transactioner) {
 	return persistTx, transact
 }
 
-func ThatFailsOnBeginInGoRoutine() (*m.PersistenceTx, *m.Transactioner) {
-	persistTx := &m.PersistenceTx{}
+func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
 	persistTx.On("Commit").Return(nil).Once()
 
-	transact := &m.Transactioner{}
+	transact := &persistenceautomock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
 	transact.On("Begin").Return(persistTx, testErr).Once()
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()

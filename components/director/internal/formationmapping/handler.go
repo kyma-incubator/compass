@@ -144,10 +144,9 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	// todo::: double check with Stuni
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	if formationOperation == model.UnassignFormation {
-		log.C(ctx).Infof("Processing formation assignment staus update for %q operation", model.UnassignFormation)
+		log.C(ctx).Infof("Processing formation assignment status update for %q operation", model.UnassignFormation)
 		isFADeleted, err := h.processFormationAssignmentUnassignStatusUpdate(ctx, fa, reqBody)
 
 		if commitErr := tx.Commit(); commitErr != nil {
@@ -157,7 +156,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		}
 
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation assignment staus update for %q operation", model.UnassignFormation)
+			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation assignment status update for %q operation", model.UnassignFormation)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
@@ -175,6 +174,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
+	log.C(ctx).Infof("Processing formation assignment status update for %q operation", model.AssignFormation)
 	if errorResponse := h.processFormationAssignmentAssignStatusUpdate(ctx, fa, reqBody, correlationID); errorResponse != nil {
 		respondWithError(ctx, w, errorResponse.statusCode, errors.New(errorResponse.errorMessage))
 		return
