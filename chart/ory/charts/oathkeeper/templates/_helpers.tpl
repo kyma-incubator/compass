@@ -107,13 +107,3 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
-{{/*
-Expand the name of the oathkeeper maester chart.
-This originally existed in the helper of the oathkeeper chart itself, but was moved here to fix problems
-
-TODO: Return this to its original location: (chart/ory/charts/oathkeeper/charts/oathkeeper-maester/templates/_helpers.tpl) 
-when the own Ory deployment reaches prod
-*/}}
-{{- define "oathkeeper-maester.name" -}}
-{{- default .Chart.Name .Values.oathkeeper-maester.nameOverride | trunc 63 | trimSuffix "-" -}}
-{{- end -}}

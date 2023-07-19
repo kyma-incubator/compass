@@ -245,8 +245,8 @@ oathkeeper:
       targetCPUUtilizationPercentage: 80    
   oathkeeper-maester:
     # Needed to enforce unique names
-    # TODO: remove this once the ory stack reaches prod
-    nameOverride: "ory-stack-oathkeeper-maester"
+    # TODO: remove this once the ory stack reaches prod & rollback the serviceaccountnames in oathkeeper deployments
+    nameOverride: "oathkeeper-stack-maester"
     deployment:
       annotations:
         sidecar.istio.io/inject: "false"

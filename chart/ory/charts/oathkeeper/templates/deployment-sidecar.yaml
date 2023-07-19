@@ -136,7 +136,8 @@ spec:
         {{- if .Values.deployment.extraContainers }}
 {{ tpl .Values.deployment.extraContainers . | indent 8 }}
         {{- end }}
-      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-maester-account
+      # TODO: Change this back to {{ include "oathkeeper-maester.name" . }}-maester-account when it reaches prod
+      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-stack-maester-account
       {{- with .Values.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
