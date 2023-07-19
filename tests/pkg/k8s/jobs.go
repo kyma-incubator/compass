@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
 	"io"
-	"k8s.io/apimachinery/pkg/types"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"

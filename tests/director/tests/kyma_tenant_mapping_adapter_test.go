@@ -3,12 +3,13 @@ package tests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestKymaTenantMappingAdapter(t *testing.T) {
