@@ -281,6 +281,3 @@ gcloud-sqlproxy:
     term_timeout: 30s
   podAnnotations:
     sidecar.istio.io/inject: "false"
-  # Must be in-sync with hydra.hydra.config.existingSecret
-  existingSecret: "ory-hydra-credentials"
-  existingSecretKey: "gcp-sa.json"

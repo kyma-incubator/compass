@@ -106,3 +106,11 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/* vim: set filetype=mustache: */}}
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "oathkeeper-maester.name" -}}
+{{- default .Chart.Name .Values.oathkeeper-maester.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
