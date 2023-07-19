@@ -99,7 +99,7 @@ rules:
 - apiGroups: ["*"]
   resources: ["jobs"]
   resourceNames: ["system-fetcher-test", "system-fetcher-test2"]
-  verbs: ["get", "delete"]
+  verbs: ["get", "delete", "patch"]
 - apiGroups: ["*"]
   resources: ["jobs"]
   resourceNames: []

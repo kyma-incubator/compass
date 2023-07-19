@@ -249,7 +249,7 @@ rules:
 - apiGroups: ["*"]
   resources: ["jobs"]
   resourceNames: [{{ .Values.global.tests.subscription.externalCertTestJobName }}]
-  verbs: ["get", "delete"]
+  verbs: ["get", "delete", "patch"]
 - apiGroups: ["*"]
   resources: ["jobs"]
   resourceNames: []
