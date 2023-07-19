@@ -3,7 +3,10 @@ package k8s
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"io"
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 	"testing"
 	"time"
@@ -77,16 +80,39 @@ func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientse
 
 	require.NoError(t, err)
 
-	elapsed := time.After(time.Minute * 2)
+	elapsed := time.After(time.Minute * 3)
+	pendingDelete := time.After(time.Minute * 2)
 	for {
 		select {
+		case <-pendingDelete:
+			t.Logf("Removing finalizers from the job %q...", jobName)
+			finalizers := struct {
+				Metadata struct {
+					Finalizers interface{} `json:"finalizers"`
+				} `json:"metadata"`
+			}{
+				Metadata: struct {
+					Finalizers interface{} `json:"finalizers"`
+				}{
+					Finalizers: nil,
+				},
+			}
+
+			patchBytes, err := json.Marshal(finalizers)
+			if err != nil {
+				t.Fatalf("Can't marshal patch bytes for job %q: %v. Exiting...", jobName, err)
+			}
+
+			if _, err = k8sClient.BatchV1().Jobs(namespace).Patch(ctx, jobName, types.MergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
+				spew.Dump(err)
+				t.Fatalf("Can't patch job %q finalizers: %v. Exiting...", jobName, err)
+			}
 		case <-elapsed:
 			t.Fatalf("Timeout reached waiting for job %q to be deleted. Exiting...", jobName)
 		default:
 		}
 		t.Logf("Waiting for job %q to be deleted...", jobName)
-		_, err = k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
-		if errors.IsNotFound(err) {
+		if _, err = k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{}); errors.IsNotFound(err) {
 			break
 		}
 		time.Sleep(time.Second * 5)
