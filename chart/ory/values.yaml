@@ -245,6 +245,7 @@ oathkeeper:
       targetCPUUtilizationPercentage: 80    
   oathkeeper-maester:
     # Needed to enforce unique names
+    # TODO: remove this once the ory stack reaches prod
     nameOverride: "ory-stack-oathkeeper-maester"
     deployment:
       annotations:
