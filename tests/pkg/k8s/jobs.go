@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/stretchr/testify/require"
@@ -105,7 +104,6 @@ func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientse
 			}
 
 			if _, err = k8sClient.BatchV1().Jobs(namespace).Patch(ctx, jobName, types.MergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
-				spew.Dump(err)
 				t.Fatalf("Can't patch job %q finalizers: %v. Exiting...", jobName, err)
 			}
 		case <-elapsed:
