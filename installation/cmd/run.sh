@@ -258,12 +258,12 @@ mount_k3d_ca_to_oathkeeper
 # with the needed keys, by first getting them using kubectl
 function patchJWKS() {
   JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
-  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
+  until [[ $(kubectl get requestauthentication ory-internal-authn -n ory 2>/dev/null) &&
           $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
     echo "Waiting for requestauthentication resources to be created"
     sleep 3
   done
-  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  kubectl get requestauthentication ory-internal-authn -n ory -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
   kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
 }
 patchJWKS&
