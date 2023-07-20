@@ -2,6 +2,7 @@
 global:
   domainName: "local.kyma.dev"
   postgresql:
+    # Values are used by the install-ory.sh script
     postgresqlDatabase: db4hydra
     postgresqlUsername: hydra
   istio:

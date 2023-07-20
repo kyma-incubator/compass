@@ -170,6 +170,11 @@ function installKyma() {
   kyma deploy --ci --source=local --workspace "$KYMA_WORKSPACE" --verbose -c "${MINIMAL_KYMA}" --values-file "$PWD/kyma_overrides.yaml"
 }
 
+function installOry() {
+  log::info "Installing Ory Helm chart..."
+  bash "${COMPASS_SCRIPTS_DIR}"/install-ory.sh
+}
+
 function installCompassOld() {
   cd "$COMPASS_SOURCES_DIR"
   readonly LATEST_VERSION=$(git rev-parse --short main~1)
@@ -264,13 +269,6 @@ installHelm
 log::info "Install Kyma"
 installKyma
 
-
-kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
-  echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-  sleep 3
-done
-kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
 installCompassOld
