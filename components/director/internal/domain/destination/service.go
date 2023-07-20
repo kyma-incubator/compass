@@ -104,7 +104,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	}
 
 	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
-		return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
+		return errors.Wrapf(err, "while upserting design time destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
 	}
 
 	return nil
@@ -201,7 +201,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	}
 
 	if err = s.destinationRepo.UpsertWithEmbeddedTenant(ctx, destModel); err != nil {
-		return errors.Wrapf(err, "while upserting basic destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
+		return errors.Wrapf(err, "while upserting SAML Assertion destination with name: %q and assignment ID: %q in the DB", destinationDetails.Name, formationAssignment.ID)
 	}
 
 	return nil

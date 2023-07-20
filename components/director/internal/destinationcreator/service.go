@@ -649,6 +649,7 @@ func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody 
 	req.Header.Set(clientUserHeaderKey, clientUser)
 	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
 
+	req = req.WithContext(ctx)
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
 		return defaultRespBody, defaultStatusCode, err
@@ -687,6 +688,7 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 	req.Header.Set(clientUserHeaderKey, clientUser)
 	req.Header.Set(contentTypeHeaderKey, contentTypeApplicationJSON)
 
+	req = req.WithContext(ctx)
 	resp, err := s.mtlsHTTPClient.Do(req)
 	if err != nil {
 		return err
