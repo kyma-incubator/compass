@@ -128,12 +128,12 @@ func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) Applic
 		return ApplicationTemplate{}
 	}
 
-	uidService := uid.NewService()
-	webhooks := make([]Webhook, 0)
-	for _, webhookInput := range a.Webhooks {
-		webhook := webhookInput.ToWebhook(uidService.Generate(), id, ApplicationTemplateWebhookReference)
-		webhooks = append(webhooks, *webhook)
-	}
+	//uidService := uid.NewService()
+	//webhooks := make([]Webhook, 0)
+	//for _, webhookInput := range a.Webhooks {
+	//	webhook := webhookInput.ToWebhook(uidService.Generate(), id, ApplicationTemplateWebhookReference)
+	//	webhooks = append(webhooks, *webhook)
+	//}
 
 	return ApplicationTemplate{
 		ID:                   id,
@@ -144,6 +144,6 @@ func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) Applic
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
 		Labels:               a.Labels,
-		Webhooks:             webhooks,
+		//Webhooks:             webhooks,
 	}
 }

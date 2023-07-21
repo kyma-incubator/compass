@@ -56,6 +56,7 @@ type UIDService interface {
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 	DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error
+	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
 // LabelUpsertService missing godoc
@@ -310,19 +311,27 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		}
 	}
 
-	appTemplate := in.ToApplicationTemplate(id)
+	appTemplate := in.ToApplicationTemplate(id) // /?????
 	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
 
+	whs, err := s.webhookRepo.ListByApplicationTemplateID(ctx, appTemplate.ID)
+	if err != nil {
+		return errors.Wrapf(err, "while listing Webhooks for applicationTemplate with id %s", appTemplate.ID)
+	}
 	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
 		return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
 	}
 
 	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplate.ID, model.ApplicationTemplateWebhookReference))
+		if elementExists(whs, item.ID) {
+			webhooks = append(webhooks, item.ToWebhook(item.ID, appTemplate.ID, model.ApplicationTemplateWebhookReference))
+		} else {
+			webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplate.ID, model.ApplicationTemplateWebhookReference))
+		}
 	}
 	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 		return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
@@ -498,4 +507,13 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		return "", errors.Wrapf(err, "while marshalling app input")
 	}
 	return string(inputJSON), nil
+}
+
+func elementExists(arr []*model.Webhook, id string) bool {
+	for _, el := range arr {
+		if el.ID == id {
+			return true
+		}
+	}
+	return false
 }
