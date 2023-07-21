@@ -94,7 +94,7 @@ mkdir -p "${ARTIFACTS}"
 
 
 echo "Install java"
-curl -fLSs -o adoptopenjdk17.tgz "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-debugimage_x64_alpine-linux_hotspot_17.0.8_7.tar.gz"
+curl -fLSs -o adoptopenjdk17.tgz "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-jdk_x64_alpine-linux_hotspot_17.0.8_7.tar.gz"
 tar --extract --file adoptopenjdk17.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
 rm adoptopenjdk17.tgz*
 
