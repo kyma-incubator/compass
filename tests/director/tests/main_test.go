@@ -99,6 +99,10 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
+	if err := conf.DestinationsConfig.MapInstanceConfigs(); err != nil {
+		log.D().Fatal(errors.Wrap(err, "while loading destination instances config"))
+	}
+
 	var err error
 	cc, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {

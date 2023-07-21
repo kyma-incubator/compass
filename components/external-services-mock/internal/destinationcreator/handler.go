@@ -1,6 +1,7 @@
 package destinationcreator
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -9,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"strings"
@@ -16,8 +18,7 @@ import (
 
 const (
 	clientUserHeaderKey = "CLIENT_USER"
-	certCommonName      = "e2e-test-mock-destination-cert-common-name"
-	certChain           = "e2e-test-mock-cert-chain"
+	certChain           = "e2e-test-destination-cert-mock-cert-chain"
 )
 
 // todo::: add detailed comments for the structure/fields/methods/etc..
@@ -40,12 +41,10 @@ func NewHandler(config *Config) *Handler {
 	}
 }
 
-// todo::: extract the common logic into func
+// Destination Creator Service handlers + helper functions
 
-// Destination Creator Service handlers
-
-// CreateDesignTimeDestination todo::: go doc
-func (h *Handler) CreateDesignTimeDestination(writer http.ResponseWriter, r *http.Request) {
+// CreateDestinations todo::: go doc
+func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
@@ -61,70 +60,61 @@ func (h *Handler) CreateDesignTimeDestination(writer http.ResponseWriter, r *htt
 		return
 	}
 
+	routeVars := mux.Vars(r)
+	if err := h.validateDestinationCreatorPathParams(routeVars, false, true); err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		return
+	}
+
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading design time destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading design time destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+		log.C(ctx).WithError(err).Errorf("while reading destination request body. X-Request-Id: %s", correlationID)
+		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
 		return
 	}
 
-	var reqBody DesignTimeRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling design time destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling design time destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+	authTypeResult := gjson.GetBytes(bodyBytes, "authenticationType")
+	if !authTypeResult.Exists() || authTypeResult.String() == "" {
+		log.C(ctx).Errorf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID)
+		httphelpers.WriteError(writer, errors.Wrapf(err, "The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID), http.StatusBadRequest)
 		return
 	}
 
-	log.C(ctx).Info("Validating design time destination request body...")
-	if err = reqBody.Validate(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating design time destination request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating design time destination request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
+	switch destinationcreator.AuthType(authTypeResult.String()) {
+	case destinationcreator.AuthTypeNoAuth:
+		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes, routeVars)
+		if err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
+			return
+		}
+		httputils.Respond(writer, statusCode)
+	case destinationcreator.AuthTypeBasic:
+		statusCode, err := h.createBasicDestination(ctx, bodyBytes, routeVars)
+		if err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
+			return
+		}
+		httputils.Respond(writer, statusCode)
+	case destinationcreator.AuthTypeSAMLAssertion:
+		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes, routeVars)
+		if err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
+			return
+		}
+		httputils.Respond(writer, statusCode)
+	default:
+		log.C(ctx).Errorf("Invalid destination authentication type: %s. X-Request-Id: %s", authTypeResult.String(), correlationID)
+		httphelpers.WriteError(writer, errors.Errorf("Invalid destination authentication type: %s. X-Request-Id: %s", authTypeResult.String(), correlationID), http.StatusInternalServerError)
 		return
 	}
-
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-
-	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q or/and %q", regionParam, subaccountIDParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, correlationID), http.StatusBadRequest)
-		return
-	}
-
-	_, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]
-	if ok {
-		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
-		httputils.Respond(writer, http.StatusConflict)
-	}
-
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	noAuthDest := destinationcreator.NoAuthenticationDestination{
-		Name:           reqBody.Name,
-		Type:           reqBody.Type,
-		URL:            reqBody.URL,
-		Authentication: reqBody.AuthenticationType,
-		ProxyType:      reqBody.ProxyType,
-	}
-
-	noAuthDestBytes, err := json.Marshal(noAuthDest)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("while marshalling no authentication destination")
-		httphelpers.WriteError(writer, errors.New("while marshalling no authentication destination"), http.StatusInternalServerError)
-		return
-	}
-
-	h.DestinationSvcDestinations[reqBody.Name] = noAuthDestBytes
-
-	httputils.Respond(writer, http.StatusCreated)
 }
 
-// DeleteDesignTimeDestination todo::: go doc
-func (h *Handler) DeleteDesignTimeDestination(writer http.ResponseWriter, r *http.Request) {
+// DeleteDestinations todo::: go doc
+func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
@@ -140,367 +130,29 @@ func (h *Handler) DeleteDesignTimeDestination(writer http.ResponseWriter, r *htt
 		return
 	}
 
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading design time destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading design time destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	var reqBody DesignTimeRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling design time destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling design time destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Info("Validating design time destination request body...")
-	if err = reqBody.Validate(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating design time destination request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating design time destination request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
-		return
-	}
-
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-	destinationNameParam := h.Config.DestinationAPIConfig.DestinationNameParam
-
 	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-	destinationNameParamValue := routeVars[destinationNameParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" || destinationNameParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q, %q or/and %q", regionParam, subaccountIDParam, destinationNameParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q, %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, destinationNameParam, correlationID), http.StatusBadRequest)
+	if err := h.validateDestinationCreatorPathParams(routeVars, true, true); err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
 		return
 	}
+	destinationNameValue := routeVars[h.Config.DestinationAPIConfig.DestinationNameParam]
 
-	_, isDestinationCreatorDestExist := h.DestinationCreatorSvcDestinations[reqBody.Name]
+	_, isDestinationCreatorDestExist := h.DestinationCreatorSvcDestinations[destinationNameValue]
 	if !isDestinationCreatorDestExist {
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q does not exists in the destination creator", reqBody.Name, reqBody.AuthenticationType)
+		log.C(ctx).Infof("Destination with name: %q does not exists in the destination creator", destinationNameValue)
 	} else {
-		delete(h.DestinationCreatorSvcDestinations, reqBody.Name)
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q was deleted from the destination creator", reqBody.Name, reqBody.AuthenticationType)
+		delete(h.DestinationCreatorSvcDestinations, destinationNameValue)
+		log.C(ctx).Infof("Destination with name: %q was deleted from the destination creator", destinationNameValue)
 	}
 
-	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[reqBody.Name]
+	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[destinationNameValue]
 	if !isDestinationSvcDestExists {
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q does not exists in the destination service. Returning 204 No Content...", reqBody.Name, reqBody.AuthenticationType)
+		log.C(ctx).Infof("Destination with name: %q does not exists in the destination service. Returning 204 No Content...", destinationNameValue)
 		httputils.Respond(writer, http.StatusNoContent)
 	}
-	delete(h.DestinationSvcDestinations, reqBody.Name)
-	log.C(ctx).Infof("Destination with name: %q and authentication type: %q was deleted from the destination service", reqBody.Name, reqBody.AuthenticationType)
-
-	httputils.Respond(writer, http.StatusNoContent)
-}
-
-// CreateBasicDestination todo::: go doc
-func (h *Handler) CreateBasicDestination(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
-
-	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading basic destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading basic destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	var reqBody BasicRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling basic destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling basic destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Info("Validating basic destination request body...")
-	if err = reqBody.Validate(h.Config); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating basic destination request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating basic destination request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
-		return
-	}
-
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-
-	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q or/and %q", regionParam, subaccountIDParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, correlationID), http.StatusBadRequest)
-		return
-	}
-
-	_, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]
-	if ok {
-		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
-		httputils.Respond(writer, http.StatusConflict)
-	}
-
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	basicAuthDest := destinationcreator.BasicDestination{
-		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           reqBody.Name,
-			Type:           reqBody.Type,
-			URL:            reqBody.URL,
-			Authentication: reqBody.AuthenticationType,
-			ProxyType:      reqBody.ProxyType,
-		},
-		User:     reqBody.User,
-		Password: reqBody.Password,
-	}
-
-	basicDestBytes, err := json.Marshal(basicAuthDest)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("while marshalling basic destination")
-		httphelpers.WriteError(writer, errors.New("while marshalling basic destination"), http.StatusInternalServerError)
-		return
-	}
-
-	h.DestinationSvcDestinations[reqBody.Name] = basicDestBytes
-
-	httputils.Respond(writer, http.StatusCreated)
-}
-
-// DeleteBasicDestination todo::: go doc
-func (h *Handler) DeleteBasicDestination(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
-
-	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading basic destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading basic destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	var reqBody BasicRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling basic destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling basic destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Info("Validating basic destination request body...")
-	if err = reqBody.Validate(h.Config); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating basic destination request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating basic destination request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
-		return
-	}
-
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-	destinationNameParam := h.Config.DestinationAPIConfig.DestinationNameParam
-
-	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-	destinationNameParamValue := routeVars[destinationNameParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" || destinationNameParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q, %q or/and %q", regionParam, subaccountIDParam, destinationNameParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q, %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, destinationNameParam, correlationID), http.StatusBadRequest)
-		return
-	}
-
-	_, isDestinationCreatorDestExist := h.DestinationCreatorSvcDestinations[reqBody.Name]
-	if !isDestinationCreatorDestExist {
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q does not exists in the destination creator", reqBody.Name, reqBody.AuthenticationType)
-	} else {
-		delete(h.DestinationCreatorSvcDestinations, reqBody.Name)
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q was deleted from the destination creator", reqBody.Name, reqBody.AuthenticationType)
-	}
-
-	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[reqBody.Name]
-	if !isDestinationSvcDestExists {
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q does not exists in the destination service. Returning 204 No Content...", reqBody.Name, reqBody.AuthenticationType)
-		httputils.Respond(writer, http.StatusNoContent)
-	}
-	delete(h.DestinationSvcDestinations, reqBody.Name)
-	log.C(ctx).Infof("Destination with name: %q and authentication type: %q was deleted from the destination service", reqBody.Name, reqBody.AuthenticationType)
-
-	httputils.Respond(writer, http.StatusNoContent)
-}
-
-// CreateSAMLAssertionDestination todo::: go doc
-func (h *Handler) CreateSAMLAssertionDestination(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
-
-	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading SAML assertion destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading SAML assertion destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	var reqBody SAMLAssertionRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling SAML assertion destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling SAML assertion destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Info("Validating SAML assertion destination request body...")
-	if err = reqBody.Validate(h.Config); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating SAML assertion destination request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating SAML assertion destination request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
-		return
-	}
-
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-
-	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q or/and %q", regionParam, subaccountIDParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, correlationID), http.StatusBadRequest)
-		return
-	}
-
-	_, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]
-	if ok {
-		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
-		httputils.Respond(writer, http.StatusConflict)
-	}
-
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
-		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           reqBody.Name,
-			Type:           reqBody.Type,
-			URL:            reqBody.URL,
-			Authentication: reqBody.AuthenticationType,
-			ProxyType:      reqBody.ProxyType,
-		},
-		Audience:         reqBody.Audience,
-		KeyStoreLocation: reqBody.KeyStoreLocation,
-	}
-
-	samlAssertionAuthDestBytes, err := json.Marshal(samlAssertionAuthDest)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("while marshalling SAML assertion destination")
-		httphelpers.WriteError(writer, errors.New("while marshalling SAML assertion destination"), http.StatusInternalServerError)
-		return
-	}
-
-	h.DestinationSvcDestinations[reqBody.Name] = samlAssertionAuthDestBytes
-
-	httputils.Respond(writer, http.StatusCreated)
-}
-
-// DeleteSAMLAssertionDestination todo::: go doc
-func (h *Handler) DeleteSAMLAssertionDestination(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
-
-	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading SAML assertion destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading SAML assertion destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	var reqBody SAMLAssertionRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling SAML assertion destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling SAML assertion destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Info("Validating SAML assertion destination request body...")
-	if err = reqBody.Validate(h.Config); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating SAML assertion destination request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating SAML assertion destination request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
-		return
-	}
-
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-	destinationNameParam := h.Config.DestinationAPIConfig.DestinationNameParam
-
-	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-	destinationNameParamValue := routeVars[destinationNameParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" || destinationNameParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q, %q or/and %q", regionParam, subaccountIDParam, destinationNameParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q, %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, destinationNameParam, correlationID), http.StatusBadRequest)
-		return
-	}
-
-	_, isDestinationCreatorDestExist := h.DestinationCreatorSvcDestinations[reqBody.Name]
-	if !isDestinationCreatorDestExist {
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q does not exists in the destination creator", reqBody.Name, reqBody.AuthenticationType)
-	} else {
-		delete(h.DestinationCreatorSvcDestinations, reqBody.Name)
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q was deleted from the destination creator", reqBody.Name, reqBody.AuthenticationType)
-	}
-
-	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[reqBody.Name]
-	if !isDestinationSvcDestExists {
-		log.C(ctx).Infof("Destination with name: %q and authentication type: %q does not exists in the destination service. Returning 204 No Content...", reqBody.Name, reqBody.AuthenticationType)
-		httputils.Respond(writer, http.StatusNoContent)
-	}
-	delete(h.DestinationSvcDestinations, reqBody.Name)
-	log.C(ctx).Infof("Destination with name: %q and authentication type: %q was deleted from the destination service", reqBody.Name, reqBody.AuthenticationType)
+	delete(h.DestinationSvcDestinations, destinationNameValue)
+	log.C(ctx).Infof("Destination with name: %q was deleted from the destination service", destinationNameValue)
 
 	httputils.Respond(writer, http.StatusNoContent)
 }
@@ -522,6 +174,13 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	routeVars := mux.Vars(r)
+	if err := h.validateDestinationCreatorPathParams(routeVars, false, false); err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		return
+	}
+
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("while reading destination certificate request body. X-Request-Id: %s", correlationID)
@@ -543,28 +202,16 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	regionParam := h.Config.CertificateAPIConfig.RegionParam
-	subaccountIDParam := h.Config.CertificateAPIConfig.SubaccountIDParam
-
-	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q or/and %q", regionParam, subaccountIDParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, correlationID), http.StatusBadRequest)
+	if _, ok := h.DestinationCreatorSvcCertificates[reqBody.Name]; ok {
+		log.C(ctx).Infof("Certificate with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
+		httputils.Respond(writer, http.StatusConflict)
 		return
 	}
 
-	_, ok := h.DestinationCreatorSvcCertificates[reqBody.Name]
-	if ok {
-		log.C(ctx).Infof("Certificate with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
-		httputils.Respond(writer, http.StatusConflict)
-	}
-
+	destinationCertName := reqBody.Name + destinationcreator.JavaKeyStoreFileExtension
 	certResp := CertificateResponseBody{
-		FileName:         reqBody.Name + destinationcreator.JavaKeyStoreFileExtension,
-		CommonName:       certCommonName,
+		FileName:         destinationCertName,
+		CommonName:       reqBody.Name,
 		CertificateChain: certChain,
 	}
 
@@ -575,10 +222,11 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	log.C(ctx).Infof("Destination certificate with name: %q added to the destination creator", reqBody.Name)
 	h.DestinationCreatorSvcCertificates[reqBody.Name] = certRespBytes
 
 	destSvcCertificateResp := destinationcreator.DestinationSvcCertificateResponse{
-		Name:    reqBody.Name + destinationcreator.JavaKeyStoreFileExtension,
+		Name:    destinationCertName,
 		Content: certChain,
 	}
 
@@ -589,7 +237,8 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.DestinationSvcCertificates[reqBody.Name] = destSvcCertificateRespBytes
+	log.C(ctx).Infof("Destination certificate with name: %q added to the destination service", destinationCertName)
+	h.DestinationSvcCertificates[destinationCertName] = destSvcCertificateRespBytes
 
 	httputils.RespondWithBody(ctx, writer, http.StatusCreated, certResp)
 }
@@ -611,59 +260,170 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading destination certificate request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading destination certificate request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	var reqBody CertificateRequestBody
-	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling destination certificate request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling destination certificate request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Info("Validating destination certificate request body...")
-	if err = reqBody.Validate(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating destination certificate request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating destination certificate request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
-		return
-	}
-
-	regionParam := h.Config.CertificateAPIConfig.RegionParam
-	subaccountIDParam := h.Config.CertificateAPIConfig.SubaccountIDParam
-	certNameParam := h.Config.CertificateAPIConfig.CertificateNameParam
-
 	routeVars := mux.Vars(r)
-	regionParamValue := routeVars[regionParam]
-	subaccountIDParamValue := routeVars[subaccountIDParam]
-	certNameParamValue := routeVars[certNameParam]
-
-	if regionParamValue == "" || subaccountIDParamValue == "" || certNameParamValue == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q, %q or/and %q", regionParam, subaccountIDParam, certNameParam)
-		httphelpers.WriteError(writer, errors.Errorf("Not all of the required parameters - %q, %q or/and %q are provided. X-Request-Id: %s", regionParam, subaccountIDParam, certNameParam, correlationID), http.StatusBadRequest)
+	if err := h.validateDestinationCreatorPathParams(routeVars, true, false); err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
 		return
 	}
+	certNameValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
 
-	_, isDestinationCreatorCertExist := h.DestinationCreatorSvcCertificates[reqBody.Name]
-	if !isDestinationCreatorCertExist {
-		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination creator", reqBody.Name)
+	if _, isDestinationCreatorCertExist := h.DestinationCreatorSvcCertificates[certNameValue]; !isDestinationCreatorCertExist {
+		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination creator", certNameValue)
 	} else {
-		delete(h.DestinationCreatorSvcCertificates, reqBody.Name)
-		log.C(ctx).Infof("Certificate with name: %q was deleted from the destination creator", reqBody.Name)
+		delete(h.DestinationCreatorSvcCertificates, certNameValue)
+		log.C(ctx).Infof("Certificate with name: %q was deleted from the destination creator", certNameValue)
 	}
 
-	_, isDestinationSvcCertExists := h.DestinationSvcCertificates[reqBody.Name]
-	if !isDestinationSvcCertExists {
-		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", reqBody.Name)
+	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreator.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
+		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", certNameValue)
 		httputils.Respond(writer, http.StatusNoContent)
 	}
-	delete(h.DestinationSvcCertificates, reqBody.Name)
-	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", reqBody.Name)
+	delete(h.DestinationSvcCertificates, certNameValue+destinationcreator.JavaKeyStoreFileExtension)
+	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreator.JavaKeyStoreFileExtension)
 
 	httputils.Respond(writer, http.StatusNoContent)
+}
+
+func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
+	var reqBody DesignTimeRequestBody
+	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshaling design time destination request body")
+	}
+
+	log.C(ctx).Info("Validating design time destination request body...")
+	if err := reqBody.Validate(); err != nil {
+		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating design time destination request body")
+	}
+
+	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
+		log.C(ctx).Infof("Destination with name: %q already exists in the destination creator. Returning 409 Conflict...", reqBody.Name)
+		return http.StatusConflict, nil
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
+	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
+
+	noAuthDest := destinationcreator.NoAuthenticationDestination{
+		Name:           reqBody.Name,
+		Type:           reqBody.Type,
+		URL:            reqBody.URL,
+		Authentication: reqBody.AuthenticationType,
+		ProxyType:      reqBody.ProxyType,
+	}
+
+	noAuthDestBytes, err := json.Marshal(noAuthDest)
+	if err != nil {
+		return http.StatusInternalServerError, errors.New("while marshalling no authentication destination")
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
+	h.DestinationSvcDestinations[reqBody.Name] = noAuthDestBytes
+
+	return http.StatusCreated, nil
+}
+
+// CreateBasicDestination todo::: go doc
+func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
+	var reqBody BasicRequestBody
+	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshaling basic destination request body")
+	}
+
+	log.C(ctx).Info("Validating basic destination request body...")
+	if err := reqBody.Validate(h.Config); err != nil {
+		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating basic destination request body")
+	}
+
+	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
+		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
+		return http.StatusConflict, nil
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
+	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
+
+	basicAuthDest := destinationcreator.BasicDestination{
+		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+			Name:           reqBody.Name,
+			Type:           reqBody.Type,
+			URL:            reqBody.URL,
+			Authentication: reqBody.AuthenticationType,
+			ProxyType:      reqBody.ProxyType,
+		},
+		User:     reqBody.User,
+		Password: reqBody.Password,
+	}
+
+	basicDestBytes, err := json.Marshal(basicAuthDest)
+	if err != nil {
+		return http.StatusInternalServerError, errors.New("An error occurred while marshalling basic destination")
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
+	h.DestinationSvcDestinations[reqBody.Name] = basicDestBytes
+
+	return http.StatusCreated, nil
+}
+
+// CreateSAMLAssertionDestination todo::: go doc
+func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
+	var reqBody SAMLAssertionRequestBody
+	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
+		return http.StatusInternalServerError, errors.Wrapf(err, "while unmarshaling SAML assertion destination request body")
+	}
+
+	log.C(ctx).Info("Validating SAML assertion destination request body...")
+	if err := reqBody.Validate(h.Config); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while validating SAML assertion destination request body")
+		return http.StatusBadRequest, errors.Errorf("An error occurred while validating SAML assertion destination request body")
+	}
+
+	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
+		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
+		return http.StatusConflict, nil
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
+	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
+
+	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
+		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+			Name:           reqBody.Name,
+			Type:           reqBody.Type,
+			URL:            reqBody.URL,
+			Authentication: reqBody.AuthenticationType,
+			ProxyType:      reqBody.ProxyType,
+		},
+		Audience:         reqBody.Audience,
+		KeyStoreLocation: reqBody.KeyStoreLocation,
+	}
+
+	samlAssertionAuthDestBytes, err := json.Marshal(samlAssertionAuthDest)
+	if err != nil {
+		return http.StatusInternalServerError, errors.New("while marshalling SAML assertion destination")
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
+	h.DestinationSvcDestinations[reqBody.Name] = samlAssertionAuthDestBytes
+
+	return http.StatusCreated, nil
+}
+
+// CleanupDestinationCertificates todo::: go doc
+func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *http.Request) {
+	h.DestinationCreatorSvcCertificates = make(map[string]json.RawMessage)
+	h.DestinationSvcCertificates = make(map[string]json.RawMessage)
+	log.C(r.Context()).Infof("Destination creator certificates and destination service certificates mappings were successfully deleted")
+	httputils.Respond(writer, http.StatusOK)
+}
+
+// CleanupDestinations todo::: go doc
+func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Request) {
+	h.DestinationCreatorSvcDestinations = make(map[string]json.RawMessage)
+	h.DestinationSvcDestinations = make(map[string]json.RawMessage)
+	log.C(r.Context()).Infof("Destination creator destinations and destination service destinations mappings were successfully deleted")
+	httputils.Respond(writer, http.StatusOK)
 }
 
 // Destination Service handlers
@@ -673,28 +433,16 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	log.C(ctx).Info("Validating authorization header...")
-	authorizationHeaderValue := r.Header.Get(httphelpers.AuthorizationHeaderKey)
-
-	if authorizationHeaderValue == "" {
-		log.C(ctx).Errorf("missing authorization header. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Errorf("missing authorization header. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+	if err := validateAuthorization(ctx, r); err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
 		return
 	}
 
-	tokenValue := strings.TrimPrefix(authorizationHeaderValue, "Bearer ")
-	if tokenValue == "" {
-		log.C(ctx).Errorf("the token value cannot be empty. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Errorf("the token value cannot be empty. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	routeVars := mux.Vars(r)
-	destinationNameParamValue := routeVars["name"]
-
-	if destinationNameParamValue == "" {
-		log.C(ctx).Error("Missing required parameters: \"name\"")
-		httphelpers.WriteError(writer, errors.Errorf("Missing required parameters: \"name\". X-Request-Id: %s", correlationID), http.StatusBadRequest)
+	destinationNameParamValue, err := validateDestinationSvcPathParams(mux.Vars(r))
+	if err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
 		return
 	}
 
@@ -719,74 +467,27 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	}
 }
 
-// todo::: delete
-//// DeleteDestinationByNameFromDestinationSvc todo::: go doc
-//func (h *Handler) DeleteDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
-//	ctx := r.Context()
-//	correlationID := correlation.CorrelationIDFromContext(ctx)
-//
-//	log.C(ctx).Info("Validating authorization header...")
-//	authorizationHeaderValue := r.Header.Get(httphelpers.AuthorizationHeaderKey)
-//
-//	if authorizationHeaderValue == "" {
-//		log.C(ctx).Errorf("missing authorization header. X-Request-Id: %s", correlationID)
-//		httphelpers.WriteError(writer, errors.Errorf("missing authorization header. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-//		return
-//	}
-//
-//	tokenValue := strings.TrimPrefix(authorizationHeaderValue, "Bearer ")
-//	if tokenValue == "" {
-//		log.C(ctx).Errorf("the token value cannot be empty. X-Request-Id: %s", correlationID)
-//		httphelpers.WriteError(writer, errors.Errorf("the token value cannot be empty. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-//		return
-//	}
-//
-//	routeVars := mux.Vars(r)
-//	destinationNameParamValue := routeVars["name"]
-//
-//	if destinationNameParamValue == "" {
-//		log.C(ctx).Error("Missing required parameters: \"name\"")
-//		httphelpers.WriteError(writer, errors.Errorf("Missing required parameters: \"name\". X-Request-Id: %s", correlationID), http.StatusBadRequest)
-//		return
-//	}
-//
-//	h.DestinationCreatorSvcDestinations = make(map[string]json.RawMessage)
-//	httputils.Respond(writer, http.StatusOK)
-//}
-
 // GetDestinationCertificateByNameFromDestinationSvc todo::: go doc
 func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	log.C(ctx).Info("Validating authorization header...")
-	authorizationHeaderValue := r.Header.Get(httphelpers.AuthorizationHeaderKey)
-
-	if authorizationHeaderValue == "" {
-		log.C(ctx).Errorf("missing authorization header. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Errorf("missing authorization header. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+	if err := validateAuthorization(ctx, r); err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
 		return
 	}
 
-	tokenValue := strings.TrimPrefix(authorizationHeaderValue, "Bearer ")
-	if tokenValue == "" {
-		log.C(ctx).Errorf("the token value cannot be empty. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Errorf("the token value cannot be empty. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
-		return
-	}
-
-	routeVars := mux.Vars(r)
-	certificateNameParamValue := routeVars["name"]
-
-	if certificateNameParamValue == "" {
-		log.C(ctx).Error("Missing required parameters: \"name\"")
-		httphelpers.WriteError(writer, errors.Errorf("Missing required parameters: \"name\". X-Request-Id: %s", correlationID), http.StatusBadRequest)
+	certificateNameParamValue, err := validateDestinationSvcPathParams(mux.Vars(r))
+	if err != nil {
+		log.C(ctx).Error(err)
+		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
 		return
 	}
 
 	cert, exists := h.DestinationSvcCertificates[certificateNameParamValue]
 	if !exists {
-		log.C(ctx).Errorf("Destination with name: %q doest not exists", certificateNameParamValue)
+		log.C(ctx).Errorf("Certificate with name: %q doest not exists", certificateNameParamValue)
 		httphelpers.WriteError(writer, errors.Errorf("Destination with name: %q doest not exists. X-Request-Id: %s", certificateNameParamValue, correlationID), http.StatusNotFound)
 		return
 	}
@@ -805,9 +506,54 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 	}
 }
 
-// todo::: delete
-//// DeleteDestinationCertificateByNameFromDestinationSvc todo::: go doc
-//func (h *Handler) DeleteDestinationCertificateByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
-//	h.DestinationSvcCertificates = make(map[string]json.RawMessage)
-//	httputils.Respond(writer, http.StatusOK)
-//}
+func (h *Handler) validateDestinationCreatorPathParams(routeVars map[string]string, isDeleteRequest, isDestinationRequest bool) error {
+	regionParam := h.Config.DestinationAPIConfig.RegionParam
+	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
+
+	regionParamValue := routeVars[regionParam]
+	subaccountIDParamValue := routeVars[subaccountIDParam]
+	if regionParamValue == "" || subaccountIDParamValue == "" {
+		return errors.Errorf("Missing required parameters: %q or/and %q", regionParam, subaccountIDParam)
+	}
+
+	if isDeleteRequest {
+		if isDestinationRequest {
+			destinationNameParamValue := h.Config.DestinationAPIConfig.DestinationNameParam
+			if destinationNameValue := routeVars[destinationNameParamValue]; destinationNameValue == "" {
+				return errors.Errorf("Missing required parameters: %q in case of %s request", destinationNameParamValue, http.MethodDelete)
+			}
+		} else {
+			certificateNameParamValue := h.Config.CertificateAPIConfig.CertificateNameParam
+			if destinationNameValue := routeVars[certificateNameParamValue]; destinationNameValue == "" {
+				return errors.Errorf("Missing required parameters: %q in case of %s request", certificateNameParamValue, http.MethodDelete)
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateDestinationSvcPathParams(routeVars map[string]string) (string, error) {
+	nameParamValue := routeVars["name"]
+	if nameParamValue == "" {
+		return "", errors.New("Missing required parameters: \"name\"")
+	}
+
+	return nameParamValue, nil
+}
+
+func validateAuthorization(ctx context.Context, r *http.Request) error {
+	log.C(ctx).Info("Validating authorization header...")
+	authorizationHeaderValue := r.Header.Get(httphelpers.AuthorizationHeaderKey)
+
+	if authorizationHeaderValue == "" {
+		return errors.New("missing authorization header")
+	}
+
+	tokenValue := strings.TrimPrefix(authorizationHeaderValue, "Bearer ")
+	if tokenValue == "" {
+		return errors.New("the token value cannot be empty")
+	}
+
+	return nil
+}

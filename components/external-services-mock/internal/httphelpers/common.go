@@ -10,7 +10,7 @@ const (
 	AuthorizationHeaderKey           = "Authorization"
 	ContentTypeHeaderKey             = "Content-Type"
 	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
-	ContentTypeApplicationJSON       = "application/json"
+	ContentTypeApplicationJSON       = "application/json;charset=UTF-8"
 )
 
 type ErrorResponse struct {

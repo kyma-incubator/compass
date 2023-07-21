@@ -6,9 +6,9 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -42,12 +42,15 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
+
+const healthzEndpoint = "/v1/healthz"
 
 type config struct {
 	Port        int `envconfig:"default=8080"`
@@ -156,8 +159,10 @@ func main() {
 		},
 	}
 
-	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient), wg)
-	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping), wg)
+	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
+
+	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
+	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationCreatorHandler), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -170,15 +175,16 @@ func main() {
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 
-func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client) *http.Server {
+func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
 
-	router.HandleFunc("/v1/healtz", health.HandleFunc)
+	router.HandleFunc(healthzEndpoint, health.HandleFunc)
 
 	// Oauth server handlers
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
@@ -229,14 +235,11 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
-	// destination service handlers but the destination creator handler is used
-	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
+	// destination service handlers but the destination creator handler is used due to shared mappings
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
-	//router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.DeleteDestinationByNameFromDestinationSvc).Methods(http.MethodDelete) // todo::: delete/remove
 
 	tenantDestinationCertificateEndpoint := cfg.DestinationServiceConfig.TenantDestinationCertificateEndpoint
 	router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
-	//router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.DeleteDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodDelete) // todo::: delete/remove
 
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)
@@ -317,8 +320,12 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	}
 }
 
-func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *http.Server {
+func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	router := mux.NewRouter()
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
+
+	// Healthz handler
+	router.HandleFunc(healthzEndpoint, health.HandleFunc)
 
 	// Oauth server handlers
 	tokenHandlerWithKey := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
@@ -372,25 +379,21 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
 
 	// destination creator handlers
-	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
-
 	destinationCreatorPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.Path
 	deleteDestinationCreatorPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+
+	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
 
 	certificatePath := cfg.DestinationCreatorConfig.CertificateAPIConfig.Path
 	deleteCertificatePathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
 
-	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateDesignTimeDestination).Methods(http.MethodPost)
-	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteDesignTimeDestination).Methods(http.MethodDelete)
-
-	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateBasicDestination).Methods(http.MethodPost)
-	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteBasicDestination).Methods(http.MethodDelete)
-
-	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateSAMLAssertionDestination).Methods(http.MethodPost)
-	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteSAMLAssertionDestination).Methods(http.MethodDelete)
-
 	router.HandleFunc(certificatePath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
 	router.HandleFunc(certificatePath+deleteCertificatePathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
+
+	// "internal technical" handlers for deleting in-memory destinations and destination certificates mappings
+	router.HandleFunc("/destinations/cleanup", destinationCreatorHandler.CleanupDestinations).Methods(http.MethodDelete)
+	router.HandleFunc("/destination-certificates/cleanup", destinationCreatorHandler.CleanupDestinationCertificates).Methods(http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
@@ -605,10 +608,10 @@ func startServer(parentCtx context.Context, server *http.Server, wg *sync.WaitGr
 		stopServer(server)
 	}()
 
-	log.Printf("Starting and listening on %s://%s", "http", server.Addr)
+	log.C(ctx).Infof("Starting and listening on %s://%s", "http", server.Addr)
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
+		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
 	}
 }
 
@@ -622,14 +625,14 @@ func stopServer(server *http.Server) {
 		if ctx.Err() == context.Canceled {
 			return
 		} else if ctx.Err() == context.DeadlineExceeded {
-			log.Fatal("Timeout while stopping the server, killing instance!")
+			log.C(ctx).Fatal("Timeout while stopping the server, killing instance!")
 		}
 	}(ctx)
 
 	server.SetKeepAlivesEnabled(false)
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+		log.C(ctx).Fatalf("Could not gracefully shutdown the server: %v\n", err)
 	}
 }
 

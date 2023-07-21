@@ -207,6 +207,8 @@ spec:
                 value: {{ .Values.global.externalServicesMock.iasAdapter.providerAppTenantID }}
               - name : APP_IAS_ADAPTER_PROVIDED_API_NAME
                 value: {{ .Values.global.externalServicesMock.iasAdapter.apiName }}
+              - name: APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY
+                value: "{{ .Values.global.director.destinationCreator.correlationIDsKey }}"
               - name: APP_DESTINATION_CREATOR_DESTINATION_PATH
                 value: "{{ .Values.global.director.destinationCreator.destinationAPI.path }}"
               - name: APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER

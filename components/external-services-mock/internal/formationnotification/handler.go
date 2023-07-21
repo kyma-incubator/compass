@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -180,6 +181,7 @@ type SyncFAResponseFn func(bodyBytes []byte)
 
 // Patch handles synchronous formation assignment notification requests for Assign operation
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func([]byte) {
 		var response interface{} = FormationAssignmentResponseBody{
 			Config: FormationAssignmentResponseConfig{
@@ -193,11 +195,12 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // PatchWithState handles synchronous formation assignment notification requests for Assign operation and returns state in the response body
 func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func([]byte) {
 		var response interface{} = FormationAssignmentResponseBodyWithState{
 			State: ConfigPendingAssignmentState,
@@ -212,13 +215,14 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // RespondWithIncomplete handles synchronous formation assignment notification requests for Assign operation
 // that based on the provided config in the request body we return either so called "incomplete" status coe(204) without config in case the config is not provided
 // or if the config is provided we just return it with "success" status code(200)
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func(bodyBytes []byte) {
 		if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
 			writer.WriteHeader(http.StatusNoContent)
@@ -235,36 +239,41 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // RespondWithIncompleteAndDestinationDetails handles synchronous formation assignment notification requests for Assign operation
 // that returns destination details if the config in the request body is NOT provided, and if the config is provided returns READY state without configuration
 func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func(bodyBytes []byte) {
-		if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
-			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"correlationIds\":[\"some-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"http://e2e-basic-url-example.com\",\"authentication\":\"BasicAuthentication\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
+		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
+			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"correlationIds\":[\"e2e-basic-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"http://e2e-basic-url-example.com\",\"authentication\":\"BasicAuthentication\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
 
-			httputils.RespondWithBody(context.TODO(), writer, http.StatusNoContent, response)
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
 			return
 		}
 
-		response := "{\"state\":\"READY\"}"
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+		response := FormationAssignmentResponseBodyWithState{
+			State: ReadyAssignmentState,
+		}
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
 	}
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // Delete handles synchronous formation assignment notification requests for Unassign operation
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func([]byte) { writer.WriteHeader(http.StatusOK) }
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // DestinationDelete handles synchronous formation assignment notification requests for destination deletion during Unassign operation
 func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBodyWithState{
 			State: ReadyAssignmentState,
@@ -272,29 +281,32 @@ func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request)
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // DeleteWithState handles synchronous formation assignment notification requests for Unassign operation and returns state in the response body
 func (h *Handler) DeleteWithState(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBodyWithState{State: "READY"}
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 func (h *Handler) FailResponse(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	responseFunc := func([]byte) {
 		response := FormationAssignmentResponseBody{Error: "failed to parse request"}
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusBadRequest, response)
 	}
-	h.syncFAResponse(writer, r, responseFunc)
+	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
 // todo::: minor: go doc + the other methods as well
 func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	if h.ShouldReturnError {
 		responseFunc := func([]byte) {
 			response := FormationAssignmentResponseBody{Error: "failed to parse request"}
@@ -302,7 +314,7 @@ func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) 
 			h.ShouldReturnError = false
 		}
 
-		h.syncFAResponse(writer, r, responseFunc)
+		h.syncFAResponse(ctx, writer, r, responseFunc)
 		return
 	}
 
@@ -341,10 +353,12 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) syncFAResponse(writer http.ResponseWriter, r *http.Request, responseFunc SyncFAResponseFn) {
-	id, ok := mux.Vars(r)["tenantId"]
+func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, responseFunc SyncFAResponseFn) {
+	routeVars := mux.Vars(r)
+	id, ok := routeVars["tenantId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		log.C(ctx).Error("missing tenantId path parameter in the url")
+		httphelpers.WriteError(writer, errors.New("missing tenantId path parameter in the url"), http.StatusBadRequest)
 		return
 	}
 
@@ -353,18 +367,21 @@ func (h *Handler) syncFAResponse(writer http.ResponseWriter, r *http.Request, re
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.C(ctx).WithError(err).Error("error while reading request body")
 		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		log.C(ctx).WithError(err).Error("body is not a valid JSON")
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 		return
 	}
 
 	mappings := h.Mappings[id]
 	if r.Method == http.MethodPatch {
+		log.C(ctx).Infof("Adding to formation assignment notifications mappings operation: %s and body: %s", Assign, string(bodyBytes))
 		mappings = append(h.Mappings[id], Response{
 			Operation:   Assign,
 			RequestBody: bodyBytes,
@@ -372,11 +389,13 @@ func (h *Handler) syncFAResponse(writer http.ResponseWriter, r *http.Request, re
 	}
 
 	if r.Method == http.MethodDelete {
-		applicationId, ok := mux.Vars(r)["applicationId"]
+		applicationId, ok := routeVars["applicationId"]
 		if !ok {
+			log.C(ctx).Error("missing tenantId path parameter in the url")
 			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
 			return
 		}
+		log.C(ctx).Infof("Adding to formation assignment notifications mappings operation: %s, app ID: %s and body: %s", Unassign, applicationId, string(bodyBytes))
 		mappings = append(h.Mappings[id], Response{
 			Operation:     Unassign,
 			ApplicationID: &applicationId,
@@ -392,84 +411,85 @@ func (h *Handler) syncFAResponse(writer http.ResponseWriter, r *http.Request, re
 // Formation Assignment notifications asynchronous handlers and helper functions
 
 // AsyncFAResponseFn is a function type that represents the formation assignment response function signature
-type AsyncFAResponseFn func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)
+type AsyncFAResponseFn func(client *http.Client, correlationID, formationID, formationAssignmentID, config string)
 
 // AsyncNoopFAResponseFn is an empty implementation of the AsyncFAResponseFn function
-var AsyncNoopFAResponseFn = func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {}
+var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {}
 
 // Async handles asynchronous formation assignment notification requests for Assign operation
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
-	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
-	h.asyncFAResponse(writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
-
-	writer.WriteHeader(http.StatusAccepted)
+	h.asyncFAResponse(ctx, writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
 }
 
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
 func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Request) {
-	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
 
-	config := "{\"state\":\"READY\",\"configuration\":{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://basic-destination-url.com\",\"username\":\"basic-destination-username\",\"password\":\"basic-destination-password\"},\"samlAssertion\":{\"url\":\"https://saml-destination-url.com\"}}}}}"
-	h.asyncFAResponse(writer, r, Assign, config, responseFunc)
-
-	writer.WriteHeader(http.StatusAccepted)
+	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"}}}}"
+	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
 
 // AsyncDelete handles asynchronous formation assignment notification requests for Unassign operation
 func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
-	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
-	h.asyncFAResponse(writer, r, Unassign, "", responseFunc)
+	h.asyncFAResponse(ctx, writer, r, Unassign, "", responseFunc)
 }
 
 // AsyncDestinationDelete handles asynchronous formation assignment notification requests for destination deletion during Unassign operation
 func (h *Handler) AsyncDestinationDelete(writer http.ResponseWriter, r *http.Request) {
-	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, ReadyAssignmentState, config, formationID, formationAssignmentID)
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
-	h.asyncFAResponse(writer, r, Unassign, "", responseFunc)
+	h.asyncFAResponse(ctx, writer, r, Unassign, "", responseFunc)
 }
 
 // AsyncNoResponseAssign handles asynchronous formation assignment notification requests for Assign operation that do not send any request to the formation assignment status API
 func (h *Handler) AsyncNoResponseAssign(writer http.ResponseWriter, r *http.Request) {
-	h.asyncFAResponse(writer, r, Assign, "", AsyncNoopFAResponseFn)
+	h.asyncFAResponse(r.Context(), writer, r, Assign, "", AsyncNoopFAResponseFn)
 }
 
 // AsyncNoResponseUnassign handles asynchronous formation assignment notification requests for Unassign operation that do not send any request to the formation assignment status API
 func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Request) {
-	h.asyncFAResponse(writer, r, Unassign, "", AsyncNoopFAResponseFn)
+	h.asyncFAResponse(r.Context(), writer, r, Unassign, "", AsyncNoopFAResponseFn)
 }
 
 // AsyncFailOnce handles asynchronous formation assignment notification requests for both Assign and Unassign operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	operation := Assign
 	if r.Method == http.MethodPatch {
 		operation = Assign
 	} else if r.Method == http.MethodDelete {
 		operation = Unassign
 	}
-	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
 		state := ReadyAssignmentState
 		if operation == Assign && h.ShouldReturnError {
@@ -479,24 +499,31 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 			state = DeleteErrorAssignmentState
 			h.ShouldReturnError = false
 		}
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, state, config, formationID, formationAssignmentID)
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
 	if h.ShouldReturnError {
 		config := "test error"
-		h.asyncFAResponse(writer, r, operation, config, responseFunc)
+		h.asyncFAResponse(ctx, writer, r, operation, config, responseFunc)
 	} else {
 		config := `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`
-		h.asyncFAResponse(writer, r, operation, config, responseFunc)
+		h.asyncFAResponse(ctx, writer, r, operation, config, responseFunc)
 	}
-
-	writer.WriteHeader(http.StatusAccepted)
 }
 
 // executeFormationAssignmentStatusUpdateRequest prepares a request with the given inputs and sends it to the formation assignment status API
-func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPClient *http.Client, state FormationAssignmentState, testConfig, formationID, formationAssignmentID string) error {
+func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPClient *http.Client, correlationID string, state FormationAssignmentState, testConfig, formationID, formationAssignmentID string) error {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	correlationIDKey := correlation.RequestIDHeaderKey
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	FAReqBody := FormationAssignmentRequestBody{
 		State: state,
 	}
@@ -521,17 +548,20 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 		return err
 	}
 
+	request.Header.Add(correlation.RequestIDHeaderKey, correlationID)
 	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
+	log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %s", formationID, formationAssignmentID, state, testConfig)
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }
 
 // asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
-func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc AsyncFAResponseFn) {
-	ctx := r.Context()
-	id, ok := mux.Vars(r)["tenantId"]
+func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc AsyncFAResponseFn) {
+	routeVars := mux.Vars(r)
+	id, ok := routeVars["tenantId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		log.C(ctx).Error("missing tenantId path parameter in the url")
+		httphelpers.WriteError(writer, errors.New("missing tenantId path parameter in the url"), http.StatusBadRequest)
 		return
 	}
 	if _, ok := h.Mappings[id]; !ok {
@@ -539,12 +569,14 @@ func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, o
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.C(ctx).WithError(err).Error("error while reading request body")
 		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		log.C(ctx).WithError(err).Error("body is not a valid JSON")
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 		return
 	}
@@ -553,14 +585,16 @@ func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, o
 		RequestBody: bodyBytes,
 	}
 	if r.Method == http.MethodDelete {
-		applicationId, ok := mux.Vars(r)["applicationId"]
+		applicationId, ok := routeVars["applicationId"]
 		if !ok {
+			log.C(ctx).Error("missing applicationId path parameter in the url")
 			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
 			return
 		}
 		response.ApplicationID = &applicationId
 	}
 
+	log.C(ctx).Infof("Adding to formation assignment notifications mappings operation: %s and body: %s", operation, string(bodyBytes))
 	h.Mappings[id] = append(h.Mappings[id], response)
 
 	formationID, err := retrieveFormationID(ctx, bodyBytes)
@@ -581,7 +615,8 @@ func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, o
 		return
 	}
 
-	go responseFunc(ctx, certAuthorizedHTTPClient, formationID, formationAssignmentID, config)
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
 }
@@ -603,7 +638,9 @@ func retrieveIDFromJSONPath(ctx context.Context, bodyBytes []byte, jsonPaths []s
 			log.C(ctx).Warnf("Couldn't find ID at %q path", path)
 			continue
 		}
+		log.C(ctx).Warnf("Successfully find ID at %q path", path)
 		found = true
+		break
 	}
 
 	if !found {
@@ -707,44 +744,48 @@ func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *ht
 // Formation notifications asynchronous handlers and helper functions
 
 // FormationResponseFn is a function type that represents the formation response function signature
-type FormationResponseFn func(ctx context.Context, client *http.Client, formationError, formationID string)
+type FormationResponseFn func(client *http.Client, correlationID, formationError, formationID string)
 
 // NoopFormationResponseFn is an empty implementation of the FormationResponseFn function
-var NoopFormationResponseFn = func(ctx context.Context, client *http.Client, formationError, formationID string) {}
+var NoopFormationResponseFn = func(client *http.Client, correlationID, formationError, formationID string) {}
 
 // AsyncPostFormation handles asynchronous formation notification requests for CreateFormation operation.
 func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request) {
-	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
+	ctx := r.Context()
+	formationResponseFunc := func(client *http.Client, correlationID, formationError, formationID string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationStatusUpdateRequest(client, ReadyFormationState, formationError, formationID)
+		err := h.executeFormationStatusUpdateRequest(client, correlationID, ReadyFormationState, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
 		}
 	}
-	h.asyncFormationResponse(writer, r, CreateFormation, "", formationResponseFunc)
+	h.asyncFormationResponse(ctx, writer, r, CreateFormation, "", formationResponseFunc)
 }
 
 // AsyncDeleteFormation handles asynchronous formation notification requests for DeleteFormation operation
 func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Request) {
-	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
+	ctx := r.Context()
+	formationResponseFunc := func(client *http.Client, correlationID, formationError, formationID string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationStatusUpdateRequest(client, ReadyFormationState, formationError, formationID)
+		err := h.executeFormationStatusUpdateRequest(client, correlationID, ReadyFormationState, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
 		}
 	}
-	h.asyncFormationResponse(writer, r, DeleteFormation, "", formationResponseFunc)
+	h.asyncFormationResponse(ctx, writer, r, DeleteFormation, "", formationResponseFunc)
 }
 
 // AsyncFormationFailOnce handles asynchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	operation := CreateFormation
 	if r.Method == http.MethodPost {
 		operation = CreateFormation
 	} else if r.Method == http.MethodDelete {
 		operation = DeleteFormation
 	}
-	responseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
+	responseFunc := func(client *http.Client, correlationID, formationError, formationID string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
 		state := ReadyFormationState
 		if r.Method == http.MethodPost && h.ShouldReturnError {
@@ -754,29 +795,29 @@ func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Req
 			state = DeleteErrorFormationState
 			h.ShouldReturnError = false
 		}
-		err := h.executeFormationStatusUpdateRequest(client, state, formationError, formationID)
+		err := h.executeFormationStatusUpdateRequest(client, correlationID, state, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
 		}
 	}
 	if h.ShouldReturnError {
-		h.asyncFormationResponse(writer, r, operation, "failed to parse request", responseFunc)
+		h.asyncFormationResponse(ctx, writer, r, operation, "failed to parse request", responseFunc)
 	} else {
-		h.asyncFormationResponse(writer, r, operation, "", responseFunc)
+		h.asyncFormationResponse(ctx, writer, r, operation, "", responseFunc)
 	}
-
-	writer.WriteHeader(http.StatusAccepted)
 }
 
 // AsyncNoResponse handles asynchronous formation notification requests that do not send any request to the formation status API
 func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	operation := CreateFormation
 	if r.Method == http.MethodPost {
 		operation = CreateFormation
 	} else if r.Method == http.MethodDelete {
 		operation = DeleteFormation
 	}
-	h.asyncFormationResponse(writer, r, operation, "", NoopFormationResponseFn)
+	h.asyncFormationResponse(ctx, writer, r, operation, "", NoopFormationResponseFn)
 }
 
 func (h *Handler) KymaBasicCredentials(writer http.ResponseWriter, r *http.Request) {
@@ -811,7 +852,16 @@ func (h *Handler) KymaOauthCredentials(writer http.ResponseWriter, r *http.Reque
 }
 
 // executeFormationStatusUpdateRequest prepares a request with the given inputs and sends it to the formation status API
-func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *http.Client, formationState FormationState, formationError, formationID string) error {
+func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *http.Client, correlationID string, formationState FormationState, formationError, formationID string) error {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	correlationIDKey := correlation.RequestIDHeaderKey
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+
+	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	formationReqBody := FormationRequestBody{
 		State: formationState,
 		Error: formationError,
@@ -828,17 +878,19 @@ func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *htt
 		return err
 	}
 
+	request.Header.Add(correlation.RequestIDHeaderKey, correlationID)
 	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
+	log.C(ctx).Infof("Calling status API for formation status update with the following data - formation ID: %s, state: %s and error: %s", formationID, formationState, formationError)
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }
 
 // asyncFormationResponse handles the incoming formation notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `formationResponseFunc` which sends a request to the formation status API
-func (h *Handler) asyncFormationResponse(writer http.ResponseWriter, r *http.Request, operation Operation, formationErr string, formationResponseFunc FormationResponseFn) {
-	ctx := r.Context()
+func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, formationErr string, formationResponseFunc FormationResponseFn) {
 	formationID, ok := mux.Vars(r)["uclFormationId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
+		log.C(ctx).Error("missing uclFormationId path parameter in the url")
+		httphelpers.WriteError(writer, errors.New("missing uclFormationId path parameter in the url"), http.StatusBadRequest)
 		return
 	}
 
@@ -847,15 +899,19 @@ func (h *Handler) asyncFormationResponse(writer http.ResponseWriter, r *http.Req
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.C(ctx).WithError(err).Error("error while reading formation notification request body")
 		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading formation notification request body"), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		log.C(ctx).WithError(err).Error("body is not a valid JSON")
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 		return
 	}
+
+	log.C(ctx).Infof("Adding to formation notifications mappings operation: %s and body: %s", operation, string(bodyBytes))
 	h.Mappings[formationID] = append(h.Mappings[formationID], Response{
 		Operation:   operation,
 		RequestBody: bodyBytes,
@@ -863,12 +919,14 @@ func (h *Handler) asyncFormationResponse(writer http.ResponseWriter, r *http.Req
 
 	formationIDFromBody := gjson.Get(string(bodyBytes), "details.id").String()
 	if formationIDFromBody == "" {
+		log.C(ctx).Errorf("Missing formation ID from request body")
 		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation ID from request body"))
 		return
 	}
 
 	formationNameFromBody := gjson.Get(string(bodyBytes), "details.name").String()
 	if formationNameFromBody == "" {
+		log.C(ctx).Errorf("Missing formation name from request body")
 		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation name from request body"))
 		return
 	}
@@ -879,7 +937,8 @@ func (h *Handler) asyncFormationResponse(writer http.ResponseWriter, r *http.Req
 		return
 	}
 
-	go formationResponseFunc(ctx, certAuthorizedHTTPClient, formationErr, formationID)
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+	go formationResponseFunc(certAuthorizedHTTPClient, correlationID, formationErr, formationID)
 
 	writer.WriteHeader(http.StatusAccepted)
 }

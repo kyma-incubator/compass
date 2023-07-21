@@ -3,7 +3,6 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -274,7 +273,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	}
 
 	log.C(ctx).Infof("Processing formation status update for %q operation...", model.CreateFormation)
-	err = h.processFormationCreateStatusUpdate(ctx, f, reqBody)
+	shouldResync, err := h.processFormationCreateStatusUpdate(ctx, f, reqBody)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while processing formation status update for %q operation. X-Request-Id: %s", model.CreateFormation, correlationID)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -288,9 +287,11 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	}
 	log.C(ctx).Infof("The status update for formation with ID: %q was successfully processed for %q operation", formationID, model.CreateFormation)
 
-	// The formation notifications processing is independent of the status update request handling.
-	// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-	go h.processFormationNotifications(f, correlationID)
+	if shouldResync {
+		// The formation notifications processing is independent of the status update request handling.
+		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
+		go h.processFormationNotifications(f, correlationID)
+	}
 
 	httputils.Respond(w, http.StatusOK)
 }
@@ -458,25 +459,25 @@ func (h *Handler) processFormationDeleteStatusUpdate(ctx context.Context, format
 }
 
 // processFormationCreateStatusUpdate handles the async create formation status update
-func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) error {
+func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) (bool, error) {
 	if reqBody.State != model.ReadyFormationState && reqBody.State != model.CreateErrorFormationState {
-		return errors.Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.CreateFormation)
+		return false, errors.Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.CreateFormation)
 	}
 
 	if reqBody.State == model.CreateErrorFormationState {
 		if err := h.formationStatusService.SetFormationToErrorStateWithConstraints(ctx, formation, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
-			return errors.Wrapf(err, "while updating error state to: %s for formation with ID: %q", reqBody.State, formation.ID)
+			return false, errors.Wrapf(err, "while updating error state to: %s for formation with ID: %q", reqBody.State, formation.ID)
 		}
-		return nil
+		return false, nil
 	}
 
 	log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, reqBody.State)
 	formation.State = model.ReadyFormationState
 	if err := h.formationStatusService.UpdateWithConstraints(ctx, formation, model.CreateFormation); err != nil {
-		return errors.Wrapf(err, "while updating formation with ID: %q to: %q state", formation.ID, model.ReadyFormationState)
+		return false, errors.Wrapf(err, "while updating formation with ID: %q to: %q state", formation.ID, model.ReadyFormationState)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string) {
@@ -488,7 +489,7 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	correlationIDKey := correlation.RequestIDHeaderKey
 	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
 
-	logger := log.C(ctx).WithField(correlation.RequestIDHeaderKey, correlationID)
+	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")

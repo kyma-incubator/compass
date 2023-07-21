@@ -85,7 +85,7 @@ func (r *repository) DeleteOld(ctx context.Context, latestRevision, tenantID str
 	return r.globalDeleter.DeleteManyGlobal(ctx, conditions)
 }
 
-// GetDestinationByNameAndTenant gets a destination for a given `destinationName` and `tenantID`
+// GetDestinationByNameAndTenant retrieve destination for a given `destinationName` and `tenantID`
 func (r *repository) GetDestinationByNameAndTenant(ctx context.Context, destinationName, tenantID string) (*model.Destination, error) {
 	log.C(ctx).Infof("Getting destinations with name: %q and tenant ID: %q", destinationName, tenantID)
 
