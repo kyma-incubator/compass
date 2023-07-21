@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -318,6 +319,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	}
 
 	whs, err := s.webhookRepo.ListByApplicationTemplateID(ctx, appTemplate.ID)
+	spew.Dump(">>>>>>>>>>>>Webhooks from db for app template with id", appTemplate.ID, whs)
 	if err != nil {
 		return errors.Wrapf(err, "while listing Webhooks for applicationTemplate with id %s", appTemplate.ID)
 	}
@@ -326,7 +328,9 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	}
 
 	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
+	spew.Dump(">>>>>>>>>>>>WEBHOOKS FROM INPUT ", in.Webhooks)
 	for _, item := range in.Webhooks {
+		spew.Dump(">>>>>>>>>>>>>>>>Webhook from INPUT ", item)
 		if elementExists(whs, item.ID) {
 			webhooks = append(webhooks, item.ToWebhook(item.ID, appTemplate.ID, model.ApplicationTemplateWebhookReference))
 		} else {
