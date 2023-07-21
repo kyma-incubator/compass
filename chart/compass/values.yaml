@@ -541,7 +541,7 @@ global:
       connectTimeout: 30s
       requestTimeout: 30s
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
   kymaAdapter:
     port: 8080
     apiRootPath: "/kyma-adapter"
@@ -642,7 +642,7 @@ global:
       dbPassword: ""
       directorDBName: ""
   oathkeeper:
-    host: ory-oathkeeper-proxy.ory.svc.cluster.local
+    host: ory-stack-oathkeeper-proxy.ory.svc.cluster.local
     port: 4455
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
@@ -748,7 +748,7 @@ global:
     parallelTenants: 10
     tenantSyncTimeout: "5m"
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
       appDestinationsSyncScope: "destinations:sync"
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
@@ -802,7 +802,7 @@ global:
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
@@ -913,7 +913,7 @@ global:
     lease:
       lockname: aggregatorlease
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     http:
       client:
         skipSSLValidation: false

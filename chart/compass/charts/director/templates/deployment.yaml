@@ -76,7 +76,7 @@ spec:
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
-              value: http://ory-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+              value: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
             - name: APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION
               value: "{{ .Values.global.director.metrics.enableGraphqlOperationInstrumentation }}"
             - name: APP_DB_USER
@@ -140,7 +140,7 @@ spec:
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ .Values.global.director.clientIDHeaderKey }}
             - name: APP_OAUTH20_URL
-              value: http://ory-hydra-admin.ory.svc.cluster.local:4445
+              value: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_LEGACY_CONNECTOR_URL

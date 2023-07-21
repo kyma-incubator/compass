@@ -41,6 +41,7 @@ trap cleanup_trap EXIT INT TERM
 
 echo "Helm install ORY components..."
 RELEASE_NS=ory
+RELEASE_NAME=ory-stack
 SECRET_NAME=ory-hydra-credentials
 
 kubectl create ns $RELEASE_NS || true
@@ -55,7 +56,7 @@ if [[ ! $(kubectl get secret $SECRET_NAME -n ${RELEASE_NS}) ]]; then
   POSTGRES_PASSWORD=$(generate_random 10)
   POSTGRES_DB=$(yq .global.postgresql.postgresqlDatabase ${VALUES_FILE_ORY})
 
-  DSN=postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@ory-postgresql.${RELEASE_NS}.svc.cluster.local:5432/${POSTGRES_DB}?sslmode=disable\&max_conn_lifetime=10s
+  DSN=postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${RELEASE_NAME}-postgresql.${RELEASE_NS}.svc.cluster.local:5432/${POSTGRES_DB}?sslmode=disable\&max_conn_lifetime=10s
 
   SYSTEM=$(generate_random 32)
   COOKIE=$(generate_random 32)
@@ -80,8 +81,6 @@ EOF
   echo "${SECRET}" | kubectl apply -f -
 fi
 
-RELEASE_NAME=ory
-
 # --wait is excluded as the deployment hangs; it hangs as there is a cronjob that creates the jwks secret
 helm upgrade --install $RELEASE_NAME -f "${VALUES_FILE_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
 
@@ -95,11 +94,12 @@ until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.statu
 done
 kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
 
-echo "Waiting for oathkeeper deployment to roll out..."
-# Wait for Oathkeeper deployment to roll out as the CronJob created the Secret; needs to be ready for successful compass installation
-if [[ ! $(kubectl rollout status deployment $RELEASE_NAME-oathkeeper -n $RELEASE_NS --timeout=30m) ]]; then
+# Wait for Ory deployment to roll out as they needs to be ready for successful compass installation
+echo "Waiting for Ory deployments to roll out..."
+if ! [ "$(kubectl rollout status deployment $RELEASE_NAME-hydra -n $RELEASE_NS --timeout=30m)" -a "$(kubectl rollout status deployment $RELEASE_NAME-oathkeeper -n $RELEASE_NS --timeout=30m)" ]; then
   echo "Oathkeeper did not deploy correctly..."
-  echo "Uninstalling Ory Helm chart..."
+  echo "Uninstalling Ory Helm chart and removing namespace"
   helm uninstall $RELEASE_NAME -n $RELEASE_NS
+  kubectl delete ns $RELEASE_NS
   exit 1
 fi
