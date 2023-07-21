@@ -69,7 +69,7 @@ check_value() {
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
 BASE_DIR="${1}"
-JAVA_HOME="${BASE_DIR}openjdk-11"
+JAVA_HOME="${BASE_DIR}openjdk-17"
 M2_HOME="${BASE_DIR}maven"
 MIGRATE_HOME="${BASE_DIR}migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
