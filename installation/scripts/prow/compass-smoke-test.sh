@@ -123,6 +123,8 @@ echo "Path: ${PATH}"
 echo "-----------------------------------"
 echo "Java version:"
 echo "-----------------------------------"
+echo "$JAVA_HOME"
+ls "$JAVA_HOME"
 java --version
 echo "-----------------------------------"
 echo "Migrate version:"
