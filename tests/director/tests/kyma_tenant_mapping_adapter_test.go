@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -15,7 +14,7 @@ import (
 func TestKymaTenantMappingAdapter(t *testing.T) {
 	ctx := context.Background()
 
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := conf.TestProviderAccountID
 
 	// Create formation template
 	applicationType := "App1"
@@ -36,9 +35,9 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	// Create formation from template
-	formationName := "test-formation"
+	formationName := "test-kyma-adapter-formation"
 	t.Logf("Should create formation: %q", formationName)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName)
 	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName, &formationTemplate.Name)
 
 	// Creating application template
@@ -130,7 +129,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	runtimeName := "runtime-test"
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixRuntimeInput(runtimeName)
-	runtimeRegInput.Labels[conf.ConsumerSubaccountLabelKey] = conf.ConsumerID
+	runtimeRegInput.Labels[conf.ConsumerSubaccountLabelKey] = conf.TestProviderSubaccountID
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -147,7 +146,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	queryAPIForApplication := fixtures.FixGetApplicationWithInstanceAuths(app.ID)
 
 	returnedApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAPIForApplication, &returnedApp)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
@@ -162,7 +161,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	// Check that there are bundle instance auths created for each application bundle by the Kyma Adapter
 	t.Log("Assert that there are bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAPIForApplication, &returnedApp)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
@@ -200,7 +199,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	// Check there are the updated instance auths for the application bundles
 	t.Log("Assert that there are the updated bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAPIForApplication, &returnedApp)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
@@ -220,7 +219,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	// Check that there are no instance auths for application bundles
 	t.Log("Assert that there are no bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAPIForApplication, &returnedApp)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
@@ -235,7 +234,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	// Check there are the updated instance auths for the application bundles
 	t.Log("Assert that there are the bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAPIForApplication, &returnedApp)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
@@ -254,7 +253,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	t.Log("Assert that there are no bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &returnedApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAPIForApplication, &returnedApp)
 	require.NoError(t, err)
 
 	require.Equal(t, 2, returnedApp.Bundles.TotalCount)
