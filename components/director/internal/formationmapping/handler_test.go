@@ -1423,11 +1423,10 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 		},
 		{
 			name:       "Successfully update formation status when operation is create formation and state is CREATE_ERROR",
-			transactFn: txGen.ThatSucceedsTwice,
+			transactFn: txGen.ThatSucceeds,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID, false).Return(nil, nil).Once()
 				return formationSvc
 			},
 			formationStatusSvcFn: func() *automock.FormationStatusService {
