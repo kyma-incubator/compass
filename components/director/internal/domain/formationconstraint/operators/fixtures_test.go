@@ -53,7 +53,7 @@ const (
 	basicUser             = "user"
 	basicPassword         = "pwd"
 	samlAssertionDestName = "saml-assertion-name"
-	testJsonConfig        = `{"key": "val"}`
+	testJSONConfig        = `{"key": "val"}`
 )
 
 var (
@@ -62,7 +62,7 @@ var (
 	corrleationIDs []string
 
 	invalidFAConfig              = json.RawMessage("invalid-config")
-	configWithDifferentStructure = json.RawMessage(testJsonConfig)
+	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(
 		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
