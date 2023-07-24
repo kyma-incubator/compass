@@ -3398,8 +3398,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-
-
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)

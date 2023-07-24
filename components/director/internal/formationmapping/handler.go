@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -174,7 +175,8 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	log.C(ctx).Infof("Processing formation assignment status update for %q operation", model.AssignFormation)
-	if errorResponse := h.processFormationAssignmentAssignStatusUpdate(ctx, fa, reqBody, correlationID); errorResponse != nil {
+	shouldProcessNotifications, errorResponse := h.processFormationAssignmentAssignStatusUpdate(ctx, fa, reqBody, correlationID)
+	if errorResponse != nil {
 		respondWithError(ctx, w, errorResponse.statusCode, errors.New(errorResponse.errorMessage))
 		return
 	}
@@ -192,9 +194,11 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	// The formation assignment notifications processing is independent of the status update request handling.
-	// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-	go h.processFormationAssignmentNotifications(fa, correlationID)
+	if shouldProcessNotifications {
+		// The formation assignment notifications processing is independent of the status update request handling.
+		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
+		go h.processFormationAssignmentNotifications(fa, correlationID)
+	}
 
 	httputils.Respond(w, http.StatusOK)
 }
@@ -396,10 +400,10 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 	return true, nil
 }
 
-func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, reqBody FormationAssignmentRequestBody, correlationID string) *responseError {
+func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, reqBody FormationAssignmentRequestBody, correlationID string) (bool, *responseError) {
 	if len(reqBody.State) > 0 && reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.AssignFormation)
-		return &responseError{
+		return false, &responseError{
 			statusCode:   http.StatusBadRequest,
 			errorMessage: fmt.Sprintf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID),
 		}
@@ -408,11 +412,13 @@ func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Conte
 	if reqBody.State == model.CreateErrorAssignmentState {
 		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
-			return &responseError{
+			return false, &responseError{
 				statusCode:   http.StatusInternalServerError,
 				errorMessage: fmt.Sprintf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID),
 			}
 		}
+
+		return false, nil
 	}
 
 	if len(reqBody.State) > 0 {
@@ -428,13 +434,13 @@ func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Conte
 	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
 	if err := h.faStatusService.UpdateWithConstraints(ctx, fa, model.AssignFormation); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
-		return &responseError{
+		return false, &responseError{
 			statusCode:   http.StatusInternalServerError,
 			errorMessage: fmt.Sprintf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID),
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 // processFormationDeleteStatusUpdate handles the async delete formation status update

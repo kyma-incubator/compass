@@ -396,7 +396,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
 				updater := &automock.FormationAssignmentStatusService{}
 				updater.On("SetAssignmentToErrorStateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState, model.CreateFormation).Return(nil).Once()
-				updater.On("UpdateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, model.AssignFormation).Return(nil).Once()
 				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -423,7 +422,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
 				updater := &automock.FormationAssignmentStatusService{}
 				updater.On("SetAssignmentToErrorStateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState, model.CreateFormation).Return(nil).Once()
-				updater.On("UpdateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, model.AssignFormation).Return(nil).Once()
 				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -435,11 +433,11 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
 		{
-			name:       "Error when setting formation assignment state to error fail",
+			name:       "Error when update with constraints fail",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeWithCreateErrorState, nil).Once()
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
@@ -449,13 +447,12 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
 				updater := &automock.FormationAssignmentStatusService{}
-				updater.On("SetAssignmentToErrorStateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState, model.CreateFormation).Return(nil).Once()
-				updater.On("UpdateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeWithCreateErrorState, model.AssignFormation).Return(testErr).Once()
+				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(testErr).Once()
 				return updater
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
-				State: model.CreateErrorAssignmentState,
-				Error: configurationErr.Error(),
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
