@@ -3,6 +3,8 @@ package certsubjectmapping_test
 import (
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -134,6 +136,7 @@ func TestService_Update(t *testing.T) {
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
 				repo.On("Exists", emptyCtx, TestID).Return(true, nil).Once()
+				repo.On("GetBySubject", emptyCtx, CertSubjectMappingModel.Subject).Return(CertSubjectMappingModel, nil).Once()
 				repo.On("Update", emptyCtx, CertSubjectMappingModel).Return(nil).Once()
 				return repo
 			},
@@ -164,10 +167,33 @@ func TestService_Update(t *testing.T) {
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
 				repo.On("Exists", emptyCtx, TestID).Return(true, nil).Once()
+				repo.On("GetBySubject", emptyCtx, CertSubjectMappingModel.Subject).Return(CertSubjectMappingModel, nil).Once()
 				repo.On("Update", emptyCtx, CertSubjectMappingModel).Return(testErr).Once()
 				return repo
 			},
 			ExpectedError: testErr,
+		},
+		{
+			Name:  "Error when getting certificate subject mapping by subject fails",
+			Input: CertSubjectMappingModel,
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("Exists", emptyCtx, TestID).Return(true, nil).Once()
+				repo.On("GetBySubject", emptyCtx, CertSubjectMappingModel.Subject).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Error certificate subject mapping with the same subject exists",
+			Input: CertSubjectMappingModel,
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("Exists", emptyCtx, TestID).Return(true, nil).Once()
+				repo.On("GetBySubject", emptyCtx, CertSubjectMappingModel.Subject).Return(&model.CertSubjectMapping{ID: "different-subject"}, nil).Once()
+				return repo
+			},
+			ExpectedError: errors.Errorf("Certificate subject mapping with Subject %q already exists", CertSubjectMappingModel.Subject),
 		},
 	}
 
@@ -276,6 +302,58 @@ func TestService_Exists(t *testing.T) {
 
 			// WHEN
 			result, err := svc.Exists(emptyCtx, TestID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_ExistsBySubject(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		Repo           func() *automock.CertMappingRepository
+		ExpectedOutput bool
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ExistsBySubject", emptyCtx, TestSubject).Return(true, nil).Once()
+				return repo
+			},
+			ExpectedOutput: true,
+		},
+		{
+			Name: "Error when checking for existence of certificate subject mapping fails",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ExistsBySubject", emptyCtx, TestSubject).Return(false, testErr).Once()
+				return repo
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.Repo()
+
+			svc := certsubjectmapping.NewService(repo)
+
+			// WHEN
+			result, err := svc.ExistsBySubject(emptyCtx, TestSubject)
 
 			// THEN
 			if testCase.ExpectedError != nil {
