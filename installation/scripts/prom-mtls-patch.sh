@@ -300,15 +300,4 @@ function removeKymaPeerAuthsForPrometheus() {
   crd="peerauthentications.security.istio.io"
 
   kubectl delete ${crd} -n kyma-system monitoring-grafana-policy
-
-  namespace="ory"
-
-  allPAs=(
-    ory-stack-oathkeeper-maester-metrics
-    ory-stack-hydra-maester-metrics
-  )
-
-  for pa in "${allPAs[@]}"; do
-    kubectl delete ${crd} -n ${namespace} "${pa}" || true
-  done
 }
