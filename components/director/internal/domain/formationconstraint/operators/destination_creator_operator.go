@@ -69,7 +69,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				return false, errors.Wrapf(err, "while unmarshaling tenant mapping response configuration from assignment with ID: %q", di.FormationAssignment.ID)
 			}
 
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
+			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
 			if err != nil {
 				return false, err
 			}
@@ -112,8 +112,8 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
 			}
 
-			var reverseAssigmentConfig Configuration
-			if err := json.Unmarshal(di.ReverseFormationAssignment.Value, &reverseAssigmentConfig); err != nil {
+			var reverseAssignmentConfig Configuration
+			if err := json.Unmarshal(di.ReverseFormationAssignment.Value, &reverseAssignmentConfig); err != nil {
 				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
 			}
 
@@ -121,17 +121,17 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				return false, errors.New("The inbound communication destination details could not be empty")
 			}
 
-			if reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials == nil {
+			if reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials == nil {
 				return false, errors.New("The outbound communication credentials could not be empty")
 			}
 
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
+			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
 			if err != nil {
 				return false, err
 			}
 
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
-			basicAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
+			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
 			if basicAuthDetails != nil && basicAuthCreds != nil {
 				log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
 				for _, destDetails := range basicAuthDetails.Destinations {
@@ -142,7 +142,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 
 			samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-			samlAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
+			samlAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
 			if samlAssertionDetails != nil && samlAuthCreds != nil {
 				log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
 				for _, destDetails := range samlAssertionDetails.Destinations {

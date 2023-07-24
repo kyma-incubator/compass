@@ -13,59 +13,6 @@ import (
 )
 
 func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *testing.T) {
-	// todo::: consider extracting them in fixture file
-	applicationTypeLabel := "applicationType"
-	runtimeTypeLabel := "runtimeType"
-	inputAppType := "input-type"
-	inputAppID := "eb2d5110-ca3a-11ed-afa1-0242ac120002"
-	appID := "b55131c4-ca3a-11ed-afa1-0242ac120002"
-	runtimeID := "c66341c4-ca3a-11ed-afa1-0242ac120564"
-	runtimeCtxID := "f7156h4-ca3a-11ed-afa1-0242ac121237"
-
-	exceptType := "except-type"
-	formationType := "formationType"
-
-	in := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:       model.ApplicationResourceType,
-		ResourceSubtype:    inputAppType,
-		ResourceID:         inputAppID,
-		SourceResourceType: model.ApplicationResourceType,
-		SourceResourceID:   appID,
-		Tenant:             testTenantID,
-		ExceptSubtypes:     []string{exceptType},
-	}
-
-	inWithFormationTypeException := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:         model.ApplicationResourceType,
-		FormationTemplateID:  formationTemplateID,
-		ResourceSubtype:      inputAppType,
-		ResourceID:           inputAppID,
-		SourceResourceType:   model.ApplicationResourceType,
-		SourceResourceID:     appID,
-		Tenant:               testTenantID,
-		ExceptSubtypes:       []string{exceptType},
-		ExceptFormationTypes: []string{formationType},
-	}
-
-	runtimeIn := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:       model.ApplicationResourceType,
-		ResourceSubtype:    inputAppType,
-		ResourceID:         inputAppID,
-		SourceResourceType: model.RuntimeResourceType,
-		SourceResourceID:   runtimeID,
-		Tenant:             testTenantID,
-		ExceptSubtypes:     []string{exceptType},
-	}
-
-	runtimeContextIn := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:       model.ApplicationResourceType,
-		ResourceSubtype:    inputAppType,
-		ResourceID:         inputAppID,
-		SourceResourceType: model.RuntimeContextResourceType,
-		SourceResourceID:   runtimeCtxID,
-		Tenant:             testTenantID,
-		ExceptSubtypes:     []string{exceptType},
-	}
 
 	testCases := []struct {
 		Name                  string
