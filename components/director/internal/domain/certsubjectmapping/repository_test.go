@@ -3,6 +3,7 @@ package certsubjectmapping_test
 import (
 	"database/sql/driver"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -75,7 +76,7 @@ func TestRepository_GetBySubject(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping WHERE subject ILIKE $1`),
-				Args:     []driver.Value{"C=DE_ L=test_ O=SAP SE_ OU=TestRegion_ OU=SAP Cloud Platform Clients_ OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10_ CN=test-compass"},
+				Args:     []driver.Value{strings.ReplaceAll(TestSubject, ",", "_")},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
@@ -180,7 +181,7 @@ func TestRepository_ExistsBySubject(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.cert_subject_mapping WHERE subject ILIKE $1`),
-				Args:     []driver.Value{"C=DE_ L=test_ O=SAP SE_ OU=TestRegion_ OU=SAP Cloud Platform Clients_ OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10_ CN=test-compass"},
+				Args:     []driver.Value{strings.ReplaceAll(TestSubject, ",", "_")},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
