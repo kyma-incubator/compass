@@ -64,6 +64,23 @@ export GCLOUD_SUBNET_NAME="${gcp_set_vars_for_network_return_subnet_name:?}"
 DNS_SUBDOMAIN="${COMMON_NAME}"
 COMPASS_SCRIPTS_DIR="${COMPASS_SOURCES_DIR}/installation/scripts"
 
+log::info "Installing gcloud CLI"
+apk add --no-cache python3 py3-crcmod py3-openssl
+export PATH="/google-cloud-sdk/bin:${PATH}"
+GCLOUD_CLI_VERSION="437.0.1"
+curl -fLSs -o gc-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz"
+tar xzf gc-sdk.tar.gz -C /
+rm gc-sdk.tar.gz
+gcloud components install alpha beta kubectl docker-credential-gcr gke-gcloud-auth-plugin
+gcloud config set core/disable_usage_reporting true
+gcloud config set component_manager/disable_update_check true
+gcloud config set metrics/environment github_docker_image
+gcloud --version
+
+log::info "Authenticate to GCP through gcloud"
+gcp::authenticate \
+    -c "${GOOGLE_APPLICATION_CREDENTIALS}"
+
 function createCluster() {
   #Used to detect errors for logging purposes
   ERROR_LOGGING_GUARD="true"
