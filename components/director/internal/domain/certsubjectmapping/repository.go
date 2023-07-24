@@ -2,6 +2,7 @@ package certsubjectmapping
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -86,6 +87,29 @@ func (r *repository) Get(ctx context.Context, id string) (*model.CertSubjectMapp
 	return result, nil
 }
 
+// GetBySubject queries for a single certificate subject mapping matching by a given subject
+func (r *repository) GetBySubject(ctx context.Context, subject string) (*model.CertSubjectMapping, error) {
+	log.C(ctx).Debugf("Getting certificate mapping by Subject: %q from DB", subject)
+
+	splittedSubject := strings.FieldsFunc(subject, splitSubject)
+
+	searchTermRegex := strings.Join(splittedSubject, "_")
+
+	likeConditions := []repo.Condition{repo.NewLikeCondition("subject", searchTermRegex)}
+
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, likeConditions, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	result, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting certificate subject mapping with Subject: %q", subject)
+	}
+
+	return result, nil
+}
+
 // Update updates the certificate subject mapping with the provided input model
 func (r *repository) Update(ctx context.Context, model *model.CertSubjectMapping) error {
 	if model == nil {
@@ -114,6 +138,19 @@ func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// ExistsBySubject check if a certificate subject mapping with given subject exists
+func (r *repository) ExistsBySubject(ctx context.Context, subject string) (bool, error) {
+	log.C(ctx).Debugf("Check if certificate mapping with subject: %q exists", subject)
+
+	splittedSubject := strings.FieldsFunc(subject, splitSubject)
+
+	searchTermRegex := strings.Join(splittedSubject, "_")
+
+	likeConditions := []repo.Condition{repo.NewLikeCondition("subject", searchTermRegex)}
+
+	return r.existQuerierGlobal.ExistsGlobal(ctx, likeConditions)
+}
+
 // List queries for all certificate subject mappings sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error) {
 	log.C(ctx).Debug("Listing certificate subject mappings from DB")
@@ -139,4 +176,8 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func splitSubject(r rune) bool {
+	return r == '+' || r == ','
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 )
 
 // CertSubjectMappingService is responsible for service-layer certificate subject mapping operations
@@ -18,6 +19,7 @@ type CertSubjectMappingService interface {
 	Update(ctx context.Context, in *model.CertSubjectMapping) error
 	Delete(ctx context.Context, id string) error
 	Exists(ctx context.Context, id string) (bool, error)
+	ExistsBySubject(ctx context.Context, subject string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
 }
 
@@ -127,6 +129,14 @@ func (r *Resolver) CreateCertificateSubjectMapping(ctx context.Context, in graph
 
 	if err = in.Validate(); err != nil {
 		return nil, err
+	}
+
+	exists, err := r.certSubjectMappingSvc.ExistsBySubject(ctx, in.Subject)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.Errorf("Certificate subject mapping with Subject %q already exists", in.Subject)
 	}
 
 	certSubjectMappingID := r.uidSvc.Generate()

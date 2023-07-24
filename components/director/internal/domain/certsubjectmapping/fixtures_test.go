@@ -13,7 +13,7 @@ import (
 
 const (
 	TestID           = "455e47ea-5eab-49c5-ba35-a67e1d9125f6"
-	TestSubject      = "C=DE, L=test, O=SAP SE, OU=TestRegion, OU=SAP Cloud Platform Clients, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=test-compass"
+	TestSubject      = "C=DE, L=test, O=SAP SE, OU=TestRegion, OU=Test Cloud Platform Clients, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=test-compass"
 	TestConsumerType = inputvalidation.RuntimeType
 )
 
