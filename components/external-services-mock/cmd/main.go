@@ -6,13 +6,14 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 
 	"github.com/form3tech-oss/jwt-go"
 

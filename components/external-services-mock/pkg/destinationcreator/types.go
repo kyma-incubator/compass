@@ -41,10 +41,10 @@ type ProxyType string
 // NoAuthenticationDestination is structure representing a no authentication destination entity and its data from the remote destination service
 type NoAuthenticationDestination struct {
 	Name           string    `json:"name"`
-	Type           Type      `json:"type"`
 	URL            string    `json:"url"`
-	Authentication AuthType  `json:"authentication"`
+	Type           Type      `json:"type"`
 	ProxyType      ProxyType `json:"proxyType"`
+	Authentication AuthType  `json:"authentication"`
 }
 
 // BasicDestination is structure representing a basic destination entity and its data from the remote destination service

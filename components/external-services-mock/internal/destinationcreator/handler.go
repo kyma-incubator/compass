@@ -3,6 +3,10 @@ package destinationcreator
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -11,18 +15,14 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"io"
-	"net/http"
-	"strings"
 )
 
 const (
 	clientUserHeaderKey = "CLIENT_USER"
-	certChain           = "e2e-test-destination-cert-mock-cert-chain"
+	CertChain           = "e2e-test-destination-cert-mock-cert-chain"
 )
 
-// todo::: add detailed comments for the structure/fields/methods/etc..
-
+// Handler is responsible to mock and handle any Destination Creator Svc and Destination Service requests
 type Handler struct {
 	Config                            *Config
 	DestinationCreatorSvcDestinations map[string]json.RawMessage
@@ -31,6 +31,7 @@ type Handler struct {
 	DestinationSvcCertificates        map[string]json.RawMessage
 }
 
+// NewHandler creates a new Handler
 func NewHandler(config *Config) *Handler {
 	return &Handler{
 		Config:                            config,
@@ -43,7 +44,7 @@ func NewHandler(config *Config) *Handler {
 
 // Destination Creator Service handlers + helper functions
 
-// CreateDestinations todo::: go doc
+// CreateDestinations mocks creation of all types of destinations in both Destination Creator Svc and Destination Svc
 func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -77,7 +78,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 	authTypeResult := gjson.GetBytes(bodyBytes, "authenticationType")
 	if !authTypeResult.Exists() || authTypeResult.String() == "" {
 		log.C(ctx).Errorf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.Errorf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID), http.StatusBadRequest)
 		return
 	}
 
@@ -113,7 +114,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 	}
 }
 
-// DeleteDestinations todo::: go doc
+// DeleteDestinations mocks deletion of destinations from both Destination Creator Svc and Destination Svc
 func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -157,7 +158,7 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
-// CreateCertificate todo::: go doc
+// CreateCertificate mocks creation of certificate in both Destination Creator Svc and Destination Svc
 func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -212,7 +213,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	certResp := CertificateResponseBody{
 		FileName:         destinationCertName,
 		CommonName:       reqBody.Name,
-		CertificateChain: certChain,
+		CertificateChain: CertChain,
 	}
 
 	certRespBytes, err := json.Marshal(certResp)
@@ -227,7 +228,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 
 	destSvcCertificateResp := destinationcreator.DestinationSvcCertificateResponse{
 		Name:    destinationCertName,
-		Content: certChain,
+		Content: CertChain,
 	}
 
 	destSvcCertificateRespBytes, err := json.Marshal(destSvcCertificateResp)
@@ -243,7 +244,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	httputils.RespondWithBody(ctx, writer, http.StatusCreated, certResp)
 }
 
-// DeleteCertificate todo::: go doc
+// DeleteCertificate mocks deletion of certificate from both Destination Creator Svc and Destination Svc
 func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -306,10 +307,10 @@ func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []b
 
 	noAuthDest := destinationcreator.NoAuthenticationDestination{
 		Name:           reqBody.Name,
-		Type:           reqBody.Type,
 		URL:            reqBody.URL,
-		Authentication: reqBody.AuthenticationType,
+		Type:           reqBody.Type,
 		ProxyType:      reqBody.ProxyType,
+		Authentication: reqBody.AuthenticationType,
 	}
 
 	noAuthDestBytes, err := json.Marshal(noAuthDest)
@@ -323,7 +324,6 @@ func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []b
 	return http.StatusCreated, nil
 }
 
-// CreateBasicDestination todo::: go doc
 func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
 	var reqBody BasicRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
@@ -366,7 +366,6 @@ func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte, 
 	return http.StatusCreated, nil
 }
 
-// CreateSAMLAssertionDestination todo::: go doc
 func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
 	var reqBody SAMLAssertionRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
@@ -410,7 +409,7 @@ func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes 
 	return http.StatusCreated, nil
 }
 
-// CleanupDestinationCertificates todo::: go doc
+// CleanupDestinationCertificates is "internal/technical" function for deleting in-memory certificates mappings
 func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *http.Request) {
 	h.DestinationCreatorSvcCertificates = make(map[string]json.RawMessage)
 	h.DestinationSvcCertificates = make(map[string]json.RawMessage)
@@ -418,7 +417,7 @@ func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *
 	httputils.Respond(writer, http.StatusOK)
 }
 
-// CleanupDestinations todo::: go doc
+// CleanupDestinations is "internal/technical" function for deleting in-memory destinations mappings
 func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Request) {
 	h.DestinationCreatorSvcDestinations = make(map[string]json.RawMessage)
 	h.DestinationSvcDestinations = make(map[string]json.RawMessage)
@@ -428,7 +427,7 @@ func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Reques
 
 // Destination Service handlers
 
-// GetDestinationByNameFromDestinationSvc todo::: go doc
+// GetDestinationByNameFromDestinationSvc mocks getting a single destination by its name from Destination Service
 func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -467,7 +466,7 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	}
 }
 
-// GetDestinationCertificateByNameFromDestinationSvc todo::: go doc
+// GetDestinationCertificateByNameFromDestinationSvc mocks getting a single certificate by its name from Destination Service
 func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)

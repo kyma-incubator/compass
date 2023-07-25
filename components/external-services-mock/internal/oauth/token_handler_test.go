@@ -7,13 +7,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/tidwall/gjson"
 

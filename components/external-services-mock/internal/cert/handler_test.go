@@ -9,13 +9,14 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"io/ioutil"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 	"github.com/stretchr/testify/require"

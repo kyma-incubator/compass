@@ -2,6 +2,7 @@ package formationnotification_test
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 )
 

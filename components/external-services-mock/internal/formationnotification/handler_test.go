@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"

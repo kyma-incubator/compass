@@ -5,14 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/form3tech-oss/jwt-go"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +14,15 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/form3tech-oss/jwt-go"
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (

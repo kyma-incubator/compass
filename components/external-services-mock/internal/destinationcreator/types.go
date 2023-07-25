@@ -2,11 +2,12 @@ package destinationcreator
 
 import (
 	"encoding/json"
+	"regexp"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"regexp"
 )
 
 // Config holds destination creator service API test configuration
@@ -34,12 +35,12 @@ type CertificateAPIConfig struct {
 
 // BaseDestinationRequestBody contains the base fields needed in the destination request body
 type BaseDestinationRequestBody struct {
-	Name                 string          `json:"name"`
-	URL                  string          `json:"url"`
-	Type                 destinationcreator.Type            `json:"type"`
-	ProxyType            destinationcreator.ProxyType       `json:"proxyType"`
-	AuthenticationType   destinationcreator.AuthType        `json:"authenticationType"`
-	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
+	Name                 string                       `json:"name"`
+	URL                  string                       `json:"url"`
+	Type                 destinationcreator.Type      `json:"type"`
+	ProxyType            destinationcreator.ProxyType `json:"proxyType"`
+	AuthenticationType   destinationcreator.AuthType  `json:"authenticationType"`
+	AdditionalProperties json.RawMessage              `json:"additionalProperties,omitempty"`
 }
 
 // DesignTimeRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth

@@ -10,11 +10,12 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
