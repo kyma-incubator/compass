@@ -32,9 +32,6 @@ gcloud --version
 log::info "Authenticate to GCP through gcloud"
 gcloud auth activate-service-account --key-file "${GOOGLE_APPLICATION_CREDENTIALS}" || exit 1
 
-log::info "Start Docker"
-docker::start
-
 chmod -R 0777 /home/prow/go/src/github.com/kyma-incubator/compass/.git
 
 log::info "Read parameters"
