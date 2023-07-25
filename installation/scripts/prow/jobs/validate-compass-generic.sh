@@ -8,10 +8,6 @@ readonly TEST_INFRA_SOURCES_DIR="${KYMA_PROJECT_DIR}/test-infra"
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 # shellcheck source=prow/scripts/lib/utils.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/utils.sh"
-# shellcheck source=prow/scripts/lib/docker.sh
-source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/docker.sh"
-# shellcheck source=prow/scripts/lib/gcp.sh
-source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/gcp.sh"
 
 if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
@@ -34,12 +30,7 @@ gcloud config set metrics/environment github_docker_image
 gcloud --version
 
 log::info "Authenticate to GCP through gcloud"
-gcp::authenticate \
-    -c "${GOOGLE_APPLICATION_CREDENTIALS}"
-
-log::info "Authenticate"
-gcp::authenticate \
-    -c "${GOOGLE_APPLICATION_CREDENTIALS}"
+gcloud auth activate-service-account --key-file "${GOOGLE_APPLICATION_CREDENTIALS}" || exit 1
 
 log::info "Start Docker"
 docker::start
