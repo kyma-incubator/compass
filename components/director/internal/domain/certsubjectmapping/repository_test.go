@@ -3,7 +3,6 @@ package certsubjectmapping_test
 import (
 	"database/sql/driver"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -63,36 +62,6 @@ func TestRepository_Get(t *testing.T) {
 		ExpectedModelEntity:       CertSubjectMappingModel,
 		ExpectedDBEntity:          CertSubjectMappingEntity,
 		MethodArgs:                []interface{}{TestID},
-		DisableConverterErrorTest: false,
-	}
-
-	suite.Run(t)
-}
-
-func TestRepository_GetBySubject(t *testing.T) {
-	suite := testdb.RepoGetTestSuite{
-		Name:       "Get certificate subject mapping by ID",
-		MethodName: "GetBySubject",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping WHERE subject ILIKE $1`),
-				Args:     []driver.Value{strings.ReplaceAll(TestSubject, ",", "_")},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		RepoConstructorFunc:       certsubjectmapping.NewRepository,
-		ExpectedModelEntity:       CertSubjectMappingModel,
-		ExpectedDBEntity:          CertSubjectMappingEntity,
-		MethodArgs:                []interface{}{TestSubject},
 		DisableConverterErrorTest: false,
 	}
 
@@ -170,35 +139,6 @@ func TestRepository_Exists(t *testing.T) {
 		IsGlobal:   true,
 		MethodName: "Exists",
 		MethodArgs: []interface{}{TestID},
-	}
-
-	suite.Run(t)
-}
-
-func TestRepository_ExistsBySubject(t *testing.T) {
-	suite := testdb.RepoExistTestSuite{
-		Name: "Exists certificate subject mapping by Subject",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.cert_subject_mapping WHERE subject ILIKE $1`),
-				Args:     []driver.Value{strings.ReplaceAll(TestSubject, ",", "_")},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
-				},
-			},
-		},
-		RepoConstructorFunc: certsubjectmapping.NewRepository,
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		TargetID:   TestID,
-		IsGlobal:   true,
-		MethodName: "ExistsBySubject",
-		MethodArgs: []interface{}{TestSubject},
 	}
 
 	suite.Run(t)

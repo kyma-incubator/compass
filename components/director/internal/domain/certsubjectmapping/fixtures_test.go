@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	TestID           = "455e47ea-5eab-49c5-ba35-a67e1d9125f6"
-	TestSubject      = "C=DE, L=test, O=SAP SE, OU=TestRegion, OU=Test Cloud Platform Clients, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=test-compass"
-	TestConsumerType = inputvalidation.RuntimeType
+	TestID            = "455e47ea-5eab-49c5-ba35-a67e1d9125f6"
+	TestSubject       = "C=DE, L=test, O=SAP SE, OU=TestRegion, OU=Test Cloud Platform Clients, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=test-compass"
+	TestSubjectSorted = "CN=test-compass, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, OU=Test Cloud Platform Clients, OU=TestRegion, O=SAP SE, L=test, C=DE"
+	TestConsumerType  = inputvalidation.RuntimeType
 )
 
 var (
@@ -42,6 +43,13 @@ var (
 
 	CertSubjectMappingGQLModelInput = graphql.CertificateSubjectMappingInput{
 		Subject:            TestSubject,
+		ConsumerType:       TestConsumerType,
+		InternalConsumerID: &TestInternalConsumerID,
+		TenantAccessLevels: TestTenantAccessLevels,
+	}
+
+	CertSubjectMappingGQLModelInputWithSortedSubject = graphql.CertificateSubjectMappingInput{
+		Subject:            TestSubjectSorted,
 		ConsumerType:       TestConsumerType,
 		InternalConsumerID: &TestInternalConsumerID,
 		TenantAccessLevels: TestTenantAccessLevels,

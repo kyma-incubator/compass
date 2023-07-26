@@ -2,13 +2,16 @@ package certsubjectmapping
 
 import (
 	"context"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"sort"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
 )
 
 // CertSubjectMappingService is responsible for service-layer certificate subject mapping operations
@@ -19,7 +22,6 @@ type CertSubjectMappingService interface {
 	Update(ctx context.Context, in *model.CertSubjectMapping) error
 	Delete(ctx context.Context, id string) error
 	Exists(ctx context.Context, id string) (bool, error)
-	ExistsBySubject(ctx context.Context, subject string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
 }
 
@@ -131,13 +133,7 @@ func (r *Resolver) CreateCertificateSubjectMapping(ctx context.Context, in graph
 		return nil, err
 	}
 
-	exists, err := r.certSubjectMappingSvc.ExistsBySubject(ctx, in.Subject)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.Errorf("Certificate subject mapping with Subject %q already exists", in.Subject)
-	}
+	in.Subject = sortSubject(in.Subject)
 
 	certSubjectMappingID := r.uidSvc.Generate()
 	csmID, err := r.certSubjectMappingSvc.Create(ctx, r.conv.FromGraphql(certSubjectMappingID, in))
@@ -171,6 +167,8 @@ func (r *Resolver) UpdateCertificateSubjectMapping(ctx context.Context, id strin
 	if err = in.Validate(); err != nil {
 		return nil, err
 	}
+
+	in.Subject = sortSubject(in.Subject)
 
 	err = r.certSubjectMappingSvc.Update(ctx, r.conv.FromGraphql(id, in))
 	if err != nil {
@@ -215,4 +213,18 @@ func (r *Resolver) DeleteCertificateSubjectMapping(ctx context.Context, id strin
 	}
 
 	return r.conv.ToGraphQL(csm), nil
+}
+
+func sortSubject(subject string) string {
+	cn := fmt.Sprintf("CN=%s", cert.GetCommonName(subject))
+	o := fmt.Sprintf("O=%s", cert.GetOrganization(subject))
+	l := fmt.Sprintf("L=%s", cert.GetLocality(subject))
+	c := fmt.Sprintf("C=%s", cert.GetCountry(subject))
+	ous := cert.GetAllOrganizationalUnits(subject)
+	sort.Strings(ous)
+	for i, ou := range ous {
+		ous[i] = fmt.Sprintf("OU=%s", ou)
+	}
+
+	return strings.Join([]string{cn, strings.Join(ous, ", "), o, l, c}, ", ")
 }

@@ -15,11 +15,9 @@ import (
 type CertMappingRepository interface {
 	Create(ctx context.Context, item *model.CertSubjectMapping) error
 	Get(ctx context.Context, id string) (*model.CertSubjectMapping, error)
-	GetBySubject(ctx context.Context, subject string) (*model.CertSubjectMapping, error)
 	Update(ctx context.Context, model *model.CertSubjectMapping) error
 	Delete(ctx context.Context, id string) error
 	Exists(ctx context.Context, id string) (bool, error)
-	ExistsBySubject(ctx context.Context, subject string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
 }
 
@@ -65,14 +63,6 @@ func (s *service) Update(ctx context.Context, in *model.CertSubjectMapping) erro
 		return apperrors.NewNotFoundError(resource.CertSubjectMapping, in.ID)
 	}
 
-	certSubjectMapping, err := s.repo.GetBySubject(ctx, in.Subject)
-	if err != nil {
-		return errors.Wrapf(err, "while checking certificate subject mapping existence for Subject: %q", in.Subject)
-	}
-	if certSubjectMapping.ID != in.ID {
-		return errors.Errorf("Certificate subject mapping with Subject %q already exists", in.Subject)
-	}
-
 	if err := s.repo.Update(ctx, in); err != nil {
 		return errors.Wrapf(err, "while updating certificate subject mapping with ID: %s", in.ID)
 	}
@@ -95,16 +85,6 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	exists, err := s.repo.Exists(ctx, id)
 	if err != nil {
 		return false, errors.Wrapf(err, "while checking certificate subject mapping existence for ID: %s", id)
-	}
-	return exists, nil
-}
-
-// ExistsBySubject check if a certificate subject mapping with subject `subject` exists
-func (s *service) ExistsBySubject(ctx context.Context, subject string) (bool, error) {
-	log.C(ctx).Infof("Checking certificate subject mapping existence for Subject: %q", subject)
-	exists, err := s.repo.ExistsBySubject(ctx, subject)
-	if err != nil {
-		return false, errors.Wrapf(err, "while checking certificate subject mapping existence for Subject: %q", subject)
 	}
 	return exists, nil
 }
