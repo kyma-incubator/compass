@@ -296,6 +296,7 @@ func (h *Handler) DeleteWithState(writer http.ResponseWriter, r *http.Request) {
 	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
+// FailResponse handles synchronous formation assignment notification requests by failing and setting error states.
 func (h *Handler) FailResponse(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
@@ -305,7 +306,7 @@ func (h *Handler) FailResponse(writer http.ResponseWriter, r *http.Request) {
 	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
-// todo::: minor: go doc + the other methods as well
+// FailOnceResponse handles synchronous formation assignment notification requests for both Assign and Unassign operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if h.ShouldReturnError {
@@ -328,6 +329,7 @@ func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// ResetShouldFail toggles whether an error should be returned
 func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 	h.ShouldReturnError = true
 	writer.WriteHeader(http.StatusOK)

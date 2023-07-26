@@ -11,10 +11,13 @@ var (
 	url          = "https://target-url.com"
 
 	// Formation Assignments variables
-	formationAssignmentReqBody       = `{"ucl-formation-id":"96bbd806-0d56-4f39-bcf1-e15aee9e50cc","items":[{"region":"testRegion","application-namespace":"appNamespce","tenant-id":"localTenantID","ucl-system-tenant-id":"9d8bb1a5-4799-453c-a406-84439f151d45"}]}`
-	formationAssignmentReqConfigBody = `{"ucl-formation-id":"96bbd806-0d56-4f39-bcf1-e15aee9e50cc","config": "{\"key\":\"value\"}","items":[{"region":"testRegion","application-namespace":"appNamespce","tenant-id":"localTenantID","ucl-system-tenant-id":"9d8bb1a5-4799-453c-a406-84439f151d45"}]}`
-	tenantIDParam                    = "tenantId"
-	appID                            = "testAppID"
+	formationAssignmentReqBody                           = `{"ucl-formation-id":"96bbd806-0d56-4f39-bcf1-e15aee9e50cc","items":[{"region":"testRegion","application-namespace":"appNamespce","tenant-id":"localTenantID","ucl-system-tenant-id":"9d8bb1a5-4799-453c-a406-84439f151d45"}]}`
+	formationAssignmentReqConfigBody                     = `{"ucl-formation-id":"96bbd806-0d56-4f39-bcf1-e15aee9e50cc","config": "{\"key\":\"value\"}","items":[{"region":"testRegion","application-namespace":"appNamespce","tenant-id":"localTenantID","ucl-system-tenant-id":"9d8bb1a5-4799-453c-a406-84439f151d45"}]}`
+	formationAssignmentReqBodyWithReceiverTenant         = `{"receiverTenant":{"configuration":"{\"key\":\"value\"}"}}`
+	formationAssignmentReqBodyWithReceiverTenantNoConfig = `{"receiverTenant":{"state":"READY"}}`
+	tenantIDParam                                        = "tenantId"
+	appIDParam                                           = "applicationId"
+	appID                                                = "testAppID"
 
 	// Formation variables
 	formationIDParam = "uclFormationId"

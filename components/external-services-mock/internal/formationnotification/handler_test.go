@@ -15,9 +15,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var assignMappingsWithoutConfig = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBody, nil)
-var assignMappingsWithConfig = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqConfigBody, nil)
-var unassignMappings = fixFormationAssignmentMappings(formationnotification.Unassign, testTenantID, formationAssignmentReqBody, &appID)
+var (
+	assignMappingsWithoutConfig           = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBody, nil)
+	assignMappingsWithConfig              = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqConfigBody, nil)
+	assignMappingsWithDestDetails         = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBodyWithReceiverTenant, nil)
+	assignMappingsWithDestDetailsNoConfig = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBodyWithReceiverTenantNoConfig, nil)
+	unassignMappings                      = fixFormationAssignmentMappings(formationnotification.Unassign, testTenantID, formationAssignmentReqBody, &appID)
+)
 
 func TestHandler_Patch(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s", testTenantID)
@@ -197,6 +201,70 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 	}
 }
 
+func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
+	apiPath := fmt.Sprintf("/formation-callback/destinations/configuration/%s", testTenantID)
+
+	testCases := []struct {
+		Name                 string
+		RequestBody          string
+		TenantID             string
+		ExpectedResponseCode int
+		ExpectedMappings     map[string][]formationnotification.Response
+	}{
+		{
+			Name:                 "success with no config",
+			RequestBody:          formationAssignmentReqBodyWithReceiverTenantNoConfig,
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedMappings:     assignMappingsWithDestDetailsNoConfig,
+		},
+		{
+			Name:                 "success with config",
+			RequestBody:          formationAssignmentReqBodyWithReceiverTenant,
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedMappings:     assignMappingsWithDestDetails,
+		},
+		{
+			Name:                 "Error tenant id not found in path",
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{},
+		},
+		{
+			Name:                 "Error when body is not valid json",
+			RequestBody:          "invalid json",
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
+			if testCase.TenantID != "" {
+				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+			}
+
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			r := httptest.NewRecorder()
+
+			//WHEN
+			h.RespondWithIncompleteAndDestinationDetails(r, req)
+			resp := r.Result()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			//THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedMappings, h.Mappings)
+		})
+	}
+}
+
 func TestHandler_Delete(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s/%s", testTenantID, appID)
 
@@ -247,7 +315,7 @@ func TestHandler_Delete(t *testing.T) {
 				vars[tenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars["applicationId"] = testCase.AppID
+				vars[appIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
@@ -256,6 +324,77 @@ func TestHandler_Delete(t *testing.T) {
 
 			//WHEN
 			h.Delete(r, req)
+			resp := r.Result()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			//THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedMappings, h.Mappings)
+		})
+	}
+}
+
+func TestHandler_DestinationDelete(t *testing.T) {
+	apiPath := fmt.Sprintf("/formation-callback/destinations/configuration/%s/%s", testTenantID, appID)
+
+	testCases := []struct {
+		Name                 string
+		RequestBody          string
+		TenantID             string
+		AppID                string
+		ExpectedResponseCode int
+		ExpectedMappings     map[string][]formationnotification.Response
+	}{
+		{
+			Name:                 "success",
+			RequestBody:          formationAssignmentReqBody,
+			TenantID:             testTenantID,
+			AppID:                appID,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedMappings:     unassignMappings,
+		},
+		{
+			Name:                 "Error tenant id not found in path",
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{},
+		},
+		{
+			Name:                 "Error appID not found in path",
+			RequestBody:          formationAssignmentReqBody,
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: make([]formationnotification.Response, 0, 1)},
+		},
+		{
+			Name:                 "Error when body is not valid json",
+			RequestBody:          "invalid json",
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			req, err := http.NewRequest(http.MethodDelete, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
+			vars := map[string]string{}
+			if testCase.TenantID != "" {
+				vars[tenantIDParam] = testCase.TenantID
+			}
+			if testCase.AppID != "" {
+				vars[appIDParam] = testCase.AppID
+			}
+			req = mux.SetURLVars(req, vars)
+
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			r := httptest.NewRecorder()
+
+			//WHEN
+			h.DestinationDelete(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
@@ -318,7 +457,7 @@ func TestHandler_DeleteWithState(t *testing.T) {
 				vars[tenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars["applicationId"] = testCase.AppID
+				vars[appIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
@@ -460,7 +599,7 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 			req, err := http.NewRequest(testCase.Method, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.AppID != nil {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID, "applicationId": *testCase.AppID})
+				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID, appIDParam: *testCase.AppID})
 			} else if testCase.TenantID != "" {
 				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
 			}
