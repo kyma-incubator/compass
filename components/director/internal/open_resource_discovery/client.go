@@ -271,8 +271,7 @@ func buildDocumentURL(docURL, appBaseURL, proxyURL string, ordWebhookMapping app
 	}
 
 	if proxyURL != "" {
-		return ordWebhookMapping.ProxyBaseURL + ordWebhookMapping.ProxySuffix + docURL, nil
-		//return ordWebhookMapping.ProxyBaseURL + docURL, nil
+		return ordWebhookMapping.ProxyURL + docURL, nil
 	}
 
 	return appBaseURL + docURL, nil

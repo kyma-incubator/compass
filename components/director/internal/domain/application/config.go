@@ -11,8 +11,7 @@ type ORDWebhookMapping struct {
 	OrdURLPath          string   `json:"OrdUrlPath"`
 	SubdomainSuffix     string   `json:"SubdomainSuffix"`
 	UseProxy            bool     `json:"UseProxy"`
-	ProxySuffix         string   `json:"ProxySuffix"`
-	ProxyBaseURL        string   `json:"ProxyBaseURL"`
+	ProxyURL            string   `json:"ProxyURL"`
 	ProxyHeaderTemplate string   `json:"ProxyHeaderTemplate"`
 }
 

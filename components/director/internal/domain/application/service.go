@@ -1524,9 +1524,9 @@ func allowAllCriteria(_ string) bool {
 }
 
 func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
-	if mappingCfg.ProxySuffix == "" {
+	if mappingCfg.ProxyURL == "" {
 		return ""
 	}
 
-	return fmt.Sprintf("%s%s%s", mappingCfg.ProxyBaseURL, mappingCfg.ProxySuffix, mappingCfg.OrdURLPath)
+	return mappingCfg.ProxyURL + mappingCfg.OrdURLPath
 }
