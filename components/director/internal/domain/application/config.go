@@ -10,6 +10,10 @@ type ORDWebhookMapping struct {
 	PpmsProductVersions []string `json:"PpmsProductVersions"`
 	OrdURLPath          string   `json:"OrdUrlPath"`
 	SubdomainSuffix     string   `json:"SubdomainSuffix"`
+	UseProxy            bool     `json:"UseProxy"`
+	ProxySuffix         string   `json:"ProxySuffix"`
+	ProxyBaseURL        string   `json:"ProxyBaseURL"`
+	ProxyHeaderTemplate string   `json:"ProxyHeaderTemplate"`
 }
 
 // UnmarshalMappings unmarshalls a string into []ORDWebhookMapping. This is done because of limitation of the envconfig library

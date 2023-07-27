@@ -19,8 +19,9 @@ type handler struct {
 	cfg    MetricsConfig
 }
 
-//go:generate mockery --name=ORDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 // ORDService missing godoc
+//
+//go:generate mockery --name=ORDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ORDService interface {
 	ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error
 	ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error

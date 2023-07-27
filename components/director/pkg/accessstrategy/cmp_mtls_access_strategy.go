@@ -3,6 +3,7 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -39,7 +40,7 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProvider
 }
 
 // Execute performs the access strategy's specific execution logic
-func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string) (*http.Response, error) {
+func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders http.Header) (*http.Response, error) {
 	clientCerts := as.certCache.Get()
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
@@ -68,6 +69,13 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
+	if additionalHeaders != nil {
+		req.Header = additionalHeaders
+	}
+	//for header := range additionalHeaders {
+	//	req.Header.Set(header, additionalHeaders.Get(header))
+	//}
+
 	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header
 	if as.tenantProviderFunc != nil && len(tnt) > 0 {
 		localTenantID, err := as.tenantProviderFunc(ctx)
@@ -79,6 +87,9 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	} else {
 		req.Header.Set(tenantHeader, tnt)
 	}
+
+	fmt.Println("DOC URL ", documentURL)
+	fmt.Println("Header ", req.Header["target_host"])
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {

@@ -1454,7 +1454,7 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 		return nil
 	}
 
-	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdURLPath)
+	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg)
 	if err != nil {
 		log.C(ctx).Infof("Creating ORD Webhook failed with error: %v", err)
 		return nil
@@ -1492,15 +1492,19 @@ func buildWebhookURL(suffix string, ordPath string, baseURL *string) (string, er
 	return fmt.Sprintf("%s%s", urlStr, ordPath), nil
 }
 
-func createORDWebhookInput(baseURL, suffix, ordPath string) (*model.WebhookInput, error) {
-	webhookURL, err := buildWebhookURL(suffix, ordPath, &baseURL)
+func createORDWebhookInput(baseURL string, ordWebhookMapping ORDWebhookMapping) (*model.WebhookInput, error) {
+	webhookURL, err := buildWebhookURL(ordWebhookMapping.SubdomainSuffix, ordWebhookMapping.OrdURLPath, &baseURL)
 	if err != nil {
 		return nil, err
 	}
 
+	proxyURL := buildWebhookProxyURL(ordWebhookMapping)
+
 	return &model.WebhookInput{
-		Type: model.WebhookTypeOpenResourceDiscovery,
-		URL:  str.Ptr(webhookURL),
+		Type:           model.WebhookTypeOpenResourceDiscovery,
+		URL:            str.Ptr(webhookURL),
+		ProxyURL:       str.Ptr(proxyURL),
+		HeaderTemplate: str.Ptr(ordWebhookMapping.ProxyHeaderTemplate),
 		Auth: &model.AuthInput{
 			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
 		},
@@ -1517,4 +1521,12 @@ func createMapFromFormationsSlice(formations []string) map[string]struct{} {
 
 func allowAllCriteria(_ string) bool {
 	return true
+}
+
+func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
+	if mappingCfg.ProxySuffix == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s%s%s", mappingCfg.ProxyBaseURL, mappingCfg.ProxySuffix, mappingCfg.OrdURLPath)
 }
