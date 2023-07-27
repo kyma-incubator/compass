@@ -386,22 +386,21 @@ func TestResolver_DeleteEvent(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	modelEventDefinition, spec, bundleRef := fixFullEventDefinitionModel("test")
+	modelEventDefinition, spec, _ := fixFullEventDefinitionModel("test")
 	gqlEventDefinition := fixFullGQLEventDefinition("test")
 
-	var nilBundleID *string
+	var nilBundleReference *model.BundleReference
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name              string
-		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn         func() *automock.EventDefService
-		ConverterFn       func() *automock.EventDefConverter
-		SpecServiceFn     func() *automock.SpecService
-		BundleReferenceFn func() *automock.BundleReferenceService
-		ExpectedEvent     *graphql.EventDefinition
-		ExpectedErr       error
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.EventDefService
+		ConverterFn     func() *automock.EventDefConverter
+		SpecServiceFn   func() *automock.SpecService
+		ExpectedEvent   *graphql.EventDefinition
+		ExpectedErr     error
 	}{
 		{
 			Name:            "Success",
@@ -414,17 +413,12 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventDefConverter {
 				conv := &automock.EventDefConverter{}
-				conv.On("ToGraphQL", &modelEventDefinition, &spec, &bundleRef).Return(gqlEventDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelEventDefinition, &spec, nilBundleReference).Return(gqlEventDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(&spec, nil).Once()
-				return svc
-			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedEvent: gqlEventDefinition,
@@ -442,9 +436,6 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
 			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				return &automock.BundleReferenceService{}
-			},
 			ExpectedEvent: nil,
 			ExpectedErr:   testErr,
 		},
@@ -461,9 +452,6 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				return &automock.SpecService{}
-			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				return &automock.BundleReferenceService{}
 			},
 			ExpectedEvent: nil,
 			ExpectedErr:   testErr,
@@ -484,33 +472,6 @@ func TestResolver_DeleteEvent(t *testing.T) {
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(nil, testErr).Once()
 				return svc
 			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				return &automock.BundleReferenceService{}
-			},
-			ExpectedEvent: nil,
-			ExpectedErr:   testErr,
-		},
-		{
-			Name:            "Returns error when BundleReference retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.EventDefService {
-				svc := &automock.EventDefService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelEventDefinition, nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.EventDefConverter {
-				return &automock.EventDefConverter{}
-			},
-			SpecServiceFn: func() *automock.SpecService {
-				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(&spec, nil).Once()
-				return svc
-			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinition.ID, nilBundleID).Return(nil, testErr).Once()
-				return svc
-			},
 			ExpectedEvent: nil,
 			ExpectedErr:   testErr,
 		},
@@ -524,17 +485,12 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventDefConverter {
 				conv := &automock.EventDefConverter{}
-				conv.On("ToGraphQL", &modelEventDefinition, &spec, &bundleRef).Return(nil, testErr).Once()
+				conv.On("ToGraphQL", &modelEventDefinition, &spec, nilBundleReference).Return(nil, testErr).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(&spec, nil).Once()
-				return svc
-			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedEvent: nil,
@@ -551,17 +507,12 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventDefConverter {
 				conv := &automock.EventDefConverter{}
-				conv.On("ToGraphQL", &modelEventDefinition, &spec, &bundleRef).Return(gqlEventDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelEventDefinition, &spec, nilBundleReference).Return(gqlEventDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(&spec, nil).Once()
-				return svc
-			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedEvent: nil,
@@ -578,17 +529,12 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventDefConverter {
 				conv := &automock.EventDefConverter{}
-				conv.On("ToGraphQL", &modelEventDefinition, &spec, &bundleRef).Return(gqlEventDefinition, nil).Once()
+				conv.On("ToGraphQL", &modelEventDefinition, &spec, nilBundleReference).Return(gqlEventDefinition, nil).Once()
 				return conv
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(&spec, nil).Once()
-				return svc
-			},
-			BundleReferenceFn: func() *automock.BundleReferenceService {
-				svc := &automock.BundleReferenceService{}
-				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinition.ID, nilBundleID).Return(&bundleRef, nil).Once()
 				return svc
 			},
 			ExpectedEvent: nil,
@@ -603,9 +549,8 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			svc := testCase.ServiceFn()
 			specService := testCase.SpecServiceFn()
 			converter := testCase.ConverterFn()
-			bndlRefService := testCase.BundleReferenceFn()
 
-			resolver := event.NewResolver(transact, svc, nil, bndlRefService, converter, nil, specService, nil)
+			resolver := event.NewResolver(transact, svc, nil, nil, converter, nil, specService, nil)
 
 			// WHEN
 			result, err := resolver.DeleteEventDefinition(context.TODO(), id)
@@ -621,7 +566,6 @@ func TestResolver_DeleteEvent(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			specService.AssertExpectations(t)
-			bndlRefService.AssertExpectations(t)
 			converter.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			persist.AssertExpectations(t)

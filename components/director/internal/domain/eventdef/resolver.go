@@ -361,12 +361,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleEventReference, &event.ID, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", event.ID)
-	}
-
-	gqlEvent, err := r.converter.ToGraphQL(event, spec, bndlRef)
+	gqlEvent, err := r.converter.ToGraphQL(event, spec, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
