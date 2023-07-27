@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -88,8 +89,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 	if err != nil {
 		return nil, "", err
 	}
-
-	//webhookProxyURL :=  str.PtrStrToStr(webhook.ProxyURL)
 
 	webhookBaseURL, err := calculateBaseURL(webhook, *config)
 	if err != nil {
@@ -282,10 +281,6 @@ func buildDocumentURL(docURL, appBaseURL, proxyURL string, ordWebhookMapping app
 // if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
 // if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
 func calculateBaseURL(webhook *model.Webhook, config WellKnownConfig) (string, error) {
-	if webhook.ProxyURL != nil {
-		return str.PtrStrToStr(webhook.ProxyURL), nil
-	}
-
 	if config.BaseURL != "" {
 		return config.BaseURL, nil
 	}

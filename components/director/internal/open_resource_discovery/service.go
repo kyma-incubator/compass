@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/imdario/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -366,7 +367,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL string, ordRequestObject webhook2.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookProxyURL string, ordRequestObject webhook2.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
 	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
 		return err
 	}
@@ -387,7 +388,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		*validationErrors = validationResult
 	}
 
-	if err := documents.Sanitize(webhookBaseURL); err != nil {
+	if err := documents.Sanitize(webhookBaseURL, webhookProxyURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
@@ -1836,7 +1837,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		log.C(ctx).Info("Processing ORD documents")
 		var validationErrors error
 
-		err = s.processDocuments(ctx, resource, webhookBaseURL, ordRequestObject, documents, globalResourcesOrdIDs, &validationErrors)
+		err = s.processDocuments(ctx, resource, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordRequestObject, documents, globalResourcesOrdIDs, &validationErrors)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
