@@ -69,7 +69,7 @@ check_value() {
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
 BASE_DIR="${1}"
-JAVA_HOME="${BASE_DIR}openjdk-11"
+JAVA_HOME="${BASE_DIR}openjdk-17"
 M2_HOME="${BASE_DIR}maven"
 MIGRATE_HOME="${BASE_DIR}migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
@@ -94,9 +94,9 @@ mkdir -p "${ARTIFACTS}"
 
 
 echo "Install java"
-curl -fLSs -o adoptopenjdk11.tgz "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19%2B7/OpenJDK11U-jdk_x64_alpine-linux_hotspot_11.0.19_7.tar.gz"
-tar --extract --file adoptopenjdk11.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
-rm adoptopenjdk11.tgz* 
+curl -fLSs -o adoptopenjdk17.tgz "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-jdk_x64_alpine-linux_hotspot_17.0.8_7.tar.gz"
+tar --extract --file adoptopenjdk17.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
+rm adoptopenjdk17.tgz*
 
 echo "Install maven"
 curl -fLSs -o apache-maven.tgz "https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz"
