@@ -250,6 +250,8 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
 fi
 
+kubectl version -o yaml
+
 mount_k3d_ca_to_oathkeeper
 
 # Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
