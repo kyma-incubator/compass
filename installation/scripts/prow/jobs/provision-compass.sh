@@ -62,6 +62,8 @@ log::info "Installing openssl..."
 apk add openssl
 log::info "Successfully installed openssl"
 
+k3d version
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
