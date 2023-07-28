@@ -151,7 +151,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3170"
+      version: "PR-3183"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
