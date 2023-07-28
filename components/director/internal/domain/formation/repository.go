@@ -23,6 +23,7 @@ var (
 )
 
 // EntityConverter converts between the internal model and entity
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Formation) *Entity
