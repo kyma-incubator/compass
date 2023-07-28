@@ -1,4 +1,4 @@
-FROM golang:1.20.5-alpine3.18 as builder
+FROM golang:1.20.6-alpine3.18 as builder
 
 WORKDIR /
 RUN apk --update --no-cache add bash git
@@ -15,7 +15,7 @@ RUN git checkout $VERSION
 
 RUN go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
-FROM alpine:3.18.0
+FROM alpine:3.18.2
 
 WORKDIR /migrate
 
@@ -27,7 +27,7 @@ RUN chmod +x ./migrate
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
-ENV CLUSTER_VERSION=1.26.3
+ENV CLUSTER_VERSION=1.26.6
 
 RUN curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl  && chmod +x /usr/local/bin/kubectl
 
