@@ -155,7 +155,11 @@ do
         break
     fi
     if (( ${previousPrintTime} != ${min} )); then
-        echo "ClusterTestSuite not finished. Waiting..."
+        running_test=$(kubectl get cts ${suiteName} -o yaml | grep "status: Running" -B5 | head -n 1 | cut -d ':' -f 2 | tr -d " ")
+        if [ -z "$running_test" ]; then
+          running_test="none"
+        fi
+        echo "Running test is ${running_test}"
         previousPrintTime=${min}
     fi
     sleep 3
