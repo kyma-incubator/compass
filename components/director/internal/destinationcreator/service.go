@@ -24,10 +24,13 @@ const (
 	clientUserHeaderKey        = "CLIENT_USER"
 	contentTypeHeaderKey       = "Content-Type"
 	contentTypeApplicationJSON = "application/json;charset=UTF-8"
-	GlobalSubaccountLabelKey   = "global_subaccount_id"
-	RegionLabelKey             = "region"
-	javaKeyStoreFileExtension = ".jks"
-	DepthLimit                = 2
+	javaKeyStoreFileExtension  = ".jks"
+	// GlobalSubaccountLabelKey is label that holds the external subaccount ID of an entity
+	GlobalSubaccountLabelKey = "global_subaccount_id"
+	// RegionLabelKey holds the region value of an entity
+	RegionLabelKey = "region"
+	// DepthLimit is the recursion depth in case of conflict during destination creation
+	DepthLimit = 2
 )
 
 //go:generate mockery --exported --name=httpClient --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -72,8 +75,8 @@ type UIDService interface {
 
 // Service consists of a service-level operations related to the destination creator remote microservice
 type Service struct {
-	mtlsHTTPClient httpClient
-	config         *Config
+	mtlsHTTPClient        httpClient
+	config                *Config
 	applicationRepository applicationRepository
 	runtimeRepository     runtimeRepository
 	runtimeCtxRepository  runtimeCtxRepository

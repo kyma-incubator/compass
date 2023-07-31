@@ -13,7 +13,6 @@ import (
 )
 
 func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *testing.T) {
-
 	testCases := []struct {
 		Name                  string
 		Input                 operators.OperatorInput

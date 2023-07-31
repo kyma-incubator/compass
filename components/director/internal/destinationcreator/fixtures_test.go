@@ -3,6 +3,10 @@ package destinationcreator_test
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -10,34 +14,30 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
-	"io"
-	"net/http"
-	"strings"
 )
 
 const (
 	// Destination constants
-	destinationID                = "destination-id"
-	designTimeDestName           = "test-design-time-dest-name"
-	basicDestName                = "test-basic-dest-name"
-	samlAssertionDestName        = "test-saml-assertion-dest-name"
-	destinationDescription       = "test-dest-description"
-	destinationTypeHTTP          = string(destinationcreator.TypeHTTP)
-	destinationProxyTypeInternet = string(destinationcreator.ProxyTypeInternet)
-	destinationURL               = "http://dest-test-url"
-	invalidDestAuthType              = "invalidDestAuthTypeValue"
-	destinationInternalSubaccountID  = "destination-internal-subaccount-id"
-	destinationExternalSubaccountID  = "destination-external-subaccount-id"
-	destinationTenantName            = "testDestinationTenantName"
-	basicDestURL                     = "basic-url"
-	basicDestUser                    = "basic-user"
-	basicDestPassword                = "basic-pwd"
+	designTimeDestName              = "test-design-time-dest-name"
+	basicDestName                   = "test-basic-dest-name"
+	samlAssertionDestName           = "test-saml-assertion-dest-name"
+	destinationDescription          = "test-dest-description"
+	destinationTypeHTTP             = string(destinationcreator.TypeHTTP)
+	destinationProxyTypeInternet    = string(destinationcreator.ProxyTypeInternet)
+	destinationURL                  = "http://dest-test-url"
+	invalidDestAuthType             = "invalidDestAuthTypeValue"
+	destinationInternalSubaccountID = "destination-internal-subaccount-id"
+	destinationExternalSubaccountID = "destination-external-subaccount-id"
+	destinationTenantName           = "testDestinationTenantName"
+	basicDestURL                    = "basic-url"
+	basicDestUser                   = "basic-user"
+	basicDestPassword               = "basic-pwd"
 
 	// Destination Certificate constants
-	certificateName = "testCertificateName"
-	certificateFileNameKey   = "testCertFileNameKey"
-	certificateCommonNameKey = "testCertCommonNameKey"
-	certificateChainKey      = "testCertChainKey"
+	certificateName            = "testCertificateName"
+	certificateFileNameKey     = "testCertFileNameKey"
+	certificateCommonNameKey   = "testCertCommonNameKey"
+	certificateChainKey        = "testCertChainKey"
 	certificateFileNameValue   = "testCertFileNameValue"
 	certificateCommonNameValue = "testCertCommonNameValue"
 	certificateChainValue      = "testCertChainValue"
@@ -47,9 +47,7 @@ const (
 	testFormationID   = "TestFormationID"
 	testTenantID      = "TestTenantID"
 	testSourceID      = "TestSourceID"
-	testSourceType    = "TestSourceType"
 	testTargetID      = "TestTargetID"
-	testTargetType    = "TestTargetType"
 	invalidTargetType = "invalidTargetType"
 
 	// Application constants
@@ -183,21 +181,6 @@ func fixDestinationDetails(name, authentication, subaccountID string) operators.
 	}
 }
 
-func fixDestinationDetailsWithParameters(name, destType, description, proxyType, authType, url, subaccountID, fileName, commonName, certChain string) operators.Destination {
-	return operators.Destination{
-		Name:             name,
-		Type:             destType,
-		Description:      description,
-		ProxyType:        proxyType,
-		Authentication:   authType,
-		URL:              url,
-		SubaccountID:     subaccountID,
-		FileName:         fileName,
-		CommonName:       commonName,
-		CertificateChain: certChain,
-	}
-}
-
 func fixBasicAuthCreds(url, username, password string) operators.BasicAuthentication {
 	return operators.BasicAuthentication{
 		URL:      url,
@@ -242,21 +225,6 @@ func fixFormationAssignmentModelWithParameters(id, formationID, tenantID, source
 	}
 }
 
-func fixFormationAssignmentWithDefaultValues() *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:          testAssignmentID,
-		FormationID: testFormationID,
-		TenantID:    testTenantID,
-		Source:      testSourceID,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      testTargetID,
-		TargetType:  model.FormationAssignmentTypeApplication,
-		State:       string(model.ReadyAssignmentState),
-		Value:       TestConfigValueRawJSON,
-		Error:       TestConfigValueRawJSON,
-	}
-}
-
 func fixCertificateResponse(fileName, commonName, certChain string) *destinationcreator.CertificateResponse {
 	return &destinationcreator.CertificateResponse{
 		FileName:         fileName,
@@ -274,10 +242,7 @@ func fixHTTPResponse(statusCode int, body string) *http.Response {
 
 func requestThatHasMethod(expectedMethod string) interface{} {
 	return mock.MatchedBy(func(actualReq *http.Request) bool {
-		if actualReq.Method != expectedMethod {
-			return false
-		}
-		return true
+		return actualReq.Method == expectedMethod
 	})
 }
 

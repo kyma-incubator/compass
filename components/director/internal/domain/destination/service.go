@@ -32,6 +32,7 @@ type UIDService interface {
 	Generate() string
 }
 
+// DestinationCreatorService is responsible for the service-layer destination creator operations
 //go:generate mockery --exported --name=DestinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DestinationCreatorService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) error
