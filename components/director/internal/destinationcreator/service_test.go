@@ -1289,7 +1289,7 @@ func Test_CreateCertificate(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
 			} else {
-				//require.NotEmpty(t, result)
+				require.NotEmpty(t, result)
 				require.NoError(t, err)
 				require.Equal(t, testCase.expectedResult, result)
 			}

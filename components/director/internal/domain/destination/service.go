@@ -32,9 +32,8 @@ type UIDService interface {
 	Generate() string
 }
 
-// DestinationCreatorService is responsible for the service-layer destination creator operations
-//go:generate mockery --exported --name=DestinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type DestinationCreatorService interface {
+//go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type destinationCreatorService interface {
 	CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) error
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error
 	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error
@@ -51,11 +50,11 @@ type Service struct {
 	destinationRepo       destinationRepository
 	tenantRepo            tenantRepository
 	uidSvc                UIDService
-	destinationCreatorSvc DestinationCreatorService
+	destinationCreatorSvc destinationCreatorService
 }
 
 // NewService creates a new Service
-func NewService(transact persistence.Transactioner, destinationRepository destinationRepository, tenantRepository tenantRepository, uidSvc UIDService, destinationCreatorSvc DestinationCreatorService) *Service {
+func NewService(transact persistence.Transactioner, destinationRepository destinationRepository, tenantRepository tenantRepository, uidSvc UIDService, destinationCreatorSvc destinationCreatorService) *Service {
 	return &Service{
 		transact:              transact,
 		destinationRepo:       destinationRepository,
