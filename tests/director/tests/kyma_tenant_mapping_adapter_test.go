@@ -90,13 +90,14 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	require.NotEmpty(t, appTemplate.Name)
 
 	// Create application from template
-	appFromTemplate := graphql.ApplicationFromTemplateInput{TemplateName: appTemplate.Name, Values: []*graphql.TemplateValueInput{{Placeholder: "name", Value: "name"}, {Placeholder: "display-name", Value: "display-name"}}}
+	appName := "kyma-adapter-app-name"
+	appFromTemplate := graphql.ApplicationFromTemplateInput{TemplateName: appTemplate.Name, Values: []*graphql.TemplateValueInput{{Placeholder: "name", Value: appName}, {Placeholder: "display-name", Value: "display-name"}}}
 	appFromTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTemplate)
 	require.NoError(t, err)
 	createAppFromTemplateRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateGQL)
 	app := graphql.ApplicationExt{}
 
-	t.Logf("Creating application from application template with id %s", appTemplate.ID)
+	t.Logf("Creating application with name %q from application template with id %s", appName, appTemplate.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTemplateRequest, &app)
 	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
