@@ -108,9 +108,6 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return("", testErr)
 				return destCreatorSvc
 			},
-			TenantRepoFn:       unusedTenantRepository,
-			DestinationRepoFn:  unusedDestinationRepository,
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -125,8 +122,6 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", ctx, designTimeDestDetails.SubaccountID).Return(nil, testErr)
 				return tenantRepo
 			},
-			DestinationRepoFn:  unusedDestinationRepository,
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: "while getting tenant by external ID",
 		},
 		{
@@ -146,7 +141,6 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, designTimeDestDetails.Name, tenant.ID).Return(nil, testErr)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -166,7 +160,6 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, designTimeDestDetails.Name, tenant.ID).Return(destModelWithDifferentFAID, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: "Could not have second destination with the same name and tenant ID but with different assignment ID",
 		},
 		{
@@ -187,7 +180,6 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, designTimeDestDetails.Name, tenant.ID).Return(destModel, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -220,7 +212,6 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// GIVEN
-
 		destCreatorSvc := unusedDestinationCreatorService()
 		if testCase.DestinationCreatorServiceFn != nil {
 			destCreatorSvc = testCase.DestinationCreatorServiceFn()
@@ -340,9 +331,6 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return("", testErr)
 				return destCreatorSvc
 			},
-			TenantRepoFn:       unusedTenantRepository,
-			DestinationRepoFn:  unusedDestinationRepository,
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -357,8 +345,6 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", ctx, basicDestDetails.SubaccountID).Return(nil, testErr)
 				return tenantRepo
 			},
-			DestinationRepoFn:  unusedDestinationRepository,
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: "while getting tenant by external ID",
 		},
 		{
@@ -378,7 +364,6 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, basicDestDetails.Name, tenant.ID).Return(nil, testErr)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -398,7 +383,6 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, basicDestDetails.Name, tenant.ID).Return(destModelWithDifferentFAID, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: "Could not have second destination with the same name and tenant ID but with different assignment ID",
 		},
 		{
@@ -419,7 +403,6 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, basicDestDetails.Name, tenant.ID).Return(destModel, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -441,7 +424,6 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, basicDestDetails.Name, tenant.ID).Return(destModel, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -592,9 +574,6 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, samlAssertionDestDetails.SubaccountID, &fa).Return("", testErr)
 				return destCreatorSvc
 			},
-			TenantRepoFn:       unusedTenantRepository,
-			DestinationRepoFn:  unusedDestinationRepository,
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -609,8 +588,6 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", ctx, samlAssertionDestDetails.SubaccountID).Return(nil, testErr)
 				return tenantRepo
 			},
-			DestinationRepoFn:  unusedDestinationRepository,
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: "while getting tenant by external ID",
 		},
 		{
@@ -630,7 +607,6 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, samlAssertionDestDetails.Name, tenant.ID).Return(nil, testErr)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -650,7 +626,6 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, samlAssertionDestDetails.Name, tenant.ID).Return(destModelWithDifferentFAID, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: "Could not have second destination with the same name and tenant ID but with different assignment ID",
 		},
 		{
@@ -671,7 +646,6 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 				destinationRepo.On("GetDestinationByNameAndTenant", ctx, samlAssertionDestDetails.Name, tenant.ID).Return(destModel, nil)
 				return destinationRepo
 			},
-			UIDServiceFn:       unusedUIDService,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -802,8 +776,6 @@ func TestService_DeleteDestinations(t *testing.T) {
 				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return("", testErr)
 				return destCreatorSvc
 			},
-			TenantRepoFn:       unusedTenantRepository,
-			DestinationRepoFn:  unusedDestinationRepository,
 			ExpectedErrMessage: errMsg,
 		},
 		{
@@ -818,7 +790,6 @@ func TestService_DeleteDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(nil, testErr)
 				return tenantRepo
 			},
-			DestinationRepoFn:  unusedDestinationRepository,
 			ExpectedErrMessage: "while getting tenant by external ID",
 		},
 		{

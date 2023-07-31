@@ -24,11 +24,16 @@ const (
 	clientUserHeaderKey        = "CLIENT_USER"
 	contentTypeHeaderKey       = "Content-Type"
 	contentTypeApplicationJSON = "application/json;charset=UTF-8"
-	globalSubaccountLabelKey   = "global_subaccount_id"
-	regionLabelKey             = "region"
-	javaKeyStoreFileExtension  = ".jks"
-	depthLimit                 = 2
+	GlobalSubaccountLabelKey   = "global_subaccount_id"
+	RegionLabelKey             = "region"
+	javaKeyStoreFileExtension = ".jks"
+	DepthLimit                = 2
 )
+
+//go:generate mockery --exported --name=httpClient --output=automock --outpkg=automock --case=underscore --disable-version-string
+type httpClient interface {
+	Do(request *http.Request) (*http.Response, error)
+}
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
@@ -67,8 +72,8 @@ type UIDService interface {
 
 // Service consists of a service-level operations related to the destination creator remote microservice
 type Service struct {
-	mtlsHTTPClient        *http.Client
-	config                *Config
+	mtlsHTTPClient httpClient
+	config         *Config
 	applicationRepository applicationRepository
 	runtimeRepository     runtimeRepository
 	runtimeCtxRepository  runtimeCtxRepository
@@ -77,7 +82,7 @@ type Service struct {
 }
 
 // NewService creates a new Service
-func NewService(mtlsHTTPClient *http.Client, config *Config, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, labelRepo labelRepository, tenantRepository tenantRepository) *Service {
+func NewService(mtlsHTTPClient httpClient, config *Config, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeCtxRepository runtimeCtxRepository, labelRepo labelRepository, tenantRepository tenantRepository) *Service {
 	return &Service{
 		mtlsHTTPClient:        mtlsHTTPClient,
 		config:                config,
@@ -98,7 +103,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
@@ -131,8 +136,8 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
 		depth++
-		if depth > depthLimit {
-			return errors.Errorf("Destination creator service retry limit: %d is exceeded", depthLimit)
+		if depth > DepthLimit {
+			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
@@ -154,7 +159,7 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
@@ -177,8 +182,8 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
 		depth++
-		if depth > depthLimit {
-			return errors.Errorf("Destination creator service retry limit: %d is exceeded", depthLimit)
+		if depth > DepthLimit {
+			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
@@ -200,7 +205,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
@@ -259,8 +264,8 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
 		depth++
-		if depth > depthLimit {
-			return errors.Errorf("Destination creator service retry limit: %d is exceeded", depthLimit)
+		if depth > DepthLimit {
+			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
@@ -282,7 +287,7 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationDetails oper
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, "", false)
@@ -306,8 +311,8 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationDetails oper
 	if statusCode == http.StatusConflict {
 		log.C(ctx).Infof("The certificate with name: %q already exists. Will be deleted and created again...", certName)
 		depth++
-		if depth > depthLimit {
-			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", depthLimit)
+		if depth > DepthLimit {
+			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
 		if err := s.DeleteCertificate(ctx, certName, subaccountID, formationAssignment); err != nil {
@@ -345,7 +350,7 @@ func (s *Service) DeleteCertificate(ctx context.Context, certificateName, extern
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, certificateName, true)
@@ -371,7 +376,7 @@ func (s *Service) DeleteDestination(ctx context.Context, destinationName, extern
 
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, destinationName, true)
@@ -424,7 +429,7 @@ func (s *Service) ValidateDestinationSubaccount(ctx context.Context, externalDes
 		}
 		subaccountID = consumerSubaccountID
 
-		log.C(ctx).Info("There was no subaccount ID provided in the destination but the consumer is validated successfully")
+		log.C(ctx).Infof("There was no subaccount ID provided in the destination but the consumer: %q is validated successfully", subaccountID)
 		return subaccountID, nil
 	}
 
@@ -531,14 +536,14 @@ func (s *Service) GetConsumerTenant(ctx context.Context, formationAssignment *mo
 		return "", errors.Wrapf(err, "while getting labels for %s with ID: %q", formationAssignment.TargetType, formationAssignment.Target)
 	}
 
-	globalSubaccIDLbl, globalSubaccIDExists := labels[globalSubaccountLabelKey]
+	globalSubaccIDLbl, globalSubaccIDExists := labels[GlobalSubaccountLabelKey]
 	if !globalSubaccIDExists {
-		return "", errors.Errorf("%q label does not exists for: %q with ID: %q", globalSubaccountLabelKey, formationAssignment.TargetType, formationAssignment.Target)
+		return "", errors.Errorf("%q label does not exists for: %q with ID: %q", GlobalSubaccountLabelKey, formationAssignment.TargetType, formationAssignment.Target)
 	}
 
 	globalSubaccIDLblValue, ok := globalSubaccIDLbl.Value.(string)
 	if !ok {
-		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", globalSubaccountLabelKey, globalSubaccIDLbl.Value)
+		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", GlobalSubaccountLabelKey, globalSubaccIDLbl.Value)
 	}
 
 	return globalSubaccIDLblValue, nil
@@ -550,14 +555,14 @@ func (s *Service) getRegionLabel(ctx context.Context, tenantID string) (string, 
 		return "", errors.Wrapf(err, "while getting tenant by external ID: %q", tenantID)
 	}
 
-	regionLbl, err := s.labelRepo.GetByKey(ctx, t.ID, model.TenantLabelableObject, tenantID, regionLabelKey)
+	regionLbl, err := s.labelRepo.GetByKey(ctx, t.ID, model.TenantLabelableObject, tenantID, RegionLabelKey)
 	if err != nil {
 		return "", err
 	}
 
 	region, ok := regionLbl.Value.(string)
 	if !ok {
-		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", regionLabelKey, regionLbl.Value)
+		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", RegionLabelKey, regionLbl.Value)
 	}
 	return region, nil
 }
@@ -577,15 +582,15 @@ func (s *Service) validateAppTemplateProviderSubaccount(ctx context.Context, for
 		return errors.Wrapf(err, "while getting labels for application template with ID: %q", *app.ApplicationTemplateID)
 	}
 
-	subaccountLbl, subaccountLblExists := labels[globalSubaccountLabelKey]
+	subaccountLbl, subaccountLblExists := labels[GlobalSubaccountLabelKey]
 
 	if !subaccountLblExists {
-		return errors.Errorf("%q label should exist as part of the provider application template with ID: %q", globalSubaccountLabelKey, *app.ApplicationTemplateID)
+		return errors.Errorf("%q label should exist as part of the provider application template with ID: %q", GlobalSubaccountLabelKey, *app.ApplicationTemplateID)
 	}
 
 	subaccountLblValue, ok := subaccountLbl.Value.(string)
 	if !ok {
-		return errors.Errorf("unexpected type of %q label, expect: string, got: %T", globalSubaccountLabelKey, subaccountLbl.Value)
+		return errors.Errorf("unexpected type of %q label, expect: string, got: %T", GlobalSubaccountLabelKey, subaccountLbl.Value)
 	}
 
 	if externalDestSubaccountID != subaccountLblValue {
@@ -622,12 +627,12 @@ func (s *Service) validateRuntimeProviderSubaccount(ctx context.Context, runtime
 }
 
 func (s *Service) validateRuntimeContextProviderSubaccount(ctx context.Context, formationAssignment *model.FormationAssignment, externalDestSubaccountID string) error {
-	rtmCtxID, err := s.runtimeCtxRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
+	rtmCtx, err := s.runtimeCtxRepository.GetByID(ctx, formationAssignment.TenantID, formationAssignment.Target)
 	if err != nil {
 		return err
 	}
 
-	return s.validateRuntimeProviderSubaccount(ctx, rtmCtxID.RuntimeID, externalDestSubaccountID)
+	return s.validateRuntimeProviderSubaccount(ctx, rtmCtx.RuntimeID, externalDestSubaccountID)
 }
 
 func (s *Service) executeCreateRequest(ctx context.Context, url string, reqBody interface{}, entityName string) (defaultRespBody []byte, defaultStatusCode int, err error) {
