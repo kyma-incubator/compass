@@ -1224,14 +1224,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	appRegion := "test-app-region"
 	appNamespace := "compass.test"
 	localTenantID := "local-tenant-id"
-	app1BaseURL := "http://e2e-test-app1-base-url"
 
 	applicationType1 := "app-type-1"
 	t.Logf("Create application template for type: %q", applicationType1)
 	appTemplateInput := fixtures.FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-	subaccountID := conf.TestProviderSubaccountID                                  // in local set up the parent is testDefaultTenant
-	appTemplateInput.ApplicationInput.Labels[GlobalSubaccountIdKey] = subaccountID // todo::: double check the tenant value?
-	appTemplateInput.ApplicationInput.BaseURL = &app1BaseURL
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 	require.NoError(t, err)
@@ -1251,11 +1247,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 	localTenantID2 := "local-tenant-id2"
 	applicationType2 := "app-type-2"
-	app2BaseURL := "http://e2e-test-app2-base-url"
 	t.Logf("Create application template for type %q", applicationType2)
 	appTemplateInput = fixtures.FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-	appTemplateInput.ApplicationInput.Labels[GlobalSubaccountIdKey] = subaccountID // todo::: double check the tenant value?
-	appTemplateInput.ApplicationInput.BaseURL = &app2BaseURL
 	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl2)
@@ -3038,7 +3031,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
-		appTemplateInput.ApplicationInput.Labels[GlobalSubaccountIdKey] = subscriptionConsumerSubaccountID // todo::: double check the tenant value?
+		appTemplateInput.ApplicationInput.Labels[GlobalSubaccountIdKey] = subscriptionConsumerSubaccountID
 		appTemplateInput.ApplicationInput.BaseURL = &app1BaseURL
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
@@ -3112,7 +3105,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 		t.Logf("Create application template for type %q", applicationType2)
 		appTemplateInput = fixtures.FixApplicationTemplateWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-		appTemplateInput.ApplicationInput.Labels[GlobalSubaccountIdKey] = subscriptionConsumerSubaccountID // todo::: double check the tenant value?
+		appTemplateInput.ApplicationInput.Labels[GlobalSubaccountIdKey] = subscriptionConsumerSubaccountID
 		appTemplateInput.ApplicationInput.BaseURL = &app2BaseURL
 		appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl2)
