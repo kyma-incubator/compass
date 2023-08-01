@@ -158,10 +158,13 @@ if [ "$RESULT" == "1" ]; then
   echo "Hydra deployment"
   kubectl get deployment ory-stack-hydra -o json -n ory
   kubectl describe deployment ory-stack-hydra -n ory
+  kubectl logs deployment/ory-stack-hydra -c hydra-automigrate -n ory
+  kubectl logs deployment/ory-stack-hydra -c hydra -n ory
+  kubectl logs deployment/ory-stack-hydra -c wait-for-db -n ory
 
-  echo "Oathkeeper deployment"
-  kubectl get deployment ory-stack-oathkeeper -o json -n ory
-  kubectl describe deployment ory-stack-oathkeeper -n ory
+  echo "Postgres"
+  kubectl describe pod/ory-stack-postgresql-0 -n ory
+  kubectl logs ory-stack-postgresql-0 -n ory
 
   echo "Ory components did not deploy correctly..."
   echo "Uninstalling Ory Helm chart and removing namespace"

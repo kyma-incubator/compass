@@ -46,6 +46,7 @@ spec:
         {{- if not .Values.global.ory.hydra.persistence.gcloud.enabled }} #Use only for in-cluster databases that may not be ready yet. External databases are made ready before installation.
         - name: wait-for-db
           image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.busybox) }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /bin/sh
             - -c
