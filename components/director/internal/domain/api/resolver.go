@@ -388,7 +388,10 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 
 	bndlRef, err := r.bndlRefSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
+		if !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
+		}
+		log.C(ctx).Infof("Bundle reference for APIDefinition with id %q doesn't exist", api.ID)
 	}
 
 	gqlAPI, err := r.converter.ToGraphQL(api, spec, bndlRef)
