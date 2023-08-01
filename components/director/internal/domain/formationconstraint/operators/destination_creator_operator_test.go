@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,15 +34,12 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				destSvc.On("DeleteDestinations", ctx, inputForUnassignNotificationStatusReturned.FormationAssignment).Return(nil)
 				return destSvc
 			},
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        true,
+			ExpectedResult: true,
 		},
 		{
-			Name:                  "Success when formation assignment state is not 'Ready' or 'Config pending'",
-			Input:                 inputForAssignWithFormationAssignmentDeletingState,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        true,
+			Name:           "Success when formation assignment state is not 'Ready' or 'Config pending'",
+			Input:          inputForAssignWithFormationAssignmentDeletingState,
+			ExpectedResult: true,
 		},
 		{
 			Name:  "Success when operation is 'assign' and location is 'NotificationStatusReturned'",
@@ -77,27 +75,21 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedResult:                  true,
 		},
 		{
-			Name:                  "Success when operation is 'Unassign' and location is 'SendNotification'",
-			Input:                 inputForUnassignSendNotification,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        true,
+			Name:           "Success when operation is 'Unassign' and location is 'SendNotification'",
+			Input:          inputForUnassignSendNotification,
+			ExpectedResult: true,
 		},
 		{
-			Name:                  "Error when parsing operator input",
-			Input:                 "wrong input",
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "Incompatible input for operator:",
+			Name:             "Error when parsing operator input",
+			Input:            "wrong input",
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "Incompatible input for operator:",
 		},
 		{
-			Name:                  "Error when formation operation is invalid",
-			Input:                 inputWithInvalidOperation,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "The formation operation is invalid:",
+			Name:             "Error when formation operation is invalid",
+			Input:            inputWithInvalidOperation,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "The formation operation is invalid:",
 		},
 		{
 			Name:  "Error when operation is 'unassign' and location is 'NotificationStatusReturned' and the deletion of destinations fails",
@@ -107,25 +99,20 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				destSvc.On("DeleteDestinations", ctx, inputForUnassignNotificationStatusReturned.FormationAssignment).Return(testErr)
 				return destSvc
 			},
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      testErr.Error(),
+			ExpectedResult:   false,
+			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'NotificationStatusReturned' and config unmarshalling fails",
-			Input:                 inputForAssignNotificationStatusReturnedWithInvalidFAConfig,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "while unmarshaling tenant mapping response configuration from assignment with ID:",
+			Name:             "Error when operation is 'assign' and location is 'NotificationStatusReturned' and config unmarshalling fails",
+			Input:            inputForAssignNotificationStatusReturnedWithInvalidFAConfig,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "while unmarshaling tenant mapping response configuration from assignment with ID:",
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'NotificationStatusReturned' and retrieving fa pointer fails",
-			Input:                 inputForAssignNotificationStatusReturnedWithoutMemoryAddress,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "The join point details' assignment memory address cannot be 0",
+			Name:             "Error when operation is 'assign' and location is 'NotificationStatusReturned' and retrieving fa pointer fails",
+			Input:            inputForAssignNotificationStatusReturnedWithoutMemoryAddress,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
 		{
 			Name:  "Error when operation is 'assign' and location is 'NotificationStatusReturned' and the creation of design time dests fails",
@@ -135,9 +122,8 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), inputForAssignNotificationStatusReturned.FormationAssignment).Return(testErr)
 				return destSvc
 			},
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "while creating design time destination with name:",
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "while creating design time destination with name:",
 		},
 		{
 			Name:  "Error when operation is 'assign' and location is 'NotificationStatusReturned' and the creation of certificates fails",
@@ -173,44 +159,34 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'SendNotification' and config unmarshalling fails",
-			Input:                 inputForAssignSendNotificationWithInvalidFAConfig,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "while unmarshaling tenant mapping configuration response from assignment with ID:",
+			Name:             "Error when operation is 'assign' and location is 'SendNotification' and config unmarshalling fails",
+			Input:            inputForAssignSendNotificationWithInvalidFAConfig,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "while unmarshaling tenant mapping configuration response from assignment with ID:",
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'SendNotification' and reverse config unmarshalling fails",
-			Input:                 inputForAssignSendNotificationWithInvalidReverseFAConfig,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "while unmarshaling tenant mapping configuration response from reverse assignment with ID:",
+			Name:             "Error when operation is 'assign' and location is 'SendNotification' and reverse config unmarshalling fails",
+			Input:            inputForAssignSendNotificationWithInvalidReverseFAConfig,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "while unmarshaling tenant mapping configuration response from reverse assignment with ID:",
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'SendNotification' and inbound details are nil",
-			Input:                 inputForAssignSendNotificationWhereFAConfigStructureIsDifferent,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "The inbound communication destination details could not be empty",
+			Name:             "Error when operation is 'assign' and location is 'SendNotification' and inbound details are nil",
+			Input:            inputForAssignSendNotificationWhereFAConfigStructureIsDifferent,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "The inbound communication destination details could not be empty",
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'SendNotification' and outbound details are nil",
-			Input:                 inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "The outbound communication credentials could not be empty",
+			Name:             "Error when operation is 'assign' and location is 'SendNotification' and outbound details are nil",
+			Input:            inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "The outbound communication credentials could not be empty",
 		},
 		{
-			Name:                  "Error when operation is 'assign' and location is 'SendNotification' and retrieving fa pointer fails",
-			Input:                 inputForAssignSendNotificationWithoutMemoryAddress,
-			DestinationSvc:        UnusedDestinationService,
-			DestinationCreatorSvc: UnusedDestinationCreatorService,
-			ExpectedResult:        false,
-			ExpectedErrorMsg:      "The join point details' assignment memory address cannot be 0",
+			Name:             "Error when operation is 'assign' and location is 'SendNotification' and retrieving fa pointer fails",
+			Input:            inputForAssignSendNotificationWithoutMemoryAddress,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
 		{
 			Name:  "Error when operation is 'assign' and location is 'SendNotification' and the creation of basic dests fails",
@@ -252,9 +228,10 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			}
 
 			destCreatorSvc := UnusedDestinationCreatorService()
-			if testCase.DestinationSvc != nil {
+			if testCase.DestinationCreatorSvc != nil {
 				destCreatorSvc = testCase.DestinationCreatorSvc()
 			}
+			defer mock.AssertExpectationsForObjects(t, destSvc, destCreatorSvc)
 
 			if testCase.InputFormationAssignment != nil {
 				in, ok := testCase.Input.(*formationconstraint.DestinationCreatorInput)
@@ -283,8 +260,6 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				assert.Equal(t, testCase.ExpectedResult, result)
 				assert.NoError(t, err)
 			}
-
-			mock.AssertExpectationsForObjects(t, destSvc, destCreatorSvc)
 		})
 	}
 }

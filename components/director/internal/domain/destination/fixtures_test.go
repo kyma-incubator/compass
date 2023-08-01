@@ -31,9 +31,9 @@ const (
 )
 
 var (
-	faID      = destinationFormationAssignmentID
-	nilEntity *destination.Entity
-	nilModel  *model.Destination
+	faID              = destinationFormationAssignmentID
+	destinationEntity = fixDestinationEntity(destinationName)
+	destinationModel  = fixDestinationModel(destinationName)
 )
 
 func fixDestinationModel(name string) *model.Destination {

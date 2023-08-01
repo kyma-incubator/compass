@@ -22,7 +22,7 @@ const (
 	CertChain           = "e2e-test-destination-cert-mock-cert-chain"
 )
 
-// Handler is responsible to mock and handle any Destination Creator Svc and Destination Service requests
+// Handler is responsible to mock and handle any Destination Creator Service and Destination Service requests
 type Handler struct {
 	Config                            *Config
 	DestinationCreatorSvcDestinations map[string]json.RawMessage
@@ -44,7 +44,7 @@ func NewHandler(config *Config) *Handler {
 
 // Destination Creator Service handlers + helper functions
 
-// CreateDestinations mocks creation of all types of destinations in both Destination Creator Svc and Destination Svc
+// CreateDestinations mocks creation of all types of destinations in both Destination Creator Service and Destination Service
 func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -114,7 +114,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 	}
 }
 
-// DeleteDestinations mocks deletion of destinations from both Destination Creator Svc and Destination Svc
+// DeleteDestinations mocks deletion of destinations from both Destination Creator Service and Destination Service
 func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -158,7 +158,7 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
-// CreateCertificate mocks creation of certificate in both Destination Creator Svc and Destination Svc
+// CreateCertificate mocks creation of certificate in both Destination Creator Service and Destination Service
 func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -244,7 +244,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	httputils.RespondWithBody(ctx, writer, http.StatusCreated, certResp)
 }
 
-// DeleteCertificate mocks deletion of certificate from both Destination Creator Svc and Destination Svc
+// DeleteCertificate mocks deletion of certificate from both Destination Creator Service and Destination Service
 func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -409,7 +409,7 @@ func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes 
 	return http.StatusCreated, nil
 }
 
-// CleanupDestinationCertificates is "internal/technical" function for deleting in-memory certificates mappings
+// CleanupDestinationCertificates is "internal/technical" handler for deleting in-memory certificates mappings
 func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *http.Request) {
 	h.DestinationCreatorSvcCertificates = make(map[string]json.RawMessage)
 	h.DestinationSvcCertificates = make(map[string]json.RawMessage)
@@ -417,7 +417,7 @@ func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *
 	httputils.Respond(writer, http.StatusOK)
 }
 
-// CleanupDestinations is "internal/technical" function for deleting in-memory destinations mappings
+// CleanupDestinations is "internal/technical" handler for deleting in-memory destinations mappings
 func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Request) {
 	h.DestinationCreatorSvcDestinations = make(map[string]json.RawMessage)
 	h.DestinationSvcDestinations = make(map[string]json.RawMessage)

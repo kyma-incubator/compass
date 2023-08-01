@@ -16,11 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	destinationEntity = fixDestinationEntity(destinationName)
-	destinationModel  = fixDestinationModel(destinationName)
-)
-
 func TestRepository_Upsert(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

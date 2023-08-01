@@ -4,93 +4,90 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var converter = destination.NewConverter()
+
 func TestEntityConverter_ToEntity(t *testing.T) {
-	t.Run("success when all nullable properties are filled", func(t *testing.T) {
-		// GIVEN
-		destinationName := "test-dest-name"
-		destinationModel := fixDestinationModel(destinationName)
-		require.NotNil(t, destinationModel)
-		conv := destination.NewConverter()
+	destinationModelWithoutAssignmentID := fixDestinationModel(destinationName)
+	destinationModelWithoutAssignmentID.FormationAssignmentID = nil
 
-		// WHEN
-		entity := conv.ToEntity(destinationModel)
+	destinationEntityWithoutAssignmentID := fixDestinationEntity(destinationName)
+	destinationEntityWithoutAssignmentID.FormationAssignmentID = sql.NullString{}
 
-		// THEN
-		expectedDestinationEntity := fixDestinationEntity(destinationName)
-		assert.Equal(t, expectedDestinationEntity, entity)
-	})
-	t.Run("success when all nullable properties are empty", func(t *testing.T) {
-		// GIVEN
-		destinationName := "test-dest-name"
-		destinationModel := fixDestinationModel(destinationName)
-		destinationModel.FormationAssignmentID = nil
-		require.NotNil(t, destinationModel)
-		conv := destination.NewConverter()
+	testCases := []struct {
+		name           string
+		input          *model.Destination
+		expectedEntity *destination.Entity
+	}{
+		{
+			name:           "success when all nullable properties are filled",
+			input:          destinationModel,
+			expectedEntity: destinationEntity,
+		},
+		{
+			name:           "success when all nullable properties are empty",
+			input:          destinationModelWithoutAssignmentID,
+			expectedEntity: destinationEntityWithoutAssignmentID,
+		},
+		{
+			name:           "returns nil when input is nil",
+			input:          nil,
+			expectedEntity: nil,
+		},
+	}
 
-		// WHEN
-		entity := conv.ToEntity(destinationModel)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// WHEN
+			entity := converter.ToEntity(testCase.input)
 
-		// THEN
-		expectedDestinationEntity := fixDestinationEntity(destinationName)
-		expectedDestinationEntity.FormationAssignmentID = sql.NullString{}
-		assert.Equal(t, expectedDestinationEntity, entity)
-	})
-	t.Run("returns nil when input is nil", func(t *testing.T) {
-		// GIVEN
-		conv := destination.NewConverter()
-
-		// WHEN
-		entity := conv.ToEntity(nil)
-
-		// THEN
-		assert.Equal(t, nilEntity, entity)
-	})
+			// THEN
+			require.Equal(t, testCase.expectedEntity, entity)
+		})
+	}
 }
 
 func TestEntityConverter_FromEntity(t *testing.T) {
-	t.Run("success when all nullable properties are filled", func(t *testing.T) {
-		// GIVEN
-		destinationName := "test-dest-name"
-		destinationEntity := fixDestinationEntity(destinationName)
-		require.NotNil(t, destinationEntity)
-		conv := destination.NewConverter()
+	destinationEntityWithoutAssignmentID := fixDestinationEntity(destinationName)
+	destinationEntityWithoutAssignmentID.FormationAssignmentID = sql.NullString{}
 
-		// WHEN
-		model := conv.FromEntity(destinationEntity)
+	destinationModelWithoutAssignmentID := fixDestinationModel(destinationName)
+	destinationModelWithoutAssignmentID.FormationAssignmentID = nil
 
-		// THEN
-		expectedDestinationModel := fixDestinationModel(destinationName)
-		assert.Equal(t, expectedDestinationModel, model)
-	})
-	t.Run("success when all nullable properties are empty", func(t *testing.T) {
-		// GIVEN
-		destinationName := "test-dest-name"
-		destinationEntity := fixDestinationEntity(destinationName)
-		destinationEntity.FormationAssignmentID = sql.NullString{}
-		require.NotNil(t, destinationEntity)
-		conv := destination.NewConverter()
+	testCases := []struct {
+		name          string
+		input         *destination.Entity
+		expectedModel *model.Destination
+	}{
+		{
+			name:          "success when all nullable properties are filled",
+			input:         destinationEntity,
+			expectedModel: destinationModel,
+		},
+		{
+			name:          "success when all nullable properties are empty",
+			input:         destinationEntityWithoutAssignmentID,
+			expectedModel: destinationModelWithoutAssignmentID,
+		},
+		{
+			name:          "returns nil when input is nil",
+			input:         nil,
+			expectedModel: nil,
+		},
+	}
 
-		// WHEN
-		model := conv.FromEntity(destinationEntity)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// WHEN
+			destModel := converter.FromEntity(testCase.input)
 
-		// THEN
-		expectedDestinationModel := fixDestinationModel(destinationName)
-		expectedDestinationModel.FormationAssignmentID = nil
-		assert.Equal(t, expectedDestinationModel, model)
-	})
-	t.Run("returns nil when input is nil", func(t *testing.T) {
-		// GIVEN
-		conv := destination.NewConverter()
-
-		// WHEN
-		model := conv.FromEntity(nil)
-
-		// THEN
-		assert.Equal(t, nilModel, model)
-	})
+			// THEN
+			require.Equal(t, testCase.expectedModel, destModel)
+		})
+	}
 }

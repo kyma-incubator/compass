@@ -211,41 +211,42 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		destCreatorSvc := unusedDestinationCreatorService()
-		if testCase.DestinationCreatorServiceFn != nil {
-			destCreatorSvc = testCase.DestinationCreatorServiceFn()
-		}
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			destCreatorSvc := unusedDestinationCreatorService()
+			if testCase.DestinationCreatorServiceFn != nil {
+				destCreatorSvc = testCase.DestinationCreatorServiceFn()
+			}
 
-		tntRepo := unusedTenantRepository()
-		if testCase.TenantRepoFn != nil {
-			tntRepo = testCase.TenantRepoFn()
-		}
+			tntRepo := unusedTenantRepository()
+			if testCase.TenantRepoFn != nil {
+				tntRepo = testCase.TenantRepoFn()
+			}
 
-		destRepo := unusedDestinationRepository()
-		if testCase.DestinationRepoFn != nil {
-			destRepo = testCase.DestinationRepoFn()
-		}
+			destRepo := unusedDestinationRepository()
+			if testCase.DestinationRepoFn != nil {
+				destRepo = testCase.DestinationRepoFn()
+			}
 
-		uidSvc := unusedUIDService()
-		if testCase.UIDServiceFn != nil {
-			uidSvc = testCase.UIDServiceFn()
-		}
+			uidSvc := unusedUIDService()
+			if testCase.UIDServiceFn != nil {
+				uidSvc = testCase.UIDServiceFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo, uidSvc)
 
-		svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
+			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
-		// WHEN
-		err := svc.CreateDesignTimeDestinations(ctx, designTimeDestDetails, &fa)
+			// WHEN
+			err := svc.CreateDesignTimeDestinations(ctx, designTimeDestDetails, &fa)
 
-		// THEN
-		if testCase.ExpectedErrMessage == "" {
-			require.NoError(t, err)
-		} else {
-			require.Error(t, err)
-			require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-		}
-
-		mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo, uidSvc)
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
 	}
 }
 
@@ -456,42 +457,42 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			destCreatorSvc := unusedDestinationCreatorService()
+			if testCase.DestinationCreatorServiceFn != nil {
+				destCreatorSvc = testCase.DestinationCreatorServiceFn()
+			}
 
-		destCreatorSvc := unusedDestinationCreatorService()
-		if testCase.DestinationCreatorServiceFn != nil {
-			destCreatorSvc = testCase.DestinationCreatorServiceFn()
-		}
+			tntRepo := unusedTenantRepository()
+			if testCase.TenantRepoFn != nil {
+				tntRepo = testCase.TenantRepoFn()
+			}
 
-		tntRepo := unusedTenantRepository()
-		if testCase.TenantRepoFn != nil {
-			tntRepo = testCase.TenantRepoFn()
-		}
+			destRepo := unusedDestinationRepository()
+			if testCase.DestinationRepoFn != nil {
+				destRepo = testCase.DestinationRepoFn()
+			}
 
-		destRepo := unusedDestinationRepository()
-		if testCase.DestinationRepoFn != nil {
-			destRepo = testCase.DestinationRepoFn()
-		}
+			uidSvc := unusedUIDService()
+			if testCase.UIDServiceFn != nil {
+				uidSvc = testCase.UIDServiceFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo, uidSvc)
 
-		uidSvc := unusedUIDService()
-		if testCase.UIDServiceFn != nil {
-			uidSvc = testCase.UIDServiceFn()
-		}
+			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
-		svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
+			// WHEN
+			err := svc.CreateBasicCredentialDestinations(ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs)
 
-		// WHEN
-		err := svc.CreateBasicCredentialDestinations(ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs)
-
-		// THEN
-		if testCase.ExpectedErrMessage == "" {
-			require.NoError(t, err)
-		} else {
-			require.Error(t, err)
-			require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-		}
-
-		mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo, uidSvc)
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
 	}
 }
 
@@ -677,42 +678,42 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			destCreatorSvc := unusedDestinationCreatorService()
+			if testCase.DestinationCreatorServiceFn != nil {
+				destCreatorSvc = testCase.DestinationCreatorServiceFn()
+			}
 
-		destCreatorSvc := unusedDestinationCreatorService()
-		if testCase.DestinationCreatorServiceFn != nil {
-			destCreatorSvc = testCase.DestinationCreatorServiceFn()
-		}
+			tntRepo := unusedTenantRepository()
+			if testCase.TenantRepoFn != nil {
+				tntRepo = testCase.TenantRepoFn()
+			}
 
-		tntRepo := unusedTenantRepository()
-		if testCase.TenantRepoFn != nil {
-			tntRepo = testCase.TenantRepoFn()
-		}
+			destRepo := unusedDestinationRepository()
+			if testCase.DestinationRepoFn != nil {
+				destRepo = testCase.DestinationRepoFn()
+			}
 
-		destRepo := unusedDestinationRepository()
-		if testCase.DestinationRepoFn != nil {
-			destRepo = testCase.DestinationRepoFn()
-		}
+			uidSvc := unusedUIDService()
+			if testCase.UIDServiceFn != nil {
+				uidSvc = testCase.UIDServiceFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo, uidSvc)
 
-		uidSvc := unusedUIDService()
-		if testCase.UIDServiceFn != nil {
-			uidSvc = testCase.UIDServiceFn()
-		}
+			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
-		svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
+			// WHEN
+			err := svc.CreateSAMLAssertionDestination(ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs)
 
-		// WHEN
-		err := svc.CreateSAMLAssertionDestination(ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs)
-
-		// THEN
-		if testCase.ExpectedErrMessage == "" {
-			require.NoError(t, err)
-		} else {
-			require.Error(t, err)
-			require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-		}
-
-		mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo, uidSvc)
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
 	}
 }
 
@@ -875,36 +876,36 @@ func TestService_DeleteDestinations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			destCreatorSvc := unusedDestinationCreatorService()
+			if testCase.DestinationCreatorServiceFn != nil {
+				destCreatorSvc = testCase.DestinationCreatorServiceFn()
+			}
 
-		destCreatorSvc := unusedDestinationCreatorService()
-		if testCase.DestinationCreatorServiceFn != nil {
-			destCreatorSvc = testCase.DestinationCreatorServiceFn()
-		}
+			tntRepo := unusedTenantRepository()
+			if testCase.TenantRepoFn != nil {
+				tntRepo = testCase.TenantRepoFn()
+			}
 
-		tntRepo := unusedTenantRepository()
-		if testCase.TenantRepoFn != nil {
-			tntRepo = testCase.TenantRepoFn()
-		}
+			destRepo := unusedDestinationRepository()
+			if testCase.DestinationRepoFn != nil {
+				destRepo = testCase.DestinationRepoFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo)
 
-		destRepo := unusedDestinationRepository()
-		if testCase.DestinationRepoFn != nil {
-			destRepo = testCase.DestinationRepoFn()
-		}
+			svc := destination.NewService(nil, destRepo, tntRepo, nil, destCreatorSvc)
 
-		svc := destination.NewService(nil, destRepo, tntRepo, nil, destCreatorSvc)
+			// WHEN
+			err := svc.DeleteDestinations(ctx, &fa)
 
-		// WHEN
-		err := svc.DeleteDestinations(ctx, &fa)
-
-		// THEN
-		if testCase.ExpectedErrMessage == "" {
-			require.NoError(t, err)
-		} else {
-			require.Error(t, err)
-			require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-		}
-
-		mock.AssertExpectationsForObjects(t, destCreatorSvc, tntRepo, destRepo)
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
 	}
 }

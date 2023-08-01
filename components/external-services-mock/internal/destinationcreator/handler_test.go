@@ -27,9 +27,46 @@ func TestHandler_CreateDestinations(t *testing.T) {
 		Region                                    string
 		SubaccountID                              string
 		ExistingDestination                       map[string]json.RawMessage
-		InvalidContentTypeHeader                  bool
+		MissingContentTypeHeader                  bool
 		MissingClientUserHeader                   bool
 	}{
+		// Common unit tests
+		{
+			Name:                 "Error when authentication type is unknown",
+			RequestBody:          `{"authenticationType":"unknown"}`,
+			ExpectedResponseCode: http.StatusInternalServerError,
+			Region:               testRegion,
+			SubaccountID:         testSubaccountID,
+		},
+		{
+			Name:                     "Error when request content type header is invalid",
+			RequestBody:              destinationServiceBasicAuthReqBody,
+			ExpectedResponseCode:     http.StatusUnsupportedMediaType,
+			Region:                   testRegion,
+			SubaccountID:             testSubaccountID,
+			MissingContentTypeHeader: true,
+		},
+		{
+			Name:                    "Error when client_user header is missing",
+			RequestBody:             destinationServiceBasicAuthReqBody,
+			ExpectedResponseCode:    http.StatusBadRequest,
+			Region:                  testRegion,
+			SubaccountID:            testSubaccountID,
+			MissingClientUserHeader: true,
+		},
+		{
+			Name:                 "Error when request path params are missing",
+			RequestBody:          destinationServiceBasicAuthReqBody,
+			ExpectedResponseCode: http.StatusBadRequest,
+		},
+		{
+			Name:                 "Error when authenticationType is missing from request body",
+			RequestBody:          destinationCreatorReqBodyWithoutAuthType,
+			ExpectedResponseCode: http.StatusBadRequest,
+			Region:               testRegion,
+			SubaccountID:         testSubaccountID,
+		},
+		// No Authentication Destinations unit tests
 		{
 			Name:                 "Success when creating no auth destinations",
 			RequestBody:          destinationCreatorNoAuthDestReqBody,
@@ -61,6 +98,7 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			SubaccountID:         testSubaccountID,
 			ExistingDestination:  fixDestinationMappings(noAuthDestName, json.RawMessage(destinationCreatorNoAuthDestReqBody)),
 		},
+		// Basic Destinations unit tests
 		{
 			Name:                 "Success when creating basic destinations",
 			RequestBody:          destinationCreatorBasicAuthDestReqBody,
@@ -92,7 +130,7 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			SubaccountID:         testSubaccountID,
 			ExistingDestination:  fixDestinationMappings(basicAuthDestName, json.RawMessage(destinationCreatorBasicAuthDestReqBody)),
 		},
-
+		// SAML Assertion Destinations unit tests
 		{
 			Name:                 "Success when creating SAML Assertion destinations",
 			RequestBody:          destinationCreatorSAMLAssertionDestReqBody,
@@ -124,99 +162,66 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			SubaccountID:         testSubaccountID,
 			ExistingDestination:  fixDestinationMappings(samlAssertionDestName, json.RawMessage(destinationCreatorSAMLAssertionDestReqBody)),
 		},
-		{
-			Name:                 "Error when authentication type is unknown",
-			RequestBody:          `{"authenticationType":"unknown"}`,
-			ExpectedResponseCode: http.StatusInternalServerError,
-			Region:               testRegion,
-			SubaccountID:         testSubaccountID,
-		},
-		{
-			Name:                     "Error when request content type header is invalid",
-			RequestBody:              destinationServiceBasicAuthReqBody,
-			ExpectedResponseCode:     http.StatusUnsupportedMediaType,
-			Region:                   testRegion,
-			SubaccountID:             testSubaccountID,
-			InvalidContentTypeHeader: true,
-		},
-		{
-			Name:                    "Error when client_user header is missing",
-			RequestBody:             destinationServiceBasicAuthReqBody,
-			ExpectedResponseCode:    http.StatusBadRequest,
-			Region:                  testRegion,
-			SubaccountID:            testSubaccountID,
-			MissingClientUserHeader: true,
-		},
-		{
-			Name:                 "Error when request path params are missing",
-			RequestBody:          destinationServiceBasicAuthReqBody,
-			ExpectedResponseCode: http.StatusBadRequest,
-		},
-		{
-			Name:                 "Error when authenticationType is missing from request body",
-			RequestBody:          destinationCreatorReqBodyWithoutAuthType,
-			ExpectedResponseCode: http.StatusBadRequest,
-			Region:               testRegion,
-			SubaccountID:         testSubaccountID,
-		},
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		req, err := http.NewRequest(http.MethodPost, url+destinationCreatorPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
-		require.NoError(t, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodPost, url+destinationCreatorPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
 
-		if !testCase.InvalidContentTypeHeader {
-			req.Header.Add("Content-Type", "application/json;charset=UTF-8")
-		}
+			if !testCase.MissingContentTypeHeader {
+				req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+			}
 
-		if !testCase.MissingClientUserHeader {
-			req.Header.Add("CLIENT_USER", "test")
-		}
+			if !testCase.MissingClientUserHeader {
+				req.Header.Add("CLIENT_USER", "test")
+			}
 
-		urlVars := make(map[string]string)
-		if testCase.Region != "" {
-			urlVars[regionParam] = testCase.Region
-			req = mux.SetURLVars(req, urlVars)
-		}
+			urlVars := make(map[string]string)
+			if testCase.Region != "" {
+				urlVars[regionParam] = testCase.Region
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		if testCase.SubaccountID != "" {
-			urlVars[subaccountIDParam] = testCase.SubaccountID
-			req = mux.SetURLVars(req, urlVars)
-		}
+			if testCase.SubaccountID != "" {
+				urlVars[subaccountIDParam] = testCase.SubaccountID
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		config := &destinationcreator.Config{
-			CorrelationIDsKey: correlationIDsKey,
-			DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-				RegionParam:       regionParam,
-				SubaccountIDParam: subaccountIDParam,
-			},
-		}
+			config := &destinationcreator.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
+					RegionParam:       regionParam,
+					SubaccountIDParam: subaccountIDParam,
+				},
+			}
 
-		h := destinationcreator.NewHandler(config)
-		r := httptest.NewRecorder()
+			h := destinationcreator.NewHandler(config)
+			r := httptest.NewRecorder()
 
-		if testCase.ExistingDestination != nil {
-			h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
-		}
+			if testCase.ExistingDestination != nil {
+				h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
+			}
 
-		// WHEN
-		h.CreateDestinations(r, req)
-		resp := r.Result()
+			// WHEN
+			h.CreateDestinations(r, req)
+			resp := r.Result()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-		// THEN
-		require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-		if testCase.ExpectedDestinationCreatorSvcDestinations != nil {
-			require.Equal(t, testCase.ExpectedDestinationCreatorSvcDestinations, h.DestinationCreatorSvcDestinations)
-		}
+			if testCase.ExpectedDestinationCreatorSvcDestinations != nil {
+				require.Equal(t, testCase.ExpectedDestinationCreatorSvcDestinations, h.DestinationCreatorSvcDestinations)
+			}
 
-		if testCase.ExpectedDestinationSvcDestinations != nil {
-			require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
-		}
+			if testCase.ExpectedDestinationSvcDestinations != nil {
+				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
+			}
+		})
 	}
 }
 
@@ -232,7 +237,7 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 		SubaccountID                              string
 		DestName                                  string
 		ExistingDestination                       map[string]json.RawMessage
-		InvalidContentTypeHeader                  bool
+		MissingContentTypeHeader                  bool
 		MissingClientUserHeader                   bool
 	}{
 		{
@@ -258,7 +263,7 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 		{
 			Name:                     "Error when content type header is invalid",
 			ExpectedResponseCode:     http.StatusUnsupportedMediaType,
-			InvalidContentTypeHeader: true,
+			MissingContentTypeHeader: true,
 		},
 		{
 			Name:                    "Error when client_user header is missing",
@@ -272,68 +277,70 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		req, err := http.NewRequest(http.MethodDelete, url+destinationCreatorDeletionPath, bytes.NewBuffer([]byte{}))
-		require.NoError(t, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodDelete, url+destinationCreatorDeletionPath, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
 
-		if !testCase.InvalidContentTypeHeader {
-			req.Header.Add("Content-Type", "application/json;charset=UTF-8")
-		}
+			if !testCase.MissingContentTypeHeader {
+				req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+			}
 
-		if !testCase.MissingClientUserHeader {
-			req.Header.Add("CLIENT_USER", "test")
-		}
+			if !testCase.MissingClientUserHeader {
+				req.Header.Add("CLIENT_USER", "test")
+			}
 
-		urlVars := make(map[string]string)
-		if testCase.Region != "" {
-			urlVars[regionParam] = testCase.Region
-			req = mux.SetURLVars(req, urlVars)
-		}
+			urlVars := make(map[string]string)
+			if testCase.Region != "" {
+				urlVars[regionParam] = testCase.Region
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		if testCase.SubaccountID != "" {
-			urlVars[subaccountIDParam] = testCase.SubaccountID
-			req = mux.SetURLVars(req, urlVars)
-		}
+			if testCase.SubaccountID != "" {
+				urlVars[subaccountIDParam] = testCase.SubaccountID
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		if testCase.DestName != "" {
-			urlVars[destNameParam] = testCase.DestName
-			req = mux.SetURLVars(req, urlVars)
-		}
+			if testCase.DestName != "" {
+				urlVars[destNameParam] = testCase.DestName
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		config := &destinationcreator.Config{
-			CorrelationIDsKey: correlationIDsKey,
-			DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-				RegionParam:          regionParam,
-				SubaccountIDParam:    subaccountIDParam,
-				DestinationNameParam: destNameParam,
-			},
-		}
+			config := &destinationcreator.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
+					RegionParam:          regionParam,
+					SubaccountIDParam:    subaccountIDParam,
+					DestinationNameParam: destNameParam,
+				},
+			}
 
-		h := destinationcreator.NewHandler(config)
-		r := httptest.NewRecorder()
+			h := destinationcreator.NewHandler(config)
+			r := httptest.NewRecorder()
 
-		if testCase.ExistingDestination != nil {
-			h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
-			h.DestinationSvcDestinations = testCase.ExistingDestination
-		}
+			if testCase.ExistingDestination != nil {
+				h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
+				h.DestinationSvcDestinations = testCase.ExistingDestination
+			}
 
-		// WHEN
-		h.DeleteDestinations(r, req)
-		resp := r.Result()
+			// WHEN
+			h.DeleteDestinations(r, req)
+			resp := r.Result()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-		// THEN
-		require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-		if testCase.ExpectedDestinationCreatorSvcDestinations != nil {
-			require.Equal(t, testCase.ExpectedDestinationCreatorSvcDestinations, h.DestinationCreatorSvcDestinations)
-		}
+			if testCase.ExpectedDestinationCreatorSvcDestinations != nil {
+				require.Equal(t, testCase.ExpectedDestinationCreatorSvcDestinations, h.DestinationCreatorSvcDestinations)
+			}
 
-		if testCase.ExpectedDestinationSvcDestinations != nil {
-			require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
-		}
+			if testCase.ExpectedDestinationSvcDestinations != nil {
+				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
+			}
+		})
 	}
 }
 
@@ -349,7 +356,7 @@ func TestHandler_CreateCertificate(t *testing.T) {
 		Region                                    string
 		SubaccountID                              string
 		ExistingCertificate                       map[string]json.RawMessage
-		InvalidContentTypeHeader                  bool
+		MissingContentTypeHeader                  bool
 		MissingClientUserHeader                   bool
 	}{
 		{
@@ -364,7 +371,7 @@ func TestHandler_CreateCertificate(t *testing.T) {
 		{
 			Name:                     "Error when content type header is invalid",
 			ExpectedResponseCode:     http.StatusUnsupportedMediaType,
-			InvalidContentTypeHeader: true,
+			MissingContentTypeHeader: true,
 		},
 		{
 			Name:                    "Error when client_user header is missing",
@@ -400,61 +407,63 @@ func TestHandler_CreateCertificate(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		req, err := http.NewRequest(http.MethodPost, url+destinationCreatorCertificatePath, bytes.NewBuffer([]byte(testCase.RequestBody)))
-		require.NoError(t, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodPost, url+destinationCreatorCertificatePath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
 
-		if !testCase.InvalidContentTypeHeader {
-			req.Header.Add("Content-Type", "application/json;charset=UTF-8")
-		}
+			if !testCase.MissingContentTypeHeader {
+				req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+			}
 
-		if !testCase.MissingClientUserHeader {
-			req.Header.Add("CLIENT_USER", "test")
-		}
+			if !testCase.MissingClientUserHeader {
+				req.Header.Add("CLIENT_USER", "test")
+			}
 
-		urlVars := make(map[string]string)
-		if testCase.Region != "" {
-			urlVars[regionParam] = testCase.Region
-			req = mux.SetURLVars(req, urlVars)
-		}
+			urlVars := make(map[string]string)
+			if testCase.Region != "" {
+				urlVars[regionParam] = testCase.Region
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		if testCase.SubaccountID != "" {
-			urlVars[subaccountIDParam] = testCase.SubaccountID
-			req = mux.SetURLVars(req, urlVars)
-		}
+			if testCase.SubaccountID != "" {
+				urlVars[subaccountIDParam] = testCase.SubaccountID
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		config := &destinationcreator.Config{
-			CorrelationIDsKey: correlationIDsKey,
-			DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-				RegionParam:       regionParam,
-				SubaccountIDParam: subaccountIDParam,
-			},
-		}
+			config := &destinationcreator.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
+					RegionParam:       regionParam,
+					SubaccountIDParam: subaccountIDParam,
+				},
+			}
 
-		h := destinationcreator.NewHandler(config)
-		r := httptest.NewRecorder()
+			h := destinationcreator.NewHandler(config)
+			r := httptest.NewRecorder()
 
-		if testCase.ExistingCertificate != nil {
-			h.DestinationCreatorSvcCertificates = testCase.ExistingCertificate
-		}
+			if testCase.ExistingCertificate != nil {
+				h.DestinationCreatorSvcCertificates = testCase.ExistingCertificate
+			}
 
-		// WHEN
-		h.CreateCertificate(r, req)
-		resp := r.Result()
+			// WHEN
+			h.CreateCertificate(r, req)
+			resp := r.Result()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-		// THEN
-		require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-		if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
-			require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
-		}
+			if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
+				require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
+			}
 
-		if testCase.ExpectedDestinationSvcCertificates != nil {
-			require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
-		}
+			if testCase.ExpectedDestinationSvcCertificates != nil {
+				require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
+			}
+		})
 	}
 }
 
@@ -471,7 +480,7 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 		CertName                                  string
 		ExistingCertificateDestinationCreator     map[string]json.RawMessage
 		ExistingCertificateDestinationSvc         map[string]json.RawMessage
-		InvalidContentTypeHeader                  bool
+		MissingContentTypeHeader                  bool
 		MissingClientUserHeader                   bool
 	}{
 		{
@@ -498,7 +507,7 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 		{
 			Name:                     "Error when content type header is invalid",
 			ExpectedResponseCode:     http.StatusUnsupportedMediaType,
-			InvalidContentTypeHeader: true,
+			MissingContentTypeHeader: true,
 		},
 		{
 			Name:                    "Error when client_user header is missing",
@@ -512,76 +521,79 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		req, err := http.NewRequest(http.MethodDelete, url+destinationCreatorCertificateDeletionPath, bytes.NewBuffer([]byte{}))
-		require.NoError(t, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodDelete, url+destinationCreatorCertificateDeletionPath, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
 
-		if !testCase.InvalidContentTypeHeader {
-			req.Header.Add("Content-Type", "application/json;charset=UTF-8")
-		}
+			if !testCase.MissingContentTypeHeader {
+				req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+			}
 
-		if !testCase.MissingClientUserHeader {
-			req.Header.Add("CLIENT_USER", "test")
-		}
+			if !testCase.MissingClientUserHeader {
+				req.Header.Add("CLIENT_USER", "test")
+			}
 
-		urlVars := make(map[string]string)
-		if testCase.Region != "" {
-			urlVars[regionParam] = testCase.Region
-			req = mux.SetURLVars(req, urlVars)
-		}
+			urlVars := make(map[string]string)
+			if testCase.Region != "" {
+				urlVars[regionParam] = testCase.Region
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		if testCase.SubaccountID != "" {
-			urlVars[subaccountIDParam] = testCase.SubaccountID
-			req = mux.SetURLVars(req, urlVars)
-		}
+			if testCase.SubaccountID != "" {
+				urlVars[subaccountIDParam] = testCase.SubaccountID
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		if testCase.CertName != "" {
-			urlVars[certNameParam] = testCase.CertName
-			req = mux.SetURLVars(req, urlVars)
-		}
+			if testCase.CertName != "" {
+				urlVars[certNameParam] = testCase.CertName
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		config := &destinationcreator.Config{
-			CorrelationIDsKey: correlationIDsKey,
-			DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
-				RegionParam:          regionParam,
-				SubaccountIDParam:    subaccountIDParam,
-				DestinationNameParam: destNameParam,
-			},
-			CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
-				CertificateNameParam: certNameParam,
-			},
-		}
+			config := &destinationcreator.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
+					RegionParam:          regionParam,
+					SubaccountIDParam:    subaccountIDParam,
+					DestinationNameParam: destNameParam,
+				},
+				CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
+					CertificateNameParam: certNameParam,
+				},
+			}
 
-		h := destinationcreator.NewHandler(config)
-		r := httptest.NewRecorder()
+			h := destinationcreator.NewHandler(config)
+			r := httptest.NewRecorder()
 
-		if testCase.ExistingCertificateDestinationCreator != nil {
-			h.DestinationCreatorSvcCertificates = testCase.ExistingCertificateDestinationCreator
-		}
+			if testCase.ExistingCertificateDestinationCreator != nil {
+				h.DestinationCreatorSvcCertificates = testCase.ExistingCertificateDestinationCreator
+			}
 
-		if testCase.ExistingCertificateDestinationSvc != nil {
-			h.DestinationSvcCertificates = testCase.ExistingCertificateDestinationSvc
-		}
+			if testCase.ExistingCertificateDestinationSvc != nil {
+				h.DestinationSvcCertificates = testCase.ExistingCertificateDestinationSvc
+			}
 
-		// WHEN
-		h.DeleteCertificate(r, req)
-		resp := r.Result()
+			// WHEN
+			h.DeleteCertificate(r, req)
+			resp := r.Result()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-		// THEN
-		require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-		if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
-			require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
-		}
+			if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
+				require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
+			}
 
-		if testCase.ExpectedDestinationSvcCertificates != nil {
-			require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
-		}
+			if testCase.ExpectedDestinationSvcCertificates != nil {
+				require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
+			}
+		})
 	}
 }
+
 func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 	destinationSvcPath := fmt.Sprintf("/destination-configuration/v1/subaccountDestinations/%s", testDestName)
 
@@ -592,7 +604,7 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 		ExistingDestination        map[string]json.RawMessage
 		ExpectedDestination        json.RawMessage
 		MissingAuthorizationHeader bool
-		InvalidAuthorizationToken  bool
+		MissingAuthorizationToken  bool
 	}{
 		{
 			Name:                 "Success when getting destination by name from Destination Service",
@@ -607,10 +619,10 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 			MissingAuthorizationHeader: true,
 		},
 		{
-			Name:                       "Error authorization token value is empty",
+			Name:                       "Error when authorization token value is empty",
 			ExpectedResponseCode:       http.StatusBadRequest,
 			MissingAuthorizationHeader: true,
-			InvalidAuthorizationToken:  true,
+			MissingAuthorizationToken:  true,
 		},
 		{
 			Name:                 "Error when path param is missing",
@@ -630,44 +642,46 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		req, err := http.NewRequest(http.MethodGet, url+destinationSvcPath, bytes.NewBuffer([]byte{}))
-		require.NoError(t, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodGet, url+destinationSvcPath, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
 
-		if !testCase.MissingAuthorizationHeader {
-			req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer token")
-		}
+			if !testCase.MissingAuthorizationHeader {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer token")
+			}
 
-		if testCase.InvalidAuthorizationToken {
-			req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer ")
-		}
+			if testCase.MissingAuthorizationToken {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer ")
+			}
 
-		urlVars := make(map[string]string)
-		if testCase.DestName != "" {
-			urlVars[nameParam] = testCase.DestName
-			req = mux.SetURLVars(req, urlVars)
-		}
+			urlVars := make(map[string]string)
+			if testCase.DestName != "" {
+				urlVars[nameParam] = testCase.DestName
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		h := destinationcreator.NewHandler(&destinationcreator.Config{})
-		r := httptest.NewRecorder()
+			h := destinationcreator.NewHandler(&destinationcreator.Config{})
+			r := httptest.NewRecorder()
 
-		if testCase.ExistingDestination != nil {
-			h.DestinationSvcDestinations = testCase.ExistingDestination
-		}
+			if testCase.ExistingDestination != nil {
+				h.DestinationSvcDestinations = testCase.ExistingDestination
+			}
 
-		// WHEN
-		h.GetDestinationByNameFromDestinationSvc(r, req)
-		resp := r.Result()
+			// WHEN
+			h.GetDestinationByNameFromDestinationSvc(r, req)
+			resp := r.Result()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-		// THEN
-		require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-		if testCase.ExpectedDestination != nil {
-			require.Equal(t, testCase.ExpectedDestination, json.RawMessage(body))
-		}
+			if testCase.ExpectedDestination != nil {
+				require.Equal(t, testCase.ExpectedDestination, json.RawMessage(body))
+			}
+		})
 	}
 }
 
@@ -681,7 +695,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 		ExistingCertificate        map[string]json.RawMessage
 		ExpectedCertificate        json.RawMessage
 		MissingAuthorizationHeader bool
-		InvalidAuthorizationToken  bool
+		MissingAuthorizationToken  bool
 	}{
 		{
 			Name:                 "Success when getting certificate by name from Destination Service",
@@ -699,7 +713,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			Name:                       "Error authorization token value is empty",
 			ExpectedResponseCode:       http.StatusBadRequest,
 			MissingAuthorizationHeader: true,
-			InvalidAuthorizationToken:  true,
+			MissingAuthorizationToken:  true,
 		},
 		{
 			Name:                 "Error when path param is missing",
@@ -719,43 +733,45 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 	}
 
 	for _, testCase := range testCases {
-		// GIVEN
-		req, err := http.NewRequest(http.MethodGet, url+destinationSvcCertificatePath, bytes.NewBuffer([]byte{}))
-		require.NoError(t, err)
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodGet, url+destinationSvcCertificatePath, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
 
-		if !testCase.MissingAuthorizationHeader {
-			req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer token")
-		}
+			if !testCase.MissingAuthorizationHeader {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer token")
+			}
 
-		if testCase.InvalidAuthorizationToken {
-			req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer ")
-		}
+			if testCase.MissingAuthorizationToken {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer ")
+			}
 
-		urlVars := make(map[string]string)
-		if testCase.CertName != "" {
-			urlVars[nameParam] = testCase.CertName
-			req = mux.SetURLVars(req, urlVars)
-		}
+			urlVars := make(map[string]string)
+			if testCase.CertName != "" {
+				urlVars[nameParam] = testCase.CertName
+				req = mux.SetURLVars(req, urlVars)
+			}
 
-		h := destinationcreator.NewHandler(&destinationcreator.Config{})
-		r := httptest.NewRecorder()
+			h := destinationcreator.NewHandler(&destinationcreator.Config{})
+			r := httptest.NewRecorder()
 
-		if testCase.ExistingCertificate != nil {
-			h.DestinationSvcCertificates = testCase.ExistingCertificate
-		}
+			if testCase.ExistingCertificate != nil {
+				h.DestinationSvcCertificates = testCase.ExistingCertificate
+			}
 
-		// WHEN
-		h.GetDestinationCertificateByNameFromDestinationSvc(r, req)
-		resp := r.Result()
+			// WHEN
+			h.GetDestinationCertificateByNameFromDestinationSvc(r, req)
+			resp := r.Result()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-		// THEN
-		require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
-		if testCase.ExpectedCertificate != nil {
-			require.Equal(t, testCase.ExpectedCertificate, json.RawMessage(body))
-		}
+			if testCase.ExpectedCertificate != nil {
+				require.Equal(t, testCase.ExpectedCertificate, json.RawMessage(body))
+			}
+		})
 	}
 }
