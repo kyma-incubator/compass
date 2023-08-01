@@ -83,7 +83,7 @@ fi
 trap cleanup_trap EXIT INT TERM
 
 echo "Helm install ORY components..."
-RELEASE_NS=ory
+RELEASE_NS=kyma-system
 RELEASE_NAME=ory-stack
 SECRET_NAME=ory-hydra-credentials
 
