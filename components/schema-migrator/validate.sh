@@ -19,7 +19,7 @@ DATA_DIR="${COMPONENT_PATH}/seeds"
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="12"
+POSTGRES_VERSION="15"
 
 PROJECT="sap-cp-cmp"
 ENV="dev"
