@@ -144,6 +144,21 @@ function mount_k3d_ca_to_oathkeeper() {
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
 }
 
+# Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
+# with the needed keys, by first getting them using kubectl
+function patchJWKS() {
+  echo "Patching Request Authentication resources..."
+  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
+  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
+          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
+    echo "Waiting for Request Authentication resources to be created"
+    sleep 8
+  done
+  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  echo "Request Authentication resources were successfully patched"
+}
+
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
     echo -e "${YELLOW}OIDC configuration not provided. Configuration from default config file will be used.${NC}"
@@ -252,27 +267,14 @@ fi
 
 mount_k3d_ca_to_oathkeeper
 
-# Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
-# with the needed keys, by first getting them using kubectl
-function patchJWKS() {
-  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
-  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
-          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
-    echo "Waiting for requestauthentication resources to be created"
-    sleep 3
-  done
-  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
-  kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
-}
-patchJWKS&
-
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
-  echo 'Installing DB'
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
   bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
 fi
+
+patchJWKS&
 
 echo 'Installing Compass'
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"

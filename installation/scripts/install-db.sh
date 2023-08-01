@@ -51,7 +51,7 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "Install DB"
+echo "Installing DB"
 helm upgrade --install --atomic --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system localdb "${DB_CHARTS}"
 
 echo "Look for DB dump in progress ..."
