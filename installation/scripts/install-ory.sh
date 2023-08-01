@@ -83,7 +83,7 @@ fi
 trap cleanup_trap EXIT INT TERM
 
 echo "Helm install ORY components..."
-RELEASE_NS=kyma-system
+RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 SECRET_NAME=ory-hydra-credentials
 
@@ -155,6 +155,14 @@ for PID in $PIDS; do
 done
 
 if [ "$RESULT" == "1" ]; then
+  echo "Hydra deployment"
+  kubectl get deployment ory-stack-hydra -o json -n ory
+  kubectl describe deployment ory-stack-hydra -n ory
+
+  echo "Oathkeeper deployment"
+  kubectl get deployment ory-stack-oathkeeper -o json -n ory
+  kubectl describe deployment ory-stack-oathkeeper -n ory
+
   echo "Ory components did not deploy correctly..."
   echo "Uninstalling Ory Helm chart and removing namespace"
   helm uninstall $RELEASE_NAME -n $RELEASE_NS
