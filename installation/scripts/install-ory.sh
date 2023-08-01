@@ -105,11 +105,6 @@ if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTE
 
   SYSTEM=$(generate_random 32)
   COOKIE=$(generate_random 32)
-  
-  echo "$DSN"
-  echo "$POSTGRES_PASSWORD"
-  echo "$SYSTEM"
-  echo "$COOKIE"
 
   SECRET=$(cat <<EOF
   apiVersion: v1
@@ -145,6 +140,9 @@ until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.statu
 done
 kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
 
+echo "Secret keys"
+kubectl get secret ory-hydra-credentials -n ory -o json
+
 RESULT=0
 PIDS=""
 
@@ -170,6 +168,9 @@ if [ "$RESULT" == "1" ]; then
   echo "Postgres"
   kubectl describe pod/ory-stack-postgresql-0 -n ory || true
   kubectl logs ory-stack-postgresql-0 -n ory || true
+
+  echo "Secret"
+  kubectl get secret ory-hydra-credentials -n ory -o json
 
   echo "Ory components did not deploy correctly..."
   echo "Uninstalling Ory Helm chart and removing namespace"
