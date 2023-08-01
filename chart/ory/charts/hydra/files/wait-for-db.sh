@@ -23,10 +23,6 @@ else
   DB_URL=$DB_URL_PORT
 fi
 
-# TODO!!! Remove this
-DB_URL=ory-stack-postgresql.ory.svc.cluster.local
-DB_PORT=5432
-
 # If port was given, we use it, if not, empty var is expanded to 0
 until nc -zv -w 5 $DB_URL $DB_PORT; do
   echo "$DB_URL not yet ready"

@@ -106,24 +106,13 @@ if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTE
   SYSTEM=$(generate_random 32)
   COOKIE=$(generate_random 32)
 
-  SECRET=$(cat <<EOF
-  apiVersion: v1
-  kind: Secret
-  metadata:
-    name: ${SECRET_NAME}
-    namespace: ${RELEASE_NS}
-  type: Opaque
-  data:
-    dsn: $(echo -n "${DSN}" | base64)
-    secretsSystem: $(echo -n "${SYSTEM}" | base64)
-    secretsCookie: $(echo -n "${COOKIE}" | base64)
-    postgresql-password: $(echo -n "${POSTGRES_PASSWORD}" | base64)
-EOF
-)
-
-  echo "Applying database secret"
-  set -e
-  echo "${SECRET}" | kubectl apply -f -
+  echo "Creating Ory credentials Secret"
+  kubectl create secret generic "$SECRET_NAME" -n "$RELEASE_NS" \
+    --from-literal=dsn="${DSN}" \
+    --from-literal=secretsSystem="${SYSTEM}" \
+    --from-literal=secretsCookie="${COOKIE}" \
+    --from-literal=postgresql-password="${POSTGRES_PASSWORD}" \
+    --dry-run=client -o yaml | kubectl apply -f -
 fi
 
 # --wait is excluded as the deployment hangs; it hangs as there is a cronjob that creates the jwks secret for Oathkeeper
