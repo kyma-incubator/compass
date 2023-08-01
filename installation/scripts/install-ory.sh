@@ -129,9 +129,6 @@ until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.statu
 done
 kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
 
-echo "Secret keys"
-kubectl get secret ory-hydra-credentials -n ory -o json
-
 RESULT=0
 PIDS=""
 
@@ -147,20 +144,6 @@ for PID in $PIDS; do
 done
 
 if [ "$RESULT" == "1" ]; then
-  echo "Hydra deployment"
-  kubectl get deployment ory-stack-hydra -o json -n ory
-  kubectl describe deployment ory-stack-hydra -n ory
-  kubectl logs deployment/ory-stack-hydra -c hydra-automigrate -n ory || true
-  kubectl logs deployment/ory-stack-hydra -c hydra -n ory || true
-  kubectl logs deployment/ory-stack-hydra -c wait-for-db -n ory || true
-
-  echo "Postgres"
-  kubectl describe pod/ory-stack-postgresql-0 -n ory || true
-  kubectl logs ory-stack-postgresql-0 -n ory || true
-
-  echo "Secret"
-  kubectl get secret ory-hydra-credentials -n ory -o json
-
   echo "Ory components did not deploy correctly..."
   echo "Uninstalling Ory Helm chart and removing namespace"
   helm uninstall $RELEASE_NAME -n $RELEASE_NS
