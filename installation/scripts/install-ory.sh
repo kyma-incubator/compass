@@ -106,6 +106,11 @@ if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTE
   SYSTEM=$(generate_random 32)
   COOKIE=$(generate_random 32)
   
+  echo "$DSN"
+  echo "$POSTGRES_PASSWORD"
+  echo "$SYSTEM"
+  echo "$COOKIE"
+
   SECRET=$(cat <<EOF
   apiVersion: v1
   kind: Secret
