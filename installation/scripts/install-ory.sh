@@ -140,9 +140,21 @@ until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.statu
 done
 kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
 
+RESULT=0
+PIDS=""
+
+kubectl rollout status deployment $RELEASE_NAME-hydra -n $RELEASE_NS --timeout=$TIMEOUT &
+PIDS="$PIDS $!"
+
+kubectl rollout status deployment $RELEASE_NAME-oathkeeper -n $RELEASE_NS --timeout=$TIMEOUT &
+PIDS="$PIDS $!"
+
 # Wait for Ory deployment to roll out as they needs to be ready for successful compass installation
-echo "Waiting for Ory deployments to roll out..."
-if ! [ "$(kubectl rollout status deployment $RELEASE_NAME-hydra -n $RELEASE_NS --timeout=$TIMEOUT)" -a "$(kubectl rollout status deployment $RELEASE_NAME-oathkeeper -n $RELEASE_NS --timeout=$TIMEOUT)" ]; then
+for PID in $PIDS; do
+  wait $PID || let "RESULT=1"
+done
+
+if [ "$RESULT" == "1" ]; then
   echo "Ory components did not deploy correctly..."
   echo "Uninstalling Ory Helm chart and removing namespace"
   helm uninstall $RELEASE_NAME -n $RELEASE_NS
