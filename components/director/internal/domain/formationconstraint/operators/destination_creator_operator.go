@@ -44,34 +44,34 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Operation)
 
-	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && di.FormationAssignment != nil && di.FormationAssignment.State == string(model.ReadyAssignmentState) {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, di.FormationAssignment.ID)
-		if err := e.destinationSvc.DeleteDestinations(ctx, di.FormationAssignment); err != nil {
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+	if err != nil {
+		return false, err
+	}
+
+	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && formationAssignment != nil && formationAssignment.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, formationAssignment.ID)
+		if err := e.destinationSvc.DeleteDestinations(ctx, formationAssignment); err != nil {
 			return false, err
 		}
 
 		return true, nil
 	}
 
-	if di.FormationAssignment.State != string(model.ReadyAssignmentState) && di.FormationAssignment.State != string(model.ConfigPendingAssignmentState) {
-		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", di.FormationAssignment.ID, di.FormationAssignment.State)
+	if formationAssignment.State != string(model.ReadyAssignmentState) && formationAssignment.State != string(model.ConfigPendingAssignmentState) {
+		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", formationAssignment.ID, formationAssignment.State)
 		return true, nil
 	}
 
 	if di.Operation == model.AssignFormation {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.AssignFormation, di.FormationAssignment.ID)
+		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.AssignFormation, formationAssignment.ID)
 
-		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
+		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 			var assignmentConfig Configuration
-			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping response configuration from assignment with ID: %q", di.FormationAssignment.ID)
-			}
-
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
-			if err != nil {
-				return false, err
+			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
 			}
 
 			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
@@ -104,17 +104,22 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			return true, nil
 		}
 
-		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.ReverseFormationAssignment != nil && string(di.ReverseFormationAssignment.Value) != "" && string(di.ReverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
+		reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
+		if err != nil {
+			return false, err
+		}
+
+		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && reverseFormationAssignment != nil && string(reverseFormationAssignment.Value) != "" && string(reverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 			var assignmentConfig Configuration
-			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
+			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping configuration response from assignment with ID: %q", formationAssignment.ID)
 			}
 
 			var reverseAssignmentConfig Configuration
-			if err := json.Unmarshal(di.ReverseFormationAssignment.Value, &reverseAssignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
+			if err := json.Unmarshal(reverseFormationAssignment.Value, &reverseAssignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping configuration response from reverse assignment with ID: %q", reverseFormationAssignment.ID)
 			}
 
 			if assignmentConfig.Credentials.InboundCommunicationDetails == nil {
@@ -125,10 +130,10 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				return false, errors.New("The outbound communication credentials could not be empty")
 			}
 
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
-			if err != nil {
-				return false, err
-			}
+			//formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+			//if err != nil {
+			//	return false, err
+			//}
 
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
 			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication

@@ -6,9 +6,6 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/stretchr/testify/assert"
@@ -17,21 +14,19 @@ import (
 
 func TestConstraintOperators_DestinationCreator(t *testing.T) {
 	testCases := []struct {
-		Name                            string
-		Input                           operators.OperatorInput
-		DestinationSvc                  func() *automock.DestinationService
-		DestinationCreatorSvc           func() *automock.DestinationCreatorService
-		ExpectedResult                  bool
-		ExpectedErrorMsg                string
-		InputFormationAssignment        *model.FormationAssignment // since we work with the actual fa memory address in the operator, we need to have a mechanism to 'reset'/pass a new 'clean' fa after it's been modified in the flow so that the next test can use a correct fa
-		InputReverseFormationAssignment *model.FormationAssignment // since we work with the actual fa memory address in the operator, we need to have a mechanism to 'reset'/pass a new 'clean' fa after it's been modified in the flow so that the next test can use a correct fa
+		Name                  string
+		Input                 operators.OperatorInput
+		DestinationSvc        func() *automock.DestinationService
+		DestinationCreatorSvc func() *automock.DestinationCreatorService
+		ExpectedResult        bool
+		ExpectedErrorMsg      string
 	}{
 		{
 			Name:  "Success when operation is 'unassign' and location is 'NotificationStatusReturned'",
 			Input: inputForUnassignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("DeleteDestinations", ctx, inputForUnassignNotificationStatusReturned.FormationAssignment).Return(nil)
+				destSvc.On("DeleteDestinations", ctx, fa).Return(nil)
 				return destSvc
 			},
 			ExpectedResult: true,
@@ -46,33 +41,30 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForAssignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), inputForAssignNotificationStatusReturned.FormationAssignment).Return(nil)
+				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), fa).Return(nil)
 				return destSvc
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, fixSAMLAssertionDestination(), inputForAssignNotificationStatusReturned.FormationAssignment, uint8(0)).Return(fixCertificateData(), nil)
-				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", inputForAssignNotificationStatusReturned.FormationAssignment.Value, fixCertificateData(), 0).Return(destsConfigValueRawJSON, nil)
+				destCreatorSvc.On("CreateCertificate", ctx, fixSAMLAssertionDestination(), fa, uint8(0)).Return(fixCertificateData(), nil)
+				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", fa.Value, fixCertificateData(), 0).Return(destsConfigValueRawJSON, nil)
 				return destCreatorSvc
 			},
-			InputFormationAssignment: fixFormationAssignmentWithConfig(destsConfigValueRawJSON),
-			ExpectedResult:           true,
+			ExpectedResult: true,
 		},
 		{
 			Name:  "Success when operation is 'assign' and location is 'SendNotification'",
 			Input: inputForAssignSendNotification,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateBasicCredentialDestinations", ctx, fixBasicDestination(), fixBasicCreds(), inputForAssignSendNotification.FormationAssignment, corrleationIDs).Return(nil)
-				destSvc.On("CreateSAMLAssertionDestination", ctx, fixSAMLAssertionDestination(), fixSAMLCreds(), inputForAssignSendNotification.FormationAssignment, corrleationIDs).Return(nil)
+				destSvc.On("CreateBasicCredentialDestinations", ctx, fixBasicDestination(), fixBasicCreds(), fa, corrleationIDs).Return(nil)
+				destSvc.On("CreateSAMLAssertionDestination", ctx, fixSAMLAssertionDestination(), fixSAMLCreds(), fa, corrleationIDs).Return(nil)
 				return destSvc
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				return &automock.DestinationCreatorService{}
 			},
-			InputFormationAssignment:        fixFormationAssignmentWithConfig(destsConfigValueRawJSON),
-			InputReverseFormationAssignment: fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON),
-			ExpectedResult:                  true,
+			ExpectedResult: true,
 		},
 		{
 			Name:           "Success when operation is 'Unassign' and location is 'SendNotification'",
@@ -96,7 +88,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForUnassignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("DeleteDestinations", ctx, inputForUnassignNotificationStatusReturned.FormationAssignment).Return(testErr)
+				destSvc.On("DeleteDestinations", ctx, fa).Return(testErr)
 				return destSvc
 			},
 			ExpectedResult:   false,
@@ -106,11 +98,11 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Name:             "Error when operation is 'assign' and location is 'NotificationStatusReturned' and config unmarshalling fails",
 			Input:            inputForAssignNotificationStatusReturnedWithInvalidFAConfig,
 			ExpectedResult:   false,
-			ExpectedErrorMsg: "while unmarshaling tenant mapping response configuration from assignment with ID:",
+			ExpectedErrorMsg: "while unmarshalling tenant mapping response configuration from assignment with ID:",
 		},
 		{
-			Name:             "Error when operation is 'assign' and location is 'NotificationStatusReturned' and retrieving fa pointer fails",
-			Input:            inputForAssignNotificationStatusReturnedWithoutMemoryAddress,
+			Name:             "Error when retrieving fa pointer fails",
+			Input:            inputWithoutAssignmentMemoryAddress,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
@@ -119,7 +111,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForAssignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), inputForAssignNotificationStatusReturned.FormationAssignment).Return(testErr)
+				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), fa).Return(testErr)
 				return destSvc
 			},
 			ExpectedResult:   false,
@@ -130,12 +122,12 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForAssignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), inputForAssignNotificationStatusReturned.FormationAssignment).Return(nil)
+				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), fa).Return(nil)
 				return destSvc
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, fixSAMLAssertionDestination(), inputForAssignNotificationStatusReturned.FormationAssignment, uint8(0)).Return(nil, testErr)
+				destCreatorSvc.On("CreateCertificate", ctx, fixSAMLAssertionDestination(), fa, uint8(0)).Return(nil, testErr)
 				return destCreatorSvc
 			},
 			ExpectedResult:   false,
@@ -146,13 +138,13 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForAssignNotificationStatusReturned,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), inputForAssignNotificationStatusReturned.FormationAssignment).Return(nil)
+				destSvc.On("CreateDesignTimeDestinations", ctx, fixDesignTimeDestination(), fa).Return(nil)
 				return destSvc
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("CreateCertificate", ctx, fixSAMLAssertionDestination(), inputForAssignNotificationStatusReturned.FormationAssignment, uint8(0)).Return(fixCertificateData(), nil)
-				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", inputForAssignNotificationStatusReturned.FormationAssignment.Value, fixCertificateData(), 0).Return(json.RawMessage{}, testErr)
+				destCreatorSvc.On("CreateCertificate", ctx, fixSAMLAssertionDestination(), fa, uint8(0)).Return(fixCertificateData(), nil)
+				destCreatorSvc.On("EnrichAssignmentConfigWithCertificateData", fa.Value, fixCertificateData(), 0).Return(json.RawMessage{}, testErr)
 				return destCreatorSvc
 			},
 			ExpectedResult:   false,
@@ -162,13 +154,13 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Name:             "Error when operation is 'assign' and location is 'SendNotification' and config unmarshalling fails",
 			Input:            inputForAssignSendNotificationWithInvalidFAConfig,
 			ExpectedResult:   false,
-			ExpectedErrorMsg: "while unmarshaling tenant mapping configuration response from assignment with ID:",
+			ExpectedErrorMsg: "while unmarshalling tenant mapping configuration response from assignment with ID:",
 		},
 		{
 			Name:             "Error when operation is 'assign' and location is 'SendNotification' and reverse config unmarshalling fails",
 			Input:            inputForAssignSendNotificationWithInvalidReverseFAConfig,
 			ExpectedResult:   false,
-			ExpectedErrorMsg: "while unmarshaling tenant mapping configuration response from reverse assignment with ID:",
+			ExpectedErrorMsg: "while unmarshalling tenant mapping configuration response from reverse assignment with ID:",
 		},
 		{
 			Name:             "Error when operation is 'assign' and location is 'SendNotification' and inbound details are nil",
@@ -183,8 +175,8 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedErrorMsg: "The outbound communication credentials could not be empty",
 		},
 		{
-			Name:             "Error when operation is 'assign' and location is 'SendNotification' and retrieving fa pointer fails",
-			Input:            inputForAssignSendNotificationWithoutMemoryAddress,
+			Name:             "Error when operation is 'assign' and location is 'SendNotification' and retrieving reverse assignment pointer fails",
+			Input:            inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
@@ -193,7 +185,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForAssignSendNotification,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateBasicCredentialDestinations", ctx, fixBasicDestination(), fixBasicCreds(), inputForAssignSendNotification.FormationAssignment, corrleationIDs).Return(testErr)
+				destSvc.On("CreateBasicCredentialDestinations", ctx, fixBasicDestination(), fixBasicCreds(), fa, corrleationIDs).Return(testErr)
 				return destSvc
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
@@ -207,8 +199,8 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			Input: inputForAssignSendNotification,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
-				destSvc.On("CreateBasicCredentialDestinations", ctx, fixBasicDestination(), fixBasicCreds(), inputForAssignSendNotification.FormationAssignment, corrleationIDs).Return(nil)
-				destSvc.On("CreateSAMLAssertionDestination", ctx, fixSAMLAssertionDestination(), fixSAMLCreds(), inputForAssignSendNotification.FormationAssignment, corrleationIDs).Return(testErr)
+				destSvc.On("CreateBasicCredentialDestinations", ctx, fixBasicDestination(), fixBasicCreds(), fa, corrleationIDs).Return(nil)
+				destSvc.On("CreateSAMLAssertionDestination", ctx, fixSAMLAssertionDestination(), fixSAMLCreds(), fa, corrleationIDs).Return(testErr)
 				return destSvc
 			},
 			DestinationCreatorSvc: func() *automock.DestinationCreatorService {
@@ -232,20 +224,6 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 				destCreatorSvc = testCase.DestinationCreatorSvc()
 			}
 			defer mock.AssertExpectationsForObjects(t, destSvc, destCreatorSvc)
-
-			if testCase.InputFormationAssignment != nil {
-				in, ok := testCase.Input.(*formationconstraint.DestinationCreatorInput)
-				require.True(t, ok)
-				in.FormationAssignment = testCase.InputFormationAssignment
-				in.JoinPointDetailsFAMemoryAddress = testCase.InputFormationAssignment.GetAddress()
-			}
-
-			if testCase.InputReverseFormationAssignment != nil {
-				in, ok := testCase.Input.(*formationconstraint.DestinationCreatorInput)
-				require.True(t, ok)
-				in.ReverseFormationAssignment = testCase.InputReverseFormationAssignment
-				in.JoinPointDetailsReverseFAMemoryAddress = testCase.InputReverseFormationAssignment.GetAddress()
-			}
 
 			engine := operators.NewConstraintEngine(nil, nil, nil, nil, destSvc, destCreatorSvc, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 

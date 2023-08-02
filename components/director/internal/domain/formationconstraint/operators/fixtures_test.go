@@ -71,23 +71,21 @@ var (
 	)
 	fa                  = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
 	reverseFa           = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
+	faWithDeletingState = fixFormationAssignmentWithState(model.DeletingAssignmentState)
 	faWithInvalidConfig = fixFormationAssignmentWithConfig(invalidFAConfig)
 
-	// func TestConstraintOperators_DestinationCreator
+	faConfigWithDifferentStructure = fixFormationAssignmentWithConfig(configWithDifferentStructure)
+
 	inputForUnassignNotificationStatusReturned = fixDestinationCreatorInputForUnassignWithLocationOperation(model.NotificationStatusReturned)
 	inputForUnassignSendNotification           = fixDestinationCreatorInputForUnassignWithLocationOperation(model.SendNotificationOperation)
 
 	inputForAssignWithFormationAssignmentDeletingState = &formationconstraintpkg.DestinationCreatorInput{
-		Operation: model.AssignFormation,
-		FormationAssignment: &model.FormationAssignment{
-			ID:    formationAssignmentID,
-			State: string(model.DeletingAssignmentState),
-		},
+		Operation:                       model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress: faWithDeletingState.GetAddress(),
 	}
 
 	inputForAssignNotificationStatusReturned = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: fa,
+		Operation: model.AssignFormation,
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.NotificationStatusReturned,
 			ConstraintType: model.PreOperation,
@@ -96,15 +94,13 @@ var (
 	}
 
 	inputForAssignSendNotification = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                  model.AssignFormation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
+		Operation:                              model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
+		JoinPointDetailsReverseFAMemoryAddress: reverseFa.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
-		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
-		JoinPointDetailsReverseFAMemoryAddress: reverseFa.GetAddress(),
 	}
 
 	inputWithInvalidOperation = &formationconstraintpkg.DestinationCreatorInput{
@@ -112,8 +108,8 @@ var (
 	}
 
 	inputForAssignNotificationStatusReturnedWithInvalidFAConfig = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: faWithInvalidConfig,
+		Operation:                       model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress: faWithInvalidConfig.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.NotificationStatusReturned,
 			ConstraintType: model.PreOperation,
@@ -121,62 +117,60 @@ var (
 	}
 
 	inputForAssignSendNotificationWithInvalidFAConfig = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: faWithInvalidConfig,
+		Operation:                              model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress:        faWithInvalidConfig.GetAddress(),
+		JoinPointDetailsReverseFAMemoryAddress: reverseFa.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
-		ReverseFormationAssignment: fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON),
 	}
 
 	inputForAssignSendNotificationWithInvalidReverseFAConfig = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: fixFormationAssignmentWithConfig(destsConfigValueRawJSON),
+		Operation:                              model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
+		JoinPointDetailsReverseFAMemoryAddress: faWithInvalidConfig.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
-		ReverseFormationAssignment: faWithInvalidConfig,
 	}
 
 	inputForAssignSendNotificationWhereFAConfigStructureIsDifferent = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: fixFormationAssignmentWithConfig(configWithDifferentStructure),
+		Operation:                              model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress:        faConfigWithDifferentStructure.GetAddress(),
+		JoinPointDetailsReverseFAMemoryAddress: faConfigWithDifferentStructure.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
-		ReverseFormationAssignment: fixFormationAssignmentWithConfig(configWithDifferentStructure),
 	}
 
 	inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: fixFormationAssignmentWithConfig(destsConfigValueRawJSON),
+		Operation:                              model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
+		JoinPointDetailsReverseFAMemoryAddress: faConfigWithDifferentStructure.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
-		ReverseFormationAssignment: fixFormationAssignmentWithConfig(configWithDifferentStructure),
 	}
 
-	inputForAssignNotificationStatusReturnedWithoutMemoryAddress = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: fixFormationAssignmentWithConfig(destsConfigValueRawJSON),
+	inputWithoutAssignmentMemoryAddress = &formationconstraintpkg.DestinationCreatorInput{
+		Operation: model.AssignFormation,
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.NotificationStatusReturned,
 			ConstraintType: model.PreOperation,
 		},
 	}
 
-	inputForAssignSendNotificationWithoutMemoryAddress = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:           model.AssignFormation,
-		FormationAssignment: fixFormationAssignmentWithConfig(destsConfigValueRawJSON),
+	inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress = &formationconstraintpkg.DestinationCreatorInput{
+		Operation:                       model.AssignFormation,
+		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
-		ReverseFormationAssignment: fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON),
 	}
 
 	// func TestConstraintOperators_IsNotAssignedToAnyFormationOfType
@@ -316,11 +310,8 @@ var (
 
 func fixDestinationCreatorInputForUnassignWithLocationOperation(operationName model.TargetOperation) *formationconstraintpkg.DestinationCreatorInput {
 	return &formationconstraintpkg.DestinationCreatorInput{
-		Operation: model.UnassignFormation,
-		FormationAssignment: &model.FormationAssignment{
-			ID:    formationAssignmentID,
-			State: string(model.ReadyAssignmentState),
-		},
+		Operation:                       model.UnassignFormation,
+		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  operationName,
 			ConstraintType: model.PreOperation,
@@ -333,6 +324,13 @@ func fixFormationAssignmentWithConfig(config json.RawMessage) *model.FormationAs
 		ID:    formationAssignmentID,
 		State: string(model.ReadyAssignmentState),
 		Value: config,
+	}
+}
+
+func fixFormationAssignmentWithState(state model.FormationAssignmentState) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:    formationAssignmentID,
+		State: string(state),
 	}
 }
 

@@ -3274,8 +3274,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				Operator:        graphql.DestinationCreator,
 				ResourceType:    graphql.ResourceTypeApplication,
 				ResourceSubtype: applicationType2,
-				// todo::: improve the constraints and use only memory addresses for FA and reverseFA + changes in the productive code?
-				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment\\\": {\\\"id\\\":\\\"{{.FormationAssignment.ID}}\\\",\\\"tenant_id\\\":\\\"{{.FormationAssignment.TenantID}}\\\",\\\"source\\\":\\\"{{.FormationAssignment.Source}}\\\",\\\"source_type\\\":\\\"{{.FormationAssignment.SourceType}}\\\",\\\"target\\\":\\\"{{.FormationAssignment.Target}}\\\",\\\"target_type\\\":\\\"{{.FormationAssignment.TargetType}}\\\",\\\"state\\\":\\\"{{.FormationAssignment.State}}\\\",\\\"value\\\":{{ .FormationAssignment.Value | toString }}},\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment\\\": {\\\"id\\\":\\\"{{.ReverseFormationAssignment.ID}}\\\",\\\"tenant_id\\\":\\\"{{.ReverseFormationAssignment.TenantID}}\\\",\\\"source\\\":\\\"{{.ReverseFormationAssignment.Source}}\\\",\\\"source_type\\\":\\\"{{.ReverseFormationAssignment.SourceType}}\\\",\\\"target\\\":\\\"{{.ReverseFormationAssignment.Target}}\\\",\\\"target_type\\\":\\\"{{.ReverseFormationAssignment.TargetType}}\\\",\\\"state\\\":\\\"{{.ReverseFormationAssignment.State}}\\\",\\\"value\\\":{{ .ReverseFormationAssignment.Value | toString }}},\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
+				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 				ConstraintScope: graphql.ConstraintScopeFormationType,
 			}
 
@@ -3295,8 +3294,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				Operator:        graphql.DestinationCreator,
 				ResourceType:    graphql.ResourceTypeApplication,
 				ResourceSubtype: applicationType2,
-				// todo::: improve the constraints and use only memory addresses for FA and reverseFA + changes in the productive code?
-				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment\\\": {\\\"id\\\":\\\"{{.FormationAssignment.ID}}\\\",\\\"tenant_id\\\":\\\"{{.FormationAssignment.TenantID}}\\\",\\\"source\\\":\\\"{{.FormationAssignment.Source}}\\\",\\\"source_type\\\":\\\"{{.FormationAssignment.SourceType}}\\\",\\\"target\\\":\\\"{{.FormationAssignment.Target}}\\\",\\\"target_type\\\":\\\"{{.FormationAssignment.TargetType}}\\\",\\\"state\\\":\\\"{{.FormationAssignment.State}}\\\",\\\"value\\\":{{ .FormationAssignment.Value | toString }}},\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment\\\": {\\\"id\\\":\\\"{{.ReverseFormationAssignment.ID}}\\\",\\\"tenant_id\\\":\\\"{{.ReverseFormationAssignment.TenantID}}\\\",\\\"source\\\":\\\"{{.ReverseFormationAssignment.Source}}\\\",\\\"source_type\\\":\\\"{{.ReverseFormationAssignment.SourceType}}\\\",\\\"target\\\":\\\"{{.ReverseFormationAssignment.Target}}\\\",\\\"target_type\\\":\\\"{{.ReverseFormationAssignment.TargetType}}\\\",\\\"state\\\":\\\"{{.ReverseFormationAssignment.State}}\\\",\\\"value\\\":{{ .ReverseFormationAssignment.Value | toString }}},\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
+				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
 				ConstraintScope: graphql.ConstraintScopeFormationType,
 			}
 
@@ -3906,7 +3904,6 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 			notificationsForConsumerTenant := gjson.GetBytes(body, localTenantID)
 			assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-			// todo::: consider using assertFormationAssignmentsNotificationWithItemsStructure instead of verifyFormationNotificationForApplicationWithItemsStructure
 			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp, assignOperation, formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "", subscriptionConsumerAccountID, emptyParentCustomerID)
 			assert.NoError(t, err)
 
@@ -5517,7 +5514,6 @@ func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDelet
 	t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
 }
 
-// todo::: why do we need this func? couldn't reuse assertExpectationsForApplicationNotificationsWithItemsStructure instead?
 func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {
 	actualNumberOfNotifications := 0
 	for _, notification := range notificationsForConsumerTenant.Array() {
@@ -5563,7 +5559,7 @@ func assertExpectationsForApplicationNotifications(t *testing.T, notifications [
 	for _, expectation := range expectations {
 		found := false
 		for _, notification := range notifications {
-			if err := verifyFormationNotificationForApplication(t, notification, expectation.op, expectation.formationID, expectation.objectID, expectation.localTenantID, expectation.objectRegion, expectation.configuration, expectation.tenant, expectation.customerID, expectation.isNotificationContainsSAMLDestinationData); err != nil {
+			if err := verifyFormationAssignmentNotification(t, notification, expectation.op, expectation.formationID, expectation.objectID, expectation.localTenantID, expectation.objectRegion, expectation.configuration, expectation.tenant, expectation.customerID, expectation.isNotificationContainsSAMLDestinationData); err != nil {
 				t.Log(err)
 				continue
 			}
@@ -5629,7 +5625,7 @@ func verifyFormationNotificationForApplicationWithItemsStructure(notification gj
 	return nil
 }
 
-func verifyFormationNotificationForApplication(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, isNotificationContainsSAMLDestinationData bool) error {
+func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, isNotificationContainsSAMLDestinationData bool) error {
 	actualOp := notification.Get("Operation").String()
 	if op != actualOp {
 		return errors.Errorf("Operation does not match - expected: %q, but got: %q", op, actualOp)
