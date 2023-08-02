@@ -211,7 +211,6 @@ func TestRepository_ListByConsumerID(t *testing.T) {
 		},
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
-
 		},
 		RepoConstructorFunc:   certsubjectmapping.NewRepository,
 		ExpectedModelEntities: []interface{}{CertSubjectMappingModel},
