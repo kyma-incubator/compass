@@ -587,16 +587,8 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		return nil, err
 	}
 
-	// Delete all CertSubjMappings related to the app template
-	csms, err := r.certSubjectMappingSvc.ListByConsumerID(ctx, id)
-	if err != nil {
+	if err := r.certSubjectMappingSvc.DeleteByConsumerID(ctx, id); err != nil {
 		return nil, err
-	}
-
-	for _, csm := range csms {
-		if err := r.certSubjectMappingSvc.Delete(ctx, csm.ID); err != nil {
-			return nil, err
-		}
 	}
 
 	err = tx.Commit()

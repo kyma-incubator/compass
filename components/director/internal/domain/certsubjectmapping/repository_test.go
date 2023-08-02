@@ -193,31 +193,25 @@ func TestRepository_List(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestRepository_ListByConsumerID(t *testing.T) {
-	suite := testdb.RepoListTestSuite{
-		Name: "List certificate subject mappings for consumer id",
+func TestRepository_DeleteByConsumerID(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Delete certificate subject mappings for consumer id",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping WHERE internal_consumer_id = $1`),
-				IsSelect: true,
-				Args:     []driver.Value{"consumer_id"},
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
-				},
+				Query:         regexp.QuoteMeta(`DELETE FROM public.cert_subject_mapping WHERE internal_consumer_id = $1`),
+				Args:          []driver.Value{"consumer_id"},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		RepoConstructorFunc:   certsubjectmapping.NewRepository,
-		ExpectedModelEntities: []interface{}{CertSubjectMappingModel},
-		ExpectedDBEntities:    []interface{}{CertSubjectMappingEntity},
-		MethodArgs:            []interface{}{"consumer_id"},
-		MethodName:            "ListByConsumerID",
-		DisableEmptySliceTest: false,
+		RepoConstructorFunc: certsubjectmapping.NewRepository,
+		MethodName:          "DeleteByConsumerID",
+		MethodArgs:          []interface{}{"consumer_id"},
+		IsDeleteMany:        true,
+		IsGlobal:            true,
 	}
 
 	suite.Run(t)

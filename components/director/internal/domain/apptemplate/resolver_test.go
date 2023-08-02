@@ -2169,14 +2169,6 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 
 	label := &model.Label{Key: RegionKey, Value: "region-0"}
-	certSubjMappingID := "cert-subj-mapping-id"
-	csms := []*model.CertSubjectMapping{
-		{
-			ID:                 certSubjMappingID,
-			Subject:            "subj",
-			InternalConsumerID: str.Ptr(testID),
-		},
-	}
 	badValueLabel := &model.Label{Key: RegionKey, Value: 1}
 
 	testCases := []struct {
@@ -2221,14 +2213,13 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			CertSubjMappingSvcFn: func() *automock.CertSubjectMappingService {
 				certSubjMappingSvc := &automock.CertSubjectMappingService{}
-				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(csms, nil).Once()
-				certSubjMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), certSubjMappingID).Return(nil).Once()
+				certSubjMappingSvc.On("DeleteByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return certSubjMappingSvc
 			},
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
-			Name: "Returns error when getting cert subject mappings by consumer id failed",
+			Name: "Returns error when deleting cert subject mappings by consumer id failed",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
@@ -2253,39 +2244,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn:  apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			CertSubjMappingSvcFn: func() *automock.CertSubjectMappingService {
 				certSubjMappingSvc := &automock.CertSubjectMappingService{}
-				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
-				return certSubjMappingSvc
-			},
-			ExpectedError: testError,
-		},
-		{
-			Name: "Returns error when deleting cert subject mapping failed",
-			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
-
-				return persistTx, transact
-			},
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
-				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
-				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
-				appTemplateSvc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: UnusedAppTemplateConv,
-			WebhookConvFn:     UnusedWebhookConv,
-			WebhookSvcFn:      UnusedWebhookSvc,
-			SelfRegManagerFn:  apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
-			CertSubjMappingSvcFn: func() *automock.CertSubjectMappingService {
-				certSubjMappingSvc := &automock.CertSubjectMappingService{}
-				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(csms, nil).Once()
-				certSubjMappingSvc.On("Delete", txtest.CtxWithDBMatcher(), certSubjMappingID).Return(testError).Once()
+				certSubjMappingSvc.On("DeleteByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(testError).Once()
 				return certSubjMappingSvc
 			},
 			ExpectedError: testError,
@@ -2425,7 +2384,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			CertSubjMappingSvcFn: func() *automock.CertSubjectMappingService {
 				certSubjMappingSvc := &automock.CertSubjectMappingService{}
-				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), testID).Return([]*model.CertSubjectMapping{}, nil).Once()
+				certSubjMappingSvc.On("DeleteByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return certSubjMappingSvc
 			},
 			ExpectedError: testError,
@@ -2460,7 +2419,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			CertSubjMappingSvcFn: func() *automock.CertSubjectMappingService {
 				certSubjMappingSvc := &automock.CertSubjectMappingService{}
-				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), testID).Return([]*model.CertSubjectMapping{}, nil).Once()
+				certSubjMappingSvc.On("DeleteByConsumerID", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return certSubjMappingSvc
 			},
 			ExpectedError: testError,

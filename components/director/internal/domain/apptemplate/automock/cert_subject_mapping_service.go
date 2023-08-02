@@ -5,7 +5,6 @@ package automock
 import (
 	context "context"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,41 +13,18 @@ type CertSubjectMappingService struct {
 	mock.Mock
 }
 
-// Delete provides a mock function with given fields: ctx, id
-func (_m *CertSubjectMappingService) Delete(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
+// DeleteByConsumerID provides a mock function with given fields: ctx, consumerID
+func (_m *CertSubjectMappingService) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	ret := _m.Called(ctx, consumerID)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
+		r0 = rf(ctx, consumerID)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
-}
-
-// ListByConsumerID provides a mock function with given fields: ctx, consumerID
-func (_m *CertSubjectMappingService) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
-	ret := _m.Called(ctx, consumerID)
-
-	var r0 []*model.CertSubjectMapping
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.CertSubjectMapping); ok {
-		r0 = rf(ctx, consumerID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.CertSubjectMapping)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, consumerID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 type mockConstructorTestingTNewCertSubjectMappingService interface {

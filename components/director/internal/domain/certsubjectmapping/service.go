@@ -17,9 +17,9 @@ type CertMappingRepository interface {
 	Get(ctx context.Context, id string) (*model.CertSubjectMapping, error)
 	Update(ctx context.Context, model *model.CertSubjectMapping) error
 	Delete(ctx context.Context, id string) error
+	DeleteByConsumerID(ctx context.Context, consumerID string) error
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
-	ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error)
 }
 
 type service struct {
@@ -105,13 +105,11 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return csmPage, nil
 }
 
-// ListByConsumerID retrieves all certificate subject mappings for a specific consumer id
-func (s *service) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
-	log.C(ctx).Infof("Listing certificate subject mappings for consumer ID: %s", consumerID)
-	csms, err := s.repo.ListByConsumerID(ctx, consumerID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing certificate subject mapping for consumer ID: %s", consumerID)
+// DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id
+func (s *service) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	log.C(ctx).Infof("Deleting all certificate subject mappings for consumer ID: %s", consumerID)
+	if err := s.repo.DeleteByConsumerID(ctx, consumerID); err != nil {
+		return errors.Wrapf(err, "while deleting all certificate subject mappings for consumer ID: %s", consumerID)
 	}
-
-	return csms, nil
+	return nil
 }

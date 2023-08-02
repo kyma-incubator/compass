@@ -42,6 +42,20 @@ func (_m *CertMappingRepository) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
+// DeleteByConsumerID provides a mock function with given fields: ctx, consumerID
+func (_m *CertMappingRepository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	ret := _m.Called(ctx, consumerID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, consumerID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Exists provides a mock function with given fields: ctx, id
 func (_m *CertMappingRepository) Exists(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)
@@ -102,29 +116,6 @@ func (_m *CertMappingRepository) List(ctx context.Context, pageSize int, cursor 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListByConsumerID provides a mock function with given fields: ctx, consumerID
-func (_m *CertMappingRepository) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
-	ret := _m.Called(ctx, consumerID)
-
-	var r0 []*model.CertSubjectMapping
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.CertSubjectMapping); ok {
-		r0 = rf(ctx, consumerID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.CertSubjectMapping)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, consumerID)
 	} else {
 		r1 = ret.Error(1)
 	}

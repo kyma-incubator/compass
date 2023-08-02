@@ -365,36 +365,29 @@ func TestService_List(t *testing.T) {
 	}
 }
 
-func TestService_ListByConsumerID(t *testing.T) {
+func TestService_DeleteByConsumerID(t *testing.T) {
 	consumerID := "consumer_id"
-	csms := []*model.CertSubjectMapping{
-		CertSubjectMappingModel,
-	}
-
 	testCases := []struct {
-		Name           string
-		Repo           func() *automock.CertMappingRepository
-		ExpectedOutput []*model.CertSubjectMapping
-		ExpectedError  error
+		Name          string
+		Repo          func() *automock.CertMappingRepository
+		ExpectedError error
 	}{
 		{
 			Name: "Success",
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
-				repo.On("ListByConsumerID", emptyCtx, consumerID).Return(csms, nil).Once()
+				repo.On("DeleteByConsumerID", emptyCtx, consumerID).Return(nil).Once()
 				return repo
 			},
-			ExpectedOutput: csms,
 		},
 		{
-			Name: "Error while listing certificate subject mappings",
+			Name: "Error when deleting certificate subject mapping",
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
-				repo.On("ListByConsumerID", emptyCtx, consumerID).Return(nil, testErr).Once()
+				repo.On("DeleteByConsumerID", emptyCtx, consumerID).Return(testErr).Once()
 				return repo
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			ExpectedError: testErr,
 		},
 	}
 
@@ -405,7 +398,7 @@ func TestService_ListByConsumerID(t *testing.T) {
 			svc := certsubjectmapping.NewService(repo)
 
 			// WHEN
-			result, err := svc.ListByConsumerID(emptyCtx, consumerID)
+			err := svc.DeleteByConsumerID(emptyCtx, consumerID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -414,8 +407,6 @@ func TestService_ListByConsumerID(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-
-			require.Equal(t, testCase.ExpectedOutput, result)
 
 			mock.AssertExpectationsForObjects(t, repo)
 		})

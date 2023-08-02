@@ -70,8 +70,7 @@ type LabelUpsertService interface {
 //
 //go:generate mockery --name=CertSubjectMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertSubjectMappingService interface {
-	ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error)
-	Delete(ctx context.Context, id string) error
+	DeleteByConsumerID(ctx context.Context, consumerID string) error
 }
 
 // LabelRepository missing godoc

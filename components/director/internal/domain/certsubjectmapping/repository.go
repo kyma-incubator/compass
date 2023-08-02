@@ -141,25 +141,8 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 	}, nil
 }
 
-// ListByConsumerID lists all certificate subject mappings for a specific consumer id
-func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
-	log.C(ctx).Debugf("Listing certificate subject mappings for consumer ID %q from DB", consumerID)
-	var entityCollection EntityCollection
-	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, repo.Conditions{repo.NewEqualCondition("internal_consumer_id", consumerID)}...)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*model.CertSubjectMapping, 0, len(entityCollection))
-
-	for _, entity := range entityCollection {
-		result, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", entity.ID)
-		}
-
-		items = append(items, result)
-	}
-
-	return items, nil
+// DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id
+func (r *repository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	log.C(ctx).Debugf("Deleting all certificate subject mappings for consumer ID %q from DB", consumerID)
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("internal_consumer_id", consumerID)})
 }
