@@ -1,6 +1,6 @@
 BEGIN;
 
-ALTER TABLE api_definitions
+/*ALTER TABLE api_definitions
     ADD COLUMN correlation_ids JSONB;
 
 ALTER TABLE event_api_definitions
@@ -156,5 +156,5 @@ FROM api_definitions apis
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id;
-
+*/
 COMMIT;
