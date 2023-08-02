@@ -38,9 +38,9 @@ const (
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
 	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
-	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)?$"
+	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
-	ConfigBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)?$"
+	ConfigBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// StringArrayElementRegex represents the valid structure of the field
 	StringArrayElementRegex = "^[a-zA-Z0-9-_.\\/ ]*$"
 	// CountryRegex represents the valid structure of the field
@@ -405,6 +405,9 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateExtensibleField(value, api.OrdPackageID, packagePolicyLevels)
 		})),
 		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
+		validation.Field(&api.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 	)
 }
 
@@ -472,6 +475,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
 		})),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
+		validation.Field(&event.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 	)
 }
 
@@ -751,8 +757,8 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 		return errors.New("for APIResources with apiProtocol='websocket' it is mandatory to provide implementationStandard definition and type to be set to custom")
 	}
 
-	if apiProtocol == APIProtocolSAPSQLAPIV1 && !(resourceDefinitionTypes[model.APISpecTypeCustom] || resourceDefinitionTypes[model.APISpecTypeSQLAPIDefinitionV1]) {
-		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set either to sap-sql-api-definition-v1 or custom")
+	if apiProtocol == APIProtocolSAPSQLAPIV1 && !resourceDefinitionTypes[model.APISpecTypeSQLAPIDefinitionV1] {
+		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set to sap-sql-api-definition-v1")
 	}
 
 	return nil
