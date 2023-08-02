@@ -390,6 +390,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 	gqlEventDefinition := fixFullGQLEventDefinition("test")
 
 	var nilBundleID *string
+	var nilBundleReference *model.BundleReference
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -489,6 +490,33 @@ func TestResolver_DeleteEvent(t *testing.T) {
 			},
 			ExpectedEvent: nil,
 			ExpectedErr:   testErr,
+		},
+		{
+			Name:            "Success when BundleReference for API is not found",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.EventDefService {
+				svc := &automock.EventDefService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelEventDefinition, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("ToGraphQL", &modelEventDefinition, &spec, nilBundleReference).Return(gqlEventDefinition, nil).Once()
+				return conv
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.EventSpecReference, modelEventDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleReferenceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleEventReference, &modelEventDefinition.ID, nilBundleID).Return(nil, apperrors.NewNotFoundError(resource.BundleReference, id)).Once()
+				return svc
+			},
+			ExpectedEvent: gqlEventDefinition,
+			ExpectedErr:   nil,
 		},
 		{
 			Name:            "Returns error when BundleReference retrieval failed",
@@ -621,8 +649,8 @@ func TestResolver_DeleteEvent(t *testing.T) {
 
 			svc.AssertExpectations(t)
 			specService.AssertExpectations(t)
-			bndlRefService.AssertExpectations(t)
 			converter.AssertExpectations(t)
+			bndlRefService.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			persist.AssertExpectations(t)
 		})

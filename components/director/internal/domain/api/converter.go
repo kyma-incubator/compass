@@ -54,10 +54,9 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		return nil, err
 	}
 
-	var (
-		bundleID            string
-		apiDefaultTargetURL string
-	)
+	var bundleID string
+	apiDefaultTargetURL := ExtractTargetURLFromJSONArray(in.TargetURLs)
+
 	if bundleRef != nil {
 		if bundleRef.BundleID != nil {
 			bundleID = *bundleRef.BundleID

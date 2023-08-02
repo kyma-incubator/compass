@@ -486,6 +486,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 	id := "bar"
 	var nilBundleID *string
+	var nilBundleReference *model.BundleReference
 
 	modelAPIDefinition, spec, bundleRef := fixFullAPIDefinitionModelWithAppID("test")
 	gqlAPIDefinition := fixFullGQLAPIDefinition("test")
@@ -588,6 +589,33 @@ func TestResolver_DeleteAPI(t *testing.T) {
 			},
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Success when BundleReference for API is not found",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(&modelAPIDefinition, nil).Once()
+				svc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, id).Return(nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.APIConverter {
+				conv := &automock.APIConverter{}
+				conv.On("ToGraphQL", &modelAPIDefinition, &spec, nilBundleReference).Return(gqlAPIDefinition, nil).Once()
+				return conv
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), resource.Application, model.APISpecReference, modelAPIDefinition.ID).Return(&spec, nil).Once()
+				return svc
+			},
+			BundleRefServiceFn: func() *automock.BundleReferenceService {
+				svc := &automock.BundleReferenceService{}
+				svc.On("GetForBundle", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &modelAPIDefinition.ID, nilBundleID).Return(nil, apperrors.NewNotFoundError(resource.BundleReference, id)).Once()
+				return svc
+			},
+			ExpectedAPI: gqlAPIDefinition,
+			ExpectedErr: nil,
 		},
 		{
 			Name:            "Returns error when BundleReference retrieval failed",
