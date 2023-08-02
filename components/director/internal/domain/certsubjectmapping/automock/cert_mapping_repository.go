@@ -109,6 +109,29 @@ func (_m *CertMappingRepository) List(ctx context.Context, pageSize int, cursor 
 	return r0, r1
 }
 
+// ListByConsumerID provides a mock function with given fields: ctx, consumerID
+func (_m *CertMappingRepository) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
+	ret := _m.Called(ctx, consumerID)
+
+	var r0 []*model.CertSubjectMapping
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.CertSubjectMapping); ok {
+		r0 = rf(ctx, consumerID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.CertSubjectMapping)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, consumerID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *CertMappingRepository) Update(ctx context.Context, _a1 *model.CertSubjectMapping) error {
 	ret := _m.Called(ctx, _a1)

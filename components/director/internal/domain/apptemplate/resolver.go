@@ -127,10 +127,11 @@ type Resolver struct {
 	selfRegManager          SelfRegisterManager
 	uidService              UIDService
 	appTemplateProductLabel string
+	certSubjectMappingSvc   CertSubjectMappingService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		appSvc:                  appSvc,
@@ -142,6 +143,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		selfRegManager:          selfRegisterManager,
 		uidService:              uidService,
 		appTemplateProductLabel: appTemplateProductLabel,
+		certSubjectMappingSvc:   certSubjectMappingSvc,
 	}
 }
 
@@ -583,6 +585,18 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	err = r.appTemplateSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// Delete all CertSubjMappings related to the app template
+	csms, err := r.certSubjectMappingSvc.ListByConsumerID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, csm := range csms {
+		if err := r.certSubjectMappingSvc.Delete(ctx, csm.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	err = tx.Commit()
