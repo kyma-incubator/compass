@@ -1,6 +1,6 @@
 BEGIN;
 
-/*DROP VIEW IF EXISTS correlation_ids_apis;
+DROP VIEW IF EXISTS correlation_ids_apis;
 DROP VIEW IF EXISTS correlation_ids_events;
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
@@ -174,5 +174,5 @@ ALTER TABLE api_definitions
 
 ALTER TABLE event_api_definitions
     DROP COLUMN correlation_ids;
-*/
+
 COMMIT;
