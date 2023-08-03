@@ -832,6 +832,56 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	saveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
 }
 
+func TestDeleteApplicationTemplateWithCertSubjMapping(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := createAppTemplateName("app-template")
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log("Create application template")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	t.Log("Create cert subject mapping for the application template")
+	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &appTemplate.ID, tenantAccessLevels)
+	t.Logf("Create certificate subject mapping with internalConsumerID: %s", appTemplate.ID)
+
+	var csmCreate graphql.CertificateSubjectMapping
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
+
+	// WHEN
+	t.Logf("Delete application template with id %q", appTemplate.ID)
+
+	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
+	deleteOutput := graphql.ApplicationTemplate{}
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
+	require.NoError(t, err)
+
+	//THEN
+	t.Log("Check if application template was deleted")
+
+	out := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate.ID)
+
+	require.Empty(t, out)
+
+	t.Log("Check if cert subject mapping was deleted")
+
+	t.Logf("Query certificate subject mapping by ID: %s", csmCreate.ID)
+	queryCertSubjectMappingReq := fixtures.FixQueryCertificateSubjectMappingRequest(csmCreate.ID)
+	csm := graphql.CertificateSubjectMapping{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingReq, &csm)
+
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "Object not found")
+}
+
 func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
