@@ -42,6 +42,20 @@ func (_m *CertMappingRepository) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
+// DeleteByConsumerID provides a mock function with given fields: ctx, consumerID
+func (_m *CertMappingRepository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	ret := _m.Called(ctx, consumerID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, consumerID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Exists provides a mock function with given fields: ctx, id
 func (_m *CertMappingRepository) Exists(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)

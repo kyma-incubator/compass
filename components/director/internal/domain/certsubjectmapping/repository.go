@@ -139,3 +139,9 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 		PageInfo:   page,
 	}, nil
 }
+
+// DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id
+func (r *repository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	log.C(ctx).Debugf("Deleting all certificate subject mappings for consumer ID %q from DB", consumerID)
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("internal_consumer_id", consumerID)})
+}

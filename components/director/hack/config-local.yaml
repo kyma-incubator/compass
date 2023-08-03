@@ -151,6 +151,8 @@ graphql:
   input:
     application:
       localTenantID: [ "application.local_tenant_id:write" ]
+    application_template:
+      labels: [ "application_template.labels:write" ]
     formation:
       state: [ "formation.state:write" ]
 
@@ -212,6 +214,7 @@ clientCredentialsRegistrationScopes:
     - "application.webhooks:read"
     - "application.application_template:read"
     - "application_template.webhooks:read"
+    - "application_template.labels:write"
     - "bundle.instance_auths:read"
     - "document.fetch_request:read"
     - "event_spec.fetch_request:read"
