@@ -1343,7 +1343,6 @@ global:
         - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
-        - "application_template.labels:write"
         - "integration_system:read"
         - "integration_system:write"
         - "runtime:read"
