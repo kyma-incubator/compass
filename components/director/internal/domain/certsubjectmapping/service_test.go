@@ -364,3 +364,51 @@ func TestService_List(t *testing.T) {
 		})
 	}
 }
+
+func TestService_DeleteByConsumerID(t *testing.T) {
+	consumerID := "consumer_id"
+	testCases := []struct {
+		Name          string
+		Repo          func() *automock.CertMappingRepository
+		ExpectedError error
+	}{
+		{
+			Name: "Success",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("DeleteByConsumerID", emptyCtx, consumerID).Return(nil).Once()
+				return repo
+			},
+		},
+		{
+			Name: "Error when deleting certificate subject mapping",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("DeleteByConsumerID", emptyCtx, consumerID).Return(testErr).Once()
+				return repo
+			},
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.Repo()
+
+			svc := certsubjectmapping.NewService(repo)
+
+			// WHEN
+			err := svc.DeleteByConsumerID(emptyCtx, consumerID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
