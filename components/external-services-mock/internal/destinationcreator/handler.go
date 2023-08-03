@@ -3,6 +3,7 @@ package destinationcreator
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -70,21 +71,23 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading destination request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading destination request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("while reading destination request body. X-Request-Id: %s", correlationID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	authTypeResult := gjson.GetBytes(bodyBytes, "authenticationType")
 	if !authTypeResult.Exists() || authTypeResult.String() == "" {
-		log.C(ctx).Errorf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Errorf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 		return
 	}
 
 	switch destinationcreator.AuthType(authTypeResult.String()) {
 	case destinationcreator.AuthTypeNoAuth:
-		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes, routeVars)
+		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes)
 		if err != nil {
 			log.C(ctx).Error(err)
 			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
@@ -92,7 +95,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		}
 		httputils.Respond(writer, statusCode)
 	case destinationcreator.AuthTypeBasic:
-		statusCode, err := h.createBasicDestination(ctx, bodyBytes, routeVars)
+		statusCode, err := h.createBasicDestination(ctx, bodyBytes)
 		if err != nil {
 			log.C(ctx).Error(err)
 			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
@@ -100,7 +103,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		}
 		httputils.Respond(writer, statusCode)
 	case destinationcreator.AuthTypeSAMLAssertion:
-		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes, routeVars)
+		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes)
 		if err != nil {
 			log.C(ctx).Error(err)
 			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
@@ -108,8 +111,9 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		}
 		httputils.Respond(writer, statusCode)
 	default:
-		log.C(ctx).Errorf("Invalid destination authentication type: %s. X-Request-Id: %s", authTypeResult.String(), correlationID)
-		httphelpers.WriteError(writer, errors.Errorf("Invalid destination authentication type: %s. X-Request-Id: %s", authTypeResult.String(), correlationID), http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("Invalid destination authentication type: %s. X-Request-Id: %s", authTypeResult.String(), correlationID)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusInternalServerError)
 		return
 	}
 }
@@ -184,22 +188,25 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while reading destination certificate request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while reading destination certificate request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("while reading destination certificate request body. X-Request-Id: %s", correlationID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	var reqBody CertificateRequestBody
 	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		log.C(ctx).WithError(err).Errorf("while unmarshaling destination certificate request body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while unmarshaling destination certificate request body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("while unmarshaling destination certificate request body. X-Request-Id: %s", correlationID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	log.C(ctx).Info("Validating destination certificate request body...")
 	if err = reqBody.Validate(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating destination certificate request body")
-		httphelpers.WriteError(writer, errors.Errorf("An error occurred while validating destination certificate request body. X-Request-Id: %s", correlationID), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("An error occurred while validating destination certificate request body. X-Request-Id: %s", correlationID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -218,8 +225,9 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 
 	certRespBytes, err := json.Marshal(certResp)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("while marshaling certificate response body. X-Request-Id: %s", correlationID)
-		httphelpers.WriteError(writer, errors.Wrapf(err, "while marshaling certificate response body. X-Request-Id: %s", correlationID), http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("while marshaling certificate response body. X-Request-Id: %s", correlationID)
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
@@ -233,8 +241,9 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 
 	destSvcCertificateRespBytes, err := json.Marshal(destSvcCertificateResp)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("while marshalling destination certificate response")
-		httphelpers.WriteError(writer, errors.New("while marshalling destination certificate response"), http.StatusInternalServerError)
+		errMsg := "while marshalling destination certificate response"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusInternalServerError)
 		return
 	}
 
@@ -286,7 +295,7 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
-func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
+func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []byte) (int, error) {
 	var reqBody DesignTimeRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshaling design time destination request body")
@@ -324,10 +333,10 @@ func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []b
 	return http.StatusCreated, nil
 }
 
-func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
+func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) (int, error) {
 	var reqBody BasicRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshaling basic destination request body")
+		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshalling basic destination request body")
 	}
 
 	log.C(ctx).Info("Validating basic destination request body...")
@@ -366,7 +375,7 @@ func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte, 
 	return http.StatusCreated, nil
 }
 
-func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte, routeVars map[string]string) (int, error) {
+func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte) (int, error) {
 	var reqBody SAMLAssertionRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
 		return http.StatusInternalServerError, errors.Wrapf(err, "while unmarshaling SAML assertion destination request body")
@@ -374,8 +383,7 @@ func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes 
 
 	log.C(ctx).Info("Validating SAML assertion destination request body...")
 	if err := reqBody.Validate(h.Config); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while validating SAML assertion destination request body")
-		return http.StatusBadRequest, errors.Errorf("An error occurred while validating SAML assertion destination request body")
+		return http.StatusBadRequest, errors.New("An error occurred while validating SAML assertion destination request body")
 	}
 
 	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
@@ -447,21 +455,26 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 
 	dest, exists := h.DestinationSvcDestinations[destinationNameParamValue]
 	if !exists {
-		log.C(ctx).Errorf("Destination with name: %q doest not exists", destinationNameParamValue)
-		httphelpers.WriteError(writer, errors.Errorf("Destination with name: %q doest not exists. X-Request-Id: %s", destinationNameParamValue, correlationID), http.StatusNotFound)
+		errMsg := fmt.Sprintf("Destination with name: %q doest not exists. X-Request-Id: %s", destinationNameParamValue, correlationID)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusNotFound)
 		return
 	}
 
 	bodyBytes, err := json.Marshal(dest)
 	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(bodyBytes)
 	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+		errMsg := "error while writing response"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 }
@@ -486,21 +499,26 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 
 	cert, exists := h.DestinationSvcCertificates[certificateNameParamValue]
 	if !exists {
-		log.C(ctx).Errorf("Certificate with name: %q doest not exists", certificateNameParamValue)
-		httphelpers.WriteError(writer, errors.Errorf("Destination with name: %q doest not exists. X-Request-Id: %s", certificateNameParamValue, correlationID), http.StatusNotFound)
+		errMsg := fmt.Sprintf("Certificate with name: %q doest not exists. X-Request-Id: %s", certificateNameParamValue, correlationID)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusNotFound)
 		return
 	}
 
 	bodyBytes, err := json.Marshal(cert)
 	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(bodyBytes)
 	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+		errMsg := "error while writing response"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 }

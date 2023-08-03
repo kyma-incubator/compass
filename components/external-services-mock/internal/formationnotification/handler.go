@@ -43,6 +43,12 @@ const (
 	DeleteFormation Operation = "deleteFormation"
 )
 
+var (
+	TenantIDParam      = "tenantId"
+	ApplicationIDParam = "applicationId"
+	formationIDParam   = "uclFormationId"
+)
+
 type Configuration struct {
 	ExternalClientCertTestSecretName            string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
 	ExternalClientCertTestSecretNamespace       string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
@@ -184,7 +190,7 @@ type SyncFAResponseFn func(bodyBytes []byte)
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		var response interface{} = FormationAssignmentResponseBody{
+		response := FormationAssignmentResponseBody{
 			Config: FormationAssignmentResponseConfig{
 				Key: "value",
 				Key2: struct {
@@ -203,7 +209,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		var response interface{} = FormationAssignmentResponseBodyWithState{
+		response := FormationAssignmentResponseBodyWithState{
 			State: ConfigPendingAssignmentState,
 			Config: FormationAssignmentResponseConfig{
 				Key: "value",
@@ -213,7 +219,7 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -289,7 +295,7 @@ func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request)
 func (h *Handler) DeleteWithState(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		response := FormationAssignmentResponseBodyWithState{State: "READY"}
+		response := FormationAssignmentResponseBodyWithState{State: ReadyAssignmentState}
 		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
 
@@ -337,14 +343,19 @@ func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 
 // GetResponses returns the notification data saved in the Mappings
 func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	if bodyBytes, err := json.Marshal(&h.Mappings); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	} else {
 		writer.WriteHeader(http.StatusOK)
 		_, err = writer.Write(bodyBytes)
 		if err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+			errMsg := "error while writing response"
+			log.C(ctx).Error(errMsg)
+			httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -352,16 +363,18 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 
 // Cleanup deletes/cleanup the notification data saved in the Mappings
 func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
+	log.C(r.Context()).Info("Cleaning up formation notification mappings")
 	h.Mappings = make(map[string][]Response)
 	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, responseFunc SyncFAResponseFn) {
 	routeVars := mux.Vars(r)
-	id, ok := routeVars["tenantId"]
+	id, ok := routeVars[TenantIDParam]
 	if !ok {
-		log.C(ctx).Error("missing tenantId path parameter in the url")
-		httphelpers.WriteError(writer, errors.New("missing tenantId path parameter in the url"), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("missing %s path parameter in the url", TenantIDParam)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -370,15 +383,17 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("error while reading request body")
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		errMsg := "error while reading request body"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		log.C(ctx).WithError(err).Error("body is not a valid JSON")
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -392,10 +407,11 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 	}
 
 	if r.Method == http.MethodDelete {
-		applicationId, ok := routeVars["applicationId"]
+		applicationId, ok := routeVars[ApplicationIDParam]
 		if !ok {
-			log.C(ctx).Error("missing tenantId path parameter in the url")
-			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+			errMsg := fmt.Sprintf("missing %s path parameter in the url", ApplicationIDParam)
+			log.C(ctx).Errorf(errMsg)
+			httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 			return
 		}
 		log.C(ctx).Infof("Adding to formation assignment notifications mappings operation: %s, app ID: %s and body: %s", Unassign, applicationId, string(bodyBytes))
@@ -561,10 +577,11 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 // asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
 func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc AsyncFAResponseFn) {
 	routeVars := mux.Vars(r)
-	id, ok := routeVars["tenantId"]
+	id, ok := routeVars[TenantIDParam]
 	if !ok {
-		log.C(ctx).Error("missing tenantId path parameter in the url")
-		httphelpers.WriteError(writer, errors.New("missing tenantId path parameter in the url"), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("missing %s path parameter in the url", TenantIDParam)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 		return
 	}
 	if _, ok := h.Mappings[id]; !ok {
@@ -572,15 +589,17 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("error while reading request body")
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		errMsg := "error while reading request body"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		log.C(ctx).WithError(err).Error("body is not a valid JSON")
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	}
 	response := Response{
@@ -588,10 +607,11 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		RequestBody: bodyBytes,
 	}
 	if r.Method == http.MethodDelete {
-		applicationId, ok := routeVars["applicationId"]
+		applicationId, ok := routeVars[ApplicationIDParam]
 		if !ok {
-			log.C(ctx).Error("missing applicationId path parameter in the url")
-			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+			errMsg := fmt.Sprintf("missing %s path parameter in the url", ApplicationIDParam)
+			log.C(ctx).Error(errMsg)
+			httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 			return
 		}
 		response.ApplicationID = &applicationId
@@ -667,6 +687,8 @@ func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 
 // FailOnceFormation handles synchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	operation := CreateFormation
 	if r.Method == http.MethodPost {
 		operation = CreateFormation
@@ -675,9 +697,11 @@ func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request)
 	}
 
 	if h.ShouldReturnError {
-		formationID, ok := mux.Vars(r)["uclFormationId"]
+		formationID, ok := mux.Vars(r)[formationIDParam]
 		if !ok {
-			httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
+			errMsg := fmt.Sprintf("missing %s path parameter in url", formationIDParam)
+			log.C(ctx).Error(errMsg)
+			httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 			return
 		}
 
@@ -686,13 +710,17 @@ func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request)
 		}
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+			errMsg := "error while reading request body"
+			log.C(ctx).Error(errMsg)
+			httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 			return
 		}
 
 		var result interface{}
 		if err := json.Unmarshal(bodyBytes, &result); err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+			errMsg := "body is not a valid JSON"
+			log.C(ctx).Error(errMsg)
+			httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 			return
 		}
 
@@ -715,9 +743,13 @@ func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request)
 
 // synchronousFormationResponse extracts the logic that handles formation notification requests
 func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *http.Request, formationOperation Operation) {
-	formationID, ok := mux.Vars(r)["uclFormationId"]
+	ctx := r.Context()
+
+	formationID, ok := mux.Vars(r)[formationIDParam]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("missing %s path parameter in url", formationIDParam)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -726,13 +758,17 @@ func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *ht
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		errMsg := "error while reading request body"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -890,10 +926,11 @@ func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *htt
 
 // asyncFormationResponse handles the incoming formation notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `formationResponseFunc` which sends a request to the formation status API
 func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, formationErr string, formationResponseFunc FormationResponseFn) {
-	formationID, ok := mux.Vars(r)["uclFormationId"]
+	formationID, ok := mux.Vars(r)[formationIDParam]
 	if !ok {
-		log.C(ctx).Error("missing uclFormationId path parameter in the url")
-		httphelpers.WriteError(writer, errors.New("missing uclFormationId path parameter in the url"), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("missing %s path parameter in the url", formationIDParam)
+		log.C(ctx).Error(errMsg)
+		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -902,15 +939,17 @@ func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.Respon
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("error while reading formation notification request body")
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading formation notification request body"), http.StatusInternalServerError)
+		errMsg := "error while reading formation notification request body"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		log.C(ctx).WithError(err).Error("body is not a valid JSON")
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		errMsg := "body is not a valid JSON"
+		log.C(ctx).WithError(err).Error(errMsg)
+		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
 		return
 	}
 
@@ -922,15 +961,17 @@ func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.Respon
 
 	formationIDFromBody := gjson.Get(string(bodyBytes), "details.id").String()
 	if formationIDFromBody == "" {
-		log.C(ctx).Errorf("Missing formation ID from request body")
-		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation ID from request body"))
+		errMsg := "Missing formation ID from request body"
+		log.C(ctx).Errorf(errMsg)
+		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New(errMsg))
 		return
 	}
 
 	formationNameFromBody := gjson.Get(string(bodyBytes), "details.name").String()
 	if formationNameFromBody == "" {
-		log.C(ctx).Errorf("Missing formation name from request body")
-		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New("Missing formation name from request body"))
+		errMsg := "Missing formation name from request body"
+		log.C(ctx).Errorf(errMsg)
+		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New(errMsg))
 		return
 	}
 

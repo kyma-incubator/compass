@@ -134,7 +134,7 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName s
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedStatusCode, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, expectedStatusCode, string(body)))
+	require.Equal(t, expectedStatusCode, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %s", resp.StatusCode, expectedStatusCode, string(body)))
 	return body
 }
 
@@ -154,6 +154,6 @@ func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certif
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedStatusCode , resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, expectedStatusCode, string(body)))
+	require.Equal(t, expectedStatusCode, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, expectedStatusCode, string(body)))
 	return body
 }

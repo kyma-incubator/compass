@@ -3,12 +3,13 @@ package tests
 import (
 	"context"
 	"crypto/tls"
-	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
@@ -42,9 +43,9 @@ type DirectorConfig struct {
 	CertLoaderConfig                            certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                                 subscription.Config
-	DestinationAPIConfig                            clients.DestinationServiceAPIConfig
-	DestinationsConfig                              cfg.DestinationsConfig
-	DestinationConsumerSubdomain                    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
+	DestinationsConfig                                 cfg.DestinationsConfig
+	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string
 	TestConsumerAccountID                              string
@@ -61,7 +62,7 @@ type DirectorConfig struct {
 	SubscriptionProviderAppNameValue                   string
 	IndirectDependencySubscriptionProviderAppNameValue string `envconfig:"APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
 	DirectDependencySubscriptionProviderAppNameValue   string `envconfig:"APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
-	ConsumerSubaccountLabelKey                         string
+	GlobalSubaccountIDLabelKey                         string `envconfig:"APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY"`
 	SubscriptionLabelKey                               string
 	RuntimeTypeLabelKey                                string
 	ApplicationTypeLabelKey                            string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`

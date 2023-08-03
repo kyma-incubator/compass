@@ -3,12 +3,13 @@ package tests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestKymaTenantMappingAdapter(t *testing.T) {
@@ -130,7 +131,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	runtimeName := "runtime-test"
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixRuntimeInput(runtimeName)
-	runtimeRegInput.Labels[conf.ConsumerSubaccountLabelKey] = conf.TestProviderSubaccountID
+	runtimeRegInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountID
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)

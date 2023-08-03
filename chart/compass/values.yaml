@@ -273,7 +273,6 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -315,6 +314,7 @@ global:
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
+    globalSubaccountIDLabelKey: "global_subaccount_id"
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
     destinationCreator:

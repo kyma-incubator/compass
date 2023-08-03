@@ -60,7 +60,7 @@ func TestHandler_Patch(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
 			h := formationnotification.NewHandler(formationnotification.Configuration{})
@@ -117,7 +117,7 @@ func TestHandler_PatchWithState(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
 			h := formationnotification.NewHandler(formationnotification.Configuration{})
@@ -181,7 +181,7 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
 			h := formationnotification.NewHandler(formationnotification.Configuration{})
@@ -245,7 +245,7 @@ func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
 			h := formationnotification.NewHandler(formationnotification.Configuration{})
@@ -312,10 +312,10 @@ func TestHandler_Delete(t *testing.T) {
 			require.NoError(t, err)
 			vars := map[string]string{}
 			if testCase.TenantID != "" {
-				vars[tenantIDParam] = testCase.TenantID
+				vars[formationnotification.TenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars[appIDParam] = testCase.AppID
+				vars[formationnotification.ApplicationIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
@@ -383,10 +383,10 @@ func TestHandler_DestinationDelete(t *testing.T) {
 			require.NoError(t, err)
 			vars := map[string]string{}
 			if testCase.TenantID != "" {
-				vars[tenantIDParam] = testCase.TenantID
+				vars[formationnotification.TenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars[appIDParam] = testCase.AppID
+				vars[formationnotification.ApplicationIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
@@ -454,10 +454,10 @@ func TestHandler_DeleteWithState(t *testing.T) {
 			require.NoError(t, err)
 			vars := map[string]string{}
 			if testCase.TenantID != "" {
-				vars[tenantIDParam] = testCase.TenantID
+				vars[formationnotification.TenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars[appIDParam] = testCase.AppID
+				vars[formationnotification.ApplicationIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
@@ -599,9 +599,9 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 			req, err := http.NewRequest(testCase.Method, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.AppID != nil {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID, appIDParam: *testCase.AppID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID, formationnotification.ApplicationIDParam: *testCase.AppID})
 			} else if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
 			h := formationnotification.NewHandler(formationnotification.Configuration{})
