@@ -239,6 +239,8 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
+	log.C(ctx).Infof("TENANT AFTER CONV %+v", tenants[0])
+	log.C(ctx).Infof("TENANT REGION AFTER CONV %s", tenants[0].Region)
 
 	tenantIDs, err := r.srv.UpsertMany(ctx, tenants...)
 	if err != nil {

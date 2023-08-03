@@ -368,6 +368,8 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		}
 		if r, ok := regions[tenant.ExternalTenant]; ok {
 			region = r
+			log.C(ctx).Infof("THE TENANT IS %s", tenant.ExternalTenant)
+			log.C(ctx).Infof("THE REGION IS %s", region)
 		}
 		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, upsertFunc)
 		if err != nil {
@@ -407,8 +409,9 @@ func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, 
 		}
 	}
 	if len(region) > 0 {
+		log.C(ctx).Infof("REGION IN USPERT LABELS IS %s", region)
 		if err := s.upsertLabel(ctx, tenantID, RegionLabelKey, region); err != nil {
-			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
+			return errors.Wrapf(err, "while setting region label for tenant with ID %s", tenantID)
 		}
 	}
 	if len(licenseType) > 0 {
