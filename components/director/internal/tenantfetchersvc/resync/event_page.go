@@ -221,6 +221,8 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 	regionField := gjson.Get(jsonPayload, ep.FieldMapping.RegionField)
 	if !regionField.Exists() {
 		log.C(ctx).Debugf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
+		log.C(ctx).Info("REGION IS MISSING FROM EVENT SERVICE")
+		//prob here
 	}
 	region := regionField.String()
 	parentIDField := gjson.Get(jsonPayload, ep.FieldMapping.GlobalAccountKey)
@@ -228,12 +230,13 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 		return nil, invalidFieldFormatError(ep.FieldMapping.GlobalAccountKey)
 	}
 	parentID := parentIDField.String()
+	log.C(ctx).Infof("REGION IS RETURNED FROM EVENT SERVECE AND IT HAS VALUE %s", region)
 	return &model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: externalTenant,
 		Parent:         parentID,
 		Subdomain:      subdomain,
-		Region:         region,
+		Region:         region, //we add it
 		Type:           tenant.TypeToStr(tenant.Subaccount),
 		Provider:       ep.ProviderName,
 		LicenseType:    licenseType,
