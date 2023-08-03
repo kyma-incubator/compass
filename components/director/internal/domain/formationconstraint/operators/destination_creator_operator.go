@@ -58,14 +58,12 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	if formationAssignment.State != string(model.ReadyAssignmentState) && formationAssignment.State != string(model.ConfigPendingAssignmentState) {
+	if formationAssignment != nil && formationAssignment.State != string(model.ReadyAssignmentState) && formationAssignment.State != string(model.ConfigPendingAssignmentState) {
 		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", formationAssignment.ID, formationAssignment.State)
 		return true, nil
 	}
 
 	if di.Operation == model.AssignFormation {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.AssignFormation, formationAssignment.ID)
-
 		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
@@ -129,11 +127,6 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			if reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials == nil {
 				return false, errors.New("The outbound communication credentials could not be empty")
 			}
-
-			//formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
-			//if err != nil {
-			//	return false, err
-			//}
 
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
 			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
