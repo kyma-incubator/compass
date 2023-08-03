@@ -220,7 +220,8 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 	if err != nil {
 		return err
 	}
-
+	log.C(ctx).Infof("FOUND TENANT FROM EVENT SERVICE %+v", *fetchedTenant)
+	log.C(ctx).Infof("IT HAS REGION %s", fetchedTenant.Region)
 	if fetchedTenant == nil && parentTenantID == "" {
 		log.C(ctx).Infof("Tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
 		return apperrors.NewEmptyParentIDErrorWithMessage(fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID))
