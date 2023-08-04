@@ -27,6 +27,10 @@ ls ${GOPATH}/bin/
 go version
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
+
+log::info "List go bins"
+ls ${GOPATH}/bin/
+
 benchstat
 
 requiredVars=(
