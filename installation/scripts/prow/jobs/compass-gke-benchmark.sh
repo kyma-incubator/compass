@@ -18,6 +18,12 @@ source "${COMPASS_SOURCES_DIR}/installation/scripts/gcp.sh"
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
 
 go version
+log::info "Installing go benchstat"
+benchstat || true
+where benchstat || true
+go install golang.org/x/perf/cmd/benchstat@latest
+benchstat
+where benchstat
 
 requiredVars=(
     REPO_OWNER
