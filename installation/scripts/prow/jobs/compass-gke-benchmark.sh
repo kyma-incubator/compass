@@ -68,6 +68,9 @@ gcloud --version
 log::info "Installing dig and openssl commands"
 apk add bind-tools openssl
 
+log:info "Installing go benchstat"
+go install golang.org/x/perf/cmd/benchstat@latest
+
 ### Cluster name must be less than 40 characters!
 COMMON_NAME=$(echo "${COMMON_NAME}" | tr "[:upper:]" "[:lower:]")
 
