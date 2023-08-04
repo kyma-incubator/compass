@@ -17,21 +17,8 @@ source "${COMPASS_SOURCES_DIR}/installation/scripts/gcp.sh"
 # shellcheck source=prow/scripts/lib/kyma.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
 
-echo "GOPATH: ${GOPATH}"
-echo "GOBIN: ${GOBIN}"
-echo "PATH: ${PATH}"
-
-log::info "List GOPATH"
-ls ${GOPATH}
-
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
-
-${GOPATH}/bin/benchstat || true
-
-export PATH="$PATH:${GOPATH}/bin/benchstat"
-
-benchstat || true
 
 requiredVars=(
     REPO_OWNER
@@ -340,21 +327,18 @@ PODS=$(kubectl get cts $SUITE_NAME -o=go-template --template='{{range .status.re
 CHECK_FAILED=false
 FAILED_TESTS=''
 
-log::info "Installing go benchstat"
-go install golang.org/x/perf/cmd/benchstat@latest
-
 for POD in $PODS; do
   CONTAINER=$(kubectl -n kyma-system get pod "$POD" -o jsonpath='{.spec.containers[*].name}' | sed s/istio-proxy//g | awk '{$1=$1};1')
   kubectl logs -n kyma-system "$POD" -c "$CONTAINER" > "$CONTAINER"-new
 
   if [ -f "$CONTAINER"-old ]; then
     log::info "Stats of the main installation"
-    benchstat "$CONTAINER"-old
+    ${GOPATH}/bin/benchstat "$CONTAINER"-old
 
     log::info "Stats of the new installation"
-    benchstat "$CONTAINER"-new
+    ${GOPATH}/bin/benchstat "$CONTAINER"-new
 
-    STATS=$(benchstat "$CONTAINER"-old "$CONTAINER"-new)
+    STATS=$(${GOPATH}/bin/benchstat "$CONTAINER"-old "$CONTAINER"-new)
     log::info "Performance comparison statistics"
     echo "$STATS"
 
@@ -365,7 +349,7 @@ for POD in $PODS; do
       FAILED_TESTS="$CONTAINER\\n$FAILED_TESTS"
     fi
   else
-    benchstat "$CONTAINER"-new
+    ${GOPATH}/bin/benchstat "$CONTAINER"-new
   fi
 done
 
