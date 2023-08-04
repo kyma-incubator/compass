@@ -106,7 +106,6 @@ if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTE
   SYSTEM=$(generate_random 32)
   COOKIE=$(generate_random 32)
 
-  echo "Creating Ory credentials Secret"
   kubectl create secret generic "$SECRET_NAME" -n "$RELEASE_NS" \
     --from-literal=dsn="${DSN}" \
     --from-literal=secretsSystem="${SYSTEM}" \
