@@ -2,8 +2,9 @@ package fixtures
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	"github.com/stretchr/testify/require"
 

@@ -66,6 +66,13 @@ type LabelUpsertService interface {
 	UpsertLabelGlobal(ctx context.Context, labelInput *model.LabelInput) error
 }
 
+// CertSubjectMappingService missing godoc
+//
+//go:generate mockery --name=CertSubjectMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CertSubjectMappingService interface {
+	DeleteByConsumerID(ctx context.Context, consumerID string) error
+}
+
 // LabelRepository missing godoc
 //
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
