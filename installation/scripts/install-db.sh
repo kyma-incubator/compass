@@ -51,8 +51,8 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "Install DB"
-helm upgrade --install --atomic --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system localdb "${DB_CHARTS}"
+echo "Installing DB..."
+helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system localdb "${DB_CHARTS}"
 
 echo "Look for DB dump in progress ..."
 DBDUMP_JOB_JSON=$(kubectl get job compass-dbdump -n compass-system --ignore-not-found -o json)
