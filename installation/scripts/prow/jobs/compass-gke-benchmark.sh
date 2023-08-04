@@ -17,9 +17,12 @@ source "${COMPASS_SOURCES_DIR}/installation/scripts/gcp.sh"
 # shellcheck source=prow/scripts/lib/kyma.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
 
+echo "GOPATH: ${GOPATH}"
+echo "GOBIN: ${GOBIN}"
+echo "PATH: ${PATH}"
+
 go version
 log::info "Installing go benchstat"
-go get golang.org/x/perf/cmd/benchstat@latest
 go install golang.org/x/perf/cmd/benchstat@latest
 benchstat
 
