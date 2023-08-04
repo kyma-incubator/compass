@@ -21,15 +21,16 @@ echo "GOPATH: ${GOPATH}"
 echo "GOBIN: ${GOBIN}"
 echo "PATH: ${PATH}"
 
-log::info "List go bins"
-ls ${GOPATH}/bin/
+log::info "List GOPATH"
+ls ${GOPATH}
 
 go version
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
 
 log::info "List go bins"
-ls ${GOPATH}/bin/
+ls ${GOPATH}
+ls ${GOPATH}/bin
 
 benchstat
 
