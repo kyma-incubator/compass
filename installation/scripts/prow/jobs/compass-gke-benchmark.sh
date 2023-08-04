@@ -65,8 +65,8 @@ gcloud config set component_manager/disable_update_check true
 gcloud config set metrics/environment github_docker_image
 gcloud --version
 
-log::info "Installing dig command"
-apk add bind-tools
+log::info "Installing dig and openssl commands"
+apk add bind-tools openssl
 
 ### Cluster name must be less than 40 characters!
 COMMON_NAME=$(echo "${COMMON_NAME}" | tr "[:upper:]" "[:lower:]")
