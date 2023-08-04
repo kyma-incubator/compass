@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 LIBDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" || exit; pwd)"
 
-# shellcheck source=prow/scripts/lib/log.sh
-source "${LIBDIR}/log.sh"
 # shellcheck source=prow/scripts/lib/utils.sh
-source "${LIBDIR}/utils.sh"
+source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/utils.sh"
+# shellcheck source=prow/scripts/lib/log.sh
+source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 
 # gcp::provision_k8s_cluster creates a GKE kubernetes cluster
 #
