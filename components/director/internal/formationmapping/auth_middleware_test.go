@@ -723,8 +723,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			//name:       "Authorization success: when the caller has owner access to the FA target's parent for type app that is made through subscription",
-			name:       "asdf",
+			name:       "Authorization success: when the caller has owner access to the FA target's parent for type app that is made through subscription",
 			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
