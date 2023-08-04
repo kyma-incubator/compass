@@ -68,10 +68,6 @@ gcloud --version
 log::info "Installing dig and openssl commands"
 apk add bind-tools openssl
 
-log::info "Installing go benchstat"
-go install golang.org/x/perf/cmd/benchstat@latest
-benchstat --version
-
 ### Cluster name must be less than 40 characters!
 COMMON_NAME=$(echo "${COMMON_NAME}" | tr "[:upper:]" "[:lower:]")
 
@@ -327,6 +323,9 @@ PODS=$(kubectl get cts $SUITE_NAME -o=go-template --template='{{range .status.re
 
 CHECK_FAILED=false
 FAILED_TESTS=''
+
+log::info "Installing go benchstat"
+go install golang.org/x/perf/cmd/benchstat@latest
 
 for POD in $PODS; do
   CONTAINER=$(kubectl -n kyma-system get pod "$POD" -o jsonpath='{.spec.containers[*].name}' | sed s/istio-proxy//g | awk '{$1=$1};1')
