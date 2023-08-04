@@ -70,6 +70,7 @@ apk add bind-tools openssl
 
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
+benchstat --version
 
 ### Cluster name must be less than 40 characters!
 COMMON_NAME=$(echo "${COMMON_NAME}" | tr "[:upper:]" "[:lower:]")
