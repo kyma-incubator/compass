@@ -17,6 +17,8 @@ source "${COMPASS_SOURCES_DIR}/installation/scripts/gcp.sh"
 # shellcheck source=prow/scripts/lib/kyma.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
 
+go version
+
 requiredVars=(
     REPO_OWNER
     REPO_NAME
