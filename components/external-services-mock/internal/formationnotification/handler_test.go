@@ -49,7 +49,7 @@ func TestHandler_Patch(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -106,7 +106,7 @@ func TestHandler_PatchWithState(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -170,7 +170,7 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -234,7 +234,7 @@ func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -300,7 +300,7 @@ func TestHandler_Delete(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -371,7 +371,7 @@ func TestHandler_DestinationDelete(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -442,7 +442,7 @@ func TestHandler_DeleteWithState(t *testing.T) {
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -583,7 +583,7 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
 			Method:               http.MethodPatch,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
@@ -671,7 +671,7 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 			name:                 "Error when formation request body is not valid json",
 			requestBody:          "invalid json",
 			formationID:          formationID,
-			expectedResponseCode: http.StatusBadRequest,
+			expectedResponseCode: http.StatusInternalServerError,
 			expectedMappings:     map[string][]formationnotification.Response{formationID: {}},
 		},
 	}
@@ -784,7 +784,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			RequestBody:          "invalid json",
 			Method:               http.MethodPost,
 			FormationID:          formationID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ShouldFail:           false,
 			ExpectedMappings:     map[string][]formationnotification.Response{formationID: {}},
 		},
@@ -800,7 +800,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			RequestBody:          "invalid json",
 			Method:               http.MethodPost,
 			FormationID:          formationID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ShouldFail:           true,
 			ExpectedMappings:     map[string][]formationnotification.Response{formationID: {}},
 		},

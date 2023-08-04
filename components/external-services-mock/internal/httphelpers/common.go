@@ -1,9 +1,12 @@
 package httphelpers
 
 import (
+	"context"
 	"encoding/json"
-	"log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -26,7 +29,12 @@ func WriteError(writer http.ResponseWriter, errMsg error, statusCode int) {
 
 	value, err := json.Marshal(&response)
 	if err != nil {
-		log.Fatalf("while writing error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
+		log.D().Fatalf("while writing error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
 	}
 	http.Error(writer, string(value), statusCode)
+}
+
+func RespondWithError(ctx context.Context, writer http.ResponseWriter, logErr error, respErrMsg, correlationID string, statusCode int) {
+	log.C(ctx).Error(logErr)
+	WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", respErrMsg, correlationID), statusCode)
 }

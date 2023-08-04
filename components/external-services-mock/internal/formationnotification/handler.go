@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -47,6 +47,7 @@ var (
 	TenantIDParam      = "tenantId"
 	ApplicationIDParam = "applicationId"
 	formationIDParam   = "uclFormationId"
+	respErrorMsg       = "An unexpected error occurred while processing the request"
 )
 
 type Configuration struct {
@@ -344,19 +345,15 @@ func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 // GetResponses returns the notification data saved in the Mappings
 func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
 	if bodyBytes, err := json.Marshal(&h.Mappings); err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
-		return
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while marshalling notification mappings"), respErrorMsg, correlationID, http.StatusInternalServerError)
 	} else {
 		writer.WriteHeader(http.StatusOK)
 		_, err = writer.Write(bodyBytes)
 		if err != nil {
-			errMsg := "error while writing response"
-			log.C(ctx).Error(errMsg)
-			httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
-			return
+			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		}
 	}
 }
@@ -369,31 +366,28 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, responseFunc SyncFAResponseFn) {
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
 	routeVars := mux.Vars(r)
 	id, ok := routeVars[TenantIDParam]
 	if !ok {
-		errMsg := fmt.Sprintf("missing %s path parameter in the url", TenantIDParam)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+		err := errors.Errorf("missing %s path parameter in the url", TenantIDParam)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	if _, ok = h.Mappings[id]; !ok {
 		h.Mappings[id] = make([]Response, 0, 1)
 	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		errMsg := "error while reading request body"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
@@ -409,9 +403,8 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 	if r.Method == http.MethodDelete {
 		applicationId, ok := routeVars[ApplicationIDParam]
 		if !ok {
-			errMsg := fmt.Sprintf("missing %s path parameter in the url", ApplicationIDParam)
-			log.C(ctx).Errorf(errMsg)
-			httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+			err := errors.Errorf("missing %s path parameter in the url", ApplicationIDParam)
+			httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 			return
 		}
 		log.C(ctx).Infof("Adding to formation assignment notifications mappings operation: %s, app ID: %s and body: %s", Unassign, applicationId, string(bodyBytes))
@@ -576,30 +569,27 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 
 // asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
 func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc AsyncFAResponseFn) {
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
 	routeVars := mux.Vars(r)
 	id, ok := routeVars[TenantIDParam]
 	if !ok {
-		errMsg := fmt.Sprintf("missing %s path parameter in the url", TenantIDParam)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+		err := errors.Errorf("missing %s path parameter in the url", TenantIDParam)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 	if _, ok := h.Mappings[id]; !ok {
 		h.Mappings[id] = make([]Response, 0, 1)
 	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		errMsg := "error while reading request body"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 	response := Response{
@@ -609,9 +599,8 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	if r.Method == http.MethodDelete {
 		applicationId, ok := routeVars[ApplicationIDParam]
 		if !ok {
-			errMsg := fmt.Sprintf("missing %s path parameter in the url", ApplicationIDParam)
-			log.C(ctx).Error(errMsg)
-			httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+			err := errors.Errorf("missing %s path parameter in the url", ApplicationIDParam)
+			httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 			return
 		}
 		response.ApplicationID = &applicationId
@@ -638,7 +627,6 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		return
 	}
 
-	correlationID := correlation.CorrelationIDFromContext(ctx)
 	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
@@ -688,6 +676,7 @@ func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 // FailOnceFormation handles synchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	operation := CreateFormation
 	if r.Method == http.MethodPost {
@@ -699,28 +688,23 @@ func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request)
 	if h.ShouldReturnError {
 		formationID, ok := mux.Vars(r)[formationIDParam]
 		if !ok {
-			errMsg := fmt.Sprintf("missing %s path parameter in url", formationIDParam)
-			log.C(ctx).Error(errMsg)
-			httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+			err := errors.Errorf("missing %s path parameter in the url", formationIDParam)
+			httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 			return
 		}
 
 		if _, ok := h.Mappings[formationID]; !ok {
 			h.Mappings[formationID] = make([]Response, 0, 1)
 		}
-		bodyBytes, err := ioutil.ReadAll(r.Body)
+		bodyBytes, err := io.ReadAll(r.Body)
 		if err != nil {
-			errMsg := "error while reading request body"
-			log.C(ctx).Error(errMsg)
-			httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 			return
 		}
 
 		var result interface{}
 		if err := json.Unmarshal(bodyBytes, &result); err != nil {
-			errMsg := "body is not a valid JSON"
-			log.C(ctx).Error(errMsg)
-			httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 			return
 		}
 
@@ -744,31 +728,27 @@ func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request)
 // synchronousFormationResponse extracts the logic that handles formation notification requests
 func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *http.Request, formationOperation Operation) {
 	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	formationID, ok := mux.Vars(r)[formationIDParam]
 	if !ok {
-		errMsg := fmt.Sprintf("missing %s path parameter in url", formationIDParam)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+		err := errors.Errorf("missing %s path parameter in the url", formationIDParam)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	if _, ok := h.Mappings[formationID]; !ok {
 		h.Mappings[formationID] = make([]Response, 0, 1)
 	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		errMsg := "error while reading request body"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
@@ -926,30 +906,27 @@ func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *htt
 
 // asyncFormationResponse handles the incoming formation notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `formationResponseFunc` which sends a request to the formation status API
 func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, operation Operation, formationErr string, formationResponseFunc FormationResponseFn) {
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
 	formationID, ok := mux.Vars(r)[formationIDParam]
 	if !ok {
-		errMsg := fmt.Sprintf("missing %s path parameter in the url", formationIDParam)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+		err := errors.Errorf("missing %s path parameter in the url", formationIDParam)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	if _, ok = h.Mappings[formationID]; !ok {
 		h.Mappings[formationID] = make([]Response, 0, 1)
 	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		errMsg := "error while reading formation notification request body"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading formation notification request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
@@ -961,17 +938,15 @@ func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.Respon
 
 	formationIDFromBody := gjson.Get(string(bodyBytes), "details.id").String()
 	if formationIDFromBody == "" {
-		errMsg := "Missing formation ID from request body"
-		log.C(ctx).Errorf(errMsg)
-		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New(errMsg))
+		err := errors.New("Missing formation ID from request body")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	formationNameFromBody := gjson.Get(string(bodyBytes), "details.name").String()
 	if formationNameFromBody == "" {
-		errMsg := "Missing formation name from request body"
-		log.C(ctx).Errorf(errMsg)
-		httputils.RespondWithError(ctx, writer, http.StatusInternalServerError, errors.New(errMsg))
+		err := errors.New("Missing formation name from request body")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
@@ -981,7 +956,6 @@ func (h *Handler) asyncFormationResponse(ctx context.Context, writer http.Respon
 		return
 	}
 
-	correlationID := correlation.CorrelationIDFromContext(ctx)
 	go formationResponseFunc(certAuthorizedHTTPClient, correlationID, formationErr, formationID)
 
 	writer.WriteHeader(http.StatusAccepted)

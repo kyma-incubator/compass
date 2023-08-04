@@ -23,6 +23,8 @@ const (
 	CertChain           = "e2e-test-destination-cert-mock-cert-chain"
 )
 
+var respErrorMsg = "An unexpected error occurred while processing the request"
+
 // Handler is responsible to mock and handle any Destination Creator Service and Destination Service requests
 type Handler struct {
 	Config                            *Config
@@ -51,37 +53,29 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey)), http.StatusUnsupportedMediaType)
 	}
 
 	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("The %q header could not be empty", clientUserHeaderKey), http.StatusBadRequest)
 	}
 
 	routeVars := mux.Vars(r)
 	if err := h.validateDestinationCreatorPathParams(routeVars, false, true); err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		errMsg := fmt.Sprintf("while reading destination request body. X-Request-Id: %s", correlationID)
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading destination request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	authTypeResult := gjson.GetBytes(bodyBytes, "authenticationType")
 	if !authTypeResult.Exists() || authTypeResult.String() == "" {
-		errMsg := fmt.Sprintf("The authenticationType field is required and it should not be empty. X-Request-Id: %s", correlationID)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+		err := errors.New("The authenticationType field in the request body is required and it should not be empty")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
@@ -89,31 +83,27 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 	case destinationcreator.AuthTypeNoAuth:
 		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes)
 		if err != nil {
-			log.C(ctx).Error(err)
-			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
+			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating design time destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
 	case destinationcreator.AuthTypeBasic:
 		statusCode, err := h.createBasicDestination(ctx, bodyBytes)
 		if err != nil {
-			log.C(ctx).Error(err)
-			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
+			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating basic destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
 	case destinationcreator.AuthTypeSAMLAssertion:
 		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes)
 		if err != nil {
-			log.C(ctx).Error(err)
-			httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), statusCode)
+			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating SAML assertion destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
 	default:
-		errMsg := fmt.Sprintf("Invalid destination authentication type: %s. X-Request-Id: %s", authTypeResult.String(), correlationID)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusInternalServerError)
+		err := errors.Errorf("The provided destination authentication type: %s is invalid", authTypeResult.String())
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
 		return
 	}
 }
@@ -124,21 +114,16 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey)), http.StatusUnsupportedMediaType)
 	}
 
 	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("The %q header could not be empty", clientUserHeaderKey), http.StatusBadRequest)
 	}
 
 	routeVars := mux.Vars(r)
 	if err := h.validateDestinationCreatorPathParams(routeVars, true, true); err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 	destinationNameValue := routeVars[h.Config.DestinationAPIConfig.DestinationNameParam]
@@ -168,45 +153,34 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey)), http.StatusUnsupportedMediaType)
 	}
 
 	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("The %q header could not be empty", clientUserHeaderKey), http.StatusBadRequest)
 	}
 
 	routeVars := mux.Vars(r)
 	if err := h.validateDestinationCreatorPathParams(routeVars, false, false); err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		errMsg := fmt.Sprintf("while reading destination certificate request body. X-Request-Id: %s", correlationID)
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading destination certificate request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	var reqBody CertificateRequestBody
 	if err = json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		errMsg := fmt.Sprintf("while unmarshaling destination certificate request body. X-Request-Id: %s", correlationID)
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while unmarshalling destination certificate request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	log.C(ctx).Info("Validating destination certificate request body...")
 	if err = reqBody.Validate(); err != nil {
-		errMsg := fmt.Sprintf("An error occurred while validating destination certificate request body. X-Request-Id: %s", correlationID)
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while validating destination certificate request body"), "Invalid request body", correlationID, http.StatusBadRequest)
 		return
 	}
 
@@ -225,9 +199,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 
 	certRespBytes, err := json.Marshal(certResp)
 	if err != nil {
-		errMsg := fmt.Sprintf("while marshaling certificate response body. X-Request-Id: %s", correlationID)
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrapf(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while marshalling certificate response body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
@@ -241,9 +213,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 
 	destSvcCertificateRespBytes, err := json.Marshal(destSvcCertificateResp)
 	if err != nil {
-		errMsg := "while marshalling destination certificate response"
-		log.C(ctx).WithError(err).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while marshalling destination certificate response"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
@@ -259,21 +229,16 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationJSON {
-		log.C(ctx).Errorf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("Unsupported media type, expected: %s got: %s", httphelpers.ContentTypeApplicationJSON, r.Header.Get(httphelpers.ContentTypeHeaderKey)), http.StatusUnsupportedMediaType)
 	}
 
 	if r.Header.Get(clientUserHeaderKey) == "" {
-		log.C(ctx).Errorf("The %q header could not be empty", clientUserHeaderKey)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
+		respondWithHeader(ctx, writer, fmt.Sprintf("The %q header could not be empty", clientUserHeaderKey), http.StatusBadRequest)
 	}
 
 	routeVars := mux.Vars(r)
 	if err := h.validateDestinationCreatorPathParams(routeVars, true, false); err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 	certNameValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
@@ -298,7 +263,7 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []byte) (int, error) {
 	var reqBody DesignTimeRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshaling design time destination request body")
+		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while unmarshalling design time destination request body")
 	}
 
 	log.C(ctx).Info("Validating design time destination request body...")
@@ -324,7 +289,7 @@ func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []b
 
 	noAuthDestBytes, err := json.Marshal(noAuthDest)
 	if err != nil {
-		return http.StatusInternalServerError, errors.New("while marshalling no authentication destination")
+		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling no authentication destination")
 	}
 
 	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
@@ -336,7 +301,7 @@ func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []b
 func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) (int, error) {
 	var reqBody BasicRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "while unmarshalling basic destination request body")
+		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while unmarshalling basic destination request body")
 	}
 
 	log.C(ctx).Info("Validating basic destination request body...")
@@ -366,7 +331,7 @@ func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) 
 
 	basicDestBytes, err := json.Marshal(basicAuthDest)
 	if err != nil {
-		return http.StatusInternalServerError, errors.New("An error occurred while marshalling basic destination")
+		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling basic destination")
 	}
 
 	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
@@ -378,12 +343,12 @@ func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) 
 func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte) (int, error) {
 	var reqBody SAMLAssertionRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrapf(err, "while unmarshaling SAML assertion destination request body")
+		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling SAML assertion destination request body")
 	}
 
 	log.C(ctx).Info("Validating SAML assertion destination request body...")
 	if err := reqBody.Validate(h.Config); err != nil {
-		return http.StatusBadRequest, errors.New("An error occurred while validating SAML assertion destination request body")
+		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating SAML assertion destination request body")
 	}
 
 	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
@@ -408,7 +373,7 @@ func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes 
 
 	samlAssertionAuthDestBytes, err := json.Marshal(samlAssertionAuthDest)
 	if err != nil {
-		return http.StatusInternalServerError, errors.New("while marshalling SAML assertion destination")
+		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling SAML assertion destination")
 	}
 
 	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
@@ -441,40 +406,34 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	if err := validateAuthorization(ctx, r); err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	destinationNameParamValue, err := validateDestinationSvcPathParams(mux.Vars(r))
 	if err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	dest, exists := h.DestinationSvcDestinations[destinationNameParamValue]
 	if !exists {
-		errMsg := fmt.Sprintf("Destination with name: %q doest not exists. X-Request-Id: %s", destinationNameParamValue, correlationID)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusNotFound)
+		err := errors.Errorf("Destination with name: %q doest not exists", destinationNameParamValue)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
 
 	bodyBytes, err := json.Marshal(dest)
 	if err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("An error occurred while marshalling destination with name: %s", destinationNameParamValue)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(bodyBytes)
 	if err != nil {
-		errMsg := "error while writing response"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 }
@@ -485,40 +444,34 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	if err := validateAuthorization(ctx, r); err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	certificateNameParamValue, err := validateDestinationSvcPathParams(mux.Vars(r))
 	if err != nil {
-		log.C(ctx).Error(err)
-		httphelpers.WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", err.Error(), correlationID), http.StatusBadRequest)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
 	cert, exists := h.DestinationSvcCertificates[certificateNameParamValue]
 	if !exists {
-		errMsg := fmt.Sprintf("Certificate with name: %q doest not exists. X-Request-Id: %s", certificateNameParamValue, correlationID)
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.New(errMsg), http.StatusNotFound)
+		err := errors.Errorf("Certificate with name: %q doest not exists", certificateNameParamValue)
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
 
 	bodyBytes, err := json.Marshal(cert)
 	if err != nil {
-		errMsg := "body is not a valid JSON"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusBadRequest)
+		errMsg := fmt.Sprintf("An error occurred while marshalling certificate with name: %s", certificateNameParamValue)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(bodyBytes)
 	if err != nil {
-		errMsg := "error while writing response"
-		log.C(ctx).Error(errMsg)
-		httphelpers.WriteError(writer, errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 }
@@ -534,15 +487,16 @@ func (h *Handler) validateDestinationCreatorPathParams(routeVars map[string]stri
 	}
 
 	if isDeleteRequest {
+		errMsgPattern := "Missing required parameters: %q in case of %s request"
 		if isDestinationRequest {
 			destinationNameParamValue := h.Config.DestinationAPIConfig.DestinationNameParam
 			if destinationNameValue := routeVars[destinationNameParamValue]; destinationNameValue == "" {
-				return errors.Errorf("Missing required parameters: %q in case of %s request", destinationNameParamValue, http.MethodDelete)
+				return errors.Errorf(errMsgPattern, destinationNameParamValue, http.MethodDelete)
 			}
 		} else {
 			certificateNameParamValue := h.Config.CertificateAPIConfig.CertificateNameParam
 			if destinationNameValue := routeVars[certificateNameParamValue]; destinationNameValue == "" {
-				return errors.Errorf("Missing required parameters: %q in case of %s request", certificateNameParamValue, http.MethodDelete)
+				return errors.Errorf(errMsgPattern, certificateNameParamValue, http.MethodDelete)
 			}
 		}
 	}
@@ -564,13 +518,19 @@ func validateAuthorization(ctx context.Context, r *http.Request) error {
 	authorizationHeaderValue := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 
 	if authorizationHeaderValue == "" {
-		return errors.New("missing authorization header")
+		return errors.New("Missing authorization header")
 	}
 
 	tokenValue := strings.TrimPrefix(authorizationHeaderValue, "Bearer ")
 	if tokenValue == "" {
-		return errors.New("the token value cannot be empty")
+		return errors.New("The token value cannot be empty")
 	}
 
 	return nil
+}
+
+func respondWithHeader(ctx context.Context, writer http.ResponseWriter, logErrMsg string, statusCode int) {
+	log.C(ctx).Error(logErrMsg)
+	writer.WriteHeader(statusCode)
+	return
 }

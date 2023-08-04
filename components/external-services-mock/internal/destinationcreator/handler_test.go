@@ -444,6 +444,7 @@ func TestHandler_CreateCertificate(t *testing.T) {
 
 			if testCase.ExistingCertificate != nil {
 				h.DestinationCreatorSvcCertificates = testCase.ExistingCertificate
+				testCase.ExpectedDestinationCreatorSvcCertificates = testCase.ExistingCertificate
 			}
 
 			// WHEN
@@ -458,10 +459,14 @@ func TestHandler_CreateCertificate(t *testing.T) {
 
 			if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
 				require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
+			} else {
+				require.Equal(t, make(map[string]json.RawMessage), h.DestinationCreatorSvcCertificates)
 			}
 
 			if testCase.ExpectedDestinationSvcCertificates != nil {
 				require.Equal(t, testCase.ExpectedDestinationSvcCertificates, h.DestinationSvcCertificates)
+			} else {
+				require.Equal(t, make(map[string]json.RawMessage), h.DestinationSvcCertificates)
 			}
 		})
 	}
@@ -635,7 +640,7 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 		},
 		{
 			Name:                 "Error when marshalling",
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			DestName:             noAuthDestName,
 			ExistingDestination:  map[string]json.RawMessage{noAuthDestName: json.RawMessage("invalid-json")},
 		},
@@ -726,7 +731,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 		},
 		{
 			Name:                 "Error when marshalling",
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			CertName:             testCertName,
 			ExistingCertificate:  map[string]json.RawMessage{testCertName: json.RawMessage("invalid-json")},
 		},
