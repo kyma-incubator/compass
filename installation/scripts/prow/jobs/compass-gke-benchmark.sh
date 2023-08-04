@@ -28,9 +28,14 @@ go version
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
 
-log::info "List go bins"
+log::info "List GOPATH"
 ls ${GOPATH}
+log::info "List go bins"
 ls ${GOPATH}/bin
+
+${GOPATH}/bin/benchstat
+
+alias benchstat="${GOPATH}/bin/benchstat"
 
 benchstat
 
