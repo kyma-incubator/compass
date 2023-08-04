@@ -35,7 +35,7 @@ ls ${GOPATH}/bin
 
 ${GOPATH}/bin/benchstat || true
 
-alias benchstat="${GOPATH}/bin/benchstat"
+alias benchstat=${GOPATH}/bin/benchstat
 
 benchstat || true
 
