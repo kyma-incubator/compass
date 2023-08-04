@@ -33,11 +33,11 @@ ls ${GOPATH}
 log::info "List go bins"
 ls ${GOPATH}/bin
 
-${GOPATH}/bin/benchstat
+${GOPATH}/bin/benchstat || true
 
 alias benchstat="${GOPATH}/bin/benchstat"
 
-benchstat
+benchstat || true
 
 requiredVars=(
     REPO_OWNER
