@@ -13,9 +13,13 @@ source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/utils.sh"
 # shellcheck source=prow/scripts/lib/log.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 # shellcheck source=prow/scripts/lib/gcp.sh
-source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/gcp.sh"
+source "${COMPASS_SOURCES_DIR}/installation/scripts/gcp.sh"
 # shellcheck source=prow/scripts/lib/kyma.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
+
+log::info "Installing go benchstat"
+go install golang.org/x/perf/cmd/benchstat@latest
+export PATH="$PATH:${GOPATH}/bin"
 
 requiredVars=(
     REPO_OWNER
@@ -51,6 +55,22 @@ else
   readonly COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
   COMMON_NAME=$(echo "${COMMON_NAME_PREFIX}-${COMMIT_ID}-${RANDOM_NAME_SUFFIX}")
 fi
+
+log::info "Installing gcloud CLI"
+apk add --no-cache python3 py3-crcmod py3-openssl
+export PATH="/google-cloud-sdk/bin:${PATH}"
+GCLOUD_CLI_VERSION="437.0.1"
+curl -fLSs -o gc-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz"
+tar xzf gc-sdk.tar.gz -C /
+rm gc-sdk.tar.gz
+gcloud components install alpha beta kubectl docker-credential-gcr gke-gcloud-auth-plugin
+gcloud config set core/disable_usage_reporting true
+gcloud config set component_manager/disable_update_check true
+gcloud config set metrics/environment github_docker_image
+gcloud --version
+
+log::info "Installing dig and openssl commands"
+apk add bind-tools openssl
 
 ### Cluster name must be less than 40 characters!
 COMMON_NAME=$(echo "${COMMON_NAME}" | tr "[:upper:]" "[:lower:]")
