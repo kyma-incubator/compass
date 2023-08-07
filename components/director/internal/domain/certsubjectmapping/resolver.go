@@ -2,6 +2,10 @@ package certsubjectmapping
 
 import (
 	"context"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"sort"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -129,6 +133,8 @@ func (r *Resolver) CreateCertificateSubjectMapping(ctx context.Context, in graph
 		return nil, err
 	}
 
+	in.Subject = sortSubject(in.Subject)
+
 	certSubjectMappingID := r.uidSvc.Generate()
 	csmID, err := r.certSubjectMappingSvc.Create(ctx, r.conv.FromGraphql(certSubjectMappingID, in))
 	if err != nil {
@@ -161,6 +167,8 @@ func (r *Resolver) UpdateCertificateSubjectMapping(ctx context.Context, id strin
 	if err = in.Validate(); err != nil {
 		return nil, err
 	}
+
+	in.Subject = sortSubject(in.Subject)
 
 	err = r.certSubjectMappingSvc.Update(ctx, r.conv.FromGraphql(id, in))
 	if err != nil {
@@ -205,4 +213,18 @@ func (r *Resolver) DeleteCertificateSubjectMapping(ctx context.Context, id strin
 	}
 
 	return r.conv.ToGraphQL(csm), nil
+}
+
+func sortSubject(subject string) string {
+	cn := fmt.Sprintf("CN=%s", cert.GetCommonName(subject))
+	o := fmt.Sprintf("O=%s", cert.GetOrganization(subject))
+	l := fmt.Sprintf("L=%s", cert.GetLocality(subject))
+	c := fmt.Sprintf("C=%s", cert.GetCountry(subject))
+	ous := cert.GetAllOrganizationalUnits(subject)
+	sort.Strings(ous)
+	for i, ou := range ous {
+		ous[i] = fmt.Sprintf("OU=%s", ou)
+	}
+
+	return strings.Join([]string{cn, strings.Join(ous, ", "), o, l, c}, ", ")
 }
