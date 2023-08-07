@@ -259,7 +259,7 @@ func TestService_Get(t *testing.T) {
 	id := "foo"
 	url := "bar"
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
+	webhookModel := fixApplicationModelWebhookWithProxy("1", id, givenTenant(), url, time.Time{})
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
@@ -318,8 +318,8 @@ func TestService_ListForApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelWebhooks := []*model.Webhook{
-		fixApplicationModelWebhook("1", "foo", givenTenant(), "Foo", time.Time{}),
-		fixApplicationModelWebhook("2", "bar", givenTenant(), "Bar", time.Time{}),
+		fixApplicationModelWebhookWithProxy("1", "foo", givenTenant(), "Foo", time.Time{}),
+		fixApplicationModelWebhookWithProxy("2", "bar", givenTenant(), "Bar", time.Time{}),
 	}
 	applicationID := "foo"
 
@@ -791,7 +791,7 @@ func TestService_Update(t *testing.T) {
 		return webhook.URL == modelInput.URL
 	})
 
-	applicationWebhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
+	applicationWebhookModel := fixApplicationModelWebhookWithProxy("1", id, givenTenant(), url, time.Time{})
 	applicationTemplateWebhookModel := fixApplicationTemplateModelWebhook("1", id, url)
 	noIDWebhookModel := &model.Webhook{}
 	*noIDWebhookModel = *applicationWebhookModel
@@ -901,7 +901,7 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 	url := "bar"
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
+	webhookModel := fixApplicationModelWebhookWithProxy("1", id, givenTenant(), url, time.Time{})
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())

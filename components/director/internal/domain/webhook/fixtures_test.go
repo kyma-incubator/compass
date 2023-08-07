@@ -24,13 +24,22 @@ var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "pro
 var (
 	emptyTemplate = `{}`
 	testURL       = "testURL"
+	proxyURL      = "http://proxy.com"
 )
 
 func stringPtr(s string) *string {
 	return &s
 }
 
-func fixApplicationModelWebhook(id, appID, tenant, url string, createdAt time.Time) *model.Webhook {
+func fixApplicationModelWebhookWithProxy(id, appID, tenant, url string, createdAt time.Time) *model.Webhook {
+	appWebhook := fixGenericModelWebhook(id, appID, url)
+	appWebhook.ObjectType = model.ApplicationWebhookReference
+	appWebhook.CreatedAt = &createdAt
+	appWebhook.ProxyURL = str.Ptr(proxyURL)
+	return appWebhook
+}
+
+func fixApplicationModelWebhook(id, appID, url string, createdAt time.Time) *model.Webhook {
 	appWebhook := fixGenericModelWebhook(id, appID, url)
 	appWebhook.ObjectType = model.ApplicationWebhookReference
 	appWebhook.CreatedAt = &createdAt
@@ -153,7 +162,7 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 }
 
 func fixApplicationModelWebhookWithType(id, appID, tenant, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
-	w = fixApplicationModelWebhook(id, appID, tenant, url, createdAt)
+	w = fixApplicationModelWebhookWithProxy(id, appID, tenant, url, createdAt)
 	w.Type = webhookType
 	return
 }
@@ -164,9 +173,10 @@ func fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url string, w
 	return
 }
 
-func fixApplicationTemplateModelWebhookWithTypeAndTimestamp(id, appTemplateID, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
+func fixApplicationTemplateModelWebhookWithTypeTimestampAndProxy(id, appTemplateID, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
 	w = fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url, webhookType)
 	w.CreatedAt = &createdAt
+	w.ProxyURL = str.Ptr(proxyURL)
 	return
 }
 
@@ -201,6 +211,7 @@ func fixApplicationWebhookEntityWithIDAndWebhookType(t *testing.T, id string, wh
 		ApplicationID:  repo.NewValidNullableString(givenApplicationID()),
 		Type:           string(whType),
 		URL:            repo.NewValidNullableString("http://kyma.io"),
+		ProxyURL:       repo.NewValidNullableString(proxyURL),
 		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
 		Auth:           sql.NullString{Valid: true, String: fixAuthAsAString(t)},
 		URLTemplate:    repo.NewValidNullableString(emptyTemplate),
@@ -257,9 +268,10 @@ func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 	}
 }
 
-func fixApplicationTemplateWebhookEntityWithTimestamp(t *testing.T, createdAt time.Time) *webhook.Entity {
+func fixApplicationTemplateWebhookEntityWithTimestampAndProxy(t *testing.T, createdAt time.Time) *webhook.Entity {
 	w := fixApplicationTemplateWebhookEntity(t)
 	w.CreatedAt = &createdAt
+	w.ProxyURL = repo.NewValidNullableString(proxyURL)
 	return w
 }
 
