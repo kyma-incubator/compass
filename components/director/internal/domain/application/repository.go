@@ -172,6 +172,22 @@ func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumb
 	return appModel, nil
 }
 
+// GetByLocalTenantIDAndAppTemplateID returns the application with matching local tenant id and app template id from the Compass DB
+func (r *pgRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error) {
+	var appEnt Entity
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("local_tenant_id", localTenantID),
+		repo.NewEqualCondition("app_template_id", appTemplateID),
+	}
+	if err := r.singleGetter.Get(ctx, resource.Application, tenant, conditions, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
 // GetGlobalByID missing godoc
 func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
 	var appEnt Entity
