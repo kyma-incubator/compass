@@ -289,6 +289,9 @@ installHelm
 log::info "Install Kyma"
 installKyma
 
+log::info "Instal Ory"
+installOry
+
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
 installCompassOld
