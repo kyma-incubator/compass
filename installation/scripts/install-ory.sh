@@ -43,6 +43,11 @@ do
             shift # past argument
             shift
         ;;
+        --skip-jwks-rotation)
+            # Skip the manual trigger of the Oathkeeper JWKS rotation CronJob
+            SKIP_JWKS_ROTATION=true
+            shift # past argument
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -118,15 +123,17 @@ fi
 # This cronjob is triggered in the statements below
 helm upgrade --install $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
 
-CRONJOB=oathkeeper-jwks-rotator
-# CronJob creates a Secret that is needed for the successful deployment of Oathkeeper
-kubectl set image -n $RELEASE_NS cronjob $CRONJOB keys-generator=oryd/oathkeeper:v0.38.23
-kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "*/1 * * * *"}}'
-until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.status.lastScheduleTime}) ]]; do
-    echo "Waiting for cronjob $CRONJOB to be scheduled"
-    sleep 3
-done
-kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
+if [[ ! ${SKIP_JWKS_ROTATION} ]]; then
+  CRONJOB=oathkeeper-jwks-rotator
+  # CronJob creates a Secret that is needed for the successful deployment of Oathkeeper
+  kubectl set image -n $RELEASE_NS cronjob $CRONJOB keys-generator=oryd/oathkeeper:v0.38.23
+  kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "*/1 * * * *"}}'
+  until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.status.lastScheduleTime}) ]]; do
+      echo "Waiting for cronjob $CRONJOB to be scheduled"
+      sleep 3
+  done
+  kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
+fi
 
 RESULT=0
 PIDS=""
