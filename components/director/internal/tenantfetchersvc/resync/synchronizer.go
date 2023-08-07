@@ -240,6 +240,7 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 	}
 	if fetchedTenant.Region != "" {
 		fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+		log.C(ctx).Infof("REGION %s FOR TENANT %s IS SET VIA ON DEMAND API", fetchedTenant.Region, fetchedTenant.ExternalTenant)
 	}
 	parentTenantID = fetchedTenant.Parent
 	if len(parentTenantID) == 0 {
