@@ -5,11 +5,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"golang.org/x/oauth2/clientcredentials"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/oauth2/clientcredentials"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
