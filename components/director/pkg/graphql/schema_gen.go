@@ -6691,7 +6691,7 @@ type Query {
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
-	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: String!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
+	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: ID!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -9846,7 +9846,7 @@ func (ec *executionContext) field_Query_applicationByLocalTenantIDAndAppTemplate
 	args["localTenantID"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["applicationTemplateID"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}

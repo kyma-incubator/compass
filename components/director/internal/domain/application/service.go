@@ -334,7 +334,7 @@ func (s *service) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localT
 
 	app, err := s.appRepo.GetByLocalTenantIDAndAppTemplateID(ctx, appTenant, localTenantID, appTemplateID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application with local tenant id %s and app template id %s", localTenantID, appTemplateID)
+		return nil, errors.Wrapf(err, "while getting Application with local tenant id: %s and app template id: %s", localTenantID, appTemplateID)
 	}
 
 	return app, nil
