@@ -6692,7 +6692,6 @@ type Query {
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
 	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: String!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
-
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
