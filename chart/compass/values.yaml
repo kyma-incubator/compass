@@ -335,7 +335,7 @@ global:
         commonNameKey: "commonName"
         certChainKey: "certificateChain"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
-    ordWebhookMappings: '[{ "PpmsProductVersions": ["73555000100900005841", "73554900100900006373", "73555000100900006562"], "ProxyURL": "https://cert.staging.extensions.ondemand.com/ord/proxy/s4/api/v1", "ProxyHeaderTemplate": "{\"target_host\": \"{{.Application.BaseURL}}\" }", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP S/4HANA Cloud" }]'
+    ordWebhookMappings: '[{ "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090/proxy/s4", "ProxyHeaderTemplate": "{\"target_host\": \"{{.Application.BaseURL}}\" }", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:
@@ -1091,6 +1091,7 @@ global:
     ordGlobalRegistryUnsecuredPort: 8087
     unsecuredPortWithAdditionalContent: 8088
     unsecuredMultiTenantPort: 8089
+    certSecuredProxyPort: 8090
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
@@ -1146,6 +1147,7 @@ global:
       region2: "eu-2"
     ordAggregator:
       skipPattern: ""
+      proxyApplicationTemplateName: "SAP Proxy Template"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"

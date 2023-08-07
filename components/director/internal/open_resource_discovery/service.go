@@ -3,7 +3,6 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -1394,10 +1393,6 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 	for _, resourceDef := range api.ResourceDefinitions {
 		specs = append(specs, resourceDef.ToSpec())
 	}
-
-	fmt.Println("ALEX API ", api.OrdID)
-	j := gjson.ParseBytes(api.TargetURLs)
-	fmt.Println(j.String())
 
 	if !isAPIFound {
 		apiID, err := s.apiSvc.Create(ctx, resourceType, resourceID, nil, packageID, api, nil, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
