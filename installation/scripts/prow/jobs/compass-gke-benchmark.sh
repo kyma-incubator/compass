@@ -20,7 +20,6 @@ source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
 export PATH="$PATH:${GOPATH}/bin"
-benchstat
 
 requiredVars=(
     REPO_OWNER
