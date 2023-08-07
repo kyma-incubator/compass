@@ -19,6 +19,8 @@ source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
 
 log::info "Installing go benchstat"
 go install golang.org/x/perf/cmd/benchstat@latest
+export PATH="$PATH:${GOPATH}/bin"
+benchstat
 
 requiredVars=(
     REPO_OWNER
@@ -333,12 +335,12 @@ for POD in $PODS; do
 
   if [ -f "$CONTAINER"-old ]; then
     log::info "Stats of the main installation"
-    ${GOPATH}/bin/benchstat "$CONTAINER"-old
+    benchstat "$CONTAINER"-old
 
     log::info "Stats of the new installation"
-    ${GOPATH}/bin/benchstat "$CONTAINER"-new
+    benchstat "$CONTAINER"-new
 
-    STATS=$(${GOPATH}/bin/benchstat "$CONTAINER"-old "$CONTAINER"-new)
+    STATS=$(benchstat "$CONTAINER"-old "$CONTAINER"-new)
     log::info "Performance comparison statistics"
     echo "$STATS"
 
@@ -349,7 +351,7 @@ for POD in $PODS; do
       FAILED_TESTS="$CONTAINER\\n$FAILED_TESTS"
     fi
   else
-    ${GOPATH}/bin/benchstat "$CONTAINER"-new
+    benchstat "$CONTAINER"-new
   fi
 done
 
