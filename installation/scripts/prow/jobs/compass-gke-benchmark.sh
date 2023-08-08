@@ -193,8 +193,14 @@ function installKyma() {
 }
 
 function installOry() {
-  log::info "Installing Ory Helm chart..."
-  bash "${COMPASS_SCRIPTS_DIR}"/install-ory.sh
+  ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
+
+  if [[ -f "$ORY_SCRIPT_PATH" ]]; then
+    log::info "Installing Ory Helm chart..."
+    bash "${ORY_SCRIPT_PATH}"
+  else
+    log::warn "Ory installation script is missing"
+  fi
 }
 
 function installCompassOld() {
