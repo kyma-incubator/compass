@@ -200,6 +200,14 @@ function installOry() {
     bash "${ORY_SCRIPT_PATH}"
   else
     log::warn "Ory installation script is missing"
+    # If the installation is missing Kyma has installed Ory for us, we should schedule the cronjob
+    # as this is done by 'install-ory.sh'
+    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
+    until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
+      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
+      sleep 3
+    done
+    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
   fi
 }
 
