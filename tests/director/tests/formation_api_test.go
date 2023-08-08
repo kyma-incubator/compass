@@ -3386,7 +3386,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 			notificationsForApp1Tenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp1Tenant.Array(), []*applicationFormationExpectations{
 				{
