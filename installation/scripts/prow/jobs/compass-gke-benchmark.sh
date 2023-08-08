@@ -158,7 +158,7 @@ function installHelm() {
   utils::install_helm
 }
 
-function installKyma() {
+function installKymaCLI() {
   KYMA_CLI_VERSION="2.3.0"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
@@ -169,7 +169,9 @@ function installKyma() {
 
   export PATH="${PREV_WD}/cli/bin:${PATH}"
   cd "$PREV_WD"
+}
 
+function installKyma() {
   KYMA_VERSION=$(<"${COMPASS_SOURCES_DIR}/installation/resources/KYMA_VERSION")
 
   # TODO: Remove after adoption of Kyma 2.4.3 and change kyma deploy command source to --source="${KYMA_VERSION}"
@@ -204,6 +206,9 @@ function installCompassOld() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
+  echo 'Installing Kyma'
+  installKyma
+
   echo 'Installing DB'
   mkdir "$COMPASS_SOURCES_DIR/installation/data"
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -235,6 +240,9 @@ function installCompassNew() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
+
+  echo 'Installing Kyma'
+  installKyma
 
   echo 'Installing DB'
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -286,10 +294,10 @@ installYQ
 log::info "Install helm"
 installHelm
 
-log::info "Install Kyma"
-installKyma
+log::info "Install Kyma CLI"
+installKymaCLI
 
-log::info "Instal Ory"
+log::info "Install Ory"
 installOry
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
