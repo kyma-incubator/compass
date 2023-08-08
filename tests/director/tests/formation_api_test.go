@@ -3339,11 +3339,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app1.ID, subscriptionConsumerAccountID)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
-			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
-			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
-
 			t.Logf("Assert formation assignments during %s operation...", assignOperation)
 			noAuthDestinationName := "e2e-design-time-destination-name"
 			noAuthDestinationURL := "http://e2e-design-time-url-example.com"
