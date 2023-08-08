@@ -209,6 +209,9 @@ function installCompassOld() {
   echo 'Installing Kyma'
   installKyma
 
+  echo "Installing Ory"
+  installOry
+
   echo 'Installing DB'
   mkdir "$COMPASS_SOURCES_DIR/installation/data"
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -243,6 +246,9 @@ function installCompassNew() {
 
   echo 'Installing Kyma'
   installKyma
+
+  echo "Installing Ory"
+  installOry
 
   echo 'Installing DB'
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -296,9 +302,6 @@ installHelm
 
 log::info "Install Kyma CLI"
 installKymaCLI
-
-log::info "Install Ory"
-installOry
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
