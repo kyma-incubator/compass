@@ -1,5 +1,5 @@
 FROM golang:1.20.6-alpine3.18 as builder
-
+# Dummy change
 WORKDIR /
 RUN apk --update --no-cache add bash git
 
