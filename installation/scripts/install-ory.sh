@@ -119,8 +119,6 @@ if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTE
     --dry-run=client -o yaml | kubectl apply -f -
 fi
 
-cat "$OVERRIDE_TEMP_ORY"
-
 # --wait is excluded as the deployment hangs; it hangs as there is a cronjob that creates the jwks secret for Oathkeeper
 # This cronjob is triggered in the statements below
 helm upgrade --install $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
