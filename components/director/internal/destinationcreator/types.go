@@ -108,7 +108,9 @@ func (n *NoAuthRequestBody) Validate() error {
 }
 
 // Validate validates that the AuthTypeBasic request body contains the required fields and they are valid
-func (b *BasicRequestBody) Validate() error {
+func (b *BasicRequestBody) Validate(destinationCreatorCfg *Config) error {
+	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
+
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),
@@ -121,7 +123,9 @@ func (b *BasicRequestBody) Validate() error {
 }
 
 // Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
-func (s *SAMLAssertionRequestBody) Validate() error {
+func (s *SAMLAssertionRequestBody) Validate(destinationCreatorCfg *Config) error {
+	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
+
 	return validation.ValidateStruct(s,
 		validation.Field(&s.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
@@ -150,11 +154,17 @@ func (cr *CertificateResponse) Validate() error {
 	)
 }
 
-type destinationDetailsAdditionalPropertiesValidator struct{}
+type destinationDetailsAdditionalPropertiesValidator struct {
+	destinationCreatorCfg *Config
+}
 
-var areAdditionalPropertiesValid = &destinationDetailsAdditionalPropertiesValidator{}
+func newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg *Config) *destinationDetailsAdditionalPropertiesValidator {
+	return &destinationDetailsAdditionalPropertiesValidator{
+		destinationCreatorCfg: destinationCreatorCfg,
+	}
+}
 
-// Validate ads
+// Validate is a custom method that validates the correlation IDs, as part of the arbitrary destination additional attributes, are in the expected format - string divided by comma
 func (d *destinationDetailsAdditionalPropertiesValidator) Validate(value interface{}) error {
 	j, ok := value.(json.RawMessage)
 	if !ok {
@@ -165,7 +175,15 @@ func (d *destinationDetailsAdditionalPropertiesValidator) Validate(value interfa
 		return errors.New("The additional properties json is not valid")
 	}
 
-	correlationIDsResult := gjson.Get(string(j), "correlationIds") // todo::: extract as environment variable
+	if d.destinationCreatorCfg == nil {
+		return errors.New("The destination creator config could not be empty")
+	}
+
+	if d.destinationCreatorCfg.CorrelationIDsKey == "" {
+		return errors.New("The correlation IDs key in the destination creator config could not be empty")
+	}
+
+	correlationIDsResult := gjson.Get(string(j), d.destinationCreatorCfg.CorrelationIDsKey)
 	if !correlationIDsResult.Exists() {
 		return errors.New("The correlationIds property part of the additional properties json is required but it does not exist.")
 	}

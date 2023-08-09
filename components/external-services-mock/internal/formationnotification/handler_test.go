@@ -1,4 +1,4 @@
-package notification_test
+package formationnotification_test
 
 import (
 	"bytes"
@@ -9,15 +9,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
 
-var assignMappingsWithoutConfig = fixFormationAssignmentMappings(notification.Assign, testTenantID, formationAssignmentReqBody, nil)
-var assignMappingsWithConfig = fixFormationAssignmentMappings(notification.Assign, testTenantID, formationAssignmentReqConfigBody, nil)
-var unassignMappings = fixFormationAssignmentMappings(notification.Unassign, testTenantID, formationAssignmentReqBody, &appID)
+var (
+	assignMappingsWithoutConfig           = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBody, nil)
+	assignMappingsWithConfig              = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqConfigBody, nil)
+	assignMappingsWithDestDetails         = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBodyWithReceiverTenant, nil)
+	assignMappingsWithDestDetailsNoConfig = fixFormationAssignmentMappings(formationnotification.Assign, testTenantID, formationAssignmentReqBodyWithReceiverTenantNoConfig, nil)
+	unassignMappings                      = fixFormationAssignmentMappings(formationnotification.Unassign, testTenantID, formationAssignmentReqBody, &appID)
+)
 
 func TestHandler_Patch(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s", testTenantID)
@@ -27,7 +31,7 @@ func TestHandler_Patch(t *testing.T) {
 		RequestBody          string
 		TenantID             string
 		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			Name:                 "success",
@@ -39,14 +43,14 @@ func TestHandler_Patch(t *testing.T) {
 		{
 			Name:                 "Error tenant id not found in path",
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
 
@@ -56,10 +60,10 @@ func TestHandler_Patch(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := notification.NewHandler(notification.NotificationsConfiguration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -84,7 +88,7 @@ func TestHandler_PatchWithState(t *testing.T) {
 		RequestBody          string
 		TenantID             string
 		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			Name:                 "success",
@@ -96,14 +100,14 @@ func TestHandler_PatchWithState(t *testing.T) {
 		{
 			Name:                 "Error tenant id not found in path",
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
 
@@ -113,10 +117,10 @@ func TestHandler_PatchWithState(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := notification.NewHandler(notification.NotificationsConfiguration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -141,7 +145,7 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 		RequestBody          string
 		TenantID             string
 		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			Name:                 "success with no config",
@@ -160,14 +164,14 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 		{
 			Name:                 "Error tenant id not found in path",
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
 
@@ -177,14 +181,78 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := notification.NewHandler(notification.NotificationsConfiguration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
 			h.RespondWithIncomplete(r, req)
+			resp := r.Result()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			//THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedMappings, h.Mappings)
+		})
+	}
+}
+
+func TestHandler_RespondWithIncompleteAndDestinationDetails(t *testing.T) {
+	apiPath := fmt.Sprintf("/formation-callback/destinations/configuration/%s", testTenantID)
+
+	testCases := []struct {
+		Name                 string
+		RequestBody          string
+		TenantID             string
+		ExpectedResponseCode int
+		ExpectedMappings     map[string][]formationnotification.Response
+	}{
+		{
+			Name:                 "success with no config",
+			RequestBody:          formationAssignmentReqBodyWithReceiverTenantNoConfig,
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedMappings:     assignMappingsWithDestDetailsNoConfig,
+		},
+		{
+			Name:                 "success with config",
+			RequestBody:          formationAssignmentReqBodyWithReceiverTenant,
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedMappings:     assignMappingsWithDestDetails,
+		},
+		{
+			Name:                 "Error tenant id not found in path",
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{},
+		},
+		{
+			Name:                 "Error when body is not valid json",
+			RequestBody:          "invalid json",
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
+			if testCase.TenantID != "" {
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
+			}
+
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			r := httptest.NewRecorder()
+
+			//WHEN
+			h.RespondWithIncompleteAndDestinationDetails(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
@@ -206,7 +274,7 @@ func TestHandler_Delete(t *testing.T) {
 		TenantID             string
 		AppID                string
 		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			Name:                 "success",
@@ -219,21 +287,21 @@ func TestHandler_Delete(t *testing.T) {
 		{
 			Name:                 "Error tenant id not found in path",
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error appID not found in path",
 			RequestBody:          formationAssignmentReqBody,
 			TenantID:             testTenantID,
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: make([]notification.Response, 0, 1)},
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: make([]formationnotification.Response, 0, 1)},
 		},
 		{
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
 
@@ -244,18 +312,89 @@ func TestHandler_Delete(t *testing.T) {
 			require.NoError(t, err)
 			vars := map[string]string{}
 			if testCase.TenantID != "" {
-				vars[tenantIDParam] = testCase.TenantID
+				vars[formationnotification.TenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars["applicationId"] = testCase.AppID
+				vars[formationnotification.ApplicationIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
-			h := notification.NewHandler(notification.NotificationsConfiguration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
 			h.Delete(r, req)
+			resp := r.Result()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			//THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedMappings, h.Mappings)
+		})
+	}
+}
+
+func TestHandler_DestinationDelete(t *testing.T) {
+	apiPath := fmt.Sprintf("/formation-callback/destinations/configuration/%s/%s", testTenantID, appID)
+
+	testCases := []struct {
+		Name                 string
+		RequestBody          string
+		TenantID             string
+		AppID                string
+		ExpectedResponseCode int
+		ExpectedMappings     map[string][]formationnotification.Response
+	}{
+		{
+			Name:                 "success",
+			RequestBody:          formationAssignmentReqBody,
+			TenantID:             testTenantID,
+			AppID:                appID,
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedMappings:     unassignMappings,
+		},
+		{
+			Name:                 "Error tenant id not found in path",
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{},
+		},
+		{
+			Name:                 "Error appID not found in path",
+			RequestBody:          formationAssignmentReqBody,
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: make([]formationnotification.Response, 0, 1)},
+		},
+		{
+			Name:                 "Error when body is not valid json",
+			RequestBody:          "invalid json",
+			TenantID:             testTenantID,
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			req, err := http.NewRequest(http.MethodDelete, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
+			vars := map[string]string{}
+			if testCase.TenantID != "" {
+				vars[formationnotification.TenantIDParam] = testCase.TenantID
+			}
+			if testCase.AppID != "" {
+				vars[formationnotification.ApplicationIDParam] = testCase.AppID
+			}
+			req = mux.SetURLVars(req, vars)
+
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
+			r := httptest.NewRecorder()
+
+			//WHEN
+			h.DestinationDelete(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
@@ -277,7 +416,7 @@ func TestHandler_DeleteWithState(t *testing.T) {
 		TenantID             string
 		AppID                string
 		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			Name:                 "success",
@@ -290,21 +429,21 @@ func TestHandler_DeleteWithState(t *testing.T) {
 		{
 			Name:                 "Error tenant id not found in path",
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error appID not found in path",
 			RequestBody:          formationAssignmentReqBody,
 			TenantID:             testTenantID,
 			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: make([]notification.Response, 0, 1)},
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: make([]formationnotification.Response, 0, 1)},
 		},
 		{
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
 
@@ -315,14 +454,14 @@ func TestHandler_DeleteWithState(t *testing.T) {
 			require.NoError(t, err)
 			vars := map[string]string{}
 			if testCase.TenantID != "" {
-				vars[tenantIDParam] = testCase.TenantID
+				vars[formationnotification.TenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
-				vars["applicationId"] = testCase.AppID
+				vars[formationnotification.ApplicationIDParam] = testCase.AppID
 			}
 			req = mux.SetURLVars(req, vars)
 
-			h := notification.NewHandler(notification.NotificationsConfiguration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -343,7 +482,7 @@ func TestGetResponses(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 
-	h := notification.NewHandler(notification.NotificationsConfiguration{})
+	h := formationnotification.NewHandler(formationnotification.Configuration{})
 	h.Mappings = assignMappingsWithoutConfig
 	r := httptest.NewRecorder()
 
@@ -354,7 +493,7 @@ func TestGetResponses(t *testing.T) {
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	mappings := map[string][]notification.Response{}
+	mappings := map[string][]formationnotification.Response{}
 	require.NoError(t, json.Unmarshal(body, &mappings))
 
 	//THEN
@@ -366,7 +505,7 @@ func TestCleanup(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	h := notification.NewHandler(notification.NotificationsConfiguration{})
+	h := formationnotification.NewHandler(formationnotification.Configuration{})
 	h.Mappings = assignMappingsWithoutConfig
 	r := httptest.NewRecorder()
 
@@ -379,7 +518,7 @@ func TestCleanup(t *testing.T) {
 
 	//THEN
 	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
-	require.Equal(t, map[string][]notification.Response{}, h.Mappings)
+	require.Equal(t, map[string][]formationnotification.Response{}, h.Mappings)
 }
 
 func TestHandler_FailOnceResponse(t *testing.T) {
@@ -393,7 +532,7 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 		Method               string
 		ShouldFail           bool
 		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			Name:                 "assign should fail once",
@@ -437,15 +576,15 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 			Name:                 "Error tenant id not found in path",
 			ExpectedResponseCode: http.StatusBadRequest,
 			Method:               http.MethodPatch,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error when body is not valid json",
 			RequestBody:          "invalid json",
 			TenantID:             testTenantID,
 			Method:               http.MethodPatch,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExpectedMappings:     map[string][]formationnotification.Response{testTenantID: {}},
 		},
 	}
 
@@ -460,12 +599,12 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 			req, err := http.NewRequest(testCase.Method, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.AppID != nil {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID, "applicationId": *testCase.AppID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID, formationnotification.ApplicationIDParam: *testCase.AppID})
 			} else if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{formationnotification.TenantIDParam: testCase.TenantID})
 			}
 
-			h := notification.NewHandler(notification.NotificationsConfiguration{})
+			h := formationnotification.NewHandler(formationnotification.Configuration{})
 			r := httptest.NewRecorder()
 
 			h.ShouldReturnError = testCase.ShouldFail
@@ -489,7 +628,7 @@ func TestResetShouldFail(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	h := notification.NewHandler(notification.NotificationsConfiguration{})
+	h := formationnotification.NewHandler(formationnotification.Configuration{})
 	h.ShouldReturnError = false
 	r := httptest.NewRecorder()
 
@@ -514,26 +653,26 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 		requestBody          string
 		formationID          string
 		expectedResponseCode int
-		expectedMappings     map[string][]notification.Response
+		expectedMappings     map[string][]formationnotification.Response
 	}{
 		{
 			name:                 "Success",
 			requestBody:          formationReqBody,
 			formationID:          formationID,
 			expectedResponseCode: http.StatusOK,
-			expectedMappings:     fixFormationMappings(notification.CreateFormation, formationID, formationReqBody),
+			expectedMappings:     fixFormationMappings(formationnotification.CreateFormation, formationID, formationReqBody),
 		},
 		{
 			name:                 "Error when required formationID path parameter is missing",
 			expectedResponseCode: http.StatusBadRequest,
-			expectedMappings:     map[string][]notification.Response{},
+			expectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			name:                 "Error when formation request body is not valid json",
 			requestBody:          "invalid json",
 			formationID:          formationID,
-			expectedResponseCode: http.StatusBadRequest,
-			expectedMappings:     map[string][]notification.Response{formationID: {}},
+			expectedResponseCode: http.StatusInternalServerError,
+			expectedMappings:     map[string][]formationnotification.Response{formationID: {}},
 		},
 	}
 
@@ -547,7 +686,7 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationIDParam: testCase.formationID})
 			}
 
-			handler := notification.NewHandler(notification.NotificationsConfiguration{})
+			handler := formationnotification.NewHandler(formationnotification.Configuration{})
 			recorder := httptest.NewRecorder()
 
 			//WHEN
@@ -568,7 +707,7 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 		require.NoError(t, err)
 		req = mux.SetURLVars(req, map[string]string{formationIDParam: formationID})
 
-		handler := notification.NewHandler(notification.NotificationsConfiguration{})
+		handler := formationnotification.NewHandler(formationnotification.Configuration{})
 		recorder := httptest.NewRecorder()
 
 		//WHEN
@@ -580,7 +719,7 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 
 		//THEN
 		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
-		require.Equal(t, fixFormationMappings(notification.DeleteFormation, formationID, formationReqBody), handler.Mappings)
+		require.Equal(t, fixFormationMappings(formationnotification.DeleteFormation, formationID, formationReqBody), handler.Mappings)
 	})
 }
 
@@ -594,7 +733,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 		FormationID          string
 		ExpectedResponseCode int
 		Method               string
-		ExpectedMappings     map[string][]notification.Response
+		ExpectedMappings     map[string][]formationnotification.Response
 		ShouldFail           bool
 	}{
 		{
@@ -604,7 +743,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			Method:               http.MethodPost,
 			ExpectedResponseCode: http.StatusOK,
 			ShouldFail:           false,
-			ExpectedMappings:     fixFormationMappings(notification.CreateFormation, formationID, formationReqBody),
+			ExpectedMappings:     fixFormationMappings(formationnotification.CreateFormation, formationID, formationReqBody),
 		},
 		{
 			Name:                 "Success for delete formation when it shouldn't fail",
@@ -613,7 +752,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			Method:               http.MethodDelete,
 			ExpectedResponseCode: http.StatusOK,
 			ShouldFail:           false,
-			ExpectedMappings:     fixFormationMappings(notification.DeleteFormation, formationID, formationReqBody),
+			ExpectedMappings:     fixFormationMappings(formationnotification.DeleteFormation, formationID, formationReqBody),
 		},
 		{
 			Name:                 "Success for create formation when it should fail",
@@ -622,7 +761,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			Method:               http.MethodPost,
 			ExpectedResponseCode: http.StatusBadRequest,
 			ShouldFail:           true,
-			ExpectedMappings:     fixFormationMappings(notification.CreateFormation, formationID, formationReqBody),
+			ExpectedMappings:     fixFormationMappings(formationnotification.CreateFormation, formationID, formationReqBody),
 		},
 		{
 			Name:                 "Success for delete formation when it should fail",
@@ -631,39 +770,39 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 			Method:               http.MethodDelete,
 			ExpectedResponseCode: http.StatusBadRequest,
 			ShouldFail:           true,
-			ExpectedMappings:     fixFormationMappings(notification.DeleteFormation, formationID, formationReqBody),
+			ExpectedMappings:     fixFormationMappings(formationnotification.DeleteFormation, formationID, formationReqBody),
 		},
 		{
 			Name:                 "Error when required formationID path parameter is missing",
 			Method:               http.MethodPost,
 			ExpectedResponseCode: http.StatusBadRequest,
 			ShouldFail:           false,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error when formation request body is not valid json",
 			RequestBody:          "invalid json",
 			Method:               http.MethodPost,
 			FormationID:          formationID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ShouldFail:           false,
-			ExpectedMappings:     map[string][]notification.Response{formationID: {}},
+			ExpectedMappings:     map[string][]formationnotification.Response{formationID: {}},
 		},
 		{
 			Name:                 "Error when required formationID path parameter is missing when should fail",
 			Method:               http.MethodPost,
 			ExpectedResponseCode: http.StatusBadRequest,
 			ShouldFail:           true,
-			ExpectedMappings:     map[string][]notification.Response{},
+			ExpectedMappings:     map[string][]formationnotification.Response{},
 		},
 		{
 			Name:                 "Error when formation request body is not valid json when should fail",
 			RequestBody:          "invalid json",
 			Method:               http.MethodPost,
 			FormationID:          formationID,
-			ExpectedResponseCode: http.StatusBadRequest,
+			ExpectedResponseCode: http.StatusInternalServerError,
 			ShouldFail:           true,
-			ExpectedMappings:     map[string][]notification.Response{formationID: {}},
+			ExpectedMappings:     map[string][]formationnotification.Response{formationID: {}},
 		},
 	}
 
@@ -677,7 +816,7 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{formationIDParam: testCase.FormationID})
 			}
 
-			handler := notification.NewHandler(notification.NotificationsConfiguration{})
+			handler := formationnotification.NewHandler(formationnotification.Configuration{})
 			handler.ShouldReturnError = testCase.ShouldFail
 			recorder := httptest.NewRecorder()
 
@@ -700,7 +839,7 @@ func TestKymaBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -719,7 +858,7 @@ func TestKymaBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -739,7 +878,7 @@ func TestOauthBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -758,7 +897,7 @@ func TestOauthBasicCredentials(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 
-		h := notification.NewHandler(notification.NotificationsConfiguration{})
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
 		r := httptest.NewRecorder()
 
 		//WHEN
