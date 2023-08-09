@@ -38,7 +38,7 @@ func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writer.Header().Set("Content-Type", "text/plain")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, "text/plain")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
 		log.C(ctx).Errorf("while writing response: %s", err.Error())
@@ -72,7 +72,7 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 	}
 
 	h.xsappnameClone = string(body)
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(body); err != nil {
 		log.C(ctx).Errorf("while writing response: %s", err.Error())
@@ -95,7 +95,7 @@ func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(depsMarshalled); err != nil {
 		log.C(ctx).Errorf("while writing response: %s", err.Error())

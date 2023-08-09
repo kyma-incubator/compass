@@ -63,12 +63,12 @@ type validator struct {
 	applicationSvc               ApplicationService
 	intSystemSvc                 IntegrationSystemService
 	subscriptionProviderLabelKey string
-	consumerSubaccountLabelKey   string
+	globalSubaccountIDLabelKey   string
 	tokenPrefix                  string
 }
 
 // NewValidator creates new claims validator
-func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, tokenPrefix string) *validator {
+func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, globalSubaccountIDLabelKey, tokenPrefix string) *validator {
 	return &validator{
 		transact:                     transact,
 		runtimesSvc:                  runtimesSvc,
@@ -77,7 +77,7 @@ func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService
 		applicationSvc:               applicationSvc,
 		intSystemSvc:                 intSystemSvc,
 		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
-		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
+		globalSubaccountIDLabelKey:   globalSubaccountIDLabelKey,
 		tokenPrefix:                  tokenPrefix,
 	}
 }
@@ -157,14 +157,14 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims idtokenc
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
 	rtmCtxFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
+		labelfilter.NewForKeyWithQuery(v.globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
 	}
 
-	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for runtime with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for runtime with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, runtime.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	rtmCtxPage, err := v.runtimeCtxSvc.ListByFilter(ctxWithConsumerTenant, runtime.ID, rtmCtxFilter, 100, "")
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
-		return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+		log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
+		return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	}
 	log.C(ctx).Infof("Found %d runtime context(s) for runtime with ID: %q", len(rtmCtxPage.Data), runtime.ID)
 
@@ -219,14 +219,14 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims idto
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
-	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	applications, err := v.applicationSvc.ListAll(ctxWithConsumerTenant)
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
-		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
+		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.globalSubaccountIDLabelKey, consumerExternalTenantID)
+		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	}
 
-	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 
 	appFound := false
 	for _, application := range applications {

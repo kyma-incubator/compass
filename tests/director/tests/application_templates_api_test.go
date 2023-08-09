@@ -194,7 +194,7 @@ func TestCreateApplicationTemplate_ValidApplicationTypeLabel(t *testing.T) {
 	t.Log("Check if application template was created")
 	appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplate.ID)
 	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.ConsumerID
 	appTemplateInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	require.NotEmpty(t, appTemplateOutput)
@@ -236,7 +236,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateOneInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.ConsumerID
 	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 	appTemplateOneInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
@@ -271,7 +271,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateOneInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.ConsumerID
 	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 	appTemplateOneInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
@@ -294,7 +294,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
 
 	appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
+	appTemplateTwoInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountIDRegion2
 	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 	appTemplateTwoInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion2
 

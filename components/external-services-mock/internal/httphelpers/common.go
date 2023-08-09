@@ -1,28 +1,40 @@
 package httphelpers
 
 import (
+	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 const (
-	HeaderContentTypeKey   = "Content-Type"
-	HeaderContentTypeValue = "application/json;charset=UTF-8"
+	AuthorizationHeaderKey           = "Authorization"
+	ContentTypeHeaderKey             = "Content-Type"
+	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+	ContentTypeApplicationJSON       = "application/json;charset=UTF-8"
 )
 
-func WriteError(writer http.ResponseWriter, errMsg error, statusCode int) {
-	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
 
-	response := model.ErrorResponse{
+func WriteError(writer http.ResponseWriter, errMsg error, statusCode int) {
+	writer.Header().Set(ContentTypeHeaderKey, ContentTypeApplicationJSON)
+
+	response := ErrorResponse{
 		Error: errMsg.Error(),
 	}
 
 	value, err := json.Marshal(&response)
 	if err != nil {
-		log.Fatalf("while wriiting error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
+		log.D().Fatalf("while writing error message: %s, while marshalling %s ", errMsg.Error(), err.Error())
 	}
 	http.Error(writer, string(value), statusCode)
+}
+
+func RespondWithError(ctx context.Context, writer http.ResponseWriter, logErr error, respErrMsg, correlationID string, statusCode int) {
+	log.C(ctx).Error(logErr)
+	WriteError(writer, errors.Errorf("%s. X-Request-Id: %s", respErrMsg, correlationID), statusCode)
 }
