@@ -10,7 +10,6 @@ type ORDWebhookMapping struct {
 	PpmsProductVersions []string `json:"PpmsProductVersions"`
 	OrdURLPath          string   `json:"OrdUrlPath"`
 	SubdomainSuffix     string   `json:"SubdomainSuffix"`
-	UseProxy            bool     `json:"UseProxy"`
 	ProxyURL            string   `json:"ProxyURL"`
 	ProxyHeaderTemplate string   `json:"ProxyHeaderTemplate"`
 }

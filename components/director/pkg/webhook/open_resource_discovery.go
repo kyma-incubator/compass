@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// Application represents the fields needed for determining the Template's values
 type Application struct {
 	BaseURL string `json:"BaseUrl"`
 }

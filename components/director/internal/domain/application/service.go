@@ -42,12 +42,13 @@ const (
 	subaccountKey                = "Subaccount"
 	locationIDKey                = "LocationID"
 	urlSuffixToBeTrimmed         = "/"
-	applicationTypeLabelKey      = "applicationType"
 	ppmsProductVersionIDLabelKey = "ppmsProductVersionId"
 	urlSubdomainSeparator        = "."
 
 	// ManagedLabelKey is the key of the application label for internally or externally managed applications.
 	ManagedLabelKey = "managed"
+	// ApplicationTypeLabelKey is the key of the application label for determining the type of the application.
+	ApplicationTypeLabelKey = "applicationType"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -541,13 +542,13 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
 
-	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, applicationTypeLabelKey)
+	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, ApplicationTypeLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return errors.Wrapf(err, "while getting label %q for %s with id %q", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+			return errors.Wrapf(err, "while getting label %q for %s with id %q", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		}
 
-		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		return nil
 	}
 
@@ -1299,9 +1300,9 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
-	appTypeLbl, ok := in.Labels[applicationTypeLabelKey]
+	appTypeLbl, ok := in.Labels[ApplicationTypeLabelKey]
 	if !ok {
-		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		return nil
 	}
 

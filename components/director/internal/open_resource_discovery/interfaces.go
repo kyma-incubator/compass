@@ -193,6 +193,9 @@ type WebhookConverter interface {
 	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
 }
 
+// LabelService is responsible for the service-layer Label operations
+//
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }

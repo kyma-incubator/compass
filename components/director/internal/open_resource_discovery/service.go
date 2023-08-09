@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/imdario/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -366,7 +366,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookProxyURL string, ordRequestObject webhook2.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
 	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
 		return err
 	}
@@ -490,7 +490,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 	return nil
 }
 
-func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*ordFetchRequest, ordRequestObject webhook2.OpenResourceDiscoveryWebhookRequestObject) error {
+func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*ordFetchRequest, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject) error {
 	queue := make(chan *model.FetchRequest)
 
 	workers := s.config.maxParallelSpecificationProcessors
@@ -1805,8 +1805,8 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		appBaseURL = app.BaseURL
 	}
 
-	ordRequestObject := webhook2.OpenResourceDiscoveryWebhookRequestObject{
-		Application: webhook2.Application{BaseURL: str.PtrStrToStr(appBaseURL)},
+	ordRequestObject := requestobject.OpenResourceDiscoveryWebhookRequestObject{
+		Application: requestobject.Application{BaseURL: str.PtrStrToStr(appBaseURL)},
 		Headers:     http.Header{},
 	}
 
@@ -2034,10 +2034,10 @@ func (s *Service) getORDConfigForApplication(ctx context.Context, appID string) 
 		return application.ORDWebhookMapping{}, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	appTypeLbl, err := s.labelSvc.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, appID, "applicationType")
+	appTypeLbl, err := s.labelSvc.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, appID, application.ApplicationTypeLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return application.ORDWebhookMapping{}, errors.Wrapf(err, "while getting label %q for %s with id %q", "applicationType", model.ApplicationLabelableObject, appID)
+			return application.ORDWebhookMapping{}, errors.Wrapf(err, "while getting label %q for %s with id %q", application.ApplicationTypeLabelKey, model.ApplicationLabelableObject, appID)
 		}
 
 		return application.ORDWebhookMapping{}, nil

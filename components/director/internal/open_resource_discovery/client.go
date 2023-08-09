@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	directorwh "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -53,7 +53,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL webhook2.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
 }
 
 type client struct {
@@ -72,8 +72,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-// func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL *string) (Documents, string, error) {
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject webhook2.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
@@ -161,7 +160,7 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject webhook2.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
@@ -209,7 +208,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject webhook2.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 
@@ -261,7 +260,7 @@ func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *mo
 	return &config, nil
 }
 
-func buildDocumentURL(docURL, appBaseURL, proxyURL string, ordWebhookMapping application.ORDWebhookMapping) (string, error) {
+func buildDocumentURL(docURL, appBaseURL, webhookProxyURL string, ordWebhookMapping application.ORDWebhookMapping) (string, error) {
 	docURLParsed, err := url.Parse(docURL)
 	if err != nil {
 		return "", err
@@ -270,7 +269,7 @@ func buildDocumentURL(docURL, appBaseURL, proxyURL string, ordWebhookMapping app
 		return docURL, nil
 	}
 
-	if proxyURL != "" {
+	if webhookProxyURL != "" {
 		return ordWebhookMapping.ProxyURL + docURL, nil
 	}
 
