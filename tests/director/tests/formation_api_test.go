@@ -5311,22 +5311,6 @@ func cleanupDestnationCertificatesFromExternalSvcMock(t *testing.T, client *http
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func cleanupDestinationsFromExternalSvcMock(t *testing.T, client *http.Client) {
-	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/destinations/cleanup", nil)
-	require.NoError(t, err)
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-}
-
-func cleanupDestnationCertificatesFromExternalSvcMock(t *testing.T, client *http.Client) {
-	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/destination-certificates/cleanup", nil)
-	require.NoError(t, err)
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-}
-
 func resetShouldFailEndpointFromExternalSvcMock(t *testing.T, client *http.Client) {
 	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/formation-callback/reset-should-fail", nil)
 	require.NoError(t, err)
