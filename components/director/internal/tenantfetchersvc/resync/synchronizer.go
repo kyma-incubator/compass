@@ -238,7 +238,9 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		}
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
-
+	if fetchedTenant.Region != "" {
+		fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+	}
 	parentTenantID = fetchedTenant.Parent
 	if len(parentTenantID) == 0 {
 		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
