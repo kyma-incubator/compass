@@ -19,8 +19,8 @@ func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Clien
 		return nil, err
 	}
 
-	for header := range additionalHeaders {
-		req.Header.Set(header, additionalHeaders.Get(header))
+	if additionalHeaders != nil {
+		req.Header = additionalHeaders
 	}
 
 	if len(tnt) > 0 {
