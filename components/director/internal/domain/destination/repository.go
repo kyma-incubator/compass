@@ -34,7 +34,7 @@ type EntityConverter interface {
 
 type repository struct {
 	conv                       EntityConverter
-	globalCreator              repo.CreatorGlobal
+	getter                     repo.SingleGetter
 	deleter                    repo.Deleter
 	globalDeleter              repo.DeleterGlobal
 	upserterWithEmbeddedTenant repo.UpserterGlobal
@@ -46,7 +46,7 @@ type repository struct {
 func NewRepository(converter EntityConverter) *repository {
 	return &repository{
 		conv:                       converter,
-		globalCreator:              repo.NewCreatorGlobal(resource.Destination, destinationTable, destinationColumns),
+		getter:                     repo.NewSingleGetterWithEmbeddedTenant(destinationTable, tenantIDColumn, destinationColumns),
 		deleter:                    repo.NewDeleterWithEmbeddedTenant(destinationTable, tenantIDColumn),
 		globalDeleter:              repo.NewDeleterGlobal(resource.Destination, destinationTable),
 		upserterWithEmbeddedTenant: repo.NewUpserterWithEmbeddedTenant(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns, tenantIDColumn),
@@ -85,13 +85,17 @@ func (r *repository) DeleteOld(ctx context.Context, latestRevision, tenantID str
 	return r.globalDeleter.DeleteManyGlobal(ctx, conditions)
 }
 
-// CreateDestination creates destination in the DB with the provided `destination` data
-func (r *repository) CreateDestination(ctx context.Context, destination *model.Destination) error {
-	if destination == nil {
-		return apperrors.NewInternalError("destination model can not be empty")
+// GetDestinationByNameAndTenant retrieve destination for a given `destinationName` and `tenantID`
+func (r *repository) GetDestinationByNameAndTenant(ctx context.Context, destinationName, tenantID string) (*model.Destination, error) {
+	log.C(ctx).Infof("Getting destinations with name: %q and tenant ID: %q", destinationName, tenantID)
+
+	var dest Entity
+	conditions := repo.Conditions{repo.NewEqualCondition(destinationNameColumn, destinationName)}
+	if err := r.getter.Get(ctx, resource.Destination, tenantID, conditions, repo.NoOrderBy, &dest); err != nil {
+		return nil, err
 	}
 
-	return r.globalCreator.Create(ctx, r.conv.ToEntity(destination))
+	return r.conv.FromEntity(&dest), nil
 }
 
 // ListByTenantIDAndAssignmentID returns all destinations for a given `tenantID` and `formationAssignmentID`
