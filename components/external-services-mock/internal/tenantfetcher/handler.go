@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"sync"
+
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"

@@ -151,8 +151,6 @@ spec:
               value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
-            - name: CONSUMER_SUBACCOUNT_LABEL_KEY
-              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: TEST_PROVIDER_SUBACCOUNT_ID

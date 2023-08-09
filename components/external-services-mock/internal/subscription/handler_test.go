@@ -5,14 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/form3tech-oss/jwt-go"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +14,15 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/form3tech-oss/jwt-go"
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -128,7 +129,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, "Bearer ")
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, "Bearer ")
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
 
@@ -145,7 +146,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subReq, err := http.NewRequest(http.MethodPost, targetURL+fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", ""), bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
 
@@ -162,7 +163,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
@@ -186,7 +187,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//tokenWithClaim := createTokenWithSigningMethod(t, key)
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
@@ -204,7 +205,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 
@@ -232,7 +233,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq.Header.Add(subscriptionFlowHeaderKey, standardFlow)
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
@@ -262,7 +263,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, targetURL+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+		subscribeReq.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq.Header.Add(subscriptionFlowHeaderKey, "unknown")
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
@@ -355,7 +356,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				//GIVEN
 				req := testCase.Request
-				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", tokenWithClaim))
 				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 				req.Header.Add(subscriptionFlowHeaderKey, testCase.SubscriptionFlow)
 				req = mux.SetURLVars(req, map[string]string{"app_name": appName})
@@ -430,14 +431,14 @@ func TestHandler_JobStatus(t *testing.T) {
 			RequestMethod:        http.MethodGet,
 			ExpectedBody:         "{\"error\":\"token value is required\"}\n",
 			ExpectedResponseCode: http.StatusUnauthorized,
-			AuthHeader:           oauth2.AuthorizationHeader,
+			AuthHeader:           httphelpers.AuthorizationHeaderKey,
 			Token:                "",
 		},
 		{
 			Name:                 "Error when request method is not the expected one",
 			RequestMethod:        http.MethodPost,
 			ExpectedResponseCode: http.StatusMethodNotAllowed,
-			AuthHeader:           oauth2.AuthorizationHeader,
+			AuthHeader:           httphelpers.AuthorizationHeaderKey,
 			Token:                token,
 		},
 		{
@@ -445,7 +446,7 @@ func TestHandler_JobStatus(t *testing.T) {
 			RequestMethod:        http.MethodGet,
 			ExpectedResponseCode: http.StatusOK,
 			ExpectedBody:         fmt.Sprintf("{\"status\":\"COMPLETED\"}"),
-			AuthHeader:           oauth2.AuthorizationHeader,
+			AuthHeader:           httphelpers.AuthorizationHeaderKey,
 			Token:                token,
 		},
 	}
@@ -457,7 +458,7 @@ func TestHandler_JobStatus(t *testing.T) {
 			require.NoError(t, err)
 			getJobReq.Header.Add(testCase.AuthHeader, fmt.Sprintf("Bearer %s", testCase.Token))
 			if testCase.AuthHeader == "" {
-				getJobReq.Header.Del(oauth2.AuthorizationHeader)
+				getJobReq.Header.Del(httphelpers.AuthorizationHeaderKey)
 			}
 			h := NewHandler(nil, Config{}, ProviderConfig{}, jobID)
 			r := httptest.NewRecorder()

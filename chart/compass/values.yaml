@@ -138,8 +138,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20230808-c56927c1"
+      dir: dev/incubator/
+      version: "PR-3168"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -179,16 +179,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3168"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20230728-e1b9d738"
+      dir: dev/incubator/
+      version: "PR-3168"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -273,7 +273,6 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -315,18 +314,19 @@ global:
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
+    globalSubaccountIDLabelKey: "global_subaccount_id"
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
     destinationCreator:
       correlationIDsKey: "correlationIds"
       destinationAPI:
-        baseURL: "https://destination-creator-local-destination-api-url.com"
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
-        baseURL: "https://destination-creator-local-certificate-api-url.com"
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
@@ -753,6 +753,7 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:

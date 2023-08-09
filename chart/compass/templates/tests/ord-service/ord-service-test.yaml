@@ -139,6 +139,8 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
             - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
             - name: TEST_EXTERNAL_CERT_CN

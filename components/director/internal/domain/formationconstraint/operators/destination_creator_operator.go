@@ -3,10 +3,8 @@ package operators
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"runtime/debug"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -46,56 +44,38 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Operation)
 
-	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && di.FormationAssignment != nil && di.FormationAssignment.State == string(model.ReadyAssignmentState) {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, di.FormationAssignment.ID)
-		if di.FormationAssignment == nil {
-			return false, errors.New("The operator's formation assignment cannot be nil")
-		}
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+	if err != nil {
+		return false, err
+	}
 
-		if err := e.destinationSvc.DeleteDestinations(ctx, di.FormationAssignment); err != nil {
+	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && formationAssignment != nil && formationAssignment.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, formationAssignment.ID)
+		if err := e.destinationSvc.DeleteDestinations(ctx, formationAssignment); err != nil {
 			return false, err
 		}
 
 		return true, nil
 	}
 
-	if di.FormationAssignment.State != string(model.ReadyAssignmentState) && di.FormationAssignment.State != string(model.ConfigPendingAssignmentState) {
-		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", di.FormationAssignment.ID, di.FormationAssignment.State)
+	if formationAssignment != nil && formationAssignment.State != string(model.ReadyAssignmentState) && formationAssignment.State != string(model.ConfigPendingAssignmentState) {
+		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", formationAssignment.ID, formationAssignment.State)
 		return true, nil
 	}
 
 	if di.Operation == model.AssignFormation {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.AssignFormation, di.FormationAssignment.ID)
-
-		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
+		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 			var assignmentConfig Configuration
-			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping response configuration from assignment with ID: %q", di.FormationAssignment.ID)
-			}
-
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
-			if err != nil {
-				return false, err
+			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
 			}
 
 			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
 			for _, destDetails := range assignmentConfig.Destinations {
-				statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment)
-				if err != nil {
+				if err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
 					return false, errors.Wrapf(err, "while creating design time destination with name: %q", destDetails.Name)
-				}
-
-				if statusCode == http.StatusConflict {
-					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-						return false, errors.Wrapf(err, "while deleting design time destination with name: %q", destDetails.Name)
-					}
-
-					if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
-						return false, errors.Wrapf(err, "while creating design time destination with name: %q", destDetails.Name)
-					}
 				}
 			}
 
@@ -104,28 +84,12 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				if isSAMLDetailsExists := samlAssertionDetails; isSAMLDetailsExists != nil {
 					log.C(ctx).Infof("There is/are %d SAML Assertion destination details in the configuration response", len(samlAssertionDetails.Destinations))
 					for i, destDetails := range samlAssertionDetails.Destinations {
-						certData, statusCode, err := e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment)
+						certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, destDetails, formationAssignment, 0)
 						if err != nil {
 							return false, errors.Wrapf(err, "while creating SAML assertion certificate with name: %q", destDetails.Name)
 						}
 
-						if statusCode == http.StatusConflict {
-							log.C(ctx).Infof("The certificate with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-							if err := e.destinationSvc.DeleteCertificateFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-								return false, errors.Wrapf(err, "while deleting SAML assertion certificate with name: %q", destDetails.Name)
-							}
-
-							if certData, _, err = e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment); err != nil {
-								return false, errors.Wrapf(err, "while creating SAML assertion certificate with name: %q", destDetails.Name)
-							}
-						}
-
-						err = certData.Validate()
-						if err != nil {
-							return false, errors.Wrapf(err, "while validation SAML assertion certificate data")
-						}
-
-						config, err := e.destinationSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
+						config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
 						if err != nil {
 							return false, err
 						}
@@ -138,74 +102,50 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			return true, nil
 		}
 
-		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.ReverseFormationAssignment != nil && string(di.ReverseFormationAssignment.Value) != "" && string(di.ReverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
+		reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
+		if err != nil {
+			return false, err
+		}
+
+		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && reverseFormationAssignment != nil && string(reverseFormationAssignment.Value) != "" && string(reverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 			var assignmentConfig Configuration
-			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
+			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping configuration response from assignment with ID: %q", formationAssignment.ID)
 			}
 
-			var reverseAssigmentConfig Configuration
-			if err := json.Unmarshal(di.ReverseFormationAssignment.Value, &reverseAssigmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
+			var reverseAssignmentConfig Configuration
+			if err := json.Unmarshal(reverseFormationAssignment.Value, &reverseAssignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping configuration response from reverse assignment with ID: %q", reverseFormationAssignment.ID)
 			}
 
 			if assignmentConfig.Credentials.InboundCommunicationDetails == nil {
 				return false, errors.New("The inbound communication destination details could not be empty")
 			}
 
-			if reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials == nil {
+			if reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials == nil {
 				return false, errors.New("The outbound communication credentials could not be empty")
 			}
 
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
-			if err != nil {
-				return false, err
-			}
-
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
-			basicAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
+			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
 			if basicAuthDetails != nil && basicAuthCreds != nil {
 				log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
 				for _, destDetails := range basicAuthDetails.Destinations {
-					statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs)
-					if err != nil {
+					if err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
 						return false, errors.Wrapf(err, "while creating basic destination with name: %q", destDetails.Name)
-					}
-
-					if statusCode == http.StatusConflict {
-						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							return false, errors.Wrapf(err, "while deleting basic destination with name: %q", destDetails.Name)
-						}
-
-						if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
-							return false, errors.Wrapf(err, "while creating basic destination with name: %q", destDetails.Name)
-						}
 					}
 				}
 			}
 
 			samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-			samlAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
+			samlAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
 			if samlAssertionDetails != nil && samlAuthCreds != nil {
 				log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
 				for _, destDetails := range samlAssertionDetails.Destinations {
-					statusCode, err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs)
-					if err != nil {
+					if err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
 						return false, errors.Wrapf(err, "while creating SAML assertion destination with name: %q", destDetails.Name)
-					}
-
-					if statusCode == http.StatusConflict {
-						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							return false, errors.Wrapf(err, "while deleting SAML assertion destination with name: %q", destDetails.Name)
-						}
-
-						if _, err = e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
-							return false, errors.Wrapf(err, "while creating SAML assertion destination with name: %q", destDetails.Name)
-						}
 					}
 				}
 			}
@@ -310,15 +250,22 @@ type InboundOAuth2SAMLBearerAssertionDetails struct {
 
 // Destination holds different destination types properties
 type Destination struct {
-	Name                 string                       `json:"name"`
-	Type                 destinationcreator.Type      `json:"type,omitempty"`
-	Description          string                       `json:"description,omitempty"`
-	ProxyType            destinationcreator.ProxyType `json:"proxyType,omitempty"`
-	Authentication       destinationcreator.AuthType  `json:"authentication,omitempty"`
-	URL                  string                       `json:"url,omitempty"`
-	SubaccountID         string                       `json:"subaccountId,omitempty"`
-	AdditionalProperties json.RawMessage              `json:"additionalProperties,omitempty"`
-	FileName             string                       `json:"fileName,omitempty"`
-	CommonName           string                       `json:"commonName,omitempty"`
-	CertificateChain     string                       `json:"certificateChain,omitempty"`
+	Name                 string          `json:"name"`
+	Type                 string          `json:"type,omitempty"`
+	Description          string          `json:"description,omitempty"`
+	ProxyType            string          `json:"proxyType,omitempty"`
+	Authentication       string          `json:"authentication,omitempty"`
+	URL                  string          `json:"url,omitempty"`
+	SubaccountID         string          `json:"subaccountId,omitempty"`
+	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
+	FileName             string          `json:"fileName,omitempty"`
+	CommonName           string          `json:"commonName,omitempty"`
+	CertificateChain     string          `json:"certificateChain,omitempty"`
+}
+
+// CertificateData contains the data for the certificate resource from the destination creator component
+type CertificateData struct {
+	FileName         string `json:"fileName"`
+	CommonName       string `json:"commonName"`
+	CertificateChain string `json:"certificateChain"`
 }
