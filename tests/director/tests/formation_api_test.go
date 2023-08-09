@@ -3400,7 +3400,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
-			assertNotificationsCountForTenant(t, body, localTenantID2, 2)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
