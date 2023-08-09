@@ -32,7 +32,7 @@ func (h *jwksHandler) Handle(writer http.ResponseWriter, r *http.Request) {
 	keySet := jwk.NewSet()
 	keySet.Add(jwksKey)
 
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 
 	err = json.NewEncoder(writer).Encode(keySet)
 	if err != nil {

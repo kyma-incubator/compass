@@ -16,11 +16,7 @@ import (
 )
 
 const (
-	AuthorizationHeader              = "Authorization"
-	ContentTypeHeader                = "Content-Type"
-	XExternalHost                    = "X-External-Host"
-	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
-	ContentTypeApplicationJson       = "application/json"
+	XExternalHost = "X-External-Host"
 
 	GrantTypeFieldName   = "grant_type"
 	CredentialsGrantType = "client_credentials"
@@ -71,8 +67,8 @@ func NewHandlerWithSigningKey(expectedSecret, expectedID, expectedUsername, expe
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if r.Header.Get(ContentTypeHeader) != ContentTypeApplicationURLEncoded {
-		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencoded got: %s", r.Header.Get(ContentTypeHeader))
+	if r.Header.Get(httphelpers.ContentTypeHeaderKey) != httphelpers.ContentTypeApplicationURLEncoded {
+		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencoded got: %s", r.Header.Get(httphelpers.ContentTypeHeaderKey))
 		writer.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
@@ -119,7 +115,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
 	ctx := r.Context()
 	log.C(ctx).Info("Validating client credentials token request...")
-	authorization := r.Header.Get("authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 	isReqWithCert := h.isRequestWithCert(r)
 
 	flowName := "oauth"
@@ -152,7 +148,7 @@ func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
 func (h *handler) authenticatePasswordCredentialsRequest(r *http.Request) error {
 	ctx := r.Context()
 	log.C(ctx).Info("Validating password grant type token request...")
-	authorization := r.Header.Get("authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
 		return errors.Wrap(err, "client_id or client_secret doesn't match the expected one")
@@ -200,7 +196,7 @@ func respond(writer http.ResponseWriter, r *http.Request, claims map[string]inte
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set(ContentTypeHeader, ContentTypeApplicationJson)
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(payload); err != nil {
 		log.C(ctx).Errorf("while writing response: %s", err.Error())

@@ -148,7 +148,7 @@ type Authenticator struct {
 	formationRepo              FormationRepository
 	formationTemplateRepo      FormationTemplateRepository
 	tenantRepo                 TenantRepository
-	consumerSubaccountLabelKey string
+	globalSubaccountIDLabelKey string
 }
 
 // NewFormationMappingAuthenticator creates a new Authenticator
@@ -163,7 +163,7 @@ func NewFormationMappingAuthenticator(
 	formationRepo FormationRepository,
 	formationTemplateRepo FormationTemplateRepository,
 	tenantRepo TenantRepository,
-	consumerSubaccountLabelKey string,
+	globalSubaccountIDLabelKey string,
 ) *Authenticator {
 	return &Authenticator{
 		transact:                   transact,
@@ -176,7 +176,7 @@ func NewFormationMappingAuthenticator(
 		formationRepo:              formationRepo,
 		formationTemplateRepo:      formationTemplateRepo,
 		tenantRepo:                 tenantRepo,
-		consumerSubaccountLabelKey: consumerSubaccountLabelKey,
+		globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
 	}
 }
 
@@ -469,15 +469,15 @@ func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, tx per
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting labels for application template with ID: %q", *appTemplateID)
 	}
 
-	consumerSubaccountLbl, consumerSubaccountLblExists := labels[a.consumerSubaccountLabelKey]
+	consumerSubaccountLbl, consumerSubaccountLblExists := labels[a.globalSubaccountIDLabelKey]
 
 	if !consumerSubaccountLblExists {
-		return false, http.StatusUnauthorized, errors.Errorf("%q label should exist as part of the provider's application template", a.consumerSubaccountLabelKey)
+		return false, http.StatusUnauthorized, errors.Errorf("%q label should exist as part of the provider's application template", a.globalSubaccountIDLabelKey)
 	}
 
 	consumerSubaccountLblValue, ok := consumerSubaccountLbl.Value.(string)
 	if !ok {
-		return false, http.StatusUnauthorized, errors.Errorf("unexpected type of %q label, expect: string, got: %T", a.consumerSubaccountLabelKey, consumerSubaccountLbl.Value)
+		return false, http.StatusUnauthorized, errors.Errorf("unexpected type of %q label, expect: string, got: %T", a.globalSubaccountIDLabelKey, consumerSubaccountLbl.Value)
 	}
 
 	if consumerExternalTenantID == consumerSubaccountLblValue {

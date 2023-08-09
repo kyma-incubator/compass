@@ -27,7 +27,6 @@ const (
 	IsNormalizedLabel       = "isNormalized"
 	QueryRuntimesCategory   = "query runtimes"
 	RegisterRuntimeCategory = "register runtime"
-	GlobalSubaccountIdKey   = "global_subaccount_id"
 )
 
 func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
@@ -233,7 +232,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	givenInput := fixRuntimeInput("runtime-with-scenario-assignments")
 	givenInput.Description = ptr.String("runtime-1-description")
-	givenInput.Labels[GlobalSubaccountIdKey] = []interface{}{subaccount}
+	givenInput.Labels[conf.GlobalSubaccountIDLabelKey] = []interface{}{subaccount}
 
 	// WHEN
 	var actualRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -742,7 +741,7 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 		t.Logf("Registering runtime with name %q with integration system credentials...", runtimeName)
-		runtimeInput.Labels[GlobalSubaccountIdKey] = []interface{}{subaccountID} // so that the region can be set for the runtime based on the region of the subaccount
+		runtimeInput.Labels[conf.GlobalSubaccountIDLabelKey] = []interface{}{subaccountID} // so that the region can be set for the runtime based on the region of the subaccount
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, oauthGraphQLClient, tenantID, &runtime)
 		require.NoError(t, err)
