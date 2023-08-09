@@ -168,6 +168,7 @@ clientCredentialsRegistrationScopes:
     - "webhook:write"
   application:
     - "application:read"
+    - "applicationByLocalTenantIDAndAppTemplateID:ead"
     - "application:write"
     - "application.auths:read"
     - "application.webhooks:read"
