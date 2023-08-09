@@ -98,7 +98,6 @@ var successfulRoundTripFunc = func(t *testing.T, bothBaseURLsProvided, noBaseURL
 
 func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 	testErr := errors.New("test")
-	emptyHeaders := http.Header{}
 
 	testCases := []struct {
 		Name                 string
@@ -187,7 +186,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, proxyURL+ordDocURI, "", emptyHeaders).Return(&http.Response{
+				executor.On("Execute", context.TODO(), mock.Anything, proxyURL+ordDocURI, "", http.Header{}).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -209,7 +208,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", emptyHeaders).Return(&http.Response{
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "", http.Header{}).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -397,7 +396,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			}
 			requestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{
 				TenantID: tenantID,
-				Headers:  emptyHeaders,
+				Headers:  http.Header{},
 			}
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 

@@ -2003,7 +2003,7 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 		return err
 	}
 
-	ordWebhookMapping, _ := s.getMappingORDConfiguration(appTemplate.Name)
+	ordWebhookMapping := s.getMappingORDConfiguration(appTemplate.Name)
 
 	resource := Resource{
 		Type: directorresource.ApplicationTemplate,
@@ -2017,13 +2017,13 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 	return nil
 }
 
-func (s *Service) getMappingORDConfiguration(applicationType string) (application.ORDWebhookMapping, bool) {
+func (s *Service) getMappingORDConfiguration(applicationType string) application.ORDWebhookMapping {
 	for _, wm := range s.ordWebhookMapping {
 		if wm.Type == applicationType {
-			return wm, true
+			return wm
 		}
 	}
-	return application.ORDWebhookMapping{}, false
+	return application.ORDWebhookMapping{}
 }
 
 func (s *Service) getORDConfigForApplication(ctx context.Context, appID string) (application.ORDWebhookMapping, error) {
@@ -2044,7 +2044,7 @@ func (s *Service) getORDConfigForApplication(ctx context.Context, appID string) 
 	}
 
 	if appTypeLbl != nil {
-		ordWebhookMapping, _ = s.getMappingORDConfiguration(appTypeLbl.Value.(string))
+		ordWebhookMapping = s.getMappingORDConfiguration(appTypeLbl.Value.(string))
 	}
 
 	return ordWebhookMapping, nil

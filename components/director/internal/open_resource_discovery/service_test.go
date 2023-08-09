@@ -32,9 +32,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	emptyHeaders := http.Header{}
 	ordMapping := application.ORDWebhookMapping{}
-	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: emptyHeaders}
+	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: http.Header{}}
 
 	sanitizedDoc := fixSanitizedORDDocument()
 	sanitizedDocForProxy := fixSanitizedORDDocumentForProxyURL()
@@ -794,7 +793,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetch := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixAPI2SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 		return fetchReqSvc
@@ -802,7 +801,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdate := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -815,7 +814,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdateForStaticDoc := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -828,7 +827,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdateForStaticDocForApplication := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times((len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) * 2) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -3598,9 +3597,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
 					Times(len(fixAPI1SpecInputs(baseURL)))
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -3846,7 +3845,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixAPI1SpecInputs(baseURL)) + len(fixAPI2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -4121,9 +4120,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixAPI1SpecInputs(baseURL)))
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -4793,7 +4792,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, emptyHeaders).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixAPI1SpecInputs(baseURL)) + len(fixAPI2SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
