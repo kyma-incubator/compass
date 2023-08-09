@@ -210,8 +210,9 @@ function installOry() {
       sleep 3
     done
     kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
-
+    
     # Copy the Hydra Secret created by the Kyma deployment to avoid benchmark tests crashing with 401 due to HMAC key changes
+    kubectl create ns ory
     kubectl get secret ory-hydra-credentials -n kyma-system -o yaml | sed 's/namespace: .*/namespace: ory/' | kubectl apply -f -
   fi
 }
