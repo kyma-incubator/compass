@@ -3,7 +3,6 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -87,9 +86,6 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	} else {
 		req.Header.Set(tenantHeader, tnt)
 	}
-
-	fmt.Println("DOC URL ", documentURL)
-	fmt.Println("Header ", req.Header["target_host"])
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode >= http.StatusBadRequest {

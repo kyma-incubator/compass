@@ -3,7 +3,6 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -126,7 +125,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
 
-			fmt.Println("ALEX documentURL", documentURL)
 			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())

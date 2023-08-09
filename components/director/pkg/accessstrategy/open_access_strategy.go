@@ -2,7 +2,6 @@ package accessstrategy
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 )
 
@@ -26,10 +25,6 @@ func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Clien
 
 	if len(tnt) > 0 {
 		req.Header.Set(tenantHeader, tnt)
-	}
-
-	for header := range additionalHeaders {
-		fmt.Println("ALEX Open Strategy header", header, additionalHeaders.Get(header))
 	}
 
 	return client.Do(req)
