@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/hashicorp/go-multierror"
@@ -33,14 +32,16 @@ type automaticScenarioAssignmentService interface {
 
 //go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationService interface {
-	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment) (statusCode int, err error)
-	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (statusCode int, err error)
-	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (defaultStatusCode int, err error)
-	CreateCertificateInDestinationService(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment) (defaultCertData destinationcreator.CertificateResponse, defaultStatusCode int, err error)
-	DeleteDestinationFromDestinationService(ctx context.Context, destinationName, destinationSubaccount string, formationAssignment *model.FormationAssignment) error
+	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment) error
+	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
+	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
 	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error
-	DeleteCertificateFromDestinationService(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error
-	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData destinationcreator.CertificateResponse, destinationIndex int) (json.RawMessage, error)
+}
+
+//go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type destinationCreatorService interface {
+	CreateCertificate(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment, depth uint8) (*CertificateData, error)
+	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData *CertificateData, destinationIndex int) (json.RawMessage, error)
 }
 
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -102,6 +103,7 @@ type ConstraintEngine struct {
 	tenantSvc                 tenantService
 	asaSvc                    automaticScenarioAssignmentService
 	destinationSvc            destinationService
+	destinationCreatorSvc     destinationCreatorService
 	formationRepo             formationRepository
 	labelRepo                 labelRepository
 	labelService              labelService
@@ -116,13 +118,14 @@ type ConstraintEngine struct {
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	c := &ConstraintEngine{
 		transact:                transact,
 		constraintSvc:           constraintSvc,
 		tenantSvc:               tenantSvc,
 		asaSvc:                  asaSvc,
 		destinationSvc:          destinationSvc,
+		destinationCreatorSvc:   destinationCreatorSvc,
 		formationRepo:           formationRepo,
 		labelRepo:               labelRepo,
 		labelService:            labelService,

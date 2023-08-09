@@ -26,7 +26,6 @@ var (
 )
 
 func TestResolver_SubscribeTenant(t *testing.T) {
-
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
