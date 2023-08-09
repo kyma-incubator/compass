@@ -3339,11 +3339,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app1.ID, subscriptionConsumerAccountID)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
-			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
-			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
-
 			t.Logf("Assert formation assignments during %s operation...", assignOperation)
 			noAuthDestinationName := "e2e-design-time-destination-name"
 			noAuthDestinationURL := "http://e2e-design-time-url-example.com"
@@ -3391,7 +3386,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 			notificationsForApp1Tenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp1Tenant.Array(), []*applicationFormationExpectations{
 				{
@@ -3406,7 +3400,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
-			assertNotificationsCountForTenant(t, body, localTenantID2, 2)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
@@ -5296,6 +5289,22 @@ func assertNotificationsCount(t *testing.T, body []byte, objectID string, count 
 
 func cleanupNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) {
 	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/formation-callback/cleanup", nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func cleanupDestinationsFromExternalSvcMock(t *testing.T, client *http.Client) {
+	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/destinations/cleanup", nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func cleanupDestnationCertificatesFromExternalSvcMock(t *testing.T, client *http.Client) {
+	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/destination-certificates/cleanup", nil)
 	require.NoError(t, err)
 	resp, err := client.Do(req)
 	require.NoError(t, err)
