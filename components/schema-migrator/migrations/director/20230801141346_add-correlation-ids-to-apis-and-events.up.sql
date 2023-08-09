@@ -18,14 +18,21 @@ SELECT id                  AS event_id,
 FROM event_api_definitions,
      jsonb_array_elements_text(event_api_definitions.correlation_ids) AS elements;
 
-create or replace view tenants_events
+DROP VIEW IF EXISTS tenants_specifications;
+DROP VIEW IF EXISTS tenants_apis;
+DROP VIEW IF EXISTS tenants_events;
+
+DROP VIEW IF EXISTS api_definition_extensible;
+DROP VIEW IF EXISTS event_api_definition_extensible;
+
+CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value, version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
              system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, hierarchy,
              countries, release_status, sunset_date, labels, package_id, visibility, disabled, part_of_products,
-             line_of_business, industry, ready, created_at, updated_at, deleted_at, error, extensible, successors,
+             line_of_business, industry, ready, created_at, updated_at, deleted_at, error, extensible_supported, extensible_description, successors,
              resource_hash, correlation_ids)
-as
+AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
                 events.id,
@@ -62,7 +69,8 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.updated_at,
                 events.deleted_at,
                 events.error,
-                events.extensible,
+                actions.supported,
+                actions.description,
                 events.successors,
                 events.resource_hash,
                 events.correlation_ids
@@ -80,18 +88,19 @@ FROM event_api_definitions events
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
-               FROM apps_subaccounts) t_apps ON events.app_id = t_apps.id;
+               FROM apps_subaccounts) t_apps ON events.app_id = t_apps.id,
+     jsonb_to_record(events.extensible) actions(supported text, description text);
 
-create or replace view tenants_apis
+CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
              short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, hierarchy,
              supported_use_cases, countries, links, api_resource_links, release_status, sunset_date, changelog_entries,
              labels, package_id, visibility, disabled, part_of_products, line_of_business, industry, ready, created_at,
              updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
-             custom_implementation_standard_description, target_urls, extensible, successors, resource_hash,
+             custom_implementation_standard_description, target_urls, extensible_supported, extensible_description, successors, resource_hash,
              documentation_labels, correlation_ids)
-as
+AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
                 apis.id,
@@ -136,13 +145,14 @@ SELECT DISTINCT t_apps.tenant_id,
                 apis.custom_implementation_standard,
                 apis.custom_implementation_standard_description,
                 apis.target_urls,
-                apis.extensible,
+                actions.supported,
+                actions.description,
                 apis.successors,
                 apis.resource_hash,
                 apis.documentation_labels,
                 apis.correlation_ids
 FROM api_definitions apis
-         JOIN (SELECT a1.id,
+    JOIN (SELECT a1.id,
                       a1.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM tenant_applications a1
@@ -155,6 +165,32 @@ FROM api_definitions apis
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
-               FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id;
+               FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id,
+   jsonb_to_record(apis.extensible) actions(supported text, description text);
+
+CREATE OR REPLACE VIEW tenants_specifications
+            (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
+             event_spec_type, custom_type, created_at)
+AS
+SELECT DISTINCT t_api_event_def.tenant_id,
+                spec.id,
+                spec.api_def_id,
+                spec.event_def_id,
+                spec.spec_data,
+                spec.api_spec_format,
+                spec.api_spec_type,
+                spec.event_spec_format,
+                spec.event_spec_type,
+                spec.custom_type,
+                spec.created_at
+FROM specifications spec
+         JOIN (SELECT a.id,
+                      a.tenant_id
+               FROM tenants_apis a
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id
+               FROM tenants_events e) t_api_event_def
+              ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
 COMMIT;

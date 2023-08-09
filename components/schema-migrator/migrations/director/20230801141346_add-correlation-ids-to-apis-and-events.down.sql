@@ -6,14 +6,14 @@ DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
 
-create or replace view tenants_events
+CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value, version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
              system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, hierarchy,
              countries, release_status, sunset_date, labels, package_id, visibility, disabled, part_of_products,
              line_of_business, industry, ready, created_at, updated_at, deleted_at, error, extensible, successors,
              resource_hash)
-as
+AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
                 events.id,
@@ -69,7 +69,7 @@ FROM event_api_definitions events
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON events.app_id = t_apps.id;
 
-create or replace view tenants_apis
+CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
              short_description, system_instance_aware, policy_level, custom_policy_level, api_protocol, tags, hierarchy,
@@ -78,7 +78,7 @@ create or replace view tenants_apis
              updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
              custom_implementation_standard_description, target_urls, extensible, successors, resource_hash,
              documentation_labels)
-as
+AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
                 apis.id,
@@ -143,10 +143,10 @@ FROM api_definitions apis
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
                FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id;
 
-create view tenants_specifications
+CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, custom_type, created_at)
-as
+AS
 SELECT DISTINCT t_api_event_def.tenant_id,
                 spec.id,
                 spec.api_def_id,
@@ -167,6 +167,25 @@ FROM specifications spec
                       e.tenant_id
                FROM tenants_events e) t_api_event_def
               ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
+
+CREATE OR REPLACE VIEW api_definition_extensible(api_definition_id, supported, description)
+AS
+SELECT api_definitions.id AS api_definition_id,
+       actions.supported,
+       actions.description
+FROM api_definitions,
+     jsonb_to_record(api_definitions.extensible) actions(supported text, description text)
+WHERE actions.supported IS NOT NULL;
+
+
+CREATE OR REPLACE VIEW event_api_definition_extensible(event_definition_id, supported, description)
+AS
+SELECT event_api_definitions.id AS event_definition_id,
+       actions.supported,
+       actions.description
+FROM event_api_definitions,
+     jsonb_to_record(event_api_definitions.extensible) actions(supported text, description text)
+WHERE actions.supported IS NOT NULL;
 
 
 ALTER TABLE api_definitions
