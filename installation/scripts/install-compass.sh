@@ -77,13 +77,14 @@ if [[ ${SQL_HELM_BACKEND} ]]; then
     export HELM_DRIVER_SQL_CONNECTION_STRING=postgres://${DB_USER}:${DB_PWD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable
 fi
 
-echo "Wait for helm stable status"
+echo "Wait for helm stable status..."
 wait_for_helm_stable_state "compass" "compass-system" 
 
-echo "Install Compass"
+echo "Starting compass installation..."
 echo "Path to compass charts: " ${COMPASS_CHARTS}
 helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
+echo "Compass installation finished successfully"
 
 if [[ ${SQL_HELM_BACKEND} ]]; then
     pkill kubectl
