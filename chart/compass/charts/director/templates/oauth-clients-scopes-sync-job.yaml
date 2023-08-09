@@ -77,7 +77,7 @@ spec:
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
             - name: APP_OAUTH20_URL
-              value: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445
+              value: {{ .Values.global.director.authentication.oauth2.url | quote }}
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
           command:
