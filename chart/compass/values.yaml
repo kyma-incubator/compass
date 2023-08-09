@@ -335,7 +335,7 @@ global:
         commonNameKey: "commonName"
         certChainKey: "certificateChain"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
-    ordWebhookMappings: '[{ "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090/proxy/s4", "ProxyHeaderTemplate": "{\"target_host\": \"{{.Application.BaseURL}}\" }", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
+    ordWebhookMappings: '[{ "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090/proxy", "ProxyHeaderTemplate": "{\"target_host\": \"{{.Application.BaseURL}}\" }", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:

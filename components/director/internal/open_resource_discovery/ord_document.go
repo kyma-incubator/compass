@@ -411,6 +411,8 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 func (docs Documents) Sanitize(webhookBaseURL, webhookProxyURL string) error {
 	var err error
 
+	// Use the ProxyURL for all relative link substitution except for the API's TargetURLs.
+	// They are externally consumable and we should not expose those URLs through the Proxy but rather from webhook's BaseURL
 	url := webhookBaseURL
 	if webhookProxyURL != "" {
 		url = webhookProxyURL
