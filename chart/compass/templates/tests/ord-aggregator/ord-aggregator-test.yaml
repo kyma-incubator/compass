@@ -60,7 +60,7 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.certSecuredProxyPort }}/.well-known/open-resource-discovery"
             - name: GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
-            - name: ORD_WEBHOOK_MAPPINGS
+            - name: APP_ORD_WEBHOOK_MAPPINGS
               value: {{ .Values.global.director.ordWebhookMappings | quote }}
             - name: APP_PROXY_APPLICATION_TEMPLATE_NAME
               value: "{{ .Values.global.tests.ordAggregator.proxyApplicationTemplateName }}"
