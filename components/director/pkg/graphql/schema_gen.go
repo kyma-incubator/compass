@@ -6687,6 +6687,7 @@ type Query {
 	applications(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
 	"""
 	**Examples**
+	- [query application by local tenant id and app template id](examples/query-application/query-application-by-local-tenant-id-and-app-template-id.graphql)
 	- [query application](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
