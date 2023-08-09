@@ -199,6 +199,7 @@ function installOry() {
   if [[ -f "$ORY_SCRIPT_PATH" ]]; then
     log::info "Installing Ory Helm chart..."
     bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
+  # This else statement only exists as currently the main branch does not have the ory charts and still uses Ory created by Kyma
   else
     log::warn "Ory installation script is missing"
     # If the installation is missing Kyma has installed Ory for us, we should schedule the cronjob
@@ -209,6 +210,9 @@ function installOry() {
       sleep 3
     done
     kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
+
+    # Copy the Hydra Secret created by the Kyma deployment to avoid benchmark tests crashing with 401 due to HMAC key changes
+    kubectl get secret ory-hydra-credentials -n kyma-system -o yaml | sed 's/namespace: .*/namespace: ory/' | kubectl apply -f -
   fi
 }
 
