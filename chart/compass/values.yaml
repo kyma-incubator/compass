@@ -273,7 +273,6 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -315,18 +314,19 @@ global:
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
+    globalSubaccountIDLabelKey: "global_subaccount_id"
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
     destinationCreator:
       correlationIDsKey: "correlationIds"
       destinationAPI:
-        baseURL: "https://destination-creator-local-destination-api-url.com"
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
-        baseURL: "https://destination-creator-local-certificate-api-url.com"
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
@@ -753,6 +753,7 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:

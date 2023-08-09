@@ -40,18 +40,18 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 		ApplicationTemplateID: &appTemplateID,
 	}
 
-	consumerSubaccountLabelKey := "consumerSubaccountLabelKey"
+	globalSubaccountIDLabelKey := "globalSubaccountIDLabelKey"
 
 	appTemplateLbls := map[string]*model.Label{
-		consumerSubaccountLabelKey: {Key: consumerSubaccountLabelKey, Value: externalTntID},
+		globalSubaccountIDLabelKey: {Key: globalSubaccountIDLabelKey, Value: externalTntID},
 	}
 
 	appTemplateLblsWithInvalidConsumerSubaccount := map[string]*model.Label{
-		consumerSubaccountLabelKey: {Key: consumerSubaccountLabelKey, Value: "invalidConsumerSubaccountID"},
+		globalSubaccountIDLabelKey: {Key: globalSubaccountIDLabelKey, Value: "invalidConsumerSubaccountID"},
 	}
 
 	appTemplateLblsWithIncorrectType := map[string]*model.Label{
-		consumerSubaccountLabelKey: {Key: consumerSubaccountLabelKey, Value: model.FormationAssignmentTypeRuntime},
+		globalSubaccountIDLabelKey: {Key: globalSubaccountIDLabelKey, Value: model.FormationAssignmentTypeRuntime},
 	}
 
 	rtmContext := &model.RuntimeContext{
@@ -68,7 +68,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 		appTemplateRepoFn          func() *automock.ApplicationTemplateRepository
 		labelRepoFn                func() *automock.LabelRepository
 		tenantRepoFn               func() *automock.TenantRepository
-		consumerSubaccountLabelKey string
+		globalSubaccountIDLabelKey string
 		hasURLVars                 bool
 		contextFn                  func() context.Context
 		httpMethod                 string
@@ -449,7 +449,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLblsWithIncorrectType, nil)
 				return lblRepo
 			},
-			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
+			globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -487,7 +487,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLblsWithInvalidConsumerSubaccount, nil)
 				return lblRepo
 			},
-			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
+			globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -751,7 +751,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLbls, nil)
 				return lblRepo
 			},
-			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
+			globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -789,7 +789,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLbls, nil)
 				return lblRepo
 			},
-			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
+			globalSubaccountIDLabelKey: globalSubaccountIDLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -1056,7 +1056,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, nil, nil, tenantRepo, tCase.consumerSubaccountLabelKey)
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, nil, nil, tenantRepo, tCase.globalSubaccountIDLabelKey)
 			fmAuthMiddleware := fmAuthenticator.FormationAssignmentHandler()
 			rw := httptest.NewRecorder()
 
@@ -1117,7 +1117,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 		transactFn                 func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		formationRepoFn            func() *automock.FormationRepository
 		formationTemplateRepoFn    func() *automock.FormationTemplateRepository
-		consumerSubaccountLabelKey string
+		globalSubaccountIDLabelKey string
 		hasURLVars                 bool
 		contextFn                  func() context.Context
 		httpMethod                 string
@@ -1284,7 +1284,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, formationRepo, formationTemplateRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.consumerSubaccountLabelKey)
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, nil, tCase.globalSubaccountIDLabelKey)
 			formationAuthMiddleware := fmAuthenticator.FormationHandler()
 			rw := httptest.NewRecorder()
 

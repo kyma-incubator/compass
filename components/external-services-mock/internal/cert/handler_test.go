@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +56,7 @@ func TestHandler_Generate(t *testing.T) {
 
 	//GIVEN
 	req := httptest.NewRequest(http.MethodPost, "http://target.com/cert", bytes.NewBuffer(data))
-	req.Header.Set("authorization", "Bearer test-tkn")
+	req.Header.Set(httphelpers.AuthorizationHeaderKey, "Bearer test-tkn")
 	req.Header.Set("tenant", "tnt")
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
