@@ -142,7 +142,8 @@ spec:
 {{ tpl .Values.deployment.extraContainers . | indent 8 }}
         {{- end }}
       # TODO!!! Service account of the oathkeeper maester chart is used
-      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-maester-account
+      # TODO!!!: Change this back to {{ include "oathkeeper-maester.name" . }}-maester-account when it reaches prod
+      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-stack-maester-account
       # TODO!!! This exists in the OS chart, but not in this one
       # automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       {{- with .Values.deployment.nodeSelector }}

@@ -2,10 +2,9 @@
 global:
   domainName: "local.kyma.dev"
   postgresql:
+    # Values are used by the install-ory.sh script
     postgresqlDatabase: db4hydra
     postgresqlUsername: hydra
-    # password needed in .global to create dsn in Hydra Secret
-    postgresqlPassword: compass
   istio:
     gateway:
       name: kyma-gateway
@@ -22,11 +21,6 @@ global:
           saJson: ""
         postgresql:
           enabled: true
-        # user: "someUser"
-        # password: "postgres"
-        # dbUrl: "mydb.mynamespace.svc.cluster.local:1234"
-        # dbName: "db4hydra"
-        # dbType: "postgres | mysql | cockroach"
   containerRegistry:
     path: eu.gcr.io/kyma-project
   images:
@@ -44,10 +38,6 @@ global:
     hydra:
       name: "hydra"
       version: "v1.11.8"
-      directory: "external/oryd"
-    hydra_maester:
-      name: "hydra-maester"
-      version: "v0.0.25"
       directory: "external/oryd"
     busybox:
       name: "busybox"
@@ -126,7 +116,6 @@ hydra:
       log:
         leak_sensitive_values: false
         level: trace
-      secrets: {}
       serve:
         admin:
           port: 4445
@@ -141,18 +130,7 @@ hydra:
         self: {}
     dangerousAllowInsecureRedirectUrls: false
     dangerousForceHttp: true
-      # existingSecret: "ory-hydra-credentials"
-  secret:
-    enabled: true
-  maester:
-    enabled: false
-  # hydra-maester:
-  #   globalAccess: true
-  #   config:
-  #     # Must be in-sync with hydra.hydra.config.existingSecret
-  #     hydraSecret: "ory-hydra-credentials"
-  serviceMonitor:
-    enabled: false
+    existingSecret: "ory-hydra-credentials"
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
@@ -194,13 +172,13 @@ oathkeeper:
           enabled: true
           config:
             # REQUIRED IF ENABLED - The OAuth 2.0 Token Endpoint that will be used to validate the client credentials.
-            token_url: http://ory-hydra-public.kyma-system.svc.cluster.local:4444/oauth2/token
+            token_url: http://ory-stack-hydra-public.ory.svc.cluster.local:4444/oauth2/token
         oauth2_introspection:
           # Set enabled to true if the authenticator should be enabled and false to disable the authenticator. Defaults to false.
           enabled: true
           config:
             # REQUIRED IF ENABLED - The OAuth 2.0 Token Introspection endpoint.
-            introspection_url: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/oauth2/introspect
+            introspection_url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445/oauth2/introspect
             # Sets the strategy to be used to validate/match the token scope. Supports "hierarchic", "exact", "wildcard", "none". Defaults
             # to "none".
             scope_strategy: exact
@@ -209,7 +187,7 @@ oathkeeper:
           enabled: true
           config:
             jwks_urls:
-              - http://ory-hydra-public.kyma-system.svc.cluster.local:4444/.well-known/jwks.json
+              - http://ory-stack-hydra-public.ory.svc.cluster.local:4444/.well-known/jwks.json
             scope_strategy: wildcard
       authorizers:
         allow:
@@ -280,6 +258,9 @@ oathkeeper:
       targetMemoryUtilizationPercentage: 75
       targetCPUUtilizationPercentage: 80    
   oathkeeper-maester:
+    # Needed to enforce unique names
+    # TODO: remove this once the ory stack reaches prod & rollback the serviceaccountnames in oathkeeper deployments
+    nameOverride: "oathkeeper-stack-maester"
     deployment:
       annotations:
         sidecar.istio.io/inject: "false"
@@ -304,7 +285,7 @@ postgresql:
     podAnnotations:
       sidecar.istio.io/inject: "false"
   # Must be in-sync with hydra.hydra.config.existingSecret
-  # existingSecret: "ory-hydra-credentials"
+  existingSecret: "ory-hydra-credentials"
 
 # Remote persistance settings
 gcloud-sqlproxy:
@@ -315,6 +296,3 @@ gcloud-sqlproxy:
     term_timeout: 30s
   podAnnotations:
     sidecar.istio.io/inject: "false"
-  # Must be in-sync with hydra.hydra.config.existingSecret
-  existingSecret: "ory-hydra-credentials"
-  existingSecretKey: "gcp-sa.json"

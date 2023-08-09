@@ -6,17 +6,19 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
+
 	"github.com/form3tech-oss/jwt-go"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/ias"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
 	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
@@ -41,12 +43,15 @@ import (
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
+
+const healthzEndpoint = "/v1/healthz"
 
 type config struct {
 	Port        int `envconfig:"default=8080"`
@@ -56,24 +61,29 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	NotificationConfig       notification.NotificationsConfiguration
+	NotificationConfig       formationnotification.Configuration
+	DestinationCreatorConfig *destinationcreator.Config
 	DestinationServiceConfig DestinationServiceConfig
 	ORDServers               ORDServers
 	SelfRegConfig            selfreg.Config
 	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
 	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
+	OnDemandTenant           string `envconfig:"APP_ON_DEMAND_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
 
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
+
+	DirectDependencyXsappname string `envconfig:"APP_DIRECT_DEPENDENCY_XSAPPNAME"`
 }
 
 // DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
-	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
-	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+	TenantDestinationsEndpoint           string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	TenantDestinationCertificateEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
+	SensitiveDataEndpoint                string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -150,8 +160,10 @@ func main() {
 		},
 	}
 
-	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient), wg)
-	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping), wg)
+	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
+
+	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
+	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationCreatorHandler), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -164,15 +176,16 @@ func main() {
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 
-func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client) *http.Server {
+func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
 
-	router.HandleFunc("/v1/healtz", health.HandleFunc)
+	router.HandleFunc(healthzEndpoint, health.HandleFunc)
 
 	// Oauth server handlers
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
@@ -194,12 +207,13 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
 
 	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
-	providerHandler := provider.NewHandler()
+	providerHandler := provider.NewHandler(cfg.DirectDependencyXsappname)
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
 	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/v1/dependencies/configure", providerHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", providerHandler.Dependencies).Methods(http.MethodGet)
+	router.HandleFunc("/v1/dependencies/indirect", providerHandler.DependenciesIndirect).Methods(http.MethodGet)
 
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
@@ -222,6 +236,12 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
+	// destination service handlers but the destination creator handler is used due to shared mappings
+	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+
+	tenantDestinationCertificateEndpoint := cfg.DestinationServiceConfig.TenantDestinationCertificateEndpoint
+	router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)
 	exitOnError(err, "while loading IAS adapter config")
@@ -238,7 +258,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
-	tenantFetcherHandler := tenantfetcher.NewHandler(cfg.TenantConfig.TestTenantOnDemandID)
+	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
@@ -300,8 +321,12 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	}
 }
 
-func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *http.Server {
+func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
 	router := mux.NewRouter()
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
+
+	// Healthz handler
+	router.HandleFunc(healthzEndpoint, health.HandleFunc)
 
 	// Oauth server handlers
 	tokenHandlerWithKey := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
@@ -314,32 +339,62 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := notification.NewHandler(cfg.NotificationConfig)
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig)
+	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
-	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/with-state/{tenantId}/{applicationId}", notificationHandler.DeleteWithState).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
+	// formation assignment notifications handlers for kyma integration
+	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
+	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
+	// formation assignment notifications async handlers
+	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
+	// formation assignment notifications handler for the destination creation/deletion
+	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async/destinations/{tenantId}", notificationHandler.AsyncDestinationPatch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async/destinations/{tenantId}/{applicationId}", notificationHandler.AsyncDestinationDelete).Methods(http.MethodDelete)
+	// formation(lifecycle) notifications sync handlers
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/fail-once/{uclFormationId}", notificationHandler.FailOnceFormation).Methods(http.MethodPost, http.MethodDelete)
+	// formation(lifecycle) notifications async handlers
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncPostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncDeleteFormation).Methods(http.MethodDelete)
-	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
 	router.HandleFunc("/v1/businessIntegration/async-no-response/{uclFormationId}", notificationHandler.AsyncNoResponse).Methods(http.MethodPost, http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/async-fail-once/{uclFormationId}", notificationHandler.AsyncFormationFailOnce).Methods(http.MethodPost, http.MethodDelete)
+	// "technical" handlers for getting/deleting the FA notifications
+	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
+	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
+
+	// destination creator handlers
+	destinationCreatorPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.Path
+	deleteDestinationCreatorPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+
+	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
+
+	certificatePath := cfg.DestinationCreatorConfig.CertificateAPIConfig.Path
+	deleteCertificatePathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+
+	router.HandleFunc(certificatePath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
+	router.HandleFunc(certificatePath+deleteCertificatePathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
+
+	// "internal technical" handlers for deleting in-memory destinations and destination certificates mappings
+	router.HandleFunc("/destinations/cleanup", destinationCreatorHandler.CleanupDestinations).Methods(http.MethodDelete)
+	router.HandleFunc("/destination-certificates/cleanup", destinationCreatorHandler.CleanupDestinationCertificates).Methods(http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
@@ -496,7 +551,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claims) bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
+			authHeader := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 			if len(authHeader) == 0 {
 				httphelpers.WriteError(w, errors.New("No Authorization header"), http.StatusUnauthorized)
 				return
@@ -554,10 +609,10 @@ func startServer(parentCtx context.Context, server *http.Server, wg *sync.WaitGr
 		stopServer(server)
 	}()
 
-	log.Printf("Starting and listening on %s://%s", "http", server.Addr)
+	log.C(ctx).Infof("Starting and listening on %s://%s", "http", server.Addr)
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
+		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
 	}
 }
 
@@ -571,14 +626,14 @@ func stopServer(server *http.Server) {
 		if ctx.Err() == context.Canceled {
 			return
 		} else if ctx.Err() == context.DeadlineExceeded {
-			log.Fatal("Timeout while stopping the server, killing instance!")
+			log.C(ctx).Fatal("Timeout while stopping the server, killing instance!")
 		}
 	}(ctx)
 
 	server.SetKeepAlivesEnabled(false)
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+		log.C(ctx).Fatalf("Could not gracefully shutdown the server: %v\n", err)
 	}
 }
 

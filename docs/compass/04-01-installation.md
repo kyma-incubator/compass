@@ -50,17 +50,6 @@ If custom domains and certificates are needed, see the [Set up your custom domai
 
 Save the following .yaml code with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
-ory:
-  global:
-    domainName: ${DOMAIN} # Optional, only needed if you use custom domains below.
-  oathkeeper:
-    oathkeeper:
-      config:
-        authenticators:
-          jwt:
-            config:
-              jwks_urls:
-                -  ${IDP_JWKS_URL}
 istio:
    components:
       ingressGateways:
@@ -88,7 +77,98 @@ And then start the Kyma installation by using the following command:
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
 ```
 
-> **NOTE:** After the Kyma installation completes successfully, you will have to trigger manually the `oathkeeper-jwks-rotator` cronjob once.
+#### Install Ory
+
+Compass has a dependency on [Ory Hydra](https://github.com/ory/hydra) and [Ory Oathkeeper](https://github.com/ory/oathkeeper); they need to be successfully deployed before the Compass installation.
+
+The Ory Hydra requires persistence storage; the database can be in-cluster or on Google Cloud Platform - depending on the case different additional overrides are required.
+
+##### In-cluster database
+
+In-cluster persistence is achieved with the usage of the [Postgres Helm chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql). To use this method of persistence save the following yaml code with installation overrides into a file (for example: additionalOryOverrides.yaml)
+```yaml
+global:
+  domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
+oathkeeper:
+  oathkeeper:
+    config:
+      authenticators:
+        jwt:
+          config:
+            jwks_urls:
+              - ${IDP_JWKS_URL}
+```
+
+Initiate the Ory installation with the following command:
+```bash
+<script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - e.g. additionalOryOverrides.yaml>
+```
+
+The scripts creates the necessary Secret `ory-hydra-credentials` for Ory Hydra to connect to the database; the Oathkeeper Secret is created by the CronJob `oathkeeper-jwks-rotator`.
+
+##### GCP database
+
+The Ory Hydra component can authenticate to GCP by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). To use this method of persistence save the following yaml code with installation overrides into a file (for example: additionalOryOverrides.yaml)
+```yaml
+global:
+  domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
+  ory:
+    hydra:
+      persistence:
+        # Enabled gcloud to install the gcloud-sqlproxy component from the charts
+        gcloud:
+          enabled: true
+        # Disable in-cluster storage persistence
+        postgresql:
+          enabled: false
+
+oathkeeper:
+  oathkeeper:
+    config:
+      authenticators:
+        jwt:
+          config:
+            jwks_urls:
+              - ${IDP_JWKS_URL}
+
+hydra:
+  hydra:
+    # install-ory.sh handles the creation of this if in-cluster database is used
+    config:
+      dsn: ${DSN} # Connection string for the database; more details https://www.ory.sh/docs/self-hosted/deployment#postgresql
+      # Secrets needed for the operation of Ory Hydra; more details https://www.ory.sh/docs/hydra/reference/configuration
+      # It should be noted that the change of these values should follow https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
+      secrets:
+        system: "${RANDOM_VALUE}"
+        cookie: "${RANDOM_VALUE}"
+    autoMigrate: true
+    # When using in-cluster persistence the script creates the Secret before the Helm install
+    existingSecret: ""
+  # Create the Secret as it would not be created by the install-ory.sh script
+  secret:
+    enabled: true
+
+gcloud-sqlproxy: 
+  serviceAccount:
+    create: true
+    name: "ory-gcloud-sqlproxy"
+    # use workload identity SA to atuhenticate to GCP; more details https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+    # Remove the annotation if you are using the GCP SA JSON
+    annotations:
+      iam.gke.io/gcp-service-account: ${GCP_SA}
+  cloudsql:
+    instance:
+      instanceName: ${GCP_INSTANCE_NAME}
+      port: ${GCP_PORT}
+      project: ${GCP_PROJECT}
+      region: ${GCP_REGION}
+```
+> **NOTE:** The overrides above use workload identity to authenticate to GCP(recommended by Google); another possibility is to use the GCP's SA JSON as explained [here](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart). 
+
+Initiate the Ory installation with the following command:
+```bash
+<script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - e.g. additionalOryOverrides.yaml>
+```
 
 #### Install Compass
 
@@ -309,17 +389,6 @@ If custom domains and certificates are needed, see the [Set up your custom domai
 
 Save the following .yaml code with installation overrides to a file (for example: additionalKymaOverrides.yaml)
 ```yaml
-ory:
-  global:
-    domainName: ${DOMAIN} # Optional, only needed if you use custom domains below.
-  oathkeeper:
-    oathkeeper:
-      config:
-        authenticators:
-          jwt:
-            config:
-              jwks_urls:
-                -  ${IDP_JWKS_URL}
 istio:
    components:
       ingressGateways:
@@ -348,7 +417,11 @@ And then, start the Kyma installation by using the following command:
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
 ```
 
-> **NOTE:** After the Kyma installation completes successfully, you will have to trigger manually the `oathkeeper-jwks-rotator` cronjob once.
+#### Install Ory
+
+Compass has a dependency on [Ory Hydra](https://github.com/ory/hydra) and [Ory Oathkeeper](https://github.com/ory/oathkeeper); they need to be successfully deployed before the Compass installation.
+
+For installation steps please have a look at [the following chapter](#install-ory).
 
 #### Install Compass
 

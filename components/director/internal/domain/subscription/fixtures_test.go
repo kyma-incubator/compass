@@ -195,7 +195,7 @@ func fixModelApplicationCreateInputWithLabels(name, subscribedSubaccountID strin
 		Labels: map[string]interface{}{
 			"managed":                          "false",
 			scenarioassignment.SubaccountIDKey: subscribedSubaccountID,
-			subscription.InstancesLabelKey:     1,
+			subscription.SubscriptionsLabelKey: []string{subscriptionID2},
 		},
 	}
 }

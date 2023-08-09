@@ -192,3 +192,27 @@ func TestRepository_List(t *testing.T) {
 
 	suite.Run(t)
 }
+
+func TestRepository_DeleteByConsumerID(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Delete certificate subject mappings for consumer id",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.cert_subject_mapping WHERE internal_consumer_id = $1`),
+				Args:          []driver.Value{"consumer_id"},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: certsubjectmapping.NewRepository,
+		MethodName:          "DeleteByConsumerID",
+		MethodArgs:          []interface{}{"consumer_id"},
+		IsDeleteMany:        true,
+		IsGlobal:            true,
+	}
+
+	suite.Run(t)
+}

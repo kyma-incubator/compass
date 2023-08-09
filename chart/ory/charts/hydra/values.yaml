@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   # Image pull policy
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # -- Image pull secrets
 imagePullSecrets: []

@@ -241,7 +241,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				conv.On("ToGraphQL", CertSubjectMappingModel).Return(CertSubjectMappingGQLModel).Once()
 				return conv
 			},
@@ -277,7 +277,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				return conv
 			},
 			CertSubjectMappingSvcFn: func() *automock.CertSubjectMappingService {
@@ -299,7 +299,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				return conv
 			},
 			CertSubjectMappingSvcFn: func() *automock.CertSubjectMappingService {
@@ -322,7 +322,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				return conv
 			},
 			CertSubjectMappingSvcFn: func() *automock.CertSubjectMappingService {
@@ -400,7 +400,7 @@ func TestResolver_UpdateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				conv.On("ToGraphQL", CertSubjectMappingModel).Return(CertSubjectMappingGQLModel).Once()
 				return conv
 			},
@@ -431,7 +431,7 @@ func TestResolver_UpdateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				return conv
 			},
 			CertSubjectMappingSvcFn: func() *automock.CertSubjectMappingService {
@@ -448,7 +448,7 @@ func TestResolver_UpdateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				return conv
 			},
 			CertSubjectMappingSvcFn: func() *automock.CertSubjectMappingService {
@@ -466,7 +466,7 @@ func TestResolver_UpdateCertificateSubjectMapping(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInput).Return(CertSubjectMappingModel).Once()
+				conv.On("FromGraphql", TestID, CertSubjectMappingGQLModelInputWithSortedSubject).Return(CertSubjectMappingModel).Once()
 				return conv
 			},
 			CertSubjectMappingSvcFn: func() *automock.CertSubjectMappingService {

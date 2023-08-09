@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -16,7 +18,13 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-const tenantTokenClaimsKey = "tenant"
+const (
+	tenantTokenClaimsKey = "tenant"
+	// subscribedRootProviderIdValue, subscribedRootProviderAppNameValue and subscribedRootProviderSubaccountIdValue are used when CMP is an indirect dependency in a subscription flow
+	subscribedRootProviderIdValue           = "subscribedRootProviderID"
+	subscribedRootProviderAppNameValue      = "subscribedRootProviderAppName"
+	subscribedRootProviderSubaccountIdValue = "subscribedRootProviderSubaccountID"
+)
 
 type handler struct {
 	httpClient       *http.Client
@@ -30,7 +38,16 @@ type JobStatus struct {
 	Status string `json:"status"`
 }
 
-var Subscriptions = make(map[string]string)
+type ProviderSubscriptionInfo struct {
+	ProviderSubaccountID     string
+	ProviderSubscriptionsIds []string
+}
+
+type Response struct {
+	SubscriptionGUID string `json:"subscriptionGUID"`
+}
+
+var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
@@ -72,7 +89,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling subscription job status request...")
 
-	authorization := r.Header.Get("Authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 	if len(authorization) == 0 {
 		log.C(ctx).Error("authorization header is required")
 		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusUnauthorized)
@@ -102,7 +119,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	writer.WriteHeader(http.StatusOK)
 	if _, err = writer.Write(payload); err != nil {
 		log.C(ctx).Errorf("while writing response: %s", err.Error())
@@ -114,7 +131,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (int, error) {
 	ctx := r.Context()
-	authorization := r.Header.Get("Authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 
 	if len(authorization) == 0 {
 		return http.StatusUnauthorized, errors.New("authorization header is required")
@@ -132,10 +149,15 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
+	subscriptionFlow := r.Header.Get(h.tenantConfig.SubscriptionFlowHeaderKey)
+	subscriptionID := getSubscriptionID(httpMethod, appName)
+	if subscriptionID == "" {
+		return http.StatusOK, nil
+	}
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID)
+	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, subscriptionFlow)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
@@ -167,15 +189,15 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 	if httpMethod == http.MethodPut {
-		Subscriptions[appName] = providerSubaccID
+		addSubscription(appName, providerSubaccID, subscriptionID)
 	} else if httpMethod == http.MethodDelete {
-		delete(Subscriptions, appName)
+		removeSubscription(appName)
 	}
 
 	return http.StatusOK, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID string) (*http.Request, error) {
+func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, subscriptionFlow string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -206,16 +228,25 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	body, err = sjson.Set(body, h.providerConfig.LicenseTypeProperty, DefaultLicenseType)
+	subscribedProviderId := ""
+	if subscriptionFlow == h.tenantConfig.StandardFlow {
+		subscribedProviderId = h.tenantConfig.SubscriptionProviderID
+	} else {
+		subscribedProviderId = h.tenantConfig.DirectDependencySubscriptionProviderID
+	}
+	body, err = sjson.Set(body, h.providerConfig.DependentServiceInstancesInfoProperty, []map[string]string{{h.providerConfig.DependentServiceInstancesInfoAppIDProperty: subscribedProviderId, h.providerConfig.DependentServiceInstancesInfoAppNameProperty: h.tenantConfig.SubscriptionProviderAppNameValue, h.providerConfig.DependentServiceInstancesInfoProviderSubaccountIDProperty: providerSubaccID}})
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
-	if len(h.tenantConfig.SubscriptionProviderID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderIDProperty, h.tenantConfig.SubscriptionProviderID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
-		}
+	body, err = sjson.Set(body, h.providerConfig.SubscriptionIDProperty, subscriptionID)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+
+	body, err = sjson.Set(body, h.providerConfig.LicenseTypeProperty, DefaultLicenseType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
 	if len(h.tenantConfig.TestConsumerTenantID) > 0 {
@@ -225,16 +256,30 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
-	if len(h.tenantConfig.SubscriptionProviderAppNameValue) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderAppNameProperty, h.tenantConfig.SubscriptionProviderAppNameValue)
+	if subscriptionFlow == h.tenantConfig.IndirectDependencyFlow {
+		// When indirect dependency flow the subscribed application is IndirectDependency SAAS app.
+		// Participants in the scenario : Indirect dependency SAAS app <- Direct dependency SAAS app <- CMP
+		fmt.Printf("subscriptions: %v", Subscriptions)
+		body, err = h.setProviderValues(body, subscribedRootProviderIdValue, subscribedRootProviderAppNameValue, subscribedRootProviderSubaccountIdValue)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			return nil, err
 		}
-	}
-
-	body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, providerSubaccID)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	} else if subscriptionFlow == h.tenantConfig.DirectDependencyFlow {
+		// When direct dependency flow the subscribed application is Direct dependency SAAS app.
+		// Participants in the scenario: Indirect dependency SAAS app <- Direct dependency SAAS app <- CMP
+		body, err = h.setProviderValues(body, h.tenantConfig.DirectDependencySubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
+		if err != nil {
+			return nil, err
+		}
+	} else if subscriptionFlow == h.tenantConfig.StandardFlow {
+		// When standard dependency flow the subscribed application is SAAS app
+		// Participants in the scenario: SAAS app <- CMP
+		body, err = h.setProviderValues(body, h.tenantConfig.SubscriptionProviderID, h.tenantConfig.SubscriptionProviderAppNameValue, providerSubaccID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.Errorf("Unknown subscription flow: %q", subscriptionFlow)
 	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
@@ -242,7 +287,7 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		return nil, err
 	}
 
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	request.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
 	return request, nil
 }
@@ -267,4 +312,60 @@ func extractValueFromTokenClaims(consumerToken, claimsKey string) (string, error
 	}
 
 	return jsonMap[claimsKey].(string), nil
+}
+
+func getSubscriptionID(httpMethod, appName string) string {
+	if httpMethod == http.MethodPut {
+		return uuid.New().String()
+	}
+	if httpMethod == http.MethodDelete {
+		if provider, exists := Subscriptions[appName]; exists {
+			return provider.ProviderSubscriptionsIds[0]
+		}
+	}
+	return ""
+}
+
+func addSubscription(appName, providerSubaccountID, subscriptionID string) {
+	if provider, exists := Subscriptions[appName]; !exists {
+		Subscriptions[appName] = &ProviderSubscriptionInfo{
+			ProviderSubaccountID:     providerSubaccountID,
+			ProviderSubscriptionsIds: []string{subscriptionID},
+		}
+	} else {
+		provider.ProviderSubscriptionsIds = append(provider.ProviderSubscriptionsIds, subscriptionID)
+	}
+}
+
+func removeSubscription(appName string) {
+	provider := Subscriptions[appName]
+	if len(provider.ProviderSubscriptionsIds) == 1 {
+		delete(Subscriptions, appName)
+	} else {
+		provider.ProviderSubscriptionsIds = provider.ProviderSubscriptionsIds[1:] //remove first element
+	}
+}
+
+func (h *handler) setProviderValues(body, providerID, appName, subaccountID string) (string, error) {
+	var err error
+	if len(h.tenantConfig.SubscriptionProviderID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderIDProperty, providerID)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+		}
+	}
+
+	if len(h.tenantConfig.SubscriptionProviderAppNameValue) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.SubscriptionProviderAppNameProperty, appName)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+		}
+	}
+
+	body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, subaccountID)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+
+	return body, nil
 }

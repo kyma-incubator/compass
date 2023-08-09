@@ -42,7 +42,7 @@ func NewHandler(CACert, CAKey string) *handler {
 }
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
-	authorization := r.Header.Get("authorization")
+	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 
 	if len(authorization) == 0 {
 		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusBadRequest)
@@ -175,7 +175,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(payload)
 	if err != nil {

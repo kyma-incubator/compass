@@ -13,9 +13,13 @@ source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/utils.sh"
 # shellcheck source=prow/scripts/lib/log.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 # shellcheck source=prow/scripts/lib/gcp.sh
-source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/gcp.sh"
+source "${COMPASS_SOURCES_DIR}/installation/scripts/gcp.sh"
 # shellcheck source=prow/scripts/lib/kyma.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/kyma.sh"
+
+log::info "Installing go benchstat"
+go install golang.org/x/perf/cmd/benchstat@latest
+export PATH="$PATH:${GOPATH}/bin"
 
 requiredVars=(
     REPO_OWNER
@@ -51,6 +55,22 @@ else
   readonly COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
   COMMON_NAME=$(echo "${COMMON_NAME_PREFIX}-${COMMIT_ID}-${RANDOM_NAME_SUFFIX}")
 fi
+
+log::info "Installing gcloud CLI"
+apk add --no-cache python3 py3-crcmod py3-openssl
+export PATH="/google-cloud-sdk/bin:${PATH}"
+GCLOUD_CLI_VERSION="437.0.1"
+curl -fLSs -o gc-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz"
+tar xzf gc-sdk.tar.gz -C /
+rm gc-sdk.tar.gz
+gcloud components install alpha beta kubectl docker-credential-gcr gke-gcloud-auth-plugin
+gcloud config set core/disable_usage_reporting true
+gcloud config set component_manager/disable_update_check true
+gcloud config set metrics/environment github_docker_image
+gcloud --version
+
+log::info "Installing dig and openssl commands"
+apk add bind-tools openssl
 
 ### Cluster name must be less than 40 characters!
 COMMON_NAME=$(echo "${COMMON_NAME}" | tr "[:upper:]" "[:lower:]")
@@ -107,7 +127,7 @@ function createCluster() {
   gcp::provision_k8s_cluster \
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
-        -v "1.22.17" \
+        -v "1.23.17" \
         -j "$JOB_NAME" \
         -J "$PROW_JOB_ID" \
         -z "$CLOUDSDK_COMPUTE_ZONE" \
@@ -128,6 +148,7 @@ function createCluster() {
   envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-overrides-gke-benchmark.yaml" > "$PWD/compass_benchmark_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > ~/ory_benchmark_overrides.yaml
 }
 
 function installYQ() {
@@ -138,7 +159,7 @@ function installHelm() {
   utils::install_helm
 }
 
-function installKyma() {
+function installKymaCLI() {
   KYMA_CLI_VERSION="2.3.0"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
@@ -149,7 +170,9 @@ function installKyma() {
 
   export PATH="${PREV_WD}/cli/bin:${PATH}"
   cd "$PREV_WD"
+}
 
+function installKyma() {
   KYMA_VERSION=$(<"${COMPASS_SOURCES_DIR}/installation/resources/KYMA_VERSION")
 
   # TODO: Remove after adoption of Kyma 2.4.3 and change kyma deploy command source to --source="${KYMA_VERSION}"
@@ -170,6 +193,30 @@ function installKyma() {
   kyma deploy --ci --source=local --workspace "$KYMA_WORKSPACE" --verbose -c "${MINIMAL_KYMA}" --values-file "$PWD/kyma_overrides.yaml"
 }
 
+function installOry() {
+  ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
+
+  if [[ -f "$ORY_SCRIPT_PATH" ]]; then
+    log::info "Installing Ory Helm chart..."
+    bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
+  # This else statement only exists as currently the main branch does not have the ory charts and still uses Ory created by Kyma
+  else
+    log::warn "Ory installation script is missing"
+    # If the installation is missing Kyma has installed Ory for us, we should schedule the cronjob
+    # as this is done by 'install-ory.sh'
+    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
+    until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
+      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
+      sleep 3
+    done
+    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
+    
+    # Copy the Hydra Secret created by the Kyma deployment to avoid benchmark tests crashing with 401 due to HMAC key changes
+    kubectl create ns ory || true
+    kubectl get secret ory-hydra-credentials -n kyma-system -o yaml | sed 's/namespace: .*/namespace: ory/' | kubectl apply -f -
+  fi
+}
+
 function installCompassOld() {
   cd "$COMPASS_SOURCES_DIR"
   readonly LATEST_VERSION=$(git rev-parse --short main~1)
@@ -178,6 +225,12 @@ function installCompassOld() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
+
+  echo 'Installing Kyma'
+  installKyma
+
+  echo "Installing Ory"
+  installOry
 
   echo 'Installing DB'
   mkdir "$COMPASS_SOURCES_DIR/installation/data"
@@ -210,6 +263,12 @@ function installCompassNew() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
+
+  echo 'Installing Kyma'
+  installKyma
+
+  echo "Installing Ory"
+  installOry
 
   echo 'Installing DB'
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -261,16 +320,9 @@ installYQ
 log::info "Install helm"
 installHelm
 
-log::info "Install Kyma"
-installKyma
+log::info "Install Kyma CLI"
+installKymaCLI
 
-
-kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
-  echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-  sleep 3
-done
-kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
 installCompassOld

@@ -44,6 +44,10 @@ do
             SKIP_DB_INSTALL=true
             shift # past argument
         ;;
+        --skip-ory-install)
+            SKIP_ORY_INSTALL=true
+            shift # past argument
+        ;;
         --dump-db)
             DUMP_DB=true
             shift # past argument
@@ -132,16 +136,31 @@ function mount_k3d_ca_to_oathkeeper() {
   echo "Mounting k3d CA cert into oathkeeper's container..."
 
   docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
-  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
+  kubectl create configmap -n ory k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
 
-  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
-  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n ory | grep oathkeeper | awk '{print $1}')
+  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n ory "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
-  kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+  kubectl -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 
-  kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+  kubectl -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
+}
+
+# Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
+# with the needed keys, by first getting them using kubectl
+function patchJWKS() {
+  echo "Patching Request Authentication resources..."
+  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
+  until [[ $(kubectl get requestauthentication ory-internal-authn -n ory 2>/dev/null) &&
+          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
+    echo "Waiting for Request Authentication resources to be created"
+    sleep 8
+  done
+  kubectl get requestauthentication ory-internal-authn -n ory -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  echo "Request Authentication resources were successfully patched"
 }
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
@@ -211,6 +230,14 @@ if [[ ${DUMP_DB} ]]; then
     cp -R "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
 fi
 
+# If the script is not run by the root user then 'sudo' should be used for some commands
+# This is necessary as this script is ran for local installation and by PR jobs
+# The PR jobs use alpine that does not have 'sudo' as a command and always executes scripts as the root user
+SUDO=''
+if (( $EUID != 0 )); then
+    SUDO='sudo'
+fi
+
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
   kyma provision k3d \
@@ -222,7 +249,7 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   --timeout "${K3D_TIMEOUT}" \
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
-  sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
+  $SUDO sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
 usek3d
@@ -235,34 +262,22 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
-echo "Installing ORY Stack..."
-bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
+if [[ ! ${SKIP_ORY_INSTALL} ]]; then
+  echo "Installing ORY Stack..."
+  bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
+fi
 
 mount_k3d_ca_to_oathkeeper
 
-# Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
-# with the needed keys, by first getting them using kubectl
-function patchJWKS() {
-  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
-  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
-          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
-    echo "Waiting for requestauthentication resources to be created"
-    sleep 3
-  done
-  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
-  kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
-}
-patchJWKS&
-
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
-  echo 'Installing DB'
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
   bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
 fi
 
-echo 'Installing Compass'
+patchJWKS&
+
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
 bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
@@ -276,9 +291,9 @@ echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connec
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-  sudo cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
-  sudo update-ca-certificates
+  $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
+  $SUDO update-ca-certificates
 fi
 
 echo "Adding Compass entries to /etc/hosts..."
-sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"
+$SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"

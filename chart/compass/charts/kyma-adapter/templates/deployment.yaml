@@ -60,6 +60,8 @@ spec:
           env:
             - name: APP_API_ROOT_PATH
               value: {{ .Values.global.kymaAdapter.apiRootPath }}
+            - name: API_TENANT_MAPPINGS_ENDPOINT
+              value: {{ .Values.global.kymaAdapter.apiTenantMappingsEndpoint }}
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_DIRECTOR_URL
@@ -67,7 +69,7 @@ spec:
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_JWKS_ENDPOINT
-              value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
+              value: {{ .Values.global.kymaAdapter.authentication.jwksEndpoint | quote }}
             - name: APP_TENANT_INFO_ENDPOINT
               value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
             - name: APP_TENANT_INFO_REQUEST_TIMEOUT

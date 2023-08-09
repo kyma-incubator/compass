@@ -127,51 +127,51 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: prod/incubator/
-      version: "v20230627-fac0e9b7"
+      version: "v20230728-78b68ef0"
       name: compass-connector
     connectivity_adapter:
       dir: prod/incubator/
-      version: "v20230627-fac0e9b7"
+      version: "v20230728-78b68ef0"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: prod/incubator/
-      version: "v20230627-fac0e9b7"
+      version: "v20230728-78b68ef0"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20230705-58243f82"
+      dir: dev/incubator/
+      version: "PR-3168"
       name: compass-director
     hydrator:
       dir: prod/incubator/
-      version: "v20230704-486cdc30"
+      version: "v20230728-78b68ef0"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
-      version: "v20230623-d1d6b3e7"
+      version: "v20230728-78b68ef0"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: prod/incubator/
-      version: "v20230628-e9903edf"
+      dir: dev/incubator/
+      version: "PR-3183"
       name: compass-kyma-adapter
     gateway:
       dir: prod/incubator/
-      version: "v20230627-fac0e9b7"
+      version: "v20230728-78b68ef0"
       name: compass-gateway
     operations_controller:
       dir: prod/incubator/
-      version: "v20230627-fac0e9b7"
+      version: "v20230728-78b68ef0"
       name: compass-operations-controller
     ord_service:
       dir: prod/incubator/
-      version: "v20230516-659eedd9"
+      version: "v20230728-5390e241"
       name: compass-ord-service
     schema_migrator:
       dir: prod/incubator/
-      version: "v20230628-e2468984"
+      version: "v20230728-78b68ef0"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
-      version: "v20230627-fac0e9b7"
+      version: "v20230728-78b68ef0"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -179,16 +179,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20230627-25c95808"
+      dir: dev/incubator/
+      version: "PR-3168"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20230630-957eeeeb"
+      dir: dev/incubator/
+      version: "PR-3168"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -246,6 +246,8 @@ global:
     createClonePattern: '{"key": "%s"}'
     createBindingPattern: '{}'
     useClone: "false"
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   director:
     host: compass-director.compass-system.svc.cluster.local
     formationMappingAsyncStatusApi:
@@ -273,7 +275,6 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -315,18 +316,19 @@ global:
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
+    globalSubaccountIDLabelKey: "global_subaccount_id"
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
     destinationCreator:
       correlationIDsKey: "correlationIds"
       destinationAPI:
-        baseURL: "https://destination-creator-local-destination-api-url.com"
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
-        baseURL: "https://destination-creator-local-certificate-api-url.com"
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
         regionParam: "region"
         subaccountIDParam: "subaccountId"
@@ -409,6 +411,10 @@ global:
             inputTemplate: '{"context": { {{ if .CustomerTenantContext.AccountID }}"btp":{"uclFormationId":"{{.FormationID}}","globalAccountId":"{{.CustomerTenantContext.AccountID}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ else }}"atom": {"uclFormationId":"{{.FormationID}}","path":"{{.CustomerTenantContext.Path}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ end }} },"receiverTenant": {"deploymentRegion":"{{ if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{ else }}{{.TargetApplicationTemplate.Labels.region}}{{end }}","applicationNamespace":"{{ if .TargetApplication.ApplicationNamespace}}{{.TargetApplication.ApplicationNamespace}}{{ else }}{{.TargetApplicationTemplate.ApplicationNamespace}}{{end }}","applicationUrl":"{{ .TargetApplication.BaseURL }}","applicationTenantId":"{{.TargetApplication.LocalTenantID }}","uclSystemTenantId":"{{ .TargetApplication.ID}}", {{ if .TargetApplicationTemplate.Labels.parameters }}"parameters": {{.TargetApplicationTemplate.Labels.parameters}}{{ end }} },"assignedTenants": [ {"uclAssignmentId":"{{ .Assignment.ID }}","operation":"{{.Operation}}","deploymentRegion":"{{if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}","applicationNamespace":"{{if .SourceApplication.ApplicationNamespace }}{{.SourceApplication.ApplicationNamespace}}{{else }}{{.SourceApplicationTemplate.ApplicationNamespace}}{{ end }}","applicationUrl":"{{.SourceApplication.BaseURL }}","applicationTenantId":"{{.SourceApplication.LocalTenantID}}","uclSystemTenantId":"{{.SourceApplication.ID}}",{{ if .SourceApplicationTemplate.Labels.parameters }}"parameters": {{.SourceApplicationTemplate.Labels.parameters}},{{ end }}"configuration": {{.ReverseAssignment.Value}} } ]}'
             headerTemplate: '{"Content-Type": ["application/json"],"Location": ["%s/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status"]}'
             outputTemplate: '{"error":"{{.Body.error}}","success_status_code": 202}'
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+      oauth2:
+        url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     protocol: HTTP
@@ -541,12 +547,22 @@ global:
       connectTimeout: 30s
       requestTimeout: 30s
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
   kymaAdapter:
     port: 8080
     apiRootPath: "/kyma-adapter"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
     tenantInfo:
       requestTimeout: 30s
+    tenantMapping:
+      type: CONFIGURATION_CHANGED
+      mode: SYNC
+      urlTemplate: '{"path":"%s/kyma-adapter/v1/tenantMappings/{{.Runtime.Labels.global_subaccount_id}}","method":"PATCH"}'
+      inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+      headerTemplate: '{"Content-Type": ["application/json"]}'
+      outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -557,7 +573,7 @@ global:
       host: adapter-gateway-mtls
   oathkeeperFilters:
     workloadLabel: oathkeeper
-    namespace: kyma-system
+    namespace: ory
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
   istio:
@@ -634,13 +650,13 @@ global:
       dbPassword: ""
       directorDBName: ""
   oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+    host: ory-stack-oathkeeper-proxy.ory.svc.cluster.local
     port: 4455
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -740,11 +756,12 @@ global:
     parallelTenants: 10
     tenantSyncTimeout: "5m"
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
       appDestinationsSyncScope: "destinations:sync"
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:
@@ -794,7 +811,7 @@ global:
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
@@ -806,6 +823,11 @@ global:
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
       consumerTenantIdProperty: "consumerTenantIdProperty"
       subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
+      subscriptionIDProperty: "subscriptionGUID"
+      dependentServiceInstancesInfoProperty: "dependentServiceInstancesInfo"
+      dependentServiceInstancesInfoAppIdProperty: "appId"
+      dependentServiceInstancesInfoAppNameProperty: "appName"
+      dependentServiceInstancesInfoProviderSubaccountIdProperty: "providerSubaccountId"
     server:
       fetchTenantWithParentEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       fetchTenantWithoutParentEndpoint: "/v1/fetch/{tenantId}"
@@ -900,7 +922,7 @@ global:
     lease:
       lockname: aggregatorlease
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     http:
       client:
         skipSSLValidation: false
@@ -1083,6 +1105,7 @@ global:
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    directDependencyXsappname: ""
     saasAppNamesSecret:
       manage: false
     regionInstancesCredentials:
@@ -1127,6 +1150,7 @@ global:
       supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      missingTenantOnDemandID: "subaccount-external-tnt"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
@@ -1144,6 +1168,11 @@ global:
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
+      labelKey: "subscriptions"
+      standardFlow: "standard"
+      indirectDependencyFlow: "indirectDependency"
+      directDependencyFlow: "directDependency"
+      subscriptionsFlowHeaderKey: "subscriptionFlow"
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
@@ -1169,7 +1198,10 @@ global:
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
+      directDependencySubscriptionProviderIdValue: "direct-dep-id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
+      indirectDependencySubscriptionProviderAppNameValue: "indirectDependencySubscriptionProviderAppNameValue"
+      directDependencySubscriptionProviderAppNameValue: "subscriptionProviderAppNameValue" # this is used for real env tests where there is a dedicated SAAS svc instance for the indirect dependency flow
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
