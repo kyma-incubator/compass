@@ -1797,6 +1797,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		if err != nil {
 			return err
 		}
+
 		app, err := s.appSvc.Get(ctx, resource.ID)
 		if err != nil {
 			return errors.Wrapf(err, "error while retrieving app with id %q", resource.ID)
@@ -1811,11 +1812,15 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	}
 
 	if webhook.HeaderTemplate != nil {
+		log.C(ctx).Infof("Header template found for webhook with ID %s. Will parse the template.", webhook.ID)
 		headers, err := ordRequestObject.ParseHeadersTemplate(webhook.HeaderTemplate)
 		if err != nil {
 			return err
 		}
-		ordRequestObject.Headers = headers
+
+		for key, value := range headers {
+			ordRequestObject.Headers.Set(key, value[0])
+		}
 	}
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
