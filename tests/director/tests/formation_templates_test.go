@@ -492,6 +492,27 @@ func TestQueryFormationTemplates(t *testing.T) {
 		&createdFormationTemplate,
 		&secondCreatedFormationTemplate,
 	})
+
+	queryFormationTemplatesRequest = fixtures.FixQueryFormationTemplatesRequestWithNameAndPageSize("test-formation-template-2", first)
+
+	// WHEN
+	t.Log("Query formation templates with name filter")
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryFormationTemplatesRequest, &output)
+
+	//THEN
+	require.NotEmpty(t, output)
+	require.NoError(t, err)
+	assert.Equal(t, currentFormationTemplatePage.TotalCount+2, output.TotalCount)
+
+	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
+
+	t.Log("Check if formation templates are in received slice")
+
+	assert.Subset(t, output.Data, []*graphql.FormationTemplate{
+		&createdFormationTemplate,
+		&secondCreatedFormationTemplate,
+	})
+
 }
 
 func TestTenantScopedFormationTemplates(t *testing.T) {

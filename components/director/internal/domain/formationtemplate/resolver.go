@@ -26,7 +26,7 @@ type FormationTemplateConverter interface {
 type FormationTemplateService interface {
 	Create(ctx context.Context, in *model.FormationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error)
+	List(ctx context.Context, name *string, pageSize int, cursor string) (*model.FormationTemplatePage, error)
 	Update(ctx context.Context, id string, in *model.FormationTemplateInput) error
 	Delete(ctx context.Context, id string) error
 	ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error)
@@ -75,7 +75,7 @@ func NewResolver(transact persistence.Transactioner, converter FormationTemplate
 }
 
 // FormationTemplates pagination lists all FormationTemplates based on `first` and `after`
-func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+func (r *Resolver) FormationTemplatesByName(ctx context.Context, name *string, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
@@ -92,7 +92,7 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationTemplatePage, err := r.formationTemplateSvc.List(ctx, *first, cursor)
+	formationTemplatePage, err := r.formationTemplateSvc.List(ctx, name, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +116,12 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 			HasNextPage: formationTemplatePage.PageInfo.HasNextPage,
 		},
 	}, nil
+}
+
+// FormationTemplates pagination lists all FormationTemplates based on `first` and `after`
+func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+	var name *string
+	return r.FormationTemplatesByName(ctx, name, first, after)
 }
 
 // FormationTemplate queries the FormationTemplate matching ID `id`

@@ -366,7 +366,7 @@ func TestService_List(t *testing.T) {
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, testTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
+				repo.On("List", ctx, mock.Anything, testTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
@@ -383,7 +383,7 @@ func TestService_List(t *testing.T) {
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctxWithEmptyTenants, "", pageSize, mock.Anything).Return(&formationTemplateModelNullTenantPage, nil).Once()
+				repo.On("List", ctxWithEmptyTenants, mock.Anything, "", pageSize, mock.Anything).Return(&formationTemplateModelNullTenantPage, nil).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
@@ -415,7 +415,7 @@ func TestService_List(t *testing.T) {
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, testTenantID, pageSize, mock.Anything).Return(nil, testErr).Once()
+				repo.On("List", ctx, mock.Anything, testTenantID, pageSize, mock.Anything).Return(nil, testErr).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
@@ -445,7 +445,7 @@ func TestService_List(t *testing.T) {
 			svc := formationtemplate.NewService(formationTemplateRepo, nil, nil, tenantSvc, nil, nil)
 
 			// WHEN
-			result, err := svc.List(testCase.Context, testCase.PageSize, "")
+			result, err := svc.List(testCase.Context, nil, testCase.PageSize, "")
 
 			// THEN
 			if testCase.ExpectedError != nil {
