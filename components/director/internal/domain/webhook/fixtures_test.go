@@ -31,12 +31,10 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func fixApplicationModelWebhookWithProxy(id, appID, tenant, url string, createdAt time.Time) *model.Webhook {
-	appWebhook := fixGenericModelWebhook(id, appID, url)
-	appWebhook.ObjectType = model.ApplicationWebhookReference
-	appWebhook.CreatedAt = &createdAt
-	appWebhook.ProxyURL = str.Ptr(proxyURL)
-	return appWebhook
+func fixApplicationModelWebhookWithProxy(id, appID, url string, createdAt time.Time) *model.Webhook {
+	wh := fixApplicationModelWebhook(id, appID, url, createdAt)
+	wh.ProxyURL = str.Ptr(proxyURL)
+	return wh
 }
 
 func fixApplicationModelWebhook(id, appID, url string, createdAt time.Time) *model.Webhook {
@@ -161,8 +159,8 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 	}
 }
 
-func fixApplicationModelWebhookWithType(id, appID, tenant, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
-	w = fixApplicationModelWebhookWithProxy(id, appID, tenant, url, createdAt)
+func fixApplicationModelWebhookWithType(id, appID, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
+	w = fixApplicationModelWebhookWithProxy(id, appID, url, createdAt)
 	w.Type = webhookType
 	return
 }

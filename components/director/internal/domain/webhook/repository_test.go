@@ -24,7 +24,7 @@ import (
 
 func TestRepositoryGetByID(t *testing.T) {
 	createdAt := time.Now()
-	whModel := fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel := fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity := fixApplicationWebhookEntity(t, createdAt)
 
 	suite := testdb.RepoGetTestSuite{
@@ -111,7 +111,7 @@ func TestRepositoryCreate(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: webhook.NewRepository,
-		ModelEntity:         fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", createdAt),
+		ModelEntity:         fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), "http://kyma.io", createdAt),
 		DBEntity:            fixApplicationWebhookEntity(t, createdAt),
 		NilModelEntity:      nilWebhookModel,
 		TenantID:            givenTenant(),
@@ -251,7 +251,7 @@ func TestRepositoryUpdate(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: webhook.NewRepository,
-		ModelEntity:         fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", createdAt),
+		ModelEntity:         fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), "http://kyma.io", createdAt),
 		DBEntity:            fixApplicationWebhookEntity(t, createdAt),
 		NilModelEntity:      nilWebhookModel,
 		TenantID:            givenTenant(),
@@ -536,10 +536,10 @@ func testListByObjectID(t *testing.T, methodName string, lockClause string, args
 	whID2 := "whID2"
 	createdAt := time.Now()
 
-	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity1 := fixApplicationWebhookEntityWithID(t, whID1, createdAt)
 
-	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity2 := fixApplicationWebhookEntityWithID(t, whID2, createdAt)
 
 	suite := testdb.RepoListTestSuite{
@@ -578,7 +578,7 @@ func TestRepository_ListByWebhookType(t *testing.T) {
 	whType := model.WebhookTypeOpenResourceDiscovery
 	createdAt := time.Now()
 
-	whModel := fixApplicationModelWebhookWithProxy(whID, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel := fixApplicationModelWebhookWithProxy(whID, givenApplicationID(), "http://kyma.io", createdAt)
 	whModel.Type = whType
 	whEntity := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID, whType, createdAt)
 
@@ -716,10 +716,10 @@ func Test_ListByReferenceObjectTypeAndWebhookType(t *testing.T) {
 	whType := model.WebhookTypeConfigurationChanged
 	createdAt := time.Now()
 
-	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity1 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID1, whType, createdAt)
 
-	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity2 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID2, whType, createdAt)
 
 	suite := testdb.RepoListTestSuite{
@@ -759,10 +759,10 @@ func Test_ListByReferenceObjectTypesAndWebhookType(t *testing.T) {
 	whType := model.WebhookTypeConfigurationChanged
 	createdAt := time.Now()
 
-	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity1 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID1, whType, createdAt)
 
-	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity2 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID2, whType, createdAt)
 
 	suite := testdb.RepoListTestSuite{
@@ -811,7 +811,7 @@ func Test_ListByReferenceObjectTypesAndWebhookType(t *testing.T) {
 func TestRepositoryGetByIDAndWebhookType(t *testing.T) {
 	whType := model.WebhookTypeConfigurationChanged
 	createdAt := time.Now()
-	whModel := fixApplicationModelWebhookWithType(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", whType, createdAt)
+	whModel := fixApplicationModelWebhookWithType(givenID(), givenApplicationID(), "http://kyma.io", whType, createdAt)
 	whEntity := fixApplicationWebhookEntity(t, createdAt)
 
 	whAppTemplateModel := fixApplicationTemplateModelWebhookWithTypeTimestampAndProxy(givenID(), givenApplicationTemplateID(), "http://kyma.io", whType, createdAt)
