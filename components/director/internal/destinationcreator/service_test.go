@@ -1850,7 +1850,7 @@ package destinationcreator_test
 //		basicAuthCreds       operators.BasicAuthentication
 //		formationAssignment  *model.FormationAssignment
 //		expectedErrMessage   string
-//		expectedBasicReqBody *destinationcreator.BasicRequestBody
+//		expectedBasicReqBody *destinationcreator.BasicAuthDestinationRequestBody
 //	}{
 //		{
 //			name:                 "Success",

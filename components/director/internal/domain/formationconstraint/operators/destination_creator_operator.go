@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"runtime/debug"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -15,8 +17,6 @@ import (
 const (
 	// DestinationCreatorOperator represents the destination creator operator
 	DestinationCreatorOperator = "DestinationCreator"
-	authTypeSAMLAssertion      = "SAMLAssertion"
-	authTypeClientCertificate  = "ClientCertificateAuthentication"
 )
 
 // NewDestinationCreatorInput is input constructor for DestinationCreatorOperator. It returns empty OperatorInput
@@ -76,7 +76,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 			if len(assignmentConfig.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
-				if err := e.destinationSvc.CreateDesignTimeDestinations2(ctx, assignmentConfig.Destinations, formationAssignment); err != nil {
+				if err := e.destinationSvc.CreateDesignTimeDestinations(ctx, assignmentConfig.Destinations, formationAssignment); err != nil {
 					return false, errors.Wrap(err, "while creating design time destinations")
 				}
 			}
@@ -90,7 +90,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 						return true, nil
 					}
 
-					certData, err := e.destinationCreatorSvc.CreateCertificate2(ctx, samlAssertionDetails.Destinations, authTypeSAMLAssertion, formationAssignment, 0)
+					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0)
 					if err != nil {
 						return false, err
 					}
@@ -110,7 +110,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 						return true, nil
 					}
 
-					certData, err := e.destinationCreatorSvc.CreateCertificate2(ctx, clientCertDetails.Destinations, authTypeClientCertificate, formationAssignment, 0)
+					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0)
 					if err != nil {
 						return false, errors.Wrap(err, "while creating certificate for all of the client certificate authentication destinations")
 					}
@@ -156,7 +156,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
 			if basicAuthDetails != nil && basicAuthCreds != nil && len(basicAuthDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
-				if err := e.destinationSvc.CreateBasicCredentialDestinations2(ctx, basicAuthDetails.Destinations, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
+				if err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, basicAuthDetails.Destinations, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
 					return false, errors.Wrap(err, "while creating basic destinations")
 				}
 			}
@@ -165,7 +165,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			samlAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
 			if samlAssertionDetails != nil && samlAuthCreds != nil && len(samlAssertionDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d inbound SAML Assertion destination(s) available in the configuration", len(samlAssertionDetails.Destinations))
-				if err := e.destinationSvc.CreateSAMLAssertionDestination2(ctx, samlAssertionDetails.Destinations, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
+				if err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, samlAssertionDetails.Destinations, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
 					return false, errors.Wrap(err, "while creating SAML Assertion destinations")
 				}
 			}
@@ -174,7 +174,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			clientCertCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.ClientCertAuthentication
 			if clientCertDetails != nil && clientCertCreds != nil && len(clientCertDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d inbound client certificate authentication destination(s) available in the configuration", len(clientCertDetails.Destinations))
-				if err := e.destinationSvc.CreateClientCertificateAuthenticationDestination2(ctx, clientCertDetails.Destinations, clientCertCreds, formationAssignment, clientCertDetails.CorrelationIDs); err != nil {
+				if err := e.destinationSvc.CreateClientCertificateAuthenticationDestination(ctx, clientCertDetails.Destinations, clientCertCreds, formationAssignment, clientCertDetails.CorrelationIDs); err != nil {
 					return false, errors.Wrapf(err, "while creating client certificate authentication destinations")
 				}
 			}
@@ -189,7 +189,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 // Destination Creator Operator types
 
-// Configuration represents a formation assignment(or reverse formation assignment) configuration
+// Configuration represents a formation assignment (or reverse formation assignment) configuration
 type Configuration struct {
 	Destinations         []Destination        `json:"destinations"`
 	Credentials          Credentials          `json:"credentials"`
@@ -199,13 +199,13 @@ type Configuration struct {
 // AdditionalProperties is an alias for slice of `json.RawMessage` elements
 type AdditionalProperties []json.RawMessage
 
-// Credentials represents different type of credentials configuration - inbound, outbound
+// Credentials represent a different type of credentials configuration - inbound, outbound
 type Credentials struct {
 	OutboundCommunicationCredentials *OutboundCommunicationCredentials `json:"outboundCommunication,omitempty"`
 	InboundCommunicationDetails      *InboundCommunicationDetails      `json:"inboundCommunication,omitempty"`
 }
 
-// OutboundCommunicationCredentials consists of different type of outbound authentications
+// OutboundCommunicationCredentials consists of a different type of outbound authentications
 type OutboundCommunicationCredentials struct {
 	NoAuthentication                        *NoAuthentication                        `json:"noAuthentication,omitempty"`
 	BasicAuthentication                     *BasicAuthentication                     `json:"basicAuthentication,omitempty"`

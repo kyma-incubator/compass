@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/hashicorp/go-multierror"
@@ -32,20 +34,16 @@ type automaticScenarioAssignmentService interface {
 
 //go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationService interface {
-	CreateDesignTimeDestinations(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment) error
-	CreateDesignTimeDestinations2(ctx context.Context, destinationsDetails []Destination, formationAssignment *model.FormationAssignment) error
-	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	CreateBasicCredentialDestinations2(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	CreateSAMLAssertionDestination2(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
-	CreateClientCertificateAuthenticationDestination2(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
+	CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []Destination, formationAssignment *model.FormationAssignment) error
+	CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
+	CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
+	CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error
 	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error
 }
 
 //go:generate mockery --exported --name=destinationCreatorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationCreatorService interface {
-	CreateCertificate(ctx context.Context, destinationDetails Destination, formationAssignment *model.FormationAssignment, depth uint8) (*CertificateData, error)
-	CreateCertificate2(ctx context.Context, destinationsDetails []Destination, destinationAuthType string, formationAssignment *model.FormationAssignment, depth uint8) (*CertificateData, error)
+	CreateCertificate(ctx context.Context, destinationsDetails []Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8) (*CertificateData, error)
 	EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 	EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *CertificateData) (json.RawMessage, error)
 }

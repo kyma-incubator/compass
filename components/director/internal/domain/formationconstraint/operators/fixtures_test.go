@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
@@ -46,9 +46,9 @@ const (
 
 	designTimeDestName    = "design-time-name"
 	destinationURL        = "http://test-url"
-	destinationType       = destinationcreator.TypeHTTP
-	destinationProxyType  = destinationcreator.ProxyTypeInternet
-	destinationNoAuthn    = destinationcreator.AuthTypeNoAuth
+	destinationType       = destinationcreatorpkg.TypeHTTP
+	destinationProxyType  = destinationcreatorpkg.ProxyTypeInternet
+	destinationNoAuthn    = destinationcreatorpkg.AuthTypeNoAuth
 	basicDestName         = "name-basic"
 	basicUser             = "user"
 	basicPassword         = "pwd"

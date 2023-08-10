@@ -7,15 +7,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 )
 
 const (
 	destinationID                          = "126ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationName                        = "test-destination-name"
-	destinationType                        = destinationcreator.TypeHTTP
-	destinationProxyType                   = destinationcreator.ProxyTypeInternet
+	destinationType                        = destinationcreatorpkg.TypeHTTP
+	destinationProxyType                   = destinationcreatorpkg.ProxyTypeInternet
 	destinationURL                         = "http://dest-test-url"
-	destinationAuthn                       = destinationcreator.AuthTypeNoAuth
+	destinationAuthn                       = destinationcreatorpkg.AuthTypeNoAuth
 	destinationSubaccountID                = "553ac686-5773-4ad0-8eb1-2349e931f852"
 	externalDestinationSubaccountID        = "452ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationFormationAssignmentID       = "654ac686-5773-4ad0-8eb1-2349e931f852"
@@ -102,14 +103,14 @@ func fixBasicAuthn() operators.BasicAuthentication {
 	}
 }
 
-func fixBasicReqBody() *destinationcreator.BasicRequestBody {
-	return &destinationcreator.BasicRequestBody{
+func fixBasicReqBody() *destinationcreator.BasicAuthDestinationRequestBody {
+	return &destinationcreator.BasicAuthDestinationRequestBody{
 		BaseDestinationRequestBody: destinationcreator.BaseDestinationRequestBody{
 			Name:               basicDestName,
 			URL:                destinationURL,
 			Type:               destinationType,
 			ProxyType:          destinationProxyType,
-			AuthenticationType: destinationcreator.AuthTypeBasic,
+			AuthenticationType: destinationcreatorpkg.AuthTypeBasic,
 		},
 		User:     basicDestUser,
 		Password: basicDestPassword,
@@ -121,15 +122,15 @@ func fixSAMLAssertionAuthentication() *operators.SAMLAssertionAuthentication {
 }
 
 func fixDesignTimeDestinationDetails() operators.Destination {
-	return fixDestinationDetails(designTimeDestName, string(destinationcreator.AuthTypeNoAuth), externalDestinationSubaccountID)
+	return fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), externalDestinationSubaccountID)
 }
 
 func fixBasicDestinationDetails() operators.Destination {
-	return fixDestinationDetails(basicDestName, string(destinationcreator.AuthTypeBasic), externalDestinationSubaccountID)
+	return fixDestinationDetails(basicDestName, string(destinationcreatorpkg.AuthTypeBasic), externalDestinationSubaccountID)
 }
 
 func fixSAMLAssertionDestinationDetails() operators.Destination {
-	return fixDestinationDetails(samlAssertionDestName, string(destinationcreator.AuthTypeSAMLAssertion), externalDestinationSubaccountID)
+	return fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), externalDestinationSubaccountID)
 }
 
 func fixColumns() []string {

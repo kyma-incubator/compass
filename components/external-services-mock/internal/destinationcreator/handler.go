@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -79,29 +81,29 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 
-	switch destinationcreator.AuthType(authTypeResult.String()) {
-	case destinationcreator.AuthTypeNoAuth:
+	switch destinationcreatorpkg.AuthType(authTypeResult.String()) {
+	case destinationcreatorpkg.AuthTypeNoAuth:
 		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating design time destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
-	case destinationcreator.AuthTypeBasic:
+	case destinationcreatorpkg.AuthTypeBasic:
 		statusCode, err := h.createBasicDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating basic destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
-	case destinationcreator.AuthTypeSAMLAssertion:
+	case destinationcreatorpkg.AuthTypeSAMLAssertion:
 		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating SAML assertion destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
-	case destinationcreator.AuthTypeClientCertificate:
+	case destinationcreatorpkg.AuthTypeClientCertificate:
 		statusCode, err := h.createClientCertificateAuthDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating client certificate authentication destination", correlationID, statusCode)
@@ -197,7 +199,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	destinationCertName := reqBody.Name + destinationcreator.JavaKeyStoreFileExtension
+	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
 	certResp := CertificateResponseBody{
 		FileName:         destinationCertName,
 		CommonName:       reqBody.Name,
@@ -257,12 +259,12 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 		log.C(ctx).Infof("Certificate with name: %q was deleted from the destination creator", certNameValue)
 	}
 
-	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreator.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
+	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
 		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", certNameValue)
 		httputils.Respond(writer, http.StatusNoContent)
 	}
-	delete(h.DestinationSvcCertificates, certNameValue+destinationcreator.JavaKeyStoreFileExtension)
-	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreator.JavaKeyStoreFileExtension)
+	delete(h.DestinationSvcCertificates, certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
+	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
 
 	httputils.Respond(writer, http.StatusNoContent)
 }
