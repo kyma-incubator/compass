@@ -38,6 +38,7 @@ const (
 	// ProxyTypePrivateLink represents the PrivateLink proxy type
 	ProxyTypePrivateLink ProxyType = "PrivateLink"
 
+	// MaxDestinationNameLength is the maximum length for destination name resources - certificate and destination names
 	MaxDestinationNameLength = 64
 )
 

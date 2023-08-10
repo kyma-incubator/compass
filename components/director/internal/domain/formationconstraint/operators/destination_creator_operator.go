@@ -15,8 +15,8 @@ import (
 const (
 	// DestinationCreatorOperator represents the destination creator operator
 	DestinationCreatorOperator = "DestinationCreator"
-	AuthTypeSAMLAssertion      = "SAMLAssertion"
-	AuthTypeClientCertificate  = "ClientCertificateAuthentication"
+	authTypeSAMLAssertion      = "SAMLAssertion"
+	authTypeClientCertificate  = "ClientCertificateAuthentication"
 )
 
 // NewDestinationCreatorInput is input constructor for DestinationCreatorOperator. It returns empty OperatorInput
@@ -90,7 +90,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 						return true, nil
 					}
 
-					certData, err := e.destinationCreatorSvc.CreateCertificate2(ctx, samlAssertionDetails.Destinations, AuthTypeSAMLAssertion, formationAssignment, 0)
+					certData, err := e.destinationCreatorSvc.CreateCertificate2(ctx, samlAssertionDetails.Destinations, authTypeSAMLAssertion, formationAssignment, 0)
 					if err != nil {
 						return false, err
 					}
@@ -110,7 +110,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 						return true, nil
 					}
 
-					certData, err := e.destinationCreatorSvc.CreateCertificate2(ctx, clientCertDetails.Destinations, AuthTypeClientCertificate, formationAssignment, 0)
+					certData, err := e.destinationCreatorSvc.CreateCertificate2(ctx, clientCertDetails.Destinations, authTypeClientCertificate, formationAssignment, 0)
 					if err != nil {
 						return false, errors.Wrap(err, "while creating certificate for all of the client certificate authentication destinations")
 					}

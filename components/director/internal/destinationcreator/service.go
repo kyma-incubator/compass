@@ -586,7 +586,7 @@ func (s *Service) ValidateDestinationSubaccount(ctx context.Context, externalDes
 	if externalDestSubaccountID != "" {
 		consumerSubaccountID, err := s.GetConsumerTenant(ctx, formationAssignment)
 		if err != nil {
-			log.C(ctx).Warnf("An error occured while getting consumer subaccount: %s", err.Error())
+			log.C(ctx).Warnf("An error occurred while getting consumer subaccount: %s", err.Error())
 		}
 
 		if consumerSubaccountID != "" && externalDestSubaccountID == consumerSubaccountID {

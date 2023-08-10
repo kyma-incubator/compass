@@ -388,6 +388,7 @@ func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinatio
 	return nil
 }
 
+// CreateClientCertificateAuthenticationDestination2 todo::: go doc
 func (s *Service) CreateClientCertificateAuthenticationDestination2(ctx context.Context, destinationsDetails []operators.Destination, clientCertAuthCredentials *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) error {
 	if err := s.destinationCreatorSvc.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment); err != nil {
 		return errors.Wrap(err, "while ensuring the provided subaccount IDs in the destination details are correct")
