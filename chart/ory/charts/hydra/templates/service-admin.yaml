@@ -22,6 +22,7 @@ spec:
       targetPort: http-admin
       protocol: TCP
       name: {{ .Values.service.admin.name }}
+    # TODO!!! Custom and hardcoded; could be something with istio
     - port: 15020
       targetPort: 15020
       protocol: TCP

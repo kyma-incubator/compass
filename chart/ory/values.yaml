@@ -105,6 +105,8 @@ hydra:
       maxReplicas: 3
       targetMemoryUtilizationPercentage: 75
       targetCPUUtilizationPercentage: 80
+  secret:
+    enabled: false
   hydra:
     # The ORY Hydra configuration. For a full list of available settings, check:
     #   https://github.com/ory/hydra/blob/master/docs/config.yaml
