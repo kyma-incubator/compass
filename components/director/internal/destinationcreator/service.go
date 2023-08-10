@@ -99,11 +99,7 @@ func NewService(mtlsHTTPClient httpClient, config *Config, applicationRepository
 
 // CreateDesignTimeDestinations is responsible to create so-called design time(destinationcreator.AuthTypeNoAuth) destination resource in the DB as well as in the remote destination service
 func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) error {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
-	if err != nil {
-		return err
-	}
-
+	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
@@ -117,7 +113,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 	destinationName := destinationDetails.Name
 	destReqBody := &NoAuthRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
-			Name:                 destinationDetails.Name,
+			Name:                 destinationName,
 			URL:                  destinationDetails.URL,
 			Type:                 Type(destinationDetails.Type),
 			ProxyType:            ProxyType(destinationDetails.ProxyType),
@@ -155,11 +151,7 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 
 // CreateBasicCredentialDestinations is responsible to create a basic destination resource in the remote destination service
 func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
-	if err != nil {
-		return err
-	}
-
+	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
@@ -199,13 +191,9 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 	return nil
 }
 
-// CreateSAMLAssertionDestination is responsible to create SAML assertion destination resource in the DB as well as in the remote destination service
+// CreateSAMLAssertionDestination is responsible to create SAML Assertion destination resource in the DB as well as in the remote destination service
 func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
-	if err != nil {
-		return err
-	}
-
+	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
@@ -219,13 +207,13 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	destinationName := destinationDetails.Name
 	destReqBody := &SAMLAssertionRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
-			Name:               destinationDetails.Name,
+			Name:               destinationName,
 			URL:                samlAuthCreds.URL,
 			Type:               TypeHTTP,
 			ProxyType:          ProxyTypeInternet,
 			AuthenticationType: AuthTypeSAMLAssertion,
 		},
-		KeyStoreLocation: destinationDetails.Name + javaKeyStoreFileExtension,
+		KeyStoreLocation: destinationName + javaKeyStoreFileExtension,
 	}
 
 	if destinationDetails.Type != "" {
@@ -281,13 +269,79 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 	return nil
 }
 
-// CreateCertificate is responsible to create certificate resource in the remote destination service
-func (s *Service) CreateCertificate(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) (*operators.CertificateData, error) {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
+// CreateClientCertificateDestination is responsible to create client certificate destination resource in the DB as well as in the remote destination service
+func (s *Service) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
+	subaccountID := destinationDetails.SubaccountID
+	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
-		return nil, err
+		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
+	if err != nil {
+		return errors.Wrapf(err, "while building destination URL")
+	}
+
+	destinationName := destinationDetails.Name
+	destReqBody := &ClientCertificateRequestBody{
+		BaseDestinationRequestBody: BaseDestinationRequestBody{
+			Name:               destinationName,
+			URL:                clientCertAuthCreds.URL,
+			Type:               TypeHTTP,
+			ProxyType:          ProxyTypeInternet,
+			AuthenticationType: AuthTypeClientCertificate,
+		},
+		KeyStoreLocation: destinationName + javaKeyStoreFileExtension,
+	}
+
+	if destinationDetails.Type != "" {
+		destReqBody.Type = Type(destinationDetails.Type)
+	}
+
+	if destinationDetails.ProxyType != "" {
+		destReqBody.ProxyType = ProxyType(destinationDetails.ProxyType)
+	}
+
+	if destinationDetails.Authentication != "" && AuthType(destinationDetails.Authentication) != AuthTypeClientCertificate {
+		return errors.Errorf("The provided authentication type: %s in the destination details is invalid. It should be %s", destinationDetails.Authentication, AuthTypeClientCertificate)
+	}
+
+	enrichedProperties, err := enrichDestinationAdditionalPropertiesWithCorrelationIDs(s.config, correlationIDs, destinationDetails.AdditionalProperties)
+	if err != nil {
+		return err
+	}
+	destReqBody.AdditionalProperties = enrichedProperties
+
+	if err := destReqBody.Validate(s.config); err != nil {
+		return errors.Wrapf(err, "while validating client certificate destination request body")
+	}
+
+	log.C(ctx).Infof("Creating client certificate destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
+	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
+	if err != nil {
+		return errors.Wrapf(err, "while creating client certificate destination with name: %q in the destination service", destinationName)
+	}
+
+	if statusCode == http.StatusConflict {
+		log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destinationName)
+		depth++
+		if depth > DepthLimit {
+			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+		}
+
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
+			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
+		}
+
+		return s.CreateClientCertificateDestination(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth)
+	}
+
+	return nil
+}
+
+// CreateCertificate is responsible to create certificate resource in the remote destination service
+func (s *Service) CreateCertificate(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) (*operators.CertificateData, error) {
+	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
@@ -344,6 +398,96 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationDetails oper
 	return certData, nil
 }
 
+// CreateCertificate2 is responsible to create certificate resource in the remote destination service
+func (s *Service) CreateCertificate2(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType string, formationAssignment *model.FormationAssignment, depth uint8) (*operators.CertificateData, error) {
+	if err := s.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment); err != nil {
+		return nil, err
+	}
+
+	subaccountID := destinationsDetails[0].SubaccountID // we're getting the subaccount ID from the first element but before that we ensured they are all equal
+	region, err := s.getRegionLabel(ctx, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
+	}
+
+	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, "", false)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building certificate URL")
+	}
+
+	certName, err := GetDestinationCertificateName(ctx, destinationAuthType, formationAssignment.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	certReqBody := &CertificateRequestBody{Name: certName}
+
+	if err := certReqBody.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "while validating certificate request body")
+	}
+
+	log.C(ctx).Infof("Creating certificate with name: %q for subaccount with ID: %q in the destination service for SAML destination", certName, subaccountID)
+	respBody, statusCode, err := s.executeCreateRequest(ctx, strURL, certReqBody, certName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating certificate with name: %q for subaccount with ID: %q in the destination service", certName, subaccountID)
+	}
+
+	if statusCode == http.StatusConflict {
+		log.C(ctx).Infof("The certificate with name: %q already exists. Will be deleted and created again...", certName)
+		depth++
+		if depth > DepthLimit {
+			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
+		}
+
+		if err := s.DeleteCertificate(ctx, certName, subaccountID, formationAssignment); err != nil {
+			return nil, errors.Wrapf(err, "while deleting certificate with name: %q and subaccount ID: %q", certName, subaccountID)
+		}
+
+		return s.CreateCertificate2(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth)
+	}
+
+	var certResp CertificateResponse
+	err = json.Unmarshal(respBody, &certResp)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := certResp.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "while validation SAML assertion certificate data")
+	}
+
+	certData := &operators.CertificateData{
+		FileName:         certResp.FileName,
+		CommonName:       certResp.CommonName,
+		CertificateChain: certResp.CertificateChain,
+	}
+
+	return certData, nil
+}
+
+// GetDestinationCertificateName return a certificate name based on the destination authentication type and formation assignment ID.
+// And if needed truncate the certificate name, so it can be compliant with the max destination name constraint.
+func GetDestinationCertificateName(ctx context.Context, destinationAuthentication, formationAssignmentID string) (string, error) {
+	var certName string
+	switch destinationAuthentication {
+	case string(AuthTypeSAMLAssertion):
+		certName = certificateSAMLAssertionDestinationPrefix + formationAssignmentID
+	case string(AuthTypeSAMLBearerAssertion):
+		certName = certificateSAMLBearerAssertionDestinationPrefix + formationAssignmentID
+	case string(AuthTypeClientCertificate):
+		certName = certificateClientCertificateDestinationPrefix + formationAssignmentID
+	default:
+		return "", errors.Errorf("Invalid destination authentication type: %s for certificate creation", destinationAuthentication)
+	}
+
+	if len(certName) > MaxDestinationNameLength {
+		log.C(ctx).Warnf("The certificate name: %s is more than %d symbols. Truncating it...", certName, MaxDestinationNameLength)
+		certName = certName[:MaxDestinationNameLength]
+	}
+
+	return certName, nil
+}
+
 // DeleteCertificate is responsible to delete certificate resource from the remote destination service
 func (s *Service) DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
 	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
@@ -361,7 +505,7 @@ func (s *Service) DeleteCertificate(ctx context.Context, certificateName, extern
 		return errors.Wrapf(err, "while building certificate URL")
 	}
 
-	log.C(ctx).Infof("Deleting SAML assertion certificate with name: %q and subaccount ID: %q from destination service", certificateName, subaccountID)
+	log.C(ctx).Infof("Deleting destination certificate with name: %q and subaccount ID: %q from destination service", certificateName, subaccountID)
 	err = s.executeDeleteRequest(ctx, strURL, certificateName, subaccountID)
 	if err != nil {
 		return err
@@ -396,30 +540,33 @@ func (s *Service) DeleteDestination(ctx context.Context, destinationName, extern
 	return nil
 }
 
-// EnrichAssignmentConfigWithCertificateData is responsible to enrich the assignment configuration with the created certificate resource for the SAML assertion destination
-func (s *Service) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, certData *operators.CertificateData, destinationIndex int) (json.RawMessage, error) {
-	certAPIConfig := s.config.CertificateAPIConfig
+// EnrichAssignmentConfigWithCertificateData is responsible to enrich the assignment configuration with the created certificate data for any type of destination.
+func (s *Service) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *operators.CertificateData) (json.RawMessage, error) {
 	configStr := string(assignmentConfig)
 
-	path := fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.FileNameKey)
-	configStr, err := sjson.Set(configStr, path, certData.FileName)
+	path := fmt.Sprintf("%s.certificate", destinationTypePath)
+	configStr, err := sjson.Set(configStr, path, certData.CertificateChain)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.FileNameKey)
-	}
-
-	path = fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.CommonNameKey)
-	configStr, err = sjson.Set(configStr, path, certData.CommonName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with certificate %q key", certAPIConfig.CommonNameKey)
-	}
-
-	path = fmt.Sprintf("credentials.inboundCommunication.samlAssertion.destinations.%d.%s", destinationIndex, certAPIConfig.CertificateChainKey)
-	configStr, err = sjson.Set(configStr, path, certData.CertificateChain)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while enriching SAML assertion destination with %q key", certAPIConfig.CertificateChainKey)
+		return nil, errors.Wrapf(err, "while enriching %q with certificate chain", destinationTypePath)
 	}
 
 	return json.RawMessage(configStr), nil
+}
+
+// EnrichAssignmentConfigWithSAMLCertificateData is responsible to enrich the assignment configuration with the necessary SAML details using created certificate data
+func (s *Service) EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *operators.CertificateData) (json.RawMessage, error) {
+	enrichedCfg, err := s.EnrichAssignmentConfigWithCertificateData(assignmentConfig, destinationTypePath, certData)
+	if err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("%s.assertionIssuer", destinationTypePath)
+	enrichedCfgStr, err := sjson.Set(string(enrichedCfg), path, certData.CommonName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while enriching %q with assertion issuer", destinationTypePath)
+	}
+
+	return json.RawMessage(enrichedCfgStr), nil
 }
 
 // ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one. If it's not provided then we validate the subaccount ID from the formation assignment.
@@ -428,7 +575,7 @@ func (s *Service) ValidateDestinationSubaccount(ctx context.Context, externalDes
 	if externalDestSubaccountID == "" {
 		consumerSubaccountID, err := s.GetConsumerTenant(ctx, formationAssignment)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "An error occurred while getting consumer subaccount")
 		}
 		subaccountID = consumerSubaccountID
 
@@ -439,7 +586,7 @@ func (s *Service) ValidateDestinationSubaccount(ctx context.Context, externalDes
 	if externalDestSubaccountID != "" {
 		consumerSubaccountID, err := s.GetConsumerTenant(ctx, formationAssignment)
 		if err != nil {
-			log.C(ctx).Warnf("Couldn't validate the if the provided destination subaccount ID: %q is a consumer subaccount. Validating if it's a provider one...", externalDestSubaccountID)
+			log.C(ctx).Warnf("An error occured while getting consumer subaccount: %s", err.Error())
 		}
 
 		if consumerSubaccountID != "" && externalDestSubaccountID == consumerSubaccountID {
@@ -450,15 +597,15 @@ func (s *Service) ValidateDestinationSubaccount(ctx context.Context, externalDes
 		switch formationAssignment.TargetType {
 		case model.FormationAssignmentTypeApplication:
 			if err := s.validateAppTemplateProviderSubaccount(ctx, formationAssignment, externalDestSubaccountID); err != nil {
-				return "", err
+				return "", errors.Wrapf(err, "while validating provider subaccount: %s for %s formation assignment type", externalDestSubaccountID, model.FormationAssignmentTypeApplication)
 			}
 		case model.FormationAssignmentTypeRuntime:
 			if err := s.validateRuntimeProviderSubaccount(ctx, formationAssignment.Target, externalDestSubaccountID); err != nil {
-				return "", err
+				return "", errors.Wrapf(err, "while validating provider subaccount: %s for %s formation assignment type", externalDestSubaccountID, model.FormationAssignmentTypeRuntime)
 			}
 		case model.FormationAssignmentTypeRuntimeContext:
 			if err := s.validateRuntimeContextProviderSubaccount(ctx, formationAssignment, externalDestSubaccountID); err != nil {
-				return "", err
+				return "", errors.Wrapf(err, "while validating provider subaccount: %s for %s formation assignment type", externalDestSubaccountID, model.FormationAssignmentTypeRuntimeContext)
 			}
 		default:
 			return "", errors.Errorf("Unknown formation assignment type: %q", formationAssignment.TargetType)
@@ -550,6 +697,43 @@ func (s *Service) GetConsumerTenant(ctx context.Context, formationAssignment *mo
 	}
 
 	return globalSubaccIDLblValue, nil
+}
+
+// EnsureDestinationSubaccountIDsCorrectness todo::: add go doc
+func (s *Service) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment) error {
+	if err := s.sanitizeDestinationSubaccountIDs(ctx, destinationsDetails, formationAssignment); err != nil {
+		return errors.Wrap(err, "while sanitizing destination subaccount IDs")
+	}
+
+	destSubaccountIDs := make(map[string]struct{})
+	for _, destDetails := range destinationsDetails {
+		if destDetails.SubaccountID != "" {
+			destSubaccountIDs[destDetails.SubaccountID] = struct{}{}
+		}
+	}
+
+	if len(destSubaccountIDs) != len(destinationsDetails) {
+		err := errors.Errorf("The destination subaccount IDs should be the same number as destination details elements: %d", len(destinationsDetails))
+		log.C(ctx).Error(err)
+		return err
+	}
+
+	return nil
+}
+
+// sanitizeDestinationSubaccountIDs is responsible to populate the subaccount ID of every destination element in the slice if it's not provided
+func (s *Service) sanitizeDestinationSubaccountIDs(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment) error {
+	for i, destDetails := range destinationsDetails {
+		if destDetails.SubaccountID == "" {
+			subaccID, err := s.ValidateDestinationSubaccount(ctx, "", formationAssignment)
+			if err != nil {
+				return err
+			}
+			destinationsDetails[i].SubaccountID = subaccID
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) getRegionLabel(ctx context.Context, tenantID string) (string, error) {
@@ -719,8 +903,7 @@ func (s *Service) executeDeleteRequest(ctx context.Context, url string, entityNa
 
 func enrichDestinationAdditionalPropertiesWithCorrelationIDs(destinationCreatorCfg *Config, correlationIDs []string, destinationAdditionalProperties json.RawMessage) (json.RawMessage, error) {
 	joinedCorrelationIDs := strings.Join(correlationIDs, ",")
-	additionalProps := string(destinationAdditionalProperties)
-	additionalProps, err := sjson.Set(additionalProps, destinationCreatorCfg.CorrelationIDsKey, joinedCorrelationIDs)
+	additionalProps, err := sjson.Set(string(destinationAdditionalProperties), destinationCreatorCfg.CorrelationIDsKey, joinedCorrelationIDs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while setting the correlation IDs as additional properties of the destination")
 	}

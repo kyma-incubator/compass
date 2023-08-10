@@ -1,5 +1,6 @@
 package destinationcreator
 
+// todo::: consider using these constants from director instead?
 const (
 	// TypeHTTP represents the HTTP destination type
 	TypeHTTP Type = "HTTP"
@@ -16,8 +17,10 @@ const (
 	AuthTypeBasic AuthType = "BasicAuthentication"
 	// AuthTypeSAMLAssertion represents the SAMLAssertion destination authentication
 	AuthTypeSAMLAssertion AuthType = "SAMLAssertion"
-	// AuthTypeSAMLBearer represents the SAMLBearer destination authentication
-	AuthTypeSAMLBearer AuthType = "OAuth2SAMLBearerAssertion"
+	// AuthTypeSAMLBearerAssertion represents the OAuth2SAMLBearerAssertion destination authentication
+	AuthTypeSAMLBearerAssertion AuthType = "OAuth2SAMLBearerAssertion"
+	// AuthTypeClientCertificate represents the ClientCertificate destination authentication
+	AuthTypeClientCertificate AuthType = "ClientCertificateAuthentication"
 
 	// ProxyTypeInternet represents the Internet proxy type
 	ProxyTypeInternet ProxyType = "Internet"
@@ -27,6 +30,7 @@ const (
 	ProxyTypePrivateLink ProxyType = "PrivateLink"
 
 	JavaKeyStoreFileExtension = ".jks"
+	MaxDestinationNameLength  = 64
 )
 
 // Type represents the destination type
@@ -58,6 +62,12 @@ type BasicDestination struct {
 type SAMLAssertionDestination struct {
 	NoAuthenticationDestination
 	Audience         string `json:"audience"`
+	KeyStoreLocation string `json:"keyStoreLocation"`
+}
+
+// ClientCertificateAuthenticationDestination is structure representing a client certificate authentication destination entity and its data from the remote destination service
+type ClientCertificateAuthenticationDestination struct {
+	NoAuthenticationDestination
 	KeyStoreLocation string `json:"keyStoreLocation"`
 }
 

@@ -2,6 +2,7 @@ package destinationcreator
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -25,8 +26,10 @@ const (
 	AuthTypeBasic AuthType = "BasicAuthentication"
 	// AuthTypeSAMLAssertion represents the SAMLAssertion destination authentication
 	AuthTypeSAMLAssertion AuthType = "SAMLAssertion"
-	// AuthTypeSAMLBearer represents the SAMLBearer destination authentication
-	AuthTypeSAMLBearer AuthType = "OAuth2SAMLBearerAssertion"
+	// AuthTypeSAMLBearerAssertion represents the OAuth2SAMLBearerAssertion destination authentication
+	AuthTypeSAMLBearerAssertion AuthType = "OAuth2SAMLBearerAssertion"
+	// AuthTypeClientCertificate represents the ClientCertificate destination authentication
+	AuthTypeClientCertificate AuthType = "ClientCertificateAuthentication"
 
 	// ProxyTypeInternet represents the Internet proxy type
 	ProxyTypeInternet ProxyType = "Internet"
@@ -34,6 +37,14 @@ const (
 	ProxyTypeOnPremise ProxyType = "OnPremise"
 	// ProxyTypePrivateLink represents the PrivateLink proxy type
 	ProxyTypePrivateLink ProxyType = "PrivateLink"
+
+	MaxDestinationNameLength = 64
+)
+
+var (
+	certificateSAMLAssertionDestinationPrefix       = fmt.Sprintf("%s-", AuthTypeSAMLAssertion)
+	certificateSAMLBearerAssertionDestinationPrefix = fmt.Sprintf("%s-", AuthTypeSAMLBearerAssertion)
+	certificateClientCertificateDestinationPrefix   = fmt.Sprintf("%s-", AuthTypeClientCertificate)
 )
 
 // Validator validates destination creator request body
@@ -88,6 +99,12 @@ type SAMLAssertionRequestBody struct {
 	KeyStoreLocation string `json:"keyStoreLocation"`
 }
 
+// ClientCertificateRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeClientCertificate
+type ClientCertificateRequestBody struct {
+	BaseDestinationRequestBody
+	KeyStoreLocation string `json:"keyStoreLocation"`
+}
+
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
 type CertificateRequestBody struct {
 	Name string `json:"name"`
@@ -99,7 +116,7 @@ var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
 // Validate validates that the AuthTypeNoAuth request body contains the required fields and they are valid
 func (n *NoAuthRequestBody) Validate() error {
 	return validation.ValidateStruct(n,
-		validation.Field(&n.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&n.Name, validation.Required, validation.Length(1, MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&n.URL, validation.Required),
 		validation.Field(&n.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
 		validation.Field(&n.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
@@ -112,7 +129,7 @@ func (b *BasicRequestBody) Validate(destinationCreatorCfg *Config) error {
 	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
 
 	return validation.ValidateStruct(b,
-		validation.Field(&b.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&b.Name, validation.Required, validation.Length(1, MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),
 		validation.Field(&b.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
 		validation.Field(&b.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
@@ -127,7 +144,7 @@ func (s *SAMLAssertionRequestBody) Validate(destinationCreatorCfg *Config) error
 	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
 
 	return validation.ValidateStruct(s,
-		validation.Field(&s.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&s.Name, validation.Required, validation.Length(1, MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
 		validation.Field(&s.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
 		validation.Field(&s.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
@@ -138,10 +155,25 @@ func (s *SAMLAssertionRequestBody) Validate(destinationCreatorCfg *Config) error
 	)
 }
 
+// Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
+func (s *ClientCertificateRequestBody) Validate(destinationCreatorCfg *Config) error {
+	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
+
+	return validation.ValidateStruct(s,
+		validation.Field(&s.Name, validation.Required, validation.Length(1, MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&s.URL, validation.Required),
+		validation.Field(&s.Type, validation.In(TypeHTTP, TypeRFC, TypeLDAP, TypeMAIL)),
+		validation.Field(&s.ProxyType, validation.In(ProxyTypeInternet, ProxyTypeOnPremise, ProxyTypePrivateLink)),
+		validation.Field(&s.AuthenticationType, validation.In(AuthTypeClientCertificate)),
+		validation.Field(&s.KeyStoreLocation, validation.Required),
+		validation.Field(&s.AdditionalProperties, areAdditionalPropertiesValid),
+	)
+}
+
 // Validate validates that the SAML assertion certificate request body contains the required fields and they are valid
 func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
-		validation.Field(&c.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&c.Name, validation.Required, validation.Length(1, MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 	)
 }
 
