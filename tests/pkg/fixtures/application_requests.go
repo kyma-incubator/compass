@@ -248,6 +248,16 @@ func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
 			}`, systemNumber, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixGetApplicationByLocalTenantIDAndAppTemplateIDRequest(localTenantID, appTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationByLocalTenantIDAndAppTemplateID(localTenantID: "%s", applicationTemplateID: "%s") {
+					%s
+					localTenantID
+				}
+			}`, localTenantID, appTemplateID, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixMergeApplicationsRequest(srcID, destID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -387,6 +397,17 @@ func FixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string
 		fmt.Sprintf(`mutation {
 			result: registerApplicationFromTemplate(in: %s) {
 					%s
+				}
+			}`,
+			applicationFromTemplateInputInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixRegisterApplicationFromTemplateWithLocalTenantID(applicationFromTemplateInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerApplicationFromTemplate(in: %s) {
+					%s
+					localTenantID
 				}
 			}`,
 			applicationFromTemplateInputInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))

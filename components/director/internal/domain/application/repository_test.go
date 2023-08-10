@@ -990,6 +990,42 @@ func TestPgRepository_GetBySystemNumber(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetByLocalTenantIDAndAppTemplateID(t *testing.T) {
+	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Application By Local Tenant ID and App Template ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels, tenant_business_type_id FROM public.applications WHERE local_tenant_id = $1 AND app_template_id = $2 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $3))`),
+				Args:     []driver.Value{localTenantID, appTemplateID, givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()).
+							AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.LocalTenantID, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.SystemStatus, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.ApplicationNamespace, entity.OrdLabels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.Tags, entity.DocumentationLabels, entity.TenantBusinessTypeID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       application.NewRepository,
+		ExpectedModelEntity:       fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description"),
+		ExpectedDBEntity:          entity,
+		MethodName:                "GetByLocalTenantIDAndAppTemplateID",
+		MethodArgs:                []interface{}{givenTenant(), localTenantID, appTemplateID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetByFilter(t *testing.T) {
 	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
 	suite := testdb.RepoGetTestSuite{

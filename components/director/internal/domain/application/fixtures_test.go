@@ -28,8 +28,9 @@ var (
 	providerName       = "provider name"
 	fixedTimestamp     = time.Now()
 	legacyConnectorURL = "url.com"
-	systemNumber       = "123"
-	localTenantID      = "1337"
+	systemNumber       = "system-number-123"
+	localTenantID      = "local-tenant-id-123"
+	appTemplateID      = "app-template-id-123"
 	appName            = "appName"
 	appNamespace       = "appNamespace"
 	tbtID              = "tbtID"
