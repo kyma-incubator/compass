@@ -114,6 +114,9 @@ function set_oidc_config() {
 
 # NOTE: Only one trap per script is supported.
 function cleanup_trap() {
+  if [[ -f "$K3D_CA" ]]; then
+    rm -f "$K3D_CA"
+  fi
   if [[ -f ${COMPASS_CERT_PATH} ]]; then
     rm -f "${COMPASS_CERT_PATH}"
   fi
@@ -128,6 +131,20 @@ function cleanup_trap() {
 }
 
 trap cleanup_trap RETURN EXIT INT TERM
+
+K3D_CA=k3d-ca.crt
+function mount_k3d_ca_to_oathkeeper() {
+  echo "Mounting k3d CA cert into oathkeeper's container..."
+
+  docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > "$K3D_CA"
+  kubectl create configmap -n ory k3d-ca --from-file "$K3D_CA" --dry-run=client -o yaml | kubectl apply -f -
+
+  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n ory | grep oathkeeper | awk '{print $1}')
+  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n ory "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+
+  kubectl -n ory patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+   -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}],"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
+}
 
 # Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
 # with the needed keys, by first getting them using kubectl
@@ -252,6 +269,8 @@ if [[ ! "$(helm status ory-stack -n ory)" ]]; then
   echo -e "${RED}Ory Helm release does not exist, please omit the '--skip-ory-install' to install it.${NC}"
   exit 1
 fi
+
+mount_k3d_ca_to_oathkeeper
 
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
