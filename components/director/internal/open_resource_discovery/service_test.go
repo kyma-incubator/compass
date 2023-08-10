@@ -777,7 +777,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdateForProxy := func() *automock.FetchRequestService {
 		headers := http.Header{
-			"target_host": []string{baseURL},
+			"Target_host": []string{baseURL},
 		}
 		fetchReqSvc := &automock.FetchRequestService{}
 		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, headers).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
@@ -969,7 +969,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulClientFetchForDocWithoutCredentialExchangeStrategiesWithProxy := func() *automock.Client {
 		ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{
-			Headers:     http.Header{"target_host": []string{baseURL}},
+			Headers:     http.Header{"Target_host": []string{baseURL}},
 			Application: webhook.Application{BaseURL: baseURL},
 		}
 
@@ -1216,7 +1216,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			labelSvcFn:              successfulLabelGetByKey,
 		},
 		{
-			Name: "Proxy",
+			Name: "Success when webhook has a proxy URL which should be used to access the document",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(32)
 			},
