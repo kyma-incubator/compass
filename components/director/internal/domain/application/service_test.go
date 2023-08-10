@@ -5171,6 +5171,72 @@ func TestService_GetBySystemNumber(t *testing.T) {
 	}
 }
 
+func TestService_GetByLocalTenantIDAndAppTemplateID(t *testing.T) {
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	modelApp := fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum")
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testError := errors.New("Test error")
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.ApplicationRepository
+		LocalTenantID  string
+		AppTemplateID  string
+		ExptectedValue *model.Application
+		ExpectedError  error
+	}{
+		{
+			Name: "Application found",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByLocalTenantIDAndAppTemplateID", ctx, tnt, localTenantID, appTemplateID).Return(modelApp, nil)
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			AppTemplateID:  appTemplateID,
+			ExptectedValue: modelApp,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Returns error",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByLocalTenantIDAndAppTemplateID", ctx, tnt, localTenantID, appTemplateID).Return(nil, testError)
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			AppTemplateID:  appTemplateID,
+			ExptectedValue: nil,
+			ExpectedError:  testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			appRepo := testCase.RepositoryFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			value, err := svc.GetByLocalTenantIDAndAppTemplateID(ctx, testCase.LocalTenantID, testCase.AppTemplateID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			assert.Equal(t, testCase.ExptectedValue, value)
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
 type testModel struct {
 	ApplicationMatcherFn func(app *model.Application) bool
 	Webhooks             []*model.Webhook

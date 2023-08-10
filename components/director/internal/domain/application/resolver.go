@@ -45,6 +45,7 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
+	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
@@ -370,6 +371,13 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
 	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
 		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
+	})
+}
+
+// ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
+func (r *Resolver) ApplicationByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*graphql.Application, error) {
+	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
+		return r.appSvc.GetByLocalTenantIDAndAppTemplateID(ctx, localTenantID, appTemplateID)
 	})
 }
 
