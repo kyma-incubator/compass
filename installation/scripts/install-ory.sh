@@ -62,6 +62,9 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # Remove the temporary Ory values.yaml file created
 function cleanup_trap(){
+  if [[ -f "$K3D_CA" ]]; then
+    rm -f "$K3D_CA"
+  fi
   if [[ -f "$OVERRIDE_TEMP_ORY" ]]; then
     rm -f "$OVERRIDE_TEMP_ORY"
   fi
@@ -70,6 +73,20 @@ function cleanup_trap(){
 # Generate random string with the length given as argument
 function generate_random(){
   cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | fold -w ${1} | head -n 1
+}
+
+K3D_CA=k3d-ca.crt
+function mount_k3d_ca_to_oathkeeper() {
+  echo "Mounting k3d CA cert into oathkeeper's container..."
+
+  docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > "$K3D_CA"
+  kubectl create configmap -n "$RELEASE_NS" k3d-ca --from-file "$K3D_CA" --dry-run=client -o yaml | kubectl apply -f -
+
+  OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n "$RELEASE_NS" | grep oathkeeper | awk '{print $1}')
+  OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n "$RELEASE_NS" "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
+
+  kubectl -n "$RELEASE_NS" patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
+   -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}],"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 }
 
 # Copy the IDP configuration from the Compass chart; the Compass values are changed by the `run.sh`
@@ -92,7 +109,7 @@ RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 SECRET_NAME=ory-hydra-credentials
 
-kubectl create ns $RELEASE_NS || true
+kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 
 LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.postgresql.enabled" ${OVERRIDE_TEMP_ORY})
 
@@ -156,3 +173,5 @@ if [ "$RESULT" == "1" ]; then
   kubectl delete ns $RELEASE_NS
   exit 1
 fi
+
+mount_k3d_ca_to_oathkeeper
