@@ -5,10 +5,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"net/http"
 	"testing"
 	"time"
+
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
