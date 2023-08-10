@@ -93,9 +93,15 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinations
 }
 
 func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment) error {
-	t, err := s.tenantRepo.GetByExternalTenant(ctx, destinationDetails.SubaccountID)
+	subaccountID, err := s.destinationCreatorSvc.ValidateDestinationSubaccount(ctx, destinationDetails.SubaccountID, formationAssignment)
 	if err != nil {
-		return errors.Wrapf(err, "while getting tenant by external ID: %q", destinationDetails.SubaccountID)
+		return err
+	}
+	destinationDetails.SubaccountID = subaccountID
+
+	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting tenant by external ID: %q", subaccountID)
 	}
 
 	tenantID := t.ID
@@ -161,6 +167,7 @@ func (s *Service) createBasicCredentialDestination(
 	if err != nil {
 		return err
 	}
+	destinationDetails.SubaccountID = subaccountID
 
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, subaccountID)
 	if err != nil {
