@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"runtime/debug"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -72,30 +74,52 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
 			}
 
-			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
-			for _, destDetails := range assignmentConfig.Destinations {
-				if err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
-					return false, errors.Wrapf(err, "while creating design time destination with name: %q", destDetails.Name)
+			if len(assignmentConfig.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
+				if err := e.destinationSvc.CreateDesignTimeDestinations(ctx, assignmentConfig.Destinations, formationAssignment); err != nil {
+					return false, errors.Wrap(err, "while creating design time destinations")
 				}
 			}
 
 			if assignmentConfig.Credentials.InboundCommunicationDetails != nil {
-				samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-				if isSAMLDetailsExists := samlAssertionDetails; isSAMLDetailsExists != nil {
+				if samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails; samlAssertionDetails != nil && len(samlAssertionDetails.Destinations) > 0 {
 					log.C(ctx).Infof("There is/are %d SAML Assertion destination details in the configuration response", len(samlAssertionDetails.Destinations))
-					for i, destDetails := range samlAssertionDetails.Destinations {
-						certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, destDetails, formationAssignment, 0)
-						if err != nil {
-							return false, errors.Wrapf(err, "while creating SAML assertion certificate with name: %q", destDetails.Name)
-						}
 
-						config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
-						if err != nil {
-							return false, err
-						}
-
-						formationAssignment.Value = config
+					if samlAssertionDetails.Certificate != nil && *samlAssertionDetails.Certificate != "" && samlAssertionDetails.AssertionIssuer != nil && *samlAssertionDetails.AssertionIssuer != "" {
+						log.C(ctx).Infof("The certificate and assertion issuer for SAML Assertion destination already exist. No new certificate will be generated.")
+						return true, nil
 					}
+
+					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0)
+					if err != nil {
+						return false, errors.Wrap(err, "while creating SAML assertion certificate")
+					}
+
+					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(formationAssignment.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData)
+					if err != nil {
+						return false, err
+					}
+					formationAssignment.Value = config
+				}
+
+				if clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.ClientCertificateAuthenticationDetails; clientCertDetails != nil && len(clientCertDetails.Destinations) > 0 {
+					log.C(ctx).Infof("There is/are %d client certificate destination details in the configuration response", len(clientCertDetails.Destinations))
+
+					if clientCertDetails.Certificate != nil && *clientCertDetails.Certificate != "" {
+						log.C(ctx).Infof("The certificate for client certificate authentication destination already exists. No new certificate will be generated.")
+						return true, nil
+					}
+
+					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0)
+					if err != nil {
+						return false, errors.Wrap(err, "while creating client certificate authentication certificate")
+					}
+
+					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData)
+					if err != nil {
+						return false, err
+					}
+					formationAssignment.Value = config
 				}
 			}
 
@@ -130,23 +154,28 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
 			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
-			if basicAuthDetails != nil && basicAuthCreds != nil {
+			if basicAuthDetails != nil && basicAuthCreds != nil && len(basicAuthDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
-				for _, destDetails := range basicAuthDetails.Destinations {
-					if err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
-						return false, errors.Wrapf(err, "while creating basic destination with name: %q", destDetails.Name)
-					}
+				if err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, basicAuthDetails.Destinations, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
+					return false, errors.Wrap(err, "while creating basic destinations")
 				}
 			}
 
 			samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
 			samlAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
-			if samlAssertionDetails != nil && samlAuthCreds != nil {
-				log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
-				for _, destDetails := range samlAssertionDetails.Destinations {
-					if err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
-						return false, errors.Wrapf(err, "while creating SAML assertion destination with name: %q", destDetails.Name)
-					}
+			if samlAssertionDetails != nil && samlAuthCreds != nil && len(samlAssertionDetails.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d inbound SAML Assertion destination(s) available in the configuration", len(samlAssertionDetails.Destinations))
+				if err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, samlAssertionDetails.Destinations, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
+					return false, errors.Wrap(err, "while creating SAML Assertion destinations")
+				}
+			}
+
+			clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.ClientCertificateAuthenticationDetails
+			clientCertCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.ClientCertAuthentication
+			if clientCertDetails != nil && clientCertCreds != nil && len(clientCertDetails.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d inbound client certificate authentication destination(s) available in the configuration", len(clientCertDetails.Destinations))
+				if err := e.destinationSvc.CreateClientCertificateAuthenticationDestination(ctx, clientCertDetails.Destinations, clientCertCreds, formationAssignment, clientCertDetails.CorrelationIDs); err != nil {
+					return false, errors.Wrapf(err, "while creating client certificate authentication destinations")
 				}
 			}
 
@@ -160,7 +189,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 // Destination Creator Operator types
 
-// Configuration represents a formation assignment(or reverse formation assignment) configuration
+// Configuration represents a formation assignment (or reverse formation assignment) configuration
 type Configuration struct {
 	Destinations         []Destination        `json:"destinations"`
 	Credentials          Credentials          `json:"credentials"`
@@ -170,29 +199,30 @@ type Configuration struct {
 // AdditionalProperties is an alias for slice of `json.RawMessage` elements
 type AdditionalProperties []json.RawMessage
 
-// Credentials represents different type of credentials configuration - inbound, outbound
+// Credentials represent a different type of credentials configuration - inbound, outbound
 type Credentials struct {
 	OutboundCommunicationCredentials *OutboundCommunicationCredentials `json:"outboundCommunication,omitempty"`
 	InboundCommunicationDetails      *InboundCommunicationDetails      `json:"inboundCommunication,omitempty"`
 }
 
-// OutboundCommunicationCredentials consists of different type of outbound authentications
+// OutboundCommunicationCredentials consists of a different type of outbound authentications
 type OutboundCommunicationCredentials struct {
-	NoAuthentication                      *NoAuthentication                      `json:"noAuthentication,omitempty"`
-	BasicAuthentication                   *BasicAuthentication                   `json:"basicAuthentication,omitempty"`
-	SAMLAssertionAuthentication           *SAMLAssertionAuthentication           `json:"samlAssertion,omitempty"`
-	OAuth2ClientCredentialsAuthentication *OAuth2ClientCredentialsAuthentication `json:"oauth2ClientCredentials,omitempty"`
-	ClientCertAuthentication              *ClientCertAuthentication              `json:"clientCertificateAuthentication,omitempty"`
+	NoAuthentication                        *NoAuthentication                        `json:"noAuthentication,omitempty"`
+	BasicAuthentication                     *BasicAuthentication                     `json:"basicAuthentication,omitempty"`
+	SAMLAssertionAuthentication             *SAMLAssertionAuthentication             `json:"samlAssertion,omitempty"`
+	OAuth2SAMLBearerAssertionAuthentication *OAuth2SAMLBearerAssertionAuthentication `json:"oauth2SamlBearerAssertion,omitempty"`
+	ClientCertAuthentication                *ClientCertAuthentication                `json:"clientCertificateAuthentication,omitempty"`
+	OAuth2ClientCredentialsAuthentication   *OAuth2ClientCredentialsAuthentication   `json:"oauth2ClientCredentials,omitempty"`
 }
 
-// NoAuthentication represents destination without authentication
+// NoAuthentication represents outbound communication without any authentication
 type NoAuthentication struct {
 	URL            string   `json:"url"`
 	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// BasicAuthentication represents destination with basic authentication
+// BasicAuthentication represents outbound communication with basic authentication
 type BasicAuthentication struct {
 	URL            string   `json:"url"`
 	UIURL          string   `json:"uiUrl,omitempty"`
@@ -201,12 +231,20 @@ type BasicAuthentication struct {
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// SAMLAssertionAuthentication represents destination with SAML assertion authentication
+// SAMLAssertionAuthentication represents outbound communication with SAML Assertion authentication
 type SAMLAssertionAuthentication struct {
 	URL string `json:"url"`
 }
 
-// OAuth2ClientCredentialsAuthentication represents destination with OAuth 2 client credentials authentication
+// OAuth2SAMLBearerAssertionAuthentication represents outbound communication with OAuth 2 SAML Bearer Assertion authentication
+type OAuth2SAMLBearerAssertionAuthentication struct {
+	URL             string `json:"url"`
+	TokenServiceURL string `json:"tokenServiceUrl"`
+	ClientID        string `json:"clientId"`
+	ClientSecret    string `json:"clientSecret"`
+}
+
+// OAuth2ClientCredentialsAuthentication represents outbound communication with OAuth 2 client credentials authentication
 type OAuth2ClientCredentialsAuthentication struct {
 	URL             string   `json:"url"`
 	UIURL           string   `json:"uiUrl,omitempty"`
@@ -216,36 +254,48 @@ type OAuth2ClientCredentialsAuthentication struct {
 	CorrelationIds  []string `json:"correlationIds,omitempty"`
 }
 
-// ClientCertAuthentication represents destination with client certificate authentication
+// ClientCertAuthentication represents outbound communication with client certificate authentication
 type ClientCertAuthentication struct {
 	URL            string   `json:"url"`
 	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// InboundCommunicationDetails consists of different type of inbound communication configuration details
+// InboundCommunicationDetails consists of a different type of inbound communication configuration details
 type InboundCommunicationDetails struct {
-	BasicAuthenticationDetails       *InboundBasicAuthenticationDetails       `json:"basicAuthentication,omitempty"`
-	SAMLAssertionDetails             *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`
-	OAuth2SAMLBearerAssertionDetails *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
+	BasicAuthenticationDetails             *InboundBasicAuthenticationDetails       `json:"basicAuthentication,omitempty"`
+	SAMLAssertionDetails                   *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`
+	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
+	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 }
 
-// InboundBasicAuthenticationDetails represents destination configuration details for basic authentication
+// InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
 type InboundBasicAuthenticationDetails struct {
 	CorrelationIDs []string      `json:"correlationIds"`
 	Destinations   []Destination `json:"destinations"`
 }
 
-// InboundSAMLAssertionDetails represents destination configuration details for SAML assertion authentication
+// InboundSAMLAssertionDetails represents inbound communication configuration details for SAML assertion authentication
 type InboundSAMLAssertionDetails struct {
-	CorrelationIDs []string      `json:"correlationIds"`
-	Destinations   []Destination `json:"destinations"`
+	CorrelationIDs  []string      `json:"correlationIds"`
+	Destinations    []Destination `json:"destinations"`
+	Certificate     *string       `json:"certificate,omitempty"`
+	AssertionIssuer *string       `json:"assertionIssuer,omitempty"`
 }
 
-// InboundOAuth2SAMLBearerAssertionDetails represents destination configuration details for SAML bearer assertion authentication
+// InboundOAuth2SAMLBearerAssertionDetails represents inbound communication configuration details for SAML bearer assertion authentication
 type InboundOAuth2SAMLBearerAssertionDetails struct {
+	CorrelationIDs  []string      `json:"correlationIds"`
+	Destinations    []Destination `json:"destinations"`
+	Certificate     *string       `json:"certificate,omitempty"`
+	AssertionIssuer *string       `json:"assertionIssuer,omitempty"`
+}
+
+// InboundClientCertAuthenticationDetails represents inbound communication configuration details for client certificate authentication
+type InboundClientCertAuthenticationDetails struct {
 	CorrelationIDs []string      `json:"correlationIds"`
 	Destinations   []Destination `json:"destinations"`
+	Certificate    *string       `json:"certificate,omitempty"`
 }
 
 // Destination holds different destination types properties
