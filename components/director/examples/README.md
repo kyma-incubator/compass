@@ -52,6 +52,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query api definition for application](./query-api-definition-for-application/query-api-definition-for-application.graphql)
 - [query api definitions](./query-api-definitions/query-api-definitions.graphql)
 - [query application](./query-application/query-application.graphql)
+- [query application by local tenant id and app template id](./query-application/query-application-by-local-tenant-id-and-app-template-id.graphql)
 - [query application template](./query-application-template/query-application-template.graphql)
 - [query application templates](./query-application-templates/query-application-templates.graphql)
 - [query applications with label filter](./query-applications/query-applications-with-label-filter.graphql)

@@ -2025,3 +2025,75 @@ func TestGetApplicationsAPIEventDefinitions(t *testing.T) {
 	assert.Equal(t, app.APIDefinition.ID, api.ID)
 	assert.Equal(t, app.EventDefinition.ID, event.ID)
 }
+
+func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+
+	nameJSONPath := "$.name"
+	displayNameJSONPath := "$.displayName"
+	tenantIDJSONPath := "$.localTenantId"
+
+	appName := "appName"
+	localTenantID := "local-tenant-id-1234"
+	appTemplateID := "app-template-id-1234"
+	placeholdersPayload := fmt.Sprintf(`{\"name\": \"%s\", \"displayName\":\"appDisplayName\", \"localTenantId\":\"%s\"}`, appName, localTenantID)
+
+	appTemplateName := createAppTemplateName("template")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "name",
+			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
+		},
+		{
+			Name:        "tenant-id",
+			Description: ptr.String("tenant-id"),
+			JSONPath:    &tenantIDJSONPath,
+		},
+	}
+	appTmplInput.ApplicationInput.LocalTenantID = ptr.String("{{tenant-id}}")
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
+	require.NoError(t, err)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{ID: &appTemplateID, TemplateName: appTemplateName, PlaceholdersPayload: &placeholdersPayload}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplateWithLocalTenantID(appFromTmplGQL)
+
+	outputApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, outputApp)
+	require.Equal(t, appName, outputApp.Application.Name)
+	require.Equal(t, appTmpl.ID, *outputApp.Application.ApplicationTemplateID)
+	require.Equal(t, localTenantID, *outputApp.Application.LocalTenantID)
+
+	getAppRequest := fixtures.FixGetApplicationByLocalTenantIDAndAppTemplateIDRequest(localTenantID, *outputApp.ApplicationTemplateID)
+	newApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getAppRequest, &newApp)
+	saveExampleInCustomDir(t, getAppRequest.Query(), queryApplicationCategory, "query application by local tenant id and app template id")
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, newApp)
+	require.Equal(t, appName, newApp.Application.Name)
+	require.Equal(t, outputApp.Application.ID, newApp.Application.ID)
+	require.Equal(t, appTmpl.ID, *newApp.Application.ApplicationTemplateID)
+	require.Equal(t, localTenantID, *newApp.Application.LocalTenantID)
+}
