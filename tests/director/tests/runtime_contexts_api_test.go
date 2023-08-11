@@ -258,7 +258,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			require.Equal(t, subscriptionConsumerTenantID, consumerSubaccountRuntime.RuntimeContexts.Data[0].Value)
 
 			t.Log("Assert the runtime context has label containing consumer subaccount ID")
-			consumerSubaccountFromRtmCtxLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[conf.ConsumerSubaccountLabelKey].(string)
+			consumerSubaccountFromRtmCtxLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[conf.GlobalSubaccountIDLabelKey].(string)
 			require.True(t, ok)
 			require.Equal(t, subscriptionConsumerSubaccountID, consumerSubaccountFromRtmCtxLabel)
 

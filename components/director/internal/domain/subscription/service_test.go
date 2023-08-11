@@ -48,7 +48,7 @@ const (
 	runtimeM2MTableName        = "tenant_runtimes"
 
 	subscriptionProviderIDLabelKey = "subscriptionProviderId"
-	consumerSubaccountLabelKey     = "global_subaccount_id"
+	globalSubaccountIDLabelKey     = "global_subaccount_id"
 	subscriptionLabelKey           = "subscription"
 	subscriptionAppNameLabelKey    = "runtimeType"
 	tntSubdomain                   = "subdomain1"
@@ -85,7 +85,7 @@ var (
 	}
 
 	consumerSubaccountLabelInput = &model.LabelInput{
-		Key:        consumerSubaccountLabelKey,
+		Key:        globalSubaccountIDLabelKey,
 		Value:      subaccountTenantExtID,
 		ObjectID:   runtimeCtxID,
 		ObjectType: model.RuntimeContextLabelableObject,
@@ -151,7 +151,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -195,11 +195,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
 					Data: []*model.RuntimeContext{{
 						ID:        "id",
 						RuntimeID: providerRuntimeID,
-						Key:       consumerSubaccountLabelKey,
+						Key:       globalSubaccountIDLabelKey,
 						Value:     consumerTenantID,
 					}},
 					PageInfo:   nil,
@@ -233,11 +233,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
 					Data: []*model.RuntimeContext{{
 						ID:        "id",
 						RuntimeID: providerRuntimeID,
-						Key:       consumerSubaccountLabelKey,
+						Key:       globalSubaccountIDLabelKey,
 						Value:     consumerTenantID,
 					}},
 					PageInfo:   nil,
@@ -281,7 +281,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(nil, testError).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(nil, testError).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -357,7 +357,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				svc := &automock.RuntimeCtxService{}
-				svc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				svc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return svc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -382,7 +382,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				svc := &automock.RuntimeCtxService{}
-				svc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				svc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return svc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -434,7 +434,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return("", testError).Once()
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -467,11 +467,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
 					Data: []*model.RuntimeContext{{
 						ID:        "id",
 						RuntimeID: providerRuntimeID,
-						Key:       consumerSubaccountLabelKey,
+						Key:       globalSubaccountIDLabelKey,
 						Value:     consumerTenantID,
 					}},
 					PageInfo:   nil,
@@ -504,11 +504,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
 					Data: []*model.RuntimeContext{{
 						ID:        "id",
 						RuntimeID: providerRuntimeID,
-						Key:       consumerSubaccountLabelKey,
+						Key:       globalSubaccountIDLabelKey,
 						Value:     consumerTenantID,
 					}},
 					PageInfo:   nil,
@@ -543,11 +543,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
 					Data: []*model.RuntimeContext{{
 						ID:        "id",
 						RuntimeID: providerRuntimeID,
-						Key:       consumerSubaccountLabelKey,
+						Key:       globalSubaccountIDLabelKey,
 						Value:     consumerTenantID,
 					}},
 					PageInfo:   nil,
@@ -585,11 +585,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
 					Data: []*model.RuntimeContext{{
 						ID:        "id",
 						RuntimeID: providerRuntimeID,
-						Key:       consumerSubaccountLabelKey,
+						Key:       globalSubaccountIDLabelKey,
 						Value:     consumerTenantID,
 					}},
 					PageInfo:   nil,
@@ -634,7 +634,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -668,7 +668,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -707,7 +707,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
-				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -760,7 +760,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				defer DBMock.AssertExpectations(t)
 			}
 
-			service := subscription.NewService(runtimeSvc, runtimeCtxSvc, tenantSvc, labelSvc, nil, nil, nil, nil, uuidSvc, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
+			service := subscription.NewService(runtimeSvc, runtimeCtxSvc, tenantSvc, labelSvc, nil, nil, nil, nil, uuidSvc, globalSubaccountIDLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			// WHEN
 			isSubscribeSuccessful, err := service.SubscribeTenantToRuntime(ctx, subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, testCase.Region, subscriptionAppName, subscriptionID2)
@@ -798,7 +798,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 	}
 
 	runtimeCtxFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID)),
+		labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID)),
 	}
 
 	testCases := []struct {
@@ -1156,7 +1156,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			}
 			defer mock.AssertExpectationsForObjects(t, runtimeSvc, labelSvc, uidSvc, tenantSvc)
 
-			service := subscription.NewService(runtimeSvc, runtimeCtxSvc, tenantSvc, labelSvc, nil, nil, nil, nil, uidSvc, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
+			service := subscription.NewService(runtimeSvc, runtimeCtxSvc, tenantSvc, labelSvc, nil, nil, nil, nil, uidSvc, globalSubaccountIDLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			// WHEN
 			isUnsubscribeSuccessful, err := service.UnsubscribeTenantFromRuntime(ctx, subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, testCase.Region, subscriptionID2)
@@ -2073,7 +2073,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				tenantSvc = testCase.TenantSvcFn()
 			}
 
-			service := subscription.NewService(nil, nil, tenantSvc, labelSvc, appTemplateSvc, appConv, appTemplConv, appSvc, uuidSvc, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
+			service := subscription.NewService(nil, nil, tenantSvc, labelSvc, appTemplateSvc, appConv, appTemplConv, appSvc, uuidSvc, globalSubaccountIDLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			for count := 0; count < testCase.Repeats; count++ {
 				// WHEN
@@ -2507,7 +2507,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			appSvc := testCase.AppSvcFn()
 			tenantSvc := testCase.TenantSvcFn()
 			lblSvc := testCase.LabelServiceFn()
-			service := subscription.NewService(nil, nil, tenantSvc, lblSvc, appTemplateSvc, nil, nil, appSvc, nil, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
+			service := subscription.NewService(nil, nil, tenantSvc, lblSvc, appTemplateSvc, nil, nil, appSvc, nil, globalSubaccountIDLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			// WHEN
 			successful, err := service.UnsubscribeTenantFromApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionID2)
@@ -2640,7 +2640,7 @@ func TestDetermineSubscriptionFlow(t *testing.T) {
 			rtmService := testCase.RuntimeFn()
 			defer mock.AssertExpectationsForObjects(t, appTemplateSvc, rtmService)
 
-			service := subscription.NewService(rtmService, nil, nil, nil, appTemplateSvc, nil, nil, nil, nil, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
+			service := subscription.NewService(rtmService, nil, nil, nil, appTemplateSvc, nil, nil, nil, nil, globalSubaccountIDLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			output, err := service.DetermineSubscriptionFlow(context.TODO(), providerSubaccountID, regionalTenantSubdomain)
 			if len(testCase.ExpectedErrorOutput) > 0 {
