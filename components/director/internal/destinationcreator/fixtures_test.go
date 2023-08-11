@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -18,20 +20,21 @@ import (
 
 const (
 	// Destination constants
-	designTimeDestName              = "test-design-time-dest-name"
-	basicDestName                   = "test-basic-dest-name"
-	samlAssertionDestName           = "test-saml-assertion-dest-name"
-	destinationDescription          = "test-dest-description"
-	destinationTypeHTTP             = string(destinationcreator.TypeHTTP)
-	destinationProxyTypeInternet    = string(destinationcreator.ProxyTypeInternet)
-	destinationURL                  = "http://dest-test-url"
-	invalidDestAuthType             = "invalidDestAuthTypeValue"
-	destinationInternalSubaccountID = "destination-internal-subaccount-id"
-	destinationExternalSubaccountID = "destination-external-subaccount-id"
-	destinationTenantName           = "testDestinationTenantName"
-	basicDestURL                    = "basic-url"
-	basicDestUser                   = "basic-user"
-	basicDestPassword               = "basic-pwd"
+	designTimeDestName               = "test-design-time-dest-name"
+	basicDestName                    = "test-basic-dest-name"
+	samlAssertionDestName            = "test-saml-assertion-dest-name"
+	destinationDescription           = "test-dest-description"
+	destinationTypeHTTP              = string(destinationcreatorpkg.TypeHTTP)
+	destinationProxyTypeInternet     = string(destinationcreatorpkg.ProxyTypeInternet)
+	destinationURL                   = "http://dest-test-url"
+	invalidDestAuthType              = "invalidDestAuthTypeValue"
+	destinationInternalSubaccountID  = "destination-internal-subaccount-id"
+	destinationExternalSubaccountID  = "destination-external-subaccount-id"
+	destinationExternalSubaccountID2 = "destination-external-subaccount-id-2"
+	destinationTenantName            = "testDestinationTenantName"
+	basicDestURL                     = "basic-url"
+	basicDestUser                    = "basic-user"
+	basicDestPassword                = "basic-pwd"
 
 	// Destination Certificate constants
 	certificateName            = "testCertificateName"
@@ -158,15 +161,34 @@ func fixDestinationConfig() *destinationcreator.Config {
 }
 
 func fixDesignTimeDestinationDetails() operators.Destination {
-	return fixDestinationDetails(designTimeDestName, string(destinationcreator.AuthTypeNoAuth), destinationExternalSubaccountID)
+	return fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), destinationExternalSubaccountID)
 }
 
 func fixBasicDestinationDetails() operators.Destination {
-	return fixDestinationDetails(basicDestName, string(destinationcreator.AuthTypeBasic), destinationExternalSubaccountID)
+	return fixDestinationDetails(basicDestName, string(destinationcreatorpkg.AuthTypeBasic), destinationExternalSubaccountID)
 }
 
 func fixSAMLAssertionDestinationDetails() operators.Destination {
-	return fixDestinationDetails(samlAssertionDestName, string(destinationcreator.AuthTypeSAMLAssertion), destinationExternalSubaccountID)
+	return fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), destinationExternalSubaccountID)
+}
+
+func fixSAMLAssertionDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixSAMLAssertionDestinationDetails(),
+	}
+}
+
+func fixDestinationsDetailsWithoutSubaccountID() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), ""),
+	}
+}
+
+func fixDestinationsDetailsWitDifferentSubaccountIDs() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), destinationExternalSubaccountID),
+		fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), destinationExternalSubaccountID2),
+	}
 }
 
 func fixDestinationDetails(name, authentication, subaccountID string) operators.Destination {
@@ -195,14 +217,14 @@ func fixSAMLAssertionAuthCreds(url string) *operators.SAMLAssertionAuthenticatio
 	}
 }
 
-func fixBasicRequestBody(url string) *destinationcreator.BasicRequestBody {
-	return &destinationcreator.BasicRequestBody{
+func fixBasicRequestBody(url string) *destinationcreator.BasicAuthDestinationRequestBody {
+	return &destinationcreator.BasicAuthDestinationRequestBody{
 		BaseDestinationRequestBody: destinationcreator.BaseDestinationRequestBody{
 			Name:                 basicDestName,
 			URL:                  url,
-			Type:                 destinationcreator.TypeHTTP,
-			ProxyType:            destinationcreator.ProxyTypeInternet,
-			AuthenticationType:   destinationcreator.AuthTypeBasic,
+			Type:                 destinationcreatorpkg.TypeHTTP,
+			ProxyType:            destinationcreatorpkg.ProxyTypeInternet,
+			AuthenticationType:   destinationcreatorpkg.AuthTypeBasic,
 			AdditionalProperties: json.RawMessage("{\"testCorrelationIDsKey\":\"correlation-id-1,correlation-id-2\"}"),
 		},
 		User:     basicDestUser,
