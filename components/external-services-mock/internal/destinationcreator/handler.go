@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -79,25 +81,32 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 
-	switch destinationcreator.AuthType(authTypeResult.String()) {
-	case destinationcreator.AuthTypeNoAuth:
+	switch destinationcreatorpkg.AuthType(authTypeResult.String()) {
+	case destinationcreatorpkg.AuthTypeNoAuth:
 		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating design time destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
-	case destinationcreator.AuthTypeBasic:
+	case destinationcreatorpkg.AuthTypeBasic:
 		statusCode, err := h.createBasicDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating basic destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
-	case destinationcreator.AuthTypeSAMLAssertion:
+	case destinationcreatorpkg.AuthTypeSAMLAssertion:
 		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes)
 		if err != nil {
 			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating SAML assertion destination", correlationID, statusCode)
+			return
+		}
+		httputils.Respond(writer, statusCode)
+	case destinationcreatorpkg.AuthTypeClientCertificate:
+		statusCode, err := h.createClientCertificateAuthDestination(ctx, bodyBytes)
+		if err != nil {
+			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating client certificate authentication destination", correlationID, statusCode)
 			return
 		}
 		httputils.Respond(writer, statusCode)
@@ -190,7 +199,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	destinationCertName := reqBody.Name + destinationcreator.JavaKeyStoreFileExtension
+	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
 	certResp := CertificateResponseBody{
 		FileName:         destinationCertName,
 		CommonName:       reqBody.Name,
@@ -250,18 +259,18 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 		log.C(ctx).Infof("Certificate with name: %q was deleted from the destination creator", certNameValue)
 	}
 
-	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreator.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
+	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
 		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", certNameValue)
 		httputils.Respond(writer, http.StatusNoContent)
 	}
-	delete(h.DestinationSvcCertificates, certNameValue+destinationcreator.JavaKeyStoreFileExtension)
-	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreator.JavaKeyStoreFileExtension)
+	delete(h.DestinationSvcCertificates, certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
+	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
 
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
 func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody DesignTimeRequestBody
+	var reqBody DesignTimeDestRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while unmarshalling design time destination request body")
 	}
@@ -299,7 +308,7 @@ func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []b
 }
 
 func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody BasicRequestBody
+	var reqBody BasicDestRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while unmarshalling basic destination request body")
 	}
@@ -341,7 +350,7 @@ func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) 
 }
 
 func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody SAMLAssertionRequestBody
+	var reqBody SAMLAssertionDestRequestBody
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
 		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling SAML assertion destination request body")
 	}
@@ -378,6 +387,47 @@ func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes 
 
 	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
 	h.DestinationSvcDestinations[reqBody.Name] = samlAssertionAuthDestBytes
+
+	return http.StatusCreated, nil
+}
+
+func (h *Handler) createClientCertificateAuthDestination(ctx context.Context, bodyBytes []byte) (int, error) {
+	var reqBody ClientCertificateAuthDestRequestBody
+	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
+		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling client certificate authentication destination request body")
+	}
+
+	log.C(ctx).Info("Validating client certificate authentication destination request body...")
+	if err := reqBody.Validate(h.Config); err != nil {
+		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating client certificate authentication destination request body")
+	}
+
+	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
+		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
+		return http.StatusConflict, nil
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
+	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
+
+	clientCertAuthDest := destinationcreator.ClientCertificateAuthenticationDestination{
+		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+			Name:           reqBody.Name,
+			Type:           reqBody.Type,
+			URL:            reqBody.URL,
+			Authentication: reqBody.AuthenticationType,
+			ProxyType:      reqBody.ProxyType,
+		},
+		KeyStoreLocation: reqBody.KeyStoreLocation,
+	}
+
+	clientCertAuthDestBytes, err := json.Marshal(clientCertAuthDest)
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling client certificate authentication destination")
+	}
+
+	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
+	h.DestinationSvcDestinations[reqBody.Name] = clientCertAuthDestBytes
 
 	return http.StatusCreated, nil
 }

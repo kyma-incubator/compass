@@ -42,7 +42,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 				SourceResourceID:   appID,
 				Tenant:             testTenantID,
 			},
-			LabelSvc:       UnusedLabelService,
+			LabelSvc:       unusedLabelService,
 			ExpectedResult: false,
 		},
 		{
@@ -61,7 +61,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		{
 			Name:     "Error when get formation type fails",
 			Input:    inWithFormationTypeException,
-			LabelSvc: UnusedLabelService,
+			LabelSvc: unusedLabelService,
 			FormationTemplateRepo: func() *automock.FormationTemplateRepo {
 				repo := &automock.FormationTemplateRepo{}
 				repo.On("Get", ctx, formationTemplateID).Return(nil, testErr).Once()
@@ -130,7 +130,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		{
 			Name:     "Error for runtime context when get rt ctx fails",
 			Input:    runtimeContextIn,
-			LabelSvc: UnusedLabelService,
+			LabelSvc: unusedLabelService,
 			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
 				repo := &automock.RuntimeContextRepo{}
 				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(nil, testErr).Once()
