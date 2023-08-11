@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
-
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
