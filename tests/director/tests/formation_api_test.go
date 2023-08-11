@@ -46,22 +46,25 @@ import (
 )
 
 const (
-	assignFormationCategory                = "assign formation"
-	unassignFormationCategory              = "unassign formation"
-	assignOperation                        = "assign"
-	unassignOperation                      = "unassign"
-	createFormationOperation               = "createFormation"
-	deleteFormationOperation               = "deleteFormation"
-	emptyParentCustomerID                  = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
-	resourceSubtypeANY                     = "ANY"
-	exceptionSystemType                    = "exception-type"
-	supportReset                           = true
-	doesNotSupportReset                    = false
-	reset                                  = true
-	dontReset                              = false
-	samlDestinationAssertionIssuerPath     = "credentials.inboundCommunication.samlAssertion.assertionIssuer"
-	samlDestinationCertChainPath           = "credentials.inboundCommunication.samlAssertion.certificate"
-	clientCertAuthDestinationCertChainPath = "credentials.inboundCommunication.clientCertificateAuthentication.certificate"
+	assignFormationCategory   = "assign formation"
+	unassignFormationCategory = "unassign formation"
+	assignOperation           = "assign"
+	unassignOperation         = "unassign"
+	createFormationOperation  = "createFormation"
+	deleteFormationOperation  = "deleteFormation"
+	emptyParentCustomerID     = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
+	resourceSubtypeANY        = "ANY"
+	exceptionSystemType       = "exception-type"
+	supportReset              = true
+	doesNotSupportReset       = false
+	reset                     = true
+	dontReset                 = false
+)
+
+var (
+	samlDestinationAssertionIssuerPath     = directordestinationcreator.SAMLAssertionDestPath + ".assertionIssuer"
+	samlDestinationCertChainPath           = directordestinationcreator.SAMLAssertionDestPath + ".certificate"
+	clientCertAuthDestinationCertChainPath = directordestinationcreator.ClientCertAuthDestPath + ".certificate"
 )
 
 func TestGetFormation(t *testing.T) {

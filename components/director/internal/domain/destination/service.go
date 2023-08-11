@@ -227,7 +227,7 @@ func (s *Service) CreateSAMLAssertionDestination(
 
 	for _, destinationDetails := range destinationsDetails {
 		if err := s.createSAMLAssertionDestination(ctx, destinationDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs); err != nil {
-			return errors.Wrapf(err, "while creating basic destination with name: %q", destinationDetails.Name)
+			return errors.Wrapf(err, "while creating SAML Assertion destination with name: %q", destinationDetails.Name)
 		}
 	}
 

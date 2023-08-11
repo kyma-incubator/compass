@@ -431,7 +431,7 @@ func (s *Service) CreateCertificate(
 	var certResp CertificateResponse
 	err = json.Unmarshal(respBody, &certResp)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while unmarshalling certificate response")
 	}
 
 	if err := certResp.Validate(); err != nil {
@@ -459,7 +459,7 @@ func GetDestinationCertificateName(ctx context.Context, destinationAuthenticatio
 	case destinationcreatorpkg.AuthTypeClientCertificate:
 		certName = certificateClientCertificateDestinationPrefix + formationAssignmentID
 	default:
-		return "", errors.Errorf("Invalid destination authentication type: %s for certificate creation", destinationAuthentication)
+		return "", errors.Errorf("Invalid destination authentication type: %q for certificate creation", destinationAuthentication)
 	}
 
 	if len(certName) > destinationcreatorpkg.MaxDestinationNameLength {
@@ -721,7 +721,7 @@ func (s *Service) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context,
 	}
 
 	if len(destSubaccountIDs) != 1 {
-		err := errors.Errorf("All subaccount in the destinations details should have one and the same subaccount ID. Currently there is/are: %d subaacount ID(s) ", len(destSubaccountIDs))
+		err := errors.Errorf("All subaccount in the destinations details should have one and the same subaccount ID. Currently there is/are: %d subaacount ID(s)", len(destSubaccountIDs))
 		log.C(ctx).Error(err)
 		return err
 	}

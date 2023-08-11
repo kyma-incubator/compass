@@ -11,30 +11,39 @@ import (
 )
 
 const (
+	// IDs constants
 	destinationID                          = "126ac686-5773-4ad0-8eb1-2349e931f852"
-	destinationName                        = "test-destination-name"
-	destinationType                        = destinationcreatorpkg.TypeHTTP
-	destinationProxyType                   = destinationcreatorpkg.ProxyTypeInternet
-	destinationURL                         = "http://dest-test-url"
-	destinationAuthn                       = destinationcreatorpkg.AuthTypeNoAuth
 	destinationSubaccountID                = "553ac686-5773-4ad0-8eb1-2349e931f852"
 	externalDestinationSubaccountID        = "452ac686-5773-4ad0-8eb1-2349e931f852"
-	destinationFormationAssignmentID       = "654ac686-5773-4ad0-8eb1-2349e931f852"
 	secondDestinationFormationAssignmentID = "098ac686-5773-4ad0-8eb1-2349e931f852"
+	destinationFormationAssignmentID       = "654ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationBundleID                    = "765ac686-5773-4ad0-8eb1-2349e931f852"
-	destinationLatestRevision              = "2"
-	designTimeDestName                     = "test-design-time-dest-name"
-	basicDestName                          = "test-basic-dest-name"
-	samlAssertionDestName                  = "test-saml-assertion-dest-name"
-	destinationDescription                 = "test-dest-description"
-	basicDestUser                          = "basic-user"
-	basicDestPassword                      = "basic-pwd"
+
+	// Destination constants
+	destinationName        = "test-destination-name"
+	destinationType        = destinationcreatorpkg.TypeHTTP
+	destinationProxyType   = destinationcreatorpkg.ProxyTypeInternet
+	destinationNoAuthn     = destinationcreatorpkg.AuthTypeNoAuth
+	designTimeDestName     = "test-design-time-dest-name"
+	basicDestName          = "test-basic-dest-name"
+	samlAssertionDestName  = "test-saml-assertion-dest-name"
+	clientCertAuthDestName = "test-client-cert-auth-dest-name"
+	destinationURL         = "http://dest-test-url"
+	destinationDescription = "test-dest-description"
+
+	// Destination Creds constants
+	basicDestUser     = "basic-user"
+	basicDestPassword = "basic-pwd"
+
+	// Other
+	destinationLatestRevision = "2"
 )
 
 var (
 	faID              = destinationFormationAssignmentID
 	destinationEntity = fixDestinationEntity(destinationName)
 	destinationModel  = fixDestinationModel(destinationName)
+	initialDepth      = uint8(0)
 )
 
 func fixDestinationModel(name string) *model.Destination {
@@ -43,7 +52,7 @@ func fixDestinationModel(name string) *model.Destination {
 		Name:                  name,
 		Type:                  string(destinationType),
 		URL:                   destinationURL,
-		Authentication:        string(destinationAuthn),
+		Authentication:        string(destinationNoAuthn),
 		SubaccountID:          destinationSubaccountID,
 		FormationAssignmentID: &faID,
 	}
@@ -67,7 +76,7 @@ func fixDestinationEntity(name string) *destination.Entity {
 		Name:                  name,
 		Type:                  string(destinationType),
 		URL:                   destinationURL,
-		Authentication:        string(destinationAuthn),
+		Authentication:        string(destinationNoAuthn),
 		TenantID:              destinationSubaccountID,
 		FormationAssignmentID: repo.NewValidNullableString(faID),
 	}
@@ -78,7 +87,7 @@ func fixDestinationInput() model.DestinationInput {
 		Name:           destinationName,
 		Type:           string(destinationType),
 		URL:            destinationURL,
-		Authentication: string(destinationAuthn),
+		Authentication: string(destinationNoAuthn),
 	}
 }
 
@@ -121,16 +130,32 @@ func fixSAMLAssertionAuthentication() *operators.SAMLAssertionAuthentication {
 	return &operators.SAMLAssertionAuthentication{URL: destinationURL}
 }
 
-func fixDesignTimeDestinationDetails() operators.Destination {
-	return fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), externalDestinationSubaccountID)
+func fixClientCertAuthTypeAuthentication() *operators.ClientCertAuthentication {
+	return &operators.ClientCertAuthentication{URL: destinationURL}
 }
 
-func fixBasicDestinationDetails() operators.Destination {
-	return fixDestinationDetails(basicDestName, string(destinationcreatorpkg.AuthTypeBasic), externalDestinationSubaccountID)
+func fixDesignTimeDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(designTimeDestName, string(destinationcreatorpkg.AuthTypeNoAuth), externalDestinationSubaccountID),
+	}
 }
 
-func fixSAMLAssertionDestinationDetails() operators.Destination {
-	return fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), externalDestinationSubaccountID)
+func fixBasicDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(basicDestName, string(destinationcreatorpkg.AuthTypeBasic), externalDestinationSubaccountID),
+	}
+}
+
+func fixSAMLAssertionDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), externalDestinationSubaccountID),
+	}
+}
+
+func fixClientCertAuthDestinationsDetails() []operators.Destination {
+	return []operators.Destination{
+		fixDestinationDetails(clientCertAuthDestName, string(destinationcreatorpkg.AuthTypeClientCertificate), externalDestinationSubaccountID),
+	}
 }
 
 func fixColumns() []string {

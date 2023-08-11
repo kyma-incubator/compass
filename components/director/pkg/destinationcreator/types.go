@@ -32,6 +32,11 @@ const (
 	MaxDestinationNameLength = 64
 	// JavaKeyStoreFileExtension is a java key store extension name
 	JavaKeyStoreFileExtension = ".jks"
+
+	// SAMLAssertionDestPath represents the SAML Assertion destination type in the assignment config
+	SAMLAssertionDestPath = "credentials.inboundCommunication.samlAssertion"
+	// ClientCertAuthDestPath represents the client certificate authentication destination type in the assignment config
+	ClientCertAuthDestPath = "credentials.inboundCommunication.clientCertificateAuthentication"
 )
 
 // Type represents the destination type

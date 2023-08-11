@@ -92,10 +92,10 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0)
 					if err != nil {
-						return false, err
+						return false, errors.Wrap(err, "while creating SAML assertion certificate")
 					}
 
-					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(formationAssignment.Value, "credentials.inboundCommunication.samlAssertion", certData)
+					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(formationAssignment.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData)
 					if err != nil {
 						return false, err
 					}
@@ -112,10 +112,10 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0)
 					if err != nil {
-						return false, errors.Wrap(err, "while creating certificate for all of the client certificate authentication destinations")
+						return false, errors.Wrap(err, "while creating client certificate authentication certificate")
 					}
 
-					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, "credentials.inboundCommunication.clientCertificateAuthentication", certData)
+					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData)
 					if err != nil {
 						return false, err
 					}
@@ -261,7 +261,7 @@ type ClientCertAuthentication struct {
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// InboundCommunicationDetails consists of different type of inbound communication configuration details
+// InboundCommunicationDetails consists of a different type of inbound communication configuration details
 type InboundCommunicationDetails struct {
 	BasicAuthenticationDetails             *InboundBasicAuthenticationDetails       `json:"basicAuthentication,omitempty"`
 	SAMLAssertionDetails                   *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`

@@ -117,7 +117,7 @@ func (s *SAMLAssertionDestinationRequestBody) Validate(destinationCreatorCfg *Co
 	)
 }
 
-// Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
+// Validate validates that the AuthTypeClientCertificate request body contains the required fields and they are valid
 func (s *ClientCertAuthDestinationRequestBody) Validate(destinationCreatorCfg *Config) error {
 	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
 
