@@ -85,7 +85,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		{
 			Name:     "Returns error when can't get the applications in the formation",
 			Input:    in,
-			LabelSvc: UnusedLabelService,
+			LabelSvc: unusedLabelService,
 			ApplicationRepo: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListByScenariosNoPaging", ctx, testTenantID, []string{scenario}).Return(nil, testErr).Once()
@@ -97,8 +97,8 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		{
 			Name:             "Returns error when the operator input is incompatible",
 			Input:            "incompatible",
-			LabelSvc:         UnusedLabelService,
-			ApplicationRepo:  UnusedApplicationRepo,
+			LabelSvc:         unusedLabelService,
+			ApplicationRepo:  unusedApplicationRepo,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "Incompatible input",
 		},
@@ -111,8 +111,8 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 				ResourceID:      inputAppID,
 				Tenant:          testTenantID,
 			},
-			LabelSvc:         UnusedLabelService,
-			ApplicationRepo:  UnusedApplicationRepo,
+			LabelSvc:         unusedLabelService,
+			ApplicationRepo:  unusedApplicationRepo,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "Unsupported resource type",
 		},

@@ -33,6 +33,20 @@ func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx conte
 	return r0
 }
 
+// CreateClientCertificateDestination provides a mock function with given fields: ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth
+func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
+	ret := _m.Called(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8) error); ok {
+		r0 = rf(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateDesignTimeDestinations provides a mock function with given fields: ctx, destinationDetails, formationAssignment, depth
 func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) error {
 	ret := _m.Called(ctx, destinationDetails, formationAssignment, depth)
@@ -47,13 +61,13 @@ func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Co
 	return r0
 }
 
-// CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth
-func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
-	ret := _m.Called(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth)
+// CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAssertionAuthCreds, formationAssignment, correlationIDs, depth
+func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
+	ret := _m.Called(ctx, destinationDetails, samlAssertionAuthCreds, formationAssignment, correlationIDs, depth)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8) error); ok {
-		r0 = rf(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth)
+		r0 = rf(ctx, destinationDetails, samlAssertionAuthCreds, formationAssignment, correlationIDs, depth)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -89,6 +103,20 @@ func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, dest
 	return r0
 }
 
+// EnsureDestinationSubaccountIDsCorrectness provides a mock function with given fields: ctx, destinationsDetails, formationAssignment
+func (_m *DestinationCreatorService) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment) error {
+	ret := _m.Called(ctx, destinationsDetails, formationAssignment)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *model.FormationAssignment) error); ok {
+		r0 = rf(ctx, destinationsDetails, formationAssignment)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetConsumerTenant provides a mock function with given fields: ctx, formationAssignment
 func (_m *DestinationCreatorService) GetConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error) {
 	ret := _m.Called(ctx, formationAssignment)
@@ -111,15 +139,15 @@ func (_m *DestinationCreatorService) GetConsumerTenant(ctx context.Context, form
 }
 
 // PrepareBasicRequestBody provides a mock function with given fields: ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs
-func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicRequestBody, error) {
+func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicAuthDestinationRequestBody, error) {
 	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 
-	var r0 *destinationcreator.BasicRequestBody
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) *destinationcreator.BasicRequestBody); ok {
+	var r0 *destinationcreator.BasicAuthDestinationRequestBody
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) *destinationcreator.BasicAuthDestinationRequestBody); ok {
 		r0 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*destinationcreator.BasicRequestBody)
+			r0 = ret.Get(0).(*destinationcreator.BasicAuthDestinationRequestBody)
 		}
 	}
 
