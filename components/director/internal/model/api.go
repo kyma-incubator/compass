@@ -218,6 +218,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		Hierarchy:           a.Hierarchy,
 		SupportedUseCases:   a.SupportedUseCases,
 		DocumentationLabels: a.DocumentationLabels,
+		CorrelationIDs:      a.CorrelationIDs,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

@@ -184,6 +184,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, resourceType resourc
 		Extensible:          e.Extensible,
 		Hierarchy:           e.Hierarchy,
 		DocumentationLabels: e.DocumentationLabels,
+		CorrelationIDs:      e.CorrelationIDs,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
