@@ -410,7 +410,7 @@ func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Conte
 	}
 
 	if reqBody.State == model.CreateErrorAssignmentState {
-		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.CreateFormation); err != nil {
+		if err := h.faStatusService.SetAssignmentToErrorStateWithConstraints(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State, model.AssignFormation); err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
 			return false, &responseError{
 				statusCode:   http.StatusInternalServerError,
