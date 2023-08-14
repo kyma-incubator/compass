@@ -1267,7 +1267,7 @@ func Test_CreateCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: "while validation SAML assertion certificate data",
+			expectedErrMessage: "while validation destination certificate data:",
 		},
 	}
 
