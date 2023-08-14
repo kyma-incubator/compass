@@ -25,7 +25,7 @@ global:
   director:
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-    ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }]'
+    ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }, { "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090", "ProxyHeaderTemplate": "{\"target_host\": [\"{{.Application.BaseURL}}\"] }", "OrdUrlPath": "/proxy", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
   externalCertConfiguration:
     secrets:
       externalCertSvcSecret:
