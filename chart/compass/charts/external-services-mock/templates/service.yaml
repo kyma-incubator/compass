@@ -45,6 +45,10 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}
       protocol: TCP
       name: http-unsecured-multi-tenant-port
+    - port: {{ .Values.global.externalServicesMock.certSecuredProxyPort }}
+      targetPort: {{ .Values.global.externalServicesMock.certSecuredProxyPort }}
+      protocol: TCP
+      name: http-mtls-proxy
     - port: {{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}
       targetPort: {{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}
       protocol: TCP

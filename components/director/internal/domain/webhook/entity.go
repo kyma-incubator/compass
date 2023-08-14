@@ -19,6 +19,7 @@ type Entity struct {
 	Type                  string         `db:"type"`
 	Mode                  sql.NullString `db:"mode"`
 	URL                   sql.NullString `db:"url"`
+	ProxyURL              sql.NullString `db:"proxy_url"`
 	Auth                  sql.NullString `db:"auth"`
 	RetryInterval         sql.NullInt32  `db:"retry_interval"`
 	Timeout               sql.NullInt32  `db:"timeout"`

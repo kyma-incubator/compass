@@ -35,7 +35,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixApplicationModelWebhook("1", "foo", "", "bar", time.Time{}),
+			Input:    fixApplicationModelWebhook("1", "foo", "bar", time.Time{}),
 			Expected: fixApplicationGQLWebhook("1", "foo", "bar"),
 		},
 		{
@@ -75,7 +75,7 @@ func TestConverter_ToModel(t *testing.T) {
 	url := "url"
 
 	appInput := fixApplicationGQLWebhook(id, objectID, url)
-	expectedApp := fixApplicationModelWebhook(id, objectID, "", url, time.Time{})
+	expectedApp := fixApplicationModelWebhook(id, objectID, url, time.Time{})
 	var err error
 	expectedApp.Auth, err = auth.ToModel(appInput.Auth)
 	assert.NoError(t, err)
@@ -162,8 +162,8 @@ func TestConverter_ToModel(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
 	input := []*model.Webhook{
-		fixApplicationModelWebhook("1", "foo", "", "baz", time.Time{}),
-		fixApplicationModelWebhook("2", "bar", "", "bez", time.Time{}),
+		fixApplicationModelWebhook("1", "foo", "baz", time.Time{}),
+		fixApplicationModelWebhook("2", "bar", "bez", time.Time{}),
 		{},
 		nil,
 	}
