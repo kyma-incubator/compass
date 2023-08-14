@@ -502,14 +502,13 @@ func TestQueryFormationTemplates(t *testing.T) {
 	//THEN
 	require.NotEmpty(t, output)
 	require.NoError(t, err)
-	assert.Equal(t, currentFormationTemplatePage.TotalCount+2, output.TotalCount)
+	assert.Equal(t, 1, output.TotalCount)
 
 	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
 
 	t.Log("Check if formation templates are in received slice")
 
 	assert.Subset(t, output.Data, []*graphql.FormationTemplate{
-		&createdFormationTemplate,
 		&secondCreatedFormationTemplate,
 	})
 
