@@ -14,6 +14,7 @@ type Webhook struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
+	ProxyURL         *string
 	Auth             *Auth
 	Mode             *WebhookMode
 	RetryInterval    *int
@@ -32,6 +33,7 @@ type WebhookInput struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
+	ProxyURL         *string
 	Auth             *AuthInput
 	Mode             *WebhookMode
 	RetryInterval    *int
@@ -121,6 +123,7 @@ func (i *WebhookInput) ToWebhook(id, objID string, objectType WebhookReferenceOb
 		CorrelationIDKey: i.CorrelationIDKey,
 		Type:             i.Type,
 		URL:              i.URL,
+		ProxyURL:         i.ProxyURL,
 		Auth:             i.Auth.ToAuth(),
 		Mode:             i.Mode,
 		RetryInterval:    i.RetryInterval,
