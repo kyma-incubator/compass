@@ -24,18 +24,18 @@ import (
 
 func TestRepositoryGetByID(t *testing.T) {
 	createdAt := time.Now()
-	whModel := fixApplicationModelWebhook(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel := fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity := fixApplicationWebhookEntity(t, createdAt)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Webhook By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, whModel.ProxyURL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -68,9 +68,9 @@ func TestRepositoryGetByIDGlobal(t *testing.T) {
 	defer dbMock.AssertExpectations(t)
 
 	rows := sqlmock.NewRows(fixColumns).
-		AddRow(whModel.ID, nil, givenApplicationTemplateID(), whModel.Type, whModel.URL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, nil, nil)
+		AddRow(whModel.ID, nil, givenApplicationTemplateID(), whModel.Type, whModel.URL, whModel.ProxyURL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, nil, nil)
 
-	dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE id = $1")).
+	dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE id = $1")).
 		WithArgs(givenID()).WillReturnRows(rows)
 
 	ctx := persistence.SaveToContext(context.TODO(), db)
@@ -102,8 +102,8 @@ func TestRepositoryCreate(t *testing.T) {
 				},
 			},
 			{
-				Query:       regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
-				Args:        []driver.Value{givenID(), givenApplicationID(), sql.NullString{}, string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil, createdAt, nil},
+				Query:       regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), givenApplicationID(), sql.NullString{}, string(model.WebhookTypeConfigurationChanged), "http://kyma.io", proxyURL, fixAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil, createdAt, nil},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -111,7 +111,7 @@ func TestRepositoryCreate(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: webhook.NewRepository,
-		ModelEntity:         fixApplicationModelWebhook(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", createdAt),
+		ModelEntity:         fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), "http://kyma.io", createdAt),
 		DBEntity:            fixApplicationWebhookEntity(t, createdAt),
 		NilModelEntity:      nilWebhookModel,
 		TenantID:            givenTenant(),
@@ -134,8 +134,8 @@ func TestRepositoryCreate(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
-			givenID(), sql.NullString{}, givenApplicationTemplateID(), string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).WithArgs(
+			givenID(), sql.NullString{}, givenApplicationTemplateID(), string(model.WebhookTypeConfigurationChanged), "http://kyma.io", nil, fixAuthAsAString(t), nil, nil, model.WebhookModeSync, nil, nil, nil, "{}", "{}", "{}", "{}", nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -149,7 +149,7 @@ func TestRepositoryCreate(t *testing.T) {
 func TestRepositoryCreateMany(t *testing.T) {
 	createdAt := time.Now()
 	expectedParentAccess := regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3")
-	expectedInsert := regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")
+	expectedInsert := regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
@@ -170,13 +170,13 @@ func TestRepositoryCreateMany(t *testing.T) {
 
 		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
 		dbMock.ExpectExec(expectedInsert).WithArgs(
-			"one", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"one", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
 		dbMock.ExpectExec(expectedInsert).WithArgs(
-			"two", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"two", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
 		dbMock.ExpectExec(expectedInsert).WithArgs(
-			"three", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"three", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, createdAt, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -241,8 +241,8 @@ func TestRepositoryUpdate(t *testing.T) {
 		Name: "Update Application webhook",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenTenant()},
+				Query:         regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, proxy_url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{string(model.WebhookTypeConfigurationChanged), "http://kyma.io", proxyURL, fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenTenant()},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -251,7 +251,7 @@ func TestRepositoryUpdate(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc: webhook.NewRepository,
-		ModelEntity:         fixApplicationModelWebhook(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", createdAt),
+		ModelEntity:         fixApplicationModelWebhookWithProxy(givenID(), givenApplicationID(), "http://kyma.io", createdAt),
 		DBEntity:            fixApplicationWebhookEntity(t, createdAt),
 		NilModelEntity:      nilWebhookModel,
 		TenantID:            givenTenant(),
@@ -270,8 +270,8 @@ func TestRepositoryUpdate(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND app_template_id = ?`)).
-			WithArgs(string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenApplicationTemplateID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, proxy_url = ?,  auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND app_template_id = ?`)).
+			WithArgs(string(model.WebhookTypeConfigurationChanged), "http://kyma.io", nil, fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenApplicationTemplateID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -290,8 +290,8 @@ func TestRepositoryUpdate(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND formation_template_id = ?`)).
-			WithArgs(string(model.WebhookTypeFormationLifecycle), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenFormationTemplateID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, proxy_url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND formation_template_id = ?`)).
+			WithArgs(string(model.WebhookTypeFormationLifecycle), "http://kyma.io", nil, fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenFormationTemplateID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -403,13 +403,13 @@ func TestRepositoryListByRuntimeID(t *testing.T) {
 		Name: "List Webhooks by Runtime ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE runtime_id = $1 AND (id IN (SELECT id FROM runtime_webhooks_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE runtime_id = $1 AND (id IN (SELECT id FROM runtime_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenRuntimeID(), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), givenRuntimeID(), nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil).
-						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), givenRuntimeID(), nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
+						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, whModel1.ProxyURL, fixAuthAsAString(t), givenRuntimeID(), nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil).
+						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, whModel2.ProxyURL, fixAuthAsAString(t), givenRuntimeID(), nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -450,13 +450,13 @@ func TestRepositoryListByFormationTemplateID(t *testing.T) {
 		Name: "List Webhooks by Formation Template ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE formation_template_id = $1 AND (id IN (SELECT id FROM formation_templates_webhooks_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE formation_template_id = $1 AND (id IN (SELECT id FROM formation_templates_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenFormationTemplateID(), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, givenFormationTemplateID()).
-						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, givenFormationTemplateID()),
+						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, whModel1.ProxyURL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, givenFormationTemplateID()).
+						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, whModel2.ProxyURL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, givenFormationTemplateID()),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -497,13 +497,13 @@ func TestRepositoryListByFormationTemplateIDGlobal(t *testing.T) {
 		Name: "List Webhooks by Formation Template ID Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE formation_template_id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE formation_template_id = $1`),
 				Args:     []driver.Value{givenFormationTemplateID()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, givenFormationTemplateID()).
-						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, givenFormationTemplateID()),
+						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, whModel1.ProxyURL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, givenFormationTemplateID()).
+						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, whModel2.ProxyURL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, givenFormationTemplateID()),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -536,23 +536,23 @@ func testListByObjectID(t *testing.T, methodName string, lockClause string, args
 	whID2 := "whID2"
 	createdAt := time.Now()
 
-	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity1 := fixApplicationWebhookEntityWithID(t, whID1, createdAt)
 
-	whModel2 := fixApplicationModelWebhook(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity2 := fixApplicationWebhookEntityWithID(t, whID2, createdAt)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Webhooks by Application ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))` + lockClause),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))` + lockClause),
 				Args:     []driver.Value{givenApplicationID(), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil).
-						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
+						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, whModel1.ProxyURL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil).
+						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, whModel2.ProxyURL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -578,7 +578,7 @@ func TestRepository_ListByWebhookType(t *testing.T) {
 	whType := model.WebhookTypeOpenResourceDiscovery
 	createdAt := time.Now()
 
-	whModel := fixApplicationModelWebhook(whID, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel := fixApplicationModelWebhookWithProxy(whID, givenApplicationID(), "http://kyma.io", createdAt)
 	whModel.Type = whType
 	whEntity := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID, whType, createdAt)
 
@@ -586,12 +586,12 @@ func TestRepository_ListByWebhookType(t *testing.T) {
 		Name: "List Webhooks by type",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE type = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE type = $1`),
 				Args:     []driver.Value{whType},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil),
+						AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, whModel.ProxyURL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -638,11 +638,11 @@ func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "app_template_id", "type", "url", "auth"}).
-			AddRow(givenID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
-			AddRow(anotherID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
+		rows := sqlmock.NewRows([]string{"id", "app_template_id", "type", "url", "proxy_url", "auth"}).
+			AddRow(givenID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil, nil).
+			AddRow(anotherID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil, nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id = $1")).
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id = $1")).
 			WithArgs(givenApplicationTemplateID()).
 			WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -716,23 +716,23 @@ func Test_ListByReferenceObjectTypeAndWebhookType(t *testing.T) {
 	whType := model.WebhookTypeConfigurationChanged
 	createdAt := time.Now()
 
-	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity1 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID1, whType, createdAt)
 
-	whModel2 := fixApplicationModelWebhook(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity2 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID2, whType, createdAt)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Webhooks by Application ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id IS NOT NULL AND type = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id IS NOT NULL AND type = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{whType, givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil).
-						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
+						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, whModel1.ProxyURL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil).
+						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, whModel2.ProxyURL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -759,22 +759,22 @@ func Test_ListByReferenceObjectTypesAndWebhookType(t *testing.T) {
 	whType := model.WebhookTypeConfigurationChanged
 	createdAt := time.Now()
 
-	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel1 := fixApplicationModelWebhookWithProxy(whID1, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity1 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID1, whType, createdAt)
 
-	whModel2 := fixApplicationModelWebhook(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whModel2 := fixApplicationModelWebhookWithProxy(whID2, givenApplicationID(), "http://kyma.io", createdAt)
 	whEntity2 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID2, whType, createdAt)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Webhooks by Application ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE ((id IN (SELECT id FROM webhooks_tenants WHERE tenant_id = $1)) AND (type = $2 AND (app_id IS NOT NULL OR app_template_id IS NOT NULL)))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE ((id IN (SELECT id FROM webhooks_tenants WHERE tenant_id = $1)) AND (type = $2 AND (app_id IS NOT NULL OR app_template_id IS NOT NULL)))`),
 				Args:     []driver.Value{givenTenant(), whType},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil),
+						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, whModel1.ProxyURL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -782,12 +782,12 @@ func Test_ListByReferenceObjectTypesAndWebhookType(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id IS NOT NULL AND type = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id IS NOT NULL AND type = $1`),
 				Args:     []driver.Value{whModel2.Type},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
+						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, whModel1.ProxyURL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -811,21 +811,21 @@ func Test_ListByReferenceObjectTypesAndWebhookType(t *testing.T) {
 func TestRepositoryGetByIDAndWebhookType(t *testing.T) {
 	whType := model.WebhookTypeConfigurationChanged
 	createdAt := time.Now()
-	whModel := fixApplicationModelWebhookWithType(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io", whType, createdAt)
+	whModel := fixApplicationModelWebhookWithType(givenID(), givenApplicationID(), "http://kyma.io", whType, createdAt)
 	whEntity := fixApplicationWebhookEntity(t, createdAt)
 
-	whAppTemplateModel := fixApplicationTemplateModelWebhookWithTypeAndTimestamp(givenID(), givenApplicationTemplateID(), "http://kyma.io", whType, createdAt)
-	whAppTemplateEntity := fixApplicationTemplateWebhookEntityWithTimestamp(t, createdAt)
+	whAppTemplateModel := fixApplicationTemplateModelWebhookWithTypeTimestampAndProxy(givenID(), givenApplicationTemplateID(), "http://kyma.io", whType, createdAt)
+	whAppTemplateEntity := fixApplicationTemplateWebhookEntityWithTimestampAndProxy(t, createdAt)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Webhook By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id = $1 AND type = $2 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id = $1 AND type = $2 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{givenApplicationID(), whType, givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, whModel.ProxyURL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -846,11 +846,11 @@ func TestRepositoryGetByIDAndWebhookType(t *testing.T) {
 		Name: "Get Webhook By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id = $1 AND type = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id = $1 AND type = $2`),
 				Args:     []driver.Value{givenApplicationTemplateID(), whType},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(whModel.ID, nil, givenApplicationTemplateID(), whModel.Type, whModel.URL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(whModel.ID, nil, givenApplicationTemplateID(), whModel.Type, whModel.URL, whModel.ProxyURL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}

@@ -42,12 +42,13 @@ const (
 	subaccountKey                = "Subaccount"
 	locationIDKey                = "LocationID"
 	urlSuffixToBeTrimmed         = "/"
-	applicationTypeLabelKey      = "applicationType"
 	ppmsProductVersionIDLabelKey = "ppmsProductVersionId"
 	urlSubdomainSeparator        = "."
 
 	// ManagedLabelKey is the key of the application label for internally or externally managed applications.
 	ManagedLabelKey = "managed"
+	// ApplicationTypeLabelKey is the key of the application label for determining the type of the application.
+	ApplicationTypeLabelKey = "applicationType"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -557,13 +558,13 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
 
-	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, applicationTypeLabelKey)
+	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, ApplicationTypeLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return errors.Wrapf(err, "while getting label %q for %s with id %q", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+			return errors.Wrapf(err, "while getting label %q for %s with id %q", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		}
 
-		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		return nil
 	}
 
@@ -1315,9 +1316,9 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
-	appTypeLbl, ok := in.Labels[applicationTypeLabelKey]
+	appTypeLbl, ok := in.Labels[ApplicationTypeLabelKey]
 	if !ok {
-		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", ApplicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
 		return nil
 	}
 
@@ -1470,7 +1471,7 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 		return nil
 	}
 
-	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdURLPath)
+	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg)
 	if err != nil {
 		log.C(ctx).Infof("Creating ORD Webhook failed with error: %v", err)
 		return nil
@@ -1508,15 +1509,19 @@ func buildWebhookURL(suffix string, ordPath string, baseURL *string) (string, er
 	return fmt.Sprintf("%s%s", urlStr, ordPath), nil
 }
 
-func createORDWebhookInput(baseURL, suffix, ordPath string) (*model.WebhookInput, error) {
-	webhookURL, err := buildWebhookURL(suffix, ordPath, &baseURL)
+func createORDWebhookInput(baseURL string, ordWebhookMapping ORDWebhookMapping) (*model.WebhookInput, error) {
+	webhookURL, err := buildWebhookURL(ordWebhookMapping.SubdomainSuffix, ordWebhookMapping.OrdURLPath, &baseURL)
 	if err != nil {
 		return nil, err
 	}
 
+	proxyURL := buildWebhookProxyURL(ordWebhookMapping)
+
 	return &model.WebhookInput{
-		Type: model.WebhookTypeOpenResourceDiscovery,
-		URL:  str.Ptr(webhookURL),
+		Type:           model.WebhookTypeOpenResourceDiscovery,
+		URL:            str.Ptr(webhookURL),
+		ProxyURL:       str.Ptr(proxyURL),
+		HeaderTemplate: str.Ptr(ordWebhookMapping.ProxyHeaderTemplate),
 		Auth: &model.AuthInput{
 			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
 		},
@@ -1533,4 +1538,12 @@ func createMapFromFormationsSlice(formations []string) map[string]struct{} {
 
 func allowAllCriteria(_ string) bool {
 	return true
+}
+
+func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
+	if mappingCfg.ProxyURL == "" {
+		return ""
+	}
+
+	return mappingCfg.ProxyURL + mappingCfg.OrdURLPath
 }

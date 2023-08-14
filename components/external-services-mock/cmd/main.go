@@ -98,6 +98,7 @@ type ORDServers struct {
 	GlobalRegistryUnsecuredPort        int `envconfig:"default=8087"`
 	UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
 	UnsecuredMultiTenantPort           int `envconfig:"default=8089"`
+	ProxyPort                          int `envconfig:"default=8090"`
 	CertSecuredBaseURL                 string
 	CertSecuredGlobalBaseURL           string
 }
@@ -412,6 +413,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServerWithAdditionalContent(cfg))
 	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
 	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
+	servers = append(servers, initCertSecuredProxyORDServer(cfg))
 	return servers
 }
 
@@ -486,6 +488,24 @@ func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredWithAdditionalContentPort),
+		Handler: router,
+	}
+}
+
+func initCertSecuredProxyORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
+	proxyPath := "/proxy"
+
+	router.HandleFunc(proxyPath, ord_aggregator.HandleFuncOrdConfig(fmt.Sprintf("%s:%d%s", cfg.BaseURL, cfg.ORDServers.ProxyPort, proxyPath), "sap:cmp-mtls:v1"))
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d/proxy", cfg.BaseURL, cfg.ORDServers.ProxyPort), "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d/proxy", cfg.BaseURL, cfg.ORDServers.ProxyPort), "sap:cmp-mtls:v1"))
+
+	router.HandleFunc(fmt.Sprintf("%s/external-api/spec", proxyPath), apispec.HandleFunc)
+	router.HandleFunc(fmt.Sprintf("%s/external-api/spec/flapping", proxyPath), apispec.FlappingHandleFunc())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.ProxyPort),
 		Handler: router,
 	}
 }
