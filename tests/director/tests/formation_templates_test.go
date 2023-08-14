@@ -504,7 +504,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, output.TotalCount)
 
-	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
+	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates by name")
 
 	t.Log("Check if formation templates are in received slice")
 
