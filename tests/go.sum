@@ -127,10 +127,10 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2023071
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230714114052-e8783b9b2e95/go.mod h1:RfTnPJNAp0V+W7B1Ywn9GONz4AUJLsA5BtQ5xtK0K/Q=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20230714114052-e8783b9b2e95 h1:Mt4vrJkILnJAS5HuSwGwgTB1XDQElvxxDR+5o05QB08=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20230714114052-e8783b9b2e95/go.mod h1:E3TYhimO9Ry5kBTmPVUz0Z1SSLt2PNLT5md4eSc2NYI=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230811115528-34f6322b5a3f h1:gm0X7DFFlco6Bh5Kf/y6CocGaM87Oi/MhMh527XUDIw=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230811115528-34f6322b5a3f/go.mod h1:my5lL6/8ejfQ7p3lnKpHUbXXOAEI9ypJ+87a8Fh8KNU=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230811115528-34f6322b5a3f h1:FXPipAGYrDTgHldvHqdDnqiRYWW3LdLh9h0WYDEqT2Q=
-github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230811115528-34f6322b5a3f/go.mod h1:jgujLy08UkJ6BQbVN5P7k9YHf/K/Mdx9YZyxWBpQHdg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230814145224-8a9088c9934d h1:ZgMWSccc4Oao/H8lKmR8pf0ldPUiKe1X168562sV9/M=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230814145224-8a9088c9934d/go.mod h1:my5lL6/8ejfQ7p3lnKpHUbXXOAEI9ypJ+87a8Fh8KNU=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230814145224-8a9088c9934d h1:v5qRmdTHd31j+bzvWNKEyHwOSPny8N2EULya0KN5gpk=
+github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230814145224-8a9088c9934d/go.mod h1:Sv791E0c2nbvY+rz8+6YeEPqdG6xlUd18Rcc8RFNPgY=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230714114052-e8783b9b2e95 h1:1JUpSoNNQv4KsO0NTUoSrz6a0z+H3VE0ooUpmen9bs4=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230714114052-e8783b9b2e95/go.mod h1:petgS0vzgIpX8JPdFQPjW1YoefZzPg/trI0mSzpmmuI=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230714114052-e8783b9b2e95 h1:5rmw4zxXtgz85zmK2RxH8bOhaSEgmcOTp1oVFr2QMmY=
