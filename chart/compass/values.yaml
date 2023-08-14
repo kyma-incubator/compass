@@ -150,8 +150,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3183"
+      dir: prod/incubator/
+      version: "v20230807-4a200b85"
       name: compass-kyma-adapter
     gateway:
       dir: prod/incubator/
