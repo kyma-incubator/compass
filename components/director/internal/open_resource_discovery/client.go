@@ -216,7 +216,7 @@ func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *mo
 	}
 
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
-		log.C(ctx).Infof("%s %q (id = %q) ORD webhook is configured with %q access strategy.", resource.Type, resource.Name, resource.ID, *webhook.Auth.AccessStrategy)
+		log.C(ctx).Infof("%s %q (id = %q) ORD webhook with URL %s is configured with %q access strategy.", resource.Type, resource.Name, resource.ID, webhookURL, *webhook.Auth.AccessStrategy)
 		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
