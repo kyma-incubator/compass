@@ -7,6 +7,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
+# test
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 DATA_DIR="${CURRENT_DIR}/../data"
