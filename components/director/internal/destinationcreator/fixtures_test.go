@@ -23,6 +23,7 @@ const (
 	designTimeDestName               = "test-design-time-dest-name"
 	basicDestName                    = "test-basic-dest-name"
 	samlAssertionDestName            = "test-saml-assertion-dest-name"
+	clientCertAuthDestName           = "test-client-cert-auth-dest-name"
 	destinationDescription           = "test-dest-description"
 	destinationTypeHTTP              = string(destinationcreatorpkg.TypeHTTP)
 	destinationProxyTypeInternet     = string(destinationcreatorpkg.ProxyTypeInternet)
@@ -178,6 +179,10 @@ func fixSAMLAssertionDestinationsDetails() []operators.Destination {
 	}
 }
 
+func fixClientCertAuthDestinationDetails() operators.Destination {
+	return fixDestinationDetails(clientCertAuthDestName, string(destinationcreatorpkg.AuthTypeClientCertificate), destinationExternalSubaccountID)
+}
+
 func fixDestinationsDetailsWithoutSubaccountID() []operators.Destination {
 	return []operators.Destination{
 		fixDestinationDetails(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), ""),
@@ -215,6 +220,10 @@ func fixSAMLAssertionAuthCreds(url string) *operators.SAMLAssertionAuthenticatio
 	return &operators.SAMLAssertionAuthentication{
 		URL: url,
 	}
+}
+
+func fixClientCertAuthTypeCreds() *operators.ClientCertAuthentication {
+	return &operators.ClientCertAuthentication{URL: destinationURL}
 }
 
 func fixBasicRequestBody(url string) *destinationcreator.BasicAuthDestinationRequestBody {
