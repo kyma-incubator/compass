@@ -923,7 +923,7 @@ func Test_CreateClientCertificateDestination(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: fmt.Sprintf("while creating client certificate destination with name: %q in the destination service: %s", clientCertAuthDestName, testErr.Error()),
+			expectedErrMessage: fmt.Sprintf("while creating client certificate authentication destination with name: %q in the destination service: %s", clientCertAuthDestName, testErr.Error()),
 		},
 		{
 			name:                "Success while executing remote saml assertion destination request and the status code is conflict",
@@ -1489,7 +1489,7 @@ func Test_CreateCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: "while validation SAML assertion certificate data",
+			expectedErrMessage: "while validation destination certificate data",
 		},
 	}
 
