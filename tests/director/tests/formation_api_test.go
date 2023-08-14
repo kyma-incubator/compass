@@ -3369,7 +3369,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
-					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr(destinationDetailsConfigEnrichedWithCertData)},
+					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr(destinationDetailsConfig)},
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 				},
 				app2.ID: {
@@ -3452,8 +3452,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			t.Log("Assert destinations and destination certificates are created...")
 			assertNoAuthDestination(t, destinationClient, noAuthDestinationName, noAuthDestinationURL)
 			assertBasicDestination(t, destinationClient, basicDestinationName, basicDestinationURL)
-			assertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationURL, app1BaseURL)
-			assertClientCertAuthDestination(t, destinationClient, clientCertAuthDestinationName, clientCertAuthDestinationURL)
+			assertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app1BaseURL)
+			assertClientCertAuthDestination(t, destinationClient, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL)
 			assertDestinationCertificate(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 			assertDestinationCertificate(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 
@@ -5383,7 +5383,7 @@ func assertBasicDestination(t *testing.T, client *clients.DestinationClient, bas
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.ProxyType)
 }
 
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionDestinationURL, app1BaseURL string) {
+func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL string) {
 	samlAssertionDestBytes := client.GetDestinationByName(t, samlAssertionDestinationName, http.StatusOK)
 	var samlAssertionDest esmdestinationcreator.SAMLAssertionDestination
 	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
@@ -5394,10 +5394,10 @@ func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationCli
 	require.Equal(t, directordestinationcreator.AuthTypeSAMLAssertion, samlAssertionDest.Authentication)
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, samlAssertionDest.ProxyType)
 	require.Equal(t, app1BaseURL, samlAssertionDest.Audience)
-	require.Equal(t, samlAssertionDestinationName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
+	require.Equal(t, samlAssertionCertName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
 }
 
-func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, clientCertAuthDestinationName, clientCertAuthDestinationURL string) {
+func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL string) {
 	clientCertAuthDestBytes := client.GetDestinationByName(t, clientCertAuthDestinationName, http.StatusOK)
 	var clientCertAuthDest esmdestinationcreator.ClientCertificateAuthenticationDestination
 	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
@@ -5407,7 +5407,7 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 	require.Equal(t, clientCertAuthDestinationURL, clientCertAuthDest.URL)
 	require.Equal(t, directordestinationcreator.AuthTypeClientCertificate, clientCertAuthDest.Authentication)
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, clientCertAuthDest.ProxyType)
-	require.Equal(t, clientCertAuthDestinationName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
+	require.Equal(t, clientCertAuthCertName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
 }
 
 func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, certificateName string) {
