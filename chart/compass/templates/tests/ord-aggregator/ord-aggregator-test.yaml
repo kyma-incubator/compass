@@ -56,8 +56,14 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_UNSECURED_MULTI_TENANT_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}/.well-known/open-resource-discovery"
+            - name: EXTERNAL_SERVICES_MOCK_CERT_SECURED_PROXY_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.certSecuredProxyPort }}/.well-known/open-resource-discovery"
             - name: GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
+            - name: APP_ORD_WEBHOOK_MAPPINGS
+              value: {{ .Values.global.director.ordWebhookMappings | quote }}
+            - name: APP_PROXY_APPLICATION_TEMPLATE_NAME
+              value: "{{ .Values.global.tests.ordAggregator.proxyApplicationTemplateName }}"
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET

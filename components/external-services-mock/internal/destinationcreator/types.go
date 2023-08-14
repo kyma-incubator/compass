@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"regexp"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -35,30 +36,36 @@ type CertificateAPIConfig struct {
 
 // BaseDestinationRequestBody contains the base fields needed in the destination request body
 type BaseDestinationRequestBody struct {
-	Name                 string                       `json:"name"`
-	URL                  string                       `json:"url"`
-	Type                 destinationcreator.Type      `json:"type"`
-	ProxyType            destinationcreator.ProxyType `json:"proxyType"`
-	AuthenticationType   destinationcreator.AuthType  `json:"authenticationType"`
-	AdditionalProperties json.RawMessage              `json:"additionalProperties,omitempty"`
+	Name                 string                          `json:"name"`
+	URL                  string                          `json:"url"`
+	Type                 destinationcreatorpkg.Type      `json:"type"`
+	ProxyType            destinationcreatorpkg.ProxyType `json:"proxyType"`
+	AuthenticationType   destinationcreatorpkg.AuthType  `json:"authenticationType"`
+	AdditionalProperties json.RawMessage                 `json:"additionalProperties,omitempty"`
 }
 
-// DesignTimeRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth
-type DesignTimeRequestBody struct {
+// DesignTimeDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth
+type DesignTimeDestRequestBody struct {
 	BaseDestinationRequestBody
 }
 
-// BasicRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeBasic
-type BasicRequestBody struct {
+// BasicDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeBasic
+type BasicDestRequestBody struct {
 	BaseDestinationRequestBody
 	User     string `json:"user"`
 	Password string `json:"password"`
 }
 
-// SAMLAssertionRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeSAMLAssertion
-type SAMLAssertionRequestBody struct {
+// SAMLAssertionDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeSAMLAssertion
+type SAMLAssertionDestRequestBody struct {
 	BaseDestinationRequestBody
 	Audience         string `json:"audience"`
+	KeyStoreLocation string `json:"keyStoreLocation"`
+}
+
+// ClientCertificateAuthDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeClientCertificate
+type ClientCertificateAuthDestRequestBody struct {
+	BaseDestinationRequestBody
 	KeyStoreLocation string `json:"keyStoreLocation"`
 }
 
@@ -78,42 +85,57 @@ type CertificateResponseBody struct {
 var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
 
 // Validate validates that the AuthTypeNoAuth request body contains the required fields and they are valid
-func (n *DesignTimeRequestBody) Validate() error {
+func (n *DesignTimeDestRequestBody) Validate() error {
 	return validation.ValidateStruct(n,
-		validation.Field(&n.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&n.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&n.URL, validation.Required),
-		validation.Field(&n.Type, validation.In(destinationcreator.TypeHTTP, destinationcreator.TypeRFC, destinationcreator.TypeLDAP, destinationcreator.TypeMAIL)),
-		validation.Field(&n.ProxyType, validation.In(destinationcreator.ProxyTypeInternet, destinationcreator.ProxyTypeOnPremise, destinationcreator.ProxyTypePrivateLink)),
-		validation.Field(&n.AuthenticationType, validation.In(destinationcreator.AuthTypeNoAuth)),
+		validation.Field(&n.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&n.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&n.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeNoAuth)),
 	)
 }
 
 // Validate validates that the AuthTypeBasic request body contains the required fields and they are valid
-func (b *BasicRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (b *BasicDestRequestBody) Validate(destinationCreatorCfg *Config) error {
 	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
 
 	return validation.ValidateStruct(b,
-		validation.Field(&b.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),
-		validation.Field(&b.Type, validation.In(destinationcreator.TypeHTTP, destinationcreator.TypeRFC, destinationcreator.TypeLDAP, destinationcreator.TypeMAIL)),
-		validation.Field(&b.ProxyType, validation.In(destinationcreator.ProxyTypeInternet, destinationcreator.ProxyTypeOnPremise, destinationcreator.ProxyTypePrivateLink)),
-		validation.Field(&b.AuthenticationType, validation.In(destinationcreator.AuthTypeBasic)),
+		validation.Field(&b.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&b.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeBasic)),
 		validation.Field(&b.User, validation.Required, validation.Length(1, 256)),
 		validation.Field(&b.AdditionalProperties, areAdditionalPropertiesValid),
 	)
 }
 
 // Validate validates that the AuthTypeSAMLAssertion request body contains the required fields and they are valid
-func (s *SAMLAssertionRequestBody) Validate(destinationCreatorCfg *Config) error {
+func (s *SAMLAssertionDestRequestBody) Validate(destinationCreatorCfg *Config) error {
 	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
 
 	return validation.ValidateStruct(s,
-		validation.Field(&s.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&s.URL, validation.Required),
-		validation.Field(&s.Type, validation.In(destinationcreator.TypeHTTP, destinationcreator.TypeRFC, destinationcreator.TypeLDAP, destinationcreator.TypeMAIL)),
-		validation.Field(&s.ProxyType, validation.In(destinationcreator.ProxyTypeInternet, destinationcreator.ProxyTypeOnPremise, destinationcreator.ProxyTypePrivateLink)),
-		validation.Field(&s.AuthenticationType, validation.In(destinationcreator.AuthTypeSAMLAssertion)),
+		validation.Field(&s.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&s.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&s.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeSAMLAssertion)),
 		validation.Field(&s.Audience, validation.Required),
+		validation.Field(&s.KeyStoreLocation, validation.Required),
+		validation.Field(&s.AdditionalProperties, areAdditionalPropertiesValid),
+	)
+}
+
+// Validate validates that the AuthTypeClientCertificate request body contains the required fields and they are valid
+func (s *ClientCertificateAuthDestRequestBody) Validate(destinationCreatorCfg *Config) error {
+	areAdditionalPropertiesValid := newDestinationDetailsAdditionalPropertiesValidator(destinationCreatorCfg)
+
+	return validation.ValidateStruct(s,
+		validation.Field(&s.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&s.URL, validation.Required),
+		validation.Field(&s.Type, validation.In(destinationcreatorpkg.TypeHTTP, destinationcreatorpkg.TypeRFC, destinationcreatorpkg.TypeLDAP, destinationcreatorpkg.TypeMAIL)),
+		validation.Field(&s.ProxyType, validation.In(destinationcreatorpkg.ProxyTypeInternet, destinationcreatorpkg.ProxyTypeOnPremise, destinationcreatorpkg.ProxyTypePrivateLink)),
+		validation.Field(&s.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeClientCertificate)),
 		validation.Field(&s.KeyStoreLocation, validation.Required),
 		validation.Field(&s.AdditionalProperties, areAdditionalPropertiesValid),
 	)
@@ -122,7 +144,7 @@ func (s *SAMLAssertionRequestBody) Validate(destinationCreatorCfg *Config) error
 // Validate validates that the SAML assertion certificate request body contains the required fields and they are valid
 func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
-		validation.Field(&c.Name, validation.Required, validation.Length(1, 64), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 	)
 }
 

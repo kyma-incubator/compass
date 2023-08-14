@@ -12,7 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
+	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
+
 	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -44,22 +46,25 @@ import (
 )
 
 const (
-	assignFormationCategory       = "assign formation"
-	unassignFormationCategory     = "unassign formation"
-	assignOperation               = "assign"
-	unassignOperation             = "unassign"
-	createFormationOperation      = "createFormation"
-	deleteFormationOperation      = "deleteFormation"
-	emptyParentCustomerID         = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
-	resourceSubtypeANY            = "ANY"
-	exceptionSystemType           = "exception-type"
-	supportReset                  = true
-	doesNotSupportReset           = false
-	reset                         = true
-	dontReset                     = false
-	samlDestinationFileNamePath   = "credentials.inboundCommunication.samlAssertion.destinations.0.fileName"
-	samlDestinationCommonNamePath = "credentials.inboundCommunication.samlAssertion.destinations.0.commonName"
-	samlDestinationCertChainPath  = "credentials.inboundCommunication.samlAssertion.destinations.0.certificateChain"
+	assignFormationCategory   = "assign formation"
+	unassignFormationCategory = "unassign formation"
+	assignOperation           = "assign"
+	unassignOperation         = "unassign"
+	createFormationOperation  = "createFormation"
+	deleteFormationOperation  = "deleteFormation"
+	emptyParentCustomerID     = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
+	resourceSubtypeANY        = "ANY"
+	exceptionSystemType       = "exception-type"
+	supportReset              = true
+	doesNotSupportReset       = false
+	reset                     = true
+	dontReset                 = false
+)
+
+var (
+	samlDestinationAssertionIssuerPath     = directordestinationcreator.SAMLAssertionDestPath + ".assertionIssuer"
+	samlDestinationCertChainPath           = directordestinationcreator.SAMLAssertionDestPath + ".certificate"
+	clientCertAuthDestinationCertChainPath = directordestinationcreator.ClientCertAuthDestPath + ".certificate"
 )
 
 func TestGetFormation(t *testing.T) {
@@ -3339,6 +3344,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInput, app1.ID, subscriptionConsumerAccountID)
 			require.Equal(t, formationName, assignedFormation.Name)
 
+			assignmentWithDestDetails := fixtures.GetFormationAssignmentsBySourceAndTarget(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formation.ID, app1.ID, app2.ID)
+			require.NotEmpty(t, assignmentWithDestDetails)
+
 			t.Logf("Assert formation assignments during %s operation...", assignOperation)
 			noAuthDestinationName := "e2e-design-time-destination-name"
 			noAuthDestinationURL := "http://e2e-design-time-url-example.com"
@@ -3346,13 +3354,18 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			basicDestinationURL := "http://e2e-basic-url-example.com"
 			samlAssertionDestinationName := "e2e-saml-assertion-destination-name"
 			samlAssertionDestinationURL := "http://e2e-saml-url-example.com"
-			destinationCertificateName := samlAssertionDestinationName + destinationcreator.JavaKeyStoreFileExtension // we need the .jks extension because the destination creator create the certificate with it
+			clientCertAuthDestinationName := "e2e-client-cert-auth-destination-name"
+			clientCertAuthDestinationURL := "http://e2e-client-cert-auth-url-example.com"
 
-			destinationDetailsConfigWithPlaceholders := "{\"destinations\":[{\"name\":\"%s\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"correlationIds\":[\"e2e-basic-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e-basic-destination description\",\"url\":\"%s\",\"authentication\":\"BasicAuthentication\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e saml assertion destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}"
-			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, basicDestinationName, basicDestinationURL, samlAssertionDestinationName, samlAssertionDestinationURL)
-			destinationCredentialsConfig := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"}}}}"
+			samlAssertionDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeSAMLAssertion, assignmentWithDestDetails.ID)
+			clientCertAuthDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeClientCertificate, assignmentWithDestDetails.ID)
+			clientCertAuthDestinationCertName = clientCertAuthDestinationCertName[:directordestinationcreator.MaxDestinationNameLength] // due to the longer client cert auth destination prefix we exceed the maximum length of the name, that's we truncate it
 
-			destinationDetailsConfigEnrichedWithCertData := enrichAssignmentConfigWithDestinationCertData(t, destinationDetailsConfig, destinationCertificateName, samlAssertionDestinationName)
+			destinationDetailsConfigWithPlaceholders := "{\"destinations\":[{\"name\":\"%s\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"correlationIds\":[\"e2e-basic-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e-basic-destination description\",\"url\":\"%s\",\"authentication\":\"BasicAuthentication\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e saml assertion destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e client cert auth destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}"
+			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, basicDestinationName, basicDestinationURL, samlAssertionDestinationName, samlAssertionDestinationURL, clientCertAuthDestinationName, clientCertAuthDestinationURL)
+			destinationCredentialsConfig := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
+
+			destinationDetailsConfigEnrichedWithCertData := enrichAssignmentConfigWithSAMLDestinationCertData(t, destinationDetailsConfig, samlAssertionDestinationCertName)
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
@@ -3364,7 +3377,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 				},
 			}
-			assertFormationAssignmentsWithSAMLDestinationConfig(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, app1.ID, app2.ID)
+			assertFormationAssignmentsWithDestinationConfig(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, app1.ID, app2.ID)
 			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
@@ -3413,15 +3426,15 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					customerID:    emptyParentCustomerID,
 				},
 				{
-					op:            assignOperation,
-					formationID:   formation.ID,
-					objectID:      app2.ID,
-					localTenantID: localTenantID2,
-					objectRegion:  appRegion,
-					configuration: destinationDetailsConfigEnrichedWithCertData,
-					tenant:        subscriptionConsumerAccountID,
-					customerID:    emptyParentCustomerID,
-					isNotificationContainsSAMLDestinationData: true,
+					op:                                     assignOperation,
+					formationID:                            formation.ID,
+					objectID:                               app2.ID,
+					localTenantID:                          localTenantID2,
+					objectRegion:                           appRegion,
+					configuration:                          destinationDetailsConfigEnrichedWithCertData,
+					tenant:                                 subscriptionConsumerAccountID,
+					customerID:                             emptyParentCustomerID,
+					shouldRemoveDestinationCertificateData: true,
 				},
 			})
 
@@ -3439,8 +3452,10 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			t.Log("Assert destinations and destination certificates are created...")
 			assertNoAuthDestination(t, destinationClient, noAuthDestinationName, noAuthDestinationURL)
 			assertBasicDestination(t, destinationClient, basicDestinationName, basicDestinationURL)
-			assertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationURL)
-			assertDestinationCertificate(t, destinationClient, destinationCertificateName)
+			assertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationURL, app1BaseURL)
+			assertClientCertAuthDestination(t, destinationClient, clientCertAuthDestinationName, clientCertAuthDestinationURL)
+			assertDestinationCertificate(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertDestinationCertificate(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 
 			var unassignFormation graphql.Formation
 			t.Logf("Unassign Application 2 from formation %s", formationName)
@@ -3453,7 +3468,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNoDestinationIsFound(t, destinationClient, noAuthDestinationName)
 			assertNoDestinationIsFound(t, destinationClient, basicDestinationName)
 			assertNoDestinationIsFound(t, destinationClient, samlAssertionDestinationName)
-			assertNoDestinationCertificateIsFound(t, destinationClient, destinationCertificateName)
+			assertNoDestinationIsFound(t, destinationClient, clientCertAuthDestinationName)
+			assertNoDestinationCertificateIsFound(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertNoDestinationCertificateIsFound(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
@@ -5344,44 +5361,59 @@ func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.Destina
 
 func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, noAuthDestinationName, noAuthDestinationURL string) {
 	noAuthDestBytes := client.GetDestinationByName(t, noAuthDestinationName, http.StatusOK)
-	var noAuthDest destinationcreator.NoAuthenticationDestination
+	var noAuthDest esmdestinationcreator.NoAuthenticationDestination
 	err := json.Unmarshal(noAuthDestBytes, &noAuthDest)
 	require.NoError(t, err)
 	require.Equal(t, noAuthDestinationName, noAuthDest.Name)
-	require.Equal(t, destinationcreator.TypeHTTP, noAuthDest.Type)
+	require.Equal(t, directordestinationcreator.TypeHTTP, noAuthDest.Type)
 	require.Equal(t, noAuthDestinationURL, noAuthDest.URL)
-	require.Equal(t, destinationcreator.AuthTypeNoAuth, noAuthDest.Authentication)
-	require.Equal(t, destinationcreator.ProxyTypeInternet, noAuthDest.ProxyType)
+	require.Equal(t, directordestinationcreator.AuthTypeNoAuth, noAuthDest.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, noAuthDest.ProxyType)
 }
 
 func assertBasicDestination(t *testing.T, client *clients.DestinationClient, basicDestinationName, basicDestinationURL string) {
 	basicDestBytes := client.GetDestinationByName(t, basicDestinationName, http.StatusOK)
-	var basicDest destinationcreator.BasicDestination
+	var basicDest esmdestinationcreator.BasicDestination
 	err := json.Unmarshal(basicDestBytes, &basicDest)
 	require.NoError(t, err)
 	require.Equal(t, basicDestinationName, basicDest.Name)
-	require.Equal(t, destinationcreator.TypeHTTP, basicDest.Type)
+	require.Equal(t, directordestinationcreator.TypeHTTP, basicDest.Type)
 	require.Equal(t, basicDestinationURL, basicDest.URL)
-	require.Equal(t, destinationcreator.AuthTypeBasic, basicDest.Authentication)
-	require.Equal(t, destinationcreator.ProxyTypeInternet, basicDest.ProxyType)
+	require.Equal(t, directordestinationcreator.AuthTypeBasic, basicDest.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.ProxyType)
 }
 
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionDestinationURL string) {
+func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionDestinationURL, app1BaseURL string) {
 	samlAssertionDestBytes := client.GetDestinationByName(t, samlAssertionDestinationName, http.StatusOK)
-	var samlAssertionDest destinationcreator.SAMLAssertionDestination
+	var samlAssertionDest esmdestinationcreator.SAMLAssertionDestination
 	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
 	require.NoError(t, err)
 	require.Equal(t, samlAssertionDestinationName, samlAssertionDest.Name)
-	require.Equal(t, destinationcreator.TypeHTTP, samlAssertionDest.Type)
+	require.Equal(t, directordestinationcreator.TypeHTTP, samlAssertionDest.Type)
 	require.Equal(t, samlAssertionDestinationURL, samlAssertionDest.URL)
-	require.Equal(t, destinationcreator.AuthTypeSAMLAssertion, samlAssertionDest.Authentication)
-	require.Equal(t, destinationcreator.ProxyTypeInternet, samlAssertionDest.ProxyType)
+	require.Equal(t, directordestinationcreator.AuthTypeSAMLAssertion, samlAssertionDest.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, samlAssertionDest.ProxyType)
+	require.Equal(t, app1BaseURL, samlAssertionDest.Audience)
+	require.Equal(t, samlAssertionDestinationName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
+}
+
+func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, clientCertAuthDestinationName, clientCertAuthDestinationURL string) {
+	clientCertAuthDestBytes := client.GetDestinationByName(t, clientCertAuthDestinationName, http.StatusOK)
+	var clientCertAuthDest esmdestinationcreator.ClientCertificateAuthenticationDestination
+	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
+	require.NoError(t, err)
+	require.Equal(t, clientCertAuthDestinationName, clientCertAuthDest.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, clientCertAuthDest.Type)
+	require.Equal(t, clientCertAuthDestinationURL, clientCertAuthDest.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeClientCertificate, clientCertAuthDest.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, clientCertAuthDest.ProxyType)
+	require.Equal(t, clientCertAuthDestinationName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
 }
 
 func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, certificateName string) {
-	basicDestBytes := client.GetDestinationCertificateByName(t, certificateName, http.StatusOK)
-	var destCertificate destinationcreator.DestinationSvcCertificateResponse
-	err := json.Unmarshal(basicDestBytes, &destCertificate)
+	certBytes := client.GetDestinationCertificateByName(t, certificateName, http.StatusOK)
+	var destCertificate esmdestinationcreator.DestinationSvcCertificateResponse
+	err := json.Unmarshal(certBytes, &destCertificate)
 	require.NoError(t, err)
 	require.Equal(t, certificateName, destCertificate.Name)
 	require.NotEmpty(t, destCertificate.Content)
@@ -5523,15 +5555,15 @@ func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsF
 }
 
 type applicationFormationExpectations struct {
-	op                                        string
-	formationID                               string
-	objectID                                  string
-	localTenantID                             string
-	objectRegion                              string
-	configuration                             string
-	tenant                                    string
-	customerID                                string
-	isNotificationContainsSAMLDestinationData bool
+	op                                     string
+	formationID                            string
+	objectID                               string
+	localTenantID                          string
+	objectRegion                           string
+	configuration                          string
+	tenant                                 string
+	customerID                             string
+	shouldRemoveDestinationCertificateData bool
 }
 
 func assertExpectationsForApplicationNotificationsWithItemsStructure(t *testing.T, notifications []gjson.Result, expectations []*applicationFormationExpectations) {
@@ -5543,20 +5575,6 @@ func assertExpectationsForApplicationNotificationsWithItemsStructure(t *testing.
 			if err == nil {
 				found = true
 			}
-		}
-		assert.Truef(t, found, "Did not match expectations for notification %v", expectation)
-	}
-}
-
-func assertExpectationsForApplicationNotifications(t *testing.T, notifications []gjson.Result, expectations []*applicationFormationExpectations) {
-	for _, expectation := range expectations {
-		found := false
-		for _, notification := range notifications {
-			if err := verifyFormationAssignmentNotification(t, notification, expectation.op, expectation.formationID, expectation.objectID, expectation.localTenantID, expectation.objectRegion, expectation.configuration, expectation.tenant, expectation.customerID, expectation.isNotificationContainsSAMLDestinationData); err != nil {
-				t.Log(err)
-				continue
-			}
-			found = true
 		}
 		assert.Truef(t, found, "Did not match expectations for notification %v", expectation)
 	}
@@ -5618,7 +5636,21 @@ func verifyFormationNotificationForApplicationWithItemsStructure(notification gj
 	return nil
 }
 
-func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, isNotificationContainsSAMLDestinationData bool) error {
+func assertExpectationsForApplicationNotifications(t *testing.T, notifications []gjson.Result, expectations []*applicationFormationExpectations) {
+	for _, expectation := range expectations {
+		found := false
+		for _, notification := range notifications {
+			if err := verifyFormationAssignmentNotification(t, notification, expectation.op, expectation.formationID, expectation.objectID, expectation.localTenantID, expectation.objectRegion, expectation.configuration, expectation.tenant, expectation.customerID, expectation.shouldRemoveDestinationCertificateData); err != nil {
+				t.Log(err)
+				continue
+			}
+			found = true
+		}
+		assert.Truef(t, found, "Did not match expectations for notification %v", expectation)
+	}
+}
+
+func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool) error {
 	actualOp := notification.Get("Operation").String()
 	if op != actualOp {
 		return errors.Errorf("Operation does not match - expected: %q, but got: %q", op, actualOp)
@@ -5660,15 +5692,23 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 		return errors.Errorf("RequestBody.receiverTenant.deploymentRegion does not match - expected: %q, but got: %q", expectedObjectRegion, actualObjectRegion)
 	}
 
-	if isNotificationContainsSAMLDestinationData {
-		actualConfigSAMLCertChain := notification.Get("RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.destinations.0.certificateChain").String()
-		if actualConfigSAMLCertChain == "" {
-			return errors.New("RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.destinations.0.certificateChain is empty but expected not to be")
+	if shouldRemoveDestinationCertificateData {
+		notificationReceiverCfg := notification.Get("RequestBody.receiverTenant.configuration").String()
+		notificationReceiverState := notification.Get("RequestBody.receiverTenant.state").String()
+		if notificationReceiverCfg == "" && notificationReceiverState == "INITIAL" {
+			return nil
 		}
-		modifiedNotification, err := sjson.Delete(notification.String(), "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.destinations.0.certificateChain")
+
+		modifiedNotification, err := sjson.Delete(notification.String(), "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.certificate")
 		if err != nil {
 			return err
 		}
+
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.clientCertificateAuthentication.certificate")
+		if err != nil {
+			return err
+		}
+
 		modifiedConfig := gjson.Get(modifiedNotification, "RequestBody.receiverTenant.configuration").String()
 		assert.JSONEq(t, expectedConfiguration, modifiedConfig, "RequestBody.receiverTenant.configuration does not match")
 	} else {
@@ -5867,7 +5907,7 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 	}
 }
 
-func assertFormationAssignmentsWithSAMLDestinationConfig(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, sourceAppID, targetAppID string) {
+func assertFormationAssignmentsWithDestinationConfig(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, sourceAppID, targetAppID string) {
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	assignments := assignmentsPage.Data
@@ -5892,14 +5932,11 @@ func assertFormationAssignmentsWithSAMLDestinationConfig(t *testing.T, ctx conte
 
 	for _, assignment := range assignments {
 		// this is required because during SAML destination creation, the formation assignment config is enriched with destination certificate data
-		// and on of the properties is the cert chain itself that we cannot assert because it's dynamically created
+		// and one of the properties is the cert chain itself that we cannot assert because it's dynamically created
 		if assignment.Source == sourceAppID && assignment.Target == targetAppID {
-			require.NotEmpty(t, assignment.Value)
-			destinationCertChainResult := gjson.Get(*assignment.Value, samlDestinationCertChainPath)
-			require.True(t, destinationCertChainResult.Exists())
-			require.NotEmpty(t, destinationCertChainResult.String())
-			modifiedConfig, err := sjson.Delete(*assignment.Value, samlDestinationCertChainPath)
-			require.NoError(t, err)
+			modifiedConfig := validateSamlAssertionDestinationCertChain(t, assignment)
+			assignment.Value = &modifiedConfig
+			modifiedConfig = validateClientCertAuthDestinationCertChain(t, assignment)
 
 			assertStateAndConfigFunc(assignment, modifiedConfig)
 			continue
@@ -5909,11 +5946,27 @@ func assertFormationAssignmentsWithSAMLDestinationConfig(t *testing.T, ctx conte
 	}
 }
 
-func enrichAssignmentConfigWithDestinationCertData(t *testing.T, destinationDetailsConfig, destinationCertificateName, samlAssertionDestinationName string) string {
-	destinationDetailsConfigEnrichedWithCertData, err := sjson.Set(destinationDetailsConfig, samlDestinationFileNamePath, destinationCertificateName)
+func validateSamlAssertionDestinationCertChain(t *testing.T, assignment *graphql.FormationAssignment) string {
+	return validateDestinationCertChain(t, assignment, samlDestinationCertChainPath)
+}
+
+func validateClientCertAuthDestinationCertChain(t *testing.T, assignment *graphql.FormationAssignment) string {
+	return validateDestinationCertChain(t, assignment, clientCertAuthDestinationCertChainPath)
+}
+
+func validateDestinationCertChain(t *testing.T, assignment *graphql.FormationAssignment, path string) string {
+	require.NotEmpty(t, assignment.Value)
+	destinationCertChainResult := gjson.Get(*assignment.Value, path)
+	require.True(t, destinationCertChainResult.Exists())
+	require.NotEmpty(t, destinationCertChainResult.String())
+	modifiedConfig, err := sjson.Delete(*assignment.Value, path)
 	require.NoError(t, err)
 
-	destinationDetailsConfigEnrichedWithCertData, err = sjson.Set(destinationDetailsConfigEnrichedWithCertData, samlDestinationCommonNamePath, samlAssertionDestinationName)
+	return modifiedConfig
+}
+
+func enrichAssignmentConfigWithSAMLDestinationCertData(t *testing.T, destinationDetailsConfig, destinationCertificateName string) string {
+	destinationDetailsConfigEnrichedWithCertData, err := sjson.Set(destinationDetailsConfig, samlDestinationAssertionIssuerPath, destinationCertificateName)
 	require.NoError(t, err)
 
 	return destinationDetailsConfigEnrichedWithCertData
