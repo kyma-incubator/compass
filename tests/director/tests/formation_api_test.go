@@ -3365,8 +3365,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, basicDestinationName, basicDestinationURL, samlAssertionDestinationName, samlAssertionDestinationURL, clientCertAuthDestinationName, clientCertAuthDestinationURL)
 			destinationCredentialsConfig := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
 
-			destinationDetailsConfigEnrichedWithCertData := enrichAssignmentConfigWithSAMLDestinationCertData(t, destinationDetailsConfig, samlAssertionDestinationCertName)
-
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr(destinationDetailsConfig)},
@@ -3431,7 +3429,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					objectID:                               app2.ID,
 					localTenantID:                          localTenantID2,
 					objectRegion:                           appRegion,
-					configuration:                          destinationDetailsConfigEnrichedWithCertData,
+					configuration:                          destinationDetailsConfig,
 					tenant:                                 subscriptionConsumerAccountID,
 					customerID:                             emptyParentCustomerID,
 					shouldRemoveDestinationCertificateData: true,
