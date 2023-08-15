@@ -85,7 +85,7 @@ The Ory Hydra requires persistence storage; the database can be in-cluster or on
 
 ##### In-cluster database
 
-In-cluster persistence is achieved with the usage of the [Postgres Helm chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql). To use this method of persistence save the following yaml code with installation overrides into a file (for example: additionalOryOverrides.yaml)
+In-cluster persistence is achieved with the usage of the [Postgres Helm chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql). To use this method of persistence save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
 ```yaml
 global:
   domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
@@ -106,9 +106,9 @@ Initiate the Ory installation with the following command:
 
 The scripts creates the necessary Secret `ory-hydra-credentials` for Ory Hydra to connect to the database; the Oathkeeper Secret is created by the CronJob `oathkeeper-jwks-rotator`.
 
-##### GCP database
+##### Google Clouad Platform database
 
-The Ory Hydra component can authenticate to GCP by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). To use this method of persistence save the following yaml code with installation overrides into a file (for example: additionalOryOverrides.yaml)
+The Ory Hydra component can authenticate to Google Clouad Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). To use this method of persistence save the following YAML code with installation overrides into a file (for example: additionalOryOverrides.yaml).
 ```yaml
 global:
   domainName: ${DOMAIN} # Optional, only needed if you use custom domains during Kyma installation.
@@ -152,8 +152,8 @@ gcloud-sqlproxy:
   serviceAccount:
     create: true
     name: "ory-gcloud-sqlproxy"
-    # use workload identity SA to atuhenticate to GCP; more details https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
-    # Remove the annotation if you are using the GCP SA JSON
+    # use workload identity service account to authenticate to Google Cloud Platform; more details https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+    # Remove the annotation if you are using the Google Cloud Platform service account JSON
     annotations:
       iam.gke.io/gcp-service-account: ${GCP_SA}
   cloudsql:
@@ -163,11 +163,11 @@ gcloud-sqlproxy:
       project: ${GCP_PROJECT}
       region: ${GCP_REGION}
 ```
-> **NOTE:** The overrides above use workload identity to authenticate to GCP(recommended by Google); another possibility is to use the GCP's SA JSON as explained [here](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart). 
+> **NOTE:** The overrides above use workload identity to authenticate to Google Cloud Platform(recommended by Google); another possibility is to use the Google Cloud Platform's service account JSON as explained at [gcloud-sqlproxy's installation](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy#installing-the-chart). 
 
 Initiate the Ory installation with the following command:
 ```bash
-<script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - e.g. additionalOryOverrides.yaml>
+<script from ../../installation/scripts/install-ory.sh> --overrides-file <file from above step - for example additionalOryOverrides.yaml>
 ```
 
 #### Install Compass

@@ -72,7 +72,7 @@ function generate_random(){
   cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | fold -w ${1} | head -n 1
 }
 
-# Copy the IDP configuration from the Compass chart; the Compass values are changed by the `run.sh`
+# Copy the identity provider configuration from the Compass chart; the Compass values are changed by the `run.sh`
 VALUES_FILE_COMPASS="${ROOT_PATH}"/chart/compass/values.yaml
 IDP_HOST=$(yq ".global.cockpit.auth.idpHost" $VALUES_FILE_COMPASS)
 AUTH_PATH=$(yq ".global.cockpit.auth.path" $VALUES_FILE_COMPASS)
@@ -98,7 +98,7 @@ LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.postgresql.enabled" ${OVER
 
 # Create Secret that is referenced as 'existingSecret' under chart/ory/values.yaml
 # Secret should not be recreated if it exists, mainly during Helm updates, as it will create new random values.
-# The new random values will triggered the redeployment of the postgres db and Hydra - that breaks the deployment
+# The new random values will trigger the redeployment of the Postgres database and Hydra - that breaks the deployment.
 # Rotating the secrets has to be done manually; the rotation of the Hydra Secrets should be done following this guide: https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
 if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTENCE" = true ]; then
   echo "Creating secret to be used by the Ory Helm Chart..."
@@ -119,8 +119,8 @@ if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTE
     --dry-run=client -o yaml | kubectl apply -f -
 fi
 
-# --wait is excluded as the deployment hangs; it hangs as there is a cronjob that creates the jwks secret for Oathkeeper
-# This cronjob is triggered in the statements below
+# --wait is excluded as the deployment hangs; it hangs as there is a cronjob that creates the JWKS Secret for Oathkeeper
+# This CronJob is triggered in the statements below
 helm upgrade --install $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
 
 if [[ ! ${SKIP_JWKS_ROTATION} ]]; then
@@ -144,7 +144,7 @@ PIDS="$PIDS $!"
 kubectl rollout status deployment $RELEASE_NAME-oathkeeper -n $RELEASE_NS --timeout=$TIMEOUT &
 PIDS="$PIDS $!"
 
-# Wait for Ory deployment to roll out as they needs to be ready for successful compass installation
+# Wait for Ory deployment to roll out as they needs to be ready for successful Compass installation
 for PID in $PIDS; do
   wait $PID || let "RESULT=1"
 done
