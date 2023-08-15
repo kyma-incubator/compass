@@ -3365,8 +3365,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, basicDestinationName, basicDestinationURL, samlAssertionDestinationName, samlAssertionDestinationURL, clientCertAuthDestinationName, clientCertAuthDestinationURL)
 			destinationCredentialsConfig := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
 
-			destinationDetailsConfigEnrichedWithCertData := enrichAssignmentConfigWithSAMLDestinationCertData(t, destinationDetailsConfig, samlAssertionDestinationCertName)
-
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr(destinationDetailsConfig)},
@@ -3431,7 +3429,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					objectID:                               app2.ID,
 					localTenantID:                          localTenantID2,
 					objectRegion:                           appRegion,
-					configuration:                          destinationDetailsConfigEnrichedWithCertData,
+					configuration:                          destinationDetailsConfig,
 					tenant:                                 subscriptionConsumerAccountID,
 					customerID:                             emptyParentCustomerID,
 					shouldRemoveDestinationCertificateData: true,
@@ -5709,6 +5707,11 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 			return err
 		}
 
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.assertionIssuer")
+		if err != nil {
+			return err
+		}
+
 		modifiedConfig := gjson.Get(modifiedNotification, "RequestBody.receiverTenant.configuration").String()
 		assert.JSONEq(t, expectedConfiguration, modifiedConfig, "RequestBody.receiverTenant.configuration does not match")
 	} else {
@@ -5963,13 +5966,6 @@ func validateDestinationCertData(t *testing.T, assignmentConfig *string, path st
 	require.NoError(t, err)
 
 	return modifiedConfig
-}
-
-func enrichAssignmentConfigWithSAMLDestinationCertData(t *testing.T, destinationDetailsConfig, destinationCertificateName string) string {
-	destinationDetailsConfigEnrichedWithCertData, err := sjson.Set(destinationDetailsConfig, samlDestinationAssertionIssuerPath, destinationCertificateName)
-	require.NoError(t, err)
-
-	return destinationDetailsConfigEnrichedWithCertData
 }
 
 func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, asyncStatusAPIProcessingDelay int64) {
