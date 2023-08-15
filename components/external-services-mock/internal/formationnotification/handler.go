@@ -57,7 +57,7 @@ type Configuration struct {
 	ExternalClientCertKeyKey                    string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
 	DirectorExternalCertFAAsyncStatusURL        string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
 	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
-	FormationMappingAsyncResponseDelay          int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	TenantMappingAsyncResponseDelay             int64  `envconfig:"APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY"`
 }
 
 // FormationAssignmentRequestBody contains the request input of the formation assignment async status request
@@ -432,7 +432,7 @@ var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, formationID
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
@@ -445,7 +445,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
@@ -460,7 +460,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
@@ -473,7 +473,7 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) AsyncDestinationDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
@@ -502,7 +502,7 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 		operation = Unassign
 	}
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		state := ReadyAssignmentState
 		if operation == Assign && h.ShouldReturnError {
 			state = CreateErrorAssignmentState
@@ -772,7 +772,7 @@ var NoopFormationResponseFn = func(client *http.Client, correlationID, formation
 func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	formationResponseFunc := func(client *http.Client, correlationID, formationError, formationID string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationStatusUpdateRequest(client, correlationID, ReadyFormationState, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
@@ -785,7 +785,7 @@ func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request
 func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	formationResponseFunc := func(client *http.Client, correlationID, formationError, formationID string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationStatusUpdateRequest(client, correlationID, ReadyFormationState, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
@@ -805,7 +805,7 @@ func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Req
 		operation = DeleteFormation
 	}
 	responseFunc := func(client *http.Client, correlationID, formationError, formationID string) {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		state := ReadyFormationState
 		if r.Method == http.MethodPost && h.ShouldReturnError {
 			state = CreateErrorFormationState
