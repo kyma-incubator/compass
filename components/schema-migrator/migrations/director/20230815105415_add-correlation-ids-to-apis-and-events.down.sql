@@ -1,37 +1,18 @@
 BEGIN;
 
-ALTER TABLE api_definitions
-    ADD COLUMN correlation_ids JSONB;
-
-ALTER TABLE event_api_definitions
-    ADD COLUMN correlation_ids JSONB;
-
-CREATE VIEW correlation_ids_apis AS
-SELECT id                  AS api_id,
-       elements.value      AS value
-FROM api_definitions,
-     jsonb_array_elements_text(api_definitions.correlation_ids) AS elements;
-
-CREATE VIEW correlation_ids_events AS
-SELECT id                  AS event_id,
-       elements.value      AS value
-FROM event_api_definitions,
-     jsonb_array_elements_text(event_api_definitions.correlation_ids) AS elements;
-
+DROP VIEW IF EXISTS correlation_ids_apis;
+DROP VIEW IF EXISTS correlation_ids_events;
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
-
-DROP VIEW IF EXISTS api_definition_extensible;
-DROP VIEW IF EXISTS event_api_definition_extensible;
 
 CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value, version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
              system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, hierarchy,
              countries, release_status, sunset_date, labels, package_id, visibility, disabled, part_of_products,
-             line_of_business, industry, ready, created_at, updated_at, deleted_at, error, extensible_supported, extensible_description, successors,
-             resource_hash, correlation_ids)
+             line_of_business, industry, ready, created_at, updated_at, deleted_at, error, extensible, successors,
+             resource_hash)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -69,15 +50,13 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.updated_at,
                 events.deleted_at,
                 events.error,
-                actions.supported,
-                actions.description,
+                events.extensible,
                 events.successors,
-                events.resource_hash,
-                events.correlation_ids
+                events.resource_hash
 FROM event_api_definitions events
          JOIN (SELECT a1.id,
                       a1.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -87,9 +66,8 @@ FROM event_api_definitions events
                UNION ALL
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
-               FROM apps_subaccounts) t_apps ON events.app_id = t_apps.id,
-     jsonb_to_record(events.extensible) actions(supported text, description text);
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps ON events.app_id = t_apps.id;
 
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
@@ -98,8 +76,8 @@ CREATE OR REPLACE VIEW tenants_apis
              supported_use_cases, countries, links, api_resource_links, release_status, sunset_date, changelog_entries,
              labels, package_id, visibility, disabled, part_of_products, line_of_business, industry, ready, created_at,
              updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
-             custom_implementation_standard_description, target_urls, extensible_supported, extensible_description, successors, resource_hash,
-             documentation_labels, correlation_ids)
+             custom_implementation_standard_description, target_urls, extensible, successors, resource_hash,
+             documentation_labels)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.formation_id,
@@ -145,16 +123,14 @@ SELECT DISTINCT t_apps.tenant_id,
                 apis.custom_implementation_standard,
                 apis.custom_implementation_standard_description,
                 apis.target_urls,
-                actions.supported,
-                actions.description,
+                apis.extensible,
                 apis.successors,
                 apis.resource_hash,
-                apis.documentation_labels,
-                apis.correlation_ids
+                apis.documentation_labels
 FROM api_definitions apis
-    JOIN (SELECT a1.id,
+         JOIN (SELECT a1.id,
                       a1.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts.id,
@@ -164,9 +140,8 @@ FROM api_definitions apis
                UNION ALL
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
-               FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id,
-   jsonb_to_record(apis.extensible) actions(supported text, description text);
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps ON apis.app_id = t_apps.id;
 
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
@@ -192,5 +167,31 @@ FROM specifications spec
                       e.tenant_id
                FROM tenants_events e) t_api_event_def
               ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
+
+CREATE OR REPLACE VIEW api_definition_extensible(api_definition_id, supported, description)
+AS
+SELECT api_definitions.id AS api_definition_id,
+       actions.supported,
+       actions.description
+FROM api_definitions,
+     jsonb_to_record(api_definitions.extensible) actions(supported text, description text)
+WHERE actions.supported IS NOT NULL;
+
+
+CREATE OR REPLACE VIEW event_api_definition_extensible(event_definition_id, supported, description)
+AS
+SELECT event_api_definitions.id AS event_definition_id,
+       actions.supported,
+       actions.description
+FROM event_api_definitions,
+     jsonb_to_record(event_api_definitions.extensible) actions(supported text, description text)
+WHERE actions.supported IS NOT NULL;
+
+
+ALTER TABLE api_definitions
+    DROP COLUMN correlation_ids;
+
+ALTER TABLE event_api_definitions
+    DROP COLUMN correlation_ids;
 
 COMMIT;

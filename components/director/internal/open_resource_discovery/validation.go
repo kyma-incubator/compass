@@ -757,8 +757,8 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 		return errors.New("for APIResources with apiProtocol='websocket' it is mandatory to provide implementationStandard definition and type to be set to custom")
 	}
 
-	if apiProtocol == APIProtocolSAPSQLAPIV1 && !resourceDefinitionTypes[model.APISpecTypeSQLAPIDefinitionV1] {
-		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set to sap-sql-api-definition-v1")
+	if apiProtocol == APIProtocolSAPSQLAPIV1 && !(resourceDefinitionTypes[model.APISpecTypeCustom] || resourceDefinitionTypes[model.APISpecTypeSQLAPIDefinitionV1]) {
+		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set either to sap-sql-api-definition-v1 or custom")
 	}
 
 	return nil
