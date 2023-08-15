@@ -180,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3180"
+      version: "PR-3212"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -1137,6 +1137,8 @@ global:
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
+    hydrator:
+      certSubjectMappingResyncInterval: "10s"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
@@ -1154,7 +1156,7 @@ global:
       skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
-      formationAsyncApi:
+      tenantMappingStatusAPI:
         responseDelayInSeconds: 3
     selfRegistration:
       region: "eu-1"
