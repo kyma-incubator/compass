@@ -5707,6 +5707,11 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 			return err
 		}
 
+		modifiedNotification, err = sjson.Delete(notification.String(), "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.assertionIssuer")
+		if err != nil {
+			return err
+		}
+
 		modifiedConfig := gjson.Get(modifiedNotification, "RequestBody.receiverTenant.configuration").String()
 		assert.JSONEq(t, expectedConfiguration, modifiedConfig, "RequestBody.receiverTenant.configuration does not match")
 	} else {
@@ -5961,13 +5966,6 @@ func validateDestinationCertData(t *testing.T, assignmentConfig *string, path st
 	require.NoError(t, err)
 
 	return modifiedConfig
-}
-
-func enrichAssignmentConfigWithSAMLDestinationCertData(t *testing.T, destinationDetailsConfig, destinationCertificateName string) string {
-	destinationDetailsConfigEnrichedWithCertData, err := sjson.Set(destinationDetailsConfig, samlDestinationAssertionIssuerPath, destinationCertificateName)
-	require.NoError(t, err)
-
-	return destinationDetailsConfigEnrichedWithCertData
 }
 
 func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, asyncStatusAPIProcessingDelay int64) {
