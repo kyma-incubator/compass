@@ -135,7 +135,7 @@ func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenan
 	return result, nil
 }
 
-// List queries for all FormationTemplate filtered by name sorted by ID and paginated by the pageSize and cursor parameters
+// List queries for all FormationTemplate filtered by name, sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection
 
