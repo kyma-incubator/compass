@@ -138,8 +138,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20230811-df20c7d0"
+      dir: dev/incubator/
+      version: "PR-3213"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -179,16 +179,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20230811-df20c7d0"
+      dir: dev/incubator/
+      version: "PR-3213"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20230811-df20c7d0"
+      dir: dev/incubator/
+      version: "PR-3213"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1136,6 +1136,8 @@ global:
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
+    hydrator:
+      certSubjectMappingResyncInterval: "10s"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
@@ -1152,7 +1154,7 @@ global:
       skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
-      formationAsyncApi:
+      tenantMappingStatusAPI:
         responseDelayInSeconds: 3
     selfRegistration:
       region: "eu-1"

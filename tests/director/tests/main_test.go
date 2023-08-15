@@ -79,7 +79,7 @@ type DirectorConfig struct {
 	ExternalCertTestIntSystemCommonName                string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
 	ExternalClientCertExpectedIssuerLocalityRegion2    string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
 	SupportedORDApplicationType                        string        `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
-	FormationMappingAsyncResponseDelay                 int64         `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	TenantMappingAsyncResponseDelay                    int64         `envconfig:"APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY"`
 	SubscriptionProviderAppNameProperty                string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 	CertSubjectMappingResyncInterval                   time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 	ApplicationTemplateProductLabel                    string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`

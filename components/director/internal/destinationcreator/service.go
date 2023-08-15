@@ -232,6 +232,11 @@ func (s *Service) CreateSAMLAssertionDestination(
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
+	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment.ID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeSAMLAssertion)
+	}
+
 	destinationName := destinationDetails.Name
 	destReqBody := &SAMLAssertionDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
@@ -241,7 +246,7 @@ func (s *Service) CreateSAMLAssertionDestination(
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 		},
-		KeyStoreLocation: destinationName + destinationcreatorpkg.JavaKeyStoreFileExtension,
+		KeyStoreLocation: certName + destinationcreatorpkg.JavaKeyStoreFileExtension,
 	}
 
 	if destinationDetails.Type != "" {
@@ -317,6 +322,11 @@ func (s *Service) CreateClientCertificateDestination(
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
+	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment.ID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeClientCertificate)
+	}
+
 	destinationName := destinationDetails.Name
 	destReqBody := &ClientCertAuthDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
@@ -326,7 +336,7 @@ func (s *Service) CreateClientCertificateDestination(
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeClientCertificate,
 		},
-		KeyStoreLocation: destinationName + destinationcreatorpkg.JavaKeyStoreFileExtension,
+		KeyStoreLocation: certName + destinationcreatorpkg.JavaKeyStoreFileExtension,
 	}
 
 	if destinationDetails.Type != "" {
@@ -351,10 +361,10 @@ func (s *Service) CreateClientCertificateDestination(
 		return errors.Wrapf(err, "while validating client certificate destination request body")
 	}
 
-	log.C(ctx).Infof("Creating client certificate destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
+	log.C(ctx).Infof("Creating client certificate authentication destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, destReqBody, destinationName)
 	if err != nil {
-		return errors.Wrapf(err, "while creating client certificate destination with name: %q in the destination service", destinationName)
+		return errors.Wrapf(err, "while creating client certificate authentication destination with name: %q in the destination service", destinationName)
 	}
 
 	if statusCode == http.StatusConflict {
@@ -408,7 +418,7 @@ func (s *Service) CreateCertificate(
 		return nil, errors.Wrapf(err, "while validating certificate request body")
 	}
 
-	log.C(ctx).Infof("Creating certificate with name: %q for subaccount with ID: %q in the destination service for SAML destination", certName, subaccountID)
+	log.C(ctx).Infof("Creating certificate with name: %q for subaccount with ID: %q in the destination service for %q destination", certName, subaccountID, destinationAuthType)
 	respBody, statusCode, err := s.executeCreateRequest(ctx, strURL, certReqBody, certName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating certificate with name: %q for subaccount with ID: %q in the destination service", certName, subaccountID)
@@ -435,7 +445,7 @@ func (s *Service) CreateCertificate(
 	}
 
 	if err := certResp.Validate(); err != nil {
-		return nil, errors.Wrapf(err, "while validation SAML assertion certificate data")
+		return nil, errors.Wrap(err, "while validation destination certificate data")
 	}
 
 	certData := &operators.CertificateData{
