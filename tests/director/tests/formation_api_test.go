@@ -5707,7 +5707,7 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 			return err
 		}
 
-		modifiedNotification, err = sjson.Delete(notification.String(), "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.assertionIssuer")
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.samlAssertion.assertionIssuer")
 		if err != nil {
 			return err
 		}
