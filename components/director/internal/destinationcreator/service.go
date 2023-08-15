@@ -322,9 +322,9 @@ func (s *Service) CreateClientCertificateDestination(
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
-	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment.ID)
+	certName, err := GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeSAMLAssertion)
+		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
 	destinationName := destinationDetails.Name
