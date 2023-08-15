@@ -187,8 +187,8 @@ global:
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3218"
+      dir: prod/incubator/
+      version: "v20230815-75933f67"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
