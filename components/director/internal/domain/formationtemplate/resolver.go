@@ -13,6 +13,7 @@ import (
 )
 
 // FormationTemplateConverter converts between the graphql and model
+//
 //go:generate mockery --name=FormationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateConverter interface {
 	FromInputGraphQL(in *graphql.FormationTemplateInput) (*model.FormationTemplateInput, error)
@@ -22,6 +23,7 @@ type FormationTemplateConverter interface {
 }
 
 // FormationTemplateService represents the FormationTemplate service layer
+//
 //go:generate mockery --name=FormationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateService interface {
 	Create(ctx context.Context, in *model.FormationTemplateInput) (string, error)
@@ -33,6 +35,7 @@ type FormationTemplateService interface {
 }
 
 // WebhookConverter converts between the graphql and model
+//
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -40,12 +43,14 @@ type WebhookConverter interface {
 }
 
 // FormationConstraintService represents the FormationConstraint service layer
+//
 //go:generate mockery --name=FormationConstraintService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationConstraintService interface {
 	ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([][]*model.FormationConstraint, error)
 }
 
 // FormationConstraintConverter represents the FormationConstraint converter
+//
 //go:generate mockery --name=FormationConstraintConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationConstraintConverter interface {
 	MultipleToGraphQL(in []*model.FormationConstraint) []*graphql.FormationConstraint
@@ -120,8 +125,7 @@ func (r *Resolver) FormationTemplatesByName(ctx context.Context, name *string, f
 
 // FormationTemplates pagination lists all FormationTemplates based on `first` and `after`
 func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
-	var name *string
-	return r.FormationTemplatesByName(ctx, name, first, after)
+	return r.FormationTemplatesByName(ctx, nil, first, after)
 }
 
 // FormationTemplate queries the FormationTemplate matching ID `id`

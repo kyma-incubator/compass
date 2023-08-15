@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
