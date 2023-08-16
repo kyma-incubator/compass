@@ -38,6 +38,8 @@ func NewORDAggregatorHTTPHandler(svc ORDService, cfg MetricsConfig) *handler {
 func (h *handler) AggregateORDData(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
+	log.C(ctx).Info("Starting ORD Aggregation")
+
 	resources := AggregationResources{}
 	if err := json.NewDecoder(request.Body).Decode(&resources); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to parse request body")
