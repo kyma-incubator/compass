@@ -378,7 +378,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 		*validationErrors = validationResult
 	}
 
-	if err := documents.Sanitize(baseURL); err != nil {
+	if err := documents.Sanitize(ctx, baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 

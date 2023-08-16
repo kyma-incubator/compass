@@ -1,7 +1,9 @@
 package ord
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/url"
 	"path"
 	"regexp"
@@ -408,7 +410,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
-func (docs Documents) Sanitize(baseURL string) error {
+func (docs Documents) Sanitize(ctx context.Context, baseURL string) error {
 	var err error
 
 	// Rewrite relative URIs
@@ -474,6 +476,8 @@ func (docs Documents) Sanitize(baseURL string) error {
 			packages[pkg.OrdID] = pkg
 		}
 	}
+
+	log.C(ctx).Infof("Packages prepared (count = %d): %v", len(packages), packages)
 
 	for _, doc := range docs {
 		for _, api := range doc.APIResources {
