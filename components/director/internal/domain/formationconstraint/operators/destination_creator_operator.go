@@ -149,7 +149,8 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 
 			if reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials == nil {
-				return false, errors.New("The outbound communication credentials could not be empty")
+				log.C(ctx).Warnf("No outbound communication credentials are provided. No destination will be created.")
+				return false, nil
 			}
 
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
