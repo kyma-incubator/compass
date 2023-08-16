@@ -138,8 +138,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20230815-ef70d64e"
+      dir: dev/incubator/
+      version: "PR-3222"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -206,20 +206,6 @@ global:
   portieris:
     isEnabled: false
     imagePullSecretName: "portieris-dummy-image-pull-secret"
-  operations_manager:
-    election:
-      enabled: false
-    lease:
-      lockname: opmanagerlease
-    job:
-      ordCreation:
-        schedulePeriod: 168h
-      ordDeletion:
-        schedulePeriod: 24h
-        completedOpsOlderThanDays: 5
-        failedOpsOlderThanDays: 10
-    external:
-      port: 3009
   nsAdapter:
     external:
       port: 3005
