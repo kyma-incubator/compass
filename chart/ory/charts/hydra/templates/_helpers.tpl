@@ -57,7 +57,6 @@ Common labels
 
 {{/*
 Generate the dsn value
-TODO!!! Custom implementation of the dsn value
 */}}
 {{- define "hydra.dsn" -}}
 {{- if .Values.demo -}}

@@ -40,8 +40,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          # TODO!!! Custom image from Kyma, a bit confusing how to change this
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper) }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /manager
@@ -65,23 +64,18 @@ spec:
             {{- end }}
             {{- with .Values.deployment.envs }}
             {{- toYaml . | nindent 12 }}
-            {{- end }}         
+            {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
           {{- if .Values.deployment.securityContext }}
           securityContext:
             {{- toYaml .Values.deployment.securityContext | nindent 12 }}
           {{- end }}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          # TODO!!! ports does not exist in the OS version of Helm charts
-          ports:
-            - containerPort: {{ .Values.port.metrics }}
-              name: metrics
       # TODO!!! Different name used; fullname in OS
       serviceAccountName: {{ include "oathkeeper-maester.name" . }}-account
-      # TODO!!! exists in OS but not in Kyma
-      #automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext: {}
@@ -90,6 +84,7 @@ spec:
       {{- with .Values.deployment.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+    # TODO!!! Does not exist in OS
     {{- if .Values.global.priorityClassName }}
       priorityClassName: {{ .Values.global.priorityClassName }}
     {{- end }}

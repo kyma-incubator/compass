@@ -32,10 +32,6 @@ image:
 # -- Image pull secrets
 imagePullSecrets: []
 
-# TODO!!! Custom, does not exist in OS values.yaml
-port:
-  metrics: 8080
-
 deployment:
   # TODO!!! Custom, does not exist, might appear later
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
@@ -77,8 +73,7 @@ deployment:
   envs: {}
   # https://github.com/kubernetes/kubernetes/issues/57601
   # This applications connects to the k8s API and requires the permissions
-  # TODO!!! Does not exist in Kyma chart, but exists in OS
-  #automountServiceAccountToken: true
+  automountServiceAccountToken: true
 
 # -- Configure node affinity
 affinity: {}

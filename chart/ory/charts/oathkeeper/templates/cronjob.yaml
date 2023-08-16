@@ -51,7 +51,7 @@ spec:
         spec:
           initContainers:
             - name: keys-generator
-              image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper) }}"
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               command:
                 - /bin/sh
                 - -c
@@ -79,7 +79,7 @@ spec:
               set -e
               kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
                 --from-file=/etc/secrets/jwks.json \
-                -n ory -o yaml --dry-run | kubectl apply -f -
+                -n {{ .Release.Namespace }} -o yaml --dry-run | kubectl apply -f -
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:

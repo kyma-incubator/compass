@@ -24,6 +24,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "hydra.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  # TODO!!! Does not exist in OS chart
   strategy:
      {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:

@@ -1,10 +1,6 @@
 # Global or kyma related overrides
 global:
   domainName: "local.kyma.dev"
-  postgresql:
-    # Values are used by the install-ory.sh script
-    postgresqlDatabase: db4hydra
-    postgresqlUsername: hydra
   istio:
     gateway:
       name: kyma-gateway
@@ -33,22 +29,10 @@ global:
       name: "gce-proxy"
       version: "v1.30.1-alpine-3cba814e"
       directory: "tpi/cloudsql-docker"
-    hydra:
-      name: "hydra"
-      version: "v1.11.8"
-      directory: "external/oryd"
     busybox:
       name: "busybox"
       version: "1.34.1"
       directory: "external"
-    oathkeeper:
-      name: "oathkeeper"
-      version: "v0.38.25-beta.1"
-      directory: "external/oryd"
-    oathkeeper_maester:
-      name: "oathkeeper-maester"
-      version: "v0.1.5"
-      directory: "external/oryd"
     alpine:
       name: "alpine"
       version: "3.15.3"
@@ -66,9 +50,6 @@ maintenance:
 
 # Overrides for the Hydra chart
 hydra:
-  image:
-    repository: eu.gcr.io/kyma-project/external/oryd/hydra
-    tag: v1.11.8
   ingress:
     public:
       enabled: false
@@ -126,13 +107,7 @@ hydra:
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
-  image:
-    repository: eu.gcr.io/kyma-project/external/oryd/oathkeeper
-    tag: v0.38.25-beta.1
   sidecar:
-    image:
-      repository: eu.gcr.io/kyma-project/external/oryd/oathkeeper-maester
-      tag: v0.1.5
     # Previously was hardcoded by the Kyma chart
     envs:
       - name: mutatorsAvailable
@@ -251,12 +226,15 @@ oathkeeper:
       maxReplicas: "1"
       minReplicas: "1"
       targetMemoryUtilizationPercentage: 75
-      targetCPUUtilizationPercentage: 80    
-  oathkeeper-maester:
-    # Needed to enforce unique names
-    # TODO: remove this once the ory stack reaches prod & rollback the serviceaccountnames in oathkeeper deployments
+      targetCPUUtilizationPercentage: 80
+  # Should be the same as oathkeeper.oathkeeper-maester.fullnameOverride; otherwise, the maester SA, used by the sidecar, is never found    
+  maester:
     nameOverride: "oathkeeper-stack-maester"
+  oathkeeper-maester:
+    # Should be the same as oathkeeper.maester.nameOverride; otherwise, the maester SA, used by the sidecar, is never found
+    fullnameOverride: "oathkeeper-stack-maester"
     deployment:
+      automountServiceAccountToken: false
       annotations:
         sidecar.istio.io/inject: "false"
       resources:

@@ -64,7 +64,8 @@ spec:
           secret:
             secretName: {{ include "oathkeeper.secretname" . }}
       serviceAccountName: {{ include "oathkeeper.serviceAccountName" . }}
-      automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
+      # TODO!!! This breaks oathkeeper-master for some reason
+      # automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

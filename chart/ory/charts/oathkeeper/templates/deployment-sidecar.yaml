@@ -157,10 +157,8 @@ spec:
         {{- if .Values.deployment.extraContainers }}
 {{ tpl .Values.deployment.extraContainers . | indent 8 }}
         {{- end }}
-      # TODO!!! the OS chart uses {{ default "maester" .Values.maester.nameOverride }}-account
-      # TODO: Change this back to {{ include "oathkeeper-maester.name" . }}-maester-account when it reaches prod
-      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-stack-maester-account
-      # TODO!!! This exists in the OS chart, but not in this one
+      serviceAccountName: {{ default "maester" .Values.maester.nameOverride }}-account
+      # TODO!!! This breaks oathkeeerper-maester for some reason
       # automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       {{- with .Values.deployment.nodeSelector }}
       nodeSelector:
