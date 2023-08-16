@@ -109,10 +109,14 @@ type WebhookConverter interface {
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
 	IsSelfRegistrationFlow(ctx context.Context, labels map[string]interface{}) (bool, error)
-	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error, shouldSkip func() bool) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 	GetSelfRegLabelKey() string
+}
+
+type LabelService interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 // Resolver missing godoc
@@ -129,10 +133,11 @@ type Resolver struct {
 	uidService              UIDService
 	appTemplateProductLabel string
 	certSubjectMappingSvc   CertSubjectMappingService
+	labelSvc                LabelService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, labelSvc LabelService, appTemplateProductLabel string) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		appSvc:                  appSvc,
@@ -145,6 +150,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		uidService:              uidService,
 		appTemplateProductLabel: appTemplateProductLabel,
 		certSubjectMappingSvc:   certSubjectMappingSvc,
+		labelSvc:                labelSvc,
 	}
 }
 
@@ -261,42 +267,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	labels := convertedIn.Labels
-	if _, err = tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
-		isSelfReg, selfRegFlowErr := r.isSelfRegFlow(labels)
-		if selfRegFlowErr != nil {
-			return nil, selfRegFlowErr
-		}
-
-		selfRegLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
-		selfRegLabelValue := labels[selfRegLabelKey]
-		appTemplateExists := false
-		selfRegisteredAppTemplate, err := r.appTemplateSvc.GetByFilters(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(selfRegLabelKey, fmt.Sprintf("\"%s\"", selfRegLabelValue))})
-		if err != nil {
-			if !apperrors.IsNotFoundError(err) {
-				return nil, err
-			}
-
-			appTemplateExists = true
-			labels[r.selfRegManager.GetSelfRegLabelKey()] = selfRegisteredAppTemplate.Labels[r.selfRegManager.GetSelfRegLabelKey()]
-		}
-
-		if isSelfReg && !appTemplateExists {
-			validate := func() error {
-				return validateAppTemplateForSelfReg(in.ApplicationInput)
-			}
-			labels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
-	}
 
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
@@ -313,7 +289,56 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 	}()
 
-	ctx = persistence.SaveToContext(ctx, tx)
+	if tnt, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
+		selfRegLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+		selfRegLabelValue := labels[selfRegLabelKey]
+		appTemplateExists := true
+
+		// Check if AppTemplate with such Self Reg label has already been created
+		selfRegisteredAppTemplate, err := r.appTemplateSvc.GetByFilters(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(selfRegLabelKey, fmt.Sprintf("\"%s\"", selfRegLabelValue))})
+		if err != nil {
+			if !apperrors.IsNotFoundError(err) {
+				return nil, errors.Wrapf(err, "while getting Application Template with self registry filters")
+			}
+
+			appTemplateExists = false
+		}
+
+		if appTemplateExists {
+			// Enrich the new AppTemplate with the Self Reg label value of the existing AppTemplate
+			selfRegLbl, err := r.labelSvc.GetByKey(ctx, tnt, model.AppTemplateLabelableObject, selfRegisteredAppTemplate.ID, r.selfRegManager.GetSelfRegLabelKey())
+			if err != nil {
+				if !apperrors.IsNotFoundError(err) {
+					return nil, errors.Wrapf(err, "while getting self registration label for Application Template with ID %s", selfRegisteredAppTemplate.ID)
+				}
+			}
+
+			if selfRegLbl != nil {
+				labels[r.selfRegManager.GetSelfRegLabelKey()] = selfRegLbl.Value
+			}
+		}
+
+		isSelfRegFlow, selfRegFlowErr := r.isSelfRegFlow(labels)
+		if selfRegFlowErr != nil {
+			return nil, selfRegFlowErr
+		}
+
+		if isSelfRegFlow {
+			validateFn := func() error {
+				return validateAppTemplateForSelfReg(in.ApplicationInput)
+			}
+			shouldSkipFn := func() bool {
+				return appTemplateExists
+			}
+
+			labels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validateFn, shouldSkipFn)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+	}
 
 	if err = r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
 		return nil, err

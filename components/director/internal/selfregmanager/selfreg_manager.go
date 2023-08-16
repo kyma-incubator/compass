@@ -76,7 +76,7 @@ func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels
 
 // PrepareForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error) {
+func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error, shouldSkip func() bool) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading consumer")
@@ -105,6 +105,10 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		}
 
 		labels[RegionLabel] = region
+
+		if shouldSkip() {
+			return labels, nil
+		}
 
 		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 		if !exists {
