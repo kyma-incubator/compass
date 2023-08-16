@@ -118,7 +118,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	}
 	configProvider := eventsQueryConfigProviderWithAdditionalFields(tm.config, additionalFields)
 
-	fetchedTenants, err := fetchCreatedTenantsWithRetries(ctx, tm.eventAPIClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
+	fetchedTenants, err := fetchTenantWithRetries(ctx, tm.eventAPIClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	for region, regionalClient := range tm.regionalClients {
 		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan *model.BusinessTenantMappingInput) {
 			ctx = context.WithValue(ctx, TenantRegionCtxKey, region)
-			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(ctx, regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
+			createdRegionalTenants, err := fetchTenantWithRetries(ctx, regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from region %s: %v", region, err)
 			}
@@ -268,13 +268,19 @@ func eventsQueryConfigProviderWithAdditionalFields(config EventsConfig, addition
 	}
 }
 
-func fetchCreatedTenantsWithRetries(ctx context.Context, eventAPIClient EventAPIClient, retryNumber uint, supportedEvents supportedEvents, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
+func fetchTenantWithRetries(ctx context.Context, eventAPIClient EventAPIClient, retryNumber uint, supportedEvents supportedEvents, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	var fetchedTenants []model.BusinessTenantMappingInput
 
 	createdTenants, err := fetchTenantsWithRetries(ctx, eventAPIClient, retryNumber, supportedEvents.createdTenantEvent, configProvider)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching created tenants: %v", err)
 	}
+
+	if len(createdTenants) == 0 {
+		log.C(ctx).Infof("Tenant not found after fetching created tenants - will skip fetching updated tenants")
+		return nil, nil
+	}
+
 	fetchedTenants = append(fetchedTenants, createdTenants...)
 
 	updatedTenants, err := fetchTenantsWithRetries(ctx, eventAPIClient, retryNumber, supportedEvents.updatedTenantEvent, configProvider)
