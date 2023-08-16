@@ -1,6 +1,7 @@
 package ord_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -782,7 +783,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(url, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), url, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -836,7 +837,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1640,7 +1641,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -2140,7 +2141,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -4013,7 +4014,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				Bundles:  bndlsFromDB,
 			}
 
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -5188,7 +5189,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -5461,7 +5462,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5634,7 +5635,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5694,7 +5695,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5744,7 +5745,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 				Packages: pkgsFromDB,
 				Bundles:  bndlsFromDB,
 			}
-			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, map[string]bool{}, credentialExchangeStrategyTenantMappings)
+			err := docs.Validate(context.TODO(), baseURL, resourcesFromDB, resourceHashes, map[string]bool{}, credentialExchangeStrategyTenantMappings)
 			if len(test.ExpectedStringsInError) != 0 {
 				require.Error(t, err)
 				for _, expectedStr := range test.ExpectedStringsInError {

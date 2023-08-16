@@ -372,7 +372,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
+	validationResult := documents.Validate(ctx, baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult

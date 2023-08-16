@@ -132,7 +132,7 @@ type ResourceIDs struct {
 }
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB ResourcesFromDB, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
+func (docs Documents) Validate(ctx context.Context, calculatedBaseURL string, resourcesFromDB ResourcesFromDB, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	var (
 		errs                *multierror.Error
 		baseURL             = calculatedBaseURL
@@ -189,9 +189,9 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 	invalidApisIndices := make([]int, 0)
 	invalidEventsIndices := make([]int, 0)
 
-	r1, e1 := docs.validateAndCheckForDuplications(SystemVersionPerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
-	r2, e2 := docs.validateAndCheckForDuplications(SystemInstancePerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
-	r3, e3 := docs.validateAndCheckForDuplications("", false, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
+	r1, e1 := docs.validateAndCheckForDuplications(ctx, SystemVersionPerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
+	r2, e2 := docs.validateAndCheckForDuplications(ctx, SystemInstancePerspective, true, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
+	r3, e3 := docs.validateAndCheckForDuplications(ctx, "", false, resourcesFromDB, resourceIDs, resourceHashes, credentialExchangeStrategyTenantMappings)
 	errs = multierror.Append(errs, e1)
 	errs = multierror.Append(errs, e2)
 	errs = multierror.Append(errs, e3)
@@ -275,7 +275,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 	return errs.ErrorOrNil()
 }
 
-func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
+func (docs Documents) validateAndCheckForDuplications(ctx context.Context, perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
 	errs := &multierror.Error{}
 
 	resourceIDs := ResourceIDs{
@@ -306,6 +306,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		for i, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
+				log.C(ctx).Infof("error validating package with ord id %q: %s", pkg.OrdID, err.Error())
 				invalidPackagesIndices = append(invalidPackagesIndices, i)
 				resourceIDs.PackageIDs[pkg.OrdID] = false
 			}

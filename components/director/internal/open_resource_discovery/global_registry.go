@@ -64,7 +64,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, ResourcesFromDB{}, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
+	if err := documents.Validate(ctx, s.config.URL, ResourcesFromDB{}, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 
