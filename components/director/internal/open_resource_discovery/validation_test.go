@@ -4486,6 +4486,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
