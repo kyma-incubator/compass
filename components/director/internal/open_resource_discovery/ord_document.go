@@ -272,6 +272,8 @@ func (docs Documents) Validate(ctx context.Context, calculatedBaseURL string, re
 		invalidEventsIndices = nil
 	}
 
+	log.C(ctx).Info("Errors collected after validation: %v", errs.Error())
+
 	return errs.ErrorOrNil()
 }
 
