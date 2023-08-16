@@ -207,6 +207,11 @@ func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
 }
 
+// GetSelfRegLabelKey returns the label key of where the self register clone
+func (s *selfRegisterManager) GetSelfRegLabelKey() string {
+	return s.cfg.SelfRegisterLabelKey
+}
+
 func (s *selfRegisterManager) createSelfRegPrepRequest(id, tenant, targetURL string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + id
 	url, err := urlpkg.Parse(targetURL)

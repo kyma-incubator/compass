@@ -112,6 +112,7 @@ type SelfRegisterManager interface {
 	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
+	GetSelfRegLabelKey() string
 }
 
 // Resolver missing godoc
@@ -260,13 +261,26 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	labels := convertedIn.Labels
-	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
+	if _, err = tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
 		isSelfReg, selfRegFlowErr := r.isSelfRegFlow(labels)
 		if selfRegFlowErr != nil {
 			return nil, selfRegFlowErr
 		}
 
-		if isSelfReg {
+		selfRegLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+		selfRegLabelValue := labels[selfRegLabelKey]
+		appTemplateExists := false
+		selfRegisteredAppTemplate, err := r.appTemplateSvc.GetByFilters(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(selfRegLabelKey, fmt.Sprintf("\"%s\"", selfRegLabelValue))})
+		if err != nil {
+			if !apperrors.IsNotFoundError(err) {
+				return nil, err
+			}
+
+			appTemplateExists = true
+			labels[r.selfRegManager.GetSelfRegLabelKey()] = selfRegisteredAppTemplate.Labels[r.selfRegManager.GetSelfRegLabelKey()]
+		}
+
+		if isSelfReg && !appTemplateExists {
 			validate := func() error {
 				return validateAppTemplateForSelfReg(in.ApplicationInput)
 			}
@@ -301,7 +315,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
+	if err = r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
 		return nil, err
 	}
 
@@ -730,11 +744,10 @@ func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.Appli
 }
 
 func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels map[string]interface{}) error {
-	selfRegisterDistinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
 	regionLabelKey := selfregmanager.RegionLabel
 	region, regionExists := labels[regionLabelKey]
 
-	distinguishLabelKeys := []string{selfRegisterDistinguishLabelKey, r.appTemplateProductLabel}
+	distinguishLabelKeys := []string{r.appTemplateProductLabel}
 	appTemplateDistinguishLabels := make(map[string]interface{}, len(distinguishLabelKeys))
 
 	for _, key := range distinguishLabelKeys {
