@@ -30,13 +30,13 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
-	logProcessing(ctx, tenantMapping)
 
 	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
 		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
+	logProcessing(ctx, tenantMapping)
 
 	if err := tenantMapping.Validate(); err != nil {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)
@@ -48,11 +48,13 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	}
 
 	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
-	if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
-		errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
-		err := errors.Newf(errMsgf, reverseAssignmentState)
-		internal.RespondWithError(ctx, internal.IncompleteStatusCode, err)
-		return
+	if tenantMapping.AssignedTenants[0].Operation == types.OperationAssign {
+		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
+			errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
+			err := errors.Newf(errMsgf, reverseAssignmentState)
+			internal.RespondWithError(ctx, internal.IncompleteStatusCode, err)
+			return
+		}
 	}
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)

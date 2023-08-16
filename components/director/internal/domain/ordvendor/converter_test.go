@@ -10,7 +10,7 @@ import (
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		vendorModel := fixVendorModel()
+		vendorModel := fixVendorModelForApp()
 		require.NotNil(t, vendorModel)
 		conv := ordvendor.NewConverter()
 
@@ -36,7 +36,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		vendorModel, err := conv.FromEntity(entity)
 
 		require.NoError(t, err)
-		assert.Equal(t, fixVendorModel(), vendorModel)
+		assert.Equal(t, fixVendorModelForApp(), vendorModel)
 	})
 
 	t.Run("Returns error if Entity is nil", func(t *testing.T) {

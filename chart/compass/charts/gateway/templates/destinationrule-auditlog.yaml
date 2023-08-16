@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: {{ template "fullname" . }}-auditlog-rule
+  namespace: {{ .Release.Namespace }}
+spec:
+  host: {{ .Values.global.auditlog.host }}
+  trafficPolicy:
+  {{- if eq .Values.global.auditlog.tlsOrigination true }}
+    portLevelSettings:
+    # Enable TLS origination on audit log for better metrics
+    - port:
+        number: {{ .Values.global.auditlog.port }}
+      tls:
+        mode: SIMPLE
+        # use the system CA certificates to trust
+        caCertificates: system
+        sni: {{ .Values.global.auditlog.host }}
+        subjectAltNames:
+        - {{ .Values.global.auditlog.host | quote }}
+  {{- end }}
+    outlierDetection:
+      consecutive5xxErrors: 15
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 100

@@ -25,10 +25,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	auth "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
@@ -313,9 +314,11 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, han
 		return
 	}
 
-	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", handlerCfg.TenantOnDemandHandlerEndpoint)
+	log.C(ctx).Infof("Registering fetch tenant with parent on-demand endpoint on %s...", handlerCfg.TenantWithParentOnDemandHandlerEndpoint)
+	log.C(ctx).Infof("Registering fetch tenant without parent on-demand endpoint on %s...", handlerCfg.TenantWithoutParentOnDemandHandlerEndpoint)
 	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(subaccountSynchronizer, handlerCfg)
-	router.HandleFunc(handlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+	router.HandleFunc(handlerCfg.TenantWithParentOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+	router.HandleFunc(handlerCfg.TenantWithoutParentOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

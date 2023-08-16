@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
+
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/mitchellh/hashstructure/v2"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -53,8 +53,8 @@ const (
 	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
 	LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
-	// DocumentationLabelsKeyRegex represents the valid structure of the field
-	DocumentationLabelsKeyRegex = "^[^\\n]*$"
+	// NoNewLineRegex represents the valid structure of the field
+	NoNewLineRegex = "^[^\\n]*$"
 	// CustomImplementationStandardRegex represents the valid structure of the field
 	CustomImplementationStandardRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// VendorPartnersRegex represents the valid structure of the field
@@ -76,6 +76,10 @@ const (
 	MinLocalTenantIDLength = 1
 	// MaxLocalTenantIDLength represents the minimal accepted length of the LocalID field
 	MaxLocalTenantIDLength = 255
+	// MinSystemVersionTitleLength represents the minimal accepted length of the LocalID field
+	MinSystemVersionTitleLength = 1
+	// MaxSystemVersionTitleLength represents the minimal accepted length of the LocalID field
+	MaxSystemVersionTitleLength = 255
 )
 
 const (
@@ -230,6 +234,14 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 	)
 }
 
+// ValidateSystemVersionInput validates the given SystemVersion
+func ValidateSystemVersionInput(appTemplateVersion *model.ApplicationTemplateVersionInput) error {
+	return validation.ValidateStruct(appTemplateVersion,
+		validation.Field(&appTemplateVersion.Title, validation.NilOrNotEmpty, validation.Length(MinSystemVersionTitleLength, MaxSystemVersionTitleLength), validation.Match(regexp.MustCompile(NoNewLineRegex))),
+		validation.Field(&appTemplateVersion.ReleaseDate, validation.Required),
+	)
+}
+
 func validateDocumentInput(doc *Document) error {
 	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1.*$"))))
 }
@@ -285,7 +297,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 	)
 }
 
-func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64) error {
+func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
@@ -306,7 +318,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string
 				"callbackUrl": {
 					is.RequestURI,
 				},
-			}, validateCustomType, validateCustomDescription)
+			}, validateCustomType(credentialExchangeStrategyTenantMappings), validateCustomDescription)
 		})),
 		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
@@ -512,7 +524,7 @@ func validateORDLabels(val interface{}) error {
 }
 
 func validateDocumentationLabels(val interface{}) error {
-	return validateLabels(val, DocumentationLabelsKeyRegex)
+	return validateLabels(val, NoNewLineRegex)
 }
 
 func validateLabels(val interface{}, regex string) error {
@@ -1090,11 +1102,19 @@ func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validat
 	return nil
 }
 
-func validateCustomType(el gjson.Result) error {
-	if el.Get("customType").Exists() && el.Get("type").String() != custom {
-		return errors.New("if customType is provided, type should be set to 'custom'")
+func validateCustomType(credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) func(el gjson.Result) error {
+	return func(el gjson.Result) error {
+		if el.Get("customType").Exists() && el.Get("type").String() != custom {
+			return errors.New("if customType is provided, type should be set to 'custom'")
+		}
+
+		customType := el.Get("customType").String()
+		if _, ok := credentialExchangeStrategyTenantMappings[customType]; strings.Contains(customType, TenantMappingCustomTypeIdentifier) && !ok {
+			return errors.New("credential exchange strategy's tenant mapping customType is not valid")
+		}
+
+		return validation.Validate(customType, validation.Match(regexp.MustCompile(CustomTypeCredentialExchangeStrategyRegex)))
 	}
-	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomTypeCredentialExchangeStrategyRegex)))
 }
 
 func validateCustomDescription(el gjson.Result) error {

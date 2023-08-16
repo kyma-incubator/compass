@@ -75,6 +75,7 @@ type ApplicationEventingConfiguration struct {
 
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
+	ID *string `json:"id"`
 	// **Validation:** ASCII printable characters, max=100
 	TemplateName string `json:"templateName"`
 	// **Validation:** if provided, placeholdersPayload not required
@@ -82,6 +83,27 @@ type ApplicationFromTemplateInput struct {
 	// **Validation:** if provided, values not required
 	PlaceholdersPayload *string `json:"placeholdersPayload"`
 	Labels              Labels  `json:"labels"`
+}
+
+type ApplicationJSONInput struct {
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:** max=256
+	ProviderName *string `json:"providerName"`
+	// **Validation:** max=2000
+	Description *string `json:"description"`
+	// **Validation:** label key is alphanumeric with underscore
+	Labels   Labels          `json:"labels"`
+	Webhooks []*WebhookInput `json:"webhooks"`
+	// **Validation:** valid URL, max=256
+	HealthCheckURL *string `json:"healthCheckURL"`
+	// **Validation:** valid URL, max=256
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
+	Bundles              []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationPage struct {
@@ -127,7 +149,7 @@ type ApplicationTemplateInput struct {
 	Description *string         `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
 	Labels               Labels                         `json:"labels"`
-	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
@@ -145,9 +167,11 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
+	Webhooks             []*WebhookInput                `json:"webhooks"`
 	Description          *string                        `json:"description"`
-	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
 	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	Labels               Labels                         `json:"labels"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
 	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
@@ -244,6 +268,14 @@ type BundleInstanceAuth struct {
 	RuntimeContextID *string                   `json:"runtimeContextID"`
 }
 
+type BundleInstanceAuthCreateInput struct {
+	Context          *JSON      `json:"context"`
+	InputParams      *JSON      `json:"inputParams"`
+	Auth             *AuthInput `json:"auth"`
+	RuntimeID        *string    `json:"runtimeID"`
+	RuntimeContextID *string    `json:"runtimeContextID"`
+}
+
 type BundleInstanceAuthRequestInput struct {
 	ID *string `json:"id"`
 	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
@@ -286,6 +318,12 @@ type BundleInstanceAuthStatusInput struct {
 	//
 	// **Validation**: required, if condition is FAILED
 	Reason string `json:"reason"`
+}
+
+type BundleInstanceAuthUpdateInput struct {
+	Context     *JSON      `json:"context"`
+	InputParams *JSON      `json:"inputParams"`
+	Auth        *AuthInput `json:"auth"`
 }
 
 type BundlePage struct {
@@ -476,13 +514,15 @@ type FetchRequestStatus struct {
 }
 
 type FormationAssignment struct {
-	ID         string                  `json:"id"`
-	Source     string                  `json:"source"`
-	SourceType FormationAssignmentType `json:"sourceType"`
-	Target     string                  `json:"target"`
-	TargetType FormationAssignmentType `json:"targetType"`
-	State      string                  `json:"state"`
-	Value      *string                 `json:"value"`
+	ID            string                  `json:"id"`
+	Source        string                  `json:"source"`
+	SourceType    FormationAssignmentType `json:"sourceType"`
+	Target        string                  `json:"target"`
+	TargetType    FormationAssignmentType `json:"targetType"`
+	State         string                  `json:"state"`
+	Value         *string                 `json:"value"`
+	Configuration *string                 `json:"configuration"`
+	Error         *string                 `json:"error"`
 }
 
 type FormationAssignmentPage struct {
@@ -560,6 +600,7 @@ type FormationTemplateInput struct {
 	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
+	SupportsReset          *bool           `json:"supportsReset"`
 }
 
 type FormationTemplatePage struct {
@@ -1958,6 +1999,8 @@ const (
 	TargetOperationGenerateFormationNotification           TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
 	TargetOperationLoadFormations                          TargetOperation = "LOAD_FORMATIONS"
 	TargetOperationSelectSystemsForFormation               TargetOperation = "SELECT_SYSTEMS_FOR_FORMATION"
+	TargetOperationSendNotification                        TargetOperation = "SEND_NOTIFICATION"
+	TargetOperationNotificationStatusReturned              TargetOperation = "NOTIFICATION_STATUS_RETURNED"
 )
 
 var AllTargetOperation = []TargetOperation{
@@ -1969,11 +2012,13 @@ var AllTargetOperation = []TargetOperation{
 	TargetOperationGenerateFormationNotification,
 	TargetOperationLoadFormations,
 	TargetOperationSelectSystemsForFormation,
+	TargetOperationSendNotification,
+	TargetOperationNotificationStatusReturned,
 }
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation, TargetOperationSendNotification, TargetOperationNotificationStatusReturned:
 		return true
 	}
 	return false

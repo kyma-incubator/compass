@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
-	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "proxy_url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
+	updatableColumns       = []string{"type", "url", "proxy_url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 )
 
@@ -203,9 +203,12 @@ func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		conditionsForAppTemplate := repo.NewNotNullCondition(refColumn)
+		conditionsForAppTemplate := repo.Conditions{
+			repo.NewNotNullCondition(refColumn),
+			repo.NewEqualCondition("type", whType),
+		}
 
-		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate); err != nil {
+		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate...); err != nil {
 			return nil, err
 		}
 
@@ -351,6 +354,11 @@ func (r *repository) Delete(ctx context.Context, id string) error {
 // DeleteAllByApplicationID missing godoc
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
 	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
+}
+
+// DeleteAllByApplicationTemplateID missing godoc
+func (r *repository) DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error {
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("app_template_id", applicationTemplateID)})
 }
 
 func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {

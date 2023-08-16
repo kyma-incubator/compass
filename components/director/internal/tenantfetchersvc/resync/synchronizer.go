@@ -13,13 +13,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+type contextKey string
+
 const (
-	retryDelayMilliseconds = 100
+	retryDelaySeconds = 3
 	// TenantOnDemandProvider is the name of the business tenant mapping provider used when the tenant is not found in the events service
 	TenantOnDemandProvider = "lazily-tenant-fetcher"
+	// TenantRegionCtxKey region context key
+	TenantRegionCtxKey contextKey = "tenantsRegion"
 )
 
 // TenantStorageService missing godoc
+//
 //go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
@@ -28,6 +33,7 @@ type TenantStorageService interface {
 }
 
 // TenantCreator takes care of retrieving tenants from external tenant registry and storing them in Director
+//
 //go:generate mockery --name=TenantCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantCreator interface {
 	FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error)
@@ -36,6 +42,7 @@ type TenantCreator interface {
 }
 
 // TenantDeleter takes care of retrieving no longer used tenants from external tenant registry and delete them from Director
+//
 //go:generate mockery --name=TenantDeleter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantDeleter interface {
 	TenantsToDelete(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error)
@@ -43,6 +50,7 @@ type TenantDeleter interface {
 }
 
 // TenantMover takes care of moving tenants from one parent tenant to another.
+//
 //go:generate mockery --name=TenantMover --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMover interface {
 	TenantsToMove(ctx context.Context, region, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error)
@@ -50,6 +58,7 @@ type TenantMover interface {
 }
 
 // AggregationFailurePusher takes care of pushing aggregation failures to Prometheus.
+//
 //go:generate mockery --name=AggregationFailurePusher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AggregationFailurePusher interface {
 	ReportAggregationFailure(ctx context.Context, err error)
@@ -132,6 +141,7 @@ func (ts *TenantsSynchronizer) synchronizeTenants(ctx context.Context) error {
 	}
 
 	for _, region := range ts.supportedRegions {
+		ctx = context.WithValue(ctx, TenantRegionCtxKey, region)
 		log.C(ctx).Printf("Processing new events for region: %s...", region)
 		tenantsToCreate, err := ts.creator.TenantsToCreate(ctx, region, lastConsumedTenantTimestamp)
 		if err != nil {
@@ -211,6 +221,10 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return err
 	}
 
+	if fetchedTenant == nil && parentTenantID == "" {
+		log.C(ctx).Infof("Tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
+		return apperrors.NewEmptyParentIDErrorWithMessage(fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID))
+	}
 	if fetchedTenant == nil {
 		log.C(ctx).Infof("Tenant with ID %s was not found, it will be stored lazily", tenantID)
 		fetchedTenant := model.BusinessTenantMappingInput{
@@ -224,7 +238,9 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		}
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
-
+	if fetchedTenant.Region != "" {
+		fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+	}
 	parentTenantID = fetchedTenant.Parent
 	if len(parentTenantID) == 0 {
 		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)

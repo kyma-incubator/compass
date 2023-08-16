@@ -1,6 +1,8 @@
 package formationconstraint
 
-import "github.com/kyma-incubator/compass/components/director/internal/model"
+import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+)
 
 // IsNotAssignedToAnyFormationOfTypeInput input for IsNotAssignedToAnyFormationOfType operator
 type IsNotAssignedToAnyFormationOfTypeInput struct {
@@ -32,4 +34,14 @@ type DoNotGenerateFormationAssignmentNotificationInput struct {
 	FormationTemplateID  string             `json:"formation_template_id"`
 	ExceptSubtypes       []string           `json:"except_subtypes"`
 	ExceptFormationTypes []string           `json:"except_formation_types"`
+}
+
+// DestinationCreatorInput input for DestinationCreator operator
+type DestinationCreatorInput struct {
+	Operation                              model.FormationOperation `json:"operation"`
+	ResourceType                           model.ResourceType       `json:"resource_type"`
+	ResourceSubtype                        string                   `json:"resource_subtype"`
+	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
+	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
+	Location                               JoinPointLocation        `json:"join_point_location"`
 }

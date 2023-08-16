@@ -46,7 +46,7 @@ func (s *subscriber) applySubscriptionChange(ctx context.Context, subscriptionPr
 	if subscribe {
 		err = s.gqlClient.SubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload)
 	} else {
-		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
+		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionPayload)
 	}
 	return err
 }

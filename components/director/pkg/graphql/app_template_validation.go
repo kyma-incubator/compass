@@ -35,6 +35,7 @@ func (i ApplicationTemplateUpdateInput) Validate() error {
 		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
+		"webhooks":               validation.Validate(i.Webhooks, validation.By(webhooksRuleFunc)),
 		"applicationNamespace":   validation.Validate(i.ApplicationNamespace, validation.Length(1, longStringLengthLimit)),
 	}.Filter()
 }
@@ -119,7 +120,7 @@ func ensureUniquePlaceholders(placeholders []*PlaceholderDefinitionInput) error 
 	return nil
 }
 
-func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationRegisterInput) error {
+func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationJSONInput) error {
 	placeholdersMarshalled, err := json.Marshal(appInput)
 	if err != nil {
 		return errors.Wrap(err, "while marshalling placeholders")
@@ -139,7 +140,7 @@ func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput
 	return nil
 }
 
-func validPlaceholders(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationRegisterInput) error {
+func validPlaceholders(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationJSONInput) error {
 	if err := ensureUniquePlaceholders(placeholders); err != nil {
 		return err
 	}

@@ -10,13 +10,13 @@ import (
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		tombstoneModel := fixTombstoneModel()
+		tombstoneModel := fixTombstoneModelForApp()
 		require.NotNil(t, tombstoneModel)
 		conv := tombstone.NewConverter()
 
 		entity := conv.ToEntity(tombstoneModel)
 
-		assert.Equal(t, fixEntityTombstone(), entity)
+		assert.Equal(t, fixEntityTombstoneForApp(), entity)
 	})
 
 	t.Run("Returns nil if tombstone model is nil", func(t *testing.T) {
@@ -30,13 +30,13 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		entity := fixEntityTombstone()
+		entity := fixEntityTombstoneForApp()
 		conv := tombstone.NewConverter()
 
 		tombstoneModel, err := conv.FromEntity(entity)
 
 		require.NoError(t, err)
-		assert.Equal(t, fixTombstoneModel(), tombstoneModel)
+		assert.Equal(t, fixTombstoneModelForApp(), tombstoneModel)
 	})
 
 	t.Run("Returns error if Entity is nil", func(t *testing.T) {

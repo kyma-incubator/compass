@@ -371,6 +371,107 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 	}
 }
 
+func TestLabelService_UpsertLabelGlobal(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	id := "foo"
+	version := 0
+
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name         string
+		LabelRepoFn  func() *automock.LabelRepository
+		UIDServiceFn func() *automock.UIDService
+
+		LabelInput *model.LabelInput
+
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      "string",
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("UpsertGlobal", ctx, &model.Label{
+					Key:        "test",
+					Value:      "string",
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+
+		{
+			Name: "Error when upserting label",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      "string",
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("UpsertGlobal", ctx, &model.Label{
+					Key:        "test",
+					Value:      "string",
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					ID:         id,
+					Version:    version,
+				}).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+			uidService := testCase.UIDServiceFn()
+
+			svc := label.NewLabelService(labelRepo, nil, uidService)
+
+			// WHEN
+			err := svc.UpsertLabelGlobal(ctx, testCase.LabelInput)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			labelRepo.AssertExpectations(t)
+			uidService.AssertExpectations(t)
+		})
+	}
+}
+
 func TestLabelService_CreateLabel(t *testing.T) {
 	// GIVEN
 	tnt := tenantID

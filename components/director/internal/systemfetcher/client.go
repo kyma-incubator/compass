@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/avast/retry-go/v4"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
@@ -51,8 +54,10 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
-func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
+func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex *sync.Mutex) ([]System, error) {
+	mutex.Lock()
 	qp := c.buildFilter()
+	mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
 	var systems []System
@@ -162,22 +167,34 @@ func (c *Client) buildFilter() map[string]string {
 		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
 		lblExists := false
+		minTime := time.Now()
 
 		for _, s := range SystemSynchronizationTimestamps {
-			v, ok := s[lbl.Value.(string)]
-
+			v, ok := s[lblToString]
 			if ok {
 				lblExists = true
-
-				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", v.LastSyncTimestamp.String())
-				filterBuilder.addFilter(expr1, expr2)
+				if v.LastSyncTimestamp.Before(minTime) {
+					minTime = v.LastSyncTimestamp
+				}
 			}
 		}
 
-		if !lblExists {
+		if lblExists {
+			expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
+			filterBuilder.addFilter(expr1, expr2)
+		} else {
 			filterBuilder.addFilter(expr1)
 		}
 	}
+	result := map[string]string{"fetchAcrossZones": "true"}
 
-	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery()), "fetchAcrossZones": "true"}
+	if len(c.apiConfig.FilterCriteria) > 0 {
+		result["$filter"] = fmt.Sprintf(c.apiConfig.FilterCriteria, filterBuilder.buildFilterQuery())
+	}
+
+	selectFilter := strings.Join(SelectFilter, ",")
+	if len(selectFilter) > 0 {
+		result["$select"] = selectFilter
+	}
+	return result
 }

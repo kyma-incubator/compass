@@ -3,9 +3,12 @@ package ord_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -19,6 +22,7 @@ import (
 const (
 	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
 	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
+	proxyURL               = "http://proxy.com:8080"
 	baseURL                = "http://test.com:8080"
 	baseURL2               = "http://second.com"
 	customWebhookConfigURL = "http://custom.com/config/endpoint"
@@ -35,8 +39,6 @@ const (
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
-	appID            = "testApp"
-	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
@@ -51,6 +53,7 @@ const (
 	event2ID         = "testEvent2"
 	tombstoneID      = "testTs"
 	localTenantID    = "localTenantID"
+	webhookID        = "webhookID"
 
 	api1spec1ID  = "api1spec1ID"
 	api1spec2ID  = "api1spec2ID"
@@ -68,9 +71,17 @@ const (
 
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
+
+	appTemplateVersionID    = "testAppTemplateVersionID"
+	appTemplateVersionValue = "2303"
+	appTemplateName         = "appTemplateName"
+
+	applicationTypeLabelValue = "customType"
 )
 
 var (
+	appID              = "testApp"
+	appTemplateID      = "testAppTemplate"
 	uidSvc             = uid.NewService()
 	packageLinksFormat = removeWhitespace(`[
         {
@@ -139,12 +150,49 @@ var (
         "mass-extraction"
       ]`)
 
+	credentialExchangeStrategiesWithCustomTypeFormat = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        }
+      ]`)
+
+	credentialExchangeStrategiesWithMultipleSameTypesFormat = removeWhitespace(`[
+		{
+		  "callbackUrl": "http://example.com/credentials-fake",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        },
+        {
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom",
+		  "customDescription": "description"
+        }
+      ]`)
+
 	credentialExchangeStrategiesFormat = removeWhitespace(`[
         {
 		  "callbackUrl": "%s/credentials/relative",
           "customType": "ns:credential-exchange:v1",
 		  "type": "custom"
         },
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "ns:credential-exchange2:v3",
+		  "type": "custom"
+        },
+		{
+		  "callbackUrl": "http://example.com/credentials",
+          "customType": "%s",
+		  "type": "custom"
+        }
+      ]`)
+
+	credentialExchangeStrategiesBasic = removeWhitespace(`[
 		{
 		  "callbackUrl": "http://example.com/credentials",
           "customType": "ns:credential-exchange2:v3",
@@ -200,6 +248,15 @@ var (
 	hashPackage, _ = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
+
+	credentialExchangeStrategyType           = "sap.ucl:tenant-mapping:v1"
+	credentialExchangeStrategyVersion        = "v1"
+	credentialExchangeStrategyTenantMappings = map[string]ord.CredentialExchangeStrategyTenantMapping{
+		credentialExchangeStrategyType: {
+			Mode:    model.WebhookModeSync,
+			Version: credentialExchangeStrategyVersion,
+		},
+	}
 )
 
 func fixResourceHashes() map[string]uint64 {
@@ -236,34 +293,64 @@ func fixORDDocument() *ord.Document {
 	return fixORDDocumentWithBaseURL("")
 }
 
+func fixORDDocumentWithoutCredentialExchanges() *ord.Document {
+	doc := fixORDDocumentWithBaseURL("")
+	doc.ConsumptionBundles[0].CredentialExchangeStrategies = nil
+	return doc
+}
+
+func fixORDStaticDocument() *ord.Document {
+	doc := fixORDDocumentWithBaseURL("")
+	doc.DescribedSystemInstance = nil
+	doc.DescribedSystemVersion = fixAppTemplateVersionInput()
+	doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
+
+	return doc
+}
+
 func fixSanitizedORDDocument() *ord.Document {
 	sanitizedDoc := fixORDDocumentWithBaseURL(baseURL)
-
-	sanitizedDoc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
-	sanitizedDoc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.APIResources[0].Labels = json.RawMessage(mergedLabels)
-
-	sanitizedDoc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
-	sanitizedDoc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.APIResources[1].Labels = json.RawMessage(mergedLabels)
-
-	sanitizedDoc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
-	sanitizedDoc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
-	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.EventResources[0].Labels = json.RawMessage(mergedLabels)
-
-	sanitizedDoc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
-	sanitizedDoc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
-	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
-	sanitizedDoc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
-	sanitizedDoc.EventResources[1].Labels = json.RawMessage(mergedLabels)
-
+	sanitizeResources(sanitizedDoc)
 	return sanitizedDoc
+}
+
+func fixSanitizedORDDocumentForProxyURL() *ord.Document {
+	sanitizedDoc := fixORDDocumentWithBaseURL(customWebhookConfigURL)
+	sanitizedDoc.ConsumptionBundles[0].CredentialExchangeStrategies = nil
+	sanitizeResources(sanitizedDoc)
+	return sanitizedDoc
+}
+
+func fixSanitizedStaticORDDocument() *ord.Document {
+	sanitizedDoc := fixORDStaticDocumentWithBaseURL(baseURL)
+	sanitizeResources(sanitizedDoc)
+	return sanitizedDoc
+}
+
+func sanitizeResources(doc *ord.Document) {
+	doc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
+	doc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
+	doc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.APIResources[0].Labels = json.RawMessage(mergedLabels)
+
+	doc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
+	doc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
+	doc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.APIResources[1].Labels = json.RawMessage(mergedLabels)
+
+	doc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
+	doc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
+	doc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.EventResources[0].Labels = json.RawMessage(mergedLabels)
+
+	doc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
+	doc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
+	doc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
+	doc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
+	doc.EventResources[1].Labels = json.RawMessage(mergedLabels)
 }
 
 func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
@@ -271,6 +358,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
+		Perspective:           ord.SystemInstancePerspective,
 		DescribedSystemInstance: &model.Application{
 			BaseURL:             str.Ptr(baseURL),
 			OrdLabels:           json.RawMessage(labels),
@@ -311,7 +399,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Tags:                         json.RawMessage(tags),
 				Labels:                       json.RawMessage(labels),
 				DocumentationLabels:          json.RawMessage(documentLabels),
-				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
+				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL, credentialExchangeStrategyType)),
 				CorrelationIDs:               json.RawMessage(correlationIDs),
 			},
 		},
@@ -584,6 +672,15 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	}
 }
 
+func fixORDStaticDocumentWithBaseURL(providedBaseURL string) *ord.Document {
+	doc := fixORDDocumentWithBaseURL(providedBaseURL)
+	doc.DescribedSystemInstance = nil
+	doc.DescribedSystemVersion = fixAppTemplateVersionInput()
+	doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
+
+	return doc
+}
+
 func fixApplicationPage() *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: []*model.Application{
@@ -605,6 +702,38 @@ func fixApplicationPage() *model.ApplicationPage {
 		TotalCount: 1,
 	}
 }
+
+func fixAppTemplate() *model.ApplicationTemplate {
+	return &model.ApplicationTemplate{
+		ID:   appTemplateID,
+		Name: appTemplateName,
+	}
+}
+
+func fixAppTemplateVersions() []*model.ApplicationTemplateVersion {
+	return []*model.ApplicationTemplateVersion{
+		fixAppTemplateVersion(),
+	}
+}
+
+func fixAppTemplateVersion() *model.ApplicationTemplateVersion {
+	return &model.ApplicationTemplateVersion{
+		ID:                    appTemplateVersionID,
+		Version:               appTemplateVersionValue,
+		CorrelationIDs:        json.RawMessage(correlationIDs),
+		ApplicationTemplateID: appTemplateID,
+	}
+}
+
+func fixAppTemplateVersionInput() *model.ApplicationTemplateVersionInput {
+	return &model.ApplicationTemplateVersionInput{
+		Version:        appTemplateVersionValue,
+		Title:          str.Ptr("Title"),
+		ReleaseDate:    str.Ptr("2020-12-08T15:47:04+0000"),
+		CorrelationIDs: json.RawMessage(correlationIDs),
+	}
+}
+
 func fixApplications() []*model.Application {
 	return []*model.Application{
 		{
@@ -619,6 +748,54 @@ func fixApplications() []*model.Application {
 	}
 }
 
+func fixApplicationsWithBaseURL() []*model.Application {
+	return []*model.Application{
+		{
+			Name: "testApp",
+			BaseEntity: &model.BaseEntity{
+				ID:    appID,
+				Ready: true,
+			},
+			BaseURL:               str.Ptr(baseURL),
+			Type:                  testApplicationType,
+			ApplicationTemplateID: str.Ptr(appTemplateID),
+		},
+	}
+}
+
+func fixTenantMappingWebhookGraphQLInput() *graphql.WebhookInput {
+	syncMode := graphql.WebhookModeSync
+	return &graphql.WebhookInput{
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &graphql.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:    &syncMode,
+		Version: str.Ptr(credentialExchangeStrategyVersion),
+	}
+}
+
+func fixTenantMappingWebhookModelInput() *model.WebhookInput {
+	syncMode := model.WebhookModeSync
+	return &model.WebhookInput{
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode: &syncMode,
+	}
+}
+func fixWebhookForApplicationWithProxyURL() *model.Webhook {
+	return &model.Webhook{
+		ID:             whID,
+		ObjectID:       appID,
+		ObjectType:     model.ApplicationWebhookReference,
+		Type:           model.WebhookTypeOpenResourceDiscovery,
+		URL:            str.Ptr(baseURL),
+		ProxyURL:       str.Ptr(customWebhookConfigURL),
+		HeaderTemplate: str.Ptr(`{"target_host": ["{{.Application.BaseURL}}"] }`),
+	}
+}
 func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
 		{
@@ -640,6 +817,19 @@ func fixOrdWebhooksForAppTemplate() []*model.Webhook {
 			URL:        str.Ptr(baseURL),
 		},
 	}
+}
+func fixTenantMappingWebhooksForApplication() []*model.Webhook {
+	syncMode := model.WebhookModeSync
+	return []*model.Webhook{{
+		ID:  webhookID,
+		URL: str.Ptr("http://example.com/credentials"),
+		Auth: &model.Auth{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+		Mode:       &syncMode,
+		ObjectType: model.ApplicationWebhookReference,
+		ObjectID:   appID,
+	}}
 }
 
 func fixVendors() []*model.Vendor {
@@ -707,7 +897,7 @@ func fixPackages() []*model.Package {
 	return []*model.Package{
 		{
 			ID:                  packageID,
-			ApplicationID:       appID,
+			ApplicationID:       &appID,
 			OrdID:               packageORDID,
 			Vendor:              str.Ptr(vendorORDID),
 			Title:               "PACKAGE 1 TITLE",
@@ -733,7 +923,7 @@ func fixPackages() []*model.Package {
 func fixBundles() []*model.Bundle {
 	return []*model.Bundle{
 		{
-			ApplicationID:                appID,
+			ApplicationID:                &appID,
 			Name:                         "BUNDLE TITLE",
 			Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
 			Version:                      str.Ptr("1.1.2"),
@@ -751,6 +941,12 @@ func fixBundles() []*model.Bundle {
 			},
 		},
 	}
+}
+
+func fixBundlesWithCredentialExchangeStrategies() []*model.Bundle {
+	bundles := fixBundles()
+	bundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
+	return bundles
 }
 
 func fixBundleCreateInput() []*model.BundleCreateInput {
@@ -833,7 +1029,7 @@ func fixBundlesWithHash() []*model.Bundle {
 func fixAPIs() []*model.APIDefinition {
 	return []*model.APIDefinition{
 		{
-			ApplicationID:                           appID,
+			ApplicationID:                           &appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Name:                                    "API TITLE",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -866,7 +1062,7 @@ func fixAPIs() []*model.APIDefinition {
 			},
 		},
 		{
-			ApplicationID:                           appID,
+			ApplicationID:                           &appID,
 			PackageID:                               str.Ptr(packageORDID),
 			Name:                                    "Gateway Sample Service",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -938,7 +1134,7 @@ func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			ApplicationID:       appID,
+			ApplicationID:       &appID,
 			PackageID:           str.Ptr(packageORDID),
 			Name:                "EVENT TITLE",
 			Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -965,7 +1161,7 @@ func fixEvents() []*model.EventDefinition {
 			},
 		},
 		{
-			ApplicationID:    appID,
+			ApplicationID:    &appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
 			Description:      str.Ptr("lorem ipsum dolor sit amet"),
@@ -1004,7 +1200,7 @@ func fixEventsNoVersionBump() []*model.EventDefinition {
 	return events
 }
 
-func fixAPI1SpecInputs() []*model.SpecInput {
+func fixAPI1SpecInputs(url string) []*model.SpecInput {
 	openAPIType := model.APISpecTypeOpenAPIV3
 	edmxAPIType := model.APISpecTypeEDMX
 	return []*model.SpecInput{
@@ -1013,7 +1209,7 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL:  baseURL + "/external-api/unsecured/spec/flapping",
+				URL:  url + "/external-api/unsecured/spec/flapping",
 				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
@@ -1042,7 +1238,7 @@ func fixAPI1IDs() []string {
 	return []string{api1spec1ID, api1spec2ID, api1spec3ID}
 }
 
-func fixAPI2SpecInputs() []*model.SpecInput {
+func fixAPI2SpecInputs(url string) []*model.SpecInput {
 	edmxAPIType := model.APISpecTypeEDMX
 	openAPIType := model.APISpecTypeOpenAPIV3
 	return []*model.SpecInput{
@@ -1060,7 +1256,7 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL:  baseURL + "/odata/1.0/catalog.svc/$value?type=json",
+				URL:  url + "/odata/1.0/catalog.svc/$value?type=json",
 				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
@@ -1090,7 +1286,7 @@ func fixEvent1IDs() []string {
 	return []string{event1specID}
 }
 
-func fixEvent2SpecInputs() []*model.SpecInput {
+func fixEvent2SpecInputs(url string) []*model.SpecInput {
 	eventType := model.EventSpecTypeAsyncAPIV2
 	return []*model.SpecInput{
 		{
@@ -1098,7 +1294,7 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 			EventType:  &eventType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL:  baseURL + "/api/eventCatalog.json",
+				URL:  url + "/api/eventCatalog.json",
 				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
@@ -1114,7 +1310,7 @@ func fixTombstones() []*model.Tombstone {
 		{
 			ID:            tombstoneID,
 			OrdID:         api2ORDID,
-			ApplicationID: appID,
+			ApplicationID: &appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
 		},
 	}
@@ -1175,6 +1371,13 @@ func fixGlobalRegistryORDDocument() *ord.Document {
 				Title: "SAP SE",
 			},
 		},
+	}
+}
+
+func fixApplicationTypeLabel() *model.Label {
+	return &model.Label{
+		Key:   application.ApplicationTypeLabelKey,
+		Value: applicationTypeLabelValue,
 	}
 }
 

@@ -175,8 +175,8 @@ spec:
               value: {{ .Values.deployment.dataloaders.wait | quote }}
             - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
-              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
             - name: APP_TOKEN_PREFIX
               value: {{ .Values.global.director.subscription.tokenPrefix }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
@@ -267,6 +267,46 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
+            - name: APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY
+              value: "{{ .Values.global.director.destinationCreator.correlationIDsKey }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_BASE_URL
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.baseURL }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_PATH
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.subaccountIDParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.nameParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.baseURL }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_PATH
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.subaccountIDParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.nameParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_FILE_NAME_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.fileNameKey }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.commonNameKey }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.certChainKey }}"
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_URL_TEMPLATE
+              value: {{ printf .Values.global.kymaAdapter.tenantMapping.urlTemplate (tpl "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}:443" .) | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_INPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.inputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_HEADER_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.headerTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_OUTPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.outputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_MODE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.mode | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_TYPE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.type | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

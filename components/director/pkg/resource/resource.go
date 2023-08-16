@@ -10,6 +10,8 @@ const (
 	Application Type = "application"
 	// ApplicationTemplate type represents application template resource.
 	ApplicationTemplate Type = "applicationTemplate"
+	// ApplicationTemplateVersion type represents application template version resource.
+	ApplicationTemplateVersion Type = "applicationTemplateVersion"
 	// Runtime type represents runtime resource.
 	Runtime Type = "runtime"
 	// RuntimeContext type represents runtime context resource.
@@ -84,6 +86,8 @@ const (
 	AppWebhook Type = "appWebhook"
 	// RuntimeWebhook type represents runtime webhook resource.
 	RuntimeWebhook Type = "runtimeWebhook"
+	// Operation type represents operation resource.
+	Operation Type = "operation"
 	// FormationTemplateWebhook type represents formation template webhook resource.
 	FormationTemplateWebhook Type = "formationTemplateWebhook"
 	// Tenant type represents tenant resource.
@@ -97,6 +101,10 @@ const (
 	// SystemsSync type represents systems synchronization timestamps resource
 	SystemsSync Type = "systemsSync"
 )
+
+var ignoredTenantAccessTable = map[Type]string{
+	ApplicationTemplateVersion: "application_template_versions",
+}
 
 var tenantAccessTable = map[Type]string{
 	// Tables
@@ -140,6 +148,18 @@ var tablesWithEmbeddedTenant = map[Type]string{
 	SystemAuth:                 "system_auths",
 }
 
+// IgnoredTenantAccessTable returns the table / view with tenant accesses of the given type.
+func (t Type) IgnoredTenantAccessTable() (string, bool) {
+	tbl, ok := ignoredTenantAccessTable[t]
+	return tbl, ok
+}
+
+// IsTenantIgnorable returns true if the entity has a Global access and does not need tenant isolation
+func (t Type) IsTenantIgnorable() bool {
+	_, exists := ignoredTenantAccessTable[t]
+	return exists
+}
+
 // TenantAccessTable returns the table / view with tenant accesses of the given type.
 func (t Type) TenantAccessTable() (string, bool) {
 	tbl, ok := tenantAccessTable[t]
@@ -154,9 +174,10 @@ func (t Type) EmbeddedTenantTable() (string, bool) {
 
 // TopLevelEntities is a map of entities that has a many-to-many relationship with the tenants along with their table names.
 var TopLevelEntities = map[Type]string{
-	Application:    "public.applications",
-	Runtime:        "public.runtimes",
-	RuntimeContext: "public.runtime_contexts",
+	Application:                "public.applications",
+	ApplicationTemplateVersion: "public.application_template_versions",
+	Runtime:                    "public.runtimes",
+	RuntimeContext:             "public.runtime_contexts",
 }
 
 // IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.

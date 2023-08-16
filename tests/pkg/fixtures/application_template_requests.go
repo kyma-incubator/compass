@@ -19,7 +19,7 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &appTemplateDesc,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:         "{{name}}",
 			ProviderName: &providerName,
 			Description:  ptr.String("test {{display-name}}"),
@@ -66,7 +66,7 @@ func FixApplicationTemplateWithoutWebhooks(name string) graphql.ApplicationTempl
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &appTemplateDesc,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:         "{{name}}",
 			ProviderName: &providerName,
 			Description:  ptr.String("test {{display-name}}"),

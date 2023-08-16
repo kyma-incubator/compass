@@ -61,3 +61,63 @@ func FixAPIDefinitionInBundleRequest(appID, bndlID, apiID string) *gcli.Request 
 				}
 			}`, appID, bndlID, apiID, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()))
 }
+
+func FixAddAPIToApplicationRequest(appID, apiInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addAPIDefinitionToApplication(appID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, appID, apiInputGQL, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()))
+}
+
+func FixUpdateAPIToApplicationRequest(id, APIInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: updateAPIDefinitionForApplication(id: "%s", in: %s) {
+				%s
+			}
+		}
+		`, id, APIInputGQL, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()))
+}
+
+func FixAPIForApplicationWithDefaultPaginationRequest(appID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+		result: apisForApplication(appID: "%s") {
+				%s
+			}
+		}
+		`, appID, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForAPIDefinition())))
+}
+
+func FixAddEventToApplicationRequest(appID, eventInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: addEventDefinitionToApplication(appID: "%s", in: %s) {
+				%s
+			}
+		}
+		`, appID, eventInputGQL, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
+}
+
+func FixUpdateEventToApplicationRequest(id, eventInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		result: updateEventDefinitionForApplication(id: "%s", in: %s) {
+				%s
+			}
+		}
+		`, id, eventInputGQL, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
+}
+
+func FixEventForApplicationWithDefaultPaginationRequest(appID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+		result: eventsForApplication(appID: "%s") {
+				%s
+			}
+		}
+		`, appID, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForEventDefinition())))
+}

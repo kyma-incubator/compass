@@ -2,7 +2,11 @@ package ord_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"testing"
+
+	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -19,12 +23,13 @@ func TestService_SyncGlobalResources(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	dummyApp := &model.Application{
+	ordMapping := application.ORDWebhookMapping{}
+	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{}
+
+	resource := ord.Resource{
 		Name: "global-registry",
-		Type: "global-registry",
-		BaseEntity: &model.BaseEntity{
-			ID: "global-registry",
-		},
+		Type: directorresource.Application,
+		ID:   "global-registry",
 	}
 
 	testWebhook := &model.Webhook{
@@ -68,7 +73,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 
 	successfulClientFn := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(ord.Documents{fixGlobalRegistryORDDocument()}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{fixGlobalRegistryORDDocument()}, baseURL, nil)
 		return client
 	}
 
@@ -124,7 +129,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(nil, "", testErr)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(nil, "", testErr)
 				return client
 			},
 			ExpectedErr: testErr,
@@ -136,7 +141,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.Vendors[0].OrdID = "invalid-ord-id"
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			ExpectedErr: errors.New("ordId: must be in a valid format."),
@@ -148,7 +153,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.ConsumptionBundles = fixORDDocument().ConsumptionBundles
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), dummyApp, testWebhook).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			ExpectedErr: errors.New("global registry supports only vendors and products"),
@@ -316,7 +321,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client)
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
 			globalIDs, err := svc.SyncGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -410,7 +415,7 @@ func TestService_ListGlobalResources(t *testing.T) {
 			}
 			client := &automock.Client{}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client)
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
 			globalIDs, err := svc.ListGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

@@ -20,12 +20,13 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "bundle_id", "app_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	documentColumns = []string{"id", "bundle_id", "app_id", "app_template_version_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	bundleIDColumn  = "bundle_id"
 	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.Document) (*Entity, error)
@@ -39,6 +40,7 @@ type repository struct {
 	deleter         repo.Deleter
 	pageableQuerier repo.PageableQuerier
 	creator         repo.Creator
+	creatorGlobal   repo.CreatorGlobal
 
 	conv Converter
 }
@@ -52,6 +54,7 @@ func NewRepository(conv Converter) *repository {
 		deleter:         repo.NewDeleter(documentTable),
 		pageableQuerier: repo.NewPageableQuerier(documentTable, documentColumns),
 		creator:         repo.NewCreator(documentTable, documentColumns),
+		creatorGlobal:   repo.NewCreatorGlobal(resource.Document, documentTable, documentColumns),
 		conv:            conv,
 	}
 }
@@ -117,6 +120,21 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Docu
 
 	log.C(ctx).Debugf("Persisting Document entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, resource.Document, tenant, entity)
+}
+
+// CreateGlobal creates a document without a tenant isolation
+func (r *repository) CreateGlobal(ctx context.Context, item *model.Document) error {
+	if item == nil {
+		return apperrors.NewInternalError("Document cannot be empty")
+	}
+
+	entity, err := r.conv.ToEntity(item)
+	if err != nil {
+		return errors.Wrap(err, "while creating Document entity from model")
+	}
+
+	log.C(ctx).Debugf("Persisting Document entity with id %s to db", item.ID)
+	return r.creatorGlobal.Create(ctx, entity)
 }
 
 // CreateMany missing godoc

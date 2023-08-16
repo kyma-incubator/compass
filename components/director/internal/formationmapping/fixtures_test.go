@@ -113,18 +113,6 @@ func fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, te
 	}
 }
 
-func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, state model.FormationAssignmentState, config string) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: testFormationID,
-		Source:      sourceID,
-		SourceType:  sourceFAType,
-		Target:      targetID,
-		TargetType:  targetFAType,
-		State:       string(state),
-		Value:       json.RawMessage(config),
-	}
-}
-
 func fixBusinessTenantMapping() *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             internalTntID,
@@ -186,10 +174,6 @@ func fixUnusedFormationAssignmentSvc() *automock.FormationAssignmentService {
 	return &automock.FormationAssignmentService{}
 }
 
-func fixUnusedFormationAssignmentConverter() *automock.FormationAssignmentConverter {
-	return &automock.FormationAssignmentConverter{}
-}
-
 func fixUnusedFormationAssignmentNotificationSvc() *automock.FormationAssignmentNotificationService {
 	return &automock.FormationAssignmentNotificationService{}
 }
@@ -228,4 +212,41 @@ func fixUnusedFormationRepo() *automock.FormationRepository {
 
 func fixUnusedFormationTemplateRepo() *automock.FormationTemplateRepository {
 	return &automock.FormationTemplateRepository{}
+}
+
+func ThatDoesNotCommitInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+
+	transact := &persistenceautomock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Twice()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+	return persistTx, transact
+}
+
+func ThatFailsOnCommitInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+	persistTx.On("Commit").Return(testErr).Once()
+
+	transact := &persistenceautomock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Twice()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+	return persistTx, transact
+}
+
+func ThatFailsOnBeginInGoRoutine() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	persistTx := &persistenceautomock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Once()
+
+	transact := &persistenceautomock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Once()
+	transact.On("Begin").Return(persistTx, testErr).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+	return persistTx, transact
 }

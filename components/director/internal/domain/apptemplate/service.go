@@ -55,6 +55,7 @@ type UIDService interface {
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
+	DeleteAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) error
 }
 
 // LabelUpsertService missing godoc
@@ -62,6 +63,14 @@ type WebhookRepository interface {
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
+	UpsertLabelGlobal(ctx context.Context, labelInput *model.LabelInput) error
+}
+
+// CertSubjectMappingService missing godoc
+//
+//go:generate mockery --name=CertSubjectMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type CertSubjectMappingService interface {
+	DeleteByConsumerID(ctx context.Context, consumerID string) error
 }
 
 // LabelRepository missing godoc
@@ -72,22 +81,31 @@ type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+// ApplicationRepository missing godoc
+//
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationRepository interface {
+	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
+}
+
 type service struct {
 	appTemplateRepo    ApplicationTemplateRepository
 	webhookRepo        WebhookRepository
 	uidService         UIDService
 	labelUpsertService LabelUpsertService
 	labelRepo          LabelRepository
+	appRepo            ApplicationRepository
 }
 
 // NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository) *service {
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository, appRepo ApplicationRepository) *service {
 	return &service{
 		appTemplateRepo:    appTemplateRepo,
 		webhookRepo:        webhookRepo,
 		uidService:         uidService,
 		labelUpsertService: labelUpsertService,
 		labelRepo:          labelRepo,
+		appRepo:            appRepo,
 	}
 }
 
@@ -303,6 +321,44 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
+	}
+
+	if err = s.webhookRepo.DeleteAllByApplicationTemplateID(ctx, appTemplate.ID); err != nil {
+		return errors.Wrapf(err, "while deleting Webhooks for applicationTemplate")
+	}
+
+	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
+	for _, item := range in.Webhooks {
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appTemplate.ID, model.ApplicationTemplateWebhookReference))
+	}
+	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
+		return errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, id, in.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "while upserting labels for Application Template with id %s", id)
+	}
+
+	if oldAppTemplate.Name != appTemplate.Name {
+		log.C(ctx).Infof("Listing applications registered from application template with id %s", id)
+		appsByAppTemplate, err := s.appRepo.ListAllByApplicationTemplateID(ctx, id)
+		if err != nil {
+			return errors.Wrapf(err, "while listing applications for app template with id %s", id)
+		}
+
+		for _, app := range appsByAppTemplate {
+			log.C(ctx).Infof("Updating %s label for application with id %s", applicationTypeLabelKey, app.ID)
+			err = s.labelUpsertService.UpsertLabelGlobal(ctx, &model.LabelInput{
+				Key:        applicationTypeLabelKey,
+				Value:      appTemplate.Name,
+				ObjectID:   app.ID,
+				ObjectType: model.ApplicationLabelableObject,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "while updating %s label of application with id %s", applicationTypeLabelKey, app.ID)
+			}
+		}
 	}
 
 	return nil

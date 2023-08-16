@@ -61,6 +61,52 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 	}`)
 }
 
+// ApplicationJSONInputToGQL missing godoc
+func (g *Graphqlizer) ApplicationJSONInputToGQL(in graphql.ApplicationJSONInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .ProviderName }}
+		providerName: "{{ .ProviderName }}",
+		{{- end }}
+		{{- if .Description }}
+		description: "{{ .Description }}",
+		{{- end }}
+		{{- if .LocalTenantID }}
+		localTenantID: "{{ .LocalTenantID }}",
+		{{- end }}
+        {{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }}
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
+		{{- if .HealthCheckURL }}
+		healthCheckURL: "{{ .HealthCheckURL }}",
+		{{- end }}
+		{{- if .Bundles }}
+		bundles: [
+			{{- range $i, $e := .Bundles }}
+				{{- if $i}}, {{- end}} {{- BundleCreateInputToGQL $e }}
+			{{- end }} ],
+		{{- end }}
+		{{- if .IntegrationSystemID }}
+		integrationSystemID: "{{ .IntegrationSystemID }}",
+		{{- end }}
+		{{- if .StatusCondition }}
+		statusCondition: {{ .StatusCondition }},
+		{{- end }}
+		{{- if .BaseURL }}
+		baseUrl: "{{ .BaseURL }}"
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{ .ApplicationNamespace }}"
+		{{- end }}
+	}`)
+}
+
 // ApplicationUpdateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
@@ -101,7 +147,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		{{- if .ApplicationNamespace }}
 		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
-		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
+		applicationInput: {{ ApplicationJSONInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
 			{{- range $i, $e := .Placeholders }}
@@ -131,7 +177,7 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 		{{- if .ApplicationNamespace }}
 		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
-		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
+		applicationInput: {{ ApplicationJSONInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
 			{{- range $i, $e := .Placeholders }}
@@ -139,6 +185,15 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 			{{- end }} ],
 		{{- end }}
 		accessLevel: {{.AccessLevel}},
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }}
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
 	}`)
 }
 
@@ -594,6 +649,9 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
 		{{- end}}
+		{{- if .SupportsReset }}
+		supportsReset: {{.SupportsReset}}
+		{{- end}}
 	}`)
 }
 
@@ -629,6 +687,25 @@ func (g *Graphqlizer) FormationTemplateConstraintReferenceToGQL(in graphql.Const
 // ApplicationFromTemplateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
+		templateName: "{{.TemplateName}}"
+		{{- if .Values }}
+		values: [
+			{{- range $i, $e := .Values }}
+				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
+			{{- end }} ],
+		{{- end }}
+		{{- if .PlaceholdersPayload }}
+		placeholdersPayload:  "{{.PlaceholdersPayload}}"
+		{{- end }}
+	}`)
+}
+
+// ApplicationFromTemplateInputWithTemplateIDToGQL missing godoc
+func (g *Graphqlizer) ApplicationFromTemplateInputWithTemplateIDToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .ID }}
+		id: "{{ .ID }}"
+		{{- end }}
 		templateName: "{{.TemplateName}}"
 		{{- if .Values }}
 		values: [
@@ -719,6 +796,42 @@ func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInsta
 		{{- end }}
 		{{- if .Context }}
 		context: {{ .Context }}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+	}`)
+}
+
+// BundleInstanceAuthCreateInputToGQL converts graphql.BundleInstanceAuthCreateInput to input arguments in graphql format
+func (g *Graphqlizer) BundleInstanceAuthCreateInputToGQL(in graphql.BundleInstanceAuthCreateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
+		{{- end }}
+		{{- if .InputParams }}
+		inputParams: {{ .InputParams }}
+		{{- end }}
+		{{- if .RuntimeID }}
+		runtimeID: "{{ .RuntimeID }}"
+		{{- end }}
+		{{- if .RuntimeContextID }}
+		runtimeContextID: "{{ .RuntimeContextID }}"
+		{{- end }}
+	}`)
+}
+
+// BundleInstanceAuthUpdateInputToGQL converts graphql.BundleInstanceAuthUpdateInput to input arguments in graphql format
+func (g *Graphqlizer) BundleInstanceAuthUpdateInputToGQL(in graphql.BundleInstanceAuthUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		{{- if .Context }}
+		context: {{ .Context }}
+		{{- end }}
+		{{- if .Auth }}
+		auth: {{- AuthInputToGQL .Auth}}
 		{{- end }}
 		{{- if .InputParams }}
 		inputParams: {{ .InputParams }}
@@ -886,6 +999,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm := sprig.TxtFuncMap()
 	fm["marshal"] = g.marshal
 	fm["ApplicationRegisterInputToGQL"] = g.ApplicationRegisterInputToGQL
+	fm["ApplicationJSONInputToGQL"] = g.ApplicationJSONInputToGQL
 	fm["DocumentInputToGQL"] = g.DocumentInputToGQL
 	fm["FetchRequesstInputToGQL"] = g.FetchRequestInputToGQL
 	fm["AuthInputToGQL"] = g.AuthInputToGQL

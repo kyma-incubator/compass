@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/automock"
@@ -502,9 +504,12 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 				validHandlerConfig.ParentTenantPathParam: "",
 				validHandlerConfig.TenantPathParam:       tenantID,
 			},
-			TenantFetcherSvc:    func() *automock.TenantFetcher { return &automock.TenantFetcher{} },
-			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: "Parent tenant ID path parameter is missing from request",
+			TenantFetcherSvc: func() *automock.TenantFetcher {
+				svc := &automock.TenantFetcher{}
+				svc.On("SynchronizeTenant", mock.Anything, "", tenantID).Return(nil)
+				return svc
+			},
+			ExpectedStatusCode: http.StatusOK,
 		},
 		{
 			Name:    "Failure when tenant ID is missing",
@@ -530,6 +535,20 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 				return svc
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,
+		},
+		{
+			Name:    "Failure when fetch on-demand returns an error when parent ID is missing",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				validHandlerConfig.ParentTenantPathParam: "",
+				validHandlerConfig.TenantPathParam:       tenantID,
+			},
+			TenantFetcherSvc: func() *automock.TenantFetcher {
+				svc := &automock.TenantFetcher{}
+				svc.On("SynchronizeTenant", mock.Anything, "", tenantID).Return(apperrors.NewEmptyParentIDErrorWithMessage("error"))
+				return svc
+			},
+			ExpectedStatusCode: http.StatusBadRequest,
 		},
 	}
 	for _, testCase := range testCases {

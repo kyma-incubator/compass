@@ -176,6 +176,34 @@ func TestRepository_Create(t *testing.T) {
 	})
 }
 
+func TestRepository_CreateGlobal(t *testing.T) {
+	var nilLabelModel *model.Label
+	appLabelModel := fixModelLabel(model.ApplicationLabelableObject)
+	appLabelEntity := fixEntityLabel(model.ApplicationLabelableObject)
+
+	appLabelSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Application Label with global creator",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.labels ( id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{appLabelEntity.ID, appLabelEntity.TenantID, appLabelEntity.AppID, appLabelEntity.RuntimeID, appLabelEntity.RuntimeContextID, appLabelEntity.AppTemplateID, appLabelEntity.Key, appLabelEntity.Value, appLabelEntity.Version},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		ModelEntity:         appLabelModel,
+		DBEntity:            appLabelEntity,
+		NilModelEntity:      nilLabelModel,
+		MethodName:          "CreateGlobal",
+		IsGlobal:            true,
+	}
+
+	appLabelSuite.Run(t)
+}
+
 func TestRepository_Upsert(t *testing.T) {
 	testErr := errors.New("Test error")
 
@@ -529,6 +557,75 @@ func TestRepository_Upsert(t *testing.T) {
 	})
 }
 
+func TestRepository_UpsertGlobal(t *testing.T) {
+	testErr := errors.New("Test error")
+
+	t.Run("Success update of label for Application", func(t *testing.T) {
+		labelModel := fixModelLabel(model.ApplicationLabelableObject)
+		labelEntity := fixEntityLabel(model.ApplicationLabelableObject)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", labelModel).Return(labelEntity, nil).Once()
+		mockConverter.On("FromEntity", labelEntity).Return(labelModel, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2`)
+		escapedUpdateQuery := regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ?`)
+
+		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.AppTemplateID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
+		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID).WillReturnRows(mockedRows)
+		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.UpsertGlobal(ctx, labelModel)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error in GetByKeyGlobal", func(t *testing.T) {
+		labelModel := fixModelLabel(model.ApplicationLabelableObject)
+
+		labelRepo := label.NewRepository(&automock.Converter{})
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2`)
+		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID).WillReturnError(testErr)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.UpsertGlobal(ctx, labelModel)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("Error when empty label is passed", func(t *testing.T) {
+		var labelModel *model.Label
+		labelRepo := label.NewRepository(&automock.Converter{})
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		err := labelRepo.UpsertGlobal(ctx, labelModel)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: item can not be empty")
+	})
+}
+
 func TestRepository_UpdateWithVersion(t *testing.T) {
 	version := 42
 
@@ -810,6 +907,39 @@ func TestRepository_GetByKey(t *testing.T) {
 		require.Equal(t, appTemplatelabelModel, actual)
 		require.Equal(t, value, actual.Value)
 	})
+}
+
+func TestRepository_GetByKeyGlobal(t *testing.T) {
+	appLabelModel := fixModelLabel(model.ApplicationLabelableObject)
+	appLabelEntity := fixEntityLabel(model.ApplicationLabelableObject)
+
+	appLabelSuite := testdb.RepoGetTestSuite{
+		Name: "Get Application Label with global getter",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2`),
+				Args:     []driver.Value{key, refID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(appLabelEntity.ID, appLabelEntity.TenantID, appLabelEntity.AppID, appLabelEntity.RuntimeID, appLabelEntity.RuntimeContextID, appLabelEntity.AppTemplateID, appLabelEntity.Key, appLabelEntity.Value, appLabelEntity.Version)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		ExpectedModelEntity: appLabelModel,
+		ExpectedDBEntity:    appLabelEntity,
+		MethodArgs:          []interface{}{model.ApplicationLabelableObject, refID, key},
+		MethodName:          "GetByKeyGlobal",
+	}
+
+	appLabelSuite.Run(t)
 }
 
 func TestRepository_ListForObject(t *testing.T) {
@@ -1870,11 +2000,11 @@ func TestRepository_ListForObjectIDs(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE tenant_id = $1 AND tenant_id IN ($2, $3) AND app_id IS NULL AND runtime_context_id IS NULL AND runtime_id IS NULL`)
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version FROM public.labels WHERE tenant_id IN ($1, $2) AND app_id IS NULL AND runtime_context_id IS NULL AND runtime_id IS NULL`)
 		mockedRows := sqlmock.NewRows(fixColumns).
 			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version).
 			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label2Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version)
-		dbMock.ExpectQuery(escapedQuery).WithArgs(tenantID, sql.NullString{Valid: true, String: labelIDs[0]}, sql.NullString{Valid: true, String: labelIDs[1]}).WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: labelIDs[0]}, sql.NullString{Valid: true, String: labelIDs[1]}).WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)

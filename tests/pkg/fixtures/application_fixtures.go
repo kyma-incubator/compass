@@ -45,7 +45,7 @@ func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, regi
 	return graphql.ApplicationTemplateInput{
 		Name:        applicationType,
 		Description: &applicationType,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
+		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name:          fmt.Sprintf("{{%s}}", namePlaceholder),
 			ProviderName:  str.Ptr("compass"),
 			Description:   ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholder)),
@@ -53,6 +53,7 @@ func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, regi
 			Labels: graphql.Labels{
 				"applicationType": applicationType,
 				"region":          region,
+				"displayName":     fmt.Sprintf("{{%s}}", displayNamePlaceholder),
 			},
 			Webhooks: webhooks,
 		},
@@ -64,6 +65,7 @@ func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, regi
 				Name: displayNamePlaceholder,
 			},
 		},
+		Labels:               map[string]interface{}{},
 		ApplicationNamespace: &namespace,
 		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
 	}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -61,12 +63,12 @@ type validator struct {
 	applicationSvc               ApplicationService
 	intSystemSvc                 IntegrationSystemService
 	subscriptionProviderLabelKey string
-	consumerSubaccountLabelKey   string
+	globalSubaccountIDLabelKey   string
 	tokenPrefix                  string
 }
 
 // NewValidator creates new claims validator
-func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, tokenPrefix string) *validator {
+func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, globalSubaccountIDLabelKey, tokenPrefix string) *validator {
 	return &validator{
 		transact:                     transact,
 		runtimesSvc:                  runtimesSvc,
@@ -75,13 +77,13 @@ func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService
 		applicationSvc:               applicationSvc,
 		intSystemSvc:                 intSystemSvc,
 		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
-		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
+		globalSubaccountIDLabelKey:   globalSubaccountIDLabelKey,
 		tokenPrefix:                  tokenPrefix,
 	}
 }
 
 // Validate validates given id_token claims
-func (v *validator) Validate(ctx context.Context, claims Claims) error {
+func (v *validator) Validate(ctx context.Context, claims idtokenclaims.Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}
@@ -113,7 +115,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 	}
 }
 
-func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) error {
+func (v *validator) validateRuntimeConsumer(ctx context.Context, claims idtokenclaims.Claims) error {
 	tx, err := v.transact.Begin()
 	if err != nil {
 		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
@@ -155,14 +157,14 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
 	rtmCtxFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
+		labelfilter.NewForKeyWithQuery(v.globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
 	}
 
-	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for runtime with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for runtime with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, runtime.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	rtmCtxPage, err := v.runtimeCtxSvc.ListByFilter(ctxWithConsumerTenant, runtime.ID, rtmCtxFilter, 100, "")
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
-		return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+		log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
+		return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	}
 	log.C(ctx).Infof("Found %d runtime context(s) for runtime with ID: %q", len(rtmCtxPage.Data), runtime.ID)
 
@@ -174,7 +176,7 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	return tx.Commit()
 }
 
-func (v *validator) validateApplicationProvider(ctx context.Context, claims Claims) error {
+func (v *validator) validateApplicationProvider(ctx context.Context, claims idtokenclaims.Claims) error {
 	tx, err := v.transact.Begin()
 	if err != nil {
 		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
@@ -217,14 +219,14 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
-	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	applications, err := v.applicationSvc.ListAll(ctxWithConsumerTenant)
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
-		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
+		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.globalSubaccountIDLabelKey, consumerExternalTenantID)
+		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 	}
 
-	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.globalSubaccountIDLabelKey, consumerExternalTenantID)
 
 	appFound := false
 	for _, application := range applications {
@@ -242,7 +244,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	return tx.Commit()
 }
 
-func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims Claims) error {
+func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims idtokenclaims.Claims) error {
 	if claims.Tenant[tenantmapping.ProviderExternalTenantKey] == claims.ConsumerID {
 		return nil // consumer ID is a subaccount tenant
 	}

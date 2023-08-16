@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	formationconstraint "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	mock "github.com/stretchr/testify/mock"
@@ -67,12 +69,35 @@ func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Conte
 	return r0, r1
 }
 
+// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, _a1, operation
+func (_m *NotificationsService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, _a1 *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	ret := _m.Called(ctx, _a1, operation)
+
+	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, model.FormationOperation) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
+		r0 = rf(ctx, _a1, operation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*formationconstraint.NotificationStatusReturnedOperationDetails)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.Formation, model.FormationOperation) error); ok {
+		r1 = rf(ctx, _a1, operation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SendNotification provides a mock function with given fields: ctx, webhookNotificationReq
-func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhook.Response, error) {
+func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, webhookNotificationReq)
 
 	var r0 *webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookRequest) *webhook.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) *webhook.Response); ok {
 		r0 = rf(ctx, webhookNotificationReq)
 	} else {
 		if ret.Get(0) != nil {
@@ -81,7 +106,7 @@ func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNot
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookExtRequest) error); ok {
 		r1 = rf(ctx, webhookNotificationReq)
 	} else {
 		r1 = ret.Error(1)

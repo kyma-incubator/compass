@@ -69,6 +69,23 @@ func AssertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 	}
 }
 
+func AssertKymaRuntimeWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.Webhook) {
+	assert.Equal(t, len(in)+1, len(actual))
+	for _, inWh := range in {
+		found := false
+		for _, actWh := range actual {
+			if urlsAreIdentical(inWh.URL, actWh.URL) {
+				found = true
+				assert.NotNil(t, actWh.ID)
+				assert.Equal(t, inWh.Type, actWh.Type)
+
+				AssertAuth(t, inWh.Auth, actWh.Auth)
+			}
+		}
+		assert.True(t, found)
+	}
+}
+
 func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	if in == nil {
 		assert.Nil(t, actual)
@@ -254,6 +271,13 @@ func AssertRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime 
 	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
 }
 
+func AssertKymaRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime graphql.RuntimeExt) {
+	assert.Equal(t, in.Name, actualRuntime.Name)
+	assert.Equal(t, in.Description, actualRuntime.Description)
+	AssertKymaRuntimeWebhooks(t, in.Webhooks, actualRuntime.Webhooks)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
+}
+
 func AssertUpdatedRuntime(t *testing.T, in graphql.RuntimeUpdateInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
@@ -309,7 +333,7 @@ func AssertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationJSONInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
@@ -326,7 +350,7 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := testctx.Tc.Graphqlizer.ApplicationJSONInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
@@ -346,6 +370,9 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	var webhooks []graphql.Webhook
 	for _, webhook := range actual.Webhooks {
 		webhooks = append(webhooks, *webhook)
+	}
+	if in.SupportsReset != nil {
+		assert.Equal(t, *in.SupportsReset, actual.SupportsReset)
 	}
 	AssertWebhooks(t, in.Webhooks, webhooks)
 }

@@ -3,6 +3,8 @@ package scenario
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -50,7 +52,7 @@ func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepos
 		if err != nil {
 			return "", errors.Wrapf(err, "while getting Bundle with id %s", bundleID)
 		}
-		return bndl.ApplicationID, nil
+		return str.PtrStrToStr(bndl.ApplicationID), nil
 	}
 
 	return &directive{
