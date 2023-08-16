@@ -19,6 +19,8 @@ const (
 	retryDelaySeconds = 3
 	// TenantOnDemandProvider is the name of the business tenant mapping provider used when the tenant is not found in the events service
 	TenantOnDemandProvider = "lazily-tenant-fetcher"
+	// TenantEventsCentralRegion represents the central region for tenant events fetching
+	TenantEventsCentralRegion = "central"
 	// TenantRegionCtxKey region context key
 	TenantRegionCtxKey contextKey = "tenantsRegion"
 )

@@ -118,6 +118,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	}
 	configProvider := eventsQueryConfigProviderWithAdditionalFields(tm.config, additionalFields)
 
+	ctx = context.WithValue(ctx, TenantRegionCtxKey, TenantEventsCentralRegion)
 	fetchedTenants, err := fetchTenantWithRetries(ctx, tm.eventAPIClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 	if err != nil {
 		return nil, err
