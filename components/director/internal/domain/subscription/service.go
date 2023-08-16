@@ -87,6 +87,7 @@ type uidService interface {
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
@@ -318,7 +319,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	log.C(ctx).Infof("Subscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q and application name: %q", consumerTenantID, subscribedSubaccountID, providerSubaccountID, subscribedAppName)
 	filters := s.buildLabelFilters(providerID, region)
 	log.C(ctx).Infof("Getting provider application template in tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
-	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
+	appTemplates, err := s.appTemplateSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
@@ -341,14 +342,17 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	}
 
 	for _, app := range applications {
-		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
-			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed. Adding the new value %q to the %q label", consumerTenantID, subscriptionID, SubscriptionsLabelKey)
-			if err := s.manageSubscriptionsLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID, subscriptionID); err != nil {
-				return false, err
+		for _, appTemplate := range appTemplates {
+			if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
+				// Already subscribed
+				log.C(ctx).Infof("Consumer %q is already subscribed. Adding the new value %q to the %q label", consumerTenantID, subscriptionID, SubscriptionsLabelKey)
+				if err := s.manageSubscriptionsLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID, subscriptionID); err != nil {
+					return false, err
+				}
+				return true, nil
 			}
-			return true, nil
 		}
+
 	}
 
 	subdomainLabel, err := s.labelSvc.GetByKey(ctx, consumerInternalTenant, model.TenantLabelableObject, consumerInternalTenant, SubdomainLabelKey)
@@ -365,8 +369,10 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload); err != nil {
-		return false, err
+	for _, appTemplate := range appTemplates {
+		if err = s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload); err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
@@ -378,7 +384,7 @@ func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, provider
 	log.C(ctx).Infof("Unsubscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q", consumerTenantID, subscribedSubaccountID, providerSubaccountID)
 	filters := s.buildLabelFilters(providerID, region)
 	log.C(ctx).Infof("Getting provider application template in tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
-	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
+	appTemplates, err := s.appTemplateSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
@@ -395,8 +401,10 @@ func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, provider
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
-	if err := s.deleteApplicationsByAppTemplateID(ctx, appTemplate.ID, subscriptionID); err != nil {
-		return false, err
+	for _, appTemplate := range appTemplates {
+		if err = s.deleteApplicationsByAppTemplateID(ctx, appTemplate.ID, subscriptionID); err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
