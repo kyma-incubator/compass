@@ -213,6 +213,9 @@ func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, ap
 		return nil
 	}
 
+	log.C(ctx).Infof("Process %d Applications", len(appIDs))
+
+	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
 	for _, appID := range appIDs {
 		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
@@ -230,6 +233,7 @@ func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, glo
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
 			if err := s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
@@ -1765,6 +1769,8 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 }
 
 func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
+	log.C(ctx).Infof("Processing Webhook for resource type %s with ID %s", resource.Type, resource.ID)
+
 	var (
 		documents      Documents
 		webhookBaseURL string
@@ -2049,6 +2055,7 @@ func (s *Service) getORDConfigForApplication(ctx context.Context, appID string) 
 	}
 
 	if appTypeLbl != nil {
+		log.C(ctx).Infof("Getting ORD configuration for application type %s", appTypeLbl.Value)
 		ordWebhookMapping = s.getMappingORDConfiguration(appTypeLbl.Value.(string))
 	}
 
