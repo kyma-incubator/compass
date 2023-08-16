@@ -167,7 +167,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3180"
+      version: "PR-3223"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
