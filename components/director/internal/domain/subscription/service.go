@@ -482,7 +482,9 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	appCreateInputModel.Labels["managed"] = "false"
 	appCreateInputModel.Labels[SubscriptionsLabelKey] = []string{subscriptionID}
 	appCreateInputModel.Labels[s.globalSubaccountIDLabelKey] = subscribedSubaccountID
-	appCreateInputModel.LocalTenantID = &consumerTenantID
+	if appCreateInputModel.LocalTenantID == nil {
+		appCreateInputModel.LocalTenantID = &consumerTenantID
+	}
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
 	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
