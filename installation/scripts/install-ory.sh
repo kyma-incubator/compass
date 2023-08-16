@@ -94,19 +94,21 @@ SECRET_NAME=ory-hydra-credentials
 
 kubectl create ns $RELEASE_NS || true
 
-LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.postgresql.enabled" ${OVERRIDE_TEMP_ORY})
+LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
 
 # Create Secret that is referenced as 'existingSecret' under chart/ory/values.yaml
 # Secret should not be recreated if it exists, mainly during Helm updates, as it will create new random values.
 # The new random values will triggered the redeployment of the postgres db and Hydra - that breaks the deployment
 # Rotating the secrets has to be done manually; the rotation of the Hydra Secrets should be done following this guide: https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
-if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTENCE" = true ]; then
-  echo "Creating secret to be used by the Ory Helm Chart..."
-  POSTGRES_USERNAME=$(yq .global.postgresql.postgresqlUsername ${OVERRIDE_TEMP_ORY})
-  POSTGRES_PASSWORD=$(generate_random 10)
-  POSTGRES_DB=$(yq .global.postgresql.postgresqlDatabase ${OVERRIDE_TEMP_ORY})
+if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTENCE" = false ]; then
+  echo "Creating secret to be used by the Ory Hydra Helm Chart..."
+  # Hydra uses the `localdb` instance as its persistence backend
+  VALUES_FILE_DB="${ROOT_PATH}"/chart/localdb/values.yaml
+  POSTGRES_USERNAME=$(yq ".postgresql.postgresqlUsername" $VALUES_FILE_DB)
+  POSTGRES_PASSWORD=$(yq ".postgresql.postgresqlPassword" $VALUES_FILE_DB)
+  POSTGRES_DB=$(yq ".global.database.embedded.hydra.name" $VALUES_FILE_DB)
 
-  DSN=postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${RELEASE_NAME}-postgresql.${RELEASE_NS}.svc.cluster.local:5432/${POSTGRES_DB}?sslmode=disable\&max_conn_lifetime=10s
+  DSN=postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@compass-postgresql.compass-system.svc.cluster.local:5432/${POSTGRES_DB}?sslmode=disable\&max_conn_lifetime=10s
 
   SYSTEM=$(generate_random 32)
   COOKIE=$(generate_random 32)
@@ -126,7 +128,6 @@ helm upgrade --install $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "$
 if [[ ! ${SKIP_JWKS_ROTATION} ]]; then
   CRONJOB=oathkeeper-jwks-rotator
   # CronJob creates a Secret that is needed for the successful deployment of Oathkeeper
-  kubectl set image -n $RELEASE_NS cronjob $CRONJOB keys-generator=oryd/oathkeeper:v0.38.23
   kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "*/1 * * * *"}}'
   until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.status.lastScheduleTime}) ]]; do
       echo "Waiting for cronjob $CRONJOB to be scheduled"
