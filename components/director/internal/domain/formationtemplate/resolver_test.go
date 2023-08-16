@@ -179,8 +179,10 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatSucceeds,
 			First: &first,
 			FormationTemplateService: func() *automock.FormationTemplateService {
+				var nilStr *string
+
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), mock.Anything, first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -198,8 +200,10 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			First: &first,
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
+				var nilStr *string
+
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), mock.Anything, first, after).Return(nil, testErr)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(nil, testErr)
 
 				return svc
 			},
@@ -212,8 +216,10 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			First: &first,
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
+				var nilStr *string
+
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), mock.Anything, first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -231,8 +237,10 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			First: &first,
 			TxFn:  txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
+				var nilStr *string
+
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), mock.Anything, first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},

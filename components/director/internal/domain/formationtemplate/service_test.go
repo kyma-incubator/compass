@@ -365,8 +365,10 @@ func TestService_List(t *testing.T) {
 			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				var nilStr *string
+
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, mock.Anything, testTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
+				repo.On("List", ctx, nilStr, testTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
@@ -382,8 +384,10 @@ func TestService_List(t *testing.T) {
 			Context:  ctxWithEmptyTenants,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				var nilStr *string
+
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctxWithEmptyTenants, mock.Anything, "", pageSize, mock.Anything).Return(&formationTemplateModelNullTenantPage, nil).Once()
+				repo.On("List", ctxWithEmptyTenants, nilStr, "", pageSize, mock.Anything).Return(&formationTemplateModelNullTenantPage, nil).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
@@ -414,8 +418,10 @@ func TestService_List(t *testing.T) {
 			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				var nilStr *string
+
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, mock.Anything, testTenantID, pageSize, mock.Anything).Return(nil, testErr).Once()
+				repo.On("List", ctx, nilStr, testTenantID, pageSize, mock.Anything).Return(nil, testErr).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
