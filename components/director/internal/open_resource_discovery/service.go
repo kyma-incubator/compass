@@ -374,9 +374,12 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 
 	validationResult := documents.Validate(ctx, baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
+		log.C(ctx).Infof("Validation result: %v", validationResult)
+
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
 	}
+	log.C(ctx).Infof("Validation errors: %v", *validationErrors)
 
 	if err := documents.Sanitize(ctx, baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
