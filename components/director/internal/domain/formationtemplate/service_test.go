@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var nilStr *string
+
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
@@ -365,8 +367,6 @@ func TestService_List(t *testing.T) {
 			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				var nilStr *string
-
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("List", ctx, nilStr, testTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
 				return repo
@@ -384,8 +384,6 @@ func TestService_List(t *testing.T) {
 			Context:  ctxWithEmptyTenants,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				var nilStr *string
-
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("List", ctxWithEmptyTenants, nilStr, "", pageSize, mock.Anything).Return(&formationTemplateModelNullTenantPage, nil).Once()
 				return repo
@@ -418,8 +416,6 @@ func TestService_List(t *testing.T) {
 			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				var nilStr *string
-
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("List", ctx, nilStr, testTenantID, pageSize, mock.Anything).Return(nil, testErr).Once()
 				return repo
