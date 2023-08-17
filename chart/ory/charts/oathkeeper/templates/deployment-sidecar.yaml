@@ -9,7 +9,14 @@ metadata:
   {{- end }}
   labels:
     mode: {{ .Values.global.ory.oathkeeper.maester.mode }}
-{{ include "oathkeeper.labels" . | indent 4 }}
+    {{- include "oathkeeper.labels" . | nindent 4 }}
+    {{- with .Values.deployment.labels }} 
+      {{- toYaml . | nindent 4 }} 
+    {{- end }}  
+  annotations:  
+    {{- with .Values.deployment.annotations }}  
+      {{- toYaml . | nindent 4 }} 
+    {{- end }}
 spec:
 # TODO!!! Custom logic that checks whether autoscaling is enabled, could exist in future Ory versions
 {{- if not .Values.deployment.autoscaling.enabled}}
@@ -25,13 +32,21 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "oathkeeper.labels" . | nindent 8 }}  
+        {{- with .Values.deployment.labels }} 
+          {{- toYaml . | nindent 8 }} 
+        {{- end }}  
+        {{- with .Values.deployment.podMetadata.labels }} 
+          {{- toYaml . | nindent 8 }} 
+        {{- end }}
       annotations:
         # important: This did not previously exist, added by OS chart
         {{- include "oathkeeper.annotations.checksum" . | indent 8 -}}
         {{- with .Values.deployment.annotations }}
           {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.deployment.podMetadata.annotations }}  
+          {{- toYaml . | nindent 8 }} 
         {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
@@ -39,6 +54,9 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       volumes:
+        {{- if .Values.deployment.extraVolumes }} 
+          {{- toYaml .Values.deployment.extraVolumes | nindent 8 }} 
+        {{- end }}
         - name: {{ include "oathkeeper.name" . }}-config-volume
           configMap:
             {{- if .Values.demo }}
@@ -67,6 +85,9 @@ spec:
           securityContext:
             # TODO!!! Custom implementation of security context; in OS charts it is one, in the Kyma one it is divided by sidecar, controller etc.
             {{- toYaml .Values.deployment.securityContext.sidecar | nindent 12 }}
+      {{- if .Values.deployment.extraInitContainers }}
+        {{- tpl  .Values.deployment.extraInitContainers . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -74,11 +95,21 @@ spec:
           command: [ "oathkeeper", "serve", "--config", "/etc/config/config.yaml" ]
           env:
             # TODO!!! Custom implementation; OS chart only allows file, which is not ideal, should be changed in future Helm charts
-            {{- if .Values.oathkeeper.config.mutators.id_token.config.jwks_url }}
+            # {{- if .Values.oathkeeper.config.mutators.id_token.config.jwks_url }}
+            # - name: MUTATORS_ID_TOKEN_CONFIG_JWKS_URL
+            #   value: "{{ .Values.oathkeeper.config.mutators.id_token.config.jwks_url }}"
+            # {{- end }}
+            {{- if .Values.oathkeeper.mutatorIdTokenJWKs }}
             - name: MUTATORS_ID_TOKEN_CONFIG_JWKS_URL
-              value: "{{ .Values.oathkeeper.config.mutators.id_token.config.jwks_url }}"
+              value: "file://{{ .Values.secret.mountPath }}/{{ .Values.secret.filename }}"
+            {{- end }}
+            {{- with .Values.deployment.extraEnv }} 
+              {{- toYaml . | nindent 12 }}  
             {{- end }}
           volumeMounts:
+            {{- with .Values.deployment.extraVolumeMounts }}  
+              {{- toYaml . | nindent 12 }}  
+            {{- end }}
             - name: {{ include "oathkeeper.name" . }}-config-volume
               mountPath: /etc/config
               readOnly: true
@@ -155,7 +186,7 @@ spec:
           securityContext:
             {{- toYaml .Values.deployment.securityContext.maester | nindent 12 }}
         {{- if .Values.deployment.extraContainers }}
-{{ tpl .Values.deployment.extraContainers . | indent 8 }}
+          {{- tpl .Values.deployment.extraContainers . | nindent 8 }}
         {{- end }}
       serviceAccountName: {{ default "maester" .Values.maester.nameOverride }}-account
       # TODO!!! This breaks oathkeeerper-maester for some reason

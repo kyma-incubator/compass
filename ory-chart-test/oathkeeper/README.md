@@ -1,6 +1,6 @@
 # oathkeeper
 
-![Version: 0.24.5](https://img.shields.io/badge/Version-0.24.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.39.0](https://img.shields.io/badge/AppVersion-v0.39.0-informational?style=flat-square)
+![Version: 0.25.6](https://img.shields.io/badge/Version-0.25.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.39.0](https://img.shields.io/badge/AppVersion-v0.39.0-informational?style=flat-square)
 
 A Helm chart for deploying ORY Oathkeeper in Kubernetes
 
@@ -10,7 +10,7 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| ORY Team | office@ory.sh | https://www.ory.sh/ |
+| ORY Team | <office@ory.sh> | <https://www.ory.sh/> |
 
 ## Source Code
 
@@ -21,7 +21,7 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://../oathkeeper-maester | oathkeeper-maester(oathkeeper-maester) | 0.24.5 |
+| file://../oathkeeper-maester | oathkeeper-maester(oathkeeper-maester) | 0.25.6 |
 
 ## Values
 
@@ -33,12 +33,17 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 | deployment.annotations | object | `{}` |  |
 | deployment.automountServiceAccountToken | bool | `false` |  |
 | deployment.autoscaling | object | `{"enabled":false,"maxReplicas":5,"minReplicas":1,"targetCPUUtilizationPercentage":80}` | Configure horizontal pod autoscaler for deployment |
-| deployment.extraContainers | object | `{}` | If you want to add extra sidecar containers. |
+| deployment.extraArgs | list | `[]` | Array of extra arguments to be passed down to the Deployment. Kubernetes args format is expected |
+| deployment.extraContainers | string | `""` | If you want to add extra sidecar containers. |
 | deployment.extraEnv | list | `[]` |  |
+| deployment.extraInitContainers | string | `""` | If you want to add extra init containers. These are processed before the migration init container. |
 | deployment.extraVolumeMounts | list | `[]` | Extra volume mounts, allows mounting the extraVolumes to the container. |
 | deployment.extraVolumes | list | `[]` | Extra volumes you can attach to the pod. |
 | deployment.labels | object | `{}` |  |
 | deployment.nodeSelector | object | `{}` | Node labels for pod assignment. |
+| deployment.podMetadata | object | `{"annotations":{},"labels":{}}` | Specify pod metadata, this metadata is added directly to the pod, and not higher objects |
+| deployment.podMetadata.annotations | object | `{}` | Extra pod level annotations |
+| deployment.podMetadata.labels | object | `{}` | Extra pod level labels |
 | deployment.resources | object | `{}` |  |
 | deployment.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | deployment.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
@@ -51,9 +56,8 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 | deployment.serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
 | deployment.serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
 | deployment.tolerations | list | `[]` | Configure node tolerations. |
-| deployment.tracing | object | `{"datadog":{"enabled":false}}` | Configuration for tracing providers. Only datadog is currently supported through this block. If you need to use a different tracing provider, please manually set the configuration values via "oathkeeper.config" or via "deployment.extraEnv". |
 | fullnameOverride | string | `""` | Full chart name override |
-| global | object | `{"ory":{"oathkeeper":{"maester":{"mode":"controller"}}}}` | Mode for oathkeeper controller -- Two possible modes are: controller or sidecar |
+| global | object | `{"ory":{"oathkeeper":{"maester":{"mode":"controller"}}}}` | Two possible modes are: controller or sidecar |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.repository | string | `"oryd/oathkeeper"` | ORY Oathkeeper image |
 | image.tag | string | `"v0.39.0"` | ORY Oathkeeper version |
@@ -61,14 +65,15 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 | ingress | object | `{"api":{"annotations":{},"className":"","enabled":false,"hosts":[{"host":"api.oathkeeper.localhost","paths":[{"path":"/","pathType":"ImplementationSpecific"}]}]},"proxy":{"annotations":{},"className":"","defaultBackend":{},"enabled":false,"hosts":[{"host":"proxy.oathkeeper.localhost","paths":[{"path":"/","pathType":"ImplementationSpecific"}]}]}}` | Configure ingress |
 | ingress.api.enabled | bool | `false` | En-/Disable the api ingress. |
 | ingress.proxy | object | `{"annotations":{},"className":"","defaultBackend":{},"enabled":false,"hosts":[{"host":"proxy.oathkeeper.localhost","paths":[{"path":"/","pathType":"ImplementationSpecific"}]}]}` | Configure ingress for the proxy port. |
+| ingress.proxy.defaultBackend | object | `{}` | Configuration for custom default service. This service will be used to handle the response when the configured service in the Ingress rule does not have any active endpoints |
 | ingress.proxy.enabled | bool | `false` | En-/Disable the proxy ingress. |
 | maester | object | `{"enabled":true}` | Configures controller setup |
 | nameOverride | string | `""` | Chart name override |
-| oathkeeper | object | `{"accessRules":{},"config":{"access_rules":{"repositories":["file:///etc/rules/access-rules.json"]},"serve":{"api":{"port":4456},"prometheus":{"port":9000},"proxy":{"port":4455}}},"managedAccessRules":true,"mutatorIdTokenJWKs":{}}` | Configure ORY Oathkeeper itself |
-| oathkeeper.accessRules | object | `{}` | If set, uses the given access rules. |
+| oathkeeper | object | `{"accessRules":"","config":{"access_rules":{"repositories":["file:///etc/rules/access-rules.json"]},"serve":{"api":{"port":4456},"prometheus":{"port":9000},"proxy":{"port":4455}}},"managedAccessRules":true,"mutatorIdTokenJWKs":""}` | Configure ORY Oathkeeper itself |
+| oathkeeper.accessRules | string | `""` | If set, uses the given access rules. |
 | oathkeeper.config | object | `{"access_rules":{"repositories":["file:///etc/rules/access-rules.json"]},"serve":{"api":{"port":4456},"prometheus":{"port":9000},"proxy":{"port":4455}}}` | The ORY Oathkeeper configuration. For a full list of available settings, check:   https://github.com/ory/oathkeeper/blob/master/docs/config.yaml |
 | oathkeeper.managedAccessRules | bool | `true` | If you enable maester, the following value should be set to "false" to avoid overwriting the rules generated by the CDRs. Additionally, the value "accessRules" shouldn't be used as it will have no effect once "managedAccessRules" is disabled. |
-| oathkeeper.mutatorIdTokenJWKs | object | `{}` | If set, uses the given JSON Web Key Set as the signing key for the ID Token Mutator. |
+| oathkeeper.mutatorIdTokenJWKs | string | `""` | If set, uses the given JSON Web Key Set as the signing key for the ID Token Mutator. |
 | pdb | object | `{"enabled":false,"spec":{"minAvailable":1}}` | PodDistributionBudget configuration |
 | replicaCount | int | `1` | Number of ORY Oathkeeper members |
 | secret.enabled | bool | `true` | switch to false to prevent creating the secret |
@@ -76,10 +81,7 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 | secret.hashSumEnabled | bool | `true` | switch to false to prevent checksum annotations being maintained and propogated to the pods |
 | secret.mountPath | string | `"/etc/secrets"` | default mount path for the kubernetes secret |
 | secret.nameOverride | string | `""` | Provide custom name of existing secret, or custom name of secret to be created |
-| secret.secretAnnotations."helm.sh/hook" | string | `"pre-install, pre-upgrade"` |  |
-| secret.secretAnnotations."helm.sh/hook-delete-policy" | string | `"before-hook-creation"` |  |
-| secret.secretAnnotations."helm.sh/hook-weight" | string | `"0"` |  |
-| secret.secretAnnotations."helm.sh/resource-policy" | string | `"keep"` |  |
+| secret.secretAnnotations | object | `{"helm.sh/hook":"pre-install, pre-upgrade","helm.sh/hook-delete-policy":"before-hook-creation","helm.sh/hook-weight":"0","helm.sh/resource-policy":"keep"}` | Annotations to be added to secret. Annotations are added only when secret is being created. Existing secret will not be modified. |
 | service | object | `{"api":{"annotations":{},"enabled":true,"labels":{},"name":"http","port":4456,"type":"ClusterIP"},"metrics":{"annotations":{},"enabled":true,"labels":{},"name":"http","port":80,"type":"ClusterIP"},"proxy":{"annotations":{},"enabled":true,"labels":{},"name":"http","port":4455,"type":"ClusterIP"}}` | Configures the Kubernetes service |
 | service.api | object | `{"annotations":{},"enabled":true,"labels":{},"name":"http","port":4456,"type":"ClusterIP"}` | Configures the Kubernetes service for the api port. |
 | service.api.annotations | object | `{}` | If you do want to specify annotations, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'annotations:'. kubernetes.io/ingress.class: nginx kubernetes.io/tls-acme: "true" |
@@ -102,8 +104,10 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 | service.proxy.name | string | `"http"` | The service port name. Useful to set a custom service port name if it must follow a scheme (e.g. Istio) |
 | service.proxy.port | int | `4455` | The service port |
 | service.proxy.type | string | `"ClusterIP"` | The service type |
-| serviceMonitor | object | `{"labels":{},"scheme":"http","scrapeInterval":"60s","scrapeTimeout":"30s","targetLabels":[],"tlsConfig":{}}` | Parameters for the Prometheus ServiceMonitor objects. Reference: https://docs.openshift.com/container-platform/4.6/rest_api/monitoring_apis/servicemonitor-monitoring-coreos-com-v1.html |
-| serviceMonitor.labels | object | `{}` | Provide additionnal labels to the ServiceMonitor ressource metadata |
+| serviceMonitor | object | `{"labels":{},"metricRelabelings":[],"relabelings":[],"scheme":"http","scrapeInterval":"60s","scrapeTimeout":"30s","targetLabels":[],"tlsConfig":{}}` | Parameters for the Prometheus ServiceMonitor objects. Reference: https://docs.openshift.com/container-platform/4.6/rest_api/monitoring_apis/servicemonitor-monitoring-coreos-com-v1.html |
+| serviceMonitor.labels | object | `{}` | Provide additional labels to the ServiceMonitor resource metadata |
+| serviceMonitor.metricRelabelings | list | `[]` | Provide additional metricRelabelings to apply to samples before ingestion. |
+| serviceMonitor.relabelings | list | `[]` | Provide additional relabelings to apply to samples before scraping |
 | serviceMonitor.scheme | string | `"http"` | HTTP scheme to use for scraping. |
 | serviceMonitor.scrapeInterval | string | `"60s"` | Interval at which metrics should be scraped |
 | serviceMonitor.scrapeTimeout | string | `"30s"` | Timeout after which the scrape is ended |
@@ -112,4 +116,4 @@ A Helm chart for deploying ORY Oathkeeper in Kubernetes
 | sidecar | object | `{"envs":{},"image":{"repository":"oryd/oathkeeper-maester","tag":"v0.1.2"}}` | Options for the sidecar |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.5.0](https://github.com/norwoodj/helm-docs/releases/v1.5.0)
+Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

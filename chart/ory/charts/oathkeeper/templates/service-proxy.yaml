@@ -22,7 +22,7 @@ spec:
     - port: {{ .Values.service.proxy.port }}
       targetPort: http-proxy
       protocol: TCP
-      name: {{ .Values.service.proxy.name }}
+      name: {{ .Values.service.proxy.name }} 
     # TODO!!! Custom implementation; this port is hardcoded
     - name: tcp-status-port
       port: 15020

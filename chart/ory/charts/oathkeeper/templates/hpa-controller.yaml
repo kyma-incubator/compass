@@ -19,7 +19,7 @@ spec:
   minReplicas: {{ .Values.deployment.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.deployment.autoscaling.maxReplicas }}
   metrics:
-  {{- if .Values.deployment.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.deployment.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu

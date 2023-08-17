@@ -101,8 +101,6 @@ hydra:
             - 192.168.0.0/16
       urls:
         self: {}
-    dangerousAllowInsecureRedirectUrls: false
-    dangerousForceHttp: true
     existingSecret: "ory-hydra-credentials"
 
 # Overrides for the Oathkeeper chart
@@ -165,7 +163,7 @@ oathkeeper:
         deny:
           enabled: true
       log:
-          level: trace
+        level: trace
       mutators:
         noop:
           enabled: true
@@ -176,6 +174,7 @@ oathkeeper:
             issuer_url: https://oathkeeper.local.kyma.dev/
             # REQUIRED IF ENABLED - Sets the URL where keys should be fetched from. Supports remote locations (http, https) as
             # well as local filesystem paths.
+            # Keep in mind that this is created by the Oathkeeper CronJob and mounted into the pod; the name should equal to the one in the CronJob
             jwks_url: file:///etc/secrets/jwks.json
             # jwks_url: https://fetch-keys/from/this/location.json
             # jwks_url: file:///from/this/absolute/location.json
@@ -207,7 +206,8 @@ oathkeeper:
         api:
           port: 4456
   secret:
-    enabled: true
+    # Created by the JWKS CronJob
+    enabled: false
   deployment:
     strategy:
       type: RollingUpdate
