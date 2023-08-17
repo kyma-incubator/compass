@@ -79,7 +79,7 @@ func NewResolver(transact persistence.Transactioner, converter FormationTemplate
 	}
 }
 
-// FormationTemplates pagination lists all FormationTemplates filtered by name and based on `first` and `after`
+// FormationTemplatesByName pagination lists all FormationTemplates filtered by name and based on `first` and `after`
 func (r *Resolver) FormationTemplatesByName(ctx context.Context, name *string, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
 	var cursor string
 	if after != nil {
