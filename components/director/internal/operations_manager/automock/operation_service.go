@@ -28,6 +28,34 @@ func (_m *OperationService) CreateMultiple(ctx context.Context, in []*model.Oper
 	return r0
 }
 
+// MarkAsCompleted provides a mock function with given fields: ctx, id
+func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MarkAsFailed provides a mock function with given fields: ctx, id, errorMsg
+func (_m *OperationService) MarkAsFailed(ctx context.Context, id string, errorMsg string) error {
+	ret := _m.Called(ctx, id, errorMsg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, id, errorMsg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewOperationService interface {
 	mock.TestingT
 	Cleanup(func())

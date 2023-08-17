@@ -58,7 +58,7 @@ func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id stri
 }
 
 // MarkOperationFailed marks the operation with the given ID as failed
-func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, error string) error {
+func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorMsg string) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, error 
 	defer om.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := om.opSvc.MarkAsFailed(ctx, id, error); err != nil {
+	if err := om.opSvc.MarkAsFailed(ctx, id, errorMsg); err != nil {
 		return errors.Wrapf(err, "while marking operation with id %q as failed", id)
 	}
 	return tx.Commit()

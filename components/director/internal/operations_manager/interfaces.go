@@ -12,7 +12,7 @@ import (
 type OperationService interface {
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
 	MarkAsCompleted(ctx context.Context, id string) error
-	MarkAsFailed(ctx context.Context, id, error string) error
+	MarkAsFailed(ctx context.Context, id, errorMsg string) error
 }
 
 // WebhookService is responsible for the service-layer Webhook operations.

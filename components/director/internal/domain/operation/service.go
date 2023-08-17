@@ -2,8 +2,9 @@ package operation
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -88,7 +89,7 @@ func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
 }
 
 // MarkAsFailed marks an operation as failed
-func (s *service) MarkAsFailed(ctx context.Context, id, error string) error {
+func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 	op, err := s.opRepo.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting opreration with id %q", id)
@@ -97,7 +98,7 @@ func (s *service) MarkAsFailed(ctx context.Context, id, error string) error {
 	op.Status = model.OperationStatusFailed
 	currentTime := time.Now()
 	op.UpdatedAt = &currentTime
-	// op.Error = json.RawMessage{error} TODO
+	// op.Error = json.RawMessage{errorMsg} TODO
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)

@@ -99,7 +99,7 @@ func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
 // PriorityQueueListByType returns top priority operations from priority view for specified type
 func (r *pgRepository) PriorityQueueListByType(ctx context.Context, operationType string) ([]*model.Operation, error) {
 	var entities EntityCollection
-	if err := r.prioritiViewLister.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("op_type", operationType)}...); err != nil {
+	if err := r.prioritiViewLister.ListGlobalWithLimit(ctx, &entities, 10, repo.Conditions{repo.NewEqualCondition("op_type", operationType)}...); err != nil {
 		return nil, err
 	}
 
