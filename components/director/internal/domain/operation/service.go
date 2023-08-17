@@ -3,6 +3,7 @@ package operation
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -13,6 +14,8 @@ import (
 //go:generate mockery --name=OperationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
+	Get(ctx context.Context, id string) (*model.Operation, error)
+	Update(ctx context.Context, model *model.Operation) error
 }
 
 // UIDService is responsible for service-layer uid operations
@@ -64,5 +67,40 @@ func (s *service) CreateMultiple(ctx context.Context, in []*model.OperationInput
 		}
 	}
 
+	return nil
+}
+
+// MarkAsCompleted marks an operation as completed
+func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
+	op, err := s.opRepo.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting opreration with id %q", id)
+	}
+
+	op.Status = model.OperationStatusCompleted
+	currentTime := time.Now()
+	op.UpdatedAt = &currentTime
+
+	if err := s.opRepo.Update(ctx, op); err != nil {
+		return errors.Wrapf(err, "while updating operation with id %q", id)
+	}
+	return nil
+}
+
+// MarkAsFailed marks an operation as failed
+func (s *service) MarkAsFailed(ctx context.Context, id, error string) error {
+	op, err := s.opRepo.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting opreration with id %q", id)
+	}
+
+	op.Status = model.OperationStatusFailed
+	currentTime := time.Now()
+	op.UpdatedAt = &currentTime
+	// op.Error = json.RawMessage{error} TODO
+
+	if err := s.opRepo.Update(ctx, op); err != nil {
+		return errors.Wrapf(err, "while updating operation with id %q", id)
+	}
 	return nil
 }

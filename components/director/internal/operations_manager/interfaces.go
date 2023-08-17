@@ -11,6 +11,8 @@ import (
 //go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationService interface {
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
+	MarkAsCompleted(ctx context.Context, id string) error
+	MarkAsFailed(ctx context.Context, id, error string) error
 }
 
 // WebhookService is responsible for the service-layer Webhook operations.
