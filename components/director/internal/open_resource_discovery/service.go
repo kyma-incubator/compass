@@ -1843,7 +1843,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	}
 
 	if len(documents) > 0 {
-		log.C(ctx).Info("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
+		log.C(ctx).Infof("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
 		var validationErrors error
 
 		err = s.processDocuments(ctx, resource, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordRequestObject, documents, globalResourcesOrdIDs, &validationErrors)
