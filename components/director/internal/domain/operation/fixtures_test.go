@@ -17,6 +17,10 @@ const (
 	operationID = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 )
 
+var (
+	fixColumns = []string{"id", "op_type", "status", "data", "error", "priority", "created_at", "updated_at"}
+)
+
 func fixOperationInput(opType string, opStatus model.OperationStatus) *model.OperationInput {
 	return &model.OperationInput{
 		OpType:    opType,
@@ -61,4 +65,8 @@ func fixEntityOperation(id, opType string, opStatus model.OperationStatus) *oper
 
 func fixOperationCreateArgs(op *model.Operation) []driver.Value {
 	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), op.Priority, op.CreatedAt, op.UpdatedAt}
+}
+
+func fixOperationUpdateArgs(op *model.Operation) []driver.Value {
+	return []driver.Value{op.Status, repo.NewNullableStringFromJSONRawMessage(op.Error), op.Priority, op.UpdatedAt, op.ID}
 }
