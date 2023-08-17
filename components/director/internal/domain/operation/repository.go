@@ -2,6 +2,7 @@ package operation
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -10,6 +11,7 @@ import (
 )
 
 const operationTable = `public.operation`
+const priorityView = `public.scheduled_operations`
 
 var (
 	idTableColumns        = []string{"id"}
@@ -30,6 +32,8 @@ type pgRepository struct {
 	globalDeleter      repo.DeleterGlobal
 	globalUpdater      repo.UpdaterGlobal
 	globalSingleGetter repo.SingleGetterGlobal
+	globalQueryBuilder repo.QueryBuilderGlobal
+	prioritiViewLister repo.ListerGlobal
 	conv               EntityConverter
 }
 
@@ -40,6 +44,8 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:      repo.NewDeleterGlobal(resource.Operation, operationTable),
 		globalUpdater:      repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
 		globalSingleGetter: repo.NewSingleGetterGlobal(resource.Operation, operationTable, operationColumns),
+		globalQueryBuilder: repo.NewQueryBuilderGlobal(resource.Operation, operationTable, operationColumns),
+		prioritiViewLister: repo.NewListerGlobal(resource.Operation, priorityView, operationColumns),
 		conv:               conv,
 	}
 }
@@ -88,4 +94,24 @@ func (r *pgRepository) Delete(ctx context.Context, id string) error {
 // DeleteMultiple deletes all operations by given list of ids
 func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
 	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", ids)})
+}
+
+// PriorityQueueListByType returns top priority operations from priority view for specified type
+func (r *pgRepository) PriorityQueueListByType(ctx context.Context, operationType string) ([]*model.Operation, error) {
+	var entities EntityCollection
+	if err := r.prioritiViewLister.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("op_type", operationType)}...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.Operation {
+	items := make([]*model.Operation, 0, len(entities))
+	for _, ent := range entities {
+		model := r.conv.FromEntity(&ent)
+
+		items = append(items, model)
+	}
+	return items
 }

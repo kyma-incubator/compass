@@ -271,6 +271,38 @@ func TestQueryBuilderGlobal(t *testing.T) {
 	})
 }
 
+func TestBuildAdvisoryLockGlobal(t *testing.T) {
+	sut := repo.NewQueryBuilderGlobal(UserType, userTableName, []string{"id", "tenant_id", "first_name", "last_name", "age"})
+	var expectedIdentifier int64 = 1101223
+
+	t.Run("success with rebuild and identifier", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := "SELECT pg_try_advisory_xact_lock($1)"
+
+		// WHEN
+		query, args, err := sut.BuildAdvisoryLockGlobal(true, expectedIdentifier)
+
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(args))
+		assert.Equal(t, expectedIdentifier, args[0])
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
+	})
+	t.Run("success without rebuild with identifier", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := "SELECT pg_try_advisory_xact_lock($1)"
+
+		// WHEN
+		query, args, err := sut.BuildAdvisoryLockGlobal(false, expectedIdentifier)
+
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(args))
+		assert.Equal(t, expectedQuery, removeWhitespace(query))
+	})
+
+}
+
 func removeWhitespace(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
