@@ -2,8 +2,6 @@ package operation
 
 import (
 	"context"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -14,10 +12,7 @@ import (
 const operationTable = `public.operation`
 
 var (
-	operationTypeColumn = "op_type"
-	statusColumn        = "status"
-	finishedAtColumn    = "finished_at"
-	operationColumns    = []string{"id", operationTypeColumn, statusColumn, "data", "error", "priority", "created_at", finishedAtColumn}
+	operationColumns = []string{"id", "op_type", "status", "data", "error", "priority", "created_at", "updated_at"}
 )
 
 // EntityConverter missing godoc
@@ -54,15 +49,4 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Operation) error
 
 	log.C(ctx).Debugf("Persisting Operation entity with id %s to db", model.ID)
 	return r.globalCreator.Create(ctx, operationEnt)
-}
-
-// DeleteOlderThan deletes all operations of type `opType` with status `status` older than `date`
-func (r *pgRepository) DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, date time.Time) error {
-	log.C(ctx).Infof("Deleting all operations of type %s with status %s older than %v", opType, status, date)
-	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{
-		repo.NewNotNullCondition(finishedAtColumn),
-		repo.NewEqualCondition(operationTypeColumn, opType),
-		repo.NewEqualCondition(statusColumn, string(status)),
-		repo.NewLessThanCondition(finishedAtColumn, date),
-	})
 }

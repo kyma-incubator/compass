@@ -19,13 +19,13 @@ const (
 
 func fixOperationInput(opType string, opStatus model.OperationStatus) *model.OperationInput {
 	return &model.OperationInput{
-		OpType:     opType,
-		Status:     opStatus,
-		Data:       json.RawMessage("[]"),
-		Error:      json.RawMessage("[]"),
-		Priority:   1,
-		CreatedAt:  &time.Time{},
-		FinishedAt: &time.Time{},
+		OpType:    opType,
+		Status:    opStatus,
+		Data:      json.RawMessage("[]"),
+		Error:     json.RawMessage("[]"),
+		Priority:  1,
+		CreatedAt: &time.Time{},
+		UpdatedAt: &time.Time{},
 	}
 }
 
@@ -35,30 +35,30 @@ func fixOperationModel(opType string, status model.OperationStatus) *model.Opera
 
 func fixOperationModelWithID(id, opType string, opStatus model.OperationStatus) *model.Operation {
 	return &model.Operation{
-		ID:         id,
-		OpType:     opType,
-		Status:     opStatus,
-		Data:       json.RawMessage("[]"),
-		Error:      json.RawMessage("[]"),
-		Priority:   1,
-		CreatedAt:  &time.Time{},
-		FinishedAt: &time.Time{},
+		ID:        id,
+		OpType:    opType,
+		Status:    opStatus,
+		Data:      json.RawMessage("[]"),
+		Error:     json.RawMessage("[]"),
+		Priority:  1,
+		CreatedAt: &time.Time{},
+		UpdatedAt: &time.Time{},
 	}
 }
 
 func fixEntityOperation(id, opType string, opStatus model.OperationStatus) *operation.Entity {
 	return &operation.Entity{
-		ID:         id,
-		Type:       opType,
-		Status:     string(opStatus),
-		Data:       repo.NewValidNullableString("[]"),
-		Error:      repo.NewValidNullableString("[]"),
-		Priority:   1,
-		CreatedAt:  &time.Time{},
-		FinishedAt: &time.Time{},
+		ID:        id,
+		Type:      opType,
+		Status:    string(opStatus),
+		Data:      repo.NewValidNullableString("[]"),
+		Error:     repo.NewValidNullableString("[]"),
+		Priority:  1,
+		CreatedAt: &time.Time{},
+		UpdatedAt: &time.Time{},
 	}
 }
 
 func fixOperationCreateArgs(op *model.Operation) []driver.Value {
-	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), op.Priority, op.CreatedAt, op.FinishedAt}
+	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), op.Priority, op.CreatedAt, op.UpdatedAt}
 }
