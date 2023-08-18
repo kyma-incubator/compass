@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -243,11 +245,12 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 				value = fmt.Sprintf("%v", v)
 			default:
 				marshal, err := json.Marshal(v)
-				marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
 				if err != nil {
 					return nil, err
 				}
-				value = string(marshal)
+				value = strconv.Quote(string(marshal))
+				value = strings.TrimPrefix(value, `"`)
+				value = strings.TrimSuffix(value, `"`)
 			}
 			body[k] = value
 		}
