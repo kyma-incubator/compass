@@ -248,6 +248,7 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 					return nil, err
 				}
 				value = strconv.Quote(string(marshal))
+				value = value[1 : len(value)-1]
 			}
 			body[k] = value
 		}
