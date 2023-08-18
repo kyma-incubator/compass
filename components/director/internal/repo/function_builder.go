@@ -4,20 +4,20 @@ import (
 	"strings"
 )
 
-// FunctionBuilder is an interface for building queries about global entities.
+// FunctionBuilder is an interface for invoking functions.
 type FunctionBuilder interface {
-	BuildAdvisoryLock(isRebindingNeeded bool, identifier int64) (string, []interface{}, error)
+	BuildAdvisoryLock(identifier int64) (string, []interface{}, error)
 }
 
 type functionQueryBuilder struct{}
 
-// NewQueryBuilderGlobal is a constructor for QueryBuilderGlobal about global entities.
+// NewFunctionBuilder is a constructor for FunctionBuilder .
 func NewFunctionBuilder() FunctionBuilder {
 	return &functionQueryBuilder{}
 }
 
 // BuildAdvisoryLock builds a SQL query for advisory lock on resource.
-func (b *functionQueryBuilder) BuildAdvisoryLock(isRebindingNeeded bool, identifier int64) (string, []interface{}, error) {
+func (b *functionQueryBuilder) BuildAdvisoryLock(identifier int64) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 	stmtBuilder.WriteString("SELECT pg_try_advisory_xact_lock($1)")
 	var allArgs []interface{}

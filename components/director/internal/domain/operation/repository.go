@@ -33,7 +33,7 @@ type pgRepository struct {
 	globalUpdater      repo.UpdaterGlobal
 	globalSingleGetter repo.SingleGetterGlobal
 	functionBuilder    repo.FunctionBuilder
-	prioritiViewLister repo.ListerGlobal
+	priorityViewLister repo.ListerGlobal
 	conv               EntityConverter
 }
 
@@ -45,7 +45,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalUpdater:      repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
 		globalSingleGetter: repo.NewSingleGetterGlobal(resource.Operation, operationTable, operationColumns),
 		functionBuilder:    repo.NewFunctionBuilder(),
-		prioritiViewLister: repo.NewListerGlobal(resource.Operation, priorityView, operationColumns),
+		priorityViewLister: repo.NewListerGlobal(resource.Operation, priorityView, operationColumns),
 		conv:               conv,
 	}
 }
@@ -99,7 +99,7 @@ func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
 // PriorityQueueListByType returns top priority operations from priority view for specified type
 func (r *pgRepository) PriorityQueueListByType(ctx context.Context, operationType string) ([]*model.Operation, error) {
 	var entities EntityCollection
-	if err := r.prioritiViewLister.ListGlobalWithLimit(ctx, &entities, 10, repo.Conditions{repo.NewEqualCondition("op_type", operationType)}...); err != nil {
+	if err := r.priorityViewLister.ListGlobalWithLimit(ctx, &entities, 10, repo.Conditions{repo.NewEqualCondition("op_type", operationType)}...); err != nil {
 		return nil, err
 	}
 
