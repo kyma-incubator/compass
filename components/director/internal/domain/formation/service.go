@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -484,7 +485,7 @@ func (s *service) DeleteFormationEntityAndScenarios(ctx context.Context, tnt, fo
 //
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
-func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
 	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
@@ -514,19 +515,28 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, fmt.Errorf("cannot assign to formation with ID %q as it is in %q state", formationFromDB.ID, formationFromDB.State)
 		}
 
-		tx, err := s.transact.Begin()
+		// We need to persist the FAs before we proceed to notification processing as for scenarios where there are both
+		// participants with ASYNC notifications and SYNC notifications it is possible that a FA status update request is
+		// received before the FA is persisted in the database.
+		// Example P1 has ASYNC webhook - W1 , P2 has SYNC webhook - W2. Assign both P1 and P2 to a formation.
+		// Formation assignments are generated.
+		// Execute W1, then execute W2. W2 takes for example 10 seconds. Before the W2 processing finishes a FA status update request for W1 is received.
+		// When fetching the corresponding FA from the DB a object not found error is received as the status update is performed in new transaction and the transaction in which the FA were generate is still running.
+		tx, terr := s.transact.Begin()
+		err = terr
 		if err != nil {
 			return nil, err
 		}
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		err = s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
+		err = s.assign(transactionCtx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
 		if err != nil {
 			return nil, err
 		}
 
-		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		assignments, terr := s.formationAssignmentService.GenerateAssignments(transactionCtx, tnt, objectID, objectType, formationFromDB)
+		err = terr
 		if err != nil {
 			return nil, err
 		}
@@ -534,6 +544,40 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err = tx.Commit(); err != nil {
 			return nil, err
 		}
+
+		// If the assigning of the object fails the transaction opened in the resolver fill be rolled back.
+		// The FA records and the labels for the object will not be reverted as they we re persisted as part of another
+		// transaction. The leftover resources should be deleted separately.
+		defer func() {
+			if err == nil {
+				return
+			}
+
+			log.C(ctx).Infof("Failed to assign object with ID %q of type %q to formation %q. Deleting Created Formation Assignment records...", objectID, objectType, formation.Name)
+
+			tx, terr := s.transact.Begin()
+			err = terr
+			if err != nil {
+				log.C(ctx).Infof("Failed to open transaction for deleting leftover resources")
+			}
+			transactionCtx := persistence.SaveToContext(ctx, tx)
+			defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+			if deferError := s.formationAssignmentService.DeleteAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID); deferError != nil {
+				log.C(ctx).WithError(deferError).Errorf("Failed to delete assignemnts fo object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
+			}
+
+			if deferError := s.unassign(transactionCtx, tnt, objectID, objectType, formationFromDB); deferError != nil {
+				log.C(ctx).WithError(deferError).Errorf("Failed to unassign object with ID %q of type %q from formation %q", objectID, objectType, formation.Name)
+			}
+
+			if err = tx.Commit(); err != nil {
+				log.C(ctx).Infof("Failed to commit transaction for deleting leftover resources")
+			}
+		}()
+
+		time.Sleep(time.Second * 10)
+		return nil, errors.New("LOOOL")
 
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
 		// If we are in create error state, the formation is not ready, and we should not send notifications
