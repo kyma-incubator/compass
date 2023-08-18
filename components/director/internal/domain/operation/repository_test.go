@@ -2,13 +2,14 @@ package operation_test
 
 import (
 	"database/sql/driver"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"regexp"
-	"testing"
 )
 
 func TestPgRepository_Create(t *testing.T) {
@@ -146,6 +147,39 @@ func TestPgRepository_DeleteMultiple(t *testing.T) {
 		MethodArgs:          []interface{}{[]string{operationID}},
 		IsDeleteMany:        true,
 		IsGlobal:            true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_PriorityQueueListByType(t *testing.T) {
+	operationModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "PriorityQueue ListByType",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
+				Args:     []driver.Value{string(model.OperationStatusScheduled), 10},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       operation.NewRepository,
+		ExpectedModelEntities:     []interface{}{operationModel},
+		ExpectedDBEntities:        []interface{}{operationEntity},
+		MethodArgs:                []interface{}{string(model.OperationStatusScheduled)},
+		MethodName:                "PriorityQueueListByType",
+		DisableConverterErrorTest: true,
 	}
 
 	suite.Run(t)
