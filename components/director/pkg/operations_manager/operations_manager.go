@@ -30,13 +30,25 @@ func NewOperationsManager(transact persistence.Transactioner, opSvc operationsma
 }
 
 // GetOperation retrieves one scheduled operation
-func (om *OperationsManager) GetOperation(ctx context.Context, opType model.OperationType) (*model.Operation, error) {
+func (om *OperationsManager) GetOperation(ctx context.Context) (*model.Operation, error) {
 	om.mutex.Lock()
 	defer om.mutex.Unlock()
 
-	operations, err := om.opSvc.ListPriorityQueue(ctx, opType)
+	tx, err := om.transact.Begin()
 	if err != nil {
-		return nil, errors.Wrapf(err, "while fetching operations from priority queue with type %v ", opType)
+		return nil, err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	operations, err := om.opSvc.ListPriorityQueue(ctx, om.opType)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while fetching operations from priority queue with type %v ", om.opType)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	for _, operation := range operations {
