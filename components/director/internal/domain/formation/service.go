@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -514,13 +513,25 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if formationFromDB.State == model.DeletingFormationState || formationFromDB.State == model.DeleteErrorFormationState {
 			return nil, fmt.Errorf("cannot assign to formation with ID %q as it is in %q state", formationFromDB.ID, formationFromDB.State)
 		}
-		err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
+
+		tx, err := s.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+		err = s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
 		if err != nil {
 			return nil, err
 		}
 
 		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
+			return nil, err
+		}
+
+		if err = tx.Commit(); err != nil {
 			return nil, err
 		}
 
