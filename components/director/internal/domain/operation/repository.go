@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/internal/util"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -32,7 +33,7 @@ type pgRepository struct {
 	globalDeleter      repo.DeleterGlobal
 	globalUpdater      repo.UpdaterGlobal
 	globalSingleGetter repo.SingleGetterGlobal
-	functionBuilder    repo.FunctionBuilder
+	dbFunction         repo.DBFunction
 	priorityViewLister repo.ListerGlobal
 	conv               EntityConverter
 }
@@ -44,7 +45,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:      repo.NewDeleterGlobal(resource.Operation, operationTable),
 		globalUpdater:      repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
 		globalSingleGetter: repo.NewSingleGetterGlobal(resource.Operation, operationTable, operationColumns),
-		functionBuilder:    repo.NewFunctionBuilder(),
+		dbFunction:         repo.NewDBFunction(),
 		priorityViewLister: repo.NewListerGlobal(resource.Operation, priorityView, operationColumns),
 		conv:               conv,
 	}
@@ -104,6 +105,15 @@ func (r *pgRepository) PriorityQueueListByType(ctx context.Context, operationTyp
 	}
 
 	return r.multipleFromEntities(entities), nil
+}
+
+// LockOperation locks operations by given operation id
+func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (bool, error) {
+	identifier, err := util.StringToInt64(operationID)
+	if err != nil {
+		return false, err
+	}
+	return r.dbFunction.AdvisoryLock(ctx, identifier)
 }
 
 func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.Operation {

@@ -51,6 +51,50 @@ func (_m *OperationRepository) Get(ctx context.Context, id string) (*model.Opera
 	return r0, r1
 }
 
+// LockOperation provides a mock function with given fields: ctx, operationID
+func (_m *OperationRepository) LockOperation(ctx context.Context, operationID string) (bool, error) {
+	ret := _m.Called(ctx, operationID)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, operationID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, operationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PriorityQueueListByType provides a mock function with given fields: ctx, opType
+func (_m *OperationRepository) PriorityQueueListByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	ret := _m.Called(ctx, opType)
+
+	var r0 []*model.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) []*model.Operation); ok {
+		r0 = rf(ctx, opType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.OperationType) error); ok {
+		r1 = rf(ctx, opType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *OperationRepository) Update(ctx context.Context, _a1 *model.Operation) error {
 	ret := _m.Called(ctx, _a1)

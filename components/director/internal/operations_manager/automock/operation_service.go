@@ -28,6 +28,73 @@ func (_m *OperationService) CreateMultiple(ctx context.Context, in []*model.Oper
 	return r0
 }
 
+// Get provides a mock function with given fields: ctx, operationID
+func (_m *OperationService) Get(ctx context.Context, operationID string) (*model.Operation, error) {
+	ret := _m.Called(ctx, operationID)
+
+	var r0 *model.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Operation); ok {
+		r0 = rf(ctx, operationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, operationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListPriorityQueue provides a mock function with given fields: ctx, opType
+func (_m *OperationService) ListPriorityQueue(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	ret := _m.Called(ctx, opType)
+
+	var r0 []*model.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) []*model.Operation); ok {
+		r0 = rf(ctx, opType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.OperationType) error); ok {
+		r1 = rf(ctx, opType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LockOperation provides a mock function with given fields: ctx, operationID
+func (_m *OperationService) LockOperation(ctx context.Context, operationID string) (bool, error) {
+	ret := _m.Called(ctx, operationID)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, operationID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, operationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // MarkAsCompleted provides a mock function with given fields: ctx, id
 func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
@@ -49,6 +116,20 @@ func (_m *OperationService) MarkAsFailed(ctx context.Context, id string, errorMs
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, id, errorMsg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Update provides a mock function with given fields: ctx, input
+func (_m *OperationService) Update(ctx context.Context, input *model.Operation) error {
+	ret := _m.Called(ctx, input)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Operation) error); ok {
+		r0 = rf(ctx, input)
 	} else {
 		r0 = ret.Error(0)
 	}

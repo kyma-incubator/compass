@@ -375,6 +375,15 @@ func NewEmptyParentIDErrorWithMessage(message string) error {
 	}
 }
 
+// NewNoScheduledOperationsError missing godoc
+func NewNoScheduledOperationsError() error {
+	return Error{
+		errorCode: NoScheduledOperations,
+		Message:   NoScheduledOperationsMsg,
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -465,6 +474,10 @@ func IsEmptyParentIDError(err error) bool {
 	return ErrorCode(err) == EmptyParentID
 }
 
+// IsNoScheduledOperationsError checks if the error code is NoScheduledOperations
+func IsNoScheduledOperationsError(err error) bool {
+	return ErrorCode(err) == NoScheduledOperations
+}
 func sortMapKey(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {

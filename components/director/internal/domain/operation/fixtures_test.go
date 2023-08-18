@@ -22,7 +22,7 @@ var (
 	fixColumns = []string{"id", "op_type", "status", "data", "error", "priority", "created_at", "updated_at"}
 )
 
-func fixOperationInput(opType string, opStatus model.OperationStatus) *model.OperationInput {
+func fixOperationInput(opType model.OperationType, opStatus model.OperationStatus) *model.OperationInput {
 	return &model.OperationInput{
 		OpType:    opType,
 		Status:    opStatus,
@@ -34,11 +34,11 @@ func fixOperationInput(opType string, opStatus model.OperationStatus) *model.Ope
 	}
 }
 
-func fixOperationModel(opType string, status model.OperationStatus) *model.Operation {
+func fixOperationModel(opType model.OperationType, status model.OperationStatus) *model.Operation {
 	return fixOperationModelWithID(operationID, opType, status)
 }
 
-func fixOperationModelWithID(id, opType string, opStatus model.OperationStatus) *model.Operation {
+func fixOperationModelWithID(id string, opType model.OperationType, opStatus model.OperationStatus) *model.Operation {
 	return &model.Operation{
 		ID:        id,
 		OpType:    opType,

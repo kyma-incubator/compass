@@ -18,6 +18,8 @@ type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
 	Get(ctx context.Context, id string) (*model.Operation, error)
 	Update(ctx context.Context, model *model.Operation) error
+	PriorityQueueListByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
+	LockOperation(ctx context.Context, operationID string) (bool, error)
 }
 
 // UIDService is responsible for service-layer uid operations
@@ -89,6 +91,11 @@ func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
 	return nil
 }
 
+// Update updates an operation in repository
+func (s *service) Update(ctx context.Context, input *model.Operation) error {
+	return s.opRepo.Update(ctx, input)
+}
+
 // MarkAsFailed marks an operation as failed
 func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 	op, err := s.opRepo.Get(ctx, id)
@@ -111,6 +118,33 @@ func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 		return errors.Wrapf(err, "while updating operation with id %q", id)
 	}
 	return nil
+}
+
+// ListPriorityQueue returns top 10 operations of specified type ordered by priority
+func (s *service) ListPriorityQueue(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	operations, err := s.opRepo.PriorityQueueListByType(ctx, opType)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting operations by type from priority queue in repo")
+	}
+	return operations, nil
+}
+
+// LockOperation try to aquire advisory lock on operation with provided ID
+func (s *service) LockOperation(ctx context.Context, operationID string) (bool, error) {
+	lock, err := s.opRepo.LockOperation(ctx, operationID)
+	if err != nil {
+		return false, err
+	}
+	return lock, nil
+}
+
+// Get loads operation with specified ID
+func (s *service) Get(ctx context.Context, operationID string) (*model.Operation, error) {
+	operation, err := s.opRepo.Get(ctx, operationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting operation from repo")
+	}
+	return operation, nil
 }
 
 type OperationError struct {
