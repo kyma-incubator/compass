@@ -3,7 +3,6 @@ package operators
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"runtime/debug"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
@@ -70,7 +69,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
-			log.C(ctx).Infof(fmt.Sprintf("pp: fa config: %v", formationAssignment.Value))
+			log.C(ctx).Infof("p: fa config: %s", formationAssignment.Value)
 
 			var assignmentConfig Configuration
 			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
