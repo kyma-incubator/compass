@@ -177,3 +177,155 @@ func TestService_CreateMultiple(t *testing.T) {
 		})
 	}
 }
+
+func TestService_MarkAsCompleted(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        string
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusCompleted, arg.Status)
+				})
+				return repo
+			},
+			Input: operationID,
+		},
+		{
+			Name: "Error - Getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error - Updating operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
+				repo.On("Update", ctx, mock.Anything).Return(testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.MarkAsCompleted(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_MarkAsFailed(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        string
+		InputErrMsg  string
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusFailed, arg.Status)
+					opErr := operation.NewOperationError(operationErrMsg)
+					expectedMsg, err := opErr.ToJsonRawMessage()
+					require.NoError(t, err)
+					assert.Equal(t, expectedMsg, arg.Error)
+				})
+				return repo
+			},
+			Input:       operationID,
+			InputErrMsg: operationErrMsg,
+		},
+		{
+			Name: "Error - Getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			InputErrMsg: operationErrMsg,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error - Updating operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
+				repo.On("Update", ctx, mock.Anything).Return(testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			InputErrMsg: operationErrMsg,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.MarkAsFailed(ctx, testCase.Input, testCase.InputErrMsg)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}

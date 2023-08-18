@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	ordOpType   = "ORD_AGGREGATION"
-	operationID = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	ordOpType       = "ORD_AGGREGATION"
+	operationID     = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	operationErrMsg = "operation processing failed"
 )
 
 var (

@@ -2,6 +2,7 @@ package operation
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -95,13 +96,35 @@ func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 		return errors.Wrapf(err, "while getting opreration with id %q", id)
 	}
 
-	op.Status = model.OperationStatusFailed
 	currentTime := time.Now()
+	opError := NewOperationError(errorMsg)
+	rawMessage, err := opError.ToJsonRawMessage()
+	if err != nil {
+		return errors.Wrap(err, "while marshaling operation error")
+	}
+
+	op.Status = model.OperationStatusFailed
 	op.UpdatedAt = &currentTime
-	// op.Error = json.RawMessage{errorMsg} TODO
+	op.Error = rawMessage
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)
 	}
 	return nil
+}
+
+type OperationError struct {
+	ErrorMsg string `json:"error"`
+}
+
+func NewOperationError(errorMsg string) *OperationError {
+	return &OperationError{ErrorMsg: errorMsg}
+}
+func (or *OperationError) ToJsonRawMessage() (json.RawMessage, error) {
+	jsonBytes, err := json.Marshal(or)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonBytes, nil
 }
