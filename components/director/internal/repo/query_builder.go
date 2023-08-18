@@ -29,7 +29,6 @@ type QueryBuilder interface {
 // QueryBuilderGlobal is an interface for building queries about global entities.
 type QueryBuilderGlobal interface {
 	BuildQueryGlobal(isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
-	BuildAdvisoryLockGlobal(isRebindingNeeded bool, identifier int64) (string, []interface{}, error)
 	BuildQueryGlobalWithLimit(isRebindingNeeded bool, limit int, conditions ...Condition) (string, []interface{}, error)
 }
 
@@ -74,11 +73,6 @@ func (b *universalQueryBuilder) BuildQueryGlobal(isRebindingNeeded bool, conditi
 // BuildQueryGlobalWithLimit builds a SQL query for global entities without tenant isolatio and limits the result set size.
 func (b *universalQueryBuilder) BuildQueryGlobalWithLimit(isRebindingNeeded bool, limit int, conditions ...Condition) (string, []interface{}, error) {
 	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, limit, OrderByParams{}, NoLock, isRebindingNeeded)
-}
-
-// BuildAdvisoryLockGlobal builds a SQL query for advisory lock on resource.
-func (b *universalQueryBuilder) BuildAdvisoryLockGlobal(isRebindingNeeded bool, identifier int64) (string, []interface{}, error) {
-	return buildAdvisoryLockSelectQuery(identifier, isRebindingNeeded)
 }
 
 // BuildQuery builds a SQL query for tenant scoped entities with tenant isolation subquery.
@@ -268,14 +262,6 @@ func writeEnumeratedConditions(builder *strings.Builder, conditions Conditions) 
 	builder.WriteString(strings.Join(conditionsToJoin, " AND "))
 
 	return nil
-}
-
-func buildAdvisoryLockSelectQuery(identifier int64, isRebindingNeeded bool) (string, []interface{}, error) {
-	var stmtBuilder strings.Builder
-	stmtBuilder.WriteString("SELECT pg_try_advisory_xact_lock($1)")
-	var allArgs []interface{}
-	allArgs = append(allArgs, identifier)
-	return stmtBuilder.String(), allArgs, nil
 }
 
 const anyKeyExistsOp = "?|"
