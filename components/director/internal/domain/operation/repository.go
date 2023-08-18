@@ -32,7 +32,7 @@ type pgRepository struct {
 	globalDeleter      repo.DeleterGlobal
 	globalUpdater      repo.UpdaterGlobal
 	globalSingleGetter repo.SingleGetterGlobal
-	globalQueryBuilder repo.QueryBuilderGlobal
+	functionBuilder    repo.FunctionBuilder
 	prioritiViewLister repo.ListerGlobal
 	conv               EntityConverter
 }
@@ -44,7 +44,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:      repo.NewDeleterGlobal(resource.Operation, operationTable),
 		globalUpdater:      repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
 		globalSingleGetter: repo.NewSingleGetterGlobal(resource.Operation, operationTable, operationColumns),
-		globalQueryBuilder: repo.NewQueryBuilderGlobal(resource.Operation, operationTable, operationColumns),
+		functionBuilder:    repo.NewFunctionBuilder(),
 		prioritiViewLister: repo.NewListerGlobal(resource.Operation, priorityView, operationColumns),
 		conv:               conv,
 	}
