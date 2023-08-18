@@ -24,6 +24,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -248,7 +249,8 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 					return nil, err
 				}
 				value = strconv.Quote(string(marshal))
-				value = value[1 : len(value)-1]
+				value = strings.TrimPrefix(value, `"`)
+				value = strings.TrimSuffix(value, `"`)
 			}
 			body[k] = value
 		}
