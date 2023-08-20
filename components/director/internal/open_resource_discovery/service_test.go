@@ -3960,7 +3960,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Does not resync resources if event spec list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Times(24)
+				persistTx.On("Commit").Return(nil).Times(25)
 
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Times(26)
