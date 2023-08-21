@@ -158,8 +158,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-gateway
     operations_controller:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3242"
       name: compass-operations-controller
     ord_service:
       dir: prod/incubator/
