@@ -155,7 +155,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-" #todo::: fill in when you open a PR and image is built
+      version: "PR-3241"
       name: compass-instance-creator
     gateway:
       dir: prod/incubator/
