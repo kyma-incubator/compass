@@ -20,7 +20,11 @@ type ServiceInstances struct {
 	Items    []ServiceInstance `json:"items"`
 }
 
-type IASParameters struct {
+type ConsumedService struct {
+	ServiceInstanceName string `json:"service-instance-name"`
+}
+
+type IASInstanceParameters struct {
 	ConsumedServices      []ConsumedService `json:"consumed-services"`
 	XsuaaCrossConsumption bool              `json:"xsuaa-cross-consumption"`
 }

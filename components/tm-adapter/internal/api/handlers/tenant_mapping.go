@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/tm-adapter/pkg/httputil"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -46,7 +47,7 @@ func NewHandler(cfg *config.Config, caller *external_caller.Caller) *Handler {
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
+	correlationID := correlation.CorrelationIDForRequest(r)
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	log.C(ctx).Infof("Processing tenant mapping notification...")
@@ -80,17 +81,30 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	h.tenantID = tm.ReceiverTenant.SubaccountID
 
-	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.Configuration != nil && string(tm.AssignedTenant.Configuration) != "{}" && string(tm.AssignedTenant.Configuration) != "\"\"" && string(tm.AssignedTenant.Configuration) != "null" {
-		log.C(ctx).Infof("The configuration in the tenant mapping body is provided during %q operation and no service instance/binding will be created. Returning...", AssignOperation)
-		body := `{"state":"READY"}`
-		var jsonRawMsg json.RawMessage
-		err = json.Unmarshal([]byte(body), &jsonRawMsg)
-		if err != nil {
-			log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
+	if tm.Context.Operation == AssignOperation && tm.ReceiverTenant.State == "INITIAL" && (string(tm.ReceiverTenant.Configuration) == "" || string(tm.ReceiverTenant.Configuration) == "\"\"" || string(tm.ReceiverTenant.Configuration) == "{}" || string(tm.ReceiverTenant.Configuration) == "null") {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the receiver tenant. Returning \"initial config\"...")
+		initialConfig := `{"state":"CONFIG_PENDING","configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","correlationIds":["SAP_COM_0A00"]},"oauth2mtls":{"correlationIds":["SAP_COM_0545"]}},"inboundCommunication":{"clientCertificateAuthentication":{"correlationIds":["SAP_COM_0545"],"destinations":[{"name":"ngproc-consys"}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"Business System","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
+		httputil.RespondWithBody(ctx, w, http.StatusOK, json.RawMessage(initialConfig))
+		return
+	}
+
+	var inboundCert string
+	isAssignedTntCfgNonEmpty := isConfigNonEmpty(string(tm.AssignedTenant.Configuration))
+	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "CONFIG_PENDING" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
+		log.C(ctx).Infof("Notification request is received for %q operation with CONFIG_PENDING state and non empty configuration. Checking for inbound certificate...", AssignOperation)
+		cert := gjson.GetBytes(tm.AssignedTenant.Configuration, "credentials.inboundCommunication.oauth2mtls.certificate").String()
+		if cert == "" {
+			log.C(ctx).Error("The OAuth2 mTLS certificate in the assigned tenant configuration cannot be empty")
 			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
-		httputil.RespondWithBody(ctx, w, http.StatusOK, jsonRawMsg)
+		inboundCert = cert
+	}
+
+	readyResp := `{"state":"READY"}`
+	if tm.Context.Operation == AssignOperation && tm.AssignedTenant.State == "READY" && tm.AssignedTenant.Configuration != nil && isAssignedTntCfgNonEmpty {
+		log.C(ctx).Infof("Notification request is received for %q operation with READY state and non empty configuration. Returning only ready state...", AssignOperation)
+		httputil.RespondWithBody(ctx, w, http.StatusOK, json.RawMessage(readyResp))
 		return
 	}
 
@@ -109,27 +123,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
-		body := `{"state":"READY"}`
-		var jsonRawMsg json.RawMessage
-		err = json.Unmarshal([]byte(body), &jsonRawMsg)
-		if err != nil {
-			log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
-			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
-			return
-		}
-		httputil.RespondWithBody(ctx, w, http.StatusOK, jsonRawMsg)
+		httputil.RespondWithBody(ctx, w, http.StatusOK, json.RawMessage(readyResp))
 		return
 	} else {
-		serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS)
+		serviceKeyIAS, err = h.handleAssignOperation(ctx, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, inboundCert)
 		if err != nil {
 			log.C(ctx).Error(err)
 			httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
 	}
-
-	//// old response body containing service key credentials
-	//responseBody := types.Response{Configuration: serviceKey.Credentials} /// todo::: consider removing it?
 
 	if len(serviceKeyIAS.Credentials) < 0 {
 		log.C(ctx).Errorf("The credentials for service key with ID: %q should not be empty", serviceKeyIAS.ID)
@@ -175,7 +178,45 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	body := `{"state":"CONFIG_PENDING","configuration":{"credentials":{"outboundCommunication":{"noAuthentication":{"url":"{{ .URL }}","uiUrl":"{{ .URL }}","correlationIds":["SAP_COM_0A00"]},"oauth2ClientCredentials":{"url":"{{ .URL }}","tokenServiceUrl":"{{ .TokenURL }}","clientId":"{{ .ClientID }}","clientSecret":"{{ .ClientSecret }}","correlationIds":["SAP_COM_0545"]}},"inboundCommunication":{"clientCertificateAuthentication":{"correlationIds":["SAP_COM_0545"],"destinations":[{"name":"ngproc-consys"}]}}},"additionalAttributes":{"communicationSystemProperties":[{"name":"businessSystem","value":"{{ .SubaccountID }}","correlationIds":["SAP_COM_0545"]}],"outboundServicesProperties":[{"name":"Purchase Order – Notify about Update of Item History","path":"/api/s4-connectedsystem-soap-adapter-service-srv-api/v1/S4ConnectedSystemSoapAdapterService/updateStatus","isServiceActive":true,"correlationIds":["SAP_COM_0545"]}]}}}`
+	if inboundCert == "" {
+		log.C(ctx).Error("The inbound certificate cannot be empty")
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	receiverTntCfg := tm.ReceiverTenant.Configuration
+	modifiedReceiverTntCfg, err := sjson.SetBytes(receiverTntCfg, "credentials.outboundCommunication.oauth2mtls.url", "{{ .URL }}")
+	if err != nil {
+		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls url")
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.tokenServiceUrl", "{{ .TokenURL }}")
+	if err != nil {
+		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls token service url")
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.clientId", "{{ .ClientID }}")
+	if err != nil {
+		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls client ID")
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	modifiedReceiverTntCfg, err = sjson.SetBytes(modifiedReceiverTntCfg, "credentials.outboundCommunication.oauth2mtls.certificate", inboundCert)
+	if err != nil {
+		log.C(ctx).Error("An error occurred while enriching outbound oauth2mtls certificate")
+		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	body := fmt.Sprintf(`{"state":"CONFIG_PENDING","configuration":%s}`, modifiedReceiverTntCfg)
+
+	// todo::: remove
+	log.C(ctx).Infof("Modified resp config3: %s", body)
 
 	t, err := template.New("").Parse(body)
 	if err != nil {
@@ -192,7 +233,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var jsonRawMsg json.RawMessage
-	err = json.Unmarshal([]byte(res.String()), &jsonRawMsg)
+	err = json.Unmarshal(res.Bytes(), &jsonRawMsg)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while preparing response: %v", err)
 		httputil.RespondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -221,8 +262,12 @@ func validate(tm types.TenantMapping) error {
 	return nil
 }
 
-func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS string) (*types.ServiceKey, error) {
-	log.C(ctx).Info("Creating procurement service instance")
+func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurement, planNameProcurement, svcInstanceNameProcurement, catalogNameIAS, planNameIAS, svcInstanceNameIAS, cert string) (*types.ServiceKey, error) {
+	if cert == "" {
+		return nil, errors.New("The inbound certificate cannot be empty")
+	}
+
+	log.C(ctx).Info("Creating procurement service instance...")
 
 	offeringIDProcurement, err := h.retrieveServiceOffering(ctx, catalogNameProcurement)
 	if err != nil {
@@ -239,7 +284,7 @@ func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurem
 		return nil, err
 	}
 
-	log.C(ctx).Info("Creating IAS service instance and key")
+	log.C(ctx).Info("Creating IAS service instance and key...")
 
 	offeringIDIAS, err := h.retrieveServiceOffering(ctx, catalogNameIAS)
 	if err != nil {
@@ -257,7 +302,7 @@ func (h *Handler) handleAssignOperation(ctx context.Context, catalogNameProcurem
 	}
 
 	svcKeyNameIAS := svcInstanceNameIAS + "-key"
-	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement)
+	serviceKeyIDIAS, err := h.createServiceKey(ctx, svcKeyNameIAS, svcInstanceIDIAS, svcInstanceNameProcurement, cert)
 	if err != nil {
 		return nil, err
 	}
@@ -406,15 +451,15 @@ func (h *Handler) retrieveServicePlan(ctx context.Context, planName, offeringID 
 }
 
 func (h *Handler) createServiceInstance(ctx context.Context, serviceInstanceName, planID, serviceInstanceNameProcurement string) (string, error) {
-	iasParamsBytes, err := buildIASParameters(ctx, serviceInstanceName, serviceInstanceNameProcurement)
+	iasInstanceParamsBytes, err := buildIASInstanceParameters(ctx, serviceInstanceName, serviceInstanceNameProcurement)
 	if err != nil {
-		return "", errors.Wrapf(err, "while building IAS service instance configuration")
+		return "", errors.Wrapf(err, "while building IAS service instance parameters")
 	}
 
 	siReqBody := &types.ServiceInstanceReqBody{
 		Name:          serviceInstanceName,
 		ServicePlanId: planID,
-		Parameters:    iasParamsBytes, // todo::: most probably should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
+		Parameters:    iasInstanceParamsBytes, // todo::: most probably should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
 	}
 
 	siReqBodyBytes, err := json.Marshal(siReqBody)
@@ -582,7 +627,7 @@ func (h *Handler) deleteServiceKeys(ctx context.Context, serviceInstanceID, serv
 			}
 
 			ticker := time.NewTicker(3 * time.Second)
-			timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+			timeout := time.After(time.Second * 30) // todo::: extract as config, valid for the ticker as well
 			for {
 				select {
 				case <-ticker.C:
@@ -677,7 +722,7 @@ func (h *Handler) deleteServiceInstance(ctx context.Context, serviceInstanceID, 
 		}
 
 		ticker := time.NewTicker(3 * time.Second)
-		timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+		timeout := time.After(time.Second * 30) // todo::: extract as config, valid for the ticker as well
 		for {
 			select {
 			case <-ticker.C:
@@ -818,10 +863,16 @@ func (h *Handler) retrieveServiceInstanceByID(ctx context.Context, serviceInstan
 	return instance.ID, nil
 }
 
-func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement string) (string, error) {
+func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceInstanceID, serviceInstanceNameProcurement, cert string) (string, error) {
+	iasKeyParamsBytes, err := buildIASKeyParameters(cert)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building IAS service key parameters")
+	}
+
 	serviceKeyReqBody := &types.ServiceKeyReqBody{
 		Name:              serviceKeyName,
 		ServiceInstanceId: serviceInstanceID,
+		Parameters:        iasKeyParamsBytes,
 	}
 
 	serviceKeyReqBodyBytes, err := json.Marshal(serviceKeyReqBody)
@@ -873,7 +924,7 @@ func (h *Handler) createServiceKey(ctx context.Context, serviceKeyName, serviceI
 		}
 
 		ticker := time.NewTicker(3 * time.Second)
-		timeout := time.After(time.Second * 15) // todo::: extract as config, valid for the ticker as well
+		timeout := time.After(time.Second * 30) // todo::: extract as config, valid for the ticker as well
 		for {
 			select {
 			case <-ticker.C:
@@ -1070,11 +1121,11 @@ func (h *Handler) retrieveServiceKeyByID(ctx context.Context, serviceKeyID strin
 	return &serviceKey, nil
 }
 
-func buildIASParameters(ctx context.Context, serviceInstanceName, serviceInstanceNameProcurement string) ([]byte, error) {
+func buildIASInstanceParameters(ctx context.Context, serviceInstanceName, serviceInstanceNameProcurement string) ([]byte, error) {
 	if strings.Contains(serviceInstanceName, catalogNameIAS) {
 		log.C(ctx).Infof("The service instance is for IAS service, building instance configuration...")
 
-		iasParams := types.IASParameters{
+		iasParams := types.IASInstanceParameters{
 			ConsumedServices: []types.ConsumedService{
 				{
 					ServiceInstanceName: serviceInstanceNameProcurement,
@@ -1095,6 +1146,20 @@ func buildIASParameters(ctx context.Context, serviceInstanceName, serviceInstanc
 	}
 }
 
+func buildIASKeyParameters(certificate string) ([]byte, error) {
+	iasKeyParams := types.IASKeyParameters{
+		CredentialType: "X509_PROVIDED",
+		Certificate:    certificate,
+	}
+
+	iasKeyParamsBytes, err := json.Marshal(iasKeyParams)
+	if err != nil {
+		return nil, errors.Errorf("Failed to marshal IAS parameters with procurement service details: %v", err)
+	}
+
+	return iasKeyParamsBytes, nil
+}
+
 func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 	base, err := url.Parse(baseURL)
 	if err != nil {
@@ -1113,23 +1178,17 @@ func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 }
 
 func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReqBody types.TenantMapping) (map[string]string, error) {
-	// todo::: consider removing it?
-	//svcKeyURL := gjson.Get(string(serviceKeyCredentials), "certificateservice.apiurl").String()
-	//if svcKeyURL == "" {
-	//	return nil, errors.New("could not find 'certificateservice.apiurl' property")
-	//}
-
 	appURL := tmReqBody.ReceiverTenant.ApplicationURL
 
 	svcKeyClientID, ok := gjson.Get(string(serviceKeyCredentials), "clientid").Value().(string)
 	if !ok {
 		return nil, errors.New("could not find 'clientid' property")
 	}
-
-	svcKeyClientSecret, ok := gjson.Get(string(serviceKeyCredentials), "clientsecret").Value().(string)
-	if !ok {
-		return nil, errors.New("could not find 'clientsecret' property")
-	}
+	// todo::: for plain OAuth creds
+	//svcKeyClientSecret, ok := gjson.Get(string(serviceKeyCredentials), "clientsecret").Value().(string)
+	//if !ok {
+	//	return nil, errors.New("could not find 'clientsecret' property")
+	//}
 
 	svcKeyTokenURL, ok := gjson.Get(string(serviceKeyCredentials), "url").Value().(string)
 	if !ok {
@@ -1138,12 +1197,20 @@ func (h *Handler) buildTemplateData(serviceKeyCredentials json.RawMessage, tmReq
 	//tokenPath := "/oauth/token" // todo::: consider removing it?
 
 	data := map[string]string{
-		"URL":          appURL,
-		"TokenURL":     svcKeyTokenURL,
-		"ClientID":     svcKeyClientID,
-		"ClientSecret": svcKeyClientSecret,
+		"URL":      appURL,
+		"TokenURL": svcKeyTokenURL,
+		"ClientID": svcKeyClientID,
+		//"ClientSecret": svcKeyClientSecret, // todo::: for plain OAuth creds
 		"SubaccountID": h.tenantID,
 	}
 
 	return data, nil
+}
+
+func isConfigNonEmpty(configuration string) bool {
+	if configuration != "" && configuration != "{}" && configuration != "\"\"" && configuration != "null" {
+		return true
+	}
+
+	return false
 }
