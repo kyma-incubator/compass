@@ -50,6 +50,8 @@ maintenance:
 
 # Overrides for the Hydra chart
 hydra:
+  maester:
+    enabled: false
   ingress:
     public:
       enabled: false
@@ -79,6 +81,7 @@ hydra:
   secret:
     enabled: false
   hydra:
+    dev: true
     # The ORY Hydra configuration. For a full list of available settings, check:
     #   https://github.com/ory/hydra/blob/master/docs/config.yaml
     automigration:
