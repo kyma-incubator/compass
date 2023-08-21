@@ -69,8 +69,6 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
-			log.C(ctx).Infof("p: fa config: %s", formationAssignment.Value)
-
 			var assignmentConfig Configuration
 			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
 				return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
