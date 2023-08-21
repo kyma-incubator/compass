@@ -17,12 +17,7 @@ require (
 	k8s.io/client-go v0.26.3
 )
 
-require (
-	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/tidwall/gjson v1.14.4 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
-)
+require github.com/google/go-cmp v0.5.9 // indirect
 
 require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
