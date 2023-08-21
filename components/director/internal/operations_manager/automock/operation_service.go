@@ -28,20 +28,6 @@ func (_m *OperationService) CreateMultiple(ctx context.Context, in []*model.Oper
 	return r0
 }
 
-// DeleteOlderThan provides a mock function with given fields: ctx, opType, status, days
-func (_m *OperationService) DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, days int) error {
-	ret := _m.Called(ctx, opType, status, days)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.OperationStatus, int) error); ok {
-		r0 = rf(ctx, opType, status, days)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 type mockConstructorTestingTNewOperationService interface {
 	mock.TestingT
 	Cleanup(func())

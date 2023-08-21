@@ -5,6 +5,7 @@ graphql:
     applications: ["application:read"]
     application: ["application:read"]
     applicationBySystemNumber: ["application:read"]
+    applicationByLocalTenantIDAndAppTemplateID: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
     applicationTemplate: ["application_template:read"]

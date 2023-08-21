@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	// IDs constants
 	testID                   = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testInternalTenantID     = "aaaddec6-5456-4a1e-9ae0-74447f5d6ae9"
@@ -26,6 +27,26 @@ const (
 	formationTemplateID      = "b87631c4-ca3a-11ed-afa1-0242ac120002"
 	otherFormationTemplateID = "b05731c4-ca3a-11ed-afa1-0242ac120002"
 
+	// Certificate constants
+	testFileName   = "test-file-name"
+	testCommonName = "test-common-name"
+	testCertChain  = "test-cert-chain"
+
+	// Destination constants
+	designTimeDestName     = "design-time-name"
+	basicDestName          = "name-basic"
+	samlAssertionDestName  = "saml-assertion-name"
+	clientCertAuthDestName = "client-cert-auth-dest-name"
+	destinationURL         = "http://test-url"
+	destinationType        = destinationcreatorpkg.TypeHTTP
+	destinationProxyType   = destinationcreatorpkg.ProxyTypeInternet
+	destinationNoAuthn     = destinationcreatorpkg.AuthTypeNoAuth
+
+	// Creds constants
+	basicDestUser     = "user"
+	basicDestPassword = "pwd"
+
+	// Other
 	formationConstraintName = "test constraint"
 	operatorName            = operators.IsNotAssignedToAnyFormationOfTypeOperator
 	resourceSubtype         = "test subtype"
@@ -39,21 +60,7 @@ const (
 	applicationTypeLabel    = "applicationType"
 	runtimeTypeLabel        = "runtimeType"
 	inputAppType            = "input-type"
-
-	testFileName   = "test-file-name"
-	testCommonName = "test-common-name"
-	testCertChain  = "test-cert-chain"
-
-	designTimeDestName    = "design-time-name"
-	destinationURL        = "http://test-url"
-	destinationType       = destinationcreator.TypeHTTP
-	destinationProxyType  = destinationcreator.ProxyTypeInternet
-	destinationNoAuthn    = destinationcreator.AuthTypeNoAuth
-	basicDestName         = "name-basic"
-	basicUser             = "user"
-	basicPassword         = "pwd"
-	samlAssertionDestName = "saml-assertion-name"
-	testJSONConfig        = `{"key": "val"}`
+	testJSONConfig          = `{"key": "val"}`
 )
 
 var (
@@ -64,15 +71,26 @@ var (
 	invalidFAConfig              = json.RawMessage("invalid-config")
 	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(
-		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 	destsReverseConfigValueRawJSON = json.RawMessage(
-		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}},"outboundCommunication":{"basicAuthentication":{"url":"%s","username":"%s","password":"%s"},"samlAssertion":{"url":"%s"}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, basicUser, basicPassword, destinationURL, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}},"outboundCommunication":{"basicAuthentication":{"url":"%s","username":"%s","password":"%s"},"samlAssertion":{"url":"%s"},"clientCertificateAuthentication":{"url":"%s"}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, basicDestUser, basicDestPassword, destinationURL, destinationURL, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
-	fa                  = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
-	reverseFa           = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
-	faWithDeletingState = fixFormationAssignmentWithState(model.DeletingAssignmentState)
-	faWithInvalidConfig = fixFormationAssignmentWithConfig(invalidFAConfig)
+
+	destsConfigWithSAMLCertDataRawJSON = json.RawMessage(
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"certificate":"cert-chain-data","assertionIssuer":"assertionIssuerValue","destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+	)
+
+	destsConfigWithClientCertauthCertDataRawJSON = json.RawMessage(
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"clientCertificateAuthentication":{"certificate":"cert-chain-data","destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+	)
+
+	fa                           = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
+	reverseFa                    = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
+	faWithDeletingState          = fixFormationAssignmentWithState(model.DeletingAssignmentState)
+	faWithInvalidConfig          = fixFormationAssignmentWithConfig(invalidFAConfig)
+	faWithSAMLCertData           = fixFormationAssignmentWithConfig(destsConfigWithSAMLCertDataRawJSON)
+	faWithClientCertAuthCertData = fixFormationAssignmentWithConfig(destsConfigWithClientCertauthCertDataRawJSON)
 
 	faConfigWithDifferentStructure = fixFormationAssignmentWithConfig(configWithDifferentStructure)
 
@@ -84,91 +102,29 @@ var (
 		JoinPointDetailsFAMemoryAddress: faWithDeletingState.GetAddress(),
 	}
 
-	inputForAssignNotificationStatusReturned = &formationconstraintpkg.DestinationCreatorInput{
-		Operation: model.AssignFormation,
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.NotificationStatusReturned,
-			ConstraintType: model.PreOperation,
-		},
-		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
-	}
+	preNotificationStatusReturnedLocation = fixJoinPointLocation(model.NotificationStatusReturned, model.PreOperation)
+	preSendNotificationLocation           = fixJoinPointLocation(model.SendNotificationOperation, model.PreOperation)
 
-	inputForAssignSendNotification = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                              model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
-		JoinPointDetailsReverseFAMemoryAddress: reverseFa.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.SendNotificationOperation,
-			ConstraintType: model.PreOperation,
-		},
-	}
+	inputWithAssignmentWithSAMLCertData                                 = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation)
+	inputWithAssignmentWithClientCertAuthCertData                       = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation)
+	inputForAssignNotificationStatusReturned                            = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preNotificationStatusReturnedLocation)
+	inputForAssignNotificationStatusReturnedWithInvalidFAConfig         = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithInvalidConfig, preNotificationStatusReturnedLocation)
+	inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preSendNotificationLocation)
+
+	inputForAssignSendNotification                                         = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, reverseFa, preSendNotificationLocation)
+	inputForAssignSendNotificationWithInvalidFAConfig                      = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, faWithInvalidConfig, reverseFa, preSendNotificationLocation)
+	inputForAssignSendNotificationWithInvalidReverseFAConfig               = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, faWithInvalidConfig, preSendNotificationLocation)
+	inputForAssignSendNotificationWhereFAConfigStructureIsDifferent        = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, faConfigWithDifferentStructure, faConfigWithDifferentStructure, preSendNotificationLocation)
+	inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, faConfigWithDifferentStructure, preSendNotificationLocation)
 
 	inputWithInvalidOperation = &formationconstraintpkg.DestinationCreatorInput{
 		Operation: model.CreateFormation,
-	}
-
-	inputForAssignNotificationStatusReturnedWithInvalidFAConfig = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                       model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress: faWithInvalidConfig.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.NotificationStatusReturned,
-			ConstraintType: model.PreOperation,
-		},
-	}
-
-	inputForAssignSendNotificationWithInvalidFAConfig = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                              model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress:        faWithInvalidConfig.GetAddress(),
-		JoinPointDetailsReverseFAMemoryAddress: reverseFa.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.SendNotificationOperation,
-			ConstraintType: model.PreOperation,
-		},
-	}
-
-	inputForAssignSendNotificationWithInvalidReverseFAConfig = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                              model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
-		JoinPointDetailsReverseFAMemoryAddress: faWithInvalidConfig.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.SendNotificationOperation,
-			ConstraintType: model.PreOperation,
-		},
-	}
-
-	inputForAssignSendNotificationWhereFAConfigStructureIsDifferent = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                              model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress:        faConfigWithDifferentStructure.GetAddress(),
-		JoinPointDetailsReverseFAMemoryAddress: faConfigWithDifferentStructure.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.SendNotificationOperation,
-			ConstraintType: model.PreOperation,
-		},
-	}
-
-	inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                              model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress:        fa.GetAddress(),
-		JoinPointDetailsReverseFAMemoryAddress: faConfigWithDifferentStructure.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.SendNotificationOperation,
-			ConstraintType: model.PreOperation,
-		},
 	}
 
 	inputWithoutAssignmentMemoryAddress = &formationconstraintpkg.DestinationCreatorInput{
 		Operation: model.AssignFormation,
 		Location: formationconstraintpkg.JoinPointLocation{
 			OperationName:  model.NotificationStatusReturned,
-			ConstraintType: model.PreOperation,
-		},
-	}
-
-	inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress = &formationconstraintpkg.DestinationCreatorInput{
-		Operation:                       model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
-		Location: formationconstraintpkg.JoinPointLocation{
-			OperationName:  model.SendNotificationOperation,
 			ConstraintType: model.PreOperation,
 		},
 	}
@@ -308,6 +264,23 @@ var (
 	}
 )
 
+func fixDestinationCreatorInputWithAssignmentMemoryAddress(operation model.FormationOperation, formationAssignment *model.FormationAssignment, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.DestinationCreatorInput {
+	return &formationconstraintpkg.DestinationCreatorInput{
+		Operation:                       operation,
+		JoinPointDetailsFAMemoryAddress: formationAssignment.GetAddress(),
+		Location:                        location,
+	}
+}
+
+func fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(operation model.FormationOperation, assignment, reverseAssignment *model.FormationAssignment, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.DestinationCreatorInput {
+	return &formationconstraintpkg.DestinationCreatorInput{
+		Operation:                              operation,
+		JoinPointDetailsFAMemoryAddress:        assignment.GetAddress(),
+		JoinPointDetailsReverseFAMemoryAddress: reverseAssignment.GetAddress(),
+		Location:                               location,
+	}
+}
+
 func fixDestinationCreatorInputForUnassignWithLocationOperation(operationName model.TargetOperation) *formationconstraintpkg.DestinationCreatorInput {
 	return &formationconstraintpkg.DestinationCreatorInput{
 		Operation:                       model.UnassignFormation,
@@ -316,6 +289,13 @@ func fixDestinationCreatorInputForUnassignWithLocationOperation(operationName mo
 			OperationName:  operationName,
 			ConstraintType: model.PreOperation,
 		},
+	}
+}
+
+func fixJoinPointLocation(operationName model.TargetOperation, constraintType model.FormationConstraintType) formationconstraintpkg.JoinPointLocation {
+	return formationconstraintpkg.JoinPointLocation{
+		OperationName:  operationName,
+		ConstraintType: constraintType,
 	}
 }
 
@@ -344,30 +324,53 @@ func fixDesignTimeDestination() operators.Destination {
 	}
 }
 
-func fixBasicDestination() operators.Destination {
-	return operators.Destination{
-		Name: basicDestName,
-		URL:  destinationURL,
+func fixDesignTimeDestinations() []operators.Destination {
+	return []operators.Destination{
+		fixDesignTimeDestination(),
 	}
 }
 
-func fixSAMLAssertionDestination() operators.Destination {
+func fixBasicDestinations() []operators.Destination {
+	return []operators.Destination{
+		fixDestination(basicDestName, destinationURL),
+	}
+}
+
+func fixSAMLAssertionDestinations() []operators.Destination {
+	return []operators.Destination{
+		fixDestination(samlAssertionDestName, destinationURL),
+	}
+}
+
+func fixClientCertAuthDestinations() []operators.Destination {
+	return []operators.Destination{
+		fixDestination(clientCertAuthDestName, destinationURL),
+	}
+}
+
+func fixDestination(name, url string) operators.Destination {
 	return operators.Destination{
-		Name: samlAssertionDestName,
-		URL:  destinationURL,
+		Name: name,
+		URL:  url,
 	}
 }
 
 func fixBasicCreds() operators.BasicAuthentication {
 	return operators.BasicAuthentication{
 		URL:      destinationURL,
-		Username: basicUser,
-		Password: basicPassword,
+		Username: basicDestUser,
+		Password: basicDestPassword,
 	}
 }
 
 func fixSAMLCreds() *operators.SAMLAssertionAuthentication {
 	return &operators.SAMLAssertionAuthentication{
+		URL: destinationURL,
+	}
+}
+
+func fixClientCertAuthCreds() *operators.ClientCertAuthentication {
+	return &operators.ClientCertAuthentication{
 		URL: destinationURL,
 	}
 }
@@ -380,34 +383,34 @@ func fixCertificateData() *operators.CertificateData {
 	}
 }
 
-func UnusedTenantService() *automock.TenantService {
+func unusedTenantService() *automock.TenantService {
 	return &automock.TenantService{}
 }
 
-func UnusedASAService() *automock.AutomaticScenarioAssignmentService {
+func unusedASAService() *automock.AutomaticScenarioAssignmentService {
 	return &automock.AutomaticScenarioAssignmentService{}
 }
 
-func UnusedLabelRepo() *automock.LabelRepository {
+func unusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
 }
 
-func UnusedFormationRepo() *automock.FormationRepository {
+func unusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
 
-func UnusedApplicationRepo() *automock.ApplicationRepository {
+func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }
 
-func UnusedLabelService() *automock.LabelService {
+func unusedLabelService() *automock.LabelService {
 	return &automock.LabelService{}
 }
 
-func UnusedDestinationService() *automock.DestinationService {
+func unusedDestinationService() *automock.DestinationService {
 	return &automock.DestinationService{}
 }
 
-func UnusedDestinationCreatorService() *automock.DestinationCreatorService {
+func unusedDestinationCreatorService() *automock.DestinationCreatorService {
 	return &automock.DestinationCreatorService{}
 }

@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3168"
+      version: "PR-3234"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -150,8 +150,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3183"
+      dir: prod/incubator/
+      version: "v20230807-4a200b85"
       name: compass-kyma-adapter
     gateway:
       dir: prod/incubator/
@@ -166,8 +166,8 @@ global:
       version: "v20230728-5390e241"
       name: compass-ord-service
     schema_migrator:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3231"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
@@ -179,16 +179,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3168"
+      dir: prod/incubator/
+      version: "v20230815-62b26de8"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3168"
+      dir: prod/incubator/
+      version: "v20230815-40df0edc"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -206,20 +206,6 @@ global:
   portieris:
     isEnabled: false
     imagePullSecretName: "portieris-dummy-image-pull-secret"
-  operations_manager:
-    election:
-      enabled: false
-    lease:
-      lockname: opmanagerlease
-    job:
-      ordCreation:
-        schedulePeriod: 168h
-      ordDeletion:
-        schedulePeriod: 24h
-        completedOpsOlderThanDays: 5
-        failedOpsOlderThanDays: 10
-    external:
-      port: 3009
   nsAdapter:
     external:
       port: 3005
@@ -337,7 +323,7 @@ global:
         commonNameKey: "commonName"
         certChainKey: "certificateChain"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
-    ordWebhookMappings: '[]'
+    ordWebhookMappings: '[{ "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090/proxy", "ProxyHeaderTemplate": "{\"target_host\": \"{{.Application.BaseURL}}\" }", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:
@@ -1100,6 +1086,7 @@ global:
     ordGlobalRegistryUnsecuredPort: 8087
     unsecuredPortWithAdditionalContent: 8088
     unsecuredMultiTenantPort: 8089
+    certSecuredProxyPort: 8090
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
@@ -1144,6 +1131,8 @@ global:
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
+    hydrator:
+      certSubjectMappingResyncInterval: "10s"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
@@ -1155,12 +1144,13 @@ global:
       region2: "eu-2"
     ordAggregator:
       skipPattern: ""
+      proxyApplicationTemplateName: "SAP Proxy Template"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
-      formationAsyncApi:
+      tenantMappingStatusAPI:
         responseDelayInSeconds: 3
     selfRegistration:
       region: "eu-1"

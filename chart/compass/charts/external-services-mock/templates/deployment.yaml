@@ -49,6 +49,8 @@ spec:
                 value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_ORD_SERVERS_UNSECURED_MULTI_TENANT_PORT
                 value: "{{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}"
+              - name: APP_ORD_SERVERS_PROXY_PORT
+                value: "{{ .Values.global.externalServicesMock.certSecuredProxyPort }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_GLOBAL_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_CLIENT_ID
@@ -191,8 +193,8 @@ spec:
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
-              - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
-                value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds  | quote}}
+              - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+                value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds  | quote}}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_ID
                 value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppID }}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID

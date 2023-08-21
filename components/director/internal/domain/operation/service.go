@@ -2,8 +2,6 @@ package operation
 
 import (
 	"context"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,7 +13,6 @@ import (
 //go:generate mockery --name=OperationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
-	DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, date time.Time) error
 }
 
 // UIDService is responsible for service-layer uid operations
@@ -65,15 +62,6 @@ func (s *service) CreateMultiple(ctx context.Context, in []*model.OperationInput
 		if err := s.Create(ctx, op); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-// DeleteOlderThan deletes all operations of type `opType` with status `status` older than `days`
-func (s *service) DeleteOlderThan(ctx context.Context, opType string, status model.OperationStatus, days int) error {
-	if err := s.opRepo.DeleteOlderThan(ctx, opType, status, time.Now().AddDate(0, 0, -1*days)); err != nil {
-		return errors.Wrapf(err, "while deleting Operations of type %s and status %s older than %d", opType, status, days)
 	}
 
 	return nil

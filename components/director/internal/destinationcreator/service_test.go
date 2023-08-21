@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -26,9 +28,8 @@ var (
 
 	destConfig = fixDestinationConfig()
 
-	basicDestDetails                        = fixBasicDestinationDetails()
-	samlAssertionDestDetails                = fixSAMLAssertionDestinationDetails()
-	samlAssertionDetailsWithoutSubaccountID = fixDestinationDetails(samlAssertionDestName, string(destinationcreator.AuthTypeSAMLAssertion), "")
+	basicDestDetails          = fixBasicDestinationDetails()
+	samlAssertionDestsDetails = fixSAMLAssertionDestinationsDetails()
 
 	basicAuthCreds         = fixBasicAuthCreds(basicDestURL, basicDestUser, basicDestPassword)
 	samlAssertionAuthCreds = fixSAMLAssertionAuthCreds(basicDestURL)
@@ -43,7 +44,6 @@ var (
 
 func Test_CreateDesignTimeDestinations(t *testing.T) {
 	designTimeDestDetails := fixDesignTimeDestinationDetails()
-	designTimeDestDetailsWithoutSubaccountID := fixDestinationDetails(designTimeDestName, string(destinationcreator.AuthTypeNoAuth), "")
 
 	designTimeDestDetailsWithoutName := fixDesignTimeDestinationDetails()
 	designTimeDestDetailsWithoutName.Name = ""
@@ -73,7 +73,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -84,22 +83,10 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 		},
 		{
-			name:                "Error when validating destination subaccount fail",
-			config:              destConfig,
-			destinationDetails:  designTimeDestDetailsWithoutSubaccountID,
-			formationAssignment: faWithInvalidTargetType,
-			expectedErrMessage:  fmt.Sprintf("Couldn't determine the label-able object type from assignment type: %q", invalidTargetType),
-		},
-		{
 			name:                "Error while getting region and get external tenant fail",
 			config:              destConfig,
 			destinationDetails:  designTimeDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
-			labelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
-				return labelRepo
-			},
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
@@ -114,7 +101,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(nil, testErr).Once()
 				return labelRepo
 			},
@@ -132,7 +118,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLblWithInvalidType, nil).Once()
 				return labelRepo
 			},
@@ -150,7 +135,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
 				return labelRepo
 			},
@@ -168,7 +152,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -186,7 +169,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -209,7 +191,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -232,7 +213,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -257,7 +237,7 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(3)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(1)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(3)
 				return labelRepo
 			},
@@ -280,7 +260,7 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(5)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(2)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(5)
 				return labelRepo
 			},
@@ -303,7 +283,7 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Twice()
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -349,8 +329,6 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 }
 
 func Test_CreateBasicDestinations(t *testing.T) {
-	basicDestDetailsWithoutSubaccountID := fixDestinationDetails(basicDestName, string(destinationcreator.AuthTypeBasic), "")
-
 	basicDestDetailsWithInvalidAuth := fixBasicDestinationDetails()
 	basicDestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
 
@@ -374,7 +352,6 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -385,20 +362,9 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			},
 		},
 		{
-			name:                "Error when validating destination subaccount fail",
-			destinationDetails:  basicDestDetailsWithoutSubaccountID,
-			formationAssignment: faWithInvalidTargetType,
-			expectedErrMessage:  fmt.Sprintf("Couldn't determine the label-able object type from assignment type: %q", invalidTargetType),
-		},
-		{
 			name:                "Error while getting region and get external tenant fail",
 			destinationDetails:  basicDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
-			labelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
-				return labelRepo
-			},
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
@@ -412,7 +378,6 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
 				return labelRepo
 			},
@@ -429,7 +394,6 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -438,7 +402,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreator.AuthTypeBasic),
+			expectedErrMessage: fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreatorpkg.AuthTypeBasic),
 		},
 		{
 			name:                "Error when executing remote basic destination request fail",
@@ -451,7 +415,6 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -475,7 +438,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(3)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(1)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(3)
 				return labelRepo
 			},
@@ -497,7 +460,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(5)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(2)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(5)
 				return labelRepo
 			},
@@ -519,7 +482,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Twice()
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -565,6 +528,8 @@ func Test_CreateBasicDestinations(t *testing.T) {
 }
 
 func Test_CreateSAMLAssertionDestinations(t *testing.T) {
+	samlAssertionDestDetails := fixSAMLAssertionDestinationDetails()
+
 	samlAssertionDestDetailsWithoutName := fixSAMLAssertionDestinationDetails()
 	samlAssertionDestDetailsWithoutName.Name = ""
 
@@ -598,7 +563,6 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -609,20 +573,9 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 		},
 		{
-			name:                "Error when validating destination subaccount fail",
-			destinationDetails:  samlAssertionDetailsWithoutSubaccountID,
-			formationAssignment: faWithInvalidTargetType,
-			expectedErrMessage:  fmt.Sprintf("Couldn't determine the label-able object type from assignment type: %q", invalidTargetType),
-		},
-		{
 			name:                "Error while getting region and get external tenant fail",
-			destinationDetails:  basicDestDetails,
+			destinationDetails:  samlAssertionDestDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
-			labelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
-				return labelRepo
-			},
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
@@ -636,7 +589,6 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
 				return labelRepo
 			},
@@ -653,7 +605,6 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -662,7 +613,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreator.AuthTypeSAMLAssertion),
+			expectedErrMessage: fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreatorpkg.AuthTypeSAMLAssertion),
 		},
 		{
 			name:                "Error when getting application by ID fail",
@@ -675,7 +626,6 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -697,7 +647,6 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -724,7 +673,6 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -753,7 +701,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(3)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(1)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(3)
 				return labelRepo
 			},
@@ -780,7 +728,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(5)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(2)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(5)
 				return labelRepo
 			},
@@ -807,7 +755,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Twice()
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -847,6 +795,228 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 			svc := destinationcreator.NewService(httpClient, destConfig, appRepo, nil, nil, labelRepo, tenantRepo)
 
 			err := svc.CreateSAMLAssertionDestination(emptyCtx, testCase.destinationDetails, samlAssertionAuthCreds, testCase.formationAssignment, correlationIDs, 0)
+			if testCase.expectedErrMessage != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.expectedErrMessage)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func Test_CreateClientCertificateDestination(t *testing.T) {
+	clientCertAuthDestDetails := fixClientCertAuthDestinationDetails()
+	clientCertAuthTypeCreds := fixClientCertAuthTypeCreds()
+
+	clientCertAuthDestDetailsWithoutName := fixClientCertAuthDestinationDetails()
+	clientCertAuthDestDetailsWithoutName.Name = ""
+
+	clientCertAuthDestDetailsWithInvalidAuth := fixClientCertAuthDestinationDetails()
+	clientCertAuthDestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
+
+	testCases := []struct {
+		name                   string
+		destinationDetails     operators.Destination
+		samlAssertionAuthCreds operators.SAMLAssertionAuthentication
+		formationAssignment    *model.FormationAssignment
+		httpClient             func() *automock.HttpClient
+		labelRepoFn            func() *automock.LabelRepository
+		tenantRepoFn           func() *automock.TenantRepository
+		expectedErrMessage     string
+	}{
+		{
+			name:                "Success",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+		},
+		{
+			name:                "Error while getting region and get external tenant fail",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("while getting region label for tenant with ID: %s: while getting tenant by external ID: %q", destinationExternalSubaccountID, destinationExternalSubaccountID),
+		},
+		{
+			name:                "Error while building url and region is empty",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "while building destination URL: The provided region and/or subaccount for the URL couldn't be empty",
+		},
+		{
+			name:                "Error when saml assertion authentication type is NOT correct",
+			destinationDetails:  clientCertAuthDestDetailsWithInvalidAuth,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreatorpkg.AuthTypeClientCertificate),
+		},
+		{
+			name:                "Error when validating saml assertion request body",
+			destinationDetails:  clientCertAuthDestDetailsWithoutName,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "while validating client certificate destination request body",
+		},
+		{
+			name:                "Error when executing remote saml assertion destination request fail",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(nil, testErr).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("while creating client certificate authentication destination with name: %q in the destination service: %s", clientCertAuthDestName, testErr.Error()),
+		},
+		{
+			name:                "Success while executing remote saml assertion destination request and the status code is conflict",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Once()
+				client.On("Do", requestThatHasMethod(http.MethodDelete)).Return(deleteResp, nil).Once()
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(1)
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(3)
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Times(3)
+				return tenantRepo
+			},
+		},
+		{
+			name:                "Error while executing remote saml assertion destination request and maximum depth is reached",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Times(3)
+				client.On("Do", requestThatHasMethod(http.MethodDelete)).Return(deleteResp, nil).Twice()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(2)
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(5)
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Times(5)
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("Destination creator service retry limit: %d is exceeded", destinationcreator.DepthLimit),
+		},
+		{
+			name:                "Error while executing remote saml assertion destination request in case of conflict and delete destination fail",
+			destinationDetails:  clientCertAuthDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("while deleting destination with name: %q and subaccount ID: %q", clientCertAuthDestName, destinationExternalSubaccountID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			httpClient := fixUnusedHTTPClient()
+			if testCase.httpClient != nil {
+				httpClient = testCase.httpClient()
+			}
+
+			labelRepo := fixUnusedLabelRepo()
+			if testCase.labelRepoFn != nil {
+				labelRepo = testCase.labelRepoFn()
+			}
+
+			tenantRepo := fixUnusedTenantRepo()
+			if testCase.tenantRepoFn != nil {
+				tenantRepo = testCase.tenantRepoFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, httpClient, labelRepo, tenantRepo)
+
+			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
+
+			err := svc.CreateClientCertificateDestination(emptyCtx, testCase.destinationDetails, clientCertAuthTypeCreds, testCase.formationAssignment, correlationIDs, 0)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -1028,12 +1198,14 @@ func Test_DeleteDestination(t *testing.T) {
 }
 
 func Test_CreateCertificate(t *testing.T) {
-	samlAssertionDestDetailsWithoutName := fixSAMLAssertionDestinationDetails()
+	samlAssertionDestsDetailsWithoutName := fixSAMLAssertionDestinationsDetails()
+	samlAssertionDestDetailsWithoutName := samlAssertionDestsDetailsWithoutName[0]
 	samlAssertionDestDetailsWithoutName.Name = ""
 
 	samlAssertionDestDetailsWithInvalidAuth := fixSAMLAssertionDestinationDetails()
 	samlAssertionDestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
 
+	certName := destinationcreatorpkg.AuthTypeSAMLAssertion + "-" + testAssignmentID
 	certResp := fixCertificateResponse(certificateFileNameValue, certificateCommonNameValue, certificateChainValue)
 	certRespBytes, err := json.Marshal(certResp)
 	require.NoError(t, err)
@@ -1041,11 +1213,6 @@ func Test_CreateCertificate(t *testing.T) {
 	certRespWithoutFileName := fixCertificateResponse("", certificateCommonNameValue, certificateChainValue)
 	certRespWithoutFileNameBytes, err := json.Marshal(certRespWithoutFileName)
 	require.NoError(t, err)
-
-	certificateCreateResp := &http.Response{
-		StatusCode: http.StatusCreated,
-		Body:       io.NopCloser(bytes.NewBuffer(certRespBytes)),
-	}
 
 	certificateCreateRespWithoutName := &http.Response{
 		StatusCode: http.StatusCreated,
@@ -1056,10 +1223,12 @@ func Test_CreateCertificate(t *testing.T) {
 		StatusCode: http.StatusCreated,
 		Body:       io.NopCloser(strings.NewReader("{\"invalid")),
 	}
+	faWithSourceAppAndTargetAppAndLongID := fixFormationAssignmentModelWithParameters("some-long-id-0b2de27b-b500-47eb-bf7f-b0c105a65864", testFormationID, testTenantID, testSourceID, testTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), TestConfigValueRawJSON, TestEmptyErrorValueRawJSON)
 
 	testCases := []struct {
 		name                string
-		destinationDetails  operators.Destination
+		destinationsDetails []operators.Destination
+		destinationAuthType destinationcreatorpkg.AuthType
 		formationAssignment *model.FormationAssignment
 		httpClient          func() *automock.HttpClient
 		labelRepoFn         func() *automock.LabelRepository
@@ -1069,11 +1238,38 @@ func Test_CreateCertificate(t *testing.T) {
 	}{
 		{
 			name:                "Success",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
-				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(certificateCreateResp, nil).Once()
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(fixHTTPResponse(http.StatusCreated, string(certRespBytes)), nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedResult: &operators.CertificateData{
+				FileName:         certificateFileNameValue,
+				CommonName:       certificateCommonNameValue,
+				CertificateChain: certificateChainValue,
+			},
+		},
+		{
+			name:                "Success when destination subaccount ID is NOT provided",
+			destinationsDetails: fixDestinationsDetailsWithoutSubaccountID(),
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(fixHTTPResponse(http.StatusCreated, string(certRespBytes)), nil).Once()
 				return client
 			},
 			labelRepoFn: func() *automock.LabelRepository {
@@ -1094,20 +1290,27 @@ func Test_CreateCertificate(t *testing.T) {
 			},
 		},
 		{
+			name:                "Error when destination subaccount ID is NOT provided and validating destination subaccount fail",
+			destinationsDetails: fixDestinationsDetailsWithoutSubaccountID(),
+			formationAssignment: faWithInvalidTargetType,
+			expectedErrMessage:  "while sanitizing destination subaccount IDs: An error occurred while getting consumer subaccount:",
+		},
+		{
+			name:                "Error when the subaccount IDs in the destination details are different",
+			destinationsDetails: fixDestinationsDetailsWitDifferentSubaccountIDs(),
+			formationAssignment: faWithInvalidTargetType,
+			expectedErrMessage:  "All subaccount in the destinations details should have one and the same subaccount ID. Currently there is/are: 2 subaacount ID(s)",
+		},
+		{
 			name:                "Error when validating destination subaccount fail",
-			destinationDetails:  samlAssertionDetailsWithoutSubaccountID,
+			destinationsDetails: fixDestinationsDetailsWithoutSubaccountID(),
 			formationAssignment: faWithInvalidTargetType,
 			expectedErrMessage:  fmt.Sprintf("Couldn't determine the label-able object type from assignment type: %q", invalidTargetType),
 		},
 		{
 			name:                "Error while getting region and get external tenant fail",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
-			labelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
-				return labelRepo
-			},
 			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
@@ -1117,11 +1320,10 @@ func Test_CreateCertificate(t *testing.T) {
 		},
 		{
 			name:                "Error while building certificate url and region is empty",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
 				return labelRepo
 			},
@@ -1133,12 +1335,12 @@ func Test_CreateCertificate(t *testing.T) {
 			expectedErrMessage: "while building certificate URL: The provided region and/or subaccount for the URL couldn't be empty",
 		},
 		{
-			name:                "Error when validating certificate request body fail",
-			destinationDetails:  samlAssertionDestDetailsWithoutName,
+			name:                "Error when getting destination certificate name and destination auth type is invalid",
+			destinationsDetails: samlAssertionDestsDetailsWithoutName,
+			destinationAuthType: "",
 			formationAssignment: faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -1147,11 +1349,38 @@ func Test_CreateCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: "while validating certificate request body",
+			expectedErrMessage: "Invalid destination authentication type: \"\" for certificate creation",
+		},
+		{
+			name:                "Success when the certificate name length is more than accepted and it will be truncated",
+			destinationsDetails: samlAssertionDestsDetailsWithoutName,
+			destinationAuthType: destinationcreatorpkg.AuthTypeClientCertificate,
+			formationAssignment: faWithSourceAppAndTargetAppAndLongID,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(fixHTTPResponse(http.StatusCreated, string(certRespBytes)), nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedResult: &operators.CertificateData{
+				FileName:         certificateFileNameValue,
+				CommonName:       certificateCommonNameValue,
+				CertificateChain: certificateChainValue,
+			},
 		},
 		{
 			name:                "Error when executing remote create certificate request fail",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1160,7 +1389,6 @@ func Test_CreateCertificate(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -1169,11 +1397,12 @@ func Test_CreateCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: fmt.Sprintf("while creating certificate with name: %q for subaccount with ID: %q in the destination service: %s", samlAssertionDestName, destinationExternalSubaccountID, testErr.Error()),
+			expectedErrMessage: fmt.Sprintf("while creating certificate with name: %q for subaccount with ID: %q in the destination service: %s", certName, destinationExternalSubaccountID, testErr.Error()),
 		},
 		{
 			name:                "Error while executing remote certificate request and maximum depth is reached",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1183,7 +1412,7 @@ func Test_CreateCertificate(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(5)
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(2)
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(5)
 				return labelRepo
 			},
@@ -1196,7 +1425,8 @@ func Test_CreateCertificate(t *testing.T) {
 		},
 		{
 			name:                "Error while executing remote certificate request in case of conflict and delete destination fail",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1205,7 +1435,7 @@ func Test_CreateCertificate(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Twice()
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -1219,7 +1449,8 @@ func Test_CreateCertificate(t *testing.T) {
 		},
 		{
 			name:                "Error when unmarshalling certificate response fail",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1228,7 +1459,6 @@ func Test_CreateCertificate(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -1241,7 +1471,8 @@ func Test_CreateCertificate(t *testing.T) {
 		},
 		{
 			name:                "Error when certificate response is not valid",
-			destinationDetails:  samlAssertionDestDetails,
+			destinationsDetails: samlAssertionDestsDetails,
+			destinationAuthType: destinationcreatorpkg.AuthTypeSAMLAssertion,
 			formationAssignment: faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1250,7 +1481,6 @@ func Test_CreateCertificate(t *testing.T) {
 			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
 				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
 				return labelRepo
 			},
@@ -1259,7 +1489,7 @@ func Test_CreateCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: "while validation SAML assertion certificate data",
+			expectedErrMessage: "while validation destination certificate data",
 		},
 	}
 
@@ -1283,7 +1513,7 @@ func Test_CreateCertificate(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			result, err := svc.CreateCertificate(emptyCtx, testCase.destinationDetails, testCase.formationAssignment, 0)
+			result, err := svc.CreateCertificate(emptyCtx, testCase.destinationsDetails, testCase.destinationAuthType, testCase.formationAssignment, 0)
 			if testCase.expectedErrMessage != "" {
 				require.Empty(t, result)
 				require.Error(t, err)
@@ -1464,7 +1694,7 @@ func Test_EnrichAssignmentConfigWithCertificateData(t *testing.T) {
 			assignmentConfig:  json.RawMessage(""),
 			destinationConfig: destConfig,
 			certData:          certData,
-			expectedResult:    json.RawMessage("{\"credentials\":{\"inboundCommunication\":{\"samlAssertion\":{\"destinations\":[{\"testCertFileNameKey\":\"certFileNameValue\",\"testCertCommonNameKey\":\"certCommonNameValue\",\"testCertChainKey\":\"certChainValue\"}]}}}}"),
+			expectedResult:    json.RawMessage("{\"credentials\":{\"inboundCommunication\":{\"clientCertificateAuthentication\":{\"certificate\":\"certChainValue\"}}}}"),
 		},
 	}
 
@@ -1472,7 +1702,49 @@ func Test_EnrichAssignmentConfigWithCertificateData(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			svc := destinationcreator.NewService(nil, testCase.destinationConfig, nil, nil, nil, nil, nil)
 
-			result, err := svc.EnrichAssignmentConfigWithCertificateData(testCase.assignmentConfig, testCase.certData, 0)
+			result, err := svc.EnrichAssignmentConfigWithCertificateData(testCase.assignmentConfig, destinationcreatorpkg.ClientCertAuthDestPath, testCase.certData)
+			if testCase.expectedErrMessage != "" {
+				require.Empty(t, result)
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.expectedErrMessage)
+			} else {
+				require.NotEmpty(t, result)
+				require.NoError(t, err)
+				require.Equal(t, testCase.expectedResult, result)
+			}
+		})
+	}
+}
+
+func Test_EnrichAssignmentConfigWithSAMLCertificateData(t *testing.T) {
+	certData := &operators.CertificateData{
+		FileName:         "certFileNameValue",
+		CommonName:       "certCommonNameValue",
+		CertificateChain: "certChainValue",
+	}
+
+	testCases := []struct {
+		name               string
+		assignmentConfig   json.RawMessage
+		destinationConfig  *destinationcreator.Config
+		certData           *operators.CertificateData
+		expectedResult     json.RawMessage
+		expectedErrMessage string
+	}{
+		{
+			name:              "Success",
+			assignmentConfig:  json.RawMessage(""),
+			destinationConfig: destConfig,
+			certData:          certData,
+			expectedResult:    json.RawMessage("{\"credentials\":{\"inboundCommunication\":{\"samlAssertion\":{\"certificate\":\"certChainValue\",\"assertionIssuer\":\"certCommonNameValue\"}}}}"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			svc := destinationcreator.NewService(nil, testCase.destinationConfig, nil, nil, nil, nil, nil)
+
+			result, err := svc.EnrichAssignmentConfigWithSAMLCertificateData(testCase.assignmentConfig, destinationcreatorpkg.SAMLAssertionDestPath, testCase.certData)
 			if testCase.expectedErrMessage != "" {
 				require.Empty(t, result)
 				require.Error(t, err)
@@ -1849,7 +2121,7 @@ func Test_PrepareBasicRequestBody(t *testing.T) {
 		basicAuthCreds       operators.BasicAuthentication
 		formationAssignment  *model.FormationAssignment
 		expectedErrMessage   string
-		expectedBasicReqBody *destinationcreator.BasicRequestBody
+		expectedBasicReqBody *destinationcreator.BasicAuthDestinationRequestBody
 	}{
 		{
 			name:                 "Success",
@@ -1894,7 +2166,7 @@ func Test_PrepareBasicRequestBody(t *testing.T) {
 			formationAssignment: faWithSourceAppAndTargetApp,
 			destinationDetails:  basicDestDetailsWithInvalidAuth,
 			basicAuthCreds:      basicAuthCreds,
-			expectedErrMessage:  fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreator.AuthTypeBasic),
+			expectedErrMessage:  fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreatorpkg.AuthTypeBasic),
 		},
 		{
 			name:                "Error when the the destination request body is invalid",

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
-	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 	testDestName     = "test-dest-name"
 	testCertName     = "test-cert-name"
 	testCertChain    = esmdestinationcreator.CertChain
-	testCertFileName = testCertName + destinationcreator.JavaKeyStoreFileExtension
+	testCertFileName = testCertName + destinationcreatorpkg.JavaKeyStoreFileExtension
 
 	url = "https://target-url.com"
 

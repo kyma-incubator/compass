@@ -19,7 +19,7 @@ The current state of `values.yaml` has been configured to work with the `run.sh`
 
 ### Hydra Secret
 
-The Hydra deployment expects an already existing K8s Secret with the name `existingSecret: "ory-hydra-credentials"`. The K8s Secret is created by the `installation/scripts/install-ory.sh` script, which is invoked by `run.sh`. This approach was chosen as the Hydra secrets need to be rotated in [a specific manner](https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation#rotation-of-hmac-token-signing-and-database-and-cookie-encryption-keys); if the Secret was dynamically created with each Helm release it would break the deployment.
+The Hydra deployment expects an already existing Kubernetes Secret with the name `existingSecret: "ory-hydra-credentials"`. The Kubernetes Secret is created by the `installation/scripts/install-ory.sh` script, which is invoked by `run.sh`. This approach was chosen as the Hydra secrets need to be rotated in [a specific manner](https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation#rotation-of-hmac-token-signing-and-database-and-cookie-encryption-keys). If the secret was created dynamically with each Helm release, it would break the deployment.
 
 ### Oathkeeper Secret
 

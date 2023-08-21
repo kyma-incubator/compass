@@ -3,11 +3,15 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/imdario/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -108,6 +112,9 @@ type Service struct {
 	tenantSvc             TenantService
 	appTemplateVersionSvc ApplicationTemplateVersionService
 	appTemplateSvc        ApplicationTemplateService
+	labelSvc              LabelService
+
+	ordWebhookMapping []application.ORDWebhookMapping
 
 	webhookConverter WebhookConverter
 
@@ -116,7 +123,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping) *Service {
 	return &Service{
 		config:                config,
 		transact:              transact,
@@ -138,6 +145,8 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		webhookConverter:      webhookConverter,
 		appTemplateVersionSvc: appTemplateVersionSvc,
 		appTemplateSvc:        appTemplateSvc,
+		labelSvc:              labelService,
+		ordWebhookMapping:     ordWebhookMapping,
 	}
 }
 
@@ -204,6 +213,7 @@ func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, ap
 		return nil
 	}
 
+	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
 	for _, appID := range appIDs {
 		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
@@ -221,7 +231,8 @@ func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, glo
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			if err := s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
+			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
+			if err = s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
@@ -235,6 +246,7 @@ func (s *Service) ProcessApplicationTemplates(ctx context.Context, cfg MetricsCo
 		return nil
 	}
 
+	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
 	for _, appTemplateID := range appTemplateIDs {
 		if err := s.processApplicationTemplate(ctx, cfg, globalResourcesOrdIDs, appTemplateID); err != nil {
@@ -252,7 +264,9 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			if err := s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+
+			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
+			if err = s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 
@@ -262,7 +276,7 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 			}
 
 			for _, app := range apps {
-				if err := s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
+				if err = s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
 					return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", app.ID)
 				}
 			}
@@ -357,7 +371,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
 	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
 		return err
 	}
@@ -372,13 +386,13 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
+	validationResult := documents.Validate(webhookBaseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
 	}
 
-	if err := documents.Sanitize(baseURL); err != nil {
+	if err := documents.Sanitize(webhookBaseURL, webhookProxyURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
@@ -473,7 +487,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 			return err
 		}
 
-		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests); err != nil {
+		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests, ordRequestObject); err != nil {
 			return err
 		}
 	}
@@ -481,7 +495,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, baseU
 	return nil
 }
 
-func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*ordFetchRequest) error {
+func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*ordFetchRequest, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject) error {
 	queue := make(chan *model.FetchRequest)
 
 	workers := s.config.maxParallelSpecificationProcessors
@@ -499,7 +513,7 @@ func (s *Service) processSpecs(ctx context.Context, resourceType directorresourc
 				fr := *fetchRequest
 				ctx = addFieldToLogger(ctx, "fetch_request_id", fr.ID)
 				log.C(ctx).Infof("Will attempt to execute spec fetch request for spec with id %q and spec entity type %q", fr.ObjectID, fr.ObjectType)
-				data, status := s.fetchReqSvc.FetchSpec(ctx, &fr)
+				data, status := s.fetchReqSvc.FetchSpec(ctx, &fr, ordRequestObject.Headers)
 				log.C(ctx).Infof("Finished executing spec fetch request for spec with id %q and spec entity type %q with result: %s. Adding to result queue...", fr.ObjectID, fr.ObjectType, status.Condition)
 				s.addFetchRequestResult(&fetchRequestResults, &fetchRequestResult{
 					fetchRequest: &fr,
@@ -1755,11 +1769,11 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	}, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var (
-		documents Documents
-		baseURL   string
-		err       error
+		documents      Documents
+		webhookBaseURL string
+		err            error
 	)
 
 	metricsCfg := metrics.PusherConfig{
@@ -1774,8 +1788,52 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	ctx = addFieldToLogger(ctx, "resource_id", resource.ID)
 	ctx = addFieldToLogger(ctx, "resource_type", string(resource.Type))
 
+	var appBaseURL *string
+	if resource.Type == directorresource.Application {
+		tx, err := s.transact.Begin()
+		if err != nil {
+			return err
+		}
+		defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+		ctx = persistence.SaveToContext(ctx, tx)
+
+		ctx, err = s.saveLowestOwnerForAppToContext(ctx, resource.ID)
+		if err != nil {
+			return err
+		}
+
+		app, err := s.appSvc.Get(ctx, resource.ID)
+		if err != nil {
+			return errors.Wrapf(err, "error while retrieving app with id %q", resource.ID)
+		}
+
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+
+		appBaseURL = app.BaseURL
+	}
+
+	ordRequestObject := requestobject.OpenResourceDiscoveryWebhookRequestObject{
+		Application: requestobject.Application{BaseURL: str.PtrStrToStr(appBaseURL)},
+		Headers:     http.Header{},
+	}
+
+	if webhook.HeaderTemplate != nil {
+		log.C(ctx).Infof("Header template found for webhook with ID %s. Will parse the template.", webhook.ID)
+		headers, err := ordRequestObject.ParseHeadersTemplate(webhook.HeaderTemplate)
+		if err != nil {
+			return err
+		}
+
+		for key, value := range headers {
+			ordRequestObject.Headers.Set(key, value[0])
+		}
+	}
+
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
-		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook)
+		documents, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1785,10 +1843,10 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	}
 
 	if len(documents) > 0 {
-		log.C(ctx).Info("Processing ORD documents")
+		log.C(ctx).Infof("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
 		var validationErrors error
 
-		err = s.processDocuments(ctx, resource, baseURL, documents, globalResourcesOrdIDs, &validationErrors)
+		err = s.processDocuments(ctx, resource, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordRequestObject, documents, globalResourcesOrdIDs, &validationErrors)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1918,6 +1976,11 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 	localTenantID := str.PtrStrToStr(app.LocalTenantID)
 	ctx = tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
 
+	ordWebhookMapping, err := s.getORDConfigForApplication(ctx, app.ID)
+	if err != nil {
+		return err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return err
 	}
@@ -1929,8 +1992,8 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		Name:          app.Name,
 		LocalTenantID: app.LocalTenantID,
 	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs); err != nil {
-		return err
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+		return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
 	}
 
 	return nil
@@ -1954,16 +2017,51 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 		return err
 	}
 
+	ordWebhookMapping := s.getMappingORDConfiguration(appTemplate.Name)
+
 	resource := Resource{
 		Type: directorresource.ApplicationTemplate,
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Service) getMappingORDConfiguration(applicationType string) application.ORDWebhookMapping {
+	for _, wm := range s.ordWebhookMapping {
+		if wm.Type == applicationType {
+			return wm
+		}
+	}
+	return application.ORDWebhookMapping{}
+}
+
+func (s *Service) getORDConfigForApplication(ctx context.Context, appID string) (application.ORDWebhookMapping, error) {
+	var ordWebhookMapping application.ORDWebhookMapping
+
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return application.ORDWebhookMapping{}, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appTypeLbl, err := s.labelSvc.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, appID, application.ApplicationTypeLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return application.ORDWebhookMapping{}, errors.Wrapf(err, "while getting label %q for %s with id %q", application.ApplicationTypeLabelKey, model.ApplicationLabelableObject, appID)
+		}
+
+		return application.ORDWebhookMapping{}, nil
+	}
+
+	if appTypeLbl != nil {
+		ordWebhookMapping = s.getMappingORDConfiguration(appTypeLbl.Value.(string))
+	}
+
+	return ordWebhookMapping, nil
 }
 
 func excludeUnnecessaryFetchRequests(fetchRequests []*ordFetchRequest, frIdxToExclude []int) []*ordFetchRequest {

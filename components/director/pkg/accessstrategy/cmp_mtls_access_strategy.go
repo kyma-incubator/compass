@@ -39,7 +39,7 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProvider
 }
 
 // Execute performs the access strategy's specific execution logic
-func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string) (*http.Response, error) {
+func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders http.Header) (*http.Response, error) {
 	clientCerts := as.certCache.Get()
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
@@ -66,6 +66,10 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if additionalHeaders != nil {
+		req.Header = additionalHeaders
 	}
 
 	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header

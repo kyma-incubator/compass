@@ -505,6 +505,11 @@ func (r *queryResolver) ApplicationBySystemNumber(ctx context.Context, systemNum
 	return r.app.ApplicationBySystemNumber(ctx, systemNumber)
 }
 
+// ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
+func (r *queryResolver) ApplicationByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*graphql.Application, error) {
+	return r.app.ApplicationByLocalTenantIDAndAppTemplateID(ctx, localTenantID, appTemplateID)
+}
+
 // ApplicationTemplates missing godoc
 func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
 	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)

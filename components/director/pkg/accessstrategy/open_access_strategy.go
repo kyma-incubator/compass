@@ -13,10 +13,14 @@ func NewOpenAccessStrategyExecutor() *openAccessStrategyExecutor {
 }
 
 // Execute performs the access strategy's specific execution logic
-func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Client, documentURL, tnt string) (*http.Response, error) {
+func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Client, documentURL, tnt string, additionalHeaders http.Header) (*http.Response, error) {
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if additionalHeaders != nil {
+		req.Header = additionalHeaders
 	}
 
 	if len(tnt) > 0 {
