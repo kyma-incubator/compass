@@ -253,7 +253,7 @@ func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *mo
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
-		return nil, errors.Wrap(err, "error unmarshaling json body")
+		return nil, errors.Wrap(err, "error unmarshaling wellknown json body")
 	}
 
 	return &config, nil
