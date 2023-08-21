@@ -153,15 +153,15 @@ func TestPgRepository_DeleteMultiple(t *testing.T) {
 }
 
 func TestRepository_PriorityQueueListByType(t *testing.T) {
-	operationModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(model.OrdAggregationOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, model.OrdAggregationOpType, model.OperationStatusScheduled)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "PriorityQueue ListByType",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
-				Args:     []driver.Value{string(model.OperationStatusScheduled), 10},
+				Args:     []driver.Value{string(model.OrdAggregationOpType), 10},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
@@ -177,7 +177,7 @@ func TestRepository_PriorityQueueListByType(t *testing.T) {
 		RepoConstructorFunc:       operation.NewRepository,
 		ExpectedModelEntities:     []interface{}{operationModel},
 		ExpectedDBEntities:        []interface{}{operationEntity},
-		MethodArgs:                []interface{}{string(model.OperationStatusScheduled)},
+		MethodArgs:                []interface{}{model.OrdAggregationOpType},
 		MethodName:                "PriorityQueueListByType",
 		DisableConverterErrorTest: true,
 	}

@@ -51,10 +51,10 @@ func fixOperationModelWithID(id string, opType model.OperationType, opStatus mod
 	}
 }
 
-func fixEntityOperation(id, opType string, opStatus model.OperationStatus) *operation.Entity {
+func fixEntityOperation(id string, opType model.OperationType, opStatus model.OperationStatus) *operation.Entity {
 	return &operation.Entity{
 		ID:        id,
-		Type:      opType,
+		Type:      string(opType),
 		Status:    string(opStatus),
 		Data:      repo.NewValidNullableString("[]"),
 		Error:     repo.NewValidNullableString("[]"),
