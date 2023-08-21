@@ -19,6 +19,7 @@ import (
 type UpdaterGlobal interface {
 	UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error
 	UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error
+	UpdateFieldsGlobal(ctx context.Context, conditions Conditions, newValues map[string]interface{}) error
 	SetIDColumns(idColumns []string)
 	SetUpdatableColumns(updatableColumns []string)
 	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
@@ -195,6 +196,11 @@ func (u *updaterGlobal) UpdateSingleWithVersionGlobal(ctx context.Context, dbEnt
 	return u.updateSingleWithVersion(ctx, dbEntity)
 }
 
+// UpdateFieldsGlobal updates the fields of entities that match the conditions.
+func (u *updaterGlobal) UpdateFieldsGlobal(ctx context.Context, conditions Conditions, newValues map[string]interface{}) error {
+	return u.updateFieldsWithCondition(ctx, conditions, newValues)
+}
+
 // SetIDColumns is a setter for idColumns.
 func (u *updaterGlobal) SetIDColumns(idColumns []string) {
 	u.idColumns = idColumns
@@ -310,4 +316,58 @@ func assertSingleRowAffected(resourceType resource.Type, affected int64, isTenan
 		return apperrors.NewInternalError(apperrors.ShouldUpdateSingleRowButUpdatedMsgF, affected)
 	}
 	return nil
+}
+
+func (u *updaterGlobal) updateFieldsWithCondition(ctx context.Context, conditions Conditions, newValues map[string]interface{}) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	query, args, err := u.buildUpdateFieldsQuery(conditions, newValues)
+	if err != nil {
+		return err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", query)
+	res, err := persist.ExecContext(ctx, query, args...)
+
+	if err = persistence.MapSQLError(ctx, err, u.resourceType, resource.Update, "while updating entities from '%s' table", u.tableName); err != nil {
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "while checking affected rows")
+	}
+	log.C(ctx).Debugf("Rows updated: %d", affected)
+
+	return nil
+}
+
+func (u *updaterGlobal) buildUpdateFieldsQuery(conditions Conditions, newValues map[string]interface{}) (string, []interface{}, error) {
+	var stmtBuilder strings.Builder
+	setClauses, argValues := buildFields(newValues)
+	stmtBuilder.WriteString(fmt.Sprintf("UPDATE %s SET %s WHERE", u.tableName, strings.Join(setClauses, ", ")))
+
+	err := writeEnumeratedConditions(&stmtBuilder, conditions)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
+	}
+
+	argValues = append(argValues, getAllArgs(conditions)...)
+
+	return stmtBuilder.String(), argValues, nil
+}
+
+func buildFields(values map[string]interface{}) ([]string, []interface{}) {
+	fieldsToSet := make([]string, 0)
+	args := make([]interface{}, 0)
+
+	for field, arg := range values {
+		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = ?", field))
+		args = append(args, arg)
+	}
+
+	return fieldsToSet, args
 }

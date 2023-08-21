@@ -2,6 +2,7 @@ package operation
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -13,6 +14,8 @@ import (
 
 const operationTable = `public.operation`
 const priorityView = `public.scheduled_operations`
+const rescheduleIntervalInDays = 3
+const hangPeriodInHours = 2
 
 var (
 	idTableColumns        = []string{"id"}
@@ -124,4 +127,20 @@ func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.
 		items = append(items, model)
 	}
 	return items
+}
+
+// ResheduleOperations reschedules the operations.
+func (r *pgRepository) ResheduleOperations(ctx context.Context) error {
+	log.C(ctx).Debug("Rescheduling Operations")
+	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
+	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().AddDate(0, 0, -1*rescheduleIntervalInDays))
+	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "IN_PROGRESS", "updated_at": time.Now()})
+}
+
+// RescheduleHangedOperations reschedules operations that are hanged.
+func (r *pgRepository) RescheduleHangedOperations(ctx context.Context) error {
+	log.C(ctx).Debug("Rescheduling Operations")
+	inCondition := repo.NewInConditionForStringValues("status", []string{"IN_PROGRESS"})
+	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*hangPeriodInHours*time.Hour))
+	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
