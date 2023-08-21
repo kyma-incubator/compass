@@ -3,6 +3,7 @@ package oauth20
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -14,6 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/ory/hydra-client-go/client/admin"
 	"github.com/pkg/errors"
+
+	hydra "github.com/ory/hydra-client-go/v2"
 )
 
 const (
@@ -22,6 +25,7 @@ const (
 )
 
 // ClientDetailsConfigProvider missing godoc
+//
 //go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
@@ -29,18 +33,26 @@ type ClientDetailsConfigProvider interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // OryHydraService missing godoc
+//
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OryHydraService interface {
-	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, opts ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error)
 	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.CreateOAuth2ClientCreated, error)
 	UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.UpdateOAuth2ClientOK, error)
 	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams, opts ...admin.ClientOption) (*admin.DeleteOAuth2ClientNoContent, error)
+}
+
+// OryHydraServiceNew missing godoc
+//
+//go:generate mockery --name=OryHydraServiceNew --output=automock --outpkg=automock --case=underscore --disable-version-string
+type OryHydraServiceNew interface {
+	ListOAuth2ClientsExecute(r hydra.OAuth2ApiListOAuth2ClientsRequest) ([]hydra.OAuth2Client, *http.Response, error)
 }
 
 // ClientDetails missing godoc
@@ -54,15 +66,17 @@ type service struct {
 	scopeCfgProvider          ClientDetailsConfigProvider
 	uidService                UIDService
 	hydraCLi                  OryHydraService
+	hydraNew                  OryHydraServiceNew
 }
 
 // NewService missing godoc
-func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService) *service {
+func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraCLi OryHydraService, hydraNew OryHydraServiceNew) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
 		publicAccessTokenEndpoint: publicAccessTokenEndpoint,
 		uidService:                uidService,
 		hydraCLi:                  hydraCLi,
+		hydraNew:                  hydraNew,
 	}
 }
 
@@ -135,12 +149,14 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []p
 }
 
 // ListClients missing godoc
-func (s *service) ListClients() ([]*models.OAuth2Client, error) {
-	listClientsOK, err := s.hydraCLi.ListOAuth2Clients(admin.NewListOAuth2ClientsParams())
+func (s *service) ListClients() ([]hydra.OAuth2Client, error) {
+	clients, _, err := s.hydraNew.ListOAuth2ClientsExecute(hydra.OAuth2ApiListOAuth2ClientsRequest{})
+
 	if err != nil {
 		return nil, err
 	}
-	return listClientsOK.Payload, nil
+
+	return clients, nil
 }
 
 // GetClientDetails missing godoc

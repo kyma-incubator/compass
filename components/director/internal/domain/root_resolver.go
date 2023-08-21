@@ -74,6 +74,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/time"
 	hydraClient "github.com/ory/hydra-client-go/client"
+	hydraNew "github.com/ory/hydra-client-go/v2"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -142,6 +143,14 @@ func NewRootResolver(
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
+
+	configuration := hydraNew.Configuration{
+		Host: hydraURL.Host,
+		Scheme: hydraURL.Scheme,
+		HTTPClient: oAuth20HTTPClient,
+	}
+
+	hydraNewTest := hydraNew.NewAPIClient(&configuration)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
@@ -222,7 +231,7 @@ func NewRootResolver(
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin, hydraNewTest.OAuth2Api)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)

@@ -20,6 +20,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/ory/hydra-client-go/client"
 	"github.com/vrischmann/envconfig"
+
+	hydraNew "github.com/ory/hydra-client-go/v2"
 )
 
 const envPrefix = "APP"
@@ -55,8 +57,16 @@ func main() {
 	transport := httptransport.NewWithClient(adminURL.Host, adminURL.Path, []string{adminURL.Scheme}, oAuth20HTTPClient)
 	hydra := client.New(transport, nil)
 
+	configuration := hydraNew.Configuration{
+		Host:       adminURL.Host,
+		Scheme:     adminURL.Scheme,
+		HTTPClient: oAuth20HTTPClient,
+	}
+
+	hydraNewTest := hydraNew.NewAPIClient(&configuration)
+
 	cfgProvider := configProvider(ctx, cfg)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.Admin)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.Admin, hydraNewTest.OAuth2Api)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(ctx, err, "Error while establishing the connection to the database")
