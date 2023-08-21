@@ -408,14 +408,14 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
-func (docs Documents) Sanitize(webhookBaseURL, webhookProxyURL string) error {
+func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
 
 	// Use the ProxyURL for all relative link substitution except for the API's TargetURLs.
 	// They are externally consumable and we should not expose those URLs through the Proxy but rather from webhook's BaseURL
 	url := webhookBaseURL
-	if webhookProxyURL != "" {
-		url = webhookProxyURL
+	if webhookBaseProxyURL != "" {
+		url = webhookBaseProxyURL
 	}
 
 	// Rewrite relative URIs
