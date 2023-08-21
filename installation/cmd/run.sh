@@ -277,11 +277,6 @@ if [[ ! "$(helm status ory-stack -n ory)" ]]; then
   exit 1
 fi
 
-if [[ ! ${SKIP_ORY_INSTALL} ]]; then
-  echo "Installing ORY Stack..."
-  bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
-fi
-
 mount_k3d_ca_to_oathkeeper
 
 patchJWKS&
