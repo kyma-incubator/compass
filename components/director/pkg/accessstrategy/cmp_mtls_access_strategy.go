@@ -3,9 +3,10 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/http"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 

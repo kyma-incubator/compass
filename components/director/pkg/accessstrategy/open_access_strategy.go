@@ -2,9 +2,10 @@ package accessstrategy
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/http"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 type openAccessStrategyExecutor struct{}
