@@ -561,14 +561,14 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
 			if deferError := s.formationAssignmentService.DeleteAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID); deferError != nil {
-				log.C(ctx).WithError(deferError).Errorf("Failed to delete assignemnts fo object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
+				log.C(ctx).WithError(deferError).Errorf("Failed to delete assignments fo object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 			}
 
 			if deferError := s.unassign(transactionCtx, tnt, objectID, objectType, formationFromDB); deferError != nil {
 				log.C(ctx).WithError(deferError).Errorf("Failed to unassign object with ID %q of type %q from formation %q", objectID, objectType, formation.Name)
 			}
 
-			if deferError = tx.Commit(); err != nil {
+			if deferError = tx.Commit(); deferError != nil {
 				log.C(ctx).Infof("Failed to commit transaction for deleting leftover resources")
 			}
 		}()
