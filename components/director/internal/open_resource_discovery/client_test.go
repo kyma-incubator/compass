@@ -316,7 +316,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedErr: errors.New("error unmarshaling json body"),
+			ExpectedErr: errors.New("error unmarshaling wellknown json body"),
 		},
 		{
 			Name: "Document with unsupported access strategy is skipped",
