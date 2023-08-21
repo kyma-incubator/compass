@@ -109,6 +109,6 @@ const (
 	ShouldBeOwnerMsg = "Owner access is needed for resource modification"
 	// CannotUnassignObjectFromASA  is the error message returned when trying to unassign a Runtime Context that comes from an ASA.
 	CannotUnassignObjectFromASA = "Cannot unassign object with ID coming from ASA"
-	// CannotUnassignObjectFromASA  is the error message returned when trying to unassign a Runtime Context that comes from an ASA.
+	// NoScheduledOperationsMsg  is the error message returned when there are no sheduled operations currently in the priority queue.
 	NoScheduledOperationsMsg = "No scheduled operations"
 )

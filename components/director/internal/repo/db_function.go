@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// AdvisoryLockResult is structure used for result when advisory lock is acquired.
 type AdvisoryLockResult struct {
 	IsLocked bool `db:"pg_try_advisory_xact_lock"`
 }

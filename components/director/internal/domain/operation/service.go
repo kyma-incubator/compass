@@ -129,7 +129,7 @@ func (s *service) ListPriorityQueue(ctx context.Context, opType model.OperationT
 	return operations, nil
 }
 
-// LockOperation try to aquire advisory lock on operation with provided ID
+// LockOperation try to acquire advisory lock on operation with provided ID
 func (s *service) LockOperation(ctx context.Context, operationID string) (bool, error) {
 	lock, err := s.opRepo.LockOperation(ctx, operationID)
 	if err != nil {
@@ -147,13 +147,17 @@ func (s *service) Get(ctx context.Context, operationID string) (*model.Operation
 	return operation, nil
 }
 
+// OperationError represents an error from operation processing.
 type OperationError struct {
 	ErrorMsg string `json:"error"`
 }
 
+// NewOperationError
 func NewOperationError(errorMsg string) *OperationError {
 	return &OperationError{ErrorMsg: errorMsg}
 }
+
+// ToJsonRawMessage converts the operation error ro JSON
 func (or *OperationError) ToJsonRawMessage() (json.RawMessage, error) {
 	jsonBytes, err := json.Marshal(or)
 	if err != nil {

@@ -17,8 +17,9 @@ const (
 	// ForUpdateLock Represents FOR UPDATE lock clause in SELECT queries.
 	ForUpdateLock string = "FOR UPDATE"
 	// NoLock Represents missing lock clause in SELECT queries.
-	NoLock  string = ""
-	NoLimit int    = 0
+	NoLock string = ""
+	// NoLimit Represents missing limit clause in SELECT queries.
+	NoLimit int = 0
 )
 
 // QueryBuilder is an interface for building queries about tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.

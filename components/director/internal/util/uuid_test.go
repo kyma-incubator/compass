@@ -48,5 +48,4 @@ func TestStringToInt64(t *testing.T) {
 		}
 		require.Equal(t, 1000000, len(results))
 	})
-
 }

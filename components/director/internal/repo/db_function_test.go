@@ -67,5 +67,4 @@ func TestAdvisoryLock(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, result, false)
 	})
-
 }
