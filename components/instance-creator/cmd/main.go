@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -41,6 +42,16 @@ func main() {
 	cfg := config.Config{}
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
+
+	// todo::: WIP for validation purposes; delete later
+	err = cfg.PrepareConfiguration()
+	exitOnError(err, "Error while preparing configuration")
+
+	for k, v := range cfg.RegionToInstanceConfig {
+		fmt.Println("==== PRINT INSTANCES MAP ====")
+		fmt.Println(k, ":", v)
+	}
+	// todo::: WIP for validation purposes; delete later
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
