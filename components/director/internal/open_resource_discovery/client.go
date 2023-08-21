@@ -83,6 +83,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 		tenantValue = tntFromCtx.ExternalID
 	}
 
+	log.C(ctx).Infof("Fetching ORD well-known config")
 	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
 	if err != nil {
 		return nil, "", err

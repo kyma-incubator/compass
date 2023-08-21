@@ -212,6 +212,7 @@ func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, ap
 		return nil
 	}
 
+	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
 	for _, appID := range appIDs {
 		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
@@ -229,7 +230,8 @@ func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, glo
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			if err := s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
+			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
+			if err = s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
@@ -243,6 +245,7 @@ func (s *Service) ProcessApplicationTemplates(ctx context.Context, cfg MetricsCo
 		return nil
 	}
 
+	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
 	for _, appTemplateID := range appTemplateIDs {
 		if err := s.processApplicationTemplate(ctx, cfg, globalResourcesOrdIDs, appTemplateID); err != nil {
@@ -260,7 +263,9 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			if err := s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+
+			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
+			if err = s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 
@@ -270,7 +275,7 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 			}
 
 			for _, app := range apps {
-				if err := s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
+				if err = s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
 					return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", app.ID)
 				}
 			}
@@ -1802,6 +1807,10 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 			return errors.Wrapf(err, "error while retrieving app with id %q", resource.ID)
 		}
 
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+
 		appBaseURL = app.BaseURL
 	}
 
@@ -1833,7 +1842,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	}
 
 	if len(documents) > 0 {
-		log.C(ctx).Info("Processing ORD documents")
+		log.C(ctx).Infof("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
 		var validationErrors error
 
 		err = s.processDocuments(ctx, resource, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordRequestObject, documents, globalResourcesOrdIDs, &validationErrors)
@@ -1983,7 +1992,7 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		LocalTenantID: app.LocalTenantID,
 	}
 	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
-		return err
+		return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
 	}
 
 	return nil
