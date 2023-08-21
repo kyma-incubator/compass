@@ -2,6 +2,7 @@ package operationsmanager
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -13,10 +14,12 @@ type OperationService interface {
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
 	MarkAsCompleted(ctx context.Context, id string) error
 	MarkAsFailed(ctx context.Context, id, errorMsg string) error
-	ListPriorityQueue(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
+	ListPriorityQueue(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
 	Get(ctx context.Context, operationID string) (*model.Operation, error)
 	Update(ctx context.Context, input *model.Operation) error
+	ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error
+	RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error
 }
 
 // WebhookService is responsible for the service-layer Webhook operations.

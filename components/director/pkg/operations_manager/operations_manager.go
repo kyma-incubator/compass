@@ -8,24 +8,29 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
 
 // OperationsManager provides methods for operations management
 type OperationsManager struct {
-	opType   model.OperationType
-	transact persistence.Transactioner
-	opSvc    operationsmanager.OperationService
-	mutex    sync.Mutex
+	opType        model.OperationType
+	transact      persistence.Transactioner
+	opSvc         operationsmanager.OperationService
+	mutex         sync.Mutex
+	areJobsStared bool
+	cfg           OperationsManagerConfig
 }
 
 // NewOperationsManager creates new OperationsManager
-func NewOperationsManager(transact persistence.Transactioner, opSvc operationsmanager.OperationService, opType model.OperationType) *OperationsManager {
+func NewOperationsManager(transact persistence.Transactioner, opSvc operationsmanager.OperationService, opType model.OperationType, cfg OperationsManagerConfig) *OperationsManager {
 	return &OperationsManager{
 		transact: transact,
 		opSvc:    opSvc,
 		opType:   opType,
+		cfg:      cfg,
 	}
 }
 
@@ -41,7 +46,7 @@ func (om *OperationsManager) GetOperation(ctx context.Context) (*model.Operation
 	defer om.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	operations, err := om.opSvc.ListPriorityQueue(ctx, om.opType)
+	operations, err := om.opSvc.ListPriorityQueue(ctx, om.cfg.PriorityQueueLimit, om.opType)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching operations from priority queue with type %v ", om.opType)
 	}
@@ -116,4 +121,82 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorM
 		return errors.Wrapf(err, "while marking operation with id %q as failed", id)
 	}
 	return tx.Commit()
+}
+
+// RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.
+func (om *OperationsManager) RunMaintenanceJobs(ctx context.Context) error {
+	if om.areJobsStared {
+		log.C(ctx).Info("Maintenance jobs are already started")
+		return nil
+	}
+	log.C(ctx).Info("Maintenance jobs starting")
+
+	err := om.startRescheduleOperationsJob(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = om.startRescheduleHangedOperationsJob(ctx)
+	if err != nil {
+		return err
+	}
+	om.areJobsStared = true
+	log.C(ctx).Info("Maintenance jobs now started")
+	return nil
+}
+
+func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) error {
+	resyncJob := cronjob.CronJob{
+		Name: "RescheduleOperationsJob",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Info("Starting RescheduleOperationsJob...")
+
+			tx, err := om.transact.Begin()
+			if err != nil {
+				log.C(jobCtx).Errorf("Error during opening transaction in RescheduleOperationsJob %v", err)
+			}
+			defer om.transact.RollbackUnlessCommitted(ctx, tx)
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			if err := om.opSvc.ResheduleOperations(ctx, om.cfg.OperationReschedulePeriod); err != nil {
+				log.C(jobCtx).Errorf("Error during execution of RescheduleOperationsJob %v", err)
+			}
+			err = tx.Commit()
+			if err != nil {
+				log.C(jobCtx).Errorf("Error during commiting transaction at RescheduleOperationsJob %v", err)
+			}
+
+			log.C(jobCtx).Infof("RescheduleOperationsJob finished.")
+		},
+		SchedulePeriod: om.cfg.RescheduleOperationsJobInterval,
+	}
+	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
+}
+
+func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Context) error {
+	resyncJob := cronjob.CronJob{
+		Name: "RescheduleHangedOperationsJob",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Info("Starting RescheduleHangedOperationsJob...")
+
+			tx, err := om.transact.Begin()
+			if err != nil {
+				log.C(jobCtx).Errorf("Error during opening transaction in RescheduleHangedOperationsJob %v", err)
+			}
+			defer om.transact.RollbackUnlessCommitted(ctx, tx)
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			if err := om.opSvc.RescheduleHangedOperations(ctx, om.cfg.OperationHangPeriod); err != nil {
+				log.C(jobCtx).Errorf("Error during execution of RescheduleHangedOperationsJob %v", err)
+			}
+			err = tx.Commit()
+			if err != nil {
+				log.C(jobCtx).Errorf("Error during commiting transaction at RescheduleHangedOperationsJob %v", err)
+			}
+
+			log.C(jobCtx).Infof("RescheduleHangedOperationsJob finished.")
+		},
+		SchedulePeriod: om.cfg.RescheduleHangedOperationsJobInterval,
+	}
+	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }

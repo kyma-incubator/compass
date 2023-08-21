@@ -18,8 +18,10 @@ type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
 	Get(ctx context.Context, id string) (*model.Operation, error)
 	Update(ctx context.Context, model *model.Operation) error
-	PriorityQueueListByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
+	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
+	ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error
+	RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error
 }
 
 // UIDService is responsible for service-layer uid operations
@@ -121,30 +123,28 @@ func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 }
 
 // ListPriorityQueue returns top 10 operations of specified type ordered by priority
-func (s *service) ListPriorityQueue(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
-	operations, err := s.opRepo.PriorityQueueListByType(ctx, opType)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting operations by type from priority queue in repo")
-	}
-	return operations, nil
+func (s *service) ListPriorityQueue(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error) {
+	return s.opRepo.PriorityQueueListByType(ctx, queueLimit, opType)
 }
 
 // LockOperation try to acquire advisory lock on operation with provided ID
 func (s *service) LockOperation(ctx context.Context, operationID string) (bool, error) {
-	lock, err := s.opRepo.LockOperation(ctx, operationID)
-	if err != nil {
-		return false, err
-	}
-	return lock, nil
+	return s.opRepo.LockOperation(ctx, operationID)
+}
+
+// ResheduleOperations reschedules all old operations
+func (s *service) ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
+	return s.opRepo.ResheduleOperations(ctx, reschedulePeriod)
+}
+
+// RescheduleHangedOperations reschedules all hanged operations
+func (s *service) RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error {
+	return s.opRepo.RescheduleHangedOperations(ctx, hangPeriod)
 }
 
 // Get loads operation with specified ID
 func (s *service) Get(ctx context.Context, operationID string) (*model.Operation, error) {
-	operation, err := s.opRepo.Get(ctx, operationID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting operation from repo")
-	}
-	return operation, nil
+	return s.opRepo.Get(ctx, operationID)
 }
 
 // OperationError represents an error from operation processing.

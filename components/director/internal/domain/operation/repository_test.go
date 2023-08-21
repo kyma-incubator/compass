@@ -177,7 +177,7 @@ func TestRepository_PriorityQueueListByType(t *testing.T) {
 		RepoConstructorFunc:       operation.NewRepository,
 		ExpectedModelEntities:     []interface{}{operationModel},
 		ExpectedDBEntities:        []interface{}{operationEntity},
-		MethodArgs:                []interface{}{model.OrdAggregationOpType},
+		MethodArgs:                []interface{}{10, model.OrdAggregationOpType},
 		MethodName:                "PriorityQueueListByType",
 		DisableConverterErrorTest: true,
 	}

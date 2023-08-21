@@ -14,8 +14,6 @@ import (
 
 const operationTable = `public.operation`
 const priorityView = `public.scheduled_operations`
-const rescheduleIntervalInDays = 3
-const hangPeriodInHours = 2
 
 var (
 	idTableColumns        = []string{"id"}
@@ -101,9 +99,9 @@ func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
 }
 
 // PriorityQueueListByType returns top priority operations from priority view for specified type
-func (r *pgRepository) PriorityQueueListByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+func (r *pgRepository) PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error) {
 	var entities EntityCollection
-	if err := r.priorityViewLister.ListGlobalWithLimit(ctx, &entities, 10, repo.Conditions{repo.NewEqualCondition("op_type", opType)}...); err != nil {
+	if err := r.priorityViewLister.ListGlobalWithLimit(ctx, &entities, queueLimit, repo.Conditions{repo.NewEqualCondition("op_type", opType)}...); err != nil {
 		return nil, err
 	}
 
@@ -130,17 +128,17 @@ func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.
 }
 
 // ResheduleOperations reschedules the operations.
-func (r *pgRepository) ResheduleOperations(ctx context.Context) error {
+func (r *pgRepository) ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
 	log.C(ctx).Debug("Rescheduling Operations")
 	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
-	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().AddDate(0, 0, -1*rescheduleIntervalInDays))
+	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
 	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
 
 // RescheduleHangedOperations reschedules operations that are hanged.
-func (r *pgRepository) RescheduleHangedOperations(ctx context.Context) error {
+func (r *pgRepository) RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error {
 	log.C(ctx).Debug("Rescheduling Operations")
 	equalCondition := repo.NewEqualCondition("status", "IN_PROGRESS")
-	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*hangPeriodInHours*time.Hour))
+	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*hangPeriod))
 	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{equalCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
