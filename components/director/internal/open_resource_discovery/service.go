@@ -3,7 +3,6 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -1817,7 +1816,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 
 	ordRequestObject := requestobject.OpenResourceDiscoveryWebhookRequestObject{
 		Application: requestobject.Application{BaseURL: str.PtrStrToStr(appBaseURL)},
-		Headers:     http.Header{},
+		Headers:     sync.Map{},
 	}
 
 	if webhook.HeaderTemplate != nil {
@@ -1828,7 +1827,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		}
 
 		for key, value := range headers {
-			ordRequestObject.Headers.Set(key, value[0])
+			ordRequestObject.Headers.Store(key, value[0])
 		}
 	}
 
