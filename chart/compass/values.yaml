@@ -153,6 +153,10 @@ global:
       dir: prod/incubator/
       version: "v20230807-4a200b85"
       name: compass-kyma-adapter
+    instance_creator:
+      dir: dev/incubator/
+      version: "PR-" #todo::: fill in when you open a PR and image is built
+      name: compass-instance-creator
     gateway:
       dir: prod/incubator/
       version: "v20230728-78b68ef0"
@@ -549,6 +553,17 @@ global:
       outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
     authentication:
       jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+  instanceCreator:
+    port: 8080
+    apiRootPath: "/instance-creator"
+    tenantInfo:
+      requestTimeout: 30s
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+    secrets:
+      name: "region-sm-instances-credentials"
+      key: "keyConfig"
+      path: "/tmp"
   operations_controller:
     enabled: true
   connectivity_adapter:
