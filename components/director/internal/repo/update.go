@@ -319,6 +319,10 @@ func assertSingleRowAffected(resourceType resource.Type, affected int64, isTenan
 }
 
 func (u *updaterGlobal) updateFieldsWithCondition(ctx context.Context, conditions Conditions, newValues map[string]interface{}) error {
+	if len(conditions) == 0 {
+		return errors.New("condition is missing")
+	}
+
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -357,7 +361,7 @@ func (u *updaterGlobal) buildUpdateFieldsQuery(conditions Conditions, newValues 
 
 	argValues = append(argValues, getAllArgs(conditions)...)
 
-	return stmtBuilder.String(), argValues, nil
+	return getQueryFromBuilder(stmtBuilder), argValues, nil
 }
 
 func buildFields(values map[string]interface{}) ([]string, []interface{}) {

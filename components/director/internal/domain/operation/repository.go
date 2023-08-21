@@ -134,13 +134,13 @@ func (r *pgRepository) ResheduleOperations(ctx context.Context) error {
 	log.C(ctx).Debug("Rescheduling Operations")
 	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().AddDate(0, 0, -1*rescheduleIntervalInDays))
-	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "IN_PROGRESS", "updated_at": time.Now()})
+	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
 
 // RescheduleHangedOperations reschedules operations that are hanged.
 func (r *pgRepository) RescheduleHangedOperations(ctx context.Context) error {
 	log.C(ctx).Debug("Rescheduling Operations")
-	inCondition := repo.NewInConditionForStringValues("status", []string{"IN_PROGRESS"})
+	equalCondition := repo.NewEqualCondition("status", "IN_PROGRESS")
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*hangPeriodInHours*time.Hour))
-	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
+	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{equalCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
