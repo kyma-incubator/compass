@@ -564,6 +564,11 @@ global:
       name: "region-sm-instances-credentials"
       key: "keyConfig"
       path: "/tmp"
+    clientIdPath: "clientid"
+    clientSecretPath: "clientsecret"
+    smUrlPath: "sm_url"
+    urlPath: "url"
+    appNamePath: "appName"
   operations_controller:
     enabled: true
   connectivity_adapter:

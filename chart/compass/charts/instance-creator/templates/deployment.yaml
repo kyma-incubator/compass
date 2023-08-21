@@ -74,6 +74,16 @@ spec:
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_SM_INSTANCES_SECRET_PATH
               value: "{{ .Values.global.instanceCreator.secrets.path }}/{{ .Values.global.instanceCreator.secrets.key }}"
+            - name: APP_SM_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.instanceCreator.clientIdPath }}
+            - name: APP_SM_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.instanceCreator.clientSecretPath }}
+            - name: APP_SM_INSTANCE_SM_URL_PATH
+              value: {{ .Values.global.instanceCreator.smUrlPath }}
+            - name: APP_SM_INSTANCE_URL_PATH
+              value: {{ .Values.global.instanceCreator.urlPath }}
+            - name: APP_SM_INSTANCE_APP_NAME_PATH
+              value: {{ .Values.global.instanceCreator.appNamePath }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
