@@ -2,7 +2,9 @@ package accessstrategy
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/http"
+	"sync"
 )
 
 type openAccessStrategyExecutor struct{}
@@ -13,15 +15,16 @@ func NewOpenAccessStrategyExecutor() *openAccessStrategyExecutor {
 }
 
 // Execute performs the access strategy's specific execution logic
-func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Client, documentURL, tnt string, additionalHeaders http.Header) (*http.Response, error) {
+func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Client, documentURL, tnt string, additionalHeaders sync.Map) (*http.Response, error) {
 	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if additionalHeaders != nil {
-		req.Header = additionalHeaders
-	}
+	additionalHeaders.Range(func(key, value any) bool {
+		req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
+		return true
+	})
 
 	if len(tnt) > 0 {
 		req.Header.Set(tenantHeader, tnt)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
@@ -72,7 +73,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	}
 
 	var data *string
-	data, fr.Status = s.FetchSpec(ctx, fr, http.Header{})
+	data, fr.Status = s.FetchSpec(ctx, fr, sync.Map{})
 
 	if err := s.repo.Update(ctx, tnt, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
@@ -108,7 +109,7 @@ func (s *service) UpdateGlobal(ctx context.Context, fr *model.FetchRequest) erro
 	return nil
 }
 
-func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest, headers http.Header) (*string, *model.FetchRequestStatus) {
+func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest, headers sync.Map) (*string, *model.FetchRequestStatus) {
 	err := s.validateFetchRequest(fr)
 	if err != nil {
 		log.C(ctx).WithError(err).Error()
