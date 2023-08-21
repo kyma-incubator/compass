@@ -3463,14 +3463,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, unassignFormation.Name)
 
-			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
-			assertNoDestinationIsFound(t, destinationClient, noAuthDestinationName)
-			assertNoDestinationIsFound(t, destinationClient, basicDestinationName)
-			assertNoDestinationIsFound(t, destinationClient, samlAssertionDestinationName)
-			assertNoDestinationIsFound(t, destinationClient, clientCertAuthDestinationName)
-			assertNoDestinationCertificateIsFound(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
-			assertNoDestinationCertificateIsFound(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
-
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
@@ -3486,6 +3478,14 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 			require.Empty(t, formation.Error)
+
+			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
+			assertNoDestinationIsFound(t, destinationClient, noAuthDestinationName)
+			assertNoDestinationIsFound(t, destinationClient, basicDestinationName)
+			assertNoDestinationIsFound(t, destinationClient, samlAssertionDestinationName)
+			assertNoDestinationIsFound(t, destinationClient, clientCertAuthDestinationName)
+			assertNoDestinationCertificateIsFound(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertNoDestinationCertificateIsFound(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
