@@ -3,6 +3,7 @@ package accessstrategy_test
 import (
 	"context"
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -31,7 +32,7 @@ func TestOpenAccessStrategy(t *testing.T) {
 	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)
 
-	resp, err := executor.Execute(context.TODO(), client, testURL, "", http.Header{})
+	resp, err := executor.Execute(context.TODO(), client, testURL, "", sync.Map{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResp, resp)
 }
