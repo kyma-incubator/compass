@@ -17,11 +17,11 @@ type FetchRequestService struct {
 }
 
 // FetchSpec provides a mock function with given fields: ctx, fr, headers
-func (_m *FetchRequestService) FetchSpec(ctx context.Context, fr *model.FetchRequest, headers sync.Map) (*string, *model.FetchRequestStatus) {
+func (_m *FetchRequestService) FetchSpec(ctx context.Context, fr *model.FetchRequest, headers *sync.Map) (*string, *model.FetchRequestStatus) {
 	ret := _m.Called(ctx, fr, headers)
 
 	var r0 *string
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest, sync.Map) *string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest, *sync.Map) *string); ok {
 		r0 = rf(ctx, fr, headers)
 	} else {
 		if ret.Get(0) != nil {
@@ -30,7 +30,7 @@ func (_m *FetchRequestService) FetchSpec(ctx context.Context, fr *model.FetchReq
 	}
 
 	var r1 *model.FetchRequestStatus
-	if rf, ok := ret.Get(1).(func(context.Context, *model.FetchRequest, sync.Map) *model.FetchRequestStatus); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.FetchRequest, *sync.Map) *model.FetchRequestStatus); ok {
 		r1 = rf(ctx, fr, headers)
 	} else {
 		if ret.Get(1) != nil {

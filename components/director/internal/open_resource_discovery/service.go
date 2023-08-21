@@ -1816,7 +1816,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 
 	ordRequestObject := requestobject.OpenResourceDiscoveryWebhookRequestObject{
 		Application: requestobject.Application{BaseURL: str.PtrStrToStr(appBaseURL)},
-		Headers:     sync.Map{},
+		Headers:     &sync.Map{},
 	}
 
 	if webhook.HeaderTemplate != nil {
