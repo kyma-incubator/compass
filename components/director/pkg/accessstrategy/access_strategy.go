@@ -81,5 +81,5 @@ func (a Type) isSupported() bool {
 //
 //go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Executor interface {
-	Execute(ctx context.Context, client *http.Client, url, tnt string, additionalHeaders sync.Map) (*http.Response, error)
+	Execute(ctx context.Context, client *http.Client, url, tnt string, additionalHeaders *sync.Map) (*http.Response, error)
 }
