@@ -273,7 +273,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 					arg := args.Get(1).(*model.Operation)
 					assert.Equal(t, model.OperationStatusFailed, arg.Status)
 					opErr := operation.NewOperationError(operationErrMsg)
-					expectedMsg, err := opErr.ToJsonRawMessage()
+					expectedMsg, err := opErr.ToJSONRawMessage()
 					require.NoError(t, err)
 					assert.Equal(t, expectedMsg, arg.Error)
 				})

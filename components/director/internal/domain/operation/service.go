@@ -105,7 +105,7 @@ func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 
 	currentTime := time.Now()
 	opError := NewOperationError(errorMsg)
-	rawMessage, err := opError.ToJsonRawMessage()
+	rawMessage, err := opError.ToJSONRawMessage()
 	if err != nil {
 		return errors.Wrap(err, "while marshaling operation error")
 	}
@@ -152,13 +152,13 @@ type OperationError struct {
 	ErrorMsg string `json:"error"`
 }
 
-// NewOperationError
+// NewOperationError creates OperationError instance.
 func NewOperationError(errorMsg string) *OperationError {
 	return &OperationError{ErrorMsg: errorMsg}
 }
 
-// ToJsonRawMessage converts the operation error ro JSON
-func (or *OperationError) ToJsonRawMessage() (json.RawMessage, error) {
+// ToJSONRawMessage converts the operation error ro JSON
+func (or *OperationError) ToJSONRawMessage() (json.RawMessage, error) {
 	jsonBytes, err := json.Marshal(or)
 	if err != nil {
 		return nil, err
