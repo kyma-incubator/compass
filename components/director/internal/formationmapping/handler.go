@@ -550,10 +550,17 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 		Operation: model.AssignFormation,
 	}
 
-	log.C(ctx).Infof("Processing formation assignment pair and its notifications")
+	log.C(ctx).Infof("Processing formation assignment pair and its notifications...")
 	_, err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pair and its notifications")
+		if updateError := h.faService.SetAssignmentToErrorState(ctx, reverseFA, err.Error(), formationassignment.TechnicalError, model.CreateErrorAssignmentState); updateError != nil {
+			log.C(ctx).WithError(updateError).Errorf("An error occurred while updating formation assignment with ID: %s to error state", reverseFA.ID)
+			return
+		}
+		if err = tx.Commit(); err != nil {
+			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+		}
 		return
 	}
 
