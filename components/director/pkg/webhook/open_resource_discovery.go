@@ -15,7 +15,7 @@ type Application struct {
 type OpenResourceDiscoveryWebhookRequestObject struct {
 	Application Application
 	TenantID    string
-	Headers     sync.Map
+	Headers     *sync.Map
 }
 
 // ParseURLTemplate missing godoc

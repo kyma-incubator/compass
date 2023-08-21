@@ -32,7 +32,7 @@ func TestOpenAccessStrategy(t *testing.T) {
 	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)
 
-	resp, err := executor.Execute(context.TODO(), client, testURL, "", sync.Map{})
+	resp, err := executor.Execute(context.TODO(), client, testURL, "", &sync.Map{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResp, resp)
 }
