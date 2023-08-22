@@ -16,20 +16,6 @@ type OperationService struct {
 	mock.Mock
 }
 
-// ChangePriority provides a mock function with given fields: ctx, id, priority
-func (_m *OperationService) ChangePriority(ctx context.Context, id string, priority int) error {
-	ret := _m.Called(ctx, id, priority)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
-		r0 = rf(ctx, id, priority)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // CreateMultiple provides a mock function with given fields: ctx, in
 func (_m *OperationService) CreateMultiple(ctx context.Context, in []*model.OperationInput) error {
 	ret := _m.Called(ctx, in)
@@ -146,6 +132,20 @@ func (_m *OperationService) RescheduleHangedOperations(ctx context.Context, hang
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, time.Duration) error); ok {
 		r0 = rf(ctx, hangPeriod)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RescheduleOperation provides a mock function with given fields: ctx, operationID, priority
+func (_m *OperationService) RescheduleOperation(ctx context.Context, operationID string, priority int) error {
+	ret := _m.Called(ctx, operationID, priority)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
+		r0 = rf(ctx, operationID, priority)
 	} else {
 		r0 = ret.Error(0)
 	}
