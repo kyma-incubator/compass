@@ -9,13 +9,17 @@ type TenantMapping struct {
 }
 
 type ReceiverTenant struct {
-	ApplicationURL      string `json:"applicationUrl"`
-	ApplicationTenantID string `json:"applicationTenantId"`
-	DeploymentRegion    string `json:"deploymentRegion"`
+	ApplicationURL      string          `json:"applicationUrl"`
+	State               string          `json:"state"`
+	ApplicationTenantID string          `json:"applicationTenantId"`
+	SubaccountID        string          `json:"subaccountId"`
+	DeploymentRegion    string          `json:"deploymentRegion"`
+	Configuration       json.RawMessage `json:"configuration"`
 }
 
 type AssignedTenant struct {
 	ApplicationURL string          `json:"applicationUrl"`
+	State          string          `json:"state"`
 	Configuration  json.RawMessage `json:"configuration"`
 }
 

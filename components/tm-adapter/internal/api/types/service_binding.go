@@ -17,11 +17,11 @@ type ServiceKey struct {
 	Credentials       json.RawMessage `json:"credentials"`
 }
 
-type ConsumedService struct {
-	ServiceInstanceName string `json:"service-instance-name"`
-}
-
 type ServiceKeys struct {
 	NumItems int          `json:"num_items"`
 	Items    []ServiceKey `json:"items"`
+}
+type IASKeyParameters struct {
+	CredentialType string `json:"credential-type"`
+	Certificate    string `json:"certificate"`
 }

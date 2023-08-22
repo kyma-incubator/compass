@@ -22,7 +22,7 @@ type OperationStatus struct {
 	DeletionScheduled   time.Time              `json:"deletion_scheduled"`
 	CreatedAt           time.Time              `json:"created_at"`
 	UpdatedAt           time.Time              `json:"updated_at"`
-	Errors              []OperationStatusError `json:"errors"`
+	Errors              OperationStatusError `json:"errors"`
 }
 
 type OperationStatusError struct {
