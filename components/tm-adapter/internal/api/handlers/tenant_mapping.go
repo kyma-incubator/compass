@@ -79,7 +79,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(ctx, w, http.StatusBadRequest, errors.New(""))
 		return
 	}
-	h.tenantID = tm.ReceiverTenant.SubaccountID
+	if tm.ReceiverTenant.SubaccountID != "" {
+		log.C(ctx).Infof("Use subaccount ID from the request body as tenant")
+		h.tenantID = tm.ReceiverTenant.SubaccountID
+	} else {
+		log.C(ctx).Infof("Use application tennat ID/xsuaa tenant ID from the request body as tenant")
+		h.tenantID = tm.ReceiverTenant.ApplicationTenantID
+	}
 
 	if tm.Context.Operation == AssignOperation && tm.ReceiverTenant.State == "INITIAL" && (string(tm.ReceiverTenant.Configuration) == "" || string(tm.ReceiverTenant.Configuration) == "\"\"" || string(tm.ReceiverTenant.Configuration) == "{}" || string(tm.ReceiverTenant.Configuration) == "null") {
 		log.C(ctx).Infof("Initial notification request is received with empty config in the receiver tenant. Returning \"initial config\"...")
@@ -251,7 +257,7 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 }
 
 func validate(tm types.TenantMapping) error {
-	if tm.ReceiverTenant.SubaccountID == "" {
+	if tm.ReceiverTenant.ApplicationTenantID == "" {
 		return errors.New("The subaccount ID in the tenant mapping request body should not be empty")
 	}
 
