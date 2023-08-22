@@ -47,6 +47,7 @@ func NewServer(ctx context.Context, cfg config.Config, services Services) (*http
 		return nil, errors.Newf("failed to create auth middleware: %w", err)
 	}
 	routerGroup.Use(authMiddleware.Auth)
+	tenantMappingRouter.Use(authMiddleware.Auth)
 	tenantMappingsHandler := handlers.TenantMappingsHandler{
 		Service: services.TenantMappingsService,
 	}
