@@ -13,9 +13,12 @@ import (
 )
 
 const (
-	ordOpType       = "ORD_AGGREGATION"
-	operationID     = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	operationErrMsg = "operation processing failed"
+	testOpType            model.OperationType = "TEST_TYPE"
+	operationID                               = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	lowOperationPriority                      = 1
+	highOperationPriority                     = 2
+	operationErrMsg                           = "operation processing failed"
+	queueLimit                                = 10
 )
 
 var (
@@ -35,17 +38,21 @@ func fixOperationInput(opType model.OperationType, opStatus model.OperationStatu
 }
 
 func fixOperationModel(opType model.OperationType, status model.OperationStatus) *model.Operation {
-	return fixOperationModelWithID(operationID, opType, status)
+	return fixOperationModelWithID(operationID, opType, status, lowOperationPriority)
 }
 
-func fixOperationModelWithID(id string, opType model.OperationType, opStatus model.OperationStatus) *model.Operation {
+func fixOperationModelWithPriority(opType model.OperationType, status model.OperationStatus, priority int) *model.Operation {
+	return fixOperationModelWithID(operationID, opType, status, priority)
+}
+
+func fixOperationModelWithID(id string, opType model.OperationType, opStatus model.OperationStatus, priority int) *model.Operation {
 	return &model.Operation{
 		ID:        id,
 		OpType:    opType,
 		Status:    opStatus,
 		Data:      json.RawMessage("[]"),
 		Error:     json.RawMessage("[]"),
-		Priority:  1,
+		Priority:  priority,
 		CreatedAt: &time.Time{},
 		UpdatedAt: &time.Time{},
 	}

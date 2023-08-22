@@ -111,8 +111,8 @@ func (_m *OperationRepository) RescheduleHangedOperations(ctx context.Context, h
 	return r0
 }
 
-// ResheduleOperations provides a mock function with given fields: ctx, reschedulePeriod
-func (_m *OperationRepository) ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
+// RescheduleOperations provides a mock function with given fields: ctx, reschedulePeriod
+func (_m *OperationRepository) RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
 	ret := _m.Called(ctx, reschedulePeriod)
 
 	var r0 error

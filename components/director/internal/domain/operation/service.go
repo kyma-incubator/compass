@@ -3,6 +3,7 @@ package operation
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -10,6 +11,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
+
+const defaultPriority = 1
 
 // OperationRepository is responsible for repository-layer operation operations
 //
@@ -20,7 +23,7 @@ type OperationRepository interface {
 	Update(ctx context.Context, model *model.Operation) error
 	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
-	ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error
+	RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error
 	RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error
 }
 
@@ -86,6 +89,7 @@ func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
 	op.Status = model.OperationStatusCompleted
 	currentTime := time.Now()
 	op.UpdatedAt = &currentTime
+	op.Priority = defaultPriority
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)
@@ -115,9 +119,30 @@ func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 	op.Status = model.OperationStatusFailed
 	op.UpdatedAt = &currentTime
 	op.Error = rawMessage
+	op.Priority = defaultPriority
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)
+	}
+	return nil
+}
+
+// RescheduleOperation reschedules specified operation
+func (s *service) RescheduleOperation(ctx context.Context, operationID string, priority int) error {
+	op, err := s.opRepo.Get(ctx, operationID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting opreration with id %q", operationID)
+	}
+
+	if op.Status == model.OperationStatusInProgress {
+		return apperrors.NewOperationInProgressError(operationID)
+	}
+
+	op.Status = model.OperationStatusScheduled
+	op.Priority = priority
+
+	if err := s.opRepo.Update(ctx, op); err != nil {
+		return errors.Wrapf(err, "while updating operation with id %q", operationID)
 	}
 	return nil
 }
@@ -132,9 +157,9 @@ func (s *service) LockOperation(ctx context.Context, operationID string) (bool, 
 	return s.opRepo.LockOperation(ctx, operationID)
 }
 
-// ResheduleOperations reschedules all old operations
-func (s *service) ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
-	return s.opRepo.ResheduleOperations(ctx, reschedulePeriod)
+// RescheduleOperations reschedules all old operations
+func (s *service) RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
+	return s.opRepo.RescheduleOperations(ctx, reschedulePeriod)
 }
 
 // RescheduleHangedOperations reschedules all hanged operations

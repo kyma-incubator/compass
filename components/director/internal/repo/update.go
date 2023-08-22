@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -365,12 +366,17 @@ func (u *updaterGlobal) buildUpdateFieldsQuery(conditions Conditions, newValues 
 }
 
 func buildFields(values map[string]interface{}) ([]string, []interface{}) {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
 	fieldsToSet := make([]string, 0)
 	args := make([]interface{}, 0)
-
-	for field, arg := range values {
+	for _, field := range keys {
 		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = ?", field))
-		args = append(args, arg)
+		args = append(args, values[field])
 	}
 
 	return fieldsToSet, args

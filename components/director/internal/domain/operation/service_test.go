@@ -2,7 +2,9 @@ package operation_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
@@ -17,8 +19,8 @@ func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(ordOpType, model.OperationStatusScheduled)
-	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -87,8 +89,8 @@ func TestService_CreateMultiple(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(ordOpType, model.OperationStatusScheduled)
-	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
 
 	ctx := context.TODO()
 
@@ -178,11 +180,450 @@ func TestService_CreateMultiple(t *testing.T) {
 	}
 }
 
+func TestService_Update(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        *model.Operation
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Update", ctx, opModel).Return(nil).Once()
+				return repo
+			},
+			Input: opModel,
+		},
+		{
+			Name: "Error - Operation update",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Update", ctx, opModel).Return(testErr).Once()
+				return repo
+			},
+			Input:       opModel,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.Update(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_RescheduleOperation(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModelWithLowPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusCompleted, lowOperationPriority)
+	opModelWithHighPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusScheduled, highOperationPriority)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        string
+		Priority     int
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithLowPriority, nil).Once()
+				repo.On("Update", ctx, opModelWithHighPriority).Return(nil).Once()
+				return repo
+			},
+			Input:    operationID,
+			Priority: highOperationPriority,
+		},
+		{
+			Name: "Error while getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithHighPriority, testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			Priority:    lowOperationPriority,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error while updating operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithLowPriority, nil).Once()
+				repo.On("Update", ctx, opModelWithHighPriority).Return(testErr).Once()
+
+				return repo
+			},
+			Input:       operationID,
+			Priority:    highOperationPriority,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error while trying to reschedule operation that is in IN_PROGRESS state",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				opModelInProgress := fixOperationModelWithPriority(testOpType, model.OperationStatusInProgress, lowOperationPriority)
+				repo.On("Get", ctx, operationID).Return(opModelInProgress, nil).Once()
+				return repo
+			},
+			Input:       operationID,
+			Priority:    highOperationPriority,
+			ExpectedErr: apperrors.NewOperationInProgressError(operationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.RescheduleOperation(ctx, testCase.Input, testCase.Priority)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_Get(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.OperationRepository
+		Input          string
+		ExpectedErr    error
+		ExpectedOutput *model.Operation
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModel, nil).Once()
+				return repo
+			},
+			Input:          operationID,
+			ExpectedOutput: opModel,
+		},
+		{
+			Name: "Error while getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			op, err := svc.Get(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedOutput, op)
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_ListPriorityQueue(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationModels := []*model.Operation{opModel}
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.OperationRepository
+		OpType         model.OperationType
+		QueueLimit     int
+		ExpectedErr    error
+		ExpectedOutput []*model.Operation
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("PriorityQueueListByType", ctx, queueLimit, model.OrdAggregationOpType).Return(operationModels, nil).Once()
+				return repo
+			},
+			QueueLimit:     queueLimit,
+			OpType:         model.OrdAggregationOpType,
+			ExpectedOutput: operationModels,
+		},
+		{
+			Name: "Error while listing priority queue",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("PriorityQueueListByType", ctx, queueLimit, model.OrdAggregationOpType).Return(nil, testErr).Once()
+				return repo
+			},
+			QueueLimit:  queueLimit,
+			OpType:      model.OrdAggregationOpType,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			op, err := svc.ListPriorityQueue(ctx, testCase.QueueLimit, testCase.OpType)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedOutput, op)
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_LockOperation(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.OperationRepository
+		Input          string
+		ExpectedErr    error
+		ExpectedOutput bool
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("LockOperation", ctx, operationID).Return(true, nil).Once()
+				return repo
+			},
+			Input:          operationID,
+			ExpectedOutput: true,
+		},
+		{
+			Name: "Error while locking operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("LockOperation", ctx, operationID).Return(false, testErr).Once()
+				return repo
+			},
+			Input:       operationID,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			isLocked, err := svc.LockOperation(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedOutput, isLocked)
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_RescheduleOperations(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        time.Duration
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("RescheduleOperations", ctx, time.Minute).Return(nil).Once()
+				return repo
+			},
+			Input: time.Minute,
+		},
+		{
+			Name: "Error while rescheduling operations",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("RescheduleOperations", ctx, time.Minute).Return(testErr).Once()
+				return repo
+			},
+			Input:       time.Minute,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.RescheduleOperations(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_RescheduleHangedOperations(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        time.Duration
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("RescheduleHangedOperations", ctx, time.Minute).Return(nil).Once()
+				return repo
+			},
+			Input: time.Minute,
+		},
+		{
+			Name: "Error while rescheduling operations",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("RescheduleHangedOperations", ctx, time.Minute).Return(testErr).Once()
+				return repo
+			},
+			Input:       time.Minute,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.RescheduleHangedOperations(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_MarkAsCompleted(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -254,7 +695,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
 	ctx := context.TODO()
 
 	testCases := []struct {

@@ -1,21 +1,24 @@
 package operation_test
 
 import (
+	"context"
 	"database/sql/driver"
-	"regexp"
-	"testing"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/stretchr/testify/require"
+	"regexp"
+	"testing"
+	"time"
 )
 
 func TestPgRepository_Create(t *testing.T) {
 	var nilOperationModel *model.Operation
-	operationModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Operation",
@@ -43,8 +46,8 @@ func TestPgRepository_Create(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	var nilOperationModel *model.Operation
-	operationModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Operation",
@@ -72,8 +75,8 @@ func TestPgRepository_Update(t *testing.T) {
 }
 
 func TestPgRepository_Get(t *testing.T) {
-	operationModel := fixOperationModel(ordOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, ordOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Operation",
@@ -183,4 +186,113 @@ func TestRepository_PriorityQueueListByType(t *testing.T) {
 	}
 
 	suite.Run(t)
+}
+
+func TestRepository_LockOperation(t *testing.T) {
+	lockID := int64(491666746554389322)
+	opID := "3a31599c-7a86-455d-83db-0014a7d459e8"
+
+	t.Run("Success", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+
+		operationRepo := operation.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		expectedQuery := regexp.QuoteMeta("SELECT pg_try_advisory_xact_lock($1)")
+		rows := sqlmock.NewRows([]string{"pg_try_advisory_xact_lock"}).AddRow(true)
+		dbMock.ExpectQuery(expectedQuery).
+			WithArgs(lockID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// WHEN
+		isLocked, err := operationRepo.LockOperation(ctx, opID)
+
+		// THEN
+		require.Equal(t, true, isLocked)
+		require.NoError(t, err)
+	})
+
+	t.Run("Failed - could not acquire logs", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+
+		operationRepo := operation.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		expectedQuery := regexp.QuoteMeta("SELECT pg_try_advisory_xact_lock($1)")
+		rows := sqlmock.NewRows([]string{"pg_try_advisory_xact_lock"}).AddRow(false)
+		dbMock.ExpectQuery(expectedQuery).
+			WithArgs(lockID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// WHEN
+		isLocked, err := operationRepo.LockOperation(ctx, opID)
+
+		// THEN
+		require.Equal(t, false, isLocked)
+		require.NoError(t, err)
+	})
+
+	t.Run("Failed - empty operation id", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		operationRepo := operation.NewRepository(mockConverter)
+
+		// WHEN
+		isLocked, err := operationRepo.LockOperation(context.TODO(), "")
+
+		// THEN
+		require.Equal(t, false, isLocked)
+		require.NotNil(t, err)
+	})
+
+}
+
+func TestRepository_RescheduleOperations(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+
+		operationRepo := operation.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		expectedQuery := regexp.QuoteMeta("UPDATE public.operation SET status = $1, updated_at = $2 WHERE status IN ($3, $4) AND updated_at < $5")
+		dbMock.ExpectExec(expectedQuery).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// WHEN
+		err := operationRepo.RescheduleOperations(ctx, time.Second)
+
+		// THEN
+		require.NoError(t, err)
+	})
+}
+
+func TestRepository_RescheduleHangedOperations(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+
+		operationRepo := operation.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		expectedQuery := regexp.QuoteMeta("UPDATE public.operation SET status = $1, updated_at = $2 WHERE status = $3 AND updated_at < $4")
+		dbMock.ExpectExec(expectedQuery).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// WHEN
+		err := operationRepo.RescheduleHangedOperations(ctx, time.Second)
+
+		// THEN
+		require.NoError(t, err)
+	})
 }

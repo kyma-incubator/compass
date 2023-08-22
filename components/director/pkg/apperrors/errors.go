@@ -384,6 +384,15 @@ func NewNoScheduledOperationsError() error {
 	}
 }
 
+// NewOperationInProgressError missing godoc
+func NewOperationInProgressError(operationID string) error {
+	return Error{
+		errorCode: OperationInProgress,
+		Message:   fmt.Sprintf(OperationInProgressMsg, operationID),
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -478,6 +487,12 @@ func IsEmptyParentIDError(err error) bool {
 func IsNoScheduledOperationsError(err error) bool {
 	return ErrorCode(err) == NoScheduledOperations
 }
+
+// IsOperationInProgressError checks if the error code is OperationInProgress
+func IsOperationInProgressError(err error) bool {
+	return ErrorCode(err) == OperationInProgress
+}
+
 func sortMapKey(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {

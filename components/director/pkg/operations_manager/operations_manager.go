@@ -14,6 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+type operationPriority int
+
+const (
+	lowOperationPriority  operationPriority = 1
+	highOperationPriority operationPriority = 100
+)
+
 // OperationsManager provides methods for operations management
 type OperationsManager struct {
 	opType        model.OperationType
@@ -123,6 +130,11 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorM
 	return tx.Commit()
 }
 
+// RescheduleOperation reschedules operation with high priority
+func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationID string) error {
+	return om.rescheduleOperation(ctx, operationID, highOperationPriority)
+}
+
 // RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.
 func (om *OperationsManager) RunMaintenanceJobs(ctx context.Context) error {
 	if om.areJobsStared {
@@ -158,7 +170,7 @@ func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) e
 			defer om.transact.RollbackUnlessCommitted(ctx, tx)
 			ctx = persistence.SaveToContext(ctx, tx)
 
-			if err := om.opSvc.ResheduleOperations(ctx, om.cfg.OperationReschedulePeriod); err != nil {
+			if err := om.opSvc.RescheduleOperations(ctx, om.cfg.OperationReschedulePeriod); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of RescheduleOperationsJob %v", err)
 			}
 			err = tx.Commit()
@@ -199,4 +211,18 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 		SchedulePeriod: om.cfg.RescheduleHangedOperationsJobInterval,
 	}
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
+}
+
+func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority operationPriority) error {
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := om.opSvc.RescheduleOperation(ctx, operationID, int(priority)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

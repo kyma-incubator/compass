@@ -117,18 +117,8 @@ func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (b
 	return r.dbFunction.AdvisoryLock(ctx, identifier)
 }
 
-func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.Operation {
-	items := make([]*model.Operation, 0, len(entities))
-	for _, ent := range entities {
-		model := r.conv.FromEntity(&ent)
-
-		items = append(items, model)
-	}
-	return items
-}
-
-// ResheduleOperations reschedules the operations.
-func (r *pgRepository) ResheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
+// RescheduleOperations reschedules the operations.
+func (r *pgRepository) RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
 	log.C(ctx).Debug("Rescheduling Operations")
 	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
@@ -141,4 +131,14 @@ func (r *pgRepository) RescheduleHangedOperations(ctx context.Context, hangPerio
 	equalCondition := repo.NewEqualCondition("status", "IN_PROGRESS")
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*hangPeriod))
 	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{equalCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
+}
+
+func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.Operation {
+	items := make([]*model.Operation, 0, len(entities))
+	for _, ent := range entities {
+		model := r.conv.FromEntity(&ent)
+
+		items = append(items, model)
+	}
+	return items
 }
