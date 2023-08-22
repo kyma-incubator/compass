@@ -45,6 +45,8 @@ global:
       manage: true
     regionInstancesCredentials:
       manage: true
+    regionSMInstancesCredentials:
+      manage: true
     tenantDependenciesConfig:
       manage: true
   http:
