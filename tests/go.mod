@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230714114052-e8783b9b2e95
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20230714114052-e8783b9b2e95
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230818122537-c11789131dda
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230821181413-41705f70d003
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230811093753-e055922ba086
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230714114052-e8783b9b2e95
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230714114052-e8783b9b2e95

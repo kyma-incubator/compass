@@ -2,9 +2,10 @@ package ord_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	"testing"
 
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 

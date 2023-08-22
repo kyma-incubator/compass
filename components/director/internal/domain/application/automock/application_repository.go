@@ -65,16 +65,13 @@ func (_m *ApplicationRepository) Exists(ctx context.Context, tenant string, id s
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
-		return rf(ctx, tenant, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -89,10 +86,6 @@ func (_m *ApplicationRepository) GetByFilter(ctx context.Context, tenant string,
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) (*model.Application, error)); ok {
-		return rf(ctx, tenant, filter)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) *model.Application); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -101,6 +94,7 @@ func (_m *ApplicationRepository) GetByFilter(ctx context.Context, tenant string,
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -115,10 +109,6 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
-		return rf(ctx, tenant, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -127,6 +117,7 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -141,10 +132,6 @@ func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant st
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
-		return rf(ctx, tenant, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -153,6 +140,7 @@ func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant st
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -167,10 +155,6 @@ func (_m *ApplicationRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.
 	ret := _m.Called(ctx, tenant, localTenantID, appTemplateID)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.Application, error)); ok {
-		return rf(ctx, tenant, localTenantID, appTemplateID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Application); ok {
 		r0 = rf(ctx, tenant, localTenantID, appTemplateID)
 	} else {
@@ -179,6 +163,7 @@ func (_m *ApplicationRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, localTenantID, appTemplateID)
 	} else {
@@ -193,10 +178,6 @@ func (_m *ApplicationRepository) GetBySystemNumber(ctx context.Context, tenant s
 	ret := _m.Called(ctx, tenant, systemNumber)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
-		return rf(ctx, tenant, systemNumber)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
 		r0 = rf(ctx, tenant, systemNumber)
 	} else {
@@ -205,6 +186,7 @@ func (_m *ApplicationRepository) GetBySystemNumber(ctx context.Context, tenant s
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, systemNumber)
 	} else {
@@ -219,10 +201,6 @@ func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -231,6 +209,7 @@ func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -245,10 +224,6 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, tenant, filter, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
@@ -257,6 +232,7 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, tenant, filter, pageSize, cursor)
 	} else {
@@ -271,10 +247,6 @@ func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]
 	ret := _m.Called(ctx, tenant)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Application); ok {
 		r0 = rf(ctx, tenant)
 	} else {
@@ -283,6 +255,7 @@ func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenant)
 	} else {
@@ -297,10 +270,6 @@ func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Cont
 	ret := _m.Called(ctx, applicationTemplateID)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Application, error)); ok {
-		return rf(ctx, applicationTemplateID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Application); ok {
 		r0 = rf(ctx, applicationTemplateID)
 	} else {
@@ -309,6 +278,7 @@ func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Cont
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, applicationTemplateID)
 	} else {
@@ -323,10 +293,6 @@ func (_m *ApplicationRepository) ListAllByFilter(ctx context.Context, tenant str
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant, filter)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Application); ok {
 		r0 = rf(ctx, tenant, filter)
 	} else {
@@ -335,6 +301,7 @@ func (_m *ApplicationRepository) ListAllByFilter(ctx context.Context, tenant str
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
 	} else {
@@ -349,10 +316,6 @@ func (_m *ApplicationRepository) ListAllByIDs(ctx context.Context, tenantID stri
 	ret := _m.Called(ctx, tenantID, ids)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {
-		return rf(ctx, tenantID, ids)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Application); ok {
 		r0 = rf(ctx, tenantID, ids)
 	} else {
@@ -361,6 +324,7 @@ func (_m *ApplicationRepository) ListAllByIDs(ctx context.Context, tenantID stri
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenantID, ids)
 	} else {
@@ -375,10 +339,6 @@ func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID u
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 
 	var r0 *model.ApplicationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 	} else {
@@ -387,6 +347,7 @@ func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID u
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) error); ok {
 		r1 = rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 	} else {
@@ -401,10 +362,6 @@ func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tena
 	ret := _m.Called(ctx, tenant, scenarios, ids)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant, scenarios, ids)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) []*model.Application); ok {
 		r0 = rf(ctx, tenant, scenarios, ids)
 	} else {
@@ -413,6 +370,7 @@ func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tena
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios, ids)
 	} else {
@@ -427,10 +385,6 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 	ret := _m.Called(ctx, tenant, scenarios)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant, scenarios)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Application); ok {
 		r0 = rf(ctx, tenant, scenarios)
 	} else {
@@ -439,6 +393,7 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios)
 	} else {
@@ -453,10 +408,6 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
@@ -465,6 +416,7 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -479,10 +431,6 @@ func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, 
 	ret := _m.Called(ctx, tenant, whType)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant, whType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) []*model.Application); ok {
 		r0 = rf(ctx, tenant, whType)
 	} else {
@@ -491,6 +439,7 @@ func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, 
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookType) error); ok {
 		r1 = rf(ctx, tenant, whType)
 	} else {
@@ -505,16 +454,13 @@ func (_m *ApplicationRepository) OwnerExists(ctx context.Context, tenant string,
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
-		return rf(ctx, tenant, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -543,16 +489,13 @@ func (_m *ApplicationRepository) TrustedUpsert(ctx context.Context, tenant strin
 	ret := _m.Called(ctx, tenant, _a2)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) (string, error)); ok {
-		return rf(ctx, tenant, _a2)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) string); ok {
 		r0 = rf(ctx, tenant, _a2)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Application) error); ok {
 		r1 = rf(ctx, tenant, _a2)
 	} else {
@@ -581,16 +524,13 @@ func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 
 	ret := _m.Called(ctx, tenant, _a2)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) (string, error)); ok {
-		return rf(ctx, tenant, _a2)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) string); ok {
 		r0 = rf(ctx, tenant, _a2)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Application) error); ok {
 		r1 = rf(ctx, tenant, _a2)
 	} else {
@@ -600,12 +540,13 @@ func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 
 	return r0, r1
 }
 
-// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewApplicationRepository(t interface {
+type mockConstructorTestingTNewApplicationRepository interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ApplicationRepository {
+}
+
+// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewApplicationRepository(t mockConstructorTestingTNewApplicationRepository) *ApplicationRepository {
 	mock := &ApplicationRepository{}
 	mock.Mock.Test(t)
 

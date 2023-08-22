@@ -126,40 +126,40 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-connector
     connectivity_adapter:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3240"
+      version: "PR-3243"
       name: compass-director
     hydrator:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
       version: "v20230728-78b68ef0"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: prod/incubator/
-      version: "v20230807-4a200b85"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-kyma-adapter
     gateway:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3238"
+      version: "PR-3243"
       name: compass-operations-controller
     ord_service:
       dir: prod/incubator/
@@ -170,8 +170,8 @@ global:
       version: "PR-3231"
       name: compass-schema-migrator
     system_broker:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3243"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,7 +180,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3238"
+      version: "PR-3243"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -188,7 +188,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3238"
+      version: "PR-3243"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
