@@ -158,8 +158,8 @@ global:
       version: "v20230728-78b68ef0"
       name: compass-gateway
     operations_controller:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3238"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -179,16 +179,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20230815-62b26de8"
+      dir: dev/incubator/
+      version: "PR-3238"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20230815-40df0edc"
+      dir: dev/incubator/
+      version: "PR-3238"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -206,20 +206,6 @@ global:
   portieris:
     isEnabled: false
     imagePullSecretName: "portieris-dummy-image-pull-secret"
-  operations_manager:
-    election:
-      enabled: false
-    lease:
-      lockname: opmanagerlease
-    job:
-      ordCreation:
-        schedulePeriod: 168h
-      ordDeletion:
-        schedulePeriod: 24h
-        completedOpsOlderThanDays: 5
-        failedOpsOlderThanDays: 10
-    external:
-      port: 3009
   nsAdapter:
     external:
       port: 3005
@@ -246,6 +232,8 @@ global:
     createClonePattern: '{"key": "%s"}'
     createBindingPattern: '{}'
     useClone: "false"
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   director:
     host: compass-director.compass-system.svc.cluster.local
     formationMappingAsyncStatusApi:
@@ -409,6 +397,10 @@ global:
             inputTemplate: '{"context": { {{ if .CustomerTenantContext.AccountID }}"btp":{"uclFormationId":"{{.FormationID}}","globalAccountId":"{{.CustomerTenantContext.AccountID}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ else }}"atom": {"uclFormationId":"{{.FormationID}}","path":"{{.CustomerTenantContext.Path}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ end }} },"receiverTenant": {"deploymentRegion":"{{ if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{ else }}{{.TargetApplicationTemplate.Labels.region}}{{end }}","applicationNamespace":"{{ if .TargetApplication.ApplicationNamespace}}{{.TargetApplication.ApplicationNamespace}}{{ else }}{{.TargetApplicationTemplate.ApplicationNamespace}}{{end }}","applicationUrl":"{{ .TargetApplication.BaseURL }}","applicationTenantId":"{{.TargetApplication.LocalTenantID }}","uclSystemTenantId":"{{ .TargetApplication.ID}}", {{ if .TargetApplicationTemplate.Labels.parameters }}"parameters": {{.TargetApplicationTemplate.Labels.parameters}}{{ end }} },"assignedTenants": [ {"uclAssignmentId":"{{ .Assignment.ID }}","operation":"{{.Operation}}","deploymentRegion":"{{if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}","applicationNamespace":"{{if .SourceApplication.ApplicationNamespace }}{{.SourceApplication.ApplicationNamespace}}{{else }}{{.SourceApplicationTemplate.ApplicationNamespace}}{{ end }}","applicationUrl":"{{.SourceApplication.BaseURL }}","applicationTenantId":"{{.SourceApplication.LocalTenantID}}","uclSystemTenantId":"{{.SourceApplication.ID}}",{{ if .SourceApplicationTemplate.Labels.parameters }}"parameters": {{.SourceApplicationTemplate.Labels.parameters}},{{ end }}"configuration": {{.ReverseAssignment.Value}} } ]}'
             headerTemplate: '{"Content-Type": ["application/json"],"Location": ["%s/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status"]}'
             outputTemplate: '{"error":"{{.Body.error}}","success_status_code": 202}'
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+      oauth2:
+        url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     protocol: HTTP
@@ -541,7 +533,7 @@ global:
       connectTimeout: 30s
       requestTimeout: 30s
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
   kymaAdapter:
     port: 8080
     apiRootPath: "/kyma-adapter"
@@ -555,6 +547,8 @@ global:
       inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
       headerTemplate: '{"Content-Type": ["application/json"]}'
       outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -565,7 +559,7 @@ global:
       host: adapter-gateway-mtls
   oathkeeperFilters:
     workloadLabel: oathkeeper
-    namespace: kyma-system
+    namespace: ory
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
   istio:
@@ -642,7 +636,7 @@ global:
       dbPassword: ""
       directorDBName: ""
   oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+    host: ory-stack-oathkeeper-proxy.ory.svc.cluster.local
     port: 4455
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
@@ -748,7 +742,7 @@ global:
     parallelTenants: 10
     tenantSyncTimeout: "5m"
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
       appDestinationsSyncScope: "destinations:sync"
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
@@ -803,7 +797,7 @@ global:
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
@@ -914,7 +908,7 @@ global:
     lease:
       lockname: aggregatorlease
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     http:
       client:
         skipSSLValidation: false
