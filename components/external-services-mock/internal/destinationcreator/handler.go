@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 

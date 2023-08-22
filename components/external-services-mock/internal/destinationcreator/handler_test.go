@@ -9,6 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -458,7 +461,7 @@ func TestHandler_CreateCertificate(t *testing.T) {
 			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
 
 			if testCase.ExpectedDestinationCreatorSvcCertificates != nil {
-				require.Equal(t, testCase.ExpectedDestinationCreatorSvcCertificates, h.DestinationCreatorSvcCertificates)
+				assertDestinationCreatorCertificates(t, h.DestinationCreatorSvcCertificates, testCase.ExpectedDestinationCreatorSvcCertificates)
 			} else {
 				require.Equal(t, make(map[string]json.RawMessage), h.DestinationCreatorSvcCertificates)
 			}
@@ -779,4 +782,18 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			}
 		})
 	}
+}
+
+func assertDestinationCreatorCertificates(t *testing.T, destCreatorCertificates, expectedCertificates map[string]json.RawMessage) {
+	require.Len(t, destCreatorCertificates, 1)
+	require.Equal(t, len(expectedCertificates), len(destCreatorCertificates))
+	certificate := destCreatorCertificates[testCertName]
+	certCN := gjson.GetBytes(certificate, "commonName").String()
+	require.NotEmpty(t, certCN)
+	certificate, err := sjson.DeleteBytes(certificate, "commonName")
+	require.NoError(t, err)
+	expectedCertificate := expectedCertificates[testCertName]
+	expectedCertificate, err = sjson.DeleteBytes(expectedCertificate, "commonName")
+	require.NoError(t, err)
+	require.Equal(t, expectedCertificate, certificate)
 }
