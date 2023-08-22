@@ -1,12 +1,13 @@
 package operation_test
 
 import (
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"testing"
 )
 
 func TestPgRepository_Create(t *testing.T) {

@@ -495,14 +495,27 @@ func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
 func initCertSecuredProxyORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 	proxyPath := "/proxy"
+	proxyHeader := "target_host"
+	baseURL := fmt.Sprintf("%s:%d%s", cfg.BaseURL, cfg.ORDServers.ProxyPort, proxyPath)
+
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if exists := r.Header.Get(proxyHeader); exists == "" {
+				httphelpers.WriteError(w, errors.Errorf("required header %s is missing in the request", proxyHeader), http.StatusBadRequest)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	router.HandleFunc(proxyPath, ord_aggregator.HandleFuncOrdConfig(fmt.Sprintf("%s:%d%s", cfg.BaseURL, cfg.ORDServers.ProxyPort, proxyPath), "sap:cmp-mtls:v1"))
 
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d/proxy", cfg.BaseURL, cfg.ORDServers.ProxyPort), "sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d/proxy", cfg.BaseURL, cfg.ORDServers.ProxyPort), "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(baseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(baseURL, "sap:cmp-mtls:v1"))
 
-	router.HandleFunc(fmt.Sprintf("%s/external-api/spec", proxyPath), apispec.HandleFunc)
-	router.HandleFunc(fmt.Sprintf("%s/external-api/spec/flapping", proxyPath), apispec.FlappingHandleFunc())
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.ProxyPort),
