@@ -55,6 +55,11 @@ else
     ORD_PR_COMMIT_HASH=$(jq -r '.merge_commit_sha' <<< "${ORD_PR_DATA}")
 fi
 
+# When the immage that is used is from prod registry the value in ORD_PR_NUMBER is actually the short commit hash due to the different naming convention for the dev and prod images
+if [[ -z "$ORD_PR_COMMIT_HASH" || "$ORD_PR_COMMIT_HASH" == "null" ]]; then
+    ORD_PR_COMMIT_HASH="$ORD_PR_NUMBER"
+fi
+
 log::info "ORD_PR_COMMIT_HASH is: ${ORD_PR_COMMIT_HASH}"
 
 log::info "Fetch ORD service sources"

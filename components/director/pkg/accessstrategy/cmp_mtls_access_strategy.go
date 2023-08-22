@@ -3,7 +3,9 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/http"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -39,7 +41,7 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProvider
 }
 
 // Execute performs the access strategy's specific execution logic
-func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders http.Header) (*http.Response, error) {
+func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string, additionalHeaders *sync.Map) (*http.Response, error) {
 	clientCerts := as.certCache.Get()
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
@@ -69,7 +71,10 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	}
 
 	if additionalHeaders != nil {
-		req.Header = additionalHeaders
+		additionalHeaders.Range(func(key, value any) bool {
+			req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
+			return true
+		})
 	}
 
 	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header

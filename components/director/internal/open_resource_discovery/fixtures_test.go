@@ -315,7 +315,7 @@ func fixSanitizedORDDocument() *ord.Document {
 }
 
 func fixSanitizedORDDocumentForProxyURL() *ord.Document {
-	sanitizedDoc := fixORDDocumentWithBaseURL(customWebhookConfigURL)
+	sanitizedDoc := fixORDDocumentWithBaseURL(proxyURL)
 	sanitizedDoc.ConsumptionBundles[0].CredentialExchangeStrategies = nil
 	sanitizeResources(sanitizedDoc)
 	return sanitizedDoc
