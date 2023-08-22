@@ -8,8 +8,9 @@ type TenantStatus string
 type TenantType string
 
 const (
-	testProvider      = "Compass Tests"
-	testDefaultTenant = "Test Default"
+	testProvider                = "Compass Tests"
+	testDefaultTenant           = "Test Default"
+	testDefaultSubaccountTenant = "Test Default Subaccount"
 
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
@@ -72,6 +73,14 @@ func (mgr *TestTenantsManager) Init() {
 			ProviderName:   testProvider,
 			Type:           Account,
 			Parent:         TestDefaultCustomerTenant,
+			Status:         Active,
+		},
+		testDefaultSubaccountTenant: {
+			Name:           testDefaultSubaccountTenant,
+			ExternalTenant: "777ce47b-d901-4647-9223-14e94819830b",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Parent:         testDefaultTenant,
 			Status:         Active,
 		},
 		TestSystemFetcherTenant: {
@@ -269,6 +278,14 @@ func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) strin
 
 func (mgr TestTenantsManager) GetDefaultTenantID() string {
 	return mgr.tenantsByName[testDefaultTenant].ExternalTenant
+}
+
+func (mgr TestTenantsManager) GetDefaultSubaccountTenantID() string {
+	return mgr.tenantsByName[testDefaultSubaccountTenant].ExternalTenant
+}
+
+func (mgr TestTenantsManager) GetTenantByName(name string) Tenant {
+	return mgr.tenantsByName[name]
 }
 
 func (mgr TestTenantsManager) GetSystemFetcherTenantID() string {
