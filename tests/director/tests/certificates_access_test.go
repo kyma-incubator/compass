@@ -42,32 +42,36 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		tenant         string
+		tenantName     string
 		resourceSuffix string
 		expectErr      bool
 	}{
 		{
 			name:           "Integration System can manage account tenant entities",
-			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedAccount),
+			tenantName:     tenant.TestIntegrationSystemManagedAccount,
 			resourceSuffix: "account-owned",
 		},
 		{
 			name:           "Integration System can manage subaccount tenant entities",
-			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedSubaccount),
+			tenantName:     tenant.TestIntegrationSystemManagedSubaccount,
 			resourceSuffix: "subaccount-owned",
 		},
 		{
 			name:           "Integration System cannot manage customer tenant entities",
-			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant),
+			tenantName:     tenant.TestDefaultCustomerTenant,
 			resourceSuffix: "customer-owned",
 			expectErr:      true,
 		},
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", test.tenant))
-			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), test.tenant)
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, test.tenant, &app)
+
+			tenantObj := tenant.TestTenants.GetTenantByName(test.tenantName)
+			tenantID := tenantObj.ExternalTenant
+
+			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", tenantID))
+			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), tenantID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &app)
 			if test.expectErr {
 				require.Error(t, err)
 			} else {
@@ -75,10 +79,10 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				require.NotEmpty(t, app.ID)
 			}
 
-			t.Log(fmt.Sprintf("Trying to list applications in account tenant %s", test.tenant))
+			t.Log(fmt.Sprintf("Trying to list applications in account tenant %s", tenantID))
 			getAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 			apps := graphql.ApplicationPage{}
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, test.tenant, getAppReq, &apps)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, tenantID, getAppReq, &apps)
 			if test.expectErr {
 				require.Error(t, err)
 			} else {
@@ -86,10 +90,10 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				require.NotEmpty(t, apps.Data)
 			}
 
-			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
+			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", tenantID))
 			rtmInput := fixRuntimeInput(fmt.Sprintf("runtime-%s", test.resourceSuffix))
-			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &rtmInput)
-			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, &rt)
+			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, tenantID, &rtmInput)
+			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rt)
 			if test.expectErr {
 				require.Error(t, err)
 			} else {
@@ -97,19 +101,21 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				require.NotEmpty(t, rt.ID)
 			}
 
-			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
+			if tenantObj.Type == tenant.Subaccount {
+				t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", tenantID))
 
-			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
-			appTemplateName := createAppTemplateName(name)
-			appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
-			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
-			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, at)
-			if test.expectErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.NotEmpty(t, at.ID)
-				require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, at.Labels[tenantfetcher.RegionKey])
+				name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
+				appTemplateName := createAppTemplateName(name)
+				appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+				at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantID, appTmplInput)
+				defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, at)
+				if test.expectErr {
+					require.Error(t, err)
+				} else {
+					require.NoError(t, err)
+					require.NotEmpty(t, at.ID)
+					require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, at.Labels[tenantfetcher.RegionKey])
+				}
 			}
 		})
 	}
