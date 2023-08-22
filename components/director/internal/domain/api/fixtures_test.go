@@ -149,6 +149,7 @@ func fixFullAPIDefinitionModel(apiDefID, placeholder string) (model.APIDefinitio
 		Hierarchy:                               json.RawMessage("[]"),
 		SupportedUseCases:                       json.RawMessage("[]"),
 		DocumentationLabels:                     json.RawMessage("[]"),
+		CorrelationIDs:                          json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        apiDefID,
 			Ready:     true,
@@ -326,6 +327,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		SupportedUseCases:   repo.NewValidNullableString("[]"),
 		Hierarchy:           repo.NewValidNullableString("[]"),
 		DocumentationLabels: repo.NewValidNullableString("[]"),
+		CorrelationIDs:      repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiDefID,
 			Ready:     true,
@@ -344,7 +346,7 @@ func fixAPIDefinitionColumns() []string {
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready",
 		"created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard",
-		"custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}
+		"custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels", "correlation_ids"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
@@ -354,7 +356,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
 		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
-		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixAPIDefinitionRowForAppTemplateVersion(id, placeholder string) []driver.Value {
@@ -364,7 +366,7 @@ func fixAPIDefinitionRowForAppTemplateVersion(id, placeholder string) []driver.V
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
 		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
-		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
@@ -375,7 +377,8 @@ func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
 		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error,
 		apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs), extensible,
-		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels),
+		repo.NewNullableStringFromJSONRawMessage(apiDef.CorrelationIDs)}
 }
 
 func fixAPICreateArgsForAppTemplateVersion(id string, apiDef *model.APIDefinition) []driver.Value {
@@ -386,7 +389,8 @@ func fixAPICreateArgsForAppTemplateVersion(id string, apiDef *model.APIDefinitio
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
 		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error,
 		apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs), extensible,
-		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels),
+		repo.NewNullableStringFromJSONRawMessage(apiDef.CorrelationIDs)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

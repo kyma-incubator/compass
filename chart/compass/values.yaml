@@ -162,12 +162,12 @@ global:
       version: "PR-3243"
       name: compass-operations-controller
     ord_service:
-      dir: prod/incubator/
-      version: "v20230728-5390e241"
+      dir: dev/incubator/
+      version: "PR-96"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3231"
+      version: "PR-3189"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
