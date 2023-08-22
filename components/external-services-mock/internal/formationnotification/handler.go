@@ -444,6 +444,29 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
 func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	receiverTenantState := gjson.GetBytes(bodyBytes, "RequestBody.receiverTenant.state").String()
+	if receiverTenantState == "" {
+		err := errors.New("The receiver tenant state in the request body cannot be empty")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+		return
+	}
+
+	receiverTenantConfig := gjson.GetBytes(bodyBytes, "RequestBody.receiverTenant.configuration").String()
+
+	if receiverTenantState == "INITIAL" && receiverTenantConfig == "" {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the receiver tenant. Returning 202 Accepted with noop response func")
+		h.asyncFAResponse(r.Context(), writer, r, Assign, "", AsyncNoopFAResponseFn)
+		return
+	}
+
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)

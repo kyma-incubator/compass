@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,8 +12,6 @@ import (
 	"time"
 
 	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
-	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
-
 	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -3052,7 +3049,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		require.True(stdT, ok)
 		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
-		// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
+		// Create certificate subject mapping with a custom subject that was used to create a certificate for the graphql client above
 		internalConsumerID := appTmpl.ID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 		certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
 		csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
@@ -3412,6 +3409,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
+			assertNotificationsCountForTenant(t, body, localTenantID2, 2)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
@@ -3449,12 +3447,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 
 			t.Log("Assert destinations and destination certificates are created...")
-			assertNoAuthDestination(t, destinationClient, noAuthDestinationName, noAuthDestinationURL)
-			assertBasicDestination(t, destinationClient, basicDestinationName, basicDestinationURL)
-			assertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app1BaseURL)
-			assertClientCertAuthDestination(t, destinationClient, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL)
-			assertDestinationCertificate(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
-			assertDestinationCertificate(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertions.AssertNoAuthDestination(t, destinationClient, noAuthDestinationName, noAuthDestinationURL)
+			assertions.AssertBasicDestination(t, destinationClient, basicDestinationName, basicDestinationURL)
+			assertions.AssertSAMLAssertionDestination(t, destinationClient, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app1BaseURL)
+			assertions.AssertClientCertAuthDestination(t, destinationClient, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL)
+			assertions.AssertDestinationCertificate(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertions.AssertDestinationCertificate(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 
 			var unassignFormation graphql.Formation
 			t.Logf("Unassign Application 2 from formation %s", formationName)
@@ -3480,12 +3478,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.Empty(t, formation.Error)
 
 			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
-			assertNoDestinationIsFound(t, destinationClient, noAuthDestinationName)
-			assertNoDestinationIsFound(t, destinationClient, basicDestinationName)
-			assertNoDestinationIsFound(t, destinationClient, samlAssertionDestinationName)
-			assertNoDestinationIsFound(t, destinationClient, clientCertAuthDestinationName)
-			assertNoDestinationCertificateIsFound(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
-			assertNoDestinationCertificateIsFound(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertions.AssertNoDestinationIsFound(t, destinationClient, noAuthDestinationName)
+			assertions.AssertNoDestinationIsFound(t, destinationClient, basicDestinationName)
+			assertions.AssertNoDestinationIsFound(t, destinationClient, samlAssertionDestinationName)
+			assertions.AssertNoDestinationIsFound(t, destinationClient, clientCertAuthDestinationName)
+			assertions.AssertNoDestinationCertificateIsFound(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
+			assertions.AssertNoDestinationCertificateIsFound(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension)
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
@@ -5348,74 +5346,6 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
 	return body
-}
-
-func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, destinationName string) {
-	_ = client.GetDestinationByName(t, destinationName, http.StatusNotFound)
-}
-
-func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.DestinationClient, certificateName string) {
-	_ = client.GetDestinationCertificateByName(t, certificateName, http.StatusNotFound)
-}
-
-func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, noAuthDestinationName, noAuthDestinationURL string) {
-	noAuthDestBytes := client.GetDestinationByName(t, noAuthDestinationName, http.StatusOK)
-	var noAuthDest esmdestinationcreator.NoAuthenticationDestination
-	err := json.Unmarshal(noAuthDestBytes, &noAuthDest)
-	require.NoError(t, err)
-	require.Equal(t, noAuthDestinationName, noAuthDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, noAuthDest.Type)
-	require.Equal(t, noAuthDestinationURL, noAuthDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeNoAuth, noAuthDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, noAuthDest.ProxyType)
-}
-
-func assertBasicDestination(t *testing.T, client *clients.DestinationClient, basicDestinationName, basicDestinationURL string) {
-	basicDestBytes := client.GetDestinationByName(t, basicDestinationName, http.StatusOK)
-	var basicDest esmdestinationcreator.BasicDestination
-	err := json.Unmarshal(basicDestBytes, &basicDest)
-	require.NoError(t, err)
-	require.Equal(t, basicDestinationName, basicDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, basicDest.Type)
-	require.Equal(t, basicDestinationURL, basicDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeBasic, basicDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.ProxyType)
-}
-
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL string) {
-	samlAssertionDestBytes := client.GetDestinationByName(t, samlAssertionDestinationName, http.StatusOK)
-	var samlAssertionDest esmdestinationcreator.SAMLAssertionDestination
-	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
-	require.NoError(t, err)
-	require.Equal(t, samlAssertionDestinationName, samlAssertionDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, samlAssertionDest.Type)
-	require.Equal(t, samlAssertionDestinationURL, samlAssertionDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeSAMLAssertion, samlAssertionDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, samlAssertionDest.ProxyType)
-	require.Equal(t, app1BaseURL, samlAssertionDest.Audience)
-	require.Equal(t, samlAssertionCertName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
-}
-
-func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL string) {
-	clientCertAuthDestBytes := client.GetDestinationByName(t, clientCertAuthDestinationName, http.StatusOK)
-	var clientCertAuthDest esmdestinationcreator.ClientCertificateAuthenticationDestination
-	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
-	require.NoError(t, err)
-	require.Equal(t, clientCertAuthDestinationName, clientCertAuthDest.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, clientCertAuthDest.Type)
-	require.Equal(t, clientCertAuthDestinationURL, clientCertAuthDest.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeClientCertificate, clientCertAuthDest.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, clientCertAuthDest.ProxyType)
-	require.Equal(t, clientCertAuthCertName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
-}
-
-func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, certificateName string) {
-	certBytes := client.GetDestinationCertificateByName(t, certificateName, http.StatusOK)
-	var destCertificate esmdestinationcreator.DestinationSvcCertificateResponse
-	err := json.Unmarshal(certBytes, &destCertificate)
-	require.NoError(t, err)
-	require.Equal(t, certificateName, destCertificate.Name)
-	require.NotEmpty(t, destCertificate.Content)
 }
 
 func assertFormationAssignmentsNotificationWithItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {

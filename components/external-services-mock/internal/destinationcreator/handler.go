@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"strings"
@@ -202,7 +203,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
 	certResp := CertificateResponseBody{
 		FileName:         destinationCertName,
-		CommonName:       reqBody.Name,
+		CommonName:       uuid.New().String(),
 		CertificateChain: CertChain,
 	}
 
