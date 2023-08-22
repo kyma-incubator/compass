@@ -2,7 +2,12 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
@@ -17,17 +22,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	appName    = "app-test-bundle"
+	bundleName = "bndl-app-1"
+	rtmName    = "rtm"
+)
+
 func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	ctx := context.Background()
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
@@ -84,12 +95,12 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
-	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
+	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
@@ -196,13 +207,13 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
-	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
+	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	authInput := fixtures.FixOauthAuth(t)
-	bndlInput := fixtures.FixBundleCreateInputWithDefaultAuth("bndl-app-1", authInput)
+	bndlInput := fixtures.FixBundleCreateInputWithDefaultAuth(bundleName, authInput)
 	bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
 	require.NoError(t, err)
 
@@ -294,14 +305,14 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	authInput := fixtures.FixBasicAuth(t)
 
-	bndlInput := fixtures.FixBundleCreateInputWithDefaultAuth("bndl-app-1", authInput)
+	bndlInput := fixtures.FixBundleCreateInputWithDefaultAuth(bundleName, authInput)
 	bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
 	require.NoError(t, err)
 
@@ -418,12 +429,12 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
@@ -452,12 +463,12 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
-	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
+	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
@@ -530,12 +541,12 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
@@ -598,12 +609,12 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
@@ -619,4 +630,71 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 	require.NoError(t, err)
 
 	saveExample(t, deleteBundleInstanceAuthReq.Query(), "delete bundle instance auth")
+}
+
+func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
+	ctx = context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Logf("Registering application with name %q in tenant %q...", appName, tenantId)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	t.Logf("Creating bundle with name %q for application with ID %q in tenant %q...", bundleName, application.ID, tenantId)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bundleName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
+
+	t.Logf("Registering runtime with name %q in tenant %q...", rtmName, tenantId)
+	rtmIn := fixRuntimeInput(rtmName)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &rtmIn)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+
+	// Create the bundle instance auth
+	authInput := fixtures.FixBasicAuth(t)
+	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
+	in, err := testctx.Tc.Graphqlizer.BundleInstanceAuthCreateInputToGQL(fixtures.FixBundleInstanceAuthCreateInput(authCtx, inputParams, authInput, &runtime.ID, nil))
+	require.NoError(t, err)
+
+	fieldProvider := graphqlizer.GqlFieldsProvider{}
+
+	createBundleInstanceAuthReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {result: createBundleInstanceAuth(bundleID: "%s", in: %s) {%s}}`, bndl.ID, in, fieldProvider.ForBundleInstanceAuth()))
+
+	var instanceAuth graphql.BundleInstanceAuth
+
+	t.Logf("Creating bundle instance auth for bundle with id %q...", bndl.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createBundleInstanceAuthReq, &instanceAuth)
+	defer fixtures.DeleteBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, instanceAuth.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, authInput.Credential.Basic, instanceAuth.Auth.Credential.(*graphql.BasicCredentialData))
+
+	saveExample(t, createBundleInstanceAuthReq.Query(), "create bundle instance auth")
+
+	// Update the bundle instance auth
+	updatedAuthInput := fixtures.FixOauthAuth(t)
+
+	var authCtxData interface{} = map[string]interface{}{"ContextData": "ContextValue"}
+	var inputParamsData interface{} = map[string]interface{}{"InKey": "InValue"}
+	updatedAuthCtx := json2.MarshalJSON(t, authCtxData)
+	updatedInputParams := json2.MarshalJSON(t, inputParamsData)
+
+	in, err = testctx.Tc.Graphqlizer.BundleInstanceAuthUpdateInputToGQL(fixtures.FixBundleInstanceAuthUpdateInput(updatedAuthCtx, updatedInputParams, updatedAuthInput))
+	require.NoError(t, err)
+
+	updateBundleInstanceAuthReq := gcli.NewRequest(
+		fmt.Sprintf(`mutation {result: updateBundleInstanceAuth(id: "%s", bundleID: "%s", in: %s) {%s}}`, instanceAuth.ID, bndl.ID, in, fieldProvider.ForBundleInstanceAuth()))
+
+	var updatedInstanceAuth graphql.BundleInstanceAuth
+
+	t.Logf("Updating bundle instance auth for bundle with id %q...", bndl.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateBundleInstanceAuthReq, &updatedInstanceAuth)
+	require.NoError(t, err)
+	require.EqualValues(t, updatedAuthInput.Credential.Oauth, updatedInstanceAuth.Auth.Credential.(*graphql.OAuthCredentialData))
+
+	saveExample(t, updateBundleInstanceAuthReq.Query(), "update bundle instance auth")
 }

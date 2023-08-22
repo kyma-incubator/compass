@@ -3,7 +3,7 @@ package formationtemplate_test
 import (
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
@@ -39,6 +39,7 @@ var (
 	applicationTypes            = []string{"some-application-type"}
 	runtimeTypes                = []string{"some-runtime-type"}
 	leadingProductIDs           = []string{"leading-product-id", "leading-product-id-2"}
+	shouldReset                 = true
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
@@ -48,6 +49,16 @@ var (
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixModelWebhookInput(),
 	}
+	formationTemplateModelWithResetInput = model.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		Webhooks:               fixModelWebhookInput(),
+		SupportsReset:          shouldReset,
+	}
 	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
@@ -56,6 +67,16 @@ var (
 		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixGQLWebhookInput(),
+	}
+	formationTemplateWithResetGraphQLInput = graphql.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		Webhooks:               fixGQLWebhookInput(),
+		SupportsReset:          &shouldReset,
 	}
 
 	formationTemplateModelInputAppOnly = model.FormationTemplateInput{
@@ -160,7 +181,7 @@ var (
 
 	constraintID1           = "constraintID1"
 	constraintID2           = "constraintID2"
-	operatorName            = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
+	operatorName            = operators.IsNotAssignedToAnyFormationOfTypeOperator
 	formationConstraintName = "constraint-name"
 	resourceSubtype         = "test subtype"
 	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`

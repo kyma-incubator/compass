@@ -162,6 +162,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
         leadingProductIDs
+        supportsReset
         webhooks {%s}
 	`, fp.ForWebhooks())
 }
@@ -191,6 +192,8 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 			targetType
 			state
 			value
+			configuration
+			error
 	`
 }
 

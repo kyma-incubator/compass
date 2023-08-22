@@ -55,8 +55,16 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 	}
 
 	var bundleID string
-	if bundleRef.BundleID != nil {
-		bundleID = *bundleRef.BundleID
+	apiDefaultTargetURL := ExtractTargetURLFromJSONArray(in.TargetURLs)
+
+	if bundleRef != nil {
+		if bundleRef.BundleID != nil {
+			bundleID = *bundleRef.BundleID
+		}
+
+		if bundleRef.APIDefaultTargetURL != nil {
+			apiDefaultTargetURL = *bundleRef.APIDefaultTargetURL
+		}
 	}
 
 	return &graphql.APIDefinition{
@@ -64,7 +72,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
-		TargetURL:   str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
+		TargetURL:   apiDefaultTargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
@@ -142,7 +150,8 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 // FromEntity converts the provided Entity repo-layer representation of an APIDefinition to the service-layer representation model.APIDefinition.
 func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 	return &model.APIDefinition{
-		ApplicationID:                           entity.ApplicationID,
+		ApplicationID:                           repo.StringPtrFromNullableString(entity.ApplicationID),
+		ApplicationTemplateVersionID:            repo.StringPtrFromNullableString(entity.ApplicationTemplateVersionID),
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Name:                                    entity.Name,
 		Description:                             repo.StringPtrFromNullableString(entity.Description),
@@ -197,7 +206,8 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 	}
 
 	return &Entity{
-		ApplicationID:                           apiModel.ApplicationID,
+		ApplicationID:                           repo.NewNullableString(apiModel.ApplicationID),
+		ApplicationTemplateVersionID:            repo.NewNullableString(apiModel.ApplicationTemplateVersionID),
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,
 		Description:                             repo.NewNullableString(apiModel.Description),

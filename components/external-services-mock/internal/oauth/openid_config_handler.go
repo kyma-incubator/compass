@@ -26,7 +26,7 @@ func (h *openIDConfigHandler) Handle(writer http.ResponseWriter, r *http.Request
 		"jwks_uri": h.baseURL + h.jwksPath,
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 
 	err := json.NewEncoder(writer).Encode(openIDConfig)
 	if err != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -29,7 +31,7 @@ type Service interface {
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -49,10 +51,12 @@ type formationAssignmentService interface {
 	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
-	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) (bool, error)) error
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
+	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
+	Update(ctx context.Context, id string, fa *model.FormationAssignment) error
 	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 }
@@ -275,6 +279,13 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 		return nil, err
 	}
 
+	if objectType != graphql.FormationObjectTypeTenant {
+		err = r.deleteSelfReferencedFormationAssignment(ctx, tnt, formation.Name, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting self referenced formation assignment for formation with name %q and object ID %q", formation.Name, objectID)
+		}
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -415,6 +426,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	if err != nil {
 		return nil, []error{err}
 	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
 	for i := 0; i < len(keys); i++ {
 		formationAssignments := formationAssignmentsPerFormation[i]
@@ -436,12 +452,13 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
-				if fa.Value == nil {
+				if fa.Error == nil {
 					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
 					continue
 				}
+
 				var assignmentError formationassignment.AssignmentErrorWrapper
-				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
+				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
 				}
 
@@ -461,15 +478,11 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		})
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, []error{err}
-	}
-
 	return gqlFormationStatuses, nil
 }
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
-func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
+func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -478,7 +491,12 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID)
+	shouldReset := false
+	if reset != nil {
+		shouldReset = *reset
+	}
+
+	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID, shouldReset)
 	if err != nil {
 		return nil, err
 	}
@@ -488,6 +506,32 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	return r.conv.ToGraphQL(updatedFormation)
+}
+
+func (r *Resolver) deleteSelfReferencedFormationAssignment(ctx context.Context, tnt, formationName, objectID string) error {
+	selfFATx, err := r.transact.Begin()
+	if err != nil {
+		return err
+	}
+	selfFATransactionCtx := persistence.SaveToContext(ctx, selfFATx)
+	defer r.transact.RollbackUnlessCommitted(selfFATransactionCtx, selfFATx)
+
+	formationFromDB, err := r.service.GetFormationByName(selfFATransactionCtx, formationName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
+	}
+
+	fa, err := r.formationAssignmentSvc.GetReverseBySourceAndTarget(selfFATransactionCtx, formationFromDB.ID, objectID, objectID)
+	if err == nil {
+		_ = r.formationAssignmentSvc.Delete(selfFATransactionCtx, fa.ID)
+	}
+
+	err = selfFATx.Commit()
+	if err != nil {
+		return errors.Wrapf(err, "while committing transaction")
+	}
+	return nil
 }
 
 func isInErrorState(state string) bool {

@@ -11,11 +11,14 @@ import (
 	"testing"
 	"time"
 
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"golang.org/x/oauth2"
 
+	"golang.org/x/oauth2/clientcredentials"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
@@ -25,15 +28,12 @@ import (
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -531,7 +531,7 @@ func TestORDAggregator(stdT *testing.T) {
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		placeholderName := "name"
 		placeholderDisplayName := "display-name"
-		appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		appTemplateInput.Placeholders = []*directorSchema.PlaceholderDefinitionInput{
 			{
 				Name:        "name",
 				Description: &placeholderName,
@@ -580,14 +580,14 @@ func TestORDAggregator(stdT *testing.T) {
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
-
+		subscribeReq.Header.Add(testConfig.SubscriptionConfig.SubscriptionFlowHeaderKey, testConfig.SubscriptionConfig.StandardFlow)
 		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		//In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, testConfig.SubscriptionConfig.StandardFlow, testConfig.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, testConfig.SubscriptionConfig.StandardFlow, testConfig.SubscriptionConfig.SubscriptionFlowHeaderKey)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
@@ -767,6 +767,289 @@ func TestORDAggregator(stdT *testing.T) {
 		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfVendors, "Missing Vendors")
 		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
 		assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendorsInSubscription, expectedVendorTitle)
+		t.Log("Successfully verified vendors")
+
+		t.Log("Successfully verified all ORD documents")
+	})
+	t.Run("Verify ORD document that is accessible through a proxy", func(t *testing.T) {
+		numberOfProducts := 1
+		numberOfVendors := 1
+		numberOfSystemInstances := 1
+		numberOfPackages := 1
+		numberOfBundles := 2
+		numberOfAPIs := 3
+		numberOfPublicAPIs := 1
+		numberOfEvents := 4
+		numberOfPublicEvents := 2
+		numberOfTombstones := 1
+
+		ctx := context.Background()
+
+		// Create integration system for credentials
+		t.Log("Create integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
+
+		// Create Application Template
+		appTemplateInput := fixAppTemplateInput(testConfig.ProxyApplicationTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
+
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
+		require.NoError(t, err)
+		require.NotEmpty(t, appTemplate)
+
+		// Create Application
+		app := fixtures.RegisterApplicationFromTemplate(t, ctx, certSecuredGraphQLClient, testConfig.ProxyApplicationTemplateName, expectedSystemInstanceName, expectedSystemInstanceName, testConfig.DefaultTestTenant)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+
+		// Update Application to simulate successful Pairing flow and to add an ORD webhook from the mappings in Director
+		updatedDescription := "appUpdated"
+		updateAppInput := fixtures.FixSampleApplicationUpdateInput(updatedDescription)
+		updateAppInput.BaseURL = str.Ptr("http://test.com/test/v1")
+		_, err = fixtures.UpdateApplicationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app.ID, updateAppInput)
+		require.NoError(t, err)
+
+		// Define assertion data
+		systemInstancesMap := make(map[string]string)
+		systemInstancesMap[expectedSystemInstanceName] = updatedDescription
+
+		apisMap := make(map[string]string)
+		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
+		apisMap[secondAPIExpectedTitle] = secondAPIExpectedDescription
+		apisMap[thirdAPIExpectedTitle] = thirdAPIExpectedDescription
+
+		publicApisMap := make(map[string]string)
+		publicApisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
+
+		apisDefaultBundleMap := make(map[string]string)
+		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdIDRegex
+
+		apiSpecsMap := make(map[string]int)
+		apiSpecsMap[firstAPIExpectedTitle] = firstAPIExpectedNumberOfSpecs
+		apiSpecsMap[secondAPIExpectedTitle] = secondAPIExpectedNumberOfSpecs
+		apiSpecsMap[thirdAPIExpectedTitle] = thirdAPIExpectedNumberOfSpecs
+
+		eventsMap := make(map[string]string)
+		eventsMap[firstEventTitle] = firstEventDescription
+		eventsMap[secondEventTitle] = secondEventDescription
+		eventsMap[thirdEventTitle] = thirdEventDescription
+		eventsMap[fourthEventTitle] = fourthEventDescription
+
+		publicEventsMap := make(map[string]string)
+		publicEventsMap[firstEventTitle] = firstEventDescription
+		publicEventsMap[secondEventTitle] = secondEventDescription
+
+		eventsDefaultBundleMap := make(map[string]string)
+		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		apisAndEventsNumber := make(map[string]int)
+		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
+		apisAndEventsNumber[publicAPIsField] = expectedNumberOfPublicAPIsInFirstBundle + expectedNumberOfPublicAPIsInSecondBundle
+		apisAndEventsNumber[eventsField] = expectedNumberOfEventsInFirstBundle + expectedNumberOfEventsInSecondBundle
+		apisAndEventsNumber[publicEventsField] = expectedNumberOfPublicEventsInFirstBundle + expectedNumberOfPublicEventsInSecondBundle
+
+		bundlesMap := make(map[string]string)
+		bundlesMap[expectedBundleTitle] = expectedBundleDescription
+		bundlesMap[secondExpectedBundleTitle] = secondExpectedBundleDescription
+
+		bundlesAPIsNumberMap := make(map[string]int)
+		bundlesAPIsNumberMap[expectedBundleTitle] = expectedNumberOfAPIsInFirstBundle
+		bundlesAPIsNumberMap[secondExpectedBundleTitle] = expectedNumberOfAPIsInSecondBundle
+
+		bundlesAPIsData := make(map[string][]string)
+		bundlesAPIsData[expectedBundleTitle] = []string{firstAPIExpectedTitle, secondAPIExpectedTitle}
+		bundlesAPIsData[secondExpectedBundleTitle] = []string{firstAPIExpectedTitle, thirdAPIExpectedTitle}
+
+		bundlesEventsNumberMap := make(map[string]int)
+		bundlesEventsNumberMap[expectedBundleTitle] = expectedNumberOfEventsInFirstBundle
+		bundlesEventsNumberMap[secondExpectedBundleTitle] = expectedNumberOfEventsInSecondBundle
+
+		bundlesEventsData := make(map[string][]string)
+		bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle, thirdEventTitle}
+		bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle, fourthEventTitle}
+
+		bundlesCorrelationIDs := make(map[string][]string)
+		bundlesCorrelationIDs[expectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
+		bundlesCorrelationIDs[secondExpectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
+
+		documentationLabelsPossibleValues := []string{documentationLabelFirstValue, documentationLabelSecondValue}
+
+		productsMap := make(map[string]string)
+		productsMap[firstProductTitle] = firstProductShortDescription
+		productsMap[secondProductTitle] = secondProductShortDescription
+
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+		ordAggrClient := &http.Client{
+			Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
+			Timeout:   time.Duration(1) * time.Minute,
+		}
+
+		jsonBody := fmt.Sprintf(`{"applicationIDs":["%s"]}`, app.ID)
+		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
+		require.NoError(t, err)
+
+		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
+		resp, err := ordAggrClient.Do(req)
+		require.NoError(t, err)
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		unsecuredHttpClient := http.DefaultClient
+		unsecuredHttpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+
+		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
+
+		cfgWithInternalVisibilityScope := &clientcredentials.Config{
+			ClientID:     oauthCredentialData.ClientID,
+			ClientSecret: oauthCredentialData.ClientSecret,
+			TokenURL:     oauthCredentialData.URL,
+			Scopes:       []string{internalVisibilityScope},
+		}
+
+		cfgWithoutScopes := &clientcredentials.Config{
+			ClientID:     oauthCredentialData.ClientID,
+			ClientSecret: oauthCredentialData.ClientSecret,
+			TokenURL:     oauthCredentialData.URL,
+		}
+
+		httpClient := cfgWithInternalVisibilityScope.Client(ctx)
+		httpClient.Timeout = 20 * time.Second
+
+		httpClientWithoutVisibilityScope := cfgWithoutScopes.Client(ctx)
+		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
+
+		// create client to call Director graphql api with internal_visibility:read scope
+		accessTokenWithInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClientWithInternalVisibility := gql.NewAuthorizedGraphQLClientWithCustomURL(accessTokenWithInternalVisibility, testConfig.DirectorGraphqlOauthURL)
+
+		// create client to call Director graphql api without internal_visibility:read scope
+		accessTokenWithoutInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopesWithoutInternalVisibility)
+		oauthGraphQLClientWithoutInternalVisibility := gql.NewAuthorizedGraphQLClientWithCustomURL(accessTokenWithoutInternalVisibility, testConfig.DirectorGraphqlOauthURL)
+
+		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
+		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
+
+		expectedTotalNumberOfProducts := numberOfProducts + globalProductsNumber
+		expectedTotalNumberOfVendors := numberOfVendors + globalVendorsNumber
+
+		var respBody string
+
+		// Verify system instances
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfSystemInstances, "Missing System Instances")
+		assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, numberOfSystemInstances, descriptionField)
+
+		// Verify packages
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= 1, "Missing Packages")
+		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfPackages)
+		assertions.AssertSingleEntityFromORDService(t, respBody, numberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+		t.Log("Successfully verified packages")
+
+		// Verify bundles
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfBundles, "Missing Bundles")
+		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, 2)
+		assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, numberOfBundles, descriptionField)
+		assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, numberOfBundles)
+		ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, 2)
+		t.Log("Successfully verified bundles")
+
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, apisField, bundlesAPIsNumberMap, bundlesAPIsData)
+		t.Log("Successfully verified relation between apis and bundles")
+
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=events&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		assertions.AssertRelationBetweenBundleAndEntityFromORDService(t, respBody, eventsField, bundlesEventsNumberMap, bundlesEventsData)
+		t.Log("Successfully verified relation between events and bundles")
+
+		// Verify products
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfProducts, "Missing Products")
+		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
+		assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
+		t.Log("Successfully verified products")
+
+		// Verify apis
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= 3, "Missing APIs")
+		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfAPIs)
+		assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, numberOfAPIs, descriptionField)
+		t.Log("Successfully verified apis")
+
+		// Verify defaultBundle for apis
+		assertions.AssertDefaultBundleID(t, respBody, numberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+		t.Log("Successfully verified defaultBundles for apis")
+
+		// Verify the api spec
+		specs := assertions.AssertSpecsFromORDService(t, respBody, numberOfAPIs, apiSpecsMap)
+		t.Log("Successfully verified specs for apis")
+
+		var specURL string
+		for _, s := range specs {
+			specType := s.Get("type").String()
+			specFormat := s.Get("mediaType").String()
+			if specType == expectedSpecType && specFormat == expectedSpecFormat {
+				specURL = s.Get("url").String()
+				break
+			}
+		}
+
+		respBody = makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(respBody) > 0 && strings.Contains(respBody, "swagger"), "Spec %s not successfully fetched", specURL)
+		t.Log("Successfully verified api spec")
+
+		// verify public apis via ORD Service
+		verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, numberOfPublicAPIs)
+
+		// Verify events
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfEvents, "Missing Events")
+		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfEvents)
+		assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, numberOfEvents, descriptionField)
+		t.Log("Successfully verified events")
+
+		// Verify defaultBundle for events
+		assertions.AssertDefaultBundleID(t, respBody, numberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+		t.Log("Successfully verified defaultBundles for events")
+
+		// verify public events via ORD Service
+		verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, numberOfPublicEvents)
+
+		// verify apis and events visibility via Director's graphql
+		verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
+		// Verify tombstones
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= numberOfTombstones, "Missing Tombstones")
+		assertions.AssertTombstoneFromORDService(t, respBody, numberOfTombstones, expectedTombstoneOrdIDRegex)
+		t.Log("Successfully verified tombstones")
+
+		// Verify vendors
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.True(t, len(gjson.Get(respBody, "value").Array()) >= expectedTotalNumberOfVendors, "Missing Vendors")
+		assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
+		assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, numberOfVendors, expectedVendorTitle)
 		t.Log("Successfully verified vendors")
 
 		t.Log("Successfully verified all ORD documents")

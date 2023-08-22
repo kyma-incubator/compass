@@ -35,9 +35,11 @@ type service struct {
 }
 
 // FetchRequestRepository missing godoc
+//
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Update(ctx context.Context, tenant string, item *model.FetchRequest) error
+	UpdateGlobal(ctx context.Context, item *model.FetchRequest) error
 }
 
 // NewService missing godoc
@@ -70,7 +72,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	}
 
 	var data *string
-	data, fr.Status = s.FetchSpec(ctx, fr)
+	data, fr.Status = s.FetchSpec(ctx, fr, http.Header{})
 
 	if err := s.repo.Update(ctx, tnt, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
@@ -96,7 +98,17 @@ func (s *service) Update(ctx context.Context, fr *model.FetchRequest) error {
 	return nil
 }
 
-func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
+// UpdateGlobal is identical to HandleSpec with the difference that the fetch request is only updated in DB without being re-executed and there is no tenant isolation
+func (s *service) UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error {
+	if err := s.repo.UpdateGlobal(ctx, fr); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest, headers http.Header) (*string, *model.FetchRequestStatus) {
 	err := s.validateFetchRequest(fr)
 	if err != nil {
 		log.C(ctx).WithError(err).Error()
@@ -105,9 +117,10 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 
 	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error has occurred while getting local tenant id: %v", err)
+		log.C(ctx).Warnf("An error has occurred while getting local tenant id: %v", err)
 		localTenantID = ""
 	}
+
 	var doRequest retry.ExecutableHTTPFunc
 	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
@@ -119,7 +132,7 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(ctx, s.client, fr.URL, localTenantID)
+			return executor.Execute(ctx, s.client, fr.URL, localTenantID, headers)
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {

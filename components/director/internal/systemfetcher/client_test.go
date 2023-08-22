@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -69,6 +70,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	systemfetcher.SystemSourceKey = sourceKey
 	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
+	var mutex sync.Mutex
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",
 		FilterCriteria:  "%s",
@@ -82,7 +84,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "")
@@ -119,7 +121,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -167,7 +169,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -204,7 +206,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 2
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 5)
 	})
@@ -268,7 +270,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
-		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.NoError(t, err)
 		require.Len(t, systems, 3)
 		require.Equal(t, systems[0].TemplateID, "type1")
@@ -280,7 +282,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		mock.statusCodeToReturn = http.StatusBadRequest
-		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.Contains(t, err.Error(), "unexpected status code")
 	})
 
@@ -289,7 +291,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		mock.bodiesToReturn = [][]byte{[]byte("not a JSON")}
 		mock.statusCodeToReturn = http.StatusOK
-		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
+		_, err := client.FetchSystemsForTenant(context.Background(), "tenant1", &mutex)
 		require.Contains(t, err.Error(), "failed to unmarshal systems response")
 	})
 }
@@ -341,12 +343,12 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 func fixSystems() []systemfetcher.System {
 	return []systemfetcher.System{
 		{
-			SystemBase: systemfetcher.SystemBase{
-				DisplayName:            "System1",
-				ProductDescription:     "System1 description",
-				BaseURL:                "http://example1.com",
-				InfrastructureProvider: "test",
-				AdditionalURLs:         map[string]string{"mainUrl": "http://mainurl.com"},
+			SystemPayload: map[string]interface{}{
+				"displayName":            "System1",
+				"productDescription":     "System1 description",
+				"baseUrl":                "http://example1.com",
+				"infrastructureProvider": "test",
+				"additionalUrls":         map[string]string{"mainUrl": "http://mainurl.com"},
 			},
 			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
@@ -356,14 +358,14 @@ func fixSystems() []systemfetcher.System {
 func fixSystemsWithTbt() []systemfetcher.System {
 	return []systemfetcher.System{
 		{
-			SystemBase: systemfetcher.SystemBase{
-				DisplayName:             "System2",
-				ProductDescription:      "System2 description",
-				BaseURL:                 "http://example2.com",
-				InfrastructureProvider:  "test",
-				AdditionalURLs:          map[string]string{"mainUrl": "http://mainurl.com"},
-				BusinessTypeID:          "Test business type id",
-				BusinessTypeDescription: "Test business description",
+			SystemPayload: map[string]interface{}{
+				"displayName":             "System2",
+				"productDescription":      "System2 description",
+				"baseUrl":                 "http://example2.com",
+				"infrastructureProvider":  "test",
+				"additionalUrls":          map[string]string{"mainUrl": "http://mainurl.com"},
+				"businessTypeId":          "Test business type id",
+				"businessTypeDescription": "Test business description",
 			},
 			StatusCondition: model.ApplicationStatusConditionInitial,
 		},

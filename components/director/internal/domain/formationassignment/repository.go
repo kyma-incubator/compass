@@ -18,8 +18,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"state", "value"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value"}
+	updatableTableColumns = []string{"state", "value", "error"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
 	tenantColumn          = "tenant_id"
 )
 
@@ -140,6 +140,21 @@ func (r *repository) GetAssignmentsForFormationWithStates(ctx context.Context, t
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("formation_id", formationID),
 		repo.NewInConditionForStringValues("state", states),
+	}
+
+	if err := r.lister.List(ctx, resource.FormationAssignment, tenantID, &formationAssignmentCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(formationAssignmentCollection), nil
+}
+
+// GetAssignmentsForFormation retrieves formation assignments matching formation ID `formationID` for tenant with ID `tenantID`
+func (r *repository) GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error) {
+	var formationAssignmentCollection EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("formation_id", formationID),
 	}
 
 	if err := r.lister.List(ctx, resource.FormationAssignment, tenantID, &formationAssignmentCollection, conditions...); err != nil {

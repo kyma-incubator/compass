@@ -8,9 +8,20 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
+var templateFuncMap = template.FuncMap{
+	"toString": func(bytesData []byte) string {
+		config := string(bytesData)
+		if config == "" {
+			config = "\"\""
+		}
+
+		return config
+	},
+}
+
 // ParseInputTemplate parses tmpl using data and stores the result in dest
 func ParseInputTemplate(tmpl string, data interface{}, dest interface{}) error {
-	t, err := template.New("").Option("missingkey=zero").Parse(tmpl)
+	t, err := template.New("").Option("missingkey=zero").Funcs(templateFuncMap).Parse(tmpl)
 	if err != nil {
 		return err
 	}

@@ -1,9 +1,12 @@
 # Required scopes for specific GraphQL operations
 graphql:
   query:
+    apisForApplication: ["application:read"]
+    eventsForApplication: ["application:read"]
     applications: ["application:read"]
     application: ["application:read"]
     applicationBySystemNumber: ["application:read"]
+    applicationByLocalTenantIDAndAppTemplateID: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
     applicationTemplate: ["application_template:read"]
@@ -60,11 +63,15 @@ graphql:
     updateWebhook: ["webhook:write"]
     deleteWebhook: ["webhook:write"]
     addAPIDefinitionToBundle: ["application:write"]
+    addAPIDefinitionToApplication: ["application:write"]
     updateAPIDefinition: ["application:write"]
+    updateAPIDefinitionForApplication: ["application:write"]
     deleteAPIDefinition: ["application:write"]
     refetchAPISpec: ["application:write"]
     addEventDefinitionToBundle: ["application:write"]
+    addEventDefinitionToApplication: ["application:write"]
     updateEventDefinition: ["application:write"]
+    updateEventDefinitionForApplication: ["application:write"]
     deleteEventDefinition: ["application:write"]
     refetchEventAPISpec: ["application:write"]
     addDocumentToBundle: ["application:write"]
@@ -94,6 +101,8 @@ graphql:
     requestBundleInstanceAuthDeletion: ["runtime:write"]
     setBundleInstanceAuth: ["application:write"]
     deleteBundleInstanceAuth: ["application:write"]
+    createBundleInstanceAuth: ["bundle_instance_auth:write"]
+    updateBundleInstanceAuth: ["bundle_instance_auth:write"]
     addBundle: ["application:write"]
     updateBundle: ["application:write"]
     deleteBundle: ["application:write"]
@@ -150,6 +159,8 @@ graphql:
   input:
     application:
       localTenantID: [ "application.local_tenant_id:write" ]
+    application_template:
+      labels: ["application_template.labels:write"]
     formation:
       state: [ "formation.state:write" ]
 

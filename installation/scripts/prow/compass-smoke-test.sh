@@ -19,7 +19,7 @@ function is_ready(){
     return 1
 }
 
-function execute_gql_query(){
+function execute_gql_query_from_file(){
     local URL=${1}
     local DIRECTOR_TOKEN=${2}
     local INTERNAL_TENANT_ID=${3}
@@ -29,7 +29,22 @@ function execute_gql_query(){
         local FLAT_FILE_CONTENT=$(sed 's/\\/\\\\/g' ${FILE_LOCATION} | sed 's/\"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
         local GQL_QUERY='{ "query": "'${FLAT_FILE_CONTENT}'" }'
     fi
-    curl --request POST --url "${URL}" --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"${GQL_QUERY}"} 
+
+    execute_gql_query "${URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"${GQL_QUERY}"}
+}
+
+function execute_gql_query(){
+    local URL=${1}
+    local DIRECTOR_TOKEN=${2}
+    local INTERNAL_TENANT_ID=${3}
+    local GQL_QUERY=${4:-""}
+
+    if [ "" == "${GQL_QUERY}" ]; then
+        echo "GQL Query is mandatory!"
+        exit 1
+    fi
+
+    curl --request POST --url "${URL}" --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" --data "${GQL_QUERY}" 
 }
 
 compare_values() {
@@ -54,11 +69,11 @@ check_value() {
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
 BASE_DIR="${1}"
-JAVA_HOME="${BASE_DIR}/openjdk-11"
-M2_HOME="${BASE_DIR}/maven"
-MIGRATE_HOME="${BASE_DIR}/migrate"
+JAVA_HOME="${BASE_DIR}openjdk-17"
+M2_HOME="${BASE_DIR}maven"
+MIGRATE_HOME="${BASE_DIR}migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
-ORD_SVC_DIR="${BASE_DIR}/ord-service"
+ORD_SVC_DIR="${BASE_DIR}ord-service"
 TEST_RESULT=true
 export PATH="/google-cloud-sdk/bin:${PATH}"
 
@@ -77,10 +92,11 @@ export PATH="${MIGRATE_HOME}:${PATH}"
 export ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
 
+
 echo "Install java"
-curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
-tar --extract --file adoptopenjdk11.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
-rm adoptopenjdk11.tgz* 
+curl -fLSs -o adoptopenjdk17.tgz "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-jdk_x64_alpine-linux_hotspot_17.0.8_7.tar.gz"
+tar --extract --file adoptopenjdk17.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
+rm adoptopenjdk17.tgz*
 
 echo "Install maven"
 curl -fLSs -o apache-maven.tgz "https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz"
@@ -107,7 +123,7 @@ echo "Path: ${PATH}"
 echo "-----------------------------------"
 echo "Java version:"
 echo "-----------------------------------"
-java -version
+java --version
 echo "-----------------------------------"
 echo "Migrate version:"
 echo "-----------------------------------"
@@ -171,7 +187,7 @@ echo "Compass smoke test - start!"
 echo "Create Formation 'test-scenario'..."
 COMPASS_GQL_URL="${COMPASS_URL}/graphql"
 CREATE_FORMATION_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/create-formation/create-formation.graphql"
-CREATE_FORMATION_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${CREATE_FORMATION_FILE_LOCATION}")"
+CREATE_FORMATION_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${CREATE_FORMATION_FILE_LOCATION}")"
 echo "Result from formation creation request:"
 echo "---------------------------------"
 echo "${CREATE_FORMATION_RESULT}"
@@ -179,7 +195,7 @@ echo "---------------------------------"
 
 echo "Register application ..."
 REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
-CREATE_APP_IN_COMPASS_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
+CREATE_APP_IN_COMPASS_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
 
 echo "Result from app creation request:"
 echo "---------------------------------"
@@ -208,7 +224,7 @@ CRT_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r '.
 CRT_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r '.data.result.bundles.data[1].eventDefinitions.data[1].id')
 
 GET_APPS_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/query-applications/query-applications.graphql"
-GET_APPS_FROM_COMPASS_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
+GET_APPS_FROM_COMPASS_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
 
 echo "Result from get apps request:"
 echo "---------------------------------"
@@ -432,6 +448,30 @@ check_value "${ORD_BUNDLE_1_EVENT_DEF_1}" "Event Def with ID: ${CRT_BUNDLE_1_EVE
 
 ORD_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${ORD_BUNDLE_1_EVENT_DEF_1} | jq -r '.id')
 compare_values "${CRT_BUNDLE_1_EVENT_DEF_1_ID}" "${ORD_BUNDLE_1_EVENT_DEF_1_ID}" "Application bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From ORD service get: ${ORD_BUNDLE_1_EVENT_DEF_1_ID}"
+
+echo "Verify 'ApplicationRegisterInput' and 'ApplicationJSONInput' are with the same fields..."
+TYPE_ARI_QUERY='{ __type(name: \"ApplicationRegisterInput\") { name inputFields { name type { name kind } } } }'
+GQL_ARI_QUERY='{ "query": "'${TYPE_ARI_QUERY}'" }'
+TYPE_ARI_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GQL_ARI_QUERY}")"
+echo "Result from quering ApplicationRegisterInput:"
+echo "---------------------------------"
+echo "${TYPE_ARI_RESULT}"
+echo "---------------------------------"
+ARI_ARRAY=$(echo ${TYPE_ARI_RESULT} | jq '.data.__type.inputFields')
+
+TYPE_AJI_QUERY='{ __type(name: \"ApplicationJSONInput\") { name inputFields { name type { name kind } } } }'
+GQL_AJI_QUERY='{ "query": "'${TYPE_AJI_QUERY}'" }'
+TYPE_AJI_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GQL_AJI_QUERY}")"
+echo "Result from quering ApplicationJSONInput:"
+echo "---------------------------------"
+echo "${TYPE_AJI_RESULT}"
+echo "---------------------------------"
+AJI_ARRAY=$(echo ${TYPE_AJI_RESULT} | jq '.data.__type.inputFields')
+
+DIFF_1=$(jq -n --argjson array1 "${ARI_ARRAY}" --argjson array2 "${AJI_ARRAY}" '{"all": $array1,"some":$array2} | .all-.some' )
+DIFF_2=$(jq -n --argjson array1 "${AJI_ARRAY}" --argjson array2 "${ARI_ARRAY}" '{"all": $array1,"some":$array2} | .all-.some' )
+
+compare_values "${DIFF_1}" "${DIFF_2}" "There is a diference between fields in the structures ApplicationRegisterInput and ApplicationJSONInput. See above for different fields."
 
 echo "Ord-test end reached. Test finished with ${TEST_RESULT}!"
 

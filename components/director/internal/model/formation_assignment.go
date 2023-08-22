@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
@@ -29,6 +30,7 @@ type FormationAssignment struct {
 	TargetType  FormationAssignmentType `json:"target_type"`
 	State       string                  `json:"state"`
 	Value       json.RawMessage         `json:"value"`
+	Error       json.RawMessage         `json:"error"`
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
@@ -40,6 +42,7 @@ type FormationAssignmentInput struct {
 	TargetType  FormationAssignmentType `json:"target_type"`
 	State       string                  `json:"state"`
 	Value       json.RawMessage         `json:"value"`
+	Error       json.RawMessage         `json:"error"`
 }
 
 // FormationAssignmentPage missing godoc
@@ -95,6 +98,7 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 		TargetType:  i.TargetType,
 		State:       i.State,
 		Value:       i.Value,
+		Error:       i.Error,
 	}
 }
 
@@ -110,5 +114,12 @@ func (f *FormationAssignment) Clone() *FormationAssignment {
 		TargetType:  f.TargetType,
 		State:       f.State,
 		Value:       f.Value,
+		Error:       f.Error,
 	}
+}
+
+// GetAddress returns the memory address of the FormationAssignment in form of an uninterpreted type(integer number)
+// Currently, it's used in some formation constraints input templates, so we could propagate the memory address to the formation constraints operators and later on to modify/update it.
+func (f *FormationAssignment) GetAddress() uintptr {
+	return uintptr(unsafe.Pointer(f))
 }

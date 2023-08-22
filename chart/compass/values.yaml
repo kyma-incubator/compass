@@ -126,52 +126,56 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3052"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3052"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3052"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3061"
+      version: "PR-3240"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3052"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3047"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-ias-adapter
+    kyma_adapter:
+      dir: prod/incubator/
+      version: "v20230807-4a200b85"
+      name: compass-kyma-adapter
     tm_adapter:
       dir:
       version: "PR-XXXX"
       name: compass-tm-adapter
     gateway:
-      dir: dev/incubator/
-      version: "PR-3052"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3238"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-92"
+      dir: prod/incubator/
+      version: "v20230728-5390e241"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3231"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3052"
+      dir: prod/incubator/
+      version: "v20230728-78b68ef0"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,15 +184,15 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3052"
+      version: "PR-3238"
       name: compass-external-services-mock
     console:
-      dir: dev/incubator/
-      version: "PR-83"
+      dir: prod/incubator/
+      version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3061"
+      version: "PR-3238"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -232,6 +236,8 @@ global:
     createClonePattern: '{"key": "%s"}'
     createBindingPattern: '{}'
     useClone: "false"
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   director:
     host: compass-director.compass-system.svc.cluster.local
     formationMappingAsyncStatusApi:
@@ -259,7 +265,6 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -301,10 +306,28 @@ global:
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
     applicationTypeLabelKey: "applicationType"
+    globalSubaccountIDLabelKey: "global_subaccount_id"
     kymaRuntimeTypeLabelValue: "kyma"
     kymaApplicationNamespaceValue: "sap.kyma"
+    destinationCreator:
+      correlationIDsKey: "correlationIds"
+      destinationAPI:
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
+        path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
+        regionParam: "region"
+        subaccountIDParam: "subaccountId"
+        nameParam: "destinationName"
+      certificateAPI:
+        baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
+        path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
+        regionParam: "region"
+        subaccountIDParam: "subaccountId"
+        nameParam: "certificateName"
+        fileNameKey: "fileName"
+        commonNameKey: "commonName"
+        certChainKey: "certificateChain"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
-    ordWebhookMappings: '[]'
+    ordWebhookMappings: '[{ "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090/proxy", "ProxyHeaderTemplate": "{\"target_host\": \"{{.Application.BaseURL}}\" }", "OrdUrlPath": "/sap/bc/http/sap/ord_configuration", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
     tenantMappingsPath: "/tmp/tenantMappingsConfig"
     tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:
@@ -378,8 +401,16 @@ global:
             inputTemplate: '{"context": { {{ if .CustomerTenantContext.AccountID }}"btp":{"uclFormationId":"{{.FormationID}}","globalAccountId":"{{.CustomerTenantContext.AccountID}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ else }}"atom": {"uclFormationId":"{{.FormationID}}","path":"{{.CustomerTenantContext.Path}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ end }} },"receiverTenant": {"deploymentRegion":"{{ if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{ else }}{{.TargetApplicationTemplate.Labels.region}}{{end }}","applicationNamespace":"{{ if .TargetApplication.ApplicationNamespace}}{{.TargetApplication.ApplicationNamespace}}{{ else }}{{.TargetApplicationTemplate.ApplicationNamespace}}{{end }}","applicationUrl":"{{ .TargetApplication.BaseURL }}","applicationTenantId":"{{.TargetApplication.LocalTenantID }}","uclSystemTenantId":"{{ .TargetApplication.ID}}", {{ if .TargetApplicationTemplate.Labels.parameters }}"parameters": {{.TargetApplicationTemplate.Labels.parameters}}{{ end }} },"assignedTenants": [ {"uclAssignmentId":"{{ .Assignment.ID }}","operation":"{{.Operation}}","deploymentRegion":"{{if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}","applicationNamespace":"{{if .SourceApplication.ApplicationNamespace }}{{.SourceApplication.ApplicationNamespace}}{{else }}{{.SourceApplicationTemplate.ApplicationNamespace}}{{ end }}","applicationUrl":"{{.SourceApplication.BaseURL }}","applicationTenantId":"{{.SourceApplication.LocalTenantID}}","uclSystemTenantId":"{{.SourceApplication.ID}}",{{ if .SourceApplicationTemplate.Labels.parameters }}"parameters": {{.SourceApplicationTemplate.Labels.parameters}},{{ end }}"configuration": {{.ReverseAssignment.Value}} } ]}'
             headerTemplate: '{"Content-Type": ["application/json"],"Location": ["%s/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status"]}'
             outputTemplate: '{"error":"{{.Body.error}}","success_status_code": 202}'
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+      oauth2:
+        url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
+    protocol: HTTP
+    tlsOrigination: false
+    host: compass-external-services-mock.compass-system.svc.cluster.local
+    port: 8080
     mtlsTokenPath: "/cert/token"
     standardTokenPath: "/secured/oauth/token"
     skipSSLValidation: false
@@ -468,7 +499,7 @@ global:
     port: 3000
     prefix: /hydrators
     certSubjectMappingResyncInterval: "10s"
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -530,7 +561,22 @@ global:
       connectTimeout: 30s
       requestTimeout: 30s
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
+  kymaAdapter:
+    port: 8080
+    apiRootPath: "/kyma-adapter"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
+    tenantInfo:
+      requestTimeout: 30s
+    tenantMapping:
+      type: CONFIGURATION_CHANGED
+      mode: SYNC
+      urlTemplate: '{"path":"%s/kyma-adapter/v1/tenantMappings/{{.Runtime.Labels.global_subaccount_id}}","method":"PATCH"}'
+      inputTemplate: '{"context":{"platform":"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}","uclFormationId":"{{.FormationID}}","accountId":"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}","crmId":"{{.CustomerTenantContext.CustomerID}}","operation":"{{.Operation}}"},"assignedTenant":{"state":"{{.Assignment.State}}","uclAssignmentId":"{{.Assignment.ID}}","deploymentRegion":"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}","applicationNamespace":"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}","applicationUrl":"{{.Application.BaseURL}}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemName":"{{.Application.Name}}","uclSystemTenantId":"{{.Application.ID}}",{{if .ApplicationTemplate.Labels.parameters}}"parameters":{{.ApplicationTemplate.Labels.parameters}},{{end}}"configuration":{{.ReverseAssignment.Value}}},"receiverTenant":{"ownerTenant":"{{.Runtime.Tenant.Parent}}","state":"{{.ReverseAssignment.State}}","uclAssignmentId":"{{.ReverseAssignment.ID}}","deploymentRegion":"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}","applicationNamespace":"{{.Runtime.ApplicationNamespace}}","applicationTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}","uclSystemTenantId":"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}",{{if .Runtime.Labels.parameters}}"parameters":{{.Runtime.Labels.parameters}},{{end}}"configuration":{{.Assignment.Value}}}}'
+      headerTemplate: '{"Content-Type": ["application/json"]}'
+      outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -541,7 +587,7 @@ global:
       host: adapter-gateway-mtls
   oathkeeperFilters:
     workloadLabel: oathkeeper
-    namespace: kyma-system
+    namespace: ory
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
   istio:
@@ -618,13 +664,13 @@ global:
       dbPassword: ""
       directorDBName: ""
   oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+    host: ory-stack-oathkeeper-proxy.ory.svc.cluster.local
     port: 4455
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -724,11 +770,12 @@ global:
     parallelTenants: 10
     tenantSyncTimeout: "5m"
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
       appDestinationsSyncScope: "destinations:sync"
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:
@@ -778,7 +825,7 @@ global:
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
@@ -790,8 +837,14 @@ global:
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
       consumerTenantIdProperty: "consumerTenantIdProperty"
       subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
+      subscriptionIDProperty: "subscriptionGUID"
+      dependentServiceInstancesInfoProperty: "dependentServiceInstancesInfo"
+      dependentServiceInstancesInfoAppIdProperty: "appId"
+      dependentServiceInstancesInfoAppNameProperty: "appName"
+      dependentServiceInstancesInfoProviderSubaccountIdProperty: "providerSubaccountId"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithParentEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
+      fetchTenantWithoutParentEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
@@ -805,7 +858,7 @@ global:
   externalCertConfiguration:
     issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
-    technicalClientSubjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=%s/L=%s/CN=%s"
+    technicalClientSubjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
@@ -883,7 +936,7 @@ global:
     lease:
       lockname: aggregatorlease
     authentication:
-      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      jwksEndpoint: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
     http:
       client:
         skipSSLValidation: false
@@ -901,6 +954,7 @@ global:
     ordWebhookPartialProcessMaxDays: 0
     ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
+    tenantMappingConfiguration: '{}'
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -927,7 +981,7 @@ global:
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
-    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "displayName" }, { "placeholder_name": "display-name", "system_key": "displayName" }, { "placeholder_name": "systemNumber", "system_key": "systemNumber" }, { "placeholder_name": "productId", "system_key": "productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "infrastructureProvider", "optional": true } ]'
+    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "$.displayName" }, { "placeholder_name": "display-name", "system_key": "$.displayName" }, { "placeholder_name": "systemNumber", "system_key": "$.systemNumber" }, { "placeholder_name": "productId", "system_key": "$.productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "$.ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "$.additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "$.productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "$.additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "$.infrastructureProvider", "optional": true } ]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}","region": "{{region}}"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:
@@ -961,6 +1015,7 @@ global:
       tenantType: "subaccount"
       schedule: "*/5 * * * *"
       tenantInsertChunkSize: "500"
+      pageWorkers: "2"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: 2s
@@ -1059,11 +1114,13 @@ global:
     ordGlobalRegistryUnsecuredPort: 8087
     unsecuredPortWithAdditionalContent: 8088
     unsecuredMultiTenantPort: 8089
+    certSecuredProxyPort: 8090
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    directDependencyXsappname: ""
     saasAppNamesSecret:
       manage: false
     regionInstancesCredentials:
@@ -1102,22 +1159,26 @@ global:
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
+    hydrator:
+      certSubjectMappingResyncInterval: "10s"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
       supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      missingTenantOnDemandID: "subaccount-external-tnt"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
       skipPattern: ""
+      proxyApplicationTemplateName: "SAP Proxy Template"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
-      formationAsyncApi:
+      tenantMappingStatusAPI:
         responseDelayInSeconds: 3
     selfRegistration:
       region: "eu-1"
@@ -1125,6 +1186,11 @@ global:
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
+      labelKey: "subscriptions"
+      standardFlow: "standard"
+      indirectDependencyFlow: "indirectDependency"
+      directDependencyFlow: "directDependency"
+      subscriptionsFlowHeaderKey: "subscriptionFlow"
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
@@ -1150,7 +1216,10 @@ global:
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
+      directDependencySubscriptionProviderIdValue: "direct-dep-id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
+      indirectDependencySubscriptionProviderAppNameValue: "indirectDependencySubscriptionProviderAppNameValue"
+      directDependencySubscriptionProviderAppNameValue: "subscriptionProviderAppNameValue" # this is used for real env tests where there is a dedicated SAAS svc instance for the indirect dependency flow
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
@@ -1222,10 +1291,12 @@ global:
         - "application_template:write"
         - "application_template:read"
         - "application_template.webhooks:read"
+        - "application_template.labels:write"
         - "internal_visibility:read"
         - "webhook:write"
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
+        - "certificate_subject_mapping:read"
       managed_application_consumer: []
       landscape_resource_operator:
         - "application:read"
@@ -1335,6 +1406,7 @@ global:
         - "certificate_subject_mapping:write"
         - "formation.state:write"
         - "tenant_access:write"
+        - "bundle_instance_auth:write"
       default:
         - "runtime:read"
         - "runtime:write"

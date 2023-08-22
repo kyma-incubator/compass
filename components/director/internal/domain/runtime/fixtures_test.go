@@ -1,6 +1,7 @@
 package runtime_test
 
 import (
+	"fmt"
 	"net/url"
 	"testing"
 	"time"
@@ -22,7 +23,17 @@ const (
 	runtimeType = "runtimeType"
 )
 
-var fixColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}
+var (
+	fixColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp", "application_namespace"}
+
+	webhookMode    = "SYNC"
+	webhookType    = "CONFIGURATION_CHANGED"
+	kymaAdapterURL = "url"
+	urlTemplate    = fmt.Sprintf("{\"path\":\"%s/kyma-adapter/v1/tenantMappings/{{.Runtime.Labels.global_subaccount_id}}\",\"method\":\"PATCH\"}", kymaAdapterURL)
+	inputTemplate  = "{\"context\":{\"platform\":\"{{if .CustomerTenantContext.AccountID}}btp{{else}}unified-services{{end}}\",\"uclFormationId\":\"{{.FormationID}}\",\"accountId\":\"{{if .CustomerTenantContext.AccountID}}{{.CustomerTenantContext.AccountID}}{{else}}{{.CustomerTenantContext.Path}}{{end}}\",\"crmId\":\"{{.CustomerTenantContext.CustomerID}}\",\"operation\":\"{{.Operation}}\"},\"assignedTenant\":{\"state\":\"{{.Assignment.State}}\",\"uclAssignmentId\":\"{{.Assignment.ID}}\",\"deploymentRegion\":\"{{if .Application.Labels.region}}{{.Application.Labels.region}}{{else}}{{.ApplicationTemplate.Labels.region}}{{end}}\",\"applicationNamespace\":\"{{if .Application.ApplicationNamespace}}{{.Application.ApplicationNamespace}}{{else}}{{.ApplicationTemplate.ApplicationNamespace}}{{end}}\",\"applicationUrl\":\"{{.Application.BaseURL}}\",\"applicationTenantId\":\"{{.Application.LocalTenantID}}\",\"uclSystemName\":\"{{.Application.Name}}\",\"uclSystemTenantId\":\"{{.Application.ID}}\",{{if .ApplicationTemplate.Labels.parameters}}\"parameters\":{{.ApplicationTemplate.Labels.parameters}},{{end}}\"configuration\":{{.ReverseAssignment.Value}}},\"receiverTenant\":{\"ownerTenant\":\"{{.Runtime.Tenant.Parent}}\",\"state\":\"{{.ReverseAssignment.State}}\",\"uclAssignmentId\":\"{{.ReverseAssignment.ID}}\",\"deploymentRegion\":\"{{if and .RuntimeContext .RuntimeContext.Labels.region}}{{.RuntimeContext.Labels.region}}{{else}}{{.Runtime.Labels.region}}{{end}}\",\"applicationNamespace\":\"{{.Runtime.ApplicationNamespace}}\",\"applicationTenantId\":\"{{if .RuntimeContext}}{{.RuntimeContext.Value}}{{else}}{{.Runtime.Labels.global_subaccount_id}}{{end}}\",\"uclSystemTenantId\":\"{{if .RuntimeContext}}{{.RuntimeContext.ID}}{{else}}{{.Runtime.ID}}{{end}}\",{{if .Runtime.Labels.parameters}}\"parameters\":{{.Runtime.Labels.parameters}},{{end}}\"configuration\":{{.Assignment.Value}}}}"
+	headerTemplate = "{\"Content-Type\": [\"application/json\"]}"
+	outputTemplate = "{\"error\":\"{{.Body.error}}\",\"state\":\"{{.Body.state}}\",\"success_status_code\": 200,\"incomplete_status_code\": 422}"
+)
 
 func fixRuntimePage(runtimes []*model.Runtime) *model.RuntimePage {
 	return &model.RuntimePage{

@@ -73,7 +73,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 		return "", err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL, "")
+	resp, err := executor.Execute(ctx, c.Client, documentURL, "", http.Header{})
 	if err != nil {
 		return "", err
 	}

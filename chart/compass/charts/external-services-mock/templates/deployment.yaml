@@ -49,6 +49,8 @@ spec:
                 value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_ORD_SERVERS_UNSECURED_MULTI_TENANT_PORT
                 value: "{{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}"
+              - name: APP_ORD_SERVERS_PROXY_PORT
+                value: "{{ .Values.global.externalServicesMock.certSecuredProxyPort }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_GLOBAL_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_CLIENT_ID
@@ -79,6 +81,8 @@ spec:
                 value: "{{ (index .Values.global.tenants 9).id }}"
               - name: APP_TRUSTED_TENANT
                 value: "{{ (index .Values.global.tenants 26).id }}"
+              - name: APP_ON_DEMAND_TENANT
+                value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
               - name: APP_CA_CERT
                 valueFrom:
                   secretKeyRef:
@@ -117,6 +121,18 @@ spec:
                 value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
                 value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+              - name: APP_TENANT_PROVIDER_SUBSCRIPTION_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionIDProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_APP_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoAppIdProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_APP_NAME_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoAppNameProperty }}
+              - name: APP_TENANT_PROVIDER_DEPENDENT_SERVICE_INSTANCES_INFO_PROVIDER_SUBACCOUNT_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.dependentServiceInstancesInfoProviderSubaccountIdProperty }}
+              - name: APP_DIRECT_DEPENDENCY_XSAPPNAME
+                value: {{ .Values.global.externalServicesMock.directDependencyXsappname }}
               - name: APP_TENANT_CONFIG_TENANT_FETCHER_URL
                 value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_TENANT_CONFIG_ROOT_API
@@ -129,6 +145,8 @@ spec:
                 value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
               - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID
                 value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+              - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_ID
+                value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
@@ -149,8 +167,18 @@ spec:
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.tenantIDKey }}
               - name: APP_TENANT_CONFIG_CONSUMER_CLAIMS_SUBDOMAIN_KEY
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
+              - name: APP_TENANT_CONFIG_STANDARD_FLOW
+                value: {{ .Values.global.tests.subscription.standardFlow }}
+              - name: APP_TENANT_CONFIG_DIRECT_DEPENDENCY_FLOW
+                value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+              - name: APP_TENANT_CONFIG_INDIRECT_DEPENDENCY_FLOW
+                value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+              - name: APP_TENANT_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+                value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
               - name: APP_DESTINATION_TENANT_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+              - name: APP_DESTINATION_CERTIFICATE_TENANT_ENDPOINT
+                value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
               - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
@@ -165,8 +193,8 @@ spec:
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
-              - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
-                value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds  | quote}}
+              - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+                value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds  | quote}}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_ID
                 value: {{ .Values.global.externalServicesMock.iasAdapter.consumerAppID }}
               - name : APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID
@@ -181,6 +209,24 @@ spec:
                 value: {{ .Values.global.externalServicesMock.iasAdapter.providerAppTenantID }}
               - name : APP_IAS_ADAPTER_PROVIDED_API_NAME
                 value: {{ .Values.global.externalServicesMock.iasAdapter.apiName }}
+              - name: APP_DESTINATION_CREATOR_CORRELATION_IDS_KEY
+                value: "{{ .Values.global.director.destinationCreator.correlationIDsKey }}"
+              - name: APP_DESTINATION_CREATOR_DESTINATION_PATH
+                value: "{{ .Values.global.director.destinationCreator.destinationAPI.path }}"
+              - name: APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER
+                value: "{{ .Values.global.director.destinationCreator.destinationAPI.regionParam }}"
+              - name: APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER
+                value: "{{ .Values.global.director.destinationCreator.destinationAPI.subaccountIDParam }}"
+              - name: APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER
+                value: "{{ .Values.global.director.destinationCreator.destinationAPI.nameParam }}"
+              - name: APP_DESTINATION_CREATOR_CERTIFICATE_PATH
+                value: "{{ .Values.global.director.destinationCreator.certificateAPI.path }}"
+              - name: APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER
+                value: "{{ .Values.global.director.destinationCreator.certificateAPI.regionParam }}"
+              - name: APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER
+                value: "{{ .Values.global.director.destinationCreator.certificateAPI.subaccountIDParam }}"
+              - name: APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER
+                value: "{{ .Values.global.director.destinationCreator.certificateAPI.nameParam }}"
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

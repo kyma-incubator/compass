@@ -3,6 +3,8 @@ package ordvendor
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -10,6 +12,7 @@ import (
 )
 
 // VendorRepository missing godoc
+//
 //go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VendorRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Vendor) error
@@ -21,11 +24,12 @@ type VendorRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Vendor, error)
-	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error)
+	ListByResourceID(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) ([]*model.Vendor, error)
 	ListGlobal(ctx context.Context) ([]*model.Vendor, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -45,19 +49,15 @@ func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 }
 
 // Create creates a new Vendor.
-func (s *service) Create(ctx context.Context, applicationID string, in model.VendorInput) (string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
+func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error) {
 	id := s.uidService.Generate()
-	vendor := in.ToVendor(id, &applicationID)
+	vendor := in.ToVendor(id, resourceType, resourceID)
 
-	if err = s.vendorRepo.Create(ctx, tnt, vendor); err != nil {
-		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
+	if err := s.createVendor(ctx, vendor, resourceType); err != nil {
+		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s", id, vendor.Title)
 	}
-	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
+
+	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s", id, vendor.Title)
 
 	return vendor.OrdID, nil
 }
@@ -65,7 +65,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Ven
 // CreateGlobal creates a new Global Vendor (with NULL app_id).
 func (s *service) CreateGlobal(ctx context.Context, in model.VendorInput) (string, error) {
 	id := s.uidService.Generate()
-	vendor := in.ToVendor(id, nil)
+	vendor := in.ToVendor(id, "", "")
 
 	if err := s.vendorRepo.CreateGlobal(ctx, vendor); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating Global Vendor with id %s and title %s", id, vendor.Title)
@@ -76,22 +76,18 @@ func (s *service) CreateGlobal(ctx context.Context, in model.VendorInput) (strin
 }
 
 // Update updates an existing Vendor.
-func (s *service) Update(ctx context.Context, id string, in model.VendorInput) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	vendor, err := s.vendorRepo.GetByID(ctx, tnt, id)
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error {
+	vendor, err := s.getVendor(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Vendor with id %s", id)
 	}
 
 	vendor.SetFromUpdateInput(in)
 
-	if err = s.vendorRepo.Update(ctx, tnt, vendor); err != nil {
+	if err = s.updateVendor(ctx, vendor, resourceType); err != nil {
 		return errors.Wrapf(err, "while updating Vendor with id %s", id)
 	}
+
 	return nil
 }
 
@@ -111,16 +107,12 @@ func (s *service) UpdateGlobal(ctx context.Context, id string, in model.VendorIn
 }
 
 // Delete deletes an existing Vendor.
-func (s *service) Delete(ctx context.Context, id string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
-	}
-
-	err = s.vendorRepo.Delete(ctx, tnt, id)
-	if err != nil {
+func (s *service) Delete(ctx context.Context, resourceType resource.Type, id string) error {
+	if err := s.deleteVendor(ctx, id, resourceType); err != nil {
 		return errors.Wrapf(err, "while deleting Vendor with id %s", id)
 	}
+
+	log.C(ctx).Infof("Successfully deleted Vendor with id %s", id)
 
 	return nil
 }
@@ -172,10 +164,62 @@ func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*mod
 		return nil, err
 	}
 
-	return s.vendorRepo.ListByApplicationID(ctx, tnt, appID)
+	return s.vendorRepo.ListByResourceID(ctx, tnt, appID, resource.Application)
+}
+
+// ListByApplicationTemplateVersionID returns a list of Vendors by Application Template Version ID without tenant isolation.
+func (s *service) ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error) {
+	return s.vendorRepo.ListByResourceID(ctx, "", appTemplateVersionID, resource.ApplicationTemplateVersion)
 }
 
 // ListGlobal returns a list of Global Vendors (with NULL app_id).
 func (s *service) ListGlobal(ctx context.Context) ([]*model.Vendor, error) {
 	return s.vendorRepo.ListGlobal(ctx)
+}
+
+func (s *service) createVendor(ctx context.Context, vendor *model.Vendor, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.CreateGlobal(ctx, vendor)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.vendorRepo.Create(ctx, tnt, vendor)
+}
+
+func (s *service) getVendor(ctx context.Context, id string, resourceType resource.Type) (*model.Vendor, error) {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.GetByIDGlobal(ctx, id)
+	}
+
+	return s.Get(ctx, id)
+}
+
+func (s *service) updateVendor(ctx context.Context, vendor *model.Vendor, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.UpdateGlobal(ctx, vendor)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.vendorRepo.Update(ctx, tnt, vendor)
+}
+
+func (s *service) deleteVendor(ctx context.Context, id string, resourceType resource.Type) error {
+	if resourceType.IsTenantIgnorable() {
+		return s.vendorRepo.DeleteGlobal(ctx, id)
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	return s.vendorRepo.Delete(ctx, tnt, id)
 }
