@@ -17,6 +17,9 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
+// ClientIdFromCertificateHeader contains the name of the header containing the client id from the certificate
+const ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
+
 type AuthMiddleware struct {
 	config      config.TenantInfo
 	client      *http.Client
@@ -44,10 +47,10 @@ func NewAuthMiddleware(ctx context.Context, cfg config.TenantInfo) (AuthMiddlewa
 func (m *AuthMiddleware) Auth(ctx *gin.Context) {
 	log := logger.FromContext(ctx)
 
-	tenant, exists := ctx.Get(tenantCtxKey)
-	if !exists {
+	tenant := ctx.Request.Header.Get(ClientIdFromCertificateHeader)
+	if tenant == "" {
 		log.Error().Msg("Failed to find tenant in context")
-		internal.RespondWithError(ctx, http.StatusInternalServerError, errors.New(""))
+		internal.RespondWithError(ctx, http.StatusInternalServerError, errors.New("Tenant not found in request"))
 		return
 	}
 	orgUnit := fmt.Sprintf("OU=%s", tenant)
