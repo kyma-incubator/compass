@@ -100,9 +100,9 @@ spec:
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
           volumeMounts:
             - name: sm-instances-secret-volume
-              mountPath: { { .Values.global.instanceCreator.secrets.path } }
+              mountPath: {{ .Values.global.instanceCreator.secrets.path }}
               readOnly: true
       volumes:
         - name: sm-instances-secret-volume
           secret:
-            secretName: { { .Values.global.instanceCreator.secrets.name } }
+            secretName: {{ .Values.global.instanceCreator.secrets.name }}
