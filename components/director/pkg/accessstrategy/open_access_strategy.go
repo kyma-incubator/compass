@@ -21,10 +21,12 @@ func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Clien
 		return nil, err
 	}
 
-	additionalHeaders.Range(func(key, value any) bool {
-		req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
-		return true
-	})
+	if additionalHeaders != nil {
+		additionalHeaders.Range(func(key, value any) bool {
+			req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
+			return true
+		})
+	}
 
 	if len(tnt) > 0 {
 		req.Header.Set(tenantHeader, tnt)
