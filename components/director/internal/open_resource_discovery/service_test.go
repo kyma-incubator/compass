@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"sync"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -33,8 +36,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	ordMapping := application.ORDWebhookMapping{}
-	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: http.Header{}}
+	emptyORDMapping := application.ORDWebhookMapping{}
+	ordMappingWithProxy := application.ORDWebhookMapping{ProxyURL: proxyURL, Type: applicationTypeLabelValue}
+	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: &sync.Map{}}
 
 	sanitizedDoc := fixSanitizedORDDocument()
 	sanitizedDocForProxy := fixSanitizedORDDocumentForProxyURL()
@@ -490,15 +494,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulSpecCreateAndUpdateForProxy := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 
-		api1SpecInput1 := fixAPI1SpecInputs(customWebhookConfigURL)[0]
-		api1SpecInput2 := fixAPI1SpecInputs(customWebhookConfigURL)[1]
-		api1SpecInput3 := fixAPI1SpecInputs(customWebhookConfigURL)[2]
+		api1SpecInput1 := fixAPI1SpecInputs(proxyURL)[0]
+		api1SpecInput2 := fixAPI1SpecInputs(proxyURL)[1]
+		api1SpecInput3 := fixAPI1SpecInputs(proxyURL)[2]
 
-		api2SpecInput1 := fixAPI2SpecInputs(customWebhookConfigURL)[0]
-		api2SpecInput2 := fixAPI2SpecInputs(customWebhookConfigURL)[1]
+		api2SpecInput1 := fixAPI2SpecInputs(proxyURL)[0]
+		api2SpecInput2 := fixAPI2SpecInputs(proxyURL)[1]
 
 		event1Spec := fixEvent1SpecInputs()[0]
-		event2Spec := fixEvent2SpecInputs(customWebhookConfigURL)[0]
+		event2Spec := fixEvent2SpecInputs(proxyURL)[0]
 
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, resource.Application, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, resource.Application, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
@@ -511,12 +515,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, resource.Application, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
 		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
-			Times(len(fixAPI1SpecInputs(customWebhookConfigURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
+			Times(len(fixAPI1SpecInputs(proxyURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(proxyURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
 		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
-			Times(len(fixAPI1SpecInputs(customWebhookConfigURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
+			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		return specSvc
 	}
@@ -777,24 +781,27 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	}
 
 	successfulFetchRequestFetchAndUpdateForProxy := func() *automock.FetchRequestService {
-		headers := http.Header{
-			"Target_host": []string{baseURL},
+		headerMatcher := func() interface{} {
+			return mock.MatchedBy(func(headers *sync.Map) bool {
+				value, ok := headers.Load("target_host")
+				return ok && value == baseURL
+			})
 		}
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, headers).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
-			Times(len(fixAPI1SpecInputs(customWebhookConfigURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(customWebhookConfigURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, headerMatcher()).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
 			return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
 		})).Return(nil).
-			Times(len(fixAPI1SpecInputs(customWebhookConfigURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(customWebhookConfigURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
+			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		return fetchReqSvc
 	}
 
 	successfulFetchRequestFetch := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixAPI2SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 		return fetchReqSvc
@@ -802,7 +809,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdate := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -815,7 +822,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdateForStaticDoc := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -828,7 +835,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulFetchRequestFetchAndUpdateForStaticDocForApplication := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
-		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times((len(fixAPI1SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL))) * 2) // len(fixAPI2SpecInputs(baseURL)) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -951,31 +958,33 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulClientFetch := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
 		return client
 	}
 
 	successfulClientFetchForStaticDoc := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil)
 		return client
 	}
 
 	successfulClientFetchForStaticDocOnAppTemplateWithApplications := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil).Once()
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil).Once()
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil).Once()
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDStaticDocument()}, baseURL, nil).Once()
 		return client
 	}
 
 	successfulClientFetchForDocWithoutCredentialExchangeStrategiesWithProxy := func() *automock.Client {
-		ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{
-			Headers:     http.Header{"Target_host": []string{baseURL}},
-			Application: webhook.Application{BaseURL: baseURL},
+		headerMatcher := func() interface{} {
+			return mock.MatchedBy(func(ordRequestObject webhook.OpenResourceDiscoveryWebhookRequestObject) bool {
+				value, ok := ordRequestObject.Headers.Load("target_host")
+				return ok && value == baseURL && ordRequestObject.Application.BaseURL == baseURL
+			})
 		}
 
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, fixWebhookForApplicationWithProxyURL(), ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocumentWithoutCredentialExchanges()}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, fixWebhookForApplicationWithProxyURL(), ordMappingWithProxy, headerMatcher()).Return(ord.Documents{fixORDDocumentWithoutCredentialExchanges()}, baseURL, nil)
 		return client
 	}
 
@@ -1044,6 +1053,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		appTemplateSvcFn        func() *automock.ApplicationTemplateService
 		labelSvcFn              func() *automock.LabelService
 		clientFn                func() *automock.Client
+		webhookMappings         []application.ORDWebhookMapping
 		ExpectedErr             error
 	}{
 		{
@@ -1236,6 +1246,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
 			globalRegistrySvcFn:     successfulGlobalRegistrySvc,
 			clientFn:                successfulClientFetchForDocWithoutCredentialExchangeStrategiesWithProxy,
+			webhookMappings:         []application.ORDWebhookMapping{ordMappingWithProxy},
 			labelSvcFn:              successfulLabelGetByKey,
 		},
 		{
@@ -1515,8 +1526,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 					Name:     testApplication.Name,
 					ParentID: &appTemplateID,
 				}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil).Once()
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResources, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil).Once()
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil).Once()
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResources, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil).Once()
 				return client
 			},
 			labelSvcFn: successfulLabelGetByKey,
@@ -1795,7 +1806,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appTemplateSvcFn: successAppTemplateGetSvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -1831,7 +1842,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appTemplateSvcFn: successAppTemplateGetSvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -1868,7 +1879,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appTemplateSvcFn: successAppTemplateGetSvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -1901,7 +1912,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appTemplateSvcFn: successAppTemplateGetSvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceForAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -1924,7 +1935,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(nil, "", testErr)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(nil, "", testErr)
 				return client
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
@@ -1973,7 +1984,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalID")
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2025,7 +2036,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalID")
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2061,7 +2072,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.EventResources[0].Name = "" // invalid document
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2116,7 +2127,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Name = ""
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2158,7 +2169,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors[0].OrdID = ""
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2198,7 +2209,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Products[0].Title = ""
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2254,7 +2265,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Packages[0].Title = ""
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -2785,7 +2796,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithMultipleSameTypesFormat, credentialExchangeStrategyType, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -2831,7 +2842,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -2879,7 +2890,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -2932,7 +2943,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -2982,7 +2993,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -3031,7 +3042,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -3082,7 +3093,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -3137,7 +3148,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -3198,7 +3209,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
 				return client
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -3598,9 +3609,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
 					Times(len(fixAPI1SpecInputs(baseURL)))
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -3846,7 +3857,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixAPI1SpecInputs(baseURL)) + len(fixAPI2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -4121,9 +4132,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixAPI1SpecInputs(baseURL)))
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -4367,7 +4378,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = packageORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4420,7 +4431,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = event1ORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4472,7 +4483,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = vendorORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4523,7 +4534,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = productORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4574,7 +4585,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = bundleORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4793,7 +4804,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
-				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, http.Header{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything, &sync.Map{}).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixAPI1SpecInputs(baseURL)) + len(fixAPI2SpecInputs(baseURL)) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs(baseURL)))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
@@ -4842,7 +4853,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4886,7 +4897,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			appTemplateVersionSvcFn: successfulAppTemplateVersionList,
@@ -4973,9 +4984,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			if test.labelSvcFn != nil {
 				labelSvc = test.labelSvcFn()
 			}
+			ordWebhookMappings := []application.ORDWebhookMapping{}
+			if test.webhookMappings != nil {
+				ordWebhookMappings = test.webhookMappings
+			}
 
 			ordCfg := ord.NewServiceConfig(4, 100, 0, "", false, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
+			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings)
 			err := svc.SyncORDDocuments(context.TODO(), ord.MetricsConfig{})
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -4993,8 +5008,8 @@ func TestService_ProcessApplications(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	ordMapping := application.ORDWebhookMapping{}
-	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: http.Header{}}
+	emptyORDMapping := application.ORDWebhookMapping{}
+	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: &sync.Map{}}
 
 	testApplication := fixApplications()[0]
 	testResource := ord.Resource{
@@ -5008,7 +5023,7 @@ func TestService_ProcessApplications(t *testing.T) {
 
 	successfulClientFetch := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, ordMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResource, testWebhookForApplication, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil)
 		return client
 	}
 
@@ -5219,8 +5234,8 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	ordMapping := application.ORDWebhookMapping{}
-	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: http.Header{}}
+	emptyORDMapping := application.ORDWebhookMapping{}
+	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: &sync.Map{}}
 
 	testApplication := fixApplications()[0]
 	testResourceApp := ord.Resource{
@@ -5239,14 +5254,14 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 
 	successfulClientFetchForAppTemplate := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceApp, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceApp, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
 		return client
 	}
 
 	successfulClientFetchForOnlyAppTemplate := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceAppTemplate, testWebhookForAppTemplate, ordMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
 		return client
 	}
 
