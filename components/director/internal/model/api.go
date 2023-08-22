@@ -56,6 +56,7 @@ type APIDefinition struct {
 	Hierarchy                               json.RawMessage
 	SupportedUseCases                       json.RawMessage
 	DocumentationLabels                     json.RawMessage
+	CorrelationIDs                          json.RawMessage
 	*BaseEntity
 }
 
@@ -103,6 +104,7 @@ type APIDefinitionInput struct {
 	Hierarchy                               json.RawMessage               `json:"hierarchy"`
 	SupportedUseCases                       json.RawMessage               `json:"supported_use_cases"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
+	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
 
 	*VersionInput `hash:"ignore"`
 }
@@ -216,6 +218,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		Hierarchy:           a.Hierarchy,
 		SupportedUseCases:   a.SupportedUseCases,
 		DocumentationLabels: a.DocumentationLabels,
+		CorrelationIDs:      a.CorrelationIDs,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,
