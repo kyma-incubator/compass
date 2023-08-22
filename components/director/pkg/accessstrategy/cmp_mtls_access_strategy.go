@@ -70,10 +70,12 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
-	additionalHeaders.Range(func(key, value any) bool {
-		req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
-		return true
-	})
+	if additionalHeaders != nil {
+		additionalHeaders.Range(func(key, value any) bool {
+			req.Header.Set(str.CastOrEmpty(key), str.CastOrEmpty(value))
+			return true
+		})
+	}
 
 	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header
 	if as.tenantProviderFunc != nil && len(tnt) > 0 {
