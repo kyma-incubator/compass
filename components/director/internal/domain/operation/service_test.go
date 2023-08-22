@@ -2,9 +2,10 @@ package operation_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
@@ -34,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("Create", ctx, opModel).Return(nil).Once()
+				repo.On("Create", ctx, opModel).Return(operationID, nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -48,7 +49,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Operation creation",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("Create", ctx, opModel).Return(testErr).Once()
+				repo.On("Create", ctx, opModel).Return("", testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -70,7 +71,7 @@ func TestService_Create(t *testing.T) {
 			svc := operation.NewService(repo, uidService)
 
 			// WHEN
-			err := svc.Create(ctx, &testCase.Input)
+			_, err := svc.Create(ctx, &testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErr != nil {

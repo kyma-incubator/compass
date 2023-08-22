@@ -3,8 +3,9 @@ package operation
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -48,16 +49,16 @@ func NewService(opRepo OperationRepository, uidService UIDService) *service {
 }
 
 // Create creates new operation entity
-func (s *service) Create(ctx context.Context, in *model.OperationInput) error {
+func (s *service) Create(ctx context.Context, in *model.OperationInput) (string, error) {
 	id := s.uidService.Generate()
 	op := in.ToOperation(id)
 
 	if err := s.opRepo.Create(ctx, op); err != nil {
-		return errors.Wrapf(err, "error occurred while creating an Operation with id %s and type %s", op.ID, op.OpType)
+		return "", errors.Wrapf(err, "error occurred while creating an Operation with id %s and type %s", op.ID, op.OpType)
 	}
 
 	log.C(ctx).Infof("Successfully created an Operation with id %s and type %s", op.ID, op.OpType)
-	return nil
+	return id, nil
 }
 
 // CreateMultiple creates multiple operations
@@ -71,7 +72,7 @@ func (s *service) CreateMultiple(ctx context.Context, in []*model.OperationInput
 			continue
 		}
 
-		if err := s.Create(ctx, op); err != nil {
+		if _, err := s.Create(ctx, op); err != nil {
 			return err
 		}
 	}
