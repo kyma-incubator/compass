@@ -53,7 +53,7 @@ func (m *Middleware) Handler() func(next http.Handler) http.Handler {
 			clientID := r.Header.Get(ClientIdFromCertificateHeader)
 			if clientID == "" {
 				log.C(ctx).Errorf("Failed to find client ID from header")
-				apperrors.WriteAppError(ctx, w, errors.New("Tenant not found in request"), http.StatusUnauthorized)
+				apperrors.WriteAppError(ctx, w, errors.New("Tenant not found in request"), http.StatusBadRequest)
 				return
 			}
 			orgUnit := fmt.Sprintf("OU=%s", clientID)
