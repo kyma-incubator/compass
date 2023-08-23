@@ -60,3 +60,12 @@ func FixQueryFormationTemplatesRequestWithPageSize(pageSize int) *gcli.Request {
 					}
 				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationTemplate())))
 }
+
+func FixQueryFormationTemplatesRequestWithNameAndPageSize(name string, pageSize int) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				  result: formationTemplatesByName(name:"%s", first:%d, after:"") {
+    					%s
+					}
+				}`, name, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationTemplate())))
+}

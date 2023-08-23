@@ -20,6 +20,10 @@ func (_m *WebhookService) ListForFormationTemplate(ctx context.Context, tenant s
 	ret := _m.Called(ctx, tenant, formationTemplateID)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.Webhook, error)); ok {
+		return rf(ctx, tenant, formationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Webhook); ok {
 		r0 = rf(ctx, tenant, formationTemplateID)
 	} else {
@@ -28,7 +32,6 @@ func (_m *WebhookService) ListForFormationTemplate(ctx context.Context, tenant s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, formationTemplateID)
 	} else {
