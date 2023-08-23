@@ -1380,7 +1380,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
-	scenarioGroups: [ScenarioGroup]
+	scenarioGroups: [String]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -1464,11 +1464,6 @@ type RuntimeSystemAuth implements SystemAuth {
 	type: SystemAuthReferenceType
 	tenantId: String
 	referenceObjectId: ID
-}
-
-type ScenarioGroup {
-	key: String!
-	description: String!
 }
 
 type Tenant {
