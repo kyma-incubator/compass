@@ -156,7 +156,7 @@ func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) e
 			}
 			err = tx.Commit()
 			if err != nil {
-				log.C(jobCtx).Errorf("Error during commiting transaction at RescheduleOperationsJob %v", err)
+				log.C(jobCtx).Errorf("Error during committing transaction at RescheduleOperationsJob %v", err)
 			}
 
 			log.C(jobCtx).Infof("RescheduleOperationsJob finished.")
@@ -184,7 +184,7 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 			}
 			err = tx.Commit()
 			if err != nil {
-				log.C(jobCtx).Errorf("Error during commiting transaction at RescheduleHangedOperationsJob %v", err)
+				log.C(jobCtx).Errorf("Error during commititng transaction at RescheduleHangedOperationsJob %v", err)
 			}
 
 			log.C(jobCtx).Infof("RescheduleHangedOperationsJob finished.")

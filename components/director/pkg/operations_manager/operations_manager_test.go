@@ -333,7 +333,7 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 			ExpectedError: testError,
 		},
 		{
-			Name: "Error when commiting first transaction in tryToGet fails",
+			Name: "Error when committing first transaction in tryToGet fails",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx, transact := txGen.ThatSucceeds()
 				transact.On("Begin").Return(persistTx, testError).Times(1)
@@ -415,7 +415,7 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 			ExpectedError:     testError,
 		},
 		{
-			Name: "Error when commiting transaction after Update operation in tryToGet fails",
+			Name: "Error when committing transaction after Update operation in tryToGet fails",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx, transact := txGen.ThatSucceeds()
 				persistTx.On("Commit").Return(testError).Once()
