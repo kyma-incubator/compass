@@ -806,6 +806,11 @@ type RuntimeUpdateInput struct {
 	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
+type ScenarioGroup struct {
+	Key         string `json:"key"`
+	Description string `json:"description"`
+}
+
 type SystemAuthUpdateInput struct {
 	Auth *AuthInput `json:"auth"`
 }

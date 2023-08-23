@@ -692,6 +692,11 @@ type ComplexityRoot struct {
 		Type              func(childComplexity int) int
 	}
 
+	ScenarioGroup struct {
+		Description func(childComplexity int) int
+		Key         func(childComplexity int) int
+	}
+
 	Tenant struct {
 		ID          func(childComplexity int) int
 		Initialized func(childComplexity int) int
@@ -901,6 +906,8 @@ type MutationResolver interface {
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
 	RawEncoded(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
+
+	ScenarioGroups(ctx context.Context, obj *OneTimeTokenForApplication) ([]*ScenarioGroup, error)
 }
 type OneTimeTokenForRuntimeResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
@@ -4763,6 +4770,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeSystemAuth.Type(childComplexity), true
 
+	case "ScenarioGroup.description":
+		if e.complexity.ScenarioGroup.Description == nil {
+			break
+		}
+
+		return e.complexity.ScenarioGroup.Description(childComplexity), true
+
+	case "ScenarioGroup.key":
+		if e.complexity.ScenarioGroup.Key == nil {
+			break
+		}
+
+		return e.complexity.ScenarioGroup.Key(childComplexity), true
+
 	case "Tenant.id":
 		if e.complexity.Tenant.ID == nil {
 			break
@@ -6504,6 +6525,11 @@ type OAuthCredentialData {
 	url: String!
 }
 
+type ScenarioGroup {
+	key: String!
+	description: String!
+}
+
 type OneTimeTokenForApplication implements OneTimeToken {
 	token: String!
 	connectorURL: String!
@@ -6515,7 +6541,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
-	scenarioGroups: [String]
+	scenarioGroups: [ScenarioGroup]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -25449,13 +25475,13 @@ func (ec *executionContext) _OneTimeTokenForApplication_scenarioGroups(ctx conte
 		Object:   "OneTimeTokenForApplication",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ScenarioGroups, nil
+		return ec.resolvers.OneTimeTokenForApplication().ScenarioGroups(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25464,9 +25490,9 @@ func (ec *executionContext) _OneTimeTokenForApplication_scenarioGroups(ctx conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.([]*ScenarioGroup)
 	fc.Result = res
-	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+	return ec.marshalOScenarioGroup2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScenarioGroup(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OneTimeTokenForRuntime_token(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForRuntime) (ret graphql.Marshaler) {
@@ -29588,6 +29614,74 @@ func (ec *executionContext) _RuntimeSystemAuth_referenceObjectId(ctx context.Con
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ScenarioGroup_key(ctx context.Context, field graphql.CollectedField, obj *ScenarioGroup) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ScenarioGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ScenarioGroup_description(ctx context.Context, field graphql.CollectedField, obj *ScenarioGroup) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ScenarioGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Tenant_id(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
@@ -37053,7 +37147,16 @@ func (ec *executionContext) _OneTimeTokenForApplication(ctx context.Context, sel
 		case "type":
 			out.Values[i] = ec._OneTimeTokenForApplication_type(ctx, field, obj)
 		case "scenarioGroups":
-			out.Values[i] = ec._OneTimeTokenForApplication_scenarioGroups(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OneTimeTokenForApplication_scenarioGroups(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38062,6 +38165,38 @@ func (ec *executionContext) _RuntimeSystemAuth(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._RuntimeSystemAuth_tenantId(ctx, field, obj)
 		case "referenceObjectId":
 			out.Values[i] = ec._RuntimeSystemAuth_referenceObjectId(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var scenarioGroupImplementors = []string{"ScenarioGroup"}
+
+func (ec *executionContext) _ScenarioGroup(ctx context.Context, sel ast.SelectionSet, obj *ScenarioGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, scenarioGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ScenarioGroup")
+		case "key":
+			out.Values[i] = ec._ScenarioGroup_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._ScenarioGroup_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -42168,44 +42303,63 @@ func (ec *executionContext) marshalORuntimeSystemAuth2ᚕᚖgithubᚗcomᚋkyma�
 	return ret
 }
 
+func (ec *executionContext) marshalOScenarioGroup2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScenarioGroup(ctx context.Context, sel ast.SelectionSet, v ScenarioGroup) graphql.Marshaler {
+	return ec._ScenarioGroup(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOScenarioGroup2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScenarioGroup(ctx context.Context, sel ast.SelectionSet, v []*ScenarioGroup) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOScenarioGroup2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScenarioGroup(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOScenarioGroup2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScenarioGroup(ctx context.Context, sel ast.SelectionSet, v *ScenarioGroup) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ScenarioGroup(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
-}
-
-func (ec *executionContext) unmarshalOString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2string(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2string(ctx, sel, v[i])
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
