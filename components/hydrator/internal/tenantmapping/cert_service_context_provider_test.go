@@ -243,12 +243,12 @@ func TestCertServiceContextProviderMatch(t *testing.T) {
 
 	t.Run("should not match when access levels are present", func(t *testing.T) {
 		provider := tenantmapping.NewCertServiceContextProvider(nil, nil)
-		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		tenant := "de766a55-3abb-4480-8d4a-6d255990b159"
 
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{tenant},
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
 				},
 				Extra: map[string]interface{}{
