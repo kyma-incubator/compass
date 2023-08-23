@@ -64,36 +64,13 @@ func (om *OperationsManager) GetOperation(ctx context.Context) (*model.Operation
 	}
 
 	for _, operation := range operations {
-		tx, err := om.transact.Begin()
+		op, err := om.tryToGetOperation(ctx, operation.ID)
 		if err != nil {
 			return nil, err
 		}
-		defer om.transact.RollbackUnlessCommitted(ctx, tx)
-		ctx = persistence.SaveToContext(ctx, tx)
 
-		lock, err := om.opSvc.LockOperation(ctx, operation.ID)
-		if err != nil {
-			return nil, err
-		}
-		if lock {
-			currentOperation, err := om.opSvc.Get(ctx, operation.ID)
-			if err != nil {
-				return nil, err
-			}
-			if currentOperation.Status == model.OperationStatusScheduled {
-				currentOperation.Status = model.OperationStatusInProgress
-				now := time.Now()
-				currentOperation.UpdatedAt = &now
-				err = om.opSvc.Update(ctx, currentOperation)
-				if err != nil {
-					return nil, err
-				}
-				return currentOperation, tx.Commit()
-			}
-		}
-		err = tx.Commit()
-		if err != nil {
-			return nil, err
+		if op != nil {
+			return op, nil
 		}
 	}
 	return nil, apperrors.NewNoScheduledOperationsError()
@@ -225,4 +202,35 @@ func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationI
 		return err
 	}
 	return tx.Commit()
+}
+
+func (om *OperationsManager) tryToGetOperation(ctx context.Context, operationID string) (*model.Operation, error) {
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	lock, err := om.opSvc.LockOperation(ctx, operationID)
+	if err != nil {
+		return nil, err
+	}
+	if lock {
+		currentOperation, err := om.opSvc.Get(ctx, operationID)
+		if err != nil {
+			return nil, err
+		}
+		if currentOperation.Status == model.OperationStatusScheduled {
+			currentOperation.Status = model.OperationStatusInProgress
+			now := time.Now()
+			currentOperation.UpdatedAt = &now
+			err = om.opSvc.Update(ctx, currentOperation)
+			if err != nil {
+				return nil, err
+			}
+			return currentOperation, tx.Commit()
+		}
+	}
+	return nil, tx.Commit()
 }
