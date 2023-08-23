@@ -47,6 +47,7 @@ type Entity struct {
 	Hierarchy                               sql.NullString `db:"hierarchy"`
 	SupportedUseCases                       sql.NullString `db:"supported_use_cases"`
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
+	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
 
 	*repo.BaseEntity
 	version.Version

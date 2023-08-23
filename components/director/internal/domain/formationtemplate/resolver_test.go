@@ -180,7 +180,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			First: &first,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -199,7 +199,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(nil, testErr)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(nil, testErr)
 
 				return svc
 			},
@@ -213,7 +213,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -232,7 +232,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
