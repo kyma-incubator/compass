@@ -13,7 +13,7 @@ import (
 const (
 	testCertSubject               = "OU=testCertSubject"
 	tenant                        = "testCertSubject"
-	clientIdFromCertificateHeader = "Client-Id-From-Certificate"
+	clientIDFromCertificateHeader = "Client-Id-From-Certificate"
 )
 
 func TestNewTenantValidationMiddleware(t *testing.T) {
@@ -101,7 +101,7 @@ func TestNewHTTPHandler(t *testing.T) {
 			req, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 			require.NoError(t, err)
 			if testCase.ClientID != "" {
-				req.Header.Add(clientIdFromCertificateHeader, testCase.ClientID)
+				req.Header.Add(clientIDFromCertificateHeader, testCase.ClientID)
 			}
 
 			rr := httptest.NewRecorder()

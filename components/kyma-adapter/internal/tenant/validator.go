@@ -16,8 +16,8 @@ import (
 	"net/http"
 )
 
-// ClientIdFromCertificateHeader contains the name of the header containing the client id from the certificate
-const ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
+// ClientIDFromCertificateHeader contains the name of the header containing the client id from the certificate
+const ClientIDFromCertificateHeader = "Client-Id-From-Certificate"
 
 // Middleware authorizes only requests made from CMP - checks if the tenant from ID token matches the provider subaccount of CMP
 type Middleware struct {
@@ -50,7 +50,7 @@ func (m *Middleware) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			clientID := r.Header.Get(ClientIdFromCertificateHeader)
+			clientID := r.Header.Get(ClientIDFromCertificateHeader)
 			if clientID == "" {
 				log.C(ctx).Errorf("Failed to find client ID from header")
 				apperrors.WriteAppError(ctx, w, errors.New("Tenant not found in request"), http.StatusBadRequest)
