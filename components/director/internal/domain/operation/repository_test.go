@@ -251,7 +251,6 @@ func TestRepository_LockOperation(t *testing.T) {
 		require.Equal(t, false, isLocked)
 		require.NotNil(t, err)
 	})
-
 }
 
 func TestRepository_RescheduleOperations(t *testing.T) {
