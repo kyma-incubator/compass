@@ -40,6 +40,7 @@ type Entity struct {
 	ResourceHash                 sql.NullString `db:"resource_hash"`
 	Hierarchy                    sql.NullString `db:"hierarchy"`
 	DocumentationLabels          sql.NullString `db:"documentation_labels"`
+	CorrelationIDs               sql.NullString `db:"correlation_ids"`
 	version.Version
 
 	*repo.BaseEntity
