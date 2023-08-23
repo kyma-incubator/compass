@@ -19,8 +19,10 @@ type operationPriority int
 var now = time.Now
 
 const (
-	lowOperationPriority  operationPriority = 1
-	highOperationPriority operationPriority = 100
+	// LowOperationPriority represents low priority for operations
+	LowOperationPriority operationPriority = 1
+	// HighOperationPriority represents high priority for operations
+	HighOperationPriority operationPriority = 100
 )
 
 // OperationsManager provides methods for operations management
@@ -111,7 +113,7 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorM
 
 // RescheduleOperation reschedules operation with high priority
 func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationID string) error {
-	return om.rescheduleOperation(ctx, operationID, highOperationPriority)
+	return om.rescheduleOperation(ctx, operationID, HighOperationPriority)
 }
 
 // RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.

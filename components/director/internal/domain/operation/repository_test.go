@@ -3,6 +3,10 @@ package operation_test
 import (
 	"context"
 	"database/sql/driver"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
@@ -10,9 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
-	"time"
 )
 
 func TestPgRepository_Create(t *testing.T) {
@@ -156,15 +157,15 @@ func TestPgRepository_DeleteMultiple(t *testing.T) {
 }
 
 func TestRepository_PriorityQueueListByType(t *testing.T) {
-	operationModel := fixOperationModel(model.OrdAggregationOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, model.OrdAggregationOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(model.OperationTypeOrdAggregation, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, model.OperationTypeOrdAggregation, model.OperationStatusScheduled)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "PriorityQueue ListByType",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
-				Args:     []driver.Value{string(model.OrdAggregationOpType), 10},
+				Args:     []driver.Value{string(model.OperationTypeOrdAggregation), 10},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
@@ -180,7 +181,7 @@ func TestRepository_PriorityQueueListByType(t *testing.T) {
 		RepoConstructorFunc:       operation.NewRepository,
 		ExpectedModelEntities:     []interface{}{operationModel},
 		ExpectedDBEntities:        []interface{}{operationEntity},
-		MethodArgs:                []interface{}{10, model.OrdAggregationOpType},
+		MethodArgs:                []interface{}{10, model.OperationTypeOrdAggregation},
 		MethodName:                "PriorityQueueListByType",
 		DisableConverterErrorTest: true,
 	}

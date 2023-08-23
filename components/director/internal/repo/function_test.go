@@ -14,7 +14,7 @@ import (
 )
 
 func TestAdvisoryLock(t *testing.T) {
-	sut := repo.NewDBFunction()
+	sut := repo.NewFunctionerGlobal()
 	var expectedIdentifier int64 = 1101223
 
 	t.Run("Success with identifier", func(t *testing.T) {

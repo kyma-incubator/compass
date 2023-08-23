@@ -13,7 +13,7 @@ import (
 )
 
 const operationTable = `public.operation`
-const priorityView = `public.scheduled_operations`
+const scheduledOperationsView = `public.scheduled_operations`
 
 var (
 	idTableColumns        = []string{"id"}
@@ -30,25 +30,25 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	globalCreator      repo.CreatorGlobal
-	globalDeleter      repo.DeleterGlobal
-	globalUpdater      repo.UpdaterGlobal
-	globalSingleGetter repo.SingleGetterGlobal
-	dbFunction         repo.DBFunction
-	priorityViewLister repo.ListerGlobal
-	conv               EntityConverter
+	globalCreator                 repo.CreatorGlobal
+	globalDeleter                 repo.DeleterGlobal
+	globalUpdater                 repo.UpdaterGlobal
+	globalSingleGetter            repo.SingleGetterGlobal
+	globalFunctioner              repo.FunctionerGlobal
+	scheduledOperationsViewLister repo.ListerGlobal
+	conv                          EntityConverter
 }
 
 // NewRepository creates new operation repository
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		globalCreator:      repo.NewCreatorGlobal(resource.Operation, operationTable, operationColumns),
-		globalDeleter:      repo.NewDeleterGlobal(resource.Operation, operationTable),
-		globalUpdater:      repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
-		globalSingleGetter: repo.NewSingleGetterGlobal(resource.Operation, operationTable, operationColumns),
-		dbFunction:         repo.NewDBFunction(),
-		priorityViewLister: repo.NewListerGlobal(resource.Operation, priorityView, operationColumns),
-		conv:               conv,
+		globalCreator:                 repo.NewCreatorGlobal(resource.Operation, operationTable, operationColumns),
+		globalDeleter:                 repo.NewDeleterGlobal(resource.Operation, operationTable),
+		globalUpdater:                 repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
+		globalSingleGetter:            repo.NewSingleGetterGlobal(resource.Operation, operationTable, operationColumns),
+		globalFunctioner:              repo.NewFunctionerGlobal(),
+		scheduledOperationsViewLister: repo.NewListerGlobal(resource.Operation, scheduledOperationsView, operationColumns),
+		conv:                          conv,
 	}
 }
 
@@ -101,7 +101,7 @@ func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
 // PriorityQueueListByType returns top priority operations from priority view for specified type
 func (r *pgRepository) PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error) {
 	var entities EntityCollection
-	if err := r.priorityViewLister.ListGlobalWithLimit(ctx, &entities, queueLimit, repo.Conditions{repo.NewEqualCondition("op_type", opType)}...); err != nil {
+	if err := r.scheduledOperationsViewLister.ListGlobalWithLimit(ctx, &entities, queueLimit, repo.Conditions{repo.NewEqualCondition("op_type", opType)}...); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +114,7 @@ func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (b
 	if err != nil {
 		return false, err
 	}
-	return r.dbFunction.AdvisoryLock(ctx, identifier)
+	return r.globalFunctioner.AdvisoryLock(ctx, identifier)
 }
 
 // RescheduleOperations reschedules the operations.

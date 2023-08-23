@@ -23,8 +23,8 @@ const (
 type OperationType string
 
 const (
-	// OrdAggregationOpType specifies open resource discovery operation type
-	OrdAggregationOpType OperationType = "ORD_AGGREGATION"
+	// OperationTypeOrdAggregation specifies open resource discovery operation type
+	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
 )
 
 // Operation represents an Operation

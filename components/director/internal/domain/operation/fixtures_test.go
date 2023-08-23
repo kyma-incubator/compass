@@ -14,11 +14,11 @@ import (
 
 const (
 	testOpType            model.OperationType = "TEST_TYPE"
-	operationID                               = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	lowOperationPriority                      = 1
-	highOperationPriority                     = 2
-	operationErrMsg                           = "operation processing failed"
-	queueLimit                                = 10
+	operationID           string              = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	lowOperationPriority  int                 = 1
+	highOperationPriority int                 = 2
+	operationErrMsg       string              = "operation processing failed"
+	queueLimit            int                 = 10
 )
 
 var (

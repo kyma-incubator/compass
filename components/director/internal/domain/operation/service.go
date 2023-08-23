@@ -6,14 +6,13 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/pkg/operations_manager"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
-
-const defaultPriority = 1
 
 // OperationRepository is responsible for repository-layer operation operations
 //
@@ -90,7 +89,7 @@ func (s *service) MarkAsCompleted(ctx context.Context, id string) error {
 	op.Status = model.OperationStatusCompleted
 	currentTime := time.Now()
 	op.UpdatedAt = &currentTime
-	op.Priority = defaultPriority
+	op.Priority = int(operationsmanager.LowOperationPriority)
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)
@@ -120,7 +119,7 @@ func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
 	op.Status = model.OperationStatusFailed
 	op.UpdatedAt = &currentTime
 	op.Error = rawMessage
-	op.Priority = defaultPriority
+	op.Priority = int(operationsmanager.LowOperationPriority)
 
 	if err := s.opRepo.Update(ctx, op); err != nil {
 		return errors.Wrapf(err, "while updating operation with id %q", id)

@@ -78,7 +78,7 @@ func TestOperationsManager_MarkOperationCompleted(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			operationSvc := testCase.OperationSvcFn()
 
-			opManager := NewOperationsManager(transact, operationSvc, model.OrdAggregationOpType, OperationsManagerConfig{})
+			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
 
 			// WHEN
 			err := opManager.MarkOperationCompleted(context.TODO(), testCase.Input)
@@ -157,7 +157,7 @@ func TestOperationsManager_MarkOperationFailed(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			operationSvc := testCase.OperationSvcFn()
 
-			opManager := NewOperationsManager(transact, operationSvc, model.OrdAggregationOpType, OperationsManagerConfig{})
+			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
 
 			// WHEN
 			err := opManager.MarkOperationFailed(context.TODO(), testCase.Input, testError.Error())
@@ -193,7 +193,7 @@ func TestOperationsManager_RescheduleOperation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), operationID, int(highOperationPriority)).Return(nil).Once()
+				operationSvc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), operationID, int(HighOperationPriority)).Return(nil).Once()
 				return operationSvc
 			},
 			Input: operationID,
@@ -203,7 +203,7 @@ func TestOperationsManager_RescheduleOperation(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), operationID, int(highOperationPriority)).Return(testError).Once()
+				operationSvc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), operationID, int(HighOperationPriority)).Return(testError).Once()
 				return operationSvc
 			},
 			Input:         operationID,
@@ -223,7 +223,7 @@ func TestOperationsManager_RescheduleOperation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), operationID, int(highOperationPriority)).Return(nil).Once()
+				operationSvc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), operationID, int(HighOperationPriority)).Return(nil).Once()
 				return operationSvc
 			},
 			Input:         operationID,
@@ -236,7 +236,7 @@ func TestOperationsManager_RescheduleOperation(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			operationSvc := testCase.OperationSvcFn()
 
-			opManager := NewOperationsManager(transact, operationSvc, model.OrdAggregationOpType, OperationsManagerConfig{})
+			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
 
 			// WHEN
 			err := opManager.RescheduleOperation(context.TODO(), testCase.Input)
@@ -257,9 +257,9 @@ func TestOperationsManager_RescheduleOperation(t *testing.T) {
 func TestOperationsManager_GetOperation(t *testing.T) {
 	// GIVEN
 	testError := errors.New("test error")
-	operation1InProgress := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusInProgress, int(lowOperationPriority))
-	operation2InProgress := fixOperationModel("bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", model.OrdAggregationOpType, model.OperationStatusInProgress, int(lowOperationPriority))
-	operation3InProgress := fixOperationModel("ccccccccc-cccc-cccc-cccc-cccccccccccc", model.OrdAggregationOpType, model.OperationStatusInProgress, int(lowOperationPriority))
+	operation1InProgress := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusInProgress, int(LowOperationPriority))
+	operation2InProgress := fixOperationModel("bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", model.OperationTypeOrdAggregation, model.OperationStatusInProgress, int(LowOperationPriority))
+	operation3InProgress := fixOperationModel("ccccccccc-cccc-cccc-cccc-cccccccccccc", model.OperationTypeOrdAggregation, model.OperationStatusInProgress, int(LowOperationPriority))
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 	testCases := []struct {
@@ -275,9 +275,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation1.ID).Return(true, nil).Once()
 				operationSvc.On("Get", txtest.CtxWithDBMatcher(), operation1.ID).Return(operation1, nil).Once()
 				operationSvc.On("Update", txtest.CtxWithDBMatcher(), operation1InProgress).Return(nil).Once()
@@ -291,10 +291,10 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
-				operation2 := fixOperationModel("bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
+				operation2 := fixOperationModel("bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1, operation2}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1, operation2}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation1.ID).Return(false, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation2.ID).Return(true, nil).Once()
 				operationSvc.On("Get", txtest.CtxWithDBMatcher(), operation2.ID).Return(operation2, nil).Once()
@@ -316,7 +316,7 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return(nil, testError).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return(nil, testError).Once()
 				return operationSvc
 			},
 			ExpectedError: testError,
@@ -325,9 +325,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 			Name: "Error when transaction after list priority queue fails",
 			TxFn: txGen.ThatFailsOnCommit,
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1}, nil).Once()
 				return operationSvc
 			},
 			ExpectedError: testError,
@@ -340,9 +340,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return persistTx, transact
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1}, nil).Once()
 				return operationSvc
 			},
 			ExpectedError: testError,
@@ -356,9 +356,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return persistTx, transact
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation1.ID).Return(false, testError).Once()
 				return operationSvc
 			},
@@ -368,9 +368,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 			Name: "Error when lock operation in tryToGet returns nil",
 			TxFn: txGen.ThatSucceedsTwice,
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation1.ID).Return(false, nil).Once()
 				return operationSvc
 			},
@@ -385,9 +385,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return persistTx, transact
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation1 := fixOperationModel("aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation1}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation1}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation1.ID).Return(true, nil).Once()
 				operationSvc.On("Get", txtest.CtxWithDBMatcher(), operation1.ID).Return(nil, testError).Once()
 				return operationSvc
@@ -403,9 +403,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return persistTx, transact
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation3 := fixOperationModel("ccccccccc-cccc-cccc-cccc-cccccccccccc", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation3 := fixOperationModel("ccccccccc-cccc-cccc-cccc-cccccccccccc", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation3}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation3}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation3.ID).Return(true, nil).Once()
 				operationSvc.On("Get", txtest.CtxWithDBMatcher(), operation3.ID).Return(operation3, nil).Once()
 				operationSvc.On("Update", txtest.CtxWithDBMatcher(), operation3InProgress).Return(testError).Once()
@@ -424,9 +424,9 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				return persistTx, transact
 			},
 			OperationSvcFn: func() *automock.OperationService {
-				operation3 := fixOperationModel("ccccccccc-cccc-cccc-cccc-cccccccccccc", model.OrdAggregationOpType, model.OperationStatusScheduled, int(lowOperationPriority))
+				operation3 := fixOperationModel("ccccccccc-cccc-cccc-cccc-cccccccccccc", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, int(LowOperationPriority))
 				operationSvc := &automock.OperationService{}
-				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OrdAggregationOpType).Return([]*model.Operation{operation3}, nil).Once()
+				operationSvc.On("ListPriorityQueue", txtest.CtxWithDBMatcher(), mock.Anything, model.OperationTypeOrdAggregation).Return([]*model.Operation{operation3}, nil).Once()
 				operationSvc.On("LockOperation", txtest.CtxWithDBMatcher(), operation3.ID).Return(true, nil).Once()
 				operationSvc.On("Get", txtest.CtxWithDBMatcher(), operation3.ID).Return(operation3, nil).Once()
 				operationSvc.On("Update", txtest.CtxWithDBMatcher(), operation3InProgress).Return(nil).Once()
@@ -449,7 +449,7 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 				testCase.ExpectedOperation.UpdatedAt = &currentTime
 			}
 
-			opManager := NewOperationsManager(transact, operationSvc, model.OrdAggregationOpType, OperationsManagerConfig{})
+			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
 			// WHEN
 			actualOperation, err := opManager.GetOperation(context.TODO())
 

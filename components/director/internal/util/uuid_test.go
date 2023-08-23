@@ -9,16 +9,9 @@ import (
 
 func TestStringToInt64(t *testing.T) {
 	uuidString := "3a31599c-7a86-455d-83db-0014a7d459e8"
-	uuidID, _ := uuid.Parse(uuidString)
 	uuidExpected := int64(491666746554389322)
 	name := "some name here"
 	nameExpected := int64(-6756220559490625949)
-
-	t.Run("Success with UUID to UUIDToInt64", func(t *testing.T) {
-		result, err := UUIDToInt64(uuidID)
-		require.NoError(t, err)
-		require.Equal(t, uuidExpected, result)
-	})
 
 	t.Run("Success with UUID as string to StringToInt64", func(t *testing.T) {
 		result, err := StringToInt64(uuidString)
@@ -41,10 +34,10 @@ func TestStringToInt64(t *testing.T) {
 	t.Run("Check conversiopn for uniqunes", func(t *testing.T) {
 		results := map[int64]string{}
 		for i := 0; i < 1000000; i++ {
-			uuidID := uuid.New()
-			result, err := UUIDToInt64(uuidID)
+			uuidIDSring := uuid.New().String()
+			result, err := StringToInt64(uuidIDSring)
 			require.NoError(t, err)
-			results[result] = uuidID.String()
+			results[result] = uuidIDSring
 		}
 		require.Equal(t, 1000000, len(results))
 	})

@@ -7,14 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-
-	"github.com/google/uuid"
 )
-
-// UUIDToInt64 converts UUID to int64
-func UUIDToInt64(identifier uuid.UUID) (int64, error) {
-	return StringToInt64(identifier.String())
-}
 
 // StringToInt64 converts string to int64
 func StringToInt64(input string) (int64, error) {

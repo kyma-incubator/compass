@@ -14,20 +14,20 @@ type AdvisoryLockResult struct {
 	IsLocked bool `db:"pg_try_advisory_xact_lock"`
 }
 
-// DBFunction is an interface for invoking functions.
-type DBFunction interface {
+// FunctionerGlobal is an interface for invoking functions.
+type FunctionerGlobal interface {
 	AdvisoryLock(ctx context.Context, identifier int64) (bool, error)
 }
 
-type dbFunction struct{}
+type functionerGlobal struct{}
 
-// NewDBFunction is a constructor for DBFunction .
-func NewDBFunction() DBFunction {
-	return &dbFunction{}
+// NewFunctionerGlobal is a constructor for DBFunction .
+func NewFunctionerGlobal() FunctionerGlobal {
+	return &functionerGlobal{}
 }
 
 // AdvisoryLock executes SQL query for advisory lock on resource.
-func (b *dbFunction) AdvisoryLock(ctx context.Context, identifier int64) (bool, error) {
+func (b *functionerGlobal) AdvisoryLock(ctx context.Context, identifier int64) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err

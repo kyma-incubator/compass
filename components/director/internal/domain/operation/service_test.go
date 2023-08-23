@@ -405,22 +405,22 @@ func TestService_ListPriorityQueue(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("PriorityQueueListByType", ctx, queueLimit, model.OrdAggregationOpType).Return(operationModels, nil).Once()
+				repo.On("PriorityQueueListByType", ctx, queueLimit, model.OperationTypeOrdAggregation).Return(operationModels, nil).Once()
 				return repo
 			},
 			QueueLimit:     queueLimit,
-			OpType:         model.OrdAggregationOpType,
+			OpType:         model.OperationTypeOrdAggregation,
 			ExpectedOutput: operationModels,
 		},
 		{
 			Name: "Error while listing priority queue",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("PriorityQueueListByType", ctx, queueLimit, model.OrdAggregationOpType).Return(nil, testErr).Once()
+				repo.On("PriorityQueueListByType", ctx, queueLimit, model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
 				return repo
 			},
 			QueueLimit:  queueLimit,
-			OpType:      model.OrdAggregationOpType,
+			OpType:      model.OperationTypeOrdAggregation,
 			ExpectedErr: testErr,
 		},
 	}
