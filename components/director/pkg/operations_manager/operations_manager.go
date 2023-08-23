@@ -16,6 +16,8 @@ import (
 
 type operationPriority int
 
+var now = time.Now
+
 const (
 	lowOperationPriority  operationPriority = 1
 	highOperationPriority operationPriority = 100
@@ -223,8 +225,8 @@ func (om *OperationsManager) tryToGetOperation(ctx context.Context, operationID 
 		}
 		if currentOperation.Status == model.OperationStatusScheduled {
 			currentOperation.Status = model.OperationStatusInProgress
-			now := time.Now()
-			currentOperation.UpdatedAt = &now
+			currentTime := now()
+			currentOperation.UpdatedAt = &currentTime
 			err = om.opSvc.Update(ctx, currentOperation)
 			if err != nil {
 				return nil, err
