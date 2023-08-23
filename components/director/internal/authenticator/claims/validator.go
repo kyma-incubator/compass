@@ -98,7 +98,7 @@ func (v *validator) Validate(ctx context.Context, claims idtokenclaims.Claims) e
 
 	log.C(ctx).Infof("Consumer-Provider call by %s on behalf of REDACTED_%x. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], sha256.Sum256([]byte(claims.Tenant[tenantmapping.ConsumerTenantKey])))
 	switch claims.ConsumerType {
-	case consumer.Runtime, consumer.ExternalCertificate: // SuperAdmin consumer is needed only for testing purposes
+	case consumer.Runtime, consumer.ExternalCertificate:
 		errRuntimeConsumer := v.validateRuntimeConsumer(ctx, claims)
 		if errRuntimeConsumer == nil {
 			return nil
