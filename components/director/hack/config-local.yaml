@@ -28,6 +28,7 @@ graphql:
     systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
+    formationTemplatesByName: [ "formation_template:read" ]
     formation: ["formation:read"]
     formations: ["formation:read"]
     formationConstraint: ["formation_constraint:read"]

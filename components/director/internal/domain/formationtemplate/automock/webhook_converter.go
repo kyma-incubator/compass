@@ -19,6 +19,10 @@ func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput)
 	ret := _m.Called(in)
 
 	var r0 []*model.WebhookInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*graphql.WebhookInput) ([]*model.WebhookInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.WebhookInput) []*model.WebhookInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*graphql.WebhookInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.W
 	ret := _m.Called(in)
 
 	var r0 []*graphql.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.Webhook) ([]*graphql.Webhook, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.Webhook) []*graphql.Webhook); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.W
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.Webhook) error); ok {
 		r1 = rf(in)
 	} else {
