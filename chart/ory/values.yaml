@@ -149,7 +149,7 @@ oathkeeper:
           enabled: true
           config:
             # REQUIRED IF ENABLED - The OAuth 2.0 Token Introspection endpoint.
-            introspection_url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445/oauth2/introspect
+            introspection_url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445/admin/oauth2/introspect
             # Sets the strategy to be used to validate/match the token scope. Supports "hierarchic", "exact", "wildcard", "none". Defaults
             # to "none".
             scope_strategy: exact

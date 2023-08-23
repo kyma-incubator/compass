@@ -66,7 +66,7 @@ func main() {
 	hydra := hydraClient.NewAPIClient(&configuration)
 
 	cfgProvider := configProvider(ctx, cfg)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.OAuth2Api)
+	oAuth20Svc := oauth20.NewService(cfgProvider, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.OAuth2Api)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(ctx, err, "Error while establishing the connection to the database")

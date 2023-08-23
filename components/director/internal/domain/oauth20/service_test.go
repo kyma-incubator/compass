@@ -39,10 +39,8 @@ func TestService_CreateClient(t *testing.T) {
 		URL:          publicEndpoint,
 	}
 
-	client_id := clientID
 	scopesCreate := strings.Join(scopes, " ")
 	clientToCreate := hydraClient.OAuth2Client{
-		ClientId:   &client_id,
 		GrantTypes: grantTypes,
 		Scope:      &scopesCreate,
 	}
@@ -55,7 +53,6 @@ func TestService_CreateClient(t *testing.T) {
 		ExpectedResult             *model.OAuthCredentialDataInput
 		ExpectedError              error
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
-		UIDServiceFn               func() *automock.UIDService
 		HydraClient                func() *automock.OryHydraService
 		ObjectType                 pkgmodel.SystemAuthReferenceObjectType
 	}{
@@ -63,11 +60,6 @@ func TestService_CreateClient(t *testing.T) {
 			Name:           "Success",
 			ExpectedError:  nil,
 			ExpectedResult: successResult,
-			UIDServiceFn: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(clientID).Once()
-				return uidSvc
-			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
 				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil).Once()
@@ -77,7 +69,7 @@ func TestService_CreateClient(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				hydra := &automock.OryHydraService{}
 				hydra.On("CreateOAuth2Client", mock.Anything).Return(createRequest).Once()
-				hydra.On("CreateOAuth2ClientExecute", createRequest).Return(&hydraClient.OAuth2Client{ClientSecret: &successResult.ClientSecret}, nil, nil).Once()
+				hydra.On("CreateOAuth2ClientExecute", createRequest).Return(&hydraClient.OAuth2Client{ClientSecret: &successResult.ClientSecret, ClientId: &successResult.ClientID}, nil, nil).Once()
 				return hydra
 			},
 			ObjectType: objType,
@@ -85,11 +77,6 @@ func TestService_CreateClient(t *testing.T) {
 		{
 			Name:          "Error when client registration in hydra fails",
 			ExpectedError: testErr,
-			UIDServiceFn: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(clientID).Once()
-				return uidSvc
-			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
 				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil).Once()
@@ -107,9 +94,6 @@ func TestService_CreateClient(t *testing.T) {
 		{
 			Name:          "Error when cannot get client credentials scopes",
 			ExpectedError: testErr,
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
 				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(nil, testErr).Once()
@@ -123,9 +107,6 @@ func TestService_CreateClient(t *testing.T) {
 		{
 			Name:          "Error when cannot get client grant types",
 			ExpectedError: testErr,
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
 				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(scopes, nil).Once()
@@ -144,12 +125,10 @@ func TestService_CreateClient(t *testing.T) {
 			ctx := context.TODO()
 			clientDetailsCfgProvider := testCase.ClientDetailsCfgProviderFn()
 			defer clientDetailsCfgProvider.AssertExpectations(t)
-			uidService := testCase.UIDServiceFn()
-			defer uidService.AssertExpectations(t)
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(clientDetailsCfgProvider, uidService, publicEndpoint, hydraService)
+			svc := oauth20.NewService(clientDetailsCfgProvider, publicEndpoint, hydraService)
 
 			// WHEN
 			oauthData, err := svc.CreateClientCredentials(ctx, testCase.ObjectType)
@@ -168,10 +147,10 @@ func TestService_CreateClient(t *testing.T) {
 
 func TestService_UpdateClient(t *testing.T) {
 	// GIVEN
-	client_id := clientID
+	clientUpdate := clientID
 	scopesCreate := strings.Join(scopes, " ")
 	clientToUpgrade := hydraClient.OAuth2Client{
-		ClientId:   &client_id,
+		ClientId:   &clientUpdate,
 		GrantTypes: grantTypes,
 		Scope:      &scopesCreate,
 	}
@@ -253,12 +232,10 @@ func TestService_UpdateClient(t *testing.T) {
 			ctx := context.TODO()
 			clientDetailsCfgProvider := testCase.ClientDetailsCfgProviderFn()
 			defer clientDetailsCfgProvider.AssertExpectations(t)
-			uidService := &automock.UIDService{}
-			defer uidService.AssertExpectations(t)
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(clientDetailsCfgProvider, uidService, publicEndpoint, hydraService)
+			svc := oauth20.NewService(clientDetailsCfgProvider, publicEndpoint, hydraService)
 
 			// WHEN
 			err := svc.UpdateClient(ctx, clientID, testCase.ObjectType)
@@ -312,7 +289,7 @@ func TestService_DeleteClientCredentials(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(nil, nil, publicEndpoint, hydraService)
+			svc := oauth20.NewService(nil, publicEndpoint, hydraService)
 
 			// WHEN
 			err := svc.DeleteClientCredentials(ctx, id)
@@ -416,7 +393,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			hydraService := testCase.HydraClient()
 			defer hydraService.AssertExpectations(t)
 
-			svc := oauth20.NewService(nil, nil, publicEndpoint, hydraService)
+			svc := oauth20.NewService(nil, publicEndpoint, hydraService)
 
 			// WHEN
 			err := svc.DeleteMultipleClientCredentials(ctx, testCase.Auths)
@@ -466,10 +443,9 @@ func TestService_ListClients(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-			uidService := &automock.UIDService{}
 			hydraService := testCase.HydraClient()
 
-			svc := oauth20.NewService(clientDetailsCfgProvider, uidService, publicEndpoint, hydraService)
+			svc := oauth20.NewService(clientDetailsCfgProvider, publicEndpoint, hydraService)
 
 			// WHEN
 			clients, err := svc.ListClients()

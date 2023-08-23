@@ -13,7 +13,7 @@ spec:
     {{- if .Values.hydra.service.admin.enabled }}
     - match:
         - uri:
-            exact: "/oauth2/introspect"
+            exact: "/admin/oauth2/introspect"
       route:
         - destination:
             host: {{ include "hydra.fullname" . }}-hydra-admin

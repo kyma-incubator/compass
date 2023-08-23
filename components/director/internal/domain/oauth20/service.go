@@ -29,13 +29,6 @@ type ClientDetailsConfigProvider interface {
 	GetRequiredGrantTypes(path string) ([]string, error)
 }
 
-// UIDService missing godoc
-//
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type UIDService interface {
-	Generate() string
-}
-
 // OryHydraService missing godoc
 //
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -62,16 +55,14 @@ type ClientDetails struct {
 type service struct {
 	publicAccessTokenEndpoint string
 	scopeCfgProvider          ClientDetailsConfigProvider
-	uidService                UIDService
 	hydraService              OryHydraService
 }
 
 // NewService missing godoc
-func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDService, publicAccessTokenEndpoint string, hydraService OryHydraService) *service {
+func NewService(scopeCfgProvider ClientDetailsConfigProvider, publicAccessTokenEndpoint string, hydraService OryHydraService) *service {
 	return &service{
 		scopeCfgProvider:          scopeCfgProvider,
 		publicAccessTokenEndpoint: publicAccessTokenEndpoint,
-		uidService:                uidService,
 		hydraService:              hydraService,
 	}
 }
@@ -84,15 +75,15 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType pkgmod
 	}
 	log.C(ctx).Debugf("Fetched client credential scopes: %s for %s", details.Scopes, objectType)
 
-	clientID := s.uidService.Generate()
-	clientSecret, err := s.registerClient(ctx, clientID, details)
+	// Previously we had to create our own client id, this is now handled by Ory Hydra v2
+	createdClient, err := s.registerClient(ctx, details)
 	if err != nil {
 		return nil, errors.Wrap(err, "while registering client credentials in Hydra")
 	}
 
 	credentialData := &model.OAuthCredentialDataInput{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		ClientID:     *createdClient.ClientId,
+		ClientSecret: *createdClient.ClientSecret,
 		URL:          s.publicAccessTokenEndpoint,
 	}
 
@@ -176,12 +167,11 @@ func (s *service) GetClientDetails(objType pkgmodel.SystemAuthReferenceObjectTyp
 	}, nil
 }
 
-func (s *service) registerClient(ctx context.Context, clientID string, details *ClientDetails) (string, error) {
-	log.C(ctx).Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s and grant_types %s", clientID, details.Scopes, details.GrantTypes)
+func (s *service) registerClient(ctx context.Context, details *ClientDetails) (hydraClient.OAuth2Client, error) {
+	log.C(ctx).Debugf("Registering client_id and client_secret in Hydra with scopes: %s and grant_types %s", details.Scopes, details.GrantTypes)
 
 	scopes := strings.Join(details.Scopes, " ")
 	clientToCreate := hydraClient.OAuth2Client{
-		ClientId:   &clientID,
 		GrantTypes: details.GrantTypes,
 		Scope:      &scopes,
 	}
@@ -190,10 +180,10 @@ func (s *service) registerClient(ctx context.Context, clientID string, details *
 	createdClient, _, err := s.hydraService.CreateOAuth2ClientExecute(request)
 
 	if err != nil {
-		return "", err
+		return hydraClient.OAuth2Client{}, err
 	}
-	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
-	return *createdClient.ClientSecret, nil
+	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", *createdClient.ClientSecret)
+	return *createdClient, nil
 }
 
 func (s *service) updateClient(ctx context.Context, clientID string, details *ClientDetails) error {
