@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 
-	hydra "github.com/ory/hydra-client-go/v2"
+	hydraClient "github.com/ory/hydra-client-go/v2"
 )
 
 // SyncService missing godoc
@@ -32,7 +32,7 @@ type SystemAuthRepo interface {
 //
 //go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuthService interface {
-	ListClients() ([]hydra.OAuth2Client, error)
+	ListClients() ([]hydraClient.OAuth2Client, error)
 	UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
 	GetClientDetails(objType model.SystemAuthReferenceObjectType) (*oauth20.ClientDetails, error)
 }

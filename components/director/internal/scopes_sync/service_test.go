@@ -18,11 +18,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	hydra "github.com/ory/hydra-client-go/v2"
+	hydraClient "github.com/ory/hydra-client-go/v2"
 )
 
 func TestSyncService_UpdateClientScopes(t *testing.T) {
-	const clientID = "client-id"
+	clientID := "client-id"
+	scope := "scope"
+	scopeFirst := "first"
 	selectCondition := repo.Conditions{
 		repo.NewNotEqualCondition("(value -> 'Credential' -> 'Oauth')", "null"),
 	}
@@ -41,7 +43,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 	t.Run("fails when cannot begin transaction", func(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{}, nil)
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
@@ -57,7 +59,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{}, nil)
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error while transaction begin")).ThatDoesntExpectCommit()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return(nil, errors.New("error while listing systemAuths"))
 		defer mockedTx.AssertExpectations(t)
@@ -73,7 +75,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{}, nil)
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error during transaction commit")).ThatFailsOnCommit()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]pkgmodel.SystemAuth{}, nil)
 		defer mockedTx.AssertExpectations(t)
@@ -90,7 +92,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{}, nil)
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]pkgmodel.SystemAuth{
 			{
@@ -117,7 +119,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{}, nil)
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(nil, errors.New("error while getting scopes"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]pkgmodel.SystemAuth{
@@ -146,7 +148,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{}, nil)
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(&oauth20.ClientDetails{
 			Scopes:     []string{},
 			GrantTypes: []string{},
@@ -178,11 +180,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		client_ID := clientID
-		scope := "scope"
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{
 			{
-				ClientId: &client_ID,
+				ClientId: &clientID,
 				Scope:    &scope,
 			},
 		}, nil)
@@ -217,11 +217,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		client_ID := clientID
-		scope := "scope"
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{
 			{
-				ClientId: &client_ID,
+				ClientId: &clientID,
 				Scope:    &scope,
 			},
 		}, nil)
@@ -248,12 +246,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		client_ID := clientID
-		scope := "first"
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{
 			{
-				ClientId: &client_ID,
-				Scope:    &scope,
+				ClientId: &clientID,
+				Scope:    &scopeFirst,
 			},
 		}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(&oauth20.ClientDetails{
@@ -288,12 +284,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		// GIVEN
 		oauthSvc := &automock.OAuthService{}
 		systemAuthRepo := &automock.SystemAuthRepo{}
-		client_ID := clientID
-		scope := "first"
-		oauthSvc.On("ListClients").Return([]hydra.OAuth2Client{
+		oauthSvc.On("ListClients").Return([]hydraClient.OAuth2Client{
 			{
-				ClientId: &client_ID,
-				Scope:    &scope,
+				ClientId: &clientID,
+				Scope:    &scopeFirst,
 			},
 		}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(&oauth20.ClientDetails{

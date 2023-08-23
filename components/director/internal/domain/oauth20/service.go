@@ -182,7 +182,7 @@ func (s *service) registerClient(ctx context.Context, details *ClientDetails) (h
 	if err != nil {
 		return hydraClient.OAuth2Client{}, err
 	}
-	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", *createdClient.ClientSecret)
+	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", *createdClient.ClientId)
 	return *createdClient, nil
 }
 
