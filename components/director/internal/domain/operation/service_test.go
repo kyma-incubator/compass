@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("Create", ctx, opModel).Return(operationID, nil).Once()
+				repo.On("Create", ctx, opModel).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -49,7 +49,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Operation creation",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("Create", ctx, opModel).Return("", testErr).Once()
+				repo.On("Create", ctx, opModel).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
