@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"net/http"
 	"strings"
 	"sync"
@@ -318,8 +320,12 @@ func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.R
 	}
 
 	if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
-		log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
-		groups := strings.Split(strings.ToUpper(scenarioGroupsValue), ",")
+		var groups []model.ScenarioGroup
+		if err := json.Unmarshal([]byte(scenarioGroupsValue), &groups); err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while unmarshaling %s header", ctxScenarioGroupsKey)
+			return ctx
+		}
+		log.C(ctx).Infof("Found %s header in request with value: %+v", ctxScenarioGroupsKey, groups)
 
 		ctx = scenariogroups.SaveToContext(ctx, groups)
 	}

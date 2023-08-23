@@ -53,6 +53,12 @@ type ExternalToken struct {
 	Token string
 }
 
+// ScenarioGroup represents scenario group
+type ScenarioGroup struct {
+	Key         string `json:"key"`
+	Description string `json:"description"`
+}
+
 // Request Data represents information about an Application for which token is going to be created.
 //
 // swagger:parameters adapter
@@ -64,7 +70,7 @@ type RequestData struct {
 	// in: body
 	ClientUser string
 	// in: body
-	ScenarioGroups []string
+	ScenarioGroups []ScenarioGroup
 }
 
 type ResponseData struct {

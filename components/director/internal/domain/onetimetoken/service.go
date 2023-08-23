@@ -109,6 +109,9 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 // GenerateOneTimeToken missing godoc
 func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	token, suggestedToken, err := s.getToken(ctx, objectID, tokenType)
+	log.C(ctx).Infof("Token: %+v", token)
+	log.C(ctx).Infof("Token.token: %+v", token.Token)
+	log.C(ctx).Infof("Token.scenarioGroups: %+v", token.ScenarioGroups)
 	if err != nil {
 		return nil, err
 	}
