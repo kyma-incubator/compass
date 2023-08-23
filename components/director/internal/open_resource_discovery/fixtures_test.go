@@ -3,10 +3,11 @@ package ord_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -315,7 +316,7 @@ func fixSanitizedORDDocument() *ord.Document {
 }
 
 func fixSanitizedORDDocumentForProxyURL() *ord.Document {
-	sanitizedDoc := fixORDDocumentWithBaseURL(customWebhookConfigURL)
+	sanitizedDoc := fixORDDocumentWithBaseURL(proxyURL)
 	sanitizedDoc.ConsumptionBundles[0].CredentialExchangeStrategies = nil
 	sanitizeResources(sanitizedDoc)
 	return sanitizedDoc

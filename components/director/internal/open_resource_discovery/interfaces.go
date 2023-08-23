@@ -2,7 +2,7 @@ package ord
 
 import (
 	"context"
-	"net/http"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -93,7 +93,7 @@ type SpecService interface {
 //
 //go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestService interface {
-	FetchSpec(ctx context.Context, fr *model.FetchRequest, headers http.Header) (*string, *model.FetchRequestStatus)
+	FetchSpec(ctx context.Context, fr *model.FetchRequest, headers *sync.Map) (*string, *model.FetchRequestStatus)
 	Update(ctx context.Context, fr *model.FetchRequest) error
 	UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error
 }

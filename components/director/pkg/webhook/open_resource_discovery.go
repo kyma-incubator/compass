@@ -3,6 +3,7 @@ package webhook
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 )
 
 // Application represents the fields needed for determining the Template's values
@@ -14,7 +15,7 @@ type Application struct {
 type OpenResourceDiscoveryWebhookRequestObject struct {
 	Application Application
 	TenantID    string
-	Headers     http.Header
+	Headers     *sync.Map
 }
 
 // ParseURLTemplate missing godoc
