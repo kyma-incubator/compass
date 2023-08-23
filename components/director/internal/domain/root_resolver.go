@@ -32,7 +32,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
-	httptransport "github.com/go-openapi/runtime/client"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -73,8 +72,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/time"
-	hydraClient "github.com/ory/hydra-client-go/client"
-	hydraNew "github.com/ory/hydra-client-go/v2"
+	hydraClient "github.com/ory/hydra-client-go/v2"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -141,16 +139,17 @@ func NewRootResolver(
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)))),
 	}
 
-	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
-	hydra := hydraClient.New(transport, nil)
-
-	configuration := hydraNew.Configuration{
-		Host: hydraURL.Host,
-		Scheme: hydraURL.Scheme,
+	configuration := hydraClient.Configuration{
+		Scheme:     hydraURL.Scheme,
 		HTTPClient: oAuth20HTTPClient,
 	}
+	configuration.Servers = []hydraClient.ServerConfiguration{
+		{
+			URL: oAuth20Cfg.URL,
+		},
+	}
 
-	hydraNewTest := hydraNew.NewAPIClient(&configuration)
+	hydra := hydraClient.NewAPIClient(&configuration)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
@@ -231,7 +230,7 @@ func NewRootResolver(
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin, hydraNewTest.OAuth2Api)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.OAuth2Api)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)

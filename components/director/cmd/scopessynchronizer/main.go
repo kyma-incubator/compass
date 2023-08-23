@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 
-	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
@@ -18,10 +17,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	"github.com/ory/hydra-client-go/client"
 	"github.com/vrischmann/envconfig"
 
-	hydraNew "github.com/ory/hydra-client-go/v2"
+	hydraClient "github.com/ory/hydra-client-go/v2"
 )
 
 const envPrefix = "APP"
@@ -54,19 +52,21 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(ctx, err, "Error while parsing OAuth client endpoint")
 
-	transport := httptransport.NewWithClient(adminURL.Host, adminURL.Path, []string{adminURL.Scheme}, oAuth20HTTPClient)
-	hydra := client.New(transport, nil)
-
-	configuration := hydraNew.Configuration{
-		Host:       adminURL.Host,
+	configuration := hydraClient.Configuration{
 		Scheme:     adminURL.Scheme,
 		HTTPClient: oAuth20HTTPClient,
 	}
 
-	hydraNewTest := hydraNew.NewAPIClient(&configuration)
+	configuration.Servers = []hydraClient.ServerConfiguration{
+		{
+			URL: cfg.OAuth20.URL,
+		},
+	}
+
+	hydra := hydraClient.NewAPIClient(&configuration)
 
 	cfgProvider := configProvider(ctx, cfg)
-	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.Admin, hydraNewTest.OAuth2Api)
+	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, cfg.OAuth20.PublicAccessTokenEndpoint, hydra.OAuth2Api)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(ctx, err, "Error while establishing the connection to the database")
