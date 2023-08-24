@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/avast/retry-go/v4"
-	//"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
 )

@@ -16,9 +16,8 @@ import (
 )
 
 type config struct {
-	Auditlog          pkgConfig.AuditlogConfig
-	DefaultTestTenant string
-	//DefaultTestSubaccountTenant               string
+	Auditlog                                  pkgConfig.AuditlogConfig
+	DefaultTestTenant                         string
 	DirectorExternalCertSecuredURL            string
 	ExternalServicesMockBaseURL               string
 	ExternalServicesMockMTLSSecuredURL        string `envconfig:"EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
