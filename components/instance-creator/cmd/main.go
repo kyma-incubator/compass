@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
 	"net/http"
 	"os"
 	"time"
@@ -64,7 +65,11 @@ func main() {
 	creator.Use(tokenValidationMiddleware.KymaAdapterHandler()) //todo::: double check to add separate method if that won't do the work
 	creator.Use(tenantValidationMiddleware.Handler())
 
-	c := handler.InstanceCreatorHandler{}
+	//securedMTLSClient := authpkg.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation) // todo::: delete
+	callerProvider := client.NewCallerProvider()
+
+	smClient := client.NewClient(&cfg, callerProvider)
+	c := handler.NewHandler(smClient)
 
 	creator.HandleFunc("/", c.HandlerFunc)
 	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())

@@ -25,17 +25,20 @@ type Config struct {
 	SkipSSLValidation      bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 	JWKSEndpoint           string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
 	ServerTimeout          time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=110s"`
-	ClientTimeout          time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
+	ClientTimeout          time.Duration `envconfig:"APP_SM_CLIENT_TIMEOUT,default=105s"` // todo::: double check value
 	AuthorizationHeaderKey string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
 	AllowJWTSigningNone    bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 
-	SMInstancesSecretPath    string                    `envconfig:"APP_SM_INSTANCES_SECRET_PATH"`
-	InstanceClientIDPath     string                    `envconfig:"APP_SM_INSTANCE_CLIENT_ID_PATH"`
-	InstanceClientSecretPath string                    `envconfig:"APP_SM_INSTANCE_CLIENT_SECRET_PATH"`
-	InstanceSMURLPath        string                    `envconfig:"APP_SM_INSTANCE_SM_URL_PATH"`
-	InstanceURLPath          string                    `envconfig:"APP_SM_INSTANCE_URL_PATH"`
-	InstanceAppNamePath      string                    `envconfig:"APP_SM_INSTANCE_APP_NAME_PATH"`
-	RegionToInstanceConfig   map[string]InstanceConfig `envconfig:"-"`
+	SMInstancesSecretPath        string                    `envconfig:"APP_SM_INSTANCES_SECRET_PATH"`
+	InstanceClientIDPath         string                    `envconfig:"APP_SM_INSTANCE_CLIENT_ID_PATH"`
+	InstanceSMURLPath            string                    `envconfig:"APP_SM_INSTANCE_SM_URL_PATH"`
+	InstanceTokenURLPath         string                    `envconfig:"APP_SM_INSTANCE_TOKEN_URL_PATH"`
+	InstanceAppNamePath          string                    `envconfig:"APP_SM_INSTANCE_APP_NAME_PATH"`
+	InstanceCertificatePath      string                    `envconfig:"APP_SM_INSTANCE_CERTIFICATE_PATH"`
+	InstanceCertificateKeyPath   string                    `envconfig:"APP_SM_INSTANCE_CERTIFICATE_KEY_PATH"`
+	ExternalClientCertSecretName string                    `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	OAuthTokenPath               string                    `envconfig:"APP_SM_INSTANCE_OAUTH_TOKEN_PATH"`
+	RegionToInstanceConfig       map[string]InstanceConfig `envconfig:"-"`
 
 	Log        log.Config
 	TenantInfo TenantInfo
@@ -43,11 +46,12 @@ type Config struct {
 
 // InstanceConfig is a service instance config
 type InstanceConfig struct {
-	ClientID     string
-	ClientSecret string
-	SMURL        string
-	URL          string
-	AppName      string
+	ClientID       string
+	SMURL          string
+	TokenURL       string
+	AppName        string
+	Certificate    string
+	CertificateKey string
 }
 
 func (c *Config) PrepareConfiguration() error {
@@ -73,11 +77,12 @@ func (c *Config) MapInstanceConfigs() error {
 	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
 	for region, config := range bindingsMap {
 		i := InstanceConfig{
-			ClientID:     gjson.Get(config.String(), c.InstanceClientIDPath).String(),
-			ClientSecret: gjson.Get(config.String(), c.InstanceClientSecretPath).String(),
-			SMURL:        gjson.Get(config.String(), c.InstanceSMURLPath).String(),
-			URL:          gjson.Get(config.String(), c.InstanceURLPath).String(),
-			AppName:      gjson.Get(config.String(), c.InstanceAppNamePath).String(),
+			ClientID:       gjson.Get(config.String(), c.InstanceClientIDPath).String(),
+			SMURL:          gjson.Get(config.String(), c.InstanceSMURLPath).String(),
+			TokenURL:       gjson.Get(config.String(), c.InstanceTokenURLPath).String(),
+			AppName:        gjson.Get(config.String(), c.InstanceAppNamePath).String(),
+			Certificate:    gjson.Get(config.String(), c.InstanceCertificatePath).String(),
+			CertificateKey: gjson.Get(config.String(), c.InstanceCertificateKeyPath).String(),
 		}
 
 		if err := i.validate(); err != nil {
@@ -97,17 +102,20 @@ func (i *InstanceConfig) validate() error {
 	if i.ClientID == "" {
 		errorMessages = append(errorMessages, "Client ID is missing")
 	}
-	if i.ClientSecret == "" {
-		errorMessages = append(errorMessages, "Client Secret is missing")
-	}
 	if i.SMURL == "" {
-		errorMessages = append(errorMessages, "SM URL is missing")
+		errorMessages = append(errorMessages, "SM TokenURL is missing")
 	}
-	if i.URL == "" {
-		errorMessages = append(errorMessages, "URL is missing")
+	if i.TokenURL == "" {
+		errorMessages = append(errorMessages, "TokenURL is missing")
 	}
 	if i.AppName == "" {
 		errorMessages = append(errorMessages, "App Name is missing")
+	}
+	if i.Certificate == "" {
+		errorMessages = append(errorMessages, "Certificate is missing")
+	}
+	if i.CertificateKey == "" {
+		errorMessages = append(errorMessages, "Certificate Key is missing")
 	}
 
 	errorMsg := strings.Join(errorMessages, ", ")

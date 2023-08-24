@@ -66,6 +66,8 @@ spec:
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_JWKS_ENDPOINT
               value: {{ .Values.global.instanceCreator.authentication.jwksEndpoint | quote }}
+            - name: APP_SM_CLIENT_TIMEOUT
+              value: {{ .Values.global.instanceCreator.client.timeout }}
             - name: APP_TENANT_INFO_ENDPOINT
               value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
             - name: APP_TENANT_INFO_REQUEST_TIMEOUT
@@ -76,14 +78,20 @@ spec:
               value: "{{ .Values.global.instanceCreator.secrets.path }}/{{ .Values.global.instanceCreator.secrets.key }}"
             - name: APP_SM_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.instanceCreator.clientIdPath }}
-            - name: APP_SM_INSTANCE_CLIENT_SECRET_PATH
-              value: {{ .Values.global.instanceCreator.clientSecretPath }}
             - name: APP_SM_INSTANCE_SM_URL_PATH
               value: {{ .Values.global.instanceCreator.smUrlPath }}
-            - name: APP_SM_INSTANCE_URL_PATH
-              value: {{ .Values.global.instanceCreator.urlPath }}
+            - name: APP_SM_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.instanceCreator.tokenURLPath }}
             - name: APP_SM_INSTANCE_APP_NAME_PATH
               value: {{ .Values.global.instanceCreator.appNamePath }}
+            - name: APP_SM_INSTANCE_CERTIFICATE_PATH
+              value: {{ .Values.global.instanceCreator.certificatePath }}
+            - name: APP_SM_INSTANCE_CERTIFICATE_KEY_PATH
+              value: {{ .Values.global.instanceCreator.certificateKeyPath }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_SM_INSTANCE_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.instanceCreator.oauthTokenPath }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

@@ -3,20 +3,16 @@ package securehttp_test
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/securehttp"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
-	"golang.org/x/oauth2"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 )
 
 const (
