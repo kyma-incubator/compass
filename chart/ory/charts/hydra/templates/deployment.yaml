@@ -194,16 +194,14 @@ spec:
             {{- with $migrationExtraEnv }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
-          # TODO!!! Custom "securityContext"
+          {{- if .Values.hydra.automigration.resources }}
+          resources:
+            {{- toYaml .Values.hydra.automigration.resources | nindent 12 }}
+          {{- end }}
+          {{- with .Values.deployment.initContainerSecurityContext }}
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            privileged: false
-            runAsGroup: 1000
-            runAsNonRoot: true
-            runAsUser: 1000
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- end }}
       {{- if .Values.deployment.extraInitContainers }}
         {{- tpl .Values.deployment.extraInitContainers . | nindent 8 }}
@@ -225,5 +223,13 @@ spec:
       {{- end }}
       {{- with .Values.deployment.topologySpreadConstraints }}
       topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.dnsConfig }}
+      dnsConfig:
         {{- toYaml . | nindent 8 }}
       {{- end }}

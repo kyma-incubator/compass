@@ -13,7 +13,7 @@ image:
   # -- ORY Oathkeeper image
   repository: oryd/oathkeeper
   # -- ORY Oathkeeper version
-  tag: v0.40.0
+  tag: v0.40.1
   # -- Image pull policy
   pullPolicy: IfNotPresent
 
@@ -325,6 +325,12 @@ deployment:
   #       app.kubernetes.io/name: oathkeeper
   #       app.kubernetes.io/instance: oathkeeper
 
+  # -- Configure pod dnsConfig.
+  dnsConfig: {}
+  #   options:
+  #     - name: "ndots"
+  #       value: "1"
+
   labels: {}
   #      If you do want to specify additional labels, uncomment the following
   #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
@@ -347,8 +353,13 @@ deployment:
     enabled: false
     minReplicas: 1
     maxReplicas: 5
-    targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+    targetCPU: {}
+    #   type: Utilization
+    #   averageUtilization: 80
+    targetMemory: {}
+    #   type: Utilization
+    #   averageUtilization: 80
+
 # -- Configure node affinity
 affinity: {}
 

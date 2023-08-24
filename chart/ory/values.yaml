@@ -58,6 +58,15 @@ hydra:
     admin:
       enabled: false
   deployment:
+    initContainerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
     strategy:
       type: RollingUpdate
       rollingUpdate:
@@ -76,8 +85,12 @@ hydra:
       enabled: true
       minReplicas: 1
       maxReplicas: 3
-      targetMemoryUtilizationPercentage: 75
-      targetCPUUtilizationPercentage: 80
+      targetMemory:
+        type: Utilization
+        averageUtilization: 75
+      targetCPU:
+        type: Utilization
+        averageUtilization: 80
   secret:
     enabled: false
   hydra:
@@ -240,8 +253,12 @@ oathkeeper:
       enabled: true
       maxReplicas: "1"
       minReplicas: "1"
-      targetMemoryUtilizationPercentage: 75
-      targetCPUUtilizationPercentage: 80
+      targetMemory:
+        type: Utilization
+        averageUtilization: 75
+      targetCPU:
+        type: Utilization
+        averageUtilization: 80
   # Should be the same as oathkeeper.oathkeeper-maester.fullnameOverride; otherwise, the maester SA, used by the sidecar, is never found    
   maester:
     nameOverride: "oathkeeper-stack-maester"
