@@ -31,6 +31,7 @@ graphql:
     formations: ["formation:read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
+    formationTemplatesByName: [ "formation_template:read" ]
     systemAuth: ["ory_internal"]
     systemAuthByToken: ["ory_internal"]
     formationConstraint: [ "formation_constraint:read" ]
