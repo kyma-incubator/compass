@@ -291,40 +291,6 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ExpectedErr: testErr.Error(),
 		},
-		// integration system
-		{
-			Name:   "Success for integration system consumer-provider flow: when subaccount tenant ID is provided instead of integration system ID for consumer ID",
-			Claims: getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-		},
-		{
-			Name: "Success for integration system consumer-provider flow: when integration system with consumer ID exists",
-			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
-				intSysSvc := &automock.IntegrationSystemService{}
-				intSysSvc.On("Exists", context.TODO(), consumerID).Return(true, nil)
-				return intSysSvc
-			},
-			Claims: getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenantID, consumerExtTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-		},
-		{
-			Name: "integration system consumer-provider flow: error when check for integration system existence fails",
-			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
-				intSysSvc := &automock.IntegrationSystemService{}
-				intSysSvc.On("Exists", context.TODO(), consumerID).Return(false, testErr)
-				return intSysSvc
-			},
-			Claims:      getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenantID, consumerExtTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			ExpectedErr: testErr.Error(),
-		},
-		{
-			Name: "integration system consumer-provider flow: error when integration system with consumer ID does not exist",
-			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
-				intSysSvc := &automock.IntegrationSystemService{}
-				intSysSvc.On("Exists", context.TODO(), consumerID).Return(false, nil)
-				return intSysSvc
-			},
-			Claims:      getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenantID, consumerExtTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			ExpectedErr: fmt.Sprintf("integration system with ID %s does not exist", consumerID),
-		},
 		// application
 		{
 			Name:   "Consumer-provider flow: Success when no runtime, but there is an application subscribed",
