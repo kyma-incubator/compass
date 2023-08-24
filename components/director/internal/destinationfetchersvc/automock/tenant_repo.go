@@ -15,13 +15,13 @@ type TenantRepo struct {
 	mock.Mock
 }
 
-// ListBySubscribedRuntimes provides a mock function with given fields: ctx
-func (_m *TenantRepo) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
-	ret := _m.Called(ctx)
+// ListBySubscribedRuntimesAndApplicationTemplates provides a mock function with given fields: ctx, selfRegDistinguishLabel
+func (_m *TenantRepo) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, selfRegDistinguishLabel)
 
 	var r0 []*model.BusinessTenantMapping
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.BusinessTenantMapping); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, selfRegDistinguishLabel)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
@@ -29,8 +29,8 @@ func (_m *TenantRepo) ListBySubscribedRuntimes(ctx context.Context) ([]*model.Bu
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, selfRegDistinguishLabel)
 	} else {
 		r1 = ret.Error(1)
 	}
