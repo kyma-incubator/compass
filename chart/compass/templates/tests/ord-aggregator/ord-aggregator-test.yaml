@@ -110,6 +110,8 @@ spec:
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
+            - name: DEFAULT_TEST_SUBACCOUNT
+              value: "{{ (index .Values.global.tenants 34).id }}"
             - name: APP_SUBSCRIPTION_CONFIG_URL
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
