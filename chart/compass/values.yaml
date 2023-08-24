@@ -144,19 +144,19 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3257"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3257"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3257"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3257"
       name: compass-kyma-adapter
     gateway:
       dir: prod/incubator/
@@ -193,7 +193,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3257"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
