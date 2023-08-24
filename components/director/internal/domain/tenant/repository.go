@@ -59,7 +59,7 @@ var (
 	tenantApplicationsTable             = "tenant_applications"
 	tenantApplicationsSelectedColumns   = []string{"tenant_id"}
 
-	appTemplateIdColumn = "app_template_id"
+	appTemplateIDColumn = "app_template_id"
 	keyColumn           = "key"
 )
 
@@ -453,12 +453,12 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 		return nil, errors.Wrap(err, "while building query that fetches tenant from tenant_runtime_context")
 	}
 
-	applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs, err := r.labelsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewEqualCondition(keyColumn, selfRegDistinguishLabel), repo.NewNotNullCondition(appTemplateIdColumn)}...)
+	applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs, err := r.labelsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewEqualCondition(keyColumn, selfRegDistinguishLabel), repo.NewNotNullCondition(appTemplateIDColumn)}...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building query that fetches app_template_id from labels which have subscription")
 	}
 
-	applicationSubquery, applicationArgs, err := r.applicationQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(appTemplateIdColumn, applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs)}...)
+	applicationSubquery, applicationArgs, err := r.applicationQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(appTemplateIDColumn, applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs)}...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building query that fetches application id from application table")
 	}
