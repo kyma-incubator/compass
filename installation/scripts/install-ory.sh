@@ -151,8 +151,7 @@ done
 
 if [ "$RESULT" == "1" ]; then
   echo "Ory components did not deploy correctly..."
-  echo "Uninstalling Ory Helm chart and removing namespace"
+  echo "Uninstalling Ory Helm chart..."
   helm uninstall $RELEASE_NAME -n $RELEASE_NS
-  kubectl delete ns $RELEASE_NS
   exit 1
 fi

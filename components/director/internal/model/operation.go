@@ -19,10 +19,18 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+// OperationType defines supported operation types
+type OperationType string
+
+const (
+	// OperationTypeOrdAggregation specifies open resource discovery operation type
+	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
+)
+
 // Operation represents an Operation
 type Operation struct {
 	ID        string
-	OpType    string
+	OpType    OperationType
 	Status    OperationStatus
 	Data      json.RawMessage
 	Error     json.RawMessage
@@ -33,7 +41,7 @@ type Operation struct {
 
 // OperationInput represents an OperationInput
 type OperationInput struct {
-	OpType    string
+	OpType    OperationType
 	Status    OperationStatus
 	Data      json.RawMessage
 	Error     json.RawMessage

@@ -19,6 +19,10 @@ func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemp
 	ret := _m.Called(in)
 
 	var r0 *model.FormationTemplateInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateInput) (*model.FormationTemplateInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateInput) *model.FormationTemplateInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemp
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*graphql.FormationTemplateInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -58,6 +61,10 @@ func (_m *FormationTemplateConverter) MultipleToGraphQL(in []*model.FormationTem
 	ret := _m.Called(in)
 
 	var r0 []*graphql.FormationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.FormationTemplate) ([]*graphql.FormationTemplate, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.FormationTemplate) []*graphql.FormationTemplate); ok {
 		r0 = rf(in)
 	} else {
@@ -66,7 +73,6 @@ func (_m *FormationTemplateConverter) MultipleToGraphQL(in []*model.FormationTem
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.FormationTemplate) error); ok {
 		r1 = rf(in)
 	} else {
@@ -81,6 +87,10 @@ func (_m *FormationTemplateConverter) ToGraphQL(in *model.FormationTemplate) (*g
 	ret := _m.Called(in)
 
 	var r0 *graphql.FormationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.FormationTemplate) (*graphql.FormationTemplate, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.FormationTemplate) *graphql.FormationTemplate); ok {
 		r0 = rf(in)
 	} else {
@@ -89,7 +99,6 @@ func (_m *FormationTemplateConverter) ToGraphQL(in *model.FormationTemplate) (*g
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.FormationTemplate) error); ok {
 		r1 = rf(in)
 	} else {

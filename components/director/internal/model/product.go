@@ -54,9 +54,10 @@ func (i *ProductInput) ToProduct(id string, resourceType resource.Type, resource
 		DocumentationLabels: i.DocumentationLabels,
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	switch resourceType {
+	case resource.ApplicationTemplateVersion:
 		product.ApplicationTemplateVersionID = &resourceID
-	} else if resourceType == resource.Application {
+	case resource.Application:
 		product.ApplicationID = &resourceID
 	}
 

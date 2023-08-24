@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -243,11 +245,16 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 				value = fmt.Sprintf("%v", v)
 			default:
 				marshal, err := json.Marshal(v)
-				marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
 				if err != nil {
 					return nil, err
 				}
-				value = string(marshal)
+				// The escaping is needed because the JSON response is used in go templates
+				// where the result is put into another string, and it should be in stringify JSON format
+				value = strconv.Quote(string(marshal))
+				// The returned result from strconv.Quote function above is double-quoted string
+				// that's why we remove the first and last quote from it.
+				value = strings.TrimPrefix(value, `"`)
+				value = strings.TrimSuffix(value, `"`)
 			}
 			body[k] = value
 		}
