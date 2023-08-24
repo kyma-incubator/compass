@@ -26,13 +26,14 @@ import (
 )
 
 const (
-	tenantID            = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
-	runtimeID           = "d09ba084-0e82-49ab-ab2e-b7ecc988312d"
-	tenantLabelKey      = "subaccount"
-	regionLabelKey      = "region"
-	region              = "region1"
-	UUID                = "9b26a428-d526-469c-a5ef-2856f3ce0430"
-	subdomainLabelValue = "127" // will be replaced in 127.0.0.1 when fetching token for destination service
+	tenantID                = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
+	runtimeID               = "d09ba084-0e82-49ab-ab2e-b7ecc988312d"
+	tenantLabelKey          = "subaccount"
+	regionLabelKey          = "region"
+	region                  = "region1"
+	UUID                    = "9b26a428-d526-469c-a5ef-2856f3ce0430"
+	subdomainLabelValue     = "127" // will be replaced in 127.0.0.1 when fetching token for destination service
+	selfRegDistinguishLabel = "selfRegDistinguishLabel"
 )
 
 var (
@@ -417,16 +418,7 @@ func TestService_GetSubscribedTenantIDs(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, tx, destRepo, labelRepo, uuidService, bundleRepo, tenantRepo)
 
-			destSvc := destinationfetchersvc.DestinationService{
-				Transactioner:      tx,
-				UUIDSvc:            uuidService,
-				DestinationRepo:    destRepo,
-				BundleRepo:         bundleRepo,
-				TenantRepo:         tenantRepo,
-				LabelRepo:          labelRepo,
-				DestinationsConfig: destConfig,
-				APIConfig:          destAPIConfig,
-			}
+			destSvc := destinationfetchersvc.NewDestinationService(tx, uuidService, destRepo, bundleRepo, labelRepo, destConfig, destAPIConfig, tenantRepo, selfRegDistinguishLabel)
 
 			ctx := context.Background()
 			// WHEN
@@ -564,14 +556,14 @@ func successfulTenantRepo(tenantIDs []string) func() *automock.TenantRepo {
 				ID: tenantID,
 			})
 		}
-		tenantRepo.On("ListBySubscribedRuntimes", mock.Anything).Return(tenants, nil)
+		tenantRepo.On("ListBySubscribedRuntimesAndApplicationTemplates", mock.Anything, selfRegDistinguishLabel).Return(tenants, nil)
 		return tenantRepo
 	}
 }
 
 func failingTenantRepo() *automock.TenantRepo {
 	tenantRepo := unusedTenantRepo()
-	tenantRepo.On("ListBySubscribedRuntimes", mock.Anything).Return(nil, testErr)
+	tenantRepo.On("ListBySubscribedRuntimesAndApplicationTemplates", mock.Anything, selfRegDistinguishLabel).Return(nil, testErr)
 	return tenantRepo
 }
 

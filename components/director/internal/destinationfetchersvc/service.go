@@ -53,19 +53,35 @@ type BundleRepo interface {
 //
 //go:generate mockery --name=TenantRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepo interface {
-	ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error)
 }
 
 // DestinationService missing godoc
 type DestinationService struct {
-	Transactioner      persistence.Transactioner
-	UUIDSvc            UUIDService
-	DestinationRepo    DestinationRepo
-	BundleRepo         BundleRepo
-	LabelRepo          LabelRepo
-	DestinationsConfig config.DestinationsConfig
-	APIConfig          DestinationServiceAPIConfig
-	TenantRepo         TenantRepo
+	Transactioner           persistence.Transactioner
+	UUIDSvc                 UUIDService
+	DestinationRepo         DestinationRepo
+	BundleRepo              BundleRepo
+	LabelRepo               LabelRepo
+	DestinationsConfig      config.DestinationsConfig
+	APIConfig               DestinationServiceAPIConfig
+	TenantRepo              TenantRepo
+	selfRegDistinguishLabel string
+}
+
+// NewDestinationService creates new destination service
+func NewDestinationService(transactioner persistence.Transactioner, uuidSvc UUIDService, destinationRepo DestinationRepo, bundleRepo BundleRepo, labelRepo LabelRepo, destinationsConfig config.DestinationsConfig, apiConfig DestinationServiceAPIConfig, tenantRepo TenantRepo, selfRegDistinguishLabel string) *DestinationService {
+	return &DestinationService{
+		Transactioner:           transactioner,
+		UUIDSvc:                 uuidSvc,
+		DestinationRepo:         destinationRepo,
+		BundleRepo:              bundleRepo,
+		LabelRepo:               labelRepo,
+		DestinationsConfig:      destinationsConfig,
+		APIConfig:               apiConfig,
+		TenantRepo:              tenantRepo,
+		selfRegDistinguishLabel: selfRegDistinguishLabel,
+	}
 }
 
 // GetSubscribedTenantIDs returns subscribed tenants
@@ -86,7 +102,7 @@ func (d *DestinationService) getSubscribedTenants(ctx context.Context) ([]*model
 	var tenants []*model.BusinessTenantMapping
 	transactionError := d.transaction(ctx, func(ctxWithTransact context.Context) error {
 		var err error
-		tenants, err = d.TenantRepo.ListBySubscribedRuntimes(ctxWithTransact)
+		tenants, err = d.TenantRepo.ListBySubscribedRuntimesAndApplicationTemplates(ctxWithTransact, d.selfRegDistinguishLabel)
 		if err != nil {
 			log.C(ctxWithTransact).WithError(err).Error("An error occurred while getting subscribed tenants")
 			return err

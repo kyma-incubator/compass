@@ -447,11 +447,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 }
 
 func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, tenantID string) (*model.Label, error) {
-	conds := repo.Conditions{
-		repo.NewEqualCondition(keyColumn, tenant.SubdomainLabelKey),
-		repo.NewInConditionForSubQuery(tenantColumn,
-			"SELECT DISTINCT tenant_id FROM tenant_runtime_contexts WHERE tenant_id=?", []interface{}{tenantID}),
-	}
+	conds := repo.Conditions{repo.NewEqualCondition(keyColumn, tenant.SubdomainLabelKey)}
 
 	var entity Entity
 	err := r.embeddedTenantGetter.Get(

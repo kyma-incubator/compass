@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -25,6 +27,7 @@ type handler struct {
 //go:generate mockery --name=DestinationManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 // DestinationManager missing godoc
 type DestinationManager interface {
+	GetSubscribedTenantIDs(ctx context.Context) ([]string, error)
 	SyncTenantDestinations(ctx context.Context, tenantID string) error
 	FetchDestinationsSensitiveData(ctx context.Context, tenantID string, destinationNames []string) ([]byte, error)
 }
@@ -44,6 +47,18 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to load tenant ID from request")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	isTenantSubscribed, err := h.validateTenantSubscription(ctx, tenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to validate tenant %q subscription", tenantID)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !isTenantSubscribed {
+		log.C(ctx).Infof("Tenant %q is not subscribed", tenantID)
+		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusBadRequest)
 		return
 	}
 
@@ -72,6 +87,18 @@ func (h *handler) FetchDestinationsSensitiveData(writer http.ResponseWriter, req
 		return
 	}
 
+	isTenantSubscribed, err := h.validateTenantSubscription(ctx, tenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to validate tenant %q subscription", tenantID)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !isTenantSubscribed {
+		log.C(ctx).Infof("Tenant %q is not subscribed", tenantID)
+		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusBadRequest)
+		return
+	}
+
 	names, ok := request.URL.Query()[h.config.DestinationsQueryParameter]
 	if !ok {
 		err := fmt.Errorf("missing query parameter '%s'", h.config.DestinationsQueryParameter)
@@ -97,4 +124,19 @@ func (h *handler) FetchDestinationsSensitiveData(writer http.ResponseWriter, req
 	if _, err = writer.Write(json); err != nil {
 		log.C(ctx).WithError(err).Error("Could not write response")
 	}
+}
+
+func (h *handler) validateTenantSubscription(ctx context.Context, tenantID string) (bool, error) {
+	subscribedTenants, err := h.destinationManager.GetSubscribedTenantIDs(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "while getting subscribed tenants")
+	}
+
+	for _, subscribedTenant := range subscribedTenants {
+		if tenantID == subscribedTenant {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

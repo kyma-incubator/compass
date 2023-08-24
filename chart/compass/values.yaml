@@ -736,7 +736,7 @@ global:
     host: compass-destination-fetcher.compass-system.svc.cluster.local
     prefix: /destination-configuration
     port: 3000
-    jobSchedule: 10m
+    jobSchedule: 10s
     lease:
       lockname: destinationlease
     parallelTenants: 10
