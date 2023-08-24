@@ -13,7 +13,7 @@ image:
   # -- ORY Oathkeeper image
   repository: oryd/oathkeeper
   # -- ORY Oathkeeper version
-  tag: v0.39.0
+  tag: v0.40.0
   # -- Image pull policy
   pullPolicy: IfNotPresent
 
@@ -238,6 +238,29 @@ deployment:
       runAsNonRoot: true
       runAsUser: 65534
   ################
+  # -- Configure the livenessProbe parameters
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 5
+  # -- Configure the readinessProbe parameters
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 5
+  # -- Configure the startupProbe parameters
+  startupProbe:
+    failureThreshold: 60
+    successThreshold: 1
+    periodSeconds: 1
+    timeoutSeconds: 1
+
+  # -- Configure a custom livenessProbe. This overwrites the default object
+  customLivenessProbe: {}
+  # -- Configure a custom readinessProbe. This overwrites the default object
+  customReadinessProbe: {}
+  # -- Configure a custom startupProbe. This overwrites the default object
+  customStartupProbe: {}
 
   # -- Specify the serviceAccountName value.
   # In some situations it is needed to provides specific permissions to Hydra deployments
@@ -291,6 +314,16 @@ deployment:
 
   # -- Configure node tolerations.
   tolerations: []
+
+  # -- Configure pod topologySpreadConstraints.
+  topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: topology.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/name: oathkeeper
+  #       app.kubernetes.io/instance: oathkeeper
 
   labels: {}
   #      If you do want to specify additional labels, uncomment the following

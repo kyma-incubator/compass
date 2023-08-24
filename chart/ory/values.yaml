@@ -212,6 +212,18 @@ oathkeeper:
     # Created by the JWKS CronJob
     enabled: false
   deployment:
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      failureThreshold: 10
+    readinessProbe:
+      initialDelaySeconds: 45
+      periodSeconds: 10
+      failureThreshold: 10
+    startupProbe:
+      initialDelaySeconds: 45
+      periodSeconds: 10
+      failureThreshold: 30
     strategy:
       type: RollingUpdate
       rollingUpdate:

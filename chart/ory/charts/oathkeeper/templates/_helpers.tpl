@@ -59,7 +59,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{/*
 Check overrides consistency
-Important: this used to have custom logic
+TODO!!! this used to have custom logic
 */}}
 {{- define "oathkeeper.check.override.consistency" -}}
 {{- if and .Values.maester.enabled .Values.fullnameOverride -}}

@@ -122,26 +122,46 @@ spec:
             - name: http-proxy
               containerPort: {{ .Values.oathkeeper.config.serve.proxy.port }}
               protocol: TCP
-              # important: this might be a solution to the metrics collection of oathkeeper
+              # TODO!!! this might be a solution to the metrics collection of oathkeeper
             - name: http-metrics
               protocol: TCP
               containerPort: {{ .Values.oathkeeper.config.serve.prometheus.port }}
           livenessProbe:
+            {{- if .Values.deployment.customLivenessProbe }}
+              {{- toYaml .Values.deployment.customLivenessProbe | nindent 12 }}
+            {{- else }}
             httpGet:
               path: /health/alive
               port: http-api
-            # TODO!!! custom implementation, this(3 lines below) does not exist in OS charts; might exist in future versions
-            initialDelaySeconds: 45
-            periodSeconds: 10
-            failureThreshold: 10
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.livenessProbe | nindent 12 }}
+            {{- end }}
           readinessProbe:
+            {{- if .Values.deployment.customReadinessProbe }}
+              {{- toYaml .Values.deployment.customReadinessProbe | nindent 12 }}
+            {{- else }}
             httpGet:
               path: /health/ready
               port: http-api
-            # TODO!!! custom implementation, this(3 lines below) does not exist in OS charts; might exist in future versions
-            initialDelaySeconds: 45
-            periodSeconds: 10
-            failureThreshold: 10
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.readinessProbe | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            {{- if .Values.deployment.customStartupProbe }}
+              {{- toYaml .Values.deployment.customStartupProbe | nindent 12 }}
+            {{- else }}
+            httpGet:
+              path: /health/ready
+              port: http-api
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.startupProbe | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           # TODO!!! this is changed to adapt to the Kyma-specific oathkeeper values.yaml
@@ -166,4 +186,8 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+    {{- with .Values.deployment.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 {{- end }}

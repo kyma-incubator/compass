@@ -40,7 +40,7 @@ spec:
           {{- toYaml . | nindent 8 }} 
         {{- end }}
       annotations:
-        # important: This did not previously exist, added by OS chart
+        # TODO!!! This did not previously exist, added by OS chart
         {{- include "oathkeeper.annotations.checksum" . | indent 8 -}}
         {{- with .Values.deployment.annotations }}
           {{- toYaml . | nindent 8 }}
@@ -82,9 +82,11 @@ spec:
             - |
               touch /etc/rules/access-rules.json
               chmod 666 /etc/rules/access-rules.json
+          {{- if .Values.deployment.securityContext.sidecar }}
           securityContext:
             # TODO!!! Custom implementation of security context; in OS charts it is one, in the Kyma one it is divided by sidecar, controller etc.
             {{- toYaml .Values.deployment.securityContext.sidecar | nindent 12 }}
+          {{- end }}
       {{- if .Values.deployment.extraInitContainers }}
         {{- tpl  .Values.deployment.extraInitContainers . | nindent 8 }}
       {{- end }}
@@ -126,34 +128,45 @@ spec:
             - name: http-proxy
               containerPort: {{ .Values.oathkeeper.config.serve.proxy.port }}
               protocol: TCP
-            # important: this might be a solution to the metrics collection of oathkeeper
             - name: http-metrics
               protocol: TCP
               containerPort: {{ .Values.oathkeeper.config.serve.prometheus.port }}
           livenessProbe:
+            {{- if .Values.deployment.customLivenessProbe }}
+              {{- toYaml .Values.deployment.customLivenessProbe | nindent 12 }}
+            {{- else }}
             httpGet:
               path: /health/alive
               port: http-api
-            # TODO!!! custom implementation, this(3 lines below) does not exist in OS charts; might exist in future versions
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            failureThreshold: 10
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.livenessProbe | nindent 12 }}
+            {{- end }}
           readinessProbe:
+            {{- if .Values.deployment.customReadinessProbe }}
+              {{- toYaml .Values.deployment.customReadinessProbe | nindent 12 }}
+            {{- else }}
             httpGet:
               path: /health/ready
               port: http-api
-            # TODO!!! custom implementation, this(3 lines below) does not exist in OS charts; might exist in future versions
-            initialDelaySeconds: 45
-            periodSeconds: 10
-            failureThreshold: 10
-          # TODO!!! custom implementation, this(startupProbe) does not exist in OS charts; might exist in future versions
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.readinessProbe | nindent 12 }}
+            {{- end }}
           startupProbe:
+            {{- if .Values.deployment.customStartupProbe }}
+              {{- toYaml .Values.deployment.customStartupProbe | nindent 12 }}
+            {{- else }}
             httpGet:
-              path: /health/alive
+              path: /health/ready
               port: http-api
-            initialDelaySeconds: 45
-            periodSeconds: 10
-            failureThreshold: 30
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.startupProbe | nindent 12 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           # TODO!!! this is changed to adapt to the Kyma-specific oathkeeper values.yaml
@@ -205,6 +218,10 @@ spec:
     {{- end }}
     {{- with .Values.deployment.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.deployment.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
     {{- end }}
 {{- end }}
