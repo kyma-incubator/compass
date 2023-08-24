@@ -85,7 +85,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		{
 			Name:     "Returns error when can't get the applications in the formation",
 			Input:    in,
-			LabelSvc: UnusedLabelService,
+			LabelSvc: unusedLabelService,
 			ApplicationRepo: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListByScenariosNoPaging", ctx, testTenantID, []string{scenario}).Return(nil, testErr).Once()
@@ -97,8 +97,8 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		{
 			Name:             "Returns error when the operator input is incompatible",
 			Input:            "incompatible",
-			LabelSvc:         UnusedLabelService,
-			ApplicationRepo:  UnusedApplicationRepo,
+			LabelSvc:         unusedLabelService,
+			ApplicationRepo:  unusedApplicationRepo,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "Incompatible input",
 		},
@@ -111,8 +111,8 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 				ResourceID:      inputAppID,
 				Tenant:          testTenantID,
 			},
-			LabelSvc:         UnusedLabelService,
-			ApplicationRepo:  UnusedApplicationRepo,
+			LabelSvc:         unusedLabelService,
+			ApplicationRepo:  unusedApplicationRepo,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: "Unsupported resource type",
 		},
@@ -121,7 +121,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			labelSvc := testCase.LabelSvc()
 			appRepo := testCase.ApplicationRepo()
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, labelSvc, appRepo, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, appRepo, nil, nil, nil, runtimeType, applicationType)
 
 			result, err := engine.DoesNotContainResourceOfSubtype(ctx, testCase.Input)
 

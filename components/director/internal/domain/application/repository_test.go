@@ -404,7 +404,7 @@ func TestRepository_Update(t *testing.T) {
 }
 
 func TestRepository_Upsert(t *testing.T) {
-	upsertStmt := regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels, tenant_business_type_id ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24 ) ON CONFLICT ( system_number ) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, system_status=EXCLUDED.system_status, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, application_namespace=EXCLUDED.application_namespace, labels=EXCLUDED.labels, tenant_business_type_id=EXCLUDED.tenant_business_type_id WHERE (public.applications.id IN (SELECT id FROM tenant_applications WHERE tenant_id = $25 AND owner = true)) RETURNING id;`)
+	upsertStmt := regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels, tenant_business_type_id ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24 ) ON CONFLICT ( system_number ) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, system_status=EXCLUDED.system_status, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, local_tenant_id=EXCLUDED.local_tenant_id, application_namespace=EXCLUDED.application_namespace, labels=EXCLUDED.labels, tenant_business_type_id=EXCLUDED.tenant_business_type_id WHERE (public.applications.id IN (SELECT id FROM tenant_applications WHERE tenant_id = $25 AND owner = true)) RETURNING id;`)
 
 	var nilAppModel *model.Application
 	appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
@@ -449,7 +449,7 @@ func TestRepository_Upsert(t *testing.T) {
 }
 
 func TestRepository_TrustedUpsert(t *testing.T) {
-	upsertStmt := regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels, tenant_business_type_id ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24 ) ON CONFLICT ( system_number ) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, system_status=EXCLUDED.system_status, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, application_namespace=EXCLUDED.application_namespace, labels=EXCLUDED.labels, tenant_business_type_id=EXCLUDED.tenant_business_type_id RETURNING id;`)
+	upsertStmt := regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels, tenant_business_type_id ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24 ) ON CONFLICT ( system_number ) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, system_status=EXCLUDED.system_status, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, local_tenant_id=EXCLUDED.local_tenant_id, application_namespace=EXCLUDED.application_namespace, labels=EXCLUDED.labels, tenant_business_type_id=EXCLUDED.tenant_business_type_id RETURNING id;`)
 
 	var nilAppModel *model.Application
 	appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
@@ -984,6 +984,42 @@ func TestPgRepository_GetBySystemNumber(t *testing.T) {
 		ExpectedDBEntity:          entity,
 		MethodName:                "GetBySystemNumber",
 		MethodArgs:                []interface{}{givenTenant(), systemNumber},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_GetByLocalTenantIDAndAppTemplateID(t *testing.T) {
+	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Application By Local Tenant ID and App Template ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels, tenant_business_type_id FROM public.applications WHERE local_tenant_id = $1 AND app_template_id = $2 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $3))`),
+				Args:     []driver.Value{localTenantID, appTemplateID, givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()).
+							AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.LocalTenantID, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.SystemStatus, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.ApplicationNamespace, entity.OrdLabels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.Tags, entity.DocumentationLabels, entity.TenantBusinessTypeID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       application.NewRepository,
+		ExpectedModelEntity:       fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description"),
+		ExpectedDBEntity:          entity,
+		MethodName:                "GetByLocalTenantIDAndAppTemplateID",
+		MethodArgs:                []interface{}{givenTenant(), localTenantID, appTemplateID},
 		DisableConverterErrorTest: true,
 	}
 

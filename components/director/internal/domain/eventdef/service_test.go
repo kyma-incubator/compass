@@ -174,6 +174,83 @@ func TestService_GetForBundle(t *testing.T) {
 	})
 }
 
+func TestService_GetForApplication(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	name := "foo"
+
+	eventDefinition := fixEventDefinitionModel(id, name)
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.EventAPIRepository
+		Input              model.EventDefinitionInput
+		InputID            string
+		AppID              string
+		ExpectedEvent      *model.EventDefinition
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByApplicationID", ctx, tenantID, id, appID).Return(eventDefinition, nil).Once()
+				return repo
+			},
+			InputID:            id,
+			AppID:              appID,
+			ExpectedEvent:      eventDefinition,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when EventDefinition retrieval failed",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("GetByApplicationID", ctx, tenantID, id, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			AppID:              appID,
+			ExpectedEvent:      nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := event.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			eventDef, err := svc.GetForApplication(ctx, testCase.InputID, testCase.AppID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedEvent, eventDef)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := event.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.GetForApplication(context.TODO(), "", "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_ListByBundleIDs(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

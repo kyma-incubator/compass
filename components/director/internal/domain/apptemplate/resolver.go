@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -125,10 +127,11 @@ type Resolver struct {
 	selfRegManager          SelfRegisterManager
 	uidService              UIDService
 	appTemplateProductLabel string
+	certSubjectMappingSvc   CertSubjectMappingService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		appSvc:                  appSvc,
@@ -140,6 +143,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		selfRegManager:          selfRegisterManager,
 		uidService:              uidService,
 		appTemplateProductLabel: appTemplateProductLabel,
+		certSubjectMappingSvc:   certSubjectMappingSvc,
 	}
 }
 
@@ -417,7 +421,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if appCreateInputModel.Labels == nil {
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
-	appCreateInputModel.Labels["managed"] = "false"
+
+	if _, exists := appCreateInputModel.Labels[application.ManagedLabelKey]; !exists {
+		appCreateInputModel.Labels[application.ManagedLabelKey] = "false"
+	}
 
 	if convertedIn.Labels != nil {
 		for k, v := range in.Labels {
@@ -577,6 +584,10 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	log.C(ctx).Infof("Deleting an Application Template with id %q", id)
 	err = r.appTemplateSvc.Delete(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := r.certSubjectMappingSvc.DeleteByConsumerID(ctx, id); err != nil {
 		return nil, err
 	}
 

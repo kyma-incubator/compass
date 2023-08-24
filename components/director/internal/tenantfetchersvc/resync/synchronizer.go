@@ -221,6 +221,10 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return err
 	}
 
+	if fetchedTenant == nil && parentTenantID == "" {
+		log.C(ctx).Infof("Tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
+		return apperrors.NewEmptyParentIDErrorWithMessage(fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID))
+	}
 	if fetchedTenant == nil {
 		log.C(ctx).Infof("Tenant with ID %s was not found, it will be stored lazily", tenantID)
 		fetchedTenant := model.BusinessTenantMappingInput{
@@ -234,7 +238,9 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		}
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
-
+	if fetchedTenant.Region != "" {
+		fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+	}
 	parentTenantID = fetchedTenant.Parent
 	if len(parentTenantID) == 0 {
 		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)

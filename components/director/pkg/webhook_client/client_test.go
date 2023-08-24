@@ -19,6 +19,7 @@ package webhookclient_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -281,12 +282,12 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	mockedJSONObjectError := "{\"code\":\"401\",\"message\":\"Unauthorized\",\"correlationId\":\"12345678-e89b-12d3-a456-556642440000\"}"
+	mockedJSONObjectError := json.RawMessage(`{"code":"401","message":"Unauthorized","correlationId":"12345678-e89b-12d3-a456-556642440000"}`)
 
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": %s}", mockedJSONObjectError)))),
+				Body:       io.NopCloser(bytes.NewReader(json.RawMessage(fmt.Sprintf(`{"error": %s}`, mockedJSONObjectError)))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},

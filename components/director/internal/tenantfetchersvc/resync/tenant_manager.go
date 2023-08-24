@@ -142,6 +142,9 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 
 			if len(createdRegionalTenants) == 1 {
 				log.C(ctx).Infof("Tenant found in region %s", region)
+				if createdRegionalTenants[0].Region == "" {
+					createdRegionalTenants[0].Region = region
+				}
 				ch <- &createdRegionalTenants[0]
 			} else {
 				log.C(ctx).Warnf("Tenant not found in region %s", region)

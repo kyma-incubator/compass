@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -40,6 +41,12 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	if exists, err := fau.repo.Exists(ctx, id, tenantID); err != nil {
+		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
+	} else if !exists {
+		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
+	}
+
 	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
@@ -47,12 +54,6 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	joinPointDetails.Location = formationconstraint.PreNotificationStatusReturned
 	if err := fau.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreNotificationStatusReturned, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
 		return errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.NotificationStatusReturned, model.PreOperation)
-	}
-
-	if exists, err := fau.repo.Exists(ctx, id, tenantID); err != nil {
-		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
-	} else if !exists {
-		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
 	if err = fau.repo.Update(ctx, fa); err != nil {
@@ -79,7 +80,7 @@ func (fau *formationAssignmentStatusService) SetAssignmentToErrorStateWithConstr
 	if err != nil {
 		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
 	}
-	assignment.Value = marshaled
+	assignment.Error = marshaled
 	if err := fau.UpdateWithConstraints(ctx, assignment, operation); err != nil {
 		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 	}
@@ -99,6 +100,12 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	fa, err := fau.repo.Get(ctx, id, tenantID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting formation assignment with id %q for tenant with id %q", id, tenantID)
+	}
+
+	fa.State = string(model.ReadyAssignmentState)
+	fa.Value = nil
+	if err := fau.repo.Update(ctx, fa); err != nil {
+		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}
 
 	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation)

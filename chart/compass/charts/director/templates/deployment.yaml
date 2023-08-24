@@ -76,7 +76,7 @@ spec:
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
-              value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
+              value: {{ .Values.global.director.authentication.jwksEndpoint | quote }}
             - name: APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION
               value: "{{ .Values.global.director.metrics.enableGraphqlOperationInstrumentation }}"
             - name: APP_DB_USER
@@ -140,7 +140,7 @@ spec:
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ .Values.global.director.clientIDHeaderKey }}
             - name: APP_OAUTH20_URL
-              value: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445
+              value: {{ .Values.global.director.authentication.oauth2.url | quote }}
             - name: APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_LEGACY_CONNECTOR_URL
@@ -175,8 +175,8 @@ spec:
               value: {{ .Values.deployment.dataloaders.wait | quote }}
             - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
-              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
             - name: APP_TOKEN_PREFIX
               value: {{ .Values.global.director.subscription.tokenPrefix }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
@@ -295,6 +295,18 @@ spec:
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.commonNameKey }}"
             - name: APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.certChainKey }}"
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_URL_TEMPLATE
+              value: {{ printf .Values.global.kymaAdapter.tenantMapping.urlTemplate (tpl "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}:443" .) | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_INPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.inputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_HEADER_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.headerTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_OUTPUT_TEMPLATE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.outputTemplate | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_MODE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.mode | quote }}
+            - name: APP_KYMA_ADAPTER_TENANT_MAPPING_TYPE
+              value: {{ .Values.global.kymaAdapter.tenantMapping.type | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

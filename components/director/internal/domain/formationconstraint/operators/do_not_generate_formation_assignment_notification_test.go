@@ -13,60 +13,6 @@ import (
 )
 
 func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *testing.T) {
-	// todo::: consider extracting them in fixture file
-	applicationTypeLabel := "applicationType"
-	runtimeTypeLabel := "runtimeType"
-	inputAppType := "input-type"
-	inputAppID := "eb2d5110-ca3a-11ed-afa1-0242ac120002"
-	appID := "b55131c4-ca3a-11ed-afa1-0242ac120002"
-	runtimeID := "c66341c4-ca3a-11ed-afa1-0242ac120564"
-	runtimeCtxID := "f7156h4-ca3a-11ed-afa1-0242ac121237"
-
-	exceptType := "except-type"
-	formationType := "formationType"
-
-	in := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:       model.ApplicationResourceType,
-		ResourceSubtype:    inputAppType,
-		ResourceID:         inputAppID,
-		SourceResourceType: model.ApplicationResourceType,
-		SourceResourceID:   appID,
-		Tenant:             testTenantID,
-		ExceptSubtypes:     []string{exceptType},
-	}
-
-	inWithFormationTypeException := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:         model.ApplicationResourceType,
-		FormationTemplateID:  formationTemplateID,
-		ResourceSubtype:      inputAppType,
-		ResourceID:           inputAppID,
-		SourceResourceType:   model.ApplicationResourceType,
-		SourceResourceID:     appID,
-		Tenant:               testTenantID,
-		ExceptSubtypes:       []string{exceptType},
-		ExceptFormationTypes: []string{formationType},
-	}
-
-	runtimeIn := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:       model.ApplicationResourceType,
-		ResourceSubtype:    inputAppType,
-		ResourceID:         inputAppID,
-		SourceResourceType: model.RuntimeResourceType,
-		SourceResourceID:   runtimeID,
-		Tenant:             testTenantID,
-		ExceptSubtypes:     []string{exceptType},
-	}
-
-	runtimeContextIn := &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
-		ResourceType:       model.ApplicationResourceType,
-		ResourceSubtype:    inputAppType,
-		ResourceID:         inputAppID,
-		SourceResourceType: model.RuntimeContextResourceType,
-		SourceResourceID:   runtimeCtxID,
-		Tenant:             testTenantID,
-		ExceptSubtypes:     []string{exceptType},
-	}
-
 	testCases := []struct {
 		Name                  string
 		Input                 operators.OperatorInput
@@ -96,7 +42,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 				SourceResourceID:   appID,
 				Tenant:             testTenantID,
 			},
-			LabelSvc:       UnusedLabelService,
+			LabelSvc:       unusedLabelService,
 			ExpectedResult: false,
 		},
 		{
@@ -115,7 +61,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		{
 			Name:     "Error when get formation type fails",
 			Input:    inWithFormationTypeException,
-			LabelSvc: UnusedLabelService,
+			LabelSvc: unusedLabelService,
 			FormationTemplateRepo: func() *automock.FormationTemplateRepo {
 				repo := &automock.FormationTemplateRepo{}
 				repo.On("Get", ctx, formationTemplateID).Return(nil, testErr).Once()
@@ -184,7 +130,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		{
 			Name:     "Error for runtime context when get rt ctx fails",
 			Input:    runtimeContextIn,
-			LabelSvc: UnusedLabelService,
+			LabelSvc: unusedLabelService,
 			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
 				repo := &automock.RuntimeContextRepo{}
 				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(nil, testErr).Once()
@@ -221,7 +167,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 			if testCase.FormationTemplateRepo != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, formationTemplateRepo, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, formationTemplateRepo, nil, runtimeType, applicationType)
 
 			result, err := engine.DoNotGenerateFormationAssignmentNotification(ctx, testCase.Input)
 

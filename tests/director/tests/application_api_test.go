@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
@@ -1221,38 +1222,74 @@ func TestApplicationsForRuntime(t *testing.T) {
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, otherTenant, scenario)
 	}
 
+	//create runtime without normalization
+	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
+	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
+	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
+	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithoutNormalization)
+	runtimeWithoutNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithoutNormalization, conf.GatewayOauth)
+
+	// create an oauth graphql client for requesting bundle instance auth on behalf of the runtime
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
+	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+	require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	applications := []struct {
 		ApplicationName string
-		Tenant          string
-		WithinTenant    bool
-		Scenarios       []string
+		BundlesData     []struct {
+			Name           string
+			AuthsClientIDs []string
+		}
+		Tenant       string
+		WithinTenant bool
+		Scenarios    []string
 	}{
 		{
-			Tenant:          tenantID,
 			ApplicationName: "second",
-			WithinTenant:    true,
-			Scenarios:       scenarios[:1],
+			BundlesData: []struct {
+				Name           string
+				AuthsClientIDs []string
+			}{
+				{Name: "bundleWithTwoAuths", AuthsClientIDs: []string{"test2", "test3"}},
+				{Name: "bundleWithNoAuths", AuthsClientIDs: nil},
+			},
+			Tenant:       tenantID,
+			WithinTenant: true,
+			Scenarios:    scenarios[:1],
 		},
 		{
-			Tenant:          tenantID,
 			ApplicationName: "third",
-			WithinTenant:    true,
-			Scenarios:       scenarios,
+			BundlesData: []struct {
+				Name           string
+				AuthsClientIDs []string
+			}{
+				{Name: "bundleWithOneAuth", AuthsClientIDs: []string{"test1"}},
+			},
+			Tenant:       tenantID,
+			WithinTenant: true,
+			Scenarios:    scenarios,
 		},
 		{
-			Tenant:          tenantID,
 			ApplicationName: "allscenarios",
+			Tenant:          tenantID,
 			WithinTenant:    true,
 			Scenarios:       scenarios,
 		},
 		{
-			Tenant:          otherTenant,
 			ApplicationName: "test",
+			Tenant:          otherTenant,
 			WithinTenant:    false,
 			Scenarios:       scenarios[:1],
 		},
 	}
 
+	var expectedBundles []*graphql.Bundle
 	for i, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
@@ -1276,27 +1313,63 @@ func TestApplicationsForRuntime(t *testing.T) {
 			normalizedApp.Name = conf.DefaultNormalizationPrefix + normalizedApp.Name
 			tenantNormalizedApplications = append(tenantNormalizedApplications, &normalizedApp)
 		}
-	}
 
-	//create runtime without normalization
-	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
-	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
-	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
-	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
-	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithoutNormalization)
-	runtimeWithoutNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithoutNormalization, conf.GatewayOauth)
+		for _, data := range testApp.BundlesData {
+			bundleExt := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, testApp.Tenant, application.ID, data.Name)
+
+			var expectedBIA *graphql.BundleInstanceAuth
+			for _, clientID := range data.AuthsClientIDs {
+				currentBundleInstanceAuth := fixtures.CreateBundleInstanceAuthForRuntime(t, ctx, oauthGraphQLClient, tenantID, bundleExt.ID)
+				currentBundleInstanceAuth = fixtures.SetBundleInstanceAuthForRuntime(t, ctx, certSecuredGraphQLClient, tenantID, currentBundleInstanceAuth.ID, clientID)
+				// For a single bundle there may be more than one bundle instance auth created for specific runtime.
+				// When the Kyma runtime lists the bundles it reads only the defaultInstanceAuth property of the bundle.
+				// We are overriding defaultInstanceAuth field of the bundle with on of the BIAs created for the runtime.
+				// When fetching the BIAs they are ordered by ID so that every time one and the same BIA is returned to
+				// the Kyma runtime
+				if expectedBIA == nil || strings.Compare(expectedBIA.ID, currentBundleInstanceAuth.ID) == 1 {
+					expectedBIA = currentBundleInstanceAuth
+				}
+			}
+
+			expectedBundle := &bundleExt.Bundle
+			if expectedBIA != nil {
+				expectedBundle.DefaultInstanceAuth = expectedBIA.Auth
+			}
+			expectedBundles = append(expectedBundles, expectedBundle)
+		}
+	}
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
-		applicationPage := graphql.ApplicationPage{}
+		applicationPage := graphql.ApplicationPageExt{}
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
+		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantID, runtimeWithoutNormalization.ID)
+		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
+		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		err := testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
 		saveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, applicationPage.Data, len(tenantUnnormalizedApplications))
-		assert.ElementsMatch(t, tenantUnnormalizedApplications, applicationPage.Data)
+
+		var actualApplications []*graphql.Application
+		var actualBundles []*graphql.Bundle
+		for _, applicationExt := range applicationPage.Data {
+			actualApplications = append(actualApplications, &applicationExt.Application)
+			for _, bundleExt := range applicationExt.Bundles.Data {
+				actualBundles = append(actualBundles, &bundleExt.Bundle)
+			}
+		}
+		assert.ElementsMatch(t, tenantUnnormalizedApplications, actualApplications)
+		assert.ElementsMatch(t, expectedBundles, actualBundles)
 
 	})
 
@@ -1923,4 +1996,104 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	// Source application is not deleted
 	t.Logf("Source application should not be deleted")
 	assert.NotEmpty(t, srcApp.BaseEntity)
+}
+
+func TestGetApplicationsAPIEventDefinitions(t *testing.T) {
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	appName := "app-test-get-api-event"
+
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	api := fixtures.AddAPIToApplication(t, ctx, certSecuredGraphQLClient, application.ID)
+	event := fixtures.AddEventToApplication(t, ctx, certSecuredGraphQLClient, application.ID)
+	require.NotEmpty(t, api.ID)
+	require.NotEmpty(t, event.ID)
+
+	queryAPIForApplication := fixtures.FixGetApplicationWithAPIEventDefinitionRequest(application.ID, api.ID, event.ID)
+
+	app := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryAPIForApplication, &app)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, app.APIDefinition)
+	require.NotEmpty(t, app.EventDefinition)
+	assert.Equal(t, app.APIDefinition.ID, api.ID)
+	assert.Equal(t, app.EventDefinition.ID, event.ID)
+}
+
+func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+
+	nameJSONPath := "$.name"
+	displayNameJSONPath := "$.displayName"
+	tenantIDJSONPath := "$.localTenantId"
+
+	appName := "appName"
+	localTenantID := "local-tenant-id-1234"
+	appTemplateID := "app-template-id-1234"
+	placeholdersPayload := fmt.Sprintf(`{\"name\": \"%s\", \"displayName\":\"appDisplayName\", \"localTenantId\":\"%s\"}`, appName, localTenantID)
+
+	appTemplateName := createAppTemplateName("template")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "name",
+			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
+		},
+		{
+			Name:        "tenant-id",
+			Description: ptr.String("tenant-id"),
+			JSONPath:    &tenantIDJSONPath,
+		},
+	}
+	appTmplInput.ApplicationInput.LocalTenantID = ptr.String("{{tenant-id}}")
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
+	require.NoError(t, err)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{ID: &appTemplateID, TemplateName: appTemplateName, PlaceholdersPayload: &placeholdersPayload}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplateWithLocalTenantID(appFromTmplGQL)
+
+	outputApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, outputApp)
+	require.Equal(t, appName, outputApp.Application.Name)
+	require.Equal(t, appTmpl.ID, *outputApp.Application.ApplicationTemplateID)
+	require.Equal(t, localTenantID, *outputApp.Application.LocalTenantID)
+
+	getAppRequest := fixtures.FixGetApplicationByLocalTenantIDAndAppTemplateIDRequest(localTenantID, *outputApp.ApplicationTemplateID)
+	newApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getAppRequest, &newApp)
+	saveExampleInCustomDir(t, getAppRequest.Query(), queryApplicationCategory, "query application by local tenant id and app template id")
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, newApp)
+	require.Equal(t, appName, newApp.Application.Name)
+	require.Equal(t, outputApp.Application.ID, newApp.Application.ID)
+	require.Equal(t, appTmpl.ID, *newApp.Application.ApplicationTemplateID)
+	require.Equal(t, localTenantID, *newApp.Application.LocalTenantID)
 }

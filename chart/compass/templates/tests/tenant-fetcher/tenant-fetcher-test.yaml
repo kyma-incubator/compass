@@ -16,7 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
     spec:
@@ -109,6 +109,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_ON_DEMAND_TENANT
+              value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
       restartPolicy: Never
 ---
 apiVersion: v1

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
@@ -72,7 +73,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	}
 
 	var data *string
-	data, fr.Status = s.FetchSpec(ctx, fr)
+	data, fr.Status = s.FetchSpec(ctx, fr, &sync.Map{})
 
 	if err := s.repo.Update(ctx, tnt, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
@@ -108,7 +109,7 @@ func (s *service) UpdateGlobal(ctx context.Context, fr *model.FetchRequest) erro
 	return nil
 }
 
-func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
+func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest, headers *sync.Map) (*string, *model.FetchRequestStatus) {
 	err := s.validateFetchRequest(fr)
 	if err != nil {
 		log.C(ctx).WithError(err).Error()
@@ -120,6 +121,7 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		log.C(ctx).Warnf("An error has occurred while getting local tenant id: %v", err)
 		localTenantID = ""
 	}
+
 	var doRequest retry.ExecutableHTTPFunc
 	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
@@ -131,7 +133,7 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(ctx, s.client, fr.URL, localTenantID)
+			return executor.Execute(ctx, s.client, fr.URL, localTenantID, headers)
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {

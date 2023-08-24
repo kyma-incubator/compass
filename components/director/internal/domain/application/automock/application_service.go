@@ -90,6 +90,29 @@ func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Applic
 	return r0, r1
 }
 
+// GetByLocalTenantIDAndAppTemplateID provides a mock function with given fields: ctx, localTenantID, appTemplateID
+func (_m *ApplicationService) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID string, appTemplateID string) (*model.Application, error) {
+	ret := _m.Called(ctx, localTenantID, appTemplateID)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
+		r0 = rf(ctx, localTenantID, appTemplateID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, localTenantID, appTemplateID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBySystemNumber provides a mock function with given fields: ctx, systemNumber
 func (_m *ApplicationService) GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error) {
 	ret := _m.Called(ctx, systemNumber)

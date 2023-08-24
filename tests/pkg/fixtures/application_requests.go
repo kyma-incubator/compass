@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -205,6 +207,38 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixGetApplicationWithAPIEventDefinitionRequest(applicationID, apiID, eventID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				%s
+				}
+			}`, applicationID, testctx.Tc.GQLFieldsProvider.ForApplication(graphqlizer.FieldCtx{
+			"Application.apiDefinition": fmt.Sprintf(`apiDefinition(id: "%s") {%s}`, apiID, testctx.Tc.GQLFieldsProvider.ForAPIDefinition()),
+		}, graphqlizer.FieldCtx{
+			"Application.eventDefinition": fmt.Sprintf(`eventDefinition(id: "%s") {%s}`, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()),
+		})))
+}
+
+func FixGetApplicationWithInstanceAuths(applicationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: application(id: "%s") {
+				bundles(first: 200, after: "") {
+      				data {
+      				  id
+      				  instanceAuths {%s}
+      				}
+      				pageInfo {
+      				  hasNextPage
+      				  endCursor
+      				}
+      				totalCount
+				}
+			}
+		}`, applicationID, testctx.Tc.GQLFieldsProvider.ForBundleInstanceAuth()))
+}
+
 func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -212,6 +246,16 @@ func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
 					%s
 				}
 			}`, systemNumber, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixGetApplicationByLocalTenantIDAndAppTemplateIDRequest(localTenantID, appTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationByLocalTenantIDAndAppTemplateID(localTenantID: "%s", applicationTemplateID: "%s") {
+					%s
+					localTenantID
+				}
+			}`, localTenantID, appTemplateID, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixMergeApplicationsRequest(srcID, destID string) *gcli.Request {
@@ -353,6 +397,17 @@ func FixRegisterApplicationFromTemplate(applicationFromTemplateInputInGQL string
 		fmt.Sprintf(`mutation {
 			result: registerApplicationFromTemplate(in: %s) {
 					%s
+				}
+			}`,
+			applicationFromTemplateInputInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixRegisterApplicationFromTemplateWithLocalTenantID(applicationFromTemplateInputInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerApplicationFromTemplate(in: %s) {
+					%s
+					localTenantID
 				}
 			}`,
 			applicationFromTemplateInputInGQL, testctx.Tc.GQLFieldsProvider.ForApplication()))

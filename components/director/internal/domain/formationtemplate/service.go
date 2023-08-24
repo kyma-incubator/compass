@@ -15,7 +15,7 @@ import (
 type FormationTemplateRepository interface {
 	Create(ctx context.Context, item *model.FormationTemplate) error
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error)
+	List(ctx context.Context, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error)
 	Update(ctx context.Context, model *model.FormationTemplate) error
 	Delete(ctx context.Context, id, tenantID string) error
 	Exists(ctx context.Context, id string) (bool, error)
@@ -108,7 +108,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationTemplate,
 }
 
 // List pagination lists FormationTemplate based on `pageSize` and `cursor`
-func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+func (s *service) List(ctx context.Context, name *string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
@@ -118,7 +118,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 		return nil, err
 	}
 
-	return s.repo.List(ctx, tenantID, pageSize, cursor)
+	return s.repo.List(ctx, name, tenantID, pageSize, cursor)
 }
 
 // Update updates a FormationTemplate matching ID `id` using `in`

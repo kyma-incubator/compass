@@ -3,10 +3,10 @@ package operators
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"runtime/debug"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/destination/destinationcreator"
+	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -46,287 +46,137 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Operation)
 
-	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && di.FormationAssignment != nil && di.FormationAssignment.State == string(model.ReadyAssignmentState) {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, di.FormationAssignment.ID)
-		if di.FormationAssignment == nil {
-			return false, errors.New("The operator's formation assignment cannot be nil")
-		}
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+	if err != nil {
+		return false, err
+	}
 
-		if err := e.destinationSvc.DeleteDestinations(ctx, di.FormationAssignment); err != nil {
+	if di.Operation == model.UnassignFormation && di.Location.OperationName == model.NotificationStatusReturned && formationAssignment != nil && formationAssignment.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.UnassignFormation, formationAssignment.ID)
+		if err := e.destinationSvc.DeleteDestinations(ctx, formationAssignment); err != nil {
 			return false, err
 		}
 
 		return true, nil
 	}
 
-	if di.FormationAssignment.State != string(model.ReadyAssignmentState) && di.FormationAssignment.State != string(model.ConfigPendingAssignmentState) {
-		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", di.FormationAssignment.ID, di.FormationAssignment.State)
+	if formationAssignment != nil && formationAssignment.State != string(model.ReadyAssignmentState) && formationAssignment.State != string(model.ConfigPendingAssignmentState) {
+		log.C(ctx).Warnf("The formation assignment with ID: %q has state: %q and no destination(s) will be created because of it", formationAssignment.ID, formationAssignment.State)
 		return true, nil
 	}
 
 	if di.Operation == model.AssignFormation {
-		log.C(ctx).Infof("Handling %s operation for formation assignment with ID: %q", model.AssignFormation, di.FormationAssignment.ID)
-
-		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
+		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && di.Location.OperationName == model.NotificationStatusReturned {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 			var assignmentConfig Configuration
-			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping response configuration from assignment with ID: %q", di.FormationAssignment.ID)
+			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration from assignment with ID: %q", formationAssignment.ID)
 			}
 
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
-			if err != nil {
-				return false, err
-			}
-
-			log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
-			for _, destDetails := range assignmentConfig.Destinations {
-				statusCode, err := e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment)
-				if err != nil {
-					log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-					if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-						if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-							return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-						}
-						return nil
-					}); transactionErr != nil {
-						return false, transactionErr
-					}
-
-					return true, nil
-				}
-
-				if statusCode == http.StatusConflict {
-					log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-					if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-						log.C(ctx).Warnf("An error occurred while deleting design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
-					}
-
-					if _, err = e.destinationSvc.CreateDesignTimeDestinations(ctx, destDetails, formationAssignment); err != nil {
-						log.C(ctx).Warnf("An error occurred while creating design time destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
-					}
+			if len(assignmentConfig.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d design time destination(s) available in the configuration response", len(assignmentConfig.Destinations))
+				if err := e.destinationSvc.CreateDesignTimeDestinations(ctx, assignmentConfig.Destinations, formationAssignment); err != nil {
+					return false, errors.Wrap(err, "while creating design time destinations")
 				}
 			}
 
 			if assignmentConfig.Credentials.InboundCommunicationDetails != nil {
-				samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-				if isSAMLDetailsExists := samlAssertionDetails; isSAMLDetailsExists != nil {
+				if samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails; samlAssertionDetails != nil && len(samlAssertionDetails.Destinations) > 0 {
 					log.C(ctx).Infof("There is/are %d SAML Assertion destination details in the configuration response", len(samlAssertionDetails.Destinations))
-					for i, destDetails := range samlAssertionDetails.Destinations {
-						certData, statusCode, err := e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment)
-						if err != nil {
-							log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
 
-							return true, nil
-						}
-
-						if statusCode == http.StatusConflict {
-							log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-							if err := e.destinationSvc.DeleteCertificateFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-								log.C(ctx).Warnf("An error occurred while deleting SAML assertion certificate with name: %q from the destination service: %v", destDetails.Name, err)
-								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-									if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-										return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-									}
-									return nil
-								}); transactionErr != nil {
-									return false, transactionErr
-								}
-
-								return true, nil
-							}
-
-							if certData, _, err = e.destinationSvc.CreateCertificateInDestinationService(ctx, destDetails, formationAssignment); err != nil {
-								log.C(ctx).Warnf("An error occurred while creating SAML assertion certificate with name: %q in the destination service: %v", destDetails.Name, err)
-								if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-									if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-										return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-									}
-									return nil
-								}); transactionErr != nil {
-									return false, transactionErr
-								}
-
-								return true, nil
-							}
-						}
-
-						err = certData.Validate()
-						if err != nil {
-							return false, errors.Wrapf(err, "while validation SAML assertion certificate data")
-						}
-
-						config, err := e.destinationSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, certData, i)
-						if err != nil {
-							return false, err
-						}
-
-						formationAssignment.Value = config
+					if samlAssertionDetails.Certificate != nil && *samlAssertionDetails.Certificate != "" && samlAssertionDetails.AssertionIssuer != nil && *samlAssertionDetails.AssertionIssuer != "" {
+						log.C(ctx).Infof("The certificate and assertion issuer for SAML Assertion destination already exist. No new certificate will be generated.")
+						return true, nil
 					}
+
+					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, samlAssertionDetails.Destinations, destinationcreatorpkg.AuthTypeSAMLAssertion, formationAssignment, 0)
+					if err != nil {
+						return false, errors.Wrap(err, "while creating SAML assertion certificate")
+					}
+
+					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithSAMLCertificateData(formationAssignment.Value, destinationcreatorpkg.SAMLAssertionDestPath, certData)
+					if err != nil {
+						return false, err
+					}
+					formationAssignment.Value = config
+				}
+
+				if clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.ClientCertificateAuthenticationDetails; clientCertDetails != nil && len(clientCertDetails.Destinations) > 0 {
+					log.C(ctx).Infof("There is/are %d client certificate destination details in the configuration response", len(clientCertDetails.Destinations))
+
+					if clientCertDetails.Certificate != nil && *clientCertDetails.Certificate != "" {
+						log.C(ctx).Infof("The certificate for client certificate authentication destination already exists. No new certificate will be generated.")
+						return true, nil
+					}
+
+					certData, err := e.destinationCreatorSvc.CreateCertificate(ctx, clientCertDetails.Destinations, destinationcreatorpkg.AuthTypeClientCertificate, formationAssignment, 0)
+					if err != nil {
+						return false, errors.Wrap(err, "while creating client certificate authentication certificate")
+					}
+
+					config, err := e.destinationCreatorSvc.EnrichAssignmentConfigWithCertificateData(formationAssignment.Value, destinationcreatorpkg.ClientCertAuthDestPath, certData)
+					if err != nil {
+						return false, err
+					}
+					formationAssignment.Value = config
 				}
 			}
 
 			return true, nil
 		}
 
-		if di.FormationAssignment != nil && string(di.FormationAssignment.Value) != "" && string(di.FormationAssignment.Value) != "\"\"" && di.ReverseFormationAssignment != nil && string(di.ReverseFormationAssignment.Value) != "" && string(di.ReverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
+		reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
+		if err != nil {
+			return false, err
+		}
+
+		if formationAssignment != nil && string(formationAssignment.Value) != "" && string(formationAssignment.Value) != "\"\"" && reverseFormationAssignment != nil && string(reverseFormationAssignment.Value) != "" && string(reverseFormationAssignment.Value) != "\"\"" && di.Location.OperationName == model.SendNotificationOperation {
 			log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
 
 			var assignmentConfig Configuration
-			if err := json.Unmarshal(di.FormationAssignment.Value, &assignmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from assignment with ID: %q", di.FormationAssignment.ID)
+			if err := json.Unmarshal(formationAssignment.Value, &assignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping configuration response from assignment with ID: %q", formationAssignment.ID)
 			}
 
-			var reverseAssigmentConfig Configuration
-			if err := json.Unmarshal(di.ReverseFormationAssignment.Value, &reverseAssigmentConfig); err != nil {
-				return false, errors.Wrapf(err, "while unmarshaling tenant mapping configuration response from reverse assignment with ID: %q", di.ReverseFormationAssignment.ID)
+			var reverseAssignmentConfig Configuration
+			if err := json.Unmarshal(reverseFormationAssignment.Value, &reverseAssignmentConfig); err != nil {
+				return false, errors.Wrapf(err, "while unmarshalling tenant mapping configuration response from reverse assignment with ID: %q", reverseFormationAssignment.ID)
 			}
 
 			if assignmentConfig.Credentials.InboundCommunicationDetails == nil {
 				return false, errors.New("The inbound communication destination details could not be empty")
 			}
 
-			if reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials == nil {
-				return false, errors.New("The outbound communication credentials could not be empty")
-			}
-
-			formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JointPointDetailsFAMemoryAddress)
-			if err != nil {
-				return false, err
+			if reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials == nil {
+				log.C(ctx).Warnf("No outbound communication credentials are provided. No destination will be created.")
+				return true, nil
 			}
 
 			basicAuthDetails := assignmentConfig.Credentials.InboundCommunicationDetails.BasicAuthenticationDetails
-			basicAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
-			if basicAuthDetails != nil && basicAuthCreds != nil {
+			basicAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.BasicAuthentication
+			if basicAuthDetails != nil && basicAuthCreds != nil && len(basicAuthDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d inbound basic destination(s) details available in the configuration", len(basicAuthDetails.Destinations))
-				for _, destDetails := range basicAuthDetails.Destinations {
-					statusCode, err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs)
-					if err != nil {
-						log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
-
-						return true, nil
-					}
-
-					if statusCode == http.StatusConflict {
-						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							log.C(ctx).Warnf("An error occurred while deleting basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
-						}
-
-						if _, err = e.destinationSvc.CreateBasicCredentialDestinations(ctx, destDetails, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
-							log.C(ctx).Warnf("An error occurred while creating basic destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
-						}
-					}
+				if err := e.destinationSvc.CreateBasicCredentialDestinations(ctx, basicAuthDetails.Destinations, *basicAuthCreds, formationAssignment, basicAuthDetails.CorrelationIDs); err != nil {
+					return false, errors.Wrap(err, "while creating basic destinations")
 				}
 			}
 
 			samlAssertionDetails := assignmentConfig.Credentials.InboundCommunicationDetails.SAMLAssertionDetails
-			samlAuthCreds := reverseAssigmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
-			if samlAssertionDetails != nil && samlAuthCreds != nil {
-				log.C(ctx).Infof("There is/are %d inbound SAML destination(s) available in the configuration", len(basicAuthDetails.Destinations))
-				for _, destDetails := range samlAssertionDetails.Destinations {
-					statusCode, err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs)
-					if err != nil {
-						log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q: %v", destDetails.SubaccountID, destDetails.Name, err)
-						if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-							if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-								return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-							}
-							return nil
-						}); transactionErr != nil {
-							return false, transactionErr
-						}
+			samlAuthCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.SAMLAssertionAuthentication
+			if samlAssertionDetails != nil && samlAuthCreds != nil && len(samlAssertionDetails.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d inbound SAML Assertion destination(s) available in the configuration", len(samlAssertionDetails.Destinations))
+				if err := e.destinationSvc.CreateSAMLAssertionDestination(ctx, samlAssertionDetails.Destinations, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
+					return false, errors.Wrap(err, "while creating SAML Assertion destinations")
+				}
+			}
 
-						return true, nil
-					}
-
-					if statusCode == http.StatusConflict {
-						log.C(ctx).Infof("The destination with name: %q already exists. Will be deleted and created again...", destDetails.Name)
-						if err := e.destinationSvc.DeleteDestinationFromDestinationService(ctx, destDetails.Name, destDetails.SubaccountID, formationAssignment); err != nil {
-							log.C(ctx).Warnf("An error occurred while deleting SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
-						}
-
-						if _, err = e.destinationSvc.CreateSAMLAssertionDestination(ctx, destDetails, samlAuthCreds, formationAssignment, samlAssertionDetails.CorrelationIDs); err != nil {
-							log.C(ctx).Warnf("An error occurred while creating SAML assertion destination with subaccount ID: %q and name: %q when handling conflict case: %v", destDetails.SubaccountID, destDetails.Name, err)
-							if transactionErr := e.transaction(ctx, func(ctxWithTransact context.Context) error {
-								if err := e.setAssignmentToErrorState(ctx, formationAssignment, err.Error()); err != nil {
-									return errors.Wrapf(err, "while setting formation assignment with ID: %q to error state: %q", formationAssignment.ID, model.CreateErrorAssignmentState)
-								}
-								return nil
-							}); transactionErr != nil {
-								return false, transactionErr
-							}
-
-							return true, nil
-						}
-					}
+			clientCertDetails := assignmentConfig.Credentials.InboundCommunicationDetails.ClientCertificateAuthenticationDetails
+			clientCertCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.ClientCertAuthentication
+			if clientCertDetails != nil && clientCertCreds != nil && len(clientCertDetails.Destinations) > 0 {
+				log.C(ctx).Infof("There is/are %d inbound client certificate authentication destination(s) available in the configuration", len(clientCertDetails.Destinations))
+				if err := e.destinationSvc.CreateClientCertificateAuthenticationDestination(ctx, clientCertDetails.Destinations, clientCertCreds, formationAssignment, clientCertDetails.CorrelationIDs); err != nil {
+					return false, errors.Wrapf(err, "while creating client certificate authentication destinations")
 				}
 			}
 
@@ -340,7 +190,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 // Destination Creator Operator types
 
-// Configuration represents a formation assignment(or reverse formation assignment) configuration
+// Configuration represents a formation assignment (or reverse formation assignment) configuration
 type Configuration struct {
 	Destinations         []Destination        `json:"destinations"`
 	Credentials          Credentials          `json:"credentials"`
@@ -350,29 +200,30 @@ type Configuration struct {
 // AdditionalProperties is an alias for slice of `json.RawMessage` elements
 type AdditionalProperties []json.RawMessage
 
-// Credentials represents different type of credentials configuration - inbound, outbound
+// Credentials represent a different type of credentials configuration - inbound, outbound
 type Credentials struct {
 	OutboundCommunicationCredentials *OutboundCommunicationCredentials `json:"outboundCommunication,omitempty"`
 	InboundCommunicationDetails      *InboundCommunicationDetails      `json:"inboundCommunication,omitempty"`
 }
 
-// OutboundCommunicationCredentials consists of different type of outbound authentications
+// OutboundCommunicationCredentials consists of a different type of outbound authentications
 type OutboundCommunicationCredentials struct {
-	NoAuthentication                      *NoAuthentication                      `json:"noAuthentication,omitempty"`
-	BasicAuthentication                   *BasicAuthentication                   `json:"basicAuthentication,omitempty"`
-	SAMLAssertionAuthentication           *SAMLAssertionAuthentication           `json:"samlAssertion,omitempty"`
-	OAuth2ClientCredentialsAuthentication *OAuth2ClientCredentialsAuthentication `json:"oauth2ClientCredentials,omitempty"`
-	ClientCertAuthentication              *ClientCertAuthentication              `json:"clientCertificateAuthentication,omitempty"`
+	NoAuthentication                        *NoAuthentication                        `json:"noAuthentication,omitempty"`
+	BasicAuthentication                     *BasicAuthentication                     `json:"basicAuthentication,omitempty"`
+	SAMLAssertionAuthentication             *SAMLAssertionAuthentication             `json:"samlAssertion,omitempty"`
+	OAuth2SAMLBearerAssertionAuthentication *OAuth2SAMLBearerAssertionAuthentication `json:"oauth2SamlBearerAssertion,omitempty"`
+	ClientCertAuthentication                *ClientCertAuthentication                `json:"clientCertificateAuthentication,omitempty"`
+	OAuth2ClientCredentialsAuthentication   *OAuth2ClientCredentialsAuthentication   `json:"oauth2ClientCredentials,omitempty"`
 }
 
-// NoAuthentication represents destination without authentication
+// NoAuthentication represents outbound communication without any authentication
 type NoAuthentication struct {
 	URL            string   `json:"url"`
 	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// BasicAuthentication represents destination with basic authentication
+// BasicAuthentication represents outbound communication with basic authentication
 type BasicAuthentication struct {
 	URL            string   `json:"url"`
 	UIURL          string   `json:"uiUrl,omitempty"`
@@ -381,12 +232,20 @@ type BasicAuthentication struct {
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// SAMLAssertionAuthentication represents destination with SAML assertion authentication
+// SAMLAssertionAuthentication represents outbound communication with SAML Assertion authentication
 type SAMLAssertionAuthentication struct {
 	URL string `json:"url"`
 }
 
-// OAuth2ClientCredentialsAuthentication represents destination with OAuth 2 client credentials authentication
+// OAuth2SAMLBearerAssertionAuthentication represents outbound communication with OAuth 2 SAML Bearer Assertion authentication
+type OAuth2SAMLBearerAssertionAuthentication struct {
+	URL             string `json:"url"`
+	TokenServiceURL string `json:"tokenServiceUrl"`
+	ClientID        string `json:"clientId"`
+	ClientSecret    string `json:"clientSecret"`
+}
+
+// OAuth2ClientCredentialsAuthentication represents outbound communication with OAuth 2 client credentials authentication
 type OAuth2ClientCredentialsAuthentication struct {
 	URL             string   `json:"url"`
 	UIURL           string   `json:"uiUrl,omitempty"`
@@ -396,49 +255,68 @@ type OAuth2ClientCredentialsAuthentication struct {
 	CorrelationIds  []string `json:"correlationIds,omitempty"`
 }
 
-// ClientCertAuthentication represents destination with client certificate authentication
+// ClientCertAuthentication represents outbound communication with client certificate authentication
 type ClientCertAuthentication struct {
 	URL            string   `json:"url"`
 	UIURL          string   `json:"uiUrl,omitempty"`
 	CorrelationIds []string `json:"correlationIds,omitempty"`
 }
 
-// InboundCommunicationDetails consists of different type of inbound communication configuration details
+// InboundCommunicationDetails consists of a different type of inbound communication configuration details
 type InboundCommunicationDetails struct {
-	BasicAuthenticationDetails       *InboundBasicAuthenticationDetails       `json:"basicAuthentication,omitempty"`
-	SAMLAssertionDetails             *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`
-	OAuth2SAMLBearerAssertionDetails *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
+	BasicAuthenticationDetails             *InboundBasicAuthenticationDetails       `json:"basicAuthentication,omitempty"`
+	SAMLAssertionDetails                   *InboundSAMLAssertionDetails             `json:"samlAssertion,omitempty"`
+	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
+	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 }
 
-// InboundBasicAuthenticationDetails represents destination configuration details for basic authentication
+// InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
 type InboundBasicAuthenticationDetails struct {
 	CorrelationIDs []string      `json:"correlationIds"`
 	Destinations   []Destination `json:"destinations"`
 }
 
-// InboundSAMLAssertionDetails represents destination configuration details for SAML assertion authentication
+// InboundSAMLAssertionDetails represents inbound communication configuration details for SAML assertion authentication
 type InboundSAMLAssertionDetails struct {
-	CorrelationIDs []string      `json:"correlationIds"`
-	Destinations   []Destination `json:"destinations"`
+	CorrelationIDs  []string      `json:"correlationIds"`
+	Destinations    []Destination `json:"destinations"`
+	Certificate     *string       `json:"certificate,omitempty"`
+	AssertionIssuer *string       `json:"assertionIssuer,omitempty"`
 }
 
-// InboundOAuth2SAMLBearerAssertionDetails represents destination configuration details for SAML bearer assertion authentication
+// InboundOAuth2SAMLBearerAssertionDetails represents inbound communication configuration details for SAML bearer assertion authentication
 type InboundOAuth2SAMLBearerAssertionDetails struct {
+	CorrelationIDs  []string      `json:"correlationIds"`
+	Destinations    []Destination `json:"destinations"`
+	Certificate     *string       `json:"certificate,omitempty"`
+	AssertionIssuer *string       `json:"assertionIssuer,omitempty"`
+}
+
+// InboundClientCertAuthenticationDetails represents inbound communication configuration details for client certificate authentication
+type InboundClientCertAuthenticationDetails struct {
 	CorrelationIDs []string      `json:"correlationIds"`
 	Destinations   []Destination `json:"destinations"`
+	Certificate    *string       `json:"certificate,omitempty"`
 }
 
 // Destination holds different destination types properties
 type Destination struct {
-	Name                 string                       `json:"name"`
-	Type                 destinationcreator.Type      `json:"type,omitempty"`
-	Description          string                       `json:"description,omitempty"`
-	ProxyType            destinationcreator.ProxyType `json:"proxyType,omitempty"`
-	Authentication       destinationcreator.AuthType  `json:"authentication,omitempty"`
-	URL                  string                       `json:"url,omitempty"`
-	SubaccountID         string                       `json:"subaccountId,omitempty"`
-	AdditionalProperties json.RawMessage              `json:"additionalProperties,omitempty"`
-	FileName             string                       `json:"fileName,omitempty"`
-	CommonName           string                       `json:"commonName,omitempty"`
-	CertificateChain     string                       `json:"certificateChain,omitempty"`
+	Name                 string          `json:"name"`
+	Type                 string          `json:"type,omitempty"`
+	Description          string          `json:"description,omitempty"`
+	ProxyType            string          `json:"proxyType,omitempty"`
+	Authentication       string          `json:"authentication,omitempty"`
+	URL                  string          `json:"url,omitempty"`
+	SubaccountID         string          `json:"subaccountId,omitempty"`
+	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
+	FileName             string          `json:"fileName,omitempty"`
+	CommonName           string          `json:"commonName,omitempty"`
+	CertificateChain     string          `json:"certificateChain,omitempty"`
+}
+
+// CertificateData contains the data for the certificate resource from the destination creator component
+type CertificateData struct {
+	FileName         string `json:"fileName"`
+	CommonName       string `json:"commonName"`
+	CertificateChain string `json:"certificateChain"`
 }

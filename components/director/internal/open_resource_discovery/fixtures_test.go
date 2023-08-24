@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
@@ -21,6 +23,7 @@ import (
 const (
 	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
 	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
+	proxyURL               = "http://proxy.com:8080"
 	baseURL                = "http://test.com:8080"
 	baseURL2               = "http://second.com"
 	customWebhookConfigURL = "http://custom.com/config/endpoint"
@@ -73,6 +76,8 @@ const (
 	appTemplateVersionID    = "testAppTemplateVersionID"
 	appTemplateVersionValue = "2303"
 	appTemplateName         = "appTemplateName"
+
+	applicationTypeLabelValue = "customType"
 )
 
 var (
@@ -289,6 +294,12 @@ func fixORDDocument() *ord.Document {
 	return fixORDDocumentWithBaseURL("")
 }
 
+func fixORDDocumentWithoutCredentialExchanges() *ord.Document {
+	doc := fixORDDocumentWithBaseURL("")
+	doc.ConsumptionBundles[0].CredentialExchangeStrategies = nil
+	return doc
+}
+
 func fixORDStaticDocument() *ord.Document {
 	doc := fixORDDocumentWithBaseURL("")
 	doc.DescribedSystemInstance = nil
@@ -300,6 +311,13 @@ func fixORDStaticDocument() *ord.Document {
 
 func fixSanitizedORDDocument() *ord.Document {
 	sanitizedDoc := fixORDDocumentWithBaseURL(baseURL)
+	sanitizeResources(sanitizedDoc)
+	return sanitizedDoc
+}
+
+func fixSanitizedORDDocumentForProxyURL() *ord.Document {
+	sanitizedDoc := fixORDDocumentWithBaseURL(proxyURL)
+	sanitizedDoc.ConsumptionBundles[0].CredentialExchangeStrategies = nil
 	sanitizeResources(sanitizedDoc)
 	return sanitizedDoc
 }
@@ -731,6 +749,21 @@ func fixApplications() []*model.Application {
 	}
 }
 
+func fixApplicationsWithBaseURL() []*model.Application {
+	return []*model.Application{
+		{
+			Name: "testApp",
+			BaseEntity: &model.BaseEntity{
+				ID:    appID,
+				Ready: true,
+			},
+			BaseURL:               str.Ptr(baseURL),
+			Type:                  testApplicationType,
+			ApplicationTemplateID: str.Ptr(appTemplateID),
+		},
+	}
+}
+
 func fixTenantMappingWebhookGraphQLInput() *graphql.WebhookInput {
 	syncMode := graphql.WebhookModeSync
 	return &graphql.WebhookInput{
@@ -753,7 +786,17 @@ func fixTenantMappingWebhookModelInput() *model.WebhookInput {
 		Mode: &syncMode,
 	}
 }
-
+func fixWebhookForApplicationWithProxyURL() *model.Webhook {
+	return &model.Webhook{
+		ID:             whID,
+		ObjectID:       appID,
+		ObjectType:     model.ApplicationWebhookReference,
+		Type:           model.WebhookTypeOpenResourceDiscovery,
+		URL:            str.Ptr(baseURL),
+		ProxyURL:       str.Ptr(customWebhookConfigURL),
+		HeaderTemplate: str.Ptr(`{"target_host": ["{{.Application.BaseURL}}"] }`),
+	}
+}
 func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
 		{
@@ -1158,7 +1201,7 @@ func fixEventsNoVersionBump() []*model.EventDefinition {
 	return events
 }
 
-func fixAPI1SpecInputs() []*model.SpecInput {
+func fixAPI1SpecInputs(url string) []*model.SpecInput {
 	openAPIType := model.APISpecTypeOpenAPIV3
 	edmxAPIType := model.APISpecTypeEDMX
 	return []*model.SpecInput{
@@ -1167,7 +1210,7 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL:  baseURL + "/external-api/unsecured/spec/flapping",
+				URL:  url + "/external-api/unsecured/spec/flapping",
 				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
@@ -1196,7 +1239,7 @@ func fixAPI1IDs() []string {
 	return []string{api1spec1ID, api1spec2ID, api1spec3ID}
 }
 
-func fixAPI2SpecInputs() []*model.SpecInput {
+func fixAPI2SpecInputs(url string) []*model.SpecInput {
 	edmxAPIType := model.APISpecTypeEDMX
 	openAPIType := model.APISpecTypeOpenAPIV3
 	return []*model.SpecInput{
@@ -1214,7 +1257,7 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL:  baseURL + "/odata/1.0/catalog.svc/$value?type=json",
+				URL:  url + "/odata/1.0/catalog.svc/$value?type=json",
 				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
@@ -1244,7 +1287,7 @@ func fixEvent1IDs() []string {
 	return []string{event1specID}
 }
 
-func fixEvent2SpecInputs() []*model.SpecInput {
+func fixEvent2SpecInputs(url string) []*model.SpecInput {
 	eventType := model.EventSpecTypeAsyncAPIV2
 	return []*model.SpecInput{
 		{
@@ -1252,7 +1295,7 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 			EventType:  &eventType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL:  baseURL + "/api/eventCatalog.json",
+				URL:  url + "/api/eventCatalog.json",
 				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
@@ -1329,6 +1372,13 @@ func fixGlobalRegistryORDDocument() *ord.Document {
 				Title: "SAP SE",
 			},
 		},
+	}
+}
+
+func fixApplicationTypeLabel() *model.Label {
+	return &model.Label{
+		Key:   application.ApplicationTypeLabelKey,
+		Value: applicationTypeLabelValue,
 	}
 }
 

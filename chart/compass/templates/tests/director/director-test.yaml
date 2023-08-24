@@ -16,7 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
     spec:
@@ -77,6 +77,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_REGION2
@@ -198,8 +200,12 @@ spec:
                   key: password
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
-            - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
-              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.indirectDependencySubscriptionProviderAppNameValue }}
+            - name: APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderAppNameValue }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: SKIP_TESTS_REGEX
@@ -212,10 +218,10 @@ spec:
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
-            - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
-              value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds | quote}}
+            - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.tenantMappingStatusAPI.responseDelayInSeconds | quote}}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
-              value: {{ .Values.global.hydrator.certSubjectMappingResyncInterval | quote }}
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -238,12 +244,56 @@ spec:
                   key: password
             - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
               value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
-          {{ if .Values.global.isLocalEnv }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTIONS_LABEL_KEY
+              value: {{ .Values.global.tests.subscription.labelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_STANDARD_FLOW
+              value: {{ .Values.global.tests.subscription.standardFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_DIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.directDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_INDIRECT_DEPENDENCY_FLOW
+              value: {{ .Values.global.tests.subscription.indirectDependencyFlow }}
+            - name: APP_SUBSCRIPTION_CONFIG_SUBSCRIPTION_FLOW_HEADER_KEY
+              value: {{ .Values.global.tests.subscription.subscriptionsFlowHeaderKey }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
           volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
+          {{ if .Values.global.isLocalEnv }}
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
               name: examples
           {{ end }}
       volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
       {{ if .Values.global.isLocalEnv }}
         - name: examples
           hostPath:

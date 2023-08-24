@@ -408,25 +408,32 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
-func (docs Documents) Sanitize(baseURL string) error {
+func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
+
+	// Use the ProxyURL for all relative link substitution except for the API's TargetURLs.
+	// They are externally consumable and we should not expose those URLs through the Proxy but rather from webhook's BaseURL
+	url := webhookBaseURL
+	if webhookBaseProxyURL != "" {
+		url = webhookBaseProxyURL
+	}
 
 	// Rewrite relative URIs
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if pkg.PackageLinks, err = rewriteRelativeURIsInJSON(pkg.PackageLinks, baseURL, "url"); err != nil {
+			if pkg.PackageLinks, err = rewriteRelativeURIsInJSON(pkg.PackageLinks, url, "url"); err != nil {
 				return err
 			}
-			if pkg.Links, err = rewriteRelativeURIsInJSON(pkg.Links, baseURL, "url"); err != nil {
+			if pkg.Links, err = rewriteRelativeURIsInJSON(pkg.Links, url, "url"); err != nil {
 				return err
 			}
 		}
 
 		for _, bndl := range doc.ConsumptionBundles {
-			if bndl.Links, err = rewriteRelativeURIsInJSON(bndl.Links, baseURL, "url"); err != nil {
+			if bndl.Links, err = rewriteRelativeURIsInJSON(bndl.Links, url, "url"); err != nil {
 				return err
 			}
-			if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJSON(bndl.CredentialExchangeStrategies, baseURL, "callbackUrl"); err != nil {
+			if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJSON(bndl.CredentialExchangeStrategies, url, "callbackUrl"); err != nil {
 				return err
 			}
 		}
@@ -434,34 +441,34 @@ func (docs Documents) Sanitize(baseURL string) error {
 		for _, api := range doc.APIResources {
 			for _, definition := range api.ResourceDefinitions {
 				if !isAbsoluteURL(definition.URL) {
-					definition.URL = baseURL + definition.URL
+					definition.URL = url + definition.URL
 				}
 			}
-			if api.APIResourceLinks, err = rewriteRelativeURIsInJSON(api.APIResourceLinks, baseURL, "url"); err != nil {
+			if api.APIResourceLinks, err = rewriteRelativeURIsInJSON(api.APIResourceLinks, url, "url"); err != nil {
 				return err
 			}
-			if api.Links, err = rewriteRelativeURIsInJSON(api.Links, baseURL, "url"); err != nil {
+			if api.Links, err = rewriteRelativeURIsInJSON(api.Links, url, "url"); err != nil {
 				return err
 			}
-			if api.ChangeLogEntries, err = rewriteRelativeURIsInJSON(api.ChangeLogEntries, baseURL, "url"); err != nil {
+			if api.ChangeLogEntries, err = rewriteRelativeURIsInJSON(api.ChangeLogEntries, url, "url"); err != nil {
 				return err
 			}
-			if api.TargetURLs, err = rewriteRelativeURIsInJSONArray(api.TargetURLs, baseURL); err != nil {
+			if api.TargetURLs, err = rewriteRelativeURIsInJSONArray(api.TargetURLs, webhookBaseURL); err != nil {
 				return err
 			}
-			rewriteDefaultTargetURL(api.PartOfConsumptionBundles, baseURL)
+			rewriteDefaultTargetURL(api.PartOfConsumptionBundles, url)
 		}
 
 		for _, event := range doc.EventResources {
-			if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, baseURL, "url"); err != nil {
+			if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, url, "url"); err != nil {
 				return err
 			}
-			if event.Links, err = rewriteRelativeURIsInJSON(event.Links, baseURL, "url"); err != nil {
+			if event.Links, err = rewriteRelativeURIsInJSON(event.Links, url, "url"); err != nil {
 				return err
 			}
 			for _, definition := range event.ResourceDefinitions {
 				if !isAbsoluteURL(definition.URL) {
-					definition.URL = baseURL + definition.URL
+					definition.URL = url + definition.URL
 				}
 			}
 		}

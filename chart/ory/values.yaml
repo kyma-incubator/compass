@@ -1,0 +1,276 @@
+# Global or kyma related overrides
+global:
+  domainName: "local.kyma.dev"
+  postgresql:
+    # Values are used by the install-ory.sh script
+    postgresqlDatabase: db4hydra
+    postgresqlUsername: hydra
+  istio:
+    gateway:
+      name: kyma-gateway
+      namespace: kyma-system
+  ory:
+    oathkeeper:
+      maester:
+        mode: sidecar
+    hydra:
+      persistence:
+        enabled: true
+        gcloud:
+          enabled: false
+          saJson: ""
+        postgresql:
+          enabled: true
+  containerRegistry:
+    path: eu.gcr.io/kyma-project
+  images:
+    k8s_tools:
+      name: "k8s-tools"
+      version: "20220525-4bd6d72e"
+      directory: "tpi"
+    ## Google Cloud SQL Proxy image
+    ## ref: https://cloud.google.com/sql/docs/mysql/sql-proxy
+    ## ref: https://cloud.google.com/sql/docs/postgres/sql-proxy
+    gce_proxy:
+      name: "gce-proxy"
+      version: "v1.30.1-alpine-3cba814e"
+      directory: "tpi/cloudsql-docker"
+    hydra:
+      name: "hydra"
+      version: "v1.11.8"
+      directory: "external/oryd"
+    busybox:
+      name: "busybox"
+      version: "1.34.1"
+      directory: "external"
+    oathkeeper:
+      name: "oathkeeper"
+      version: "v0.38.25-beta.1"
+      directory: "external/oryd"
+    oathkeeper_maester:
+      name: "oathkeeper-maester"
+      version: "v0.1.5"
+      directory: "external/oryd"
+    postgres:
+      name: "postgres"
+      version: "11.15-alpine3.15"
+      directory: "external"
+    postgres_exporter:
+      name: "postgres-exporter"
+      version: "0.8.0-debian-10-r28"
+      directory: "external/bitnami"
+    alpine:
+      name: "alpine"
+      version: "3.15.3"
+      directory: "external"
+
+headerRewrite:
+  enabled: true
+  certificateDataHeader: "Certificate-Data"
+  workloadLabel: oathkeeper
+
+# Maintenance options
+maintenance:
+  podSecurityPolicy:
+    enabled: true
+
+# Overrides for the Hydra chart
+hydra:
+  ingress:
+    public:
+      enabled: false
+    admin:
+      enabled: false
+  deployment:
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: "50%"
+        maxUnavailable: "0%"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 400Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetMemoryUtilizationPercentage: 75
+      targetCPUUtilizationPercentage: 80
+  hydra:
+    # The ORY Hydra configuration. For a full list of available settings, check:
+    #   https://github.com/ory/hydra/blob/master/docs/config.yaml
+    autoMigrate: true
+    config:
+      dsn: memory
+      log:
+        leak_sensitive_values: false
+        level: trace
+      serve:
+        admin:
+          port: 4445
+        public:
+          port: 4444
+        tls:
+          allow_termination_from:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+      urls:
+        self: {}
+    dangerousAllowInsecureRedirectUrls: false
+    dangerousForceHttp: true
+    existingSecret: "ory-hydra-credentials"
+
+# Overrides for the Oathkeeper chart
+oathkeeper:
+  oathkeeper:
+    config:
+      authenticators:
+        noop:
+          enabled: true
+        unauthorized:
+          enabled: true
+        anonymous:
+          config:
+            subject: anonymous
+          enabled: true
+        cookie_session:
+          enabled: false
+          config:
+            # REQUIRED IF ENABLED - The session store to forward request method/path/headers to for validation
+            check_session_url: https://session-store-host
+            # Optionally set a list of cookie names to look for in incoming requests.
+            # If unset, all requests are forwarded.
+            # If set, only requests that have at least one of the set cookies will be forwarded, others will be passed to the next authenticator
+            only:
+              - sessionid
+        oauth2_client_credentials:
+          enabled: true
+          config:
+            # REQUIRED IF ENABLED - The OAuth 2.0 Token Endpoint that will be used to validate the client credentials.
+            token_url: http://ory-stack-hydra-public.ory.svc.cluster.local:4444/oauth2/token
+        oauth2_introspection:
+          # Set enabled to true if the authenticator should be enabled and false to disable the authenticator. Defaults to false.
+          enabled: true
+          config:
+            # REQUIRED IF ENABLED - The OAuth 2.0 Token Introspection endpoint.
+            introspection_url: http://ory-stack-hydra-admin.ory.svc.cluster.local:4445/oauth2/introspect
+            # Sets the strategy to be used to validate/match the token scope. Supports "hierarchic", "exact", "wildcard", "none". Defaults
+            # to "none".
+            scope_strategy: exact
+        # Enable the "jwt" section to allow for jwt authenticator configured.
+        jwt:
+          enabled: true
+          config:
+            jwks_urls:
+              - http://ory-stack-hydra-public.ory.svc.cluster.local:4444/.well-known/jwks.json
+            scope_strategy: wildcard
+      authorizers:
+        allow:
+          enabled: true
+        deny:
+          enabled: true
+      log:
+          level: trace
+      mutators:
+        noop:
+          enabled: true
+        id_token:
+          enabled: true
+          config:
+            # REQUIRED IF ENABLED - Sets the "iss" value of the ID Token.
+            issuer_url: https://oathkeeper.local.kyma.dev/
+            # REQUIRED IF ENABLED - Sets the URL where keys should be fetched from. Supports remote locations (http, https) as
+            # well as local filesystem paths.
+            jwks_url: file:///etc/secrets/jwks.json
+            # jwks_url: https://fetch-keys/from/this/location.json
+            # jwks_url: file:///from/this/absolute/location.json
+            # jwks_url: file://../from/this/relative/location.json
+            # Sets the time-to-live of the ID token. Defaults to one minute. Valid time units are: s (second), m (minute), h (hour).
+            ttl: 60s
+        header:
+          config:
+            headers:
+              X-Server: oathkeeper
+          enabled: true
+        cookie:
+          enabled: true
+          config:
+            cookies:
+              processedWith: oathkeeper
+        hydrator:
+          enabled: true
+          config:
+            api:
+              url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
+      serve:
+        proxy:
+          port: 4455
+          timeout:
+            idle: 3600s
+            read: 3600s
+            write: 3600s
+        api:
+          port: 4456
+  deployment:
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: "50%"
+        maxUnavailable: "0%"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 512Mi
+      requests:
+        cpu: 20m
+        memory: 128Mi
+    autoscaling:
+      enabled: true
+      maxReplicas: "1"
+      minReplicas: "1"
+      targetMemoryUtilizationPercentage: 75
+      targetCPUUtilizationPercentage: 80    
+  oathkeeper-maester:
+    # Needed to enforce unique names
+    # TODO: remove this once the ory stack reaches prod & rollback the serviceaccountnames in oathkeeper deployments
+    nameOverride: "oathkeeper-stack-maester"
+    deployment:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      resources:
+        limits:
+          cpu: 100m
+          memory: 256Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi
+
+# Local persistance settings
+postgresql:
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 1024Mi
+      cpu: 750m
+  master:
+    podAnnotations:
+      sidecar.istio.io/inject: "false"
+  # Must be in-sync with hydra.hydra.config.existingSecret
+  existingSecret: "ory-hydra-credentials"
+
+# Remote persistance settings
+gcloud-sqlproxy:
+  rbac:
+    create: true
+  extraArgs:
+    log_debug_stdout: true
+    term_timeout: 30s
+  podAnnotations:
+    sidecar.istio.io/inject: "false"

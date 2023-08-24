@@ -9,6 +9,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	directorwh "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -48,7 +52,7 @@ func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
 //
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
 }
 
 type client struct {
@@ -67,7 +71,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook) (Documents, string, error) {
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
@@ -79,17 +83,18 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 		tenantValue = tntFromCtx.ExternalID
 	}
 
-	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue)
+	log.C(ctx).Infof("Fetching ORD well-known config")
+	config, err := c.fetchConfig(ctx, resource, webhook, tenantValue, requestObject)
 	if err != nil {
 		return nil, "", err
 	}
 
-	baseURL, err := calculateBaseURL(*webhook.URL, *config)
+	webhookBaseURL, err := calculateBaseURL(webhook, *config)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while calculating baseURL")
 	}
 
-	err = config.Validate(baseURL)
+	err = config.Validate(webhookBaseURL)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
@@ -110,7 +115,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 				<-workers
 			}()
 
-			documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
+			documentURL, err := buildDocumentURL(docDetails.URL, webhookBaseURL, str.PtrStrToStr(webhook.ProxyURL), ordWebhookMapping)
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
 				addError(&fetchDocErrors, err, &errMutex)
@@ -120,7 +125,8 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 			if !ok {
 				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			}
-			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
+
+			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, requestObject)
 			if err != nil {
 				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 				addError(&fetchDocErrors, err, &errMutex)
@@ -143,7 +149,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resour
 		stringErrors := convertErrorsToStrings(fetchDocErrors)
 		fetchDocErr = errors.Errorf(strings.Join(stringErrors, "\n"))
 	}
-	return docs, baseURL, fetchDocErr
+	return docs, webhookBaseURL, fetchDocErr
 }
 
 func convertErrorsToStrings(errors []error) (result []string) {
@@ -153,14 +159,14 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue)
+	resp, err := executor.Execute(ctx, c.Client, documentURL, requestObject.TenantID, requestObject.Headers)
 	if err != nil {
 		return nil, err
 	}
@@ -201,28 +207,34 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
+
+	webhookURL := *webhook.URL
+	if webhook.ProxyURL != nil {
+		webhookURL = *webhook.ProxyURL
+	}
+
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("%s %q (id = %q) ORD webhook is configured with %q access strategy.", resource.Type, resource.Name, resource.ID, *webhook.Auth.AccessStrategy)
 		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
-		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue)
+		resp, err = executor.Execute(ctx, c.Client, webhookURL, tenantValue, requestObject.Headers)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
 	} else if webhook.Auth != nil {
 		log.C(ctx).Infof("%s %q (id = %q) configuration endpoint is secured and webhook credentials will be used", resource.Type, resource.Name, resource.ID)
-		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, *webhook.URL, tenantValue, webhook.Auth)
+		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, webhookURL, requestObject.TenantID, webhook.Auth)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
 		}
 	} else {
 		log.C(ctx).Infof("%s %q (id = %q) configuration endpoint is not secured", resource.Type, resource.Name, resource.ID)
-		resp, err = httputil.GetRequestWithoutCredentials(c.Client, *webhook.URL, tenantValue)
+		resp, err = httputil.GetRequestWithoutCredentials(c.Client, webhookURL, requestObject.TenantID)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 		}
@@ -241,13 +253,13 @@ func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *mo
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
-		return nil, errors.Wrap(err, "error unmarshaling json body")
+		return nil, errors.Wrap(err, "error unmarshaling wellknown json body")
 	}
 
 	return &config, nil
 }
 
-func buildDocumentURL(docURL, baseURL string) (string, error) {
+func buildDocumentURL(docURL, appBaseURL, webhookProxyURL string, ordWebhookMapping application.ORDWebhookMapping) (string, error) {
 	docURLParsed, err := url.Parse(docURL)
 	if err != nil {
 		return "", err
@@ -255,17 +267,22 @@ func buildDocumentURL(docURL, baseURL string) (string, error) {
 	if docURLParsed.IsAbs() {
 		return docURL, nil
 	}
-	return baseURL + docURL, nil
+
+	if webhookProxyURL != "" {
+		return ordWebhookMapping.ProxyURL + docURL, nil
+	}
+
+	return appBaseURL + docURL, nil
 }
 
 // if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
 // if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
-func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error) {
+func calculateBaseURL(webhook *model.Webhook, config WellKnownConfig) (string, error) {
 	if config.BaseURL != "" {
 		return config.BaseURL, nil
 	}
 
-	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
+	parsedWebhookURL, err := url.ParseRequestURI(str.PtrStrToStr(webhook.URL))
 	if err != nil {
 		return "", errors.New("error while parsing input webhook url")
 	}

@@ -150,6 +150,29 @@ func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant st
 	return r0, r1
 }
 
+// GetByLocalTenantIDAndAppTemplateID provides a mock function with given fields: ctx, tenant, localTenantID, appTemplateID
+func (_m *ApplicationRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant string, localTenantID string, appTemplateID string) (*model.Application, error) {
+	ret := _m.Called(ctx, tenant, localTenantID, appTemplateID)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Application); ok {
+		r0 = rf(ctx, tenant, localTenantID, appTemplateID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenant, localTenantID, appTemplateID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBySystemNumber provides a mock function with given fields: ctx, tenant, systemNumber
 func (_m *ApplicationRepository) GetBySystemNumber(ctx context.Context, tenant string, systemNumber string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, systemNumber)

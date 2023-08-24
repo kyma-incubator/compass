@@ -516,6 +516,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
+		ParentTenantID     string
 		JobCfg             resync.JobConfig
 		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		TenantStorageSvcFn func() *automock.TenantStorageService
@@ -523,8 +524,9 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		ExpectedErrMsg     string
 	}{
 		{
-			Name:   "Success when create event is present for tenant",
-			JobCfg: jobCfg,
+			Name:           "Success when create event is present for tenant",
+			ParentTenantID: parentTenantID,
+			JobCfg:         jobCfg,
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
@@ -547,6 +549,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		},
 		{
 			Name:            "[temporary] Success when create event is missing for tenant",
+			ParentTenantID:  parentTenantID,
 			JobCfg:          jobCfg,
 			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -570,6 +573,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		},
 		{
 			Name:            "Success when tenant already exists",
+			ParentTenantID:  parentTenantID,
 			JobCfg:          jobCfg,
 			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -580,7 +584,27 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 			TenantCreatorFn: func() *automock.TenantCreator { return &automock.TenantCreator{} },
 		},
 		{
+			Name:            "Fails when create event is missing for tenant and tenant has no parent ID",
+			ParentTenantID:  "",
+			JobCfg:          jobCfg,
+			TransactionerFn: txGen.ThatSucceeds,
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), newTenantID).Return(nil, nil)
+				return svc
+			},
+			TenantCreatorFn: func() *automock.TenantCreator {
+				svc := &automock.TenantCreator{}
+				tenantWithoutParent := newSubaccountTenant
+				tenantWithoutParent.Parent = ""
+				svc.On("FetchTenant", ctx, newTenantID).Return(nil, nil)
+				return svc
+			},
+			ExpectedErrMsg: fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", newTenantID),
+		},
+		{
 			Name:            "Fails when tenant from create event has no parent tenant",
+			ParentTenantID:  parentTenantID,
 			JobCfg:          jobCfg,
 			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -599,6 +623,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		},
 		{
 			Name:            "Fails when checking for already existing tenant returns an error",
+			ParentTenantID:  parentTenantID,
 			JobCfg:          jobCfg,
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -611,6 +636,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		},
 		{
 			Name:            "Fails when fetching tenant returns an error",
+			ParentTenantID:  parentTenantID,
 			JobCfg:          jobCfg,
 			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -629,8 +655,9 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 			ExpectedErrMsg: failedToFetchNewTenantsErrMsg,
 		},
 		{
-			Name:   "Fails when parent retrieval returns an error",
-			JobCfg: jobCfg,
+			Name:           "Fails when parent retrieval returns an error",
+			ParentTenantID: parentTenantID,
+			JobCfg:         jobCfg,
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Times(1)
@@ -659,6 +686,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		},
 		{
 			Name:               "Fails when transaction start returns an error",
+			ParentTenantID:     parentTenantID,
 			JobCfg:             jobCfg,
 			TransactionerFn:    txGen.ThatFailsOnBegin,
 			TenantStorageSvcFn: func() *automock.TenantStorageService { return &automock.TenantStorageService{} },
@@ -667,6 +695,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 		},
 		{
 			Name:            "Fails when first transaction commit returns an error",
+			ParentTenantID:  parentTenantID,
 			JobCfg:          jobCfg,
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -689,7 +718,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, tenantStorageSvc, tenantCreator)
 
 			synchronizer := resync.NewTenantSynchronizer(testCase.JobCfg, transact, tenantStorageSvc, tenantCreator, nil, nil, nil, nil)
-			err := synchronizer.SynchronizeTenant(ctx, parentTenantID, newTenantID)
+			err := synchronizer.SynchronizeTenant(ctx, testCase.ParentTenantID, newTenantID)
 			if len(testCase.ExpectedErrMsg) > 0 {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrMsg)

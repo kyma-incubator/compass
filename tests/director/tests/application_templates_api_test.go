@@ -194,7 +194,7 @@ func TestCreateApplicationTemplate_ValidApplicationTypeLabel(t *testing.T) {
 	t.Log("Check if application template was created")
 	appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplate.ID)
 	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.ConsumerID
 	appTemplateInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	require.NotEmpty(t, appTemplateOutput)
@@ -236,7 +236,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateOneInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.ConsumerID
 	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 	appTemplateOneInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
@@ -271,7 +271,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateOneInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.ConsumerID
 	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 	appTemplateOneInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
@@ -294,7 +294,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
 
 	appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
+	appTemplateTwoInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountIDRegion2
 	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 	appTemplateTwoInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion2
 
@@ -830,6 +830,71 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 
 	require.Empty(t, out)
 	saveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
+}
+
+func TestDeleteApplicationTemplateWithCertSubjMapping(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := createAppTemplateName("app-template")
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Logf("Create application template with name %q", appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	t.Logf("Create certificate subject mapping one for application template with name: %q and id: %q", appTemplate.Name, appTemplate.ID)
+	csmInputOne := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &appTemplate.ID, tenantAccessLevels)
+
+	var csmCreateOne graphql.CertificateSubjectMapping
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreateOne)
+	csmCreateOne = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInputOne)
+
+	t.Logf("Create certificate subject mapping two for application template with name: %q and id: %q", appTemplate.Name, appTemplate.ID)
+	csmInputTwo := fixtures.FixCertificateSubjectMappingInput(subjectTwo, consumerType, &appTemplate.ID, tenantAccessLevels)
+
+	var csmCreateTwo graphql.CertificateSubjectMapping
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreateTwo)
+	csmCreateTwo = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInputTwo)
+
+	// WHEN
+	t.Logf("Delete application template with id %q", appTemplate.ID)
+
+	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
+	deleteOutput := graphql.ApplicationTemplate{}
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
+	require.NoError(t, err)
+
+	//THEN
+	t.Logf("Check if application template with id %q was deleted", appTemplate.ID)
+
+	out := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate.ID)
+
+	require.Empty(t, out)
+
+	t.Log("Check if all certificate subject mappings were deleted")
+
+	t.Logf("Query certificate subject mapping by ID: %s", csmCreateOne.ID)
+	queryCertSubjectMappingReq := fixtures.FixQueryCertificateSubjectMappingRequest(csmCreateOne.ID)
+	csm := graphql.CertificateSubjectMapping{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingReq, &csm)
+
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "Object not found")
+
+	t.Logf("Query certificate subject mapping by ID: %s", csmCreateTwo.ID)
+	queryCertSubjectMappingReq = fixtures.FixQueryCertificateSubjectMappingRequest(csmCreateTwo.ID)
+	csm = graphql.CertificateSubjectMapping{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingReq, &csm)
+
+	require.Error(t, err)
+	require.NotNil(t, err.Error())
+	require.Contains(t, err.Error(), "Object not found")
 }
 
 func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *testing.T) {

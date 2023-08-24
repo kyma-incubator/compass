@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
@@ -39,41 +42,48 @@ type DirectorConfig struct {
 	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig                            certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SubscriptionConfig                              subscription.Config
-	TestProviderAccountID                           string
-	TestProviderSubaccountID                        string
-	TestConsumerAccountID                           string
-	TestConsumerSubaccountID                        string
-	TestConsumerAccountIDTenantHierarchy            string
-	TestConsumerSubaccountIDTenantHierarchy         string
-	TestConsumerTenantID                            string
-	TestProviderSubaccountIDRegion2                 string
-	ExternalServicesMockBaseURL                     string
-	ExternalServicesMockMtlsSecuredURL              string
-	TokenPath                                       string
-	SubscriptionProviderAppNameValue                string
-	ConsumerSubaccountLabelKey                      string
-	SubscriptionLabelKey                            string
-	RuntimeTypeLabelKey                             string
-	ApplicationTypeLabelKey                         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
-	KymaRuntimeTypeLabelValue                       string
-	KymaApplicationNamespaceValue                   string
-	SaaSAppNameLabelKey                             string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
-	ConsumerTokenURL                                string
-	ProviderClientID                                string
-	ProviderClientSecret                            string
-	BasicUsername                                   string
-	BasicPassword                                   string
-	CertSvcInstanceSecretName                       string        `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
-	ExternalCertTestIntSystemOUSubaccount           string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
-	ExternalCertTestIntSystemCommonName             string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
-	ExternalClientCertExpectedIssuerLocalityRegion2 string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
-	SupportedORDApplicationType                     string        `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
-	FormationMappingAsyncResponseDelay              int64         `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
-	SubscriptionProviderAppNameProperty             string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
-	CertSubjectMappingResyncInterval                time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
-	ApplicationTemplateProductLabel                 string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
-	DefaultTenantRegion                             string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
+	SubscriptionConfig                                 subscription.Config
+	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
+	DestinationsConfig                                 cfg.DestinationsConfig
+	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	TestProviderAccountID                              string
+	TestProviderSubaccountID                           string
+	TestConsumerAccountID                              string
+	TestConsumerSubaccountID                           string
+	TestConsumerAccountIDTenantHierarchy               string
+	TestConsumerSubaccountIDTenantHierarchy            string
+	TestConsumerTenantID                               string
+	TestProviderSubaccountIDRegion2                    string
+	SelfRegisterDirectDependencyDistinguishLabelValue  string `envconfig:"APP_SELF_REG_DIRECT_DEPENDENCY_DISTINGUISH_LABEL_VALUE"`
+	SelfRegisterSubdomainPlaceholderValue              string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE"`
+	ExternalServicesMockBaseURL                        string
+	ExternalServicesMockMtlsSecuredURL                 string
+	TokenPath                                          string
+	SubscriptionProviderAppNameValue                   string
+	IndirectDependencySubscriptionProviderAppNameValue string `envconfig:"APP_INDIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
+	DirectDependencySubscriptionProviderAppNameValue   string `envconfig:"APP_DIRECT_DEPENDENCY_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
+	GlobalSubaccountIDLabelKey                         string `envconfig:"APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY"`
+	SubscriptionLabelKey                               string
+	RuntimeTypeLabelKey                                string
+	ApplicationTypeLabelKey                            string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	KymaRuntimeTypeLabelValue                          string
+	KymaApplicationNamespaceValue                      string
+	SaaSAppNameLabelKey                                string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
+	ConsumerTokenURL                                   string
+	ProviderClientID                                   string
+	ProviderClientSecret                               string
+	BasicUsername                                      string
+	BasicPassword                                      string
+	CertSvcInstanceSecretName                          string        `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount              string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName                string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	ExternalClientCertExpectedIssuerLocalityRegion2    string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
+	SupportedORDApplicationType                        string        `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
+	TenantMappingAsyncResponseDelay                    int64         `envconfig:"APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY"`
+	SubscriptionProviderAppNameProperty                string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
+	CertSubjectMappingResyncInterval                   time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
+	ApplicationTemplateProductLabel                    string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
+	DefaultTenantRegion                                string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
 }
 
 var (
@@ -89,6 +99,10 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	ctx := context.Background()
+
+	if err := conf.DestinationsConfig.MapInstanceConfigs(); err != nil {
+		log.D().Fatal(errors.Wrap(err, "while loading destination instances config"))
+	}
 
 	var err error
 	cc, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)

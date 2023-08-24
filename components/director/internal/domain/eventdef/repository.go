@@ -27,12 +27,12 @@ var (
 	eventDefColumns          = []string{idColumn, appColumn, "app_template_version_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels", "correlation_ids"}
 	idColumns        = []string{idColumn}
 	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels", "correlation_ids"}
 )
 
 // EventAPIDefinitionConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the repo-layer representation Entity.
@@ -116,6 +116,19 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Eve
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct Event will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
+}
+
+// GetByApplicationID retrieves the EventDefinition with matching ID and Application ID from the Compass storage.
+func (r *pgRepository) GetByApplicationID(ctx context.Context, tenantID string, id, appID string) (*model.EventDefinition, error) {
+	var eventDefEntity Entity
+	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id), repo.NewEqualCondition(appColumn, appID)}, repo.NoOrderBy, &eventDefEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting EventDefinition for Application ID %s", appID)
+	}
+
+	eventDefModel := r.conv.FromEntity(&eventDefEntity)
+
+	return eventDefModel, nil
 }
 
 // ListByApplicationIDPage lists all EventDefinitions for a given application ID with paging.

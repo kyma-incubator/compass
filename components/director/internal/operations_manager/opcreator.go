@@ -147,13 +147,13 @@ func (oc *ORDOperationCreator) getApplicationsForAppTemplate(ctx context.Context
 func buildORDOperationInput(data string) *model.OperationInput {
 	now := time.Now()
 	return &model.OperationInput{
-		OpType:     OrdAggregationOpType,
-		Status:     scheduledOpStatus,
-		Data:       json.RawMessage(data),
-		Error:      nil,
-		Priority:   1,
-		CreatedAt:  &now,
-		FinishedAt: nil,
+		OpType:    OrdAggregationOpType,
+		Status:    scheduledOpStatus,
+		Data:      json.RawMessage(data),
+		Error:     nil,
+		Priority:  1,
+		CreatedAt: &now,
+		UpdatedAt: nil,
 	}
 }
 

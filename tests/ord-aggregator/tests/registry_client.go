@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -73,7 +74,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 		return "", err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL, "")
+	resp, err := executor.Execute(ctx, c.Client, documentURL, "", &sync.Map{})
 	if err != nil {
 		return "", err
 	}

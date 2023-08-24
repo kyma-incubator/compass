@@ -116,6 +116,60 @@ func TestCreateAppOnlyFormationTemplate(t *testing.T) {
 	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutDisplayNameInput)
 }
 
+func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	appType := "formation-app-type1"
+	formationTemplateName := "create-formation-template-name"
+	leadingProductIDs := []string{"leading-product-id"}
+	formationTemplateInput := fixtures.FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, []string{appType}, []string{"runtimeTypeTest"}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
+	supportsReset := false
+	formationTemplateInput.SupportsReset = &supportsReset
+
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	require.NoError(t, err)
+
+	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
+	output := graphql.FormationTemplate{}
+
+	// WHEN
+	t.Logf("Create formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &output)
+	require.NoError(t, err)
+
+	//THEN
+	require.NotEmpty(t, output.ID)
+	require.NotEmpty(t, output.Name)
+
+	saveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template with reset")
+
+	t.Logf("Check if formation template with name %q was created", formationTemplateName)
+
+	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+
+	assertions.AssertFormationTemplate(t, &formationTemplateInput, formationTemplateOutput)
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	formationName := "test-formation"
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName, &formationTemplateName)
+
+	expectedErrorMsg := "graphql: The operation is not allowed [reason=formation template \"create-formation-template-name\" does not support resetting]"
+	t.Logf("Resynchronize formation %q with reset should fail", formation.Name)
+	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, reset)
+	saveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications with reset")
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), expectedErrorMsg)
+
+	t.Logf("Resynchronize formation %q without reset should succeed", formation.Name)
+	resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, dontReset)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
+	require.Nil(t, err)
+}
+
 func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -438,6 +492,26 @@ func TestQueryFormationTemplates(t *testing.T) {
 		&createdFormationTemplate,
 		&secondCreatedFormationTemplate,
 	})
+
+	queryFormationTemplatesRequest = fixtures.FixQueryFormationTemplatesRequestWithNameAndPageSize("test-formation-template-2", first)
+
+	// WHEN
+	t.Log("Query formation templates with name filter")
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryFormationTemplatesRequest, &output)
+
+	//THEN
+	require.NotEmpty(t, output)
+	require.NoError(t, err)
+	assert.Equal(t, 1, output.TotalCount)
+
+	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates by name")
+
+	t.Log("Check if formation templates are in received slice")
+
+	assert.Subset(t, output.Data, []*graphql.FormationTemplate{
+		&secondCreatedFormationTemplate,
+	})
+
 }
 
 func TestTenantScopedFormationTemplates(t *testing.T) {

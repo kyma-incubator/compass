@@ -214,24 +214,24 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tenantSvc := UnusedTenantService()
+			tenantSvc := unusedTenantService()
 			if testCase.TenantServiceFn != nil {
 				tenantSvc = testCase.TenantServiceFn()
 			}
-			asaSvc := UnusedASAService()
+			asaSvc := unusedASAService()
 			if testCase.AsaServiceFn != nil {
 				asaSvc = testCase.AsaServiceFn()
 			}
-			labelRepo := UnusedLabelRepo()
+			labelRepo := unusedLabelRepo()
 			if testCase.LabelRepositoryFn != nil {
 				labelRepo = testCase.LabelRepositoryFn()
 			}
-			formationRepo := UnusedFormationRepo()
+			formationRepo := unusedFormationRepo()
 			if testCase.FormationRepositoryFn != nil {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
 
-			engine := operators.NewConstraintEngine(nil, nil, tenantSvc, asaSvc, nil, formationRepo, labelRepo, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, tenantSvc, asaSvc, nil, nil, formationRepo, labelRepo, nil, nil, nil, nil, nil, runtimeType, applicationType)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 

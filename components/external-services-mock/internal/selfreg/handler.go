@@ -92,7 +92,7 @@ func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
 
 	subscriberExists := false
 	for _, provider := range subscription.Subscriptions {
-		if provider == providerSubaccount {
+		if provider.ProviderSubaccountID == providerSubaccount {
 			subscriberExists = true
 			break
 		}

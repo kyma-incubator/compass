@@ -90,6 +90,13 @@ type service struct {
 	runtimeTypeLabelKey           string
 	kymaRuntimeTypeLabelValue     string
 	kymaApplicationNamespaceValue string
+
+	kymaAdapterWebhookMode           string
+	kymaAdapterWebhookType           string
+	kymaAdapterWebhookURLTemplate    string
+	kymaAdapterWebhookInputTemplate  string
+	kymaAdapterWebhookHeaderTemplate string
+	kymaAdapterWebhookOutputTemplate string
 }
 
 // NewService missing godoc
@@ -101,21 +108,28 @@ func NewService(repo runtimeRepository,
 	tenantService tenantService,
 	webhookService WebhookService,
 	runtimeContextService RuntimeContextService,
-	protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue, kymaApplicationNamespaceValue string) *service {
+	protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue, kymaApplicationNamespaceValue,
+	kymaAdapterWebhookMode, kymaAdapterWebhookType, kymaAdapterWebhookURLTemplate, kymaAdapterWebhookInputTemplate, kymaAdapterWebhookHeaderTemplate, kymaAdapterWebhookOutputTemplate string) *service {
 	return &service{
-		repo:                          repo,
-		labelRepo:                     labelRepo,
-		labelService:                  labelService,
-		uidService:                    uidService,
-		formationService:              formationService,
-		tenantSvc:                     tenantService,
-		webhookService:                webhookService,
-		runtimeContextService:         runtimeContextService,
-		protectedLabelPattern:         protectedLabelPattern,
-		immutableLabelPattern:         immutableLabelPattern,
-		runtimeTypeLabelKey:           runtimeTypeLabelKey,
-		kymaRuntimeTypeLabelValue:     kymaRuntimeTypeLabelValue,
-		kymaApplicationNamespaceValue: kymaApplicationNamespaceValue,
+		repo:                             repo,
+		labelRepo:                        labelRepo,
+		labelService:                     labelService,
+		uidService:                       uidService,
+		formationService:                 formationService,
+		tenantSvc:                        tenantService,
+		webhookService:                   webhookService,
+		runtimeContextService:            runtimeContextService,
+		protectedLabelPattern:            protectedLabelPattern,
+		immutableLabelPattern:            immutableLabelPattern,
+		runtimeTypeLabelKey:              runtimeTypeLabelKey,
+		kymaRuntimeTypeLabelValue:        kymaRuntimeTypeLabelValue,
+		kymaApplicationNamespaceValue:    kymaApplicationNamespaceValue,
+		kymaAdapterWebhookMode:           kymaAdapterWebhookMode,
+		kymaAdapterWebhookType:           kymaAdapterWebhookType,
+		kymaAdapterWebhookURLTemplate:    kymaAdapterWebhookURLTemplate,
+		kymaAdapterWebhookInputTemplate:  kymaAdapterWebhookInputTemplate,
+		kymaAdapterWebhookHeaderTemplate: kymaAdapterWebhookHeaderTemplate,
+		kymaAdapterWebhookOutputTemplate: kymaAdapterWebhookOutputTemplate,
 	}
 }
 
@@ -303,6 +317,21 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 			return err
 		}
 		in.Labels[RegionLabelKey] = region
+
+		webhookMode := model.WebhookMode(s.kymaAdapterWebhookMode)
+
+		webhook := &model.WebhookInput{
+			Mode: &webhookMode,
+			Type: model.WebhookType(s.kymaAdapterWebhookType),
+			Auth: &model.AuthInput{
+				AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+			},
+			URLTemplate:    &s.kymaAdapterWebhookURLTemplate,
+			InputTemplate:  &s.kymaAdapterWebhookInputTemplate,
+			HeaderTemplate: &s.kymaAdapterWebhookHeaderTemplate,
+			OutputTemplate: &s.kymaAdapterWebhookOutputTemplate,
+		}
+		in.Webhooks = append(in.Webhooks, webhook)
 	}
 
 	if err = s.labelService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {

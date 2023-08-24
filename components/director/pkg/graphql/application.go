@@ -43,4 +43,6 @@ type ApplicationExt struct {
 	Bundle                BundleExt                        `json:"bundle"`
 	Bundles               BundlePageExt                    `json:"bundles"`
 	EventingConfiguration ApplicationEventingConfiguration `json:"eventingConfiguration"`
+	APIDefinition         APIDefinitionExt                 `json:"apiDefinition"`
+	EventDefinition       EventAPIDefinitionExt            `json:"eventDefinition"`
 }
