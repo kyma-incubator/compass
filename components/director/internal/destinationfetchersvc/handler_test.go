@@ -102,7 +102,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{"another-tenant-id"}, nil).Once()
 				return svc
 			},
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusInternalServerError,
 		},
 	}
 	for _, testCase := range testCases {
@@ -218,7 +218,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{"another-tenant-id"}, nil).Once()
 				return svc
 			},
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusInternalServerError,
 		},
 	}
 	for _, testCase := range testCases {

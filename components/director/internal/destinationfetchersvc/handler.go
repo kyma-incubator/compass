@@ -58,7 +58,7 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 	}
 	if !isTenantSubscribed {
 		log.C(ctx).Infof("Tenant %q is not subscribed", tenantID)
-		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusInternalServerError)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h *handler) FetchDestinationsSensitiveData(writer http.ResponseWriter, req
 	}
 	if !isTenantSubscribed {
 		log.C(ctx).Infof("Tenant %q is not subscribed", tenantID)
-		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Tenant %q is not subscribed", tenantID), http.StatusInternalServerError)
 		return
 	}
 
