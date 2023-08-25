@@ -1171,7 +1171,6 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 
 func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	tnt := tenant.TestTenants.GetDefaultTenantID()
-	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestCompassProviderSubaccount)
 	tntParentCustomer := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // parent of `tenant.TestTenants.GetDefaultTenantID()` above
 
 	certSecuredHTTPClient := fixtures.FixCertSecuredHTTPClient(cc, conf.ExternalClientCertSecretName, conf.SkipSSLValidation)
@@ -1233,7 +1232,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	applicationType1 := "app-type-1"
 	t.Logf("Create application template for type: %q", applicationType1)
 	appTemplateInput := fixtures.FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-	appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subaccountID
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 	require.NoError(t, err)
@@ -1255,7 +1253,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	applicationType2 := "app-type-2"
 	t.Logf("Create application template for type %q", applicationType2)
 	appTemplateInput = fixtures.FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-	appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subaccountID
 	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl2)
