@@ -513,6 +513,20 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, fmt.Errorf("cannot assign to formation with ID %q as it is in %q state", formationFromDB.ID, formationFromDB.State)
 		}
 
+		err = s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
+		if err != nil {
+			return nil, err
+		}
+
+		// The defer statement after the formation assignment persistence depends on the value of the variable err.
+		// If err is used for the name of the returned error value a new variable that shadows the err variable from the outer scope
+		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the err variable in the same scope
+		//which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
+		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		if terr != nil {
+			return nil, terr
+		}
+
 		// We need to persist the FAs before we proceed to notification processing as for scenarios where there are both
 		// participants with ASYNC notifications and SYNC notifications it is possible that a FA status update request is
 		// received before the FA is persisted in the database.
@@ -521,20 +535,13 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// Execute W1, then execute W2. W2 takes for example 10 seconds. Before the W2 processing finishes a FA status update request for W1 is received.
 		// When fetching the corresponding FA from the DB a object not found error is received as the status update is performed in new transaction and the transaction in which the FA were generate is still running.
 		tx, terr := s.transact.Begin()
-		// using different error name as if err is used a new variable that shadows the err variable from the outer scope
-		// and the defer statement does not recognise whether an error has occurred after its declaration or not
 		if terr != nil {
 			return nil, terr
 		}
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		terr = s.assign(transactionCtx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
-		if terr != nil {
-			return nil, terr
-		}
-
-		assignments, terr := s.formationAssignmentService.GenerateAssignments(transactionCtx, tnt, objectID, objectType, formationFromDB)
+		assignments, terr := s.formationAssignmentService.PersistAssignments(transactionCtx, tnt, assignmentInputs)
 		if terr != nil {
 			return nil, terr
 		}
@@ -564,10 +571,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 				log.C(ctx).WithError(deferError).Errorf("Failed to delete assignments fo object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 			}
 
-			if deferError := s.unassign(transactionCtx, tnt, objectID, objectType, formationFromDB); deferError != nil {
-				log.C(ctx).WithError(deferError).Errorf("Failed to unassign object with ID %q of type %q from formation %q", objectID, objectType, formation.Name)
-			}
-
 			if deferError = tx.Commit(); deferError != nil {
 				log.C(ctx).Infof("Failed to commit transaction for deleting leftover resources")
 			}
@@ -580,17 +583,20 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return ft.formation, nil
 		}
 
-		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		rtmContextIDsMapping, terr := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		err = terr
 		if err != nil {
 			return nil, err
 		}
 
-		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, assignments)
+		applicationIDToApplicationTemplateIDMapping, terr := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, assignments)
+		err = terr
 		if err != nil {
 			return nil, err
 		}
 
-		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		requests, terr := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		err = terr
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
