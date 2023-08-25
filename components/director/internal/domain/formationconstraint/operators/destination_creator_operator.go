@@ -62,7 +62,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	isAssignmentCfgEmpty := isConfigEmpty(string(formationAssignment.Value))
+	isAssignmentCfgEmpty := isFormationAssignmentConfigEmpty(formationAssignment)
 	if formationAssignment != nil && (formationAssignment.State == string(model.InitialAssignmentState) || isAssignmentCfgEmpty) {
 		log.C(ctx).Infof("The formation assignment with ID: %s has either %s state or empty configuration. Returning without executing the destination creator operator.", formationAssignment.ID, model.InitialAssignmentState)
 		return true, nil
@@ -133,7 +133,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	if err != nil {
 		return false, err
 	}
-	isReverseAssignmentCfgEmpty := isConfigEmpty(string(reverseFormationAssignment.Value))
+	isReverseAssignmentCfgEmpty := isFormationAssignmentConfigEmpty(reverseFormationAssignment)
 
 	if formationAssignment != nil && !isAssignmentCfgEmpty && reverseFormationAssignment != nil && !isReverseAssignmentCfgEmpty && di.Location.OperationName == model.SendNotificationOperation {
 		log.C(ctx).Infof("Location with constraint type: %q and operation name: %q is reached", di.Location.ConstraintType, di.Location.OperationName)
@@ -193,8 +193,8 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 	return true, nil
 }
 
-func isConfigEmpty(configuration string) bool {
-	if configuration == "" || configuration == "{}" || configuration == "\"\"" || configuration == "null" {
+func isFormationAssignmentConfigEmpty(assignment *model.FormationAssignment) bool {
+	if assignment != nil && (string(assignment.Value) == "" || string(assignment.Value) == "{}" || string(assignment.Value) == "\"\"" || string(assignment.Value) == "null") {
 		return true
 	}
 
