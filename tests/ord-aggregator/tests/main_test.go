@@ -35,6 +35,7 @@ import (
 
 type config struct {
 	DefaultTestTenant                                     string
+	DefaultTestSubaccount                                 string
 	DirectorExternalCertSecuredURL                        string
 	DirectorGraphqlOauthURL                               string
 	ORDAggregatorURL                                      string

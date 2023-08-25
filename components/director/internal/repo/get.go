@@ -106,7 +106,7 @@ func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.T
 		return err
 	}
 
-	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams, lockClause, true)
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, NoLimit, orderByParams, lockClause, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
