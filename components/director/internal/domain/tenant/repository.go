@@ -72,15 +72,16 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	upserter              repo.UpserterGlobal
-	unsafeCreator         repo.UnsafeCreator
-	existQuerierGlobal    repo.ExistQuerierGlobal
-	singleGetterGlobal    repo.SingleGetterGlobal
-	pageableQuerierGlobal repo.PageableQuerierGlobal
-	listerGlobal          repo.ListerGlobal
-	conditionTreeLister   repo.ConditionTreeListerGlobal
-	updaterGlobal         repo.UpdaterGlobal
-	deleterGlobal         repo.DeleterGlobal
+	upserter                            repo.UpserterGlobal
+	unsafeCreator                       repo.UnsafeCreator
+	existQuerierGlobal                  repo.ExistQuerierGlobal
+	existQuerierGlobalWithConditionTree repo.ExistQuerierGlobalWithConditionTree
+	singleGetterGlobal                  repo.SingleGetterGlobal
+	pageableQuerierGlobal               repo.PageableQuerierGlobal
+	listerGlobal                        repo.ListerGlobal
+	conditionTreeLister                 repo.ConditionTreeListerGlobal
+	updaterGlobal                       repo.UpdaterGlobal
+	deleterGlobal                       repo.DeleterGlobal
 
 	tenantRuntimeContextQueryBuilder repo.QueryBuilderGlobal
 	labelsQueryBuilder               repo.QueryBuilderGlobal
@@ -93,20 +94,21 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		upserter:                         repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
-		unsafeCreator:                    repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
-		existQuerierGlobal:               repo.NewExistQuerierGlobal(resource.Tenant, tableName),
-		singleGetterGlobal:               repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
-		pageableQuerierGlobal:            repo.NewPageableQuerierGlobal(resource.Tenant, tableName, insertColumns),
-		listerGlobal:                     repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
-		conditionTreeLister:              repo.NewConditionTreeListerGlobal(tableName, insertColumns),
-		updaterGlobal:                    repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
-		deleterGlobal:                    repo.NewDeleterGlobal(resource.Tenant, tableName),
-		tenantRuntimeContextQueryBuilder: repo.NewQueryBuilderGlobal(resource.RuntimeContext, tenantRuntimeContextTable, tenantRuntimeContextSelectedColumns),
-		labelsQueryBuilder:               repo.NewQueryBuilderGlobal(resource.Label, labelsTable, labelsSelectedColumns),
-		applicationQueryBuilder:          repo.NewQueryBuilderGlobal(resource.Application, applicationTable, applicationsSelectedColumns),
-		tenantApplicationsQueryBuilder:   repo.NewQueryBuilderGlobal(resource.Application, tenantApplicationsTable, tenantApplicationsSelectedColumns),
-		conv:                             conv,
+		upserter:                            repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
+		unsafeCreator:                       repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
+		existQuerierGlobal:                  repo.NewExistQuerierGlobal(resource.Tenant, tableName),
+		existQuerierGlobalWithConditionTree: repo.NewExistsQuerierGlobalWithConditionTree(resource.Tenant, tableName),
+		singleGetterGlobal:                  repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
+		pageableQuerierGlobal:               repo.NewPageableQuerierGlobal(resource.Tenant, tableName, insertColumns),
+		listerGlobal:                        repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
+		conditionTreeLister:                 repo.NewConditionTreeListerGlobal(tableName, insertColumns),
+		updaterGlobal:                       repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		deleterGlobal:                       repo.NewDeleterGlobal(resource.Tenant, tableName),
+		tenantRuntimeContextQueryBuilder:    repo.NewQueryBuilderGlobal(resource.RuntimeContext, tenantRuntimeContextTable, tenantRuntimeContextSelectedColumns),
+		labelsQueryBuilder:                  repo.NewQueryBuilderGlobal(resource.Label, labelsTable, labelsSelectedColumns),
+		applicationQueryBuilder:             repo.NewQueryBuilderGlobal(resource.Application, applicationTable, applicationsSelectedColumns),
+		tenantApplicationsQueryBuilder:      repo.NewQueryBuilderGlobal(resource.Application, tenantApplicationsTable, tenantApplicationsSelectedColumns),
+		conv:                                conv,
 	}
 }
 
@@ -154,6 +156,46 @@ func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
 // ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
 func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(externalTenantColumn, externalTenant)})
+}
+
+// ExistsSubscribed checks if tenant is subscribed
+func (r *pgRepository) ExistsSubscribed(ctx context.Context, id, selfDistinguishLabel string) (bool, error) {
+	subaccountConditions := repo.Conditions{repo.NewEqualCondition(typeColumn, tenant.Subaccount)}
+
+	tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs, err := r.tenantRuntimeContextQueryBuilder.BuildQueryGlobal(false, repo.Conditions{}...)
+	if err != nil {
+		return false, errors.Wrap(err, "while building query that fetches tenant from tenant_runtime_context")
+	}
+
+	applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs, err := r.labelsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewEqualCondition(keyColumn, selfDistinguishLabel), repo.NewNotNullCondition(appTemplateIDColumn)}...)
+	if err != nil {
+		return false, errors.Wrap(err, "while building query that fetches app_template_id from labels which have subscription")
+	}
+
+	applicationSubquery, applicationArgs, err := r.applicationQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(appTemplateIDColumn, applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs)}...)
+	if err != nil {
+		return false, errors.Wrap(err, "while building query that fetches application id from application table")
+	}
+
+	tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs, err := r.tenantApplicationsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(idColumn, applicationSubquery, applicationArgs)}...)
+	if err != nil {
+		return false, errors.Wrap(err, "while building query that fetches tenant id from tenant_applications table")
+	}
+
+	subscriptionConditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs),
+		repo.NewInConditionForSubQuery(idColumn, tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs),
+	}
+
+	conditions := repo.And(
+		append(
+			append(
+				repo.ConditionTreesFromConditions(subaccountConditions),
+				repo.Or(repo.ConditionTreesFromConditions(subscriptionConditions)...),
+			),
+			&repo.ConditionTree{Operand: repo.NewEqualCondition(idColumn, id)})...,
+	)
+	return r.existQuerierGlobalWithConditionTree.ExistsGlobalWithConditionTree(ctx, conditions)
 }
 
 // List retrieves all tenants from the Compass storage.

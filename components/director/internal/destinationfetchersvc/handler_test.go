@@ -43,7 +43,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{expectedTenantID}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(nil)
 				return svc
 			},
@@ -62,7 +62,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{expectedTenantID}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				err := apperrors.NewNotFoundErrorWithMessage(resource.Label,
 					expectedTenantID, fmt.Sprintf("tenant %s not found", expectedTenantID))
 				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(err)
@@ -76,7 +76,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{expectedTenantID}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				err := fmt.Errorf("random error")
 				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(err)
 				return svc
@@ -89,7 +89,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{}, testErr).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, testErr).Once()
 				return svc
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
@@ -99,7 +99,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{"another-tenant-id"}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, nil).Once()
 				return svc
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,
@@ -166,7 +166,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			DestQuery: namesQueryRaw,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{expectedTenantID}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				svc.On("FetchDestinationsSensitiveData", mock.Anything, expectedTenantID, names).
 					Return(
 						func(ctx context.Context, tenantID string, destNames []string) []byte {
@@ -193,7 +193,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{expectedTenantID}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(true, nil).Once()
 				return svc
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
@@ -204,7 +204,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			DestQuery: namesQueryRaw,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{}, testErr).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, testErr).Once()
 				return svc
 			},
 			ExpectedStatusCode: http.StatusBadRequest,
@@ -215,7 +215,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			DestQuery: namesQueryRaw,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("GetSubscribedTenantIDs", mock.Anything).Return([]string{"another-tenant-id"}, nil).Once()
+				svc.On("IsTenantSubscribed", mock.Anything, expectedTenantID).Return(false, nil).Once()
 				return svc
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,

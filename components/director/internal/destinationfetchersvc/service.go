@@ -53,6 +53,7 @@ type BundleRepo interface {
 //
 //go:generate mockery --name=TenantRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepo interface {
+	ExistsSubscribed(ctx context.Context, id, selfDistinguishLabel string) (bool, error)
 	ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error)
 }
 
@@ -96,6 +97,22 @@ func (d *DestinationService) GetSubscribedTenantIDs(ctx context.Context) ([]stri
 		tenantIDs = append(tenantIDs, tenant.ID)
 	}
 	return tenantIDs, nil
+}
+
+// IsTenantSubscribed returns true is tenant is subscribed and false if it's not
+func (d *DestinationService) IsTenantSubscribed(ctx context.Context, tenantID string) (bool, error) {
+	var exists bool
+	transactionError := d.transaction(ctx, func(ctxWithTransact context.Context) error {
+		var err error
+		exists, err = d.TenantRepo.ExistsSubscribed(ctxWithTransact, tenantID, d.selfRegDistinguishLabel)
+		if err != nil {
+			log.C(ctxWithTransact).WithError(err).Error("An error occurred while getting subscribed tenants")
+			return err
+		}
+		return nil
+	})
+
+	return exists, transactionError
 }
 
 func (d *DestinationService) getSubscribedTenants(ctx context.Context) ([]*model.BusinessTenantMapping, error) {

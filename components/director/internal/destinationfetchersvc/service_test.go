@@ -438,6 +438,90 @@ func TestService_GetSubscribedTenantIDs(t *testing.T) {
 	}
 }
 
+func TestService_IsTenantSubscribed(t *testing.T) {
+	//GIVEN
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+	destAPIConfig := defaultAPIConfig()
+	destConfig := defaultDestinationConfig(t, "invalid")
+
+	testCases := []struct {
+		Name                string
+		ExpectedTenantIDs   []string
+		TenantRepo          func() *automock.TenantRepo
+		Transactioner       func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner)
+		ExpectedExistence   bool
+		ExpectedErrorOutput string
+	}{
+		{
+			Name:              "Tenant is subscribed",
+			ExpectedTenantIDs: []string{"a", "b"},
+			TenantRepo: func() *automock.TenantRepo {
+				tenantRepo := unusedTenantRepo()
+				tenantRepo.On("ExistsSubscribed", mock.Anything, tenantID, selfRegDistinguishLabel).Return(true, nil).Once()
+				return tenantRepo
+			},
+			ExpectedExistence: true,
+			Transactioner:     txGen.ThatSucceeds,
+		},
+		{
+			Name: "Tenant repo returns error",
+			TenantRepo: func() *automock.TenantRepo {
+				tenantRepo := unusedTenantRepo()
+				tenantRepo.On("ExistsSubscribed", mock.Anything, tenantID, selfRegDistinguishLabel).Return(false, testErr).Once()
+				return tenantRepo
+			},
+			Transactioner:       txGen.ThatSucceeds,
+			ExpectedExistence:   false,
+			ExpectedErrorOutput: testErr.Error(),
+		},
+		{
+			Name:                "Tenant repo returns error on Begin",
+			TenantRepo:          unusedTenantRepo,
+			Transactioner:       txGen.ThatFailsOnBegin,
+			ExpectedExistence:   false,
+			ExpectedErrorOutput: testErr.Error(),
+		},
+		{
+			Name: "Tenant repo returns error on Commit",
+			TenantRepo: func() *automock.TenantRepo {
+				tenantRepo := unusedTenantRepo()
+				tenantRepo.On("ExistsSubscribed", mock.Anything, tenantID, selfRegDistinguishLabel).Return(true, nil).Once()
+				return tenantRepo
+			},
+			Transactioner:       txGen.ThatFailsOnCommit,
+			ExpectedExistence:   false,
+			ExpectedErrorOutput: testErr.Error(),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			_, tx := testCase.Transactioner()
+			destRepo := unusedDestinationsRepo()
+			labelRepo := unusedLabelRepo()
+			uuidService := unusedUUIDService()
+			bundleRepo := unusedBundleRepo()
+			tenantRepo := testCase.TenantRepo()
+
+			defer mock.AssertExpectationsForObjects(t, tx, destRepo, labelRepo, uuidService, bundleRepo, tenantRepo)
+
+			destSvc := destinationfetchersvc.NewDestinationService(tx, uuidService, destRepo, bundleRepo, labelRepo, destConfig, destAPIConfig, tenantRepo, selfRegDistinguishLabel)
+
+			ctx := context.Background()
+			// WHEN
+			isTenantSubscribed, err := destSvc.IsTenantSubscribed(ctx, tenantID)
+
+			// THEN
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedExistence, isTenantSubscribed)
+			}
+		})
+	}
+}
+
 func unusedLabelRepo() *automock.LabelRepo              { return &automock.LabelRepo{} }
 func unusedDestinationsRepo() *automock.DestinationRepo { return &automock.DestinationRepo{} }
 func unusedBundleRepo() *automock.BundleRepo            { return &automock.BundleRepo{} }

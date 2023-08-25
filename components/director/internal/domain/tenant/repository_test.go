@@ -33,6 +33,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var selfRegDistinguishLabel = "selfRegDistinguishLabel"
+
 func TestPgRepository_Upsert(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -314,6 +316,48 @@ func TestPgRepository_ExistsByExternalTenant(t *testing.T) {
 
 		// WHEN
 		result, err := tenantMappingRepo.ExistsByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		assert.False(t, result)
+	})
+}
+
+func TestPgRepository_ExistsSubscribed(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))) AND id = $3)`)).
+			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel, testID).
+			WillReturnRows(testdb.RowWhenObjectExist())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		result, err := tenantMappingRepo.ExistsSubscribed(ctx, testID, selfRegDistinguishLabel)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result)
+	})
+
+	t.Run("Error when checking existence", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))) AND id = $3)`)).
+			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel, testID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		result, err := tenantMappingRepo.ExistsSubscribed(ctx, testID, selfRegDistinguishLabel)
 
 		// THEN
 		require.Error(t, err)
@@ -787,7 +831,6 @@ func TestPgRepository_ListByType(t *testing.T) {
 
 func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing.T) {
 	parentID := "test"
-	selfRegDistinguishLabel := "selfRegDistinguishLabel"
 
 	tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
 	tntEntity.Initialized = boolToPtr(true)

@@ -25,6 +25,11 @@ type ExistQuerierGlobal interface {
 	ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error)
 }
 
+// ExistQuerierGlobalWithConditionTree is an interface for checking existence of global entities.
+type ExistQuerierGlobalWithConditionTree interface {
+	ExistsGlobalWithConditionTree(ctx context.Context, conditionTree *ConditionTree) (bool, error)
+}
+
 type universalExistQuerier struct {
 	tableName    string
 	tenantColumn *string
@@ -49,6 +54,11 @@ func NewExistQuerierWithEmbeddedTenant(tableName string, tenantColumn string) Ex
 
 // NewExistQuerierGlobal is a constructor for ExistQuerierGlobal about global entities.
 func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQuerierGlobal {
+	return &universalExistQuerier{tableName: tableName, resourceType: resourceType}
+}
+
+// NewExistsQuerierGlobalWithConditionTree is a constructor for ExistQuerierGlobalWithConditionTree about global entities.
+func NewExistsQuerierGlobalWithConditionTree(resourceType resource.Type, tableName string) ExistQuerierGlobalWithConditionTree {
 	return &universalExistQuerier{tableName: tableName, resourceType: resourceType}
 }
 
@@ -104,6 +114,33 @@ func (g *universalExistQuerier) exists(ctx context.Context, resourceType resourc
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	var count int
 	err = persist.GetContext(ctx, &count, query, allArgs...)
+	err = persistence.MapSQLError(ctx, err, resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
+
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+// ExistsGlobalWithConditionTree checks for existence of global entities without tenant isolation.
+func (g *universalExistQuerier) ExistsGlobalWithConditionTree(ctx context.Context, conditionTree *ConditionTree) (bool, error) {
+	return g.existsWithConditionTree(ctx, g.resourceType, conditionTree)
+}
+
+func (g *universalExistQuerier) existsWithConditionTree(ctx context.Context, resourceType resource.Type, conditionTree *ConditionTree) (bool, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	query, args, err := buildSelectQueryFromTree(g.tableName, "1", conditionTree, NoOrderBy, NoLock, true)
+
+	log.C(ctx).Debugf("Executing DB query: %s", query)
+	var count int
+	err = persist.GetContext(ctx, &count, query, args...)
 	err = persistence.MapSQLError(ctx, err, resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
 
 	if err != nil {
