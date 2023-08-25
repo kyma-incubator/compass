@@ -461,7 +461,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	request := fixtures.FixCreateApplicationTemplateRequest(inputString)
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultSubaccountTenantID(), request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -472,7 +472,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	appTemplateName := createAppTemplateName("validation-test-app-tpl")
 	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
@@ -507,7 +507,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	appTemplateName := createAppTemplateName("validation-app")
 	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
