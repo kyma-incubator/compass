@@ -536,6 +536,24 @@ func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTT
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
+func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
+	reqBody := FormationAssignmentRequestBody{
+		State:         "READY",
+		Configuration: json.RawMessage(testConfig),
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID)
+	request, err := http.NewRequest(http.MethodPut, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	require.NoError(t, err)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Tenant", tnt)
+	response, err := certSecuredHTTPClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
 func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, formationID string, expectedStatusCode int) {
 	reqBody := FormationRequestBody{
 		State: "READY",
@@ -572,8 +590,25 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 	return formationAssignmentID
 }
 
+func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, sourceID, targetID string) string {
+	var formationAssignmentID string
+	for _, a := range assignmentsPage.Data {
+		if a.Source == sourceID && a.Target == targetID {
+			formationAssignmentID = a.ID
+		}
+	}
+	require.NotEmpty(t, formationAssignmentID, "The formation assignment could not be empty")
+	return formationAssignmentID
+}
+
 func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) string {
 	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
+	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
+	return faAsyncStatusAPIURL
+}
+
+func resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID string) string {
+	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncResetStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
 	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
 	return faAsyncStatusAPIURL
 }

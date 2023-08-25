@@ -70,8 +70,17 @@ func NewFormationMappingHandler(transact persistence.Transactioner, faService Fo
 	}
 }
 
+// ResetFormationAssignmentStatus handles formation assignment status updates
+func (h *Handler) ResetFormationAssignmentStatus(w http.ResponseWriter, r *http.Request) {
+	h.updateFormationAssignmentStatus(w, r, true)
+}
+
 // UpdateFormationAssignmentStatus handles formation assignment status updates
 func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http.Request) {
+	h.updateFormationAssignmentStatus(w, r, false)
+}
+
+func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http.Request, reset bool) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
@@ -197,7 +206,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	if shouldProcessNotifications {
 		// The formation assignment notifications processing is independent of the status update request handling.
 		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-		go h.processFormationAssignmentNotifications(fa, correlationID)
+		go h.processFormationAssignmentNotifications(fa, correlationID, reset)
 	}
 
 	httputils.Respond(w, http.StatusOK)
@@ -486,7 +495,7 @@ func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, format
 	return true, nil
 }
 
-func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string) {
+func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string, reset bool) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -523,6 +532,11 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting reverse formation assignment by source: %q and target: %q", fa.Source, fa.Target)
 		return
+	}
+
+	if reset {
+		log.C(ctx).Infof("Resetting formation assignment with ID %q to state %s", reverseFA.ID, model.InitialAssignmentState)
+		reverseFA.State = string(model.InitialAssignmentState)
 	}
 
 	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)

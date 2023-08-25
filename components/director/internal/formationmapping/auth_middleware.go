@@ -187,7 +187,7 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 			ctx := r.Context()
 			correlationID := correlation.CorrelationIDFromContext(ctx)
 
-			if r.Method != http.MethodPatch {
+			if r.Method != http.MethodPatch && r.Method != http.MethodPut {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}

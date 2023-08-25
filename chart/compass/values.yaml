@@ -239,6 +239,7 @@ global:
     formationMappingAsyncStatusApi:
       pathPrefix: "/v1/businessIntegrations"
       formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}"
       formationPath: "/{ucl-formation-id}/status"
     prefix: /director
     graphql:
