@@ -22,12 +22,6 @@ type ExternalSvcCallerProvider interface {
 	GetCaller(cfg config.Config, region string) (ExternalSvcCaller, error)
 }
 
-// Caller calls external services with given authentication
-//type Caller struct {
-//	credentials auth.Credentials
-//	httpClient  *http.Client
-//}
-
 // CallerProvider is used to provide ExternalSvcCaller to call external services with given authentication
 type CallerProvider struct{}
 
@@ -62,20 +56,3 @@ func (c *CallerProvider) GetCaller(config config.Config, region string) (Externa
 
 	return caller, nil
 }
-
-//func (c *Caller) Call(req *http.Request) (*http.Response, error) {
-//	req = c.addCredentialsToContext(req)
-//
-//	resp, err := c.httpClient.Do(req)
-//	if err != nil {
-//		return nil, errors.Wrapf(err, "An error occurred while executing call to %q", req.URL)
-//	}
-//
-//	return resp, nil
-//}
-//
-//func (c *Caller) addCredentialsToContext(req *http.Request) *http.Request {
-//	authCtx := req.Context()
-//	authCtx = auth.SaveToContext(authCtx, c.credentials)
-//	return req.WithContext(authCtx)
-//}

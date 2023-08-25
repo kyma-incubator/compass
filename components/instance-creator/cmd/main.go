@@ -65,7 +65,6 @@ func main() {
 	creator.Use(tokenValidationMiddleware.KymaAdapterHandler()) //todo::: double check to add separate method if that won't do the work
 	creator.Use(tenantValidationMiddleware.Handler())
 
-	//securedMTLSClient := authpkg.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation) // todo::: delete
 	callerProvider := client.NewCallerProvider()
 
 	smClient := client.NewClient(&cfg, callerProvider)
