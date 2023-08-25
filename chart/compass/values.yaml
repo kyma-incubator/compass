@@ -126,7 +126,6 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-      region: "eu-1"
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
@@ -168,7 +167,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-96"
+      version: "PR-97"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -741,7 +740,7 @@ global:
     host: compass-destination-fetcher.compass-system.svc.cluster.local
     prefix: /destination-configuration
     port: 3000
-    jobSchedule: 10m
+    jobSchedule: 10s
     lease:
       lockname: destinationlease
     parallelTenants: 10

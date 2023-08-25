@@ -304,3 +304,96 @@ func TestExistGlobal(t *testing.T) {
 		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 }
+
+func TestExistsGlobalWithConditionTree(t *testing.T) {
+	givenID := "id"
+	sut := repo.NewExistsQuerierGlobalWithConditionTree(UserType, "users")
+
+	t.Run("success when exist", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE id = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(testdb.RowWhenObjectExist())
+		// WHEN
+		ex, err := sut.ExistsGlobalWithConditionTree(ctx, &repo.ConditionTree{Operand: repo.NewEqualCondition("id", givenID)})
+		// THEN
+		require.NoError(t, err)
+		require.True(t, ex)
+	})
+
+	t.Run("success when does not exist", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE id = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnRows(testdb.RowWhenObjectDoesNotExist())
+		// WHEN
+		ex, err := sut.ExistsGlobalWithConditionTree(ctx, &repo.ConditionTree{Operand: repo.NewEqualCondition("id", givenID)})
+		// THEN
+		require.NoError(t, err)
+		require.False(t, ex)
+	})
+
+	t.Run("success when no conditions", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WillReturnRows(testdb.RowWhenObjectExist())
+		// WHEN
+		ex, err := sut.ExistsGlobalWithConditionTree(ctx, nil)
+		// THEN
+		require.NoError(t, err)
+		require.True(t, ex)
+	})
+
+	t.Run("success when more conditions", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE (first_name = $1 AND last_name = $2)")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs("john", "doe").WillReturnRows(testdb.RowWhenObjectDoesNotExist())
+		// WHEN
+		_, err := sut.ExistsGlobalWithConditionTree(ctx, repo.And(&repo.ConditionTree{Operand: repo.NewEqualCondition("first_name", "john")}, &repo.ConditionTree{Operand: repo.NewEqualCondition("last_name", "doe")}))
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error when operation on db failed", func(t *testing.T) {
+		// GIVEN
+		expectedQuery := regexp.QuoteMeta("SELECT 1 FROM users WHERE id = $1")
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+		mock.ExpectQuery(expectedQuery).WithArgs(givenID).WillReturnError(someError())
+		// WHEN
+		_, err := sut.ExistsGlobalWithConditionTree(ctx, &repo.ConditionTree{Operand: repo.NewEqualCondition("id", givenID)})
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
+		ctx = persistence.SaveToContext(ctx, db)
+
+		_, err := sut.ExistsGlobalWithConditionTree(ctx, &repo.ConditionTree{Operand: repo.NewEqualCondition("id", givenID)})
+
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
+	})
+
+	t.Run("returns error if missing persistence context", func(t *testing.T) {
+		ctx := context.TODO()
+		_, err := sut.ExistsGlobalWithConditionTree(ctx, &repo.ConditionTree{Operand: repo.NewEqualCondition("id", givenID)})
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
+	})
+}

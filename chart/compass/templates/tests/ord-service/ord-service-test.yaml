@@ -64,6 +64,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
               valueFrom:
                 secretKeyRef:
