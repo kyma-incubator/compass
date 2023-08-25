@@ -1308,6 +1308,11 @@ func TestService_GenerateAssignments(t *testing.T) {
 
 	allAssignments := append(append(formationAssignmentsForApplication, append(formationAssignmentsForRuntime, append(formationAssignmentsForRuntimeContext, formationAssignmentsForRuntimeContextWithParentInTheFormation...)...)...), formationAssignmentsForSelf...)
 
+	formationAssignmentInputsForApplication := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputsForRuntime := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputsForRuntimeContext := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputsForRuntimeContextWithParentInTheFormation := fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimeContexts[0].ID)
+
 	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
 	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4", "ID5"}
 
@@ -1324,7 +1329,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 		RuntimeRepo             func() *automock.RuntimeRepository
 		RuntimeContextRepo      func() *automock.RuntimeContextRepository
 		UIDService              func() *automock.UIDService
-		ExpectedOutput          []*model.FormationAssignment
+		ExpectedOutput          []*model.FormationAssignmentInput
 		ExpectedErrorMsg        string
 	}{
 		{
@@ -1334,12 +1339,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, formationParticipantsIDs).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1364,7 +1363,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForApplication,
+			ExpectedOutput: formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for entity that is being unassigned asynchronously",
@@ -1374,12 +1373,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				unassignAppFormationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(append(allAssignments, unassignAppFormationAssignments...), nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1404,7 +1397,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForApplication,
+			ExpectedOutput: formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for application and itself",
@@ -1413,12 +1406,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1443,7 +1430,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForApplication,
+			ExpectedOutput: formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime and itself",
@@ -1452,12 +1439,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, runtimes[0].ID, objectID, runtimeContexts[0].ID}).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForRuntime {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntime[i].Target, formationAssignmentsForRuntime[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntime[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForRuntime, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1482,7 +1463,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForRuntime,
+			ExpectedOutput: formationAssignmentInputsForRuntime,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and itself",
@@ -1491,12 +1472,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForRuntimeContext {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[i].Target, formationAssignmentsForRuntimeContext[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntimeContext[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForRuntimeContext, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1522,7 +1497,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: "random"}, nil)
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForRuntimeContext,
+			ExpectedOutput: formationAssignmentInputsForRuntimeContext,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and it's parent runtime",
@@ -1531,12 +1506,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForRuntimeContextWithParentInTheFormation {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Target, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDsRtmCtxParentInFormation).Return(formationAssignmentsForRuntimeContextWithParentInTheFormation, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1562,7 +1531,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: runtimes[0].ID}, nil)
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForRuntimeContextWithParentInTheFormation,
+			ExpectedOutput: formationAssignmentInputsForRuntimeContextWithParentInTheFormation,
 		},
 		{
 			Name:                    "Error while listing applications",
@@ -1682,80 +1651,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			ExpectedOutput:   nil,
 			ExpectedErrorMsg: testErr.Error(),
 		},
-		{
-			Name:       "Error while creating formation assignment",
-			Context:    ctxWithTenant,
-			ObjectType: graphql.FormationObjectTypeRuntimeContext,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[0].Target, formationAssignmentsForRuntimeContext[0].Source, TestTenantID, formationAssignmentsForRuntimeContext[0].FormationID).Return(nil, testErr).Once()
-				return repo
-			},
-			UIDService: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(formationAssignmentIDs[0]).Once()
-				return uidSvc
-			},
-			ApplicationRepo: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
-				return repo
-			},
-			RuntimeRepo: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
-				return repo
-			},
-			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(append(runtimeContexts, &model.RuntimeContext{ID: objectID}), nil).Once()
-				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: "random"}, nil)
-				return repo
-			},
-			ExpectedOutput:   nil,
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:       "Error while listing formation assignments",
-			Context:    ctxWithTenant,
-			ObjectType: graphql.FormationObjectTypeApplication,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, formationParticipantsIDs).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(nil, testErr).Once()
-
-				return repo
-			},
-			UIDService: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				for i := range formationAssignmentIDs {
-					uidSvc.On("Generate").Return(formationAssignmentIDs[i]).Once()
-				}
-				return uidSvc
-			},
-			ApplicationRepo: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
-				return repo
-			},
-			RuntimeRepo: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
-				return repo
-			},
-			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
-				return repo
-			},
-			ExpectedOutput:   nil,
-			ExpectedErrorMsg: testErr.Error(),
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -1781,6 +1676,129 @@ func TestService_GenerateAssignments(t *testing.T) {
 			require.Equal(t, testCase.ExpectedOutput, r)
 
 			mock.AssertExpectationsForObjects(t, formationAssignmentRepo, appRepo, runtimeRepo, runtimeContextRepo)
+		})
+	}
+}
+
+func TestService_PersistAssignments(t *testing.T) {
+	// GIVEN
+	objectID := "objectID"
+	applications := []*model.Application{{BaseEntity: &model.BaseEntity{ID: "app"}}}
+	runtimes := []*model.Runtime{{ID: "runtime"}}
+	runtimeContexts := []*model.RuntimeContext{{ID: "runtimeContext"}}
+
+	formationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputs := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+
+	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		Input                   []*model.FormationAssignmentInput
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		UIDService              func() *automock.UIDService
+		ExpectedOutput          []*model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				for i := range formationAssignments {
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[i].Target, formationAssignments[i].Source, TestTenantID, formationAssignments[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("Create", ctxWithTenant, formationAssignments[i]).Return(nil).Once()
+				}
+				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignments, nil).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				for i := range formationAssignmentIDs {
+					uidSvc.On("Generate").Return(formationAssignmentIDs[i]).Once()
+				}
+				return uidSvc
+			},
+			ExpectedOutput: formationAssignments,
+		},
+		{
+			Name:    "error while listing for ids",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				for i := range formationAssignments {
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[i].Target, formationAssignments[i].Source, TestTenantID, formationAssignments[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("Create", ctxWithTenant, formationAssignments[i]).Return(nil).Once()
+				}
+				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(nil, testErr).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				for i := range formationAssignmentIDs {
+					uidSvc.On("Generate").Return(formationAssignmentIDs[i]).Once()
+				}
+				return uidSvc
+			},
+			ExpectedErrorMsg: "while listing formationAssignments",
+		},
+		{
+			Name:    "error while creating formation assignments",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[0].Target, formationAssignments[0].Source, TestTenantID, formationAssignments[0].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+				repo.On("Create", ctxWithTenant, formationAssignments[0]).Return(testErr).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(formationAssignmentIDs[0]).Once()
+				return uidSvc
+			},
+			ExpectedErrorMsg: "while creating formationAssignment for formation",
+		},
+		{
+			Name:    "error while getting formation assignments",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[0].Target, formationAssignments[0].Source, TestTenantID, formationAssignments[0].FormationID).Return(nil, testErr).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(formationAssignmentIDs[0]).Once()
+				return uidSvc
+			},
+			ExpectedErrorMsg: "while getting formation assignment by target",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			formationAssignmentRepo := testCase.FormationAssignmentRepo()
+			uidSvc := testCase.UIDService()
+			svc := formationassignment.NewService(formationAssignmentRepo, uidSvc, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
+
+			// WHEN
+			r, err := svc.PersistAssignments(testCase.Context, TestTenantID, formationAssignmentInputs)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, formationAssignmentRepo)
 		})
 	}
 }

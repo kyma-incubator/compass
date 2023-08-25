@@ -521,7 +521,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// The defer statement after the formation assignment persistence depends on the value of the variable err.
 		// If err is used for the name of the returned error value a new variable that shadows the err variable from the outer scope
 		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the err variable in the same scope
-		//which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
+		// which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
 		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if terr != nil {
 			return nil, terr
