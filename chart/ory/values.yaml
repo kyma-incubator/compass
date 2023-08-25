@@ -121,6 +121,9 @@ hydra:
 
 # Overrides for the Oathkeeper chart
 oathkeeper:
+  # TODO!!! Any version above does not pass the liveness check as it expects at least one rule, our rules are deployed later with compass Helm chart
+  image:
+    tag: v0.40.1
   sidecar:
     # Previously was hardcoded by the Kyma chart
     envs:
