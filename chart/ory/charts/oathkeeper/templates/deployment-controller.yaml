@@ -22,13 +22,12 @@ spec:
   {{- if not .Values.deployment.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  # TODO!!! this does not exist in OS chart 
-  strategy:
-      {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
@@ -117,7 +116,6 @@ spec:
             - name: http-proxy
               containerPort: {{ .Values.oathkeeper.config.serve.proxy.port }}
               protocol: TCP
-              # TODO!!! this might be a solution to the metrics collection of oathkeeper
             - name: http-metrics
               protocol: TCP
               containerPort: {{ .Values.oathkeeper.config.serve.prometheus.port }}

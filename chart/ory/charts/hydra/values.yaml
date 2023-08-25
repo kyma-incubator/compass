@@ -123,6 +123,11 @@ ingress:
 
 # -- Configure ORY Hydra itself
 hydra:
+  # -- Ability to override the entrypoint of hydra container
+  # (e.g. to source dynamic secrets or export environment dynamic variables)
+  command: ["hydra"]
+  # -- Ability to override arguments of the entrypoint. Can be used in-depended of customCommand
+  customArgs: []
   # -- The ORY Hydra configuration. For a full list of available settings, check:
   #  https://www.ory.sh/docs/hydra/reference/configuration
   config:
@@ -171,6 +176,10 @@ hydra:
   dev: false
 
 deployment:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {}
+
   # -- We usually recommend not to specify default resources and to leave this as a conscious choice for the user.
   #  This also increases chances charts run on environments with little
   #  resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -323,7 +332,7 @@ deployment:
   # https://github.com/kubernetes/kubernetes/issues/57601
   automountServiceAccountToken: true
 
-  # -- If you want to add extra init containers.
+  # -- If you want to add extra init containers. These are processed before the migration init container.
   extraInitContainers: ""
   # extraInitContainers: |
   #  - name: ...
@@ -455,7 +464,17 @@ watcher:
   podSecurityContext: {}
 
   ## -- container securityContext for watcher deployment
-  securityContext: {}
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 100
+    allowPrivilegeEscalation: false
+    privileged: false
 
 ## -- Janitor cron job configuration
 janitor:
@@ -562,3 +581,11 @@ serviceMonitor:
 configmap:
   # -- switch to false to prevent checksum annotations being maintained and propogated to the pods
   hashSumEnabled: true
+
+test:
+  # -- Provide additional labels to the test pod
+  labels: {}
+  # -- use a busybox image from another repository
+  busybox:
+    repository: busybox
+    tag: 1
