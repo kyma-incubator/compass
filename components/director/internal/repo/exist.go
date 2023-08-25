@@ -137,6 +137,9 @@ func (g *universalExistQuerier) existsWithConditionTree(ctx context.Context, res
 	}
 
 	query, args, err := buildSelectQueryFromTree(g.tableName, "1", conditionTree, NoOrderBy, NoLock, true)
+	if err != nil {
+		return false, errors.Wrap(err, "while building exist query")
+	}
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	var count int

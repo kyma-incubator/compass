@@ -2,7 +2,6 @@ package repo_test
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"strings"
 	"testing"
 
@@ -215,48 +214,6 @@ func TestQueryBuilderGlobal(t *testing.T) {
 
 		// WHEN
 		query, args, err := sut.BuildQueryGlobal(false, repo.Conditions{}...)
-		var (
-			tenantRuntimeContextTable           = "tenant_runtime_contexts"
-			tenantRuntimeContextSelectedColumns = []string{"tenant_id"}
-			labelsTable                         = "labels"
-			labelsSelectedColumns               = []string{"app_template_id"}
-			applicationTable                    = "applications"
-			applicationsSelectedColumns         = []string{"id"}
-			tenantApplicationsTable             = "tenant_applications"
-			tenantApplicationsSelectedColumns   = []string{"tenant_id"}
-
-			appTemplateIDColumn = "app_template_id"
-			keyColumn           = "key"
-		)
-
-		tenantRuntimeContextQueryBuilder := repo.NewQueryBuilderGlobal(resource.RuntimeContext, tenantRuntimeContextTable, tenantRuntimeContextSelectedColumns)
-		labelsQueryBuilder := repo.NewQueryBuilderGlobal(resource.Label, labelsTable, labelsSelectedColumns)
-		applicationQueryBuilder := repo.NewQueryBuilderGlobal(resource.Application, applicationTable, applicationsSelectedColumns)
-		tenantApplicationsQueryBuilder := repo.NewQueryBuilderGlobal(resource.Application, tenantApplicationsTable, tenantApplicationsSelectedColumns)
-
-		subaccountConditions := repo.Conditions{repo.NewEqualCondition("type", "subaccount")}
-
-		tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs, err := tenantRuntimeContextQueryBuilder.BuildQueryGlobal(false, repo.Conditions{}...)
-		applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs, err := labelsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewEqualCondition(keyColumn, "selfRegDistinguishLabel"), repo.NewNotNullCondition(appTemplateIDColumn)}...)
-		applicationSubquery, applicationArgs, err := applicationQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(appTemplateIDColumn, applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs)}...)
-		tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs, err := tenantApplicationsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery("id", applicationSubquery, applicationArgs)}...)
-
-		subscriptionConditions := repo.Conditions{
-			repo.NewInConditionForSubQuery("id", tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs),
-			repo.NewInConditionForSubQuery("id", tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs),
-		}
-
-		conditions := repo.And(
-			append(
-				append(
-					repo.ConditionTreesFromConditions(subaccountConditions),
-					repo.Or(repo.ConditionTreesFromConditions(subscriptionConditions)...),
-				),
-				&repo.ConditionTree{Operand: repo.NewEqualCondition("id", "given-id")})...,
-		)
-
-		spew.Dump(conditions)
-		spew.Dump(conditions.BuildSubquery())
 
 		// THEN
 		require.NoError(t, err)
