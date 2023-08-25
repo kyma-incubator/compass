@@ -545,7 +545,7 @@ func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTP
 	require.NoError(t, err)
 
 	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID)
-	request, err := http.NewRequest(http.MethodPut, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Tenant", tnt)
