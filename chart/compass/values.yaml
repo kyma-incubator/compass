@@ -143,7 +143,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3259"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -167,7 +167,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-96"
+      version: "PR-97"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -192,7 +192,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3259"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -740,7 +740,7 @@ global:
     host: compass-destination-fetcher.compass-system.svc.cluster.local
     prefix: /destination-configuration
     port: 3000
-    jobSchedule: 10m
+    jobSchedule: 10s
     lease:
       lockname: destinationlease
     parallelTenants: 10
