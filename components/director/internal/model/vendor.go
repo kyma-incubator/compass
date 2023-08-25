@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
@@ -44,9 +45,10 @@ func (i *VendorInput) ToVendor(id string, resourceType resource.Type, resourceID
 		DocumentationLabels: i.DocumentationLabels,
 	}
 
-	if resourceType == resource.ApplicationTemplateVersion {
+	switch resourceType {
+	case resource.ApplicationTemplateVersion:
 		vendor.ApplicationTemplateVersionID = &resourceID
-	} else if resourceType == resource.Application {
+	case resource.Application:
 		vendor.ApplicationID = &resourceID
 	}
 

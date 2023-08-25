@@ -200,37 +200,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Returning when no formation assignment notification is generated",
-			transactFn: ThatDoesNotCommitInGoRoutine,
-			faServiceFn: func() *automock.FormationAssignmentService {
-				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				return faSvc
-			},
-			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
-				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
-				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil, nil).Once()
-				return faNotificationSvc
-			},
-			formationSvcFn: func() *automock.FormationService {
-				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
-				return formationSvc
-			},
-			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
-				updater := &automock.FormationAssignmentStatusService{}
-				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
-				return updater
-			},
-			reqBody: fm.FormationAssignmentRequestBody{
-				Configuration: json.RawMessage(testValidConfig),
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusOK,
-			expectedErrOutput:  "",
-			shouldSleep:        true,
-		},
-		{
 			name:       "Error when transaction fails to begin",
 			transactFn: txGen.ThatFailsOnBegin,
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -240,36 +209,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
-		},
-		{
-			name:       "Error when transaction fails to begin in go routine when operation is assign",
-			transactFn: ThatFailsOnBeginInGoRoutine,
-			faServiceFn: func() *automock.FormationAssignmentService {
-				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
-				return faSvc
-			},
-			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
-				return &automock.FormationAssignmentNotificationService{}
-			},
-			formationSvcFn: func() *automock.FormationService {
-				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
-				return formationSvc
-			},
-			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
-				updater := &automock.FormationAssignmentStatusService{}
-				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
-				return updater
-			},
-			reqBody: fm.FormationAssignmentRequestBody{
-				State:         model.ReadyAssignmentState,
-				Configuration: json.RawMessage(testValidConfig),
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusOK,
-			expectedErrOutput:  "",
-			shouldSleep:        true,
 		},
 		{
 			name:       "Error when getting formation assignment globally",
@@ -459,6 +398,63 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
 		{
+			name:       "Error when committing transaction fail before go routine",
+			transactFn: txGen.ThatFailsOnCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
+				updater := &automock.FormationAssignmentStatusService{}
+				updater.On("UpdateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		// Unit tests for formation assignment notifications processing in the go routine
+		{
+			name:       "Error when transaction fails to begin in go routine when operation is assign",
+			transactFn: ThatFailsOnBeginInGoRoutine,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
+				return faSvc
+			},
+			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
+				return &automock.FormationAssignmentNotificationService{}
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
+				updater := &automock.FormationAssignmentStatusService{}
+				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+			shouldSleep:        true,
+		},
+		{
 			name:       "Error in go routine when generating notifications for assignment fail",
 			transactFn: ThatDoesNotCommitInGoRoutine,
 			faServiceFn: func() *automock.FormationAssignmentService {
@@ -483,6 +479,37 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
 				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+			shouldSleep:        true,
+		},
+		{
+			name:       "Returning when no formation assignment notification is generated in the go routine",
+			transactFn: ThatDoesNotCommitInGoRoutine,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
+				return faSvc
+			},
+			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
+				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil, nil).Once()
+				return faNotificationSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
+				return formationSvc
+			},
+			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
+				updater := &automock.FormationAssignmentStatusService{}
+				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			hasURLVars:         true,
@@ -524,7 +551,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Error in go routine when generating reverse notifications for assignment fail",
+			name:       "Error in go routine when generating notifications for reverse assignment fail",
 			transactFn: ThatDoesNotCommitInGoRoutine,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
@@ -558,13 +585,14 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Error in go routine when processing formation assignment pairs",
-			transactFn: ThatDoesNotCommitInGoRoutine,
+			name:       "Updating assignment to error state when processing formation assignment pairs in the go routine fails",
+			transactFn: txGen.ThatSucceedsTwice,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
 				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, testErr).Once()
+				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.TechnicalError), model.CreateErrorAssignmentState).Return(nil).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
@@ -593,11 +621,14 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Error when committing transaction fail before go routine",
-			transactFn: txGen.ThatFailsOnCommit,
+			name:       "Error in go routine when processing formation assignment pairs and setting assignment to error state fails",
+			transactFn: ThatDoesNotCommitInGoRoutine,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
+				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, testErr).Once()
+				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.TechnicalError), model.CreateErrorAssignmentState).Return(testErr).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
@@ -606,7 +637,10 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				return formationSvc
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
-				return &automock.FormationAssignmentNotificationService{}
+				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(fixEmptyNotificationRequest(), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp, model.AssignFormation).Return(fixEmptyNotificationRequest(), nil).Once()
+				return faNotificationSvc
 			},
 			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
 				updater := &automock.FormationAssignmentStatusService{}
@@ -618,11 +652,48 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			hasURLVars:         true,
-			expectedStatusCode: http.StatusInternalServerError,
-			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+			shouldSleep:        true,
 		},
 		{
-			name:       "Error when committing transaction fail in the go routine",
+			name:       "Error in go routine when processing formation assignment pairs fails and committing transaction fails",
+			transactFn: ThatFailsOnCommitInGoRoutine,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
+				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, testErr).Once()
+				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.TechnicalError), model.CreateErrorAssignmentState).Return(nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
+				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(fixEmptyNotificationRequest(), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp, model.AssignFormation).Return(fixEmptyNotificationRequest(), nil).Once()
+				return faNotificationSvc
+			},
+			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
+				updater := &automock.FormationAssignmentStatusService{}
+				updater.On("UpdateWithConstraints", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, model.AssignFormation).Return(nil).Once()
+				return updater
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+			shouldSleep:        true,
+		},
+		{
+			name:       "Processing formation assignment pair succeeds but committing transaction fail in the go routine",
 			transactFn: ThatFailsOnCommitInGoRoutine,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}

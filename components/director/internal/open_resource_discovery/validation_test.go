@@ -4486,6 +4486,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
@@ -5715,7 +5716,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
-				doc.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1")
+				doc.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1+")
 
 				return []*ord.Document{doc}
 			},
@@ -5727,7 +5728,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 				doc1 := fixORDDocument()
 				doc1.DescribedSystemInstance.CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
 				doc2 := fixORDDocument()
-				doc2.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1")
+				doc2.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1+")
 
 				return []*ord.Document{doc1, doc2}
 			},
