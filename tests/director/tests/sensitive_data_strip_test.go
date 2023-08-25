@@ -25,7 +25,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	t.Log("Creating application template")
 	appTemplateName := createAppTemplateName("app-template-test")

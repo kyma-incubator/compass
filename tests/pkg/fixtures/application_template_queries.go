@@ -20,6 +20,16 @@ func CreateApplicationTemplateFromInput(t require.TestingT, ctx context.Context,
 	return appTpl, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &appTpl)
 }
 
+func CreateApplicationTemplateFromInputWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, input graphql.ApplicationTemplateInput) (graphql.ApplicationTemplate, error) {
+	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(input)
+	require.NoError(t, err)
+
+	req := FixCreateApplicationTemplateRequest(appTemplate)
+	appTpl := graphql.ApplicationTemplate{}
+
+	return appTpl, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, req, &appTpl)
+}
+
 func CreateApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, name string) (graphql.ApplicationTemplate, error) {
 	return CreateApplicationTemplateFromInput(t, ctx, gqlClient, tenant, FixApplicationTemplate(name))
 }
