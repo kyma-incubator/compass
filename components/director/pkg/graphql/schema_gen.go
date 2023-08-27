@@ -619,6 +619,7 @@ type ComplexityRoot struct {
 		FormationConstraintsByFormationType        func(childComplexity int, formationTemplateID string) int
 		FormationTemplate                          func(childComplexity int, id string) int
 		FormationTemplates                         func(childComplexity int, first *int, after *PageCursor) int
+		FormationTemplatesByName                   func(childComplexity int, name string, first *int, after *PageCursor) int
 		Formations                                 func(childComplexity int, first *int, after *PageCursor) int
 		HealthChecks                               func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
 		IntegrationSystem                          func(childComplexity int, id string) int
@@ -944,6 +945,7 @@ type QueryResolver interface {
 	FormationConstraintsByFormationType(ctx context.Context, formationTemplateID string) ([]*FormationConstraint, error)
 	FormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
 	FormationTemplates(ctx context.Context, first *int, after *PageCursor) (*FormationTemplatePage, error)
+	FormationTemplatesByName(ctx context.Context, name string, first *int, after *PageCursor) (*FormationTemplatePage, error)
 	CertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
 	CertificateSubjectMappings(ctx context.Context, first *int, after *PageCursor) (*CertificateSubjectMappingPage, error)
 }
@@ -4344,6 +4346,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.FormationTemplates(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.formationTemplatesByName":
+		if e.complexity.Query.FormationTemplatesByName == nil {
+			break
+		}
+
+		args, err := ec.field_Query_formationTemplatesByName_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FormationTemplatesByName(childComplexity, args["name"].(string), args["first"].(*int), args["after"].(*PageCursor)), true
+
 	case "Query.formations":
 		if e.complexity.Query.Formations == nil {
 			break
@@ -6806,6 +6820,11 @@ type Query {
 	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
 	"""
 	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	"""
+	**Examples**
+	- [query formation templates by name](examples/query-formation-templates-by-name/query-formation-templates-by-name.graphql)
+	"""
+	formationTemplatesByName(name: String!, first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 	"""
 	**Examples**
 	- [query certificate subject mapping](examples/query-certificate-subject-mapping/query-certificate-subject-mapping.graphql)
@@ -10200,6 +10219,36 @@ func (ec *executionContext) field_Query_formationTemplate_args(ctx context.Conte
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_formationTemplatesByName_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -28300,6 +28349,71 @@ func (ec *executionContext) _Query_formationTemplates(ctx context.Context, field
 	return ec.marshalNFormationTemplatePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplatePage(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_formationTemplatesByName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_formationTemplatesByName_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().FormationTemplatesByName(rctx, args["name"].(string), args["first"].(*int), args["after"].(*PageCursor))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationTemplates")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*FormationTemplatePage); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationTemplatePage`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*FormationTemplatePage)
+	fc.Result = res
+	return ec.marshalNFormationTemplatePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplatePage(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_certificateSubjectMapping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -37670,6 +37784,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_formationTemplates(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "formationTemplatesByName":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_formationTemplatesByName(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

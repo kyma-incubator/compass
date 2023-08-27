@@ -10,12 +10,14 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 
 	"net/http"
 )
+
+// ClientIDFromCertificateHeader contains the name of the header containing the client id from the certificate
+const ClientIDFromCertificateHeader = "Client-Id-From-Certificate"
 
 // Middleware authorizes only requests made from CMP - checks if the tenant from ID token matches the provider subaccount of CMP
 type Middleware struct {
@@ -48,18 +50,17 @@ func (m *Middleware) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-
-			tenant, err := authmiddleware.LoadExternalTenantFromContext(ctx)
-			if err != nil {
-				log.C(ctx).Error("Failed to find tenant in context")
-				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
+			clientID := r.Header.Get(ClientIDFromCertificateHeader)
+			if clientID == "" {
+				log.C(ctx).Errorf("Failed to find client ID from header")
+				apperrors.WriteAppError(ctx, w, errors.New("Tenant not found in request"), http.StatusBadRequest)
 				return
 			}
-			orgUnit := fmt.Sprintf("OU=%s", tenant)
+			orgUnit := fmt.Sprintf("OU=%s", clientID)
 
 			if !strings.Contains(m.certSubject, orgUnit) {
-				log.C(ctx).Errorf("Tenant %s is not authorized", tenant)
-				apperrors.WriteAppError(ctx, w, errors.Errorf("Tenant %s is not authorized", tenant), http.StatusUnauthorized)
+				log.C(ctx).Errorf("Tenant %s is not authorized", clientID)
+				apperrors.WriteAppError(ctx, w, errors.Errorf("Tenant %s is not authorized", clientID), http.StatusUnauthorized)
 				return
 			}
 

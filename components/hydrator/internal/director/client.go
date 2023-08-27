@@ -2,13 +2,15 @@ package director
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"strings"
 	"time"
 
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
+	"github.com/avast/retry-go/v4"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
 )
@@ -204,7 +206,17 @@ func (c *client) execute(ctx context.Context, client *graphql.Client, query stri
 	newCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	return retry.GQLRun(client.Run, newCtx, req, res)
+	return retry.Do(func() error {
+		return client.Run(newCtx, req, res)
+	}, retry.Attempts(2),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(100*time.Millisecond),
+		retry.OnRetry(func(n uint, err error) {
+			log.C(ctx).Warnf("OnRetry: attempts: %d, error: %v", n, err)
+		}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 }
 
 func graphQLToModel(in *schema.AppSystemAuth) (*model.SystemAuth, error) {

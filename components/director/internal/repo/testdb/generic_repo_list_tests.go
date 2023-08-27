@@ -141,10 +141,17 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 func callList(repo interface{}, ctx context.Context, methodName string, args []interface{}) (interface{}, error) {
 	argsVals := make([]reflect.Value, 1, len(args)+1)
 	argsVals[0] = reflect.ValueOf(ctx)
-	for _, arg := range args {
+
+	methodByName := reflect.ValueOf(repo).MethodByName(methodName)
+	for i, arg := range args {
+		if arg == nil {
+			t := methodByName.Type().In(i + 1)
+			argsVals = append(argsVals, reflect.New(t).Elem())
+			continue
+		}
 		argsVals = append(argsVals, reflect.ValueOf(arg))
 	}
-	results := reflect.ValueOf(repo).MethodByName(methodName).Call(argsVals)
+	results := methodByName.Call(argsVals)
 	if len(results) != 2 {
 		panic("Get should return two argument")
 	}

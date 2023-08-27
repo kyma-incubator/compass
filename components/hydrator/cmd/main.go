@@ -230,7 +230,7 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internal
 		tenantmappingconst.SystemAuthObjectContextProvider:       tenantmapping.NewSystemAuthContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
 		tenantmappingconst.AuthenticatorObjectContextProvider:    tenantmapping.NewAuthenticatorContextProvider(internalDirectorClientProvider.Client(), authenticators),
 		tenantmappingconst.CertServiceObjectContextProvider:      tenantmapping.NewCertServiceContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
-		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(internalDirectorClientProvider.Client()),
+		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
 		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(internalGatewayClientProvider.Client(), consumerClaimsKeysConfig),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
