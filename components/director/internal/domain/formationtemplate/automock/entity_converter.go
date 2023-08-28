@@ -19,10 +19,6 @@ func (_m *EntityConverter) FromEntity(entity *formationtemplate.Entity) (*model.
 	ret := _m.Called(entity)
 
 	var r0 *model.FormationTemplate
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*formationtemplate.Entity) (*model.FormationTemplate, error)); ok {
-		return rf(entity)
-	}
 	if rf, ok := ret.Get(0).(func(*formationtemplate.Entity) *model.FormationTemplate); ok {
 		r0 = rf(entity)
 	} else {
@@ -31,6 +27,7 @@ func (_m *EntityConverter) FromEntity(entity *formationtemplate.Entity) (*model.
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(*formationtemplate.Entity) error); ok {
 		r1 = rf(entity)
 	} else {
@@ -45,10 +42,6 @@ func (_m *EntityConverter) ToEntity(in *model.FormationTemplate) (*formationtemp
 	ret := _m.Called(in)
 
 	var r0 *formationtemplate.Entity
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*model.FormationTemplate) (*formationtemplate.Entity, error)); ok {
-		return rf(in)
-	}
 	if rf, ok := ret.Get(0).(func(*model.FormationTemplate) *formationtemplate.Entity); ok {
 		r0 = rf(in)
 	} else {
@@ -57,6 +50,7 @@ func (_m *EntityConverter) ToEntity(in *model.FormationTemplate) (*formationtemp
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.FormationTemplate) error); ok {
 		r1 = rf(in)
 	} else {
