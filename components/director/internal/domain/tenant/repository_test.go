@@ -33,6 +33,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var selfRegDistinguishLabel = "selfRegDistinguishLabel"
+
 func TestPgRepository_Upsert(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -314,6 +316,48 @@ func TestPgRepository_ExistsByExternalTenant(t *testing.T) {
 
 		// WHEN
 		result, err := tenantMappingRepo.ExistsByExternalTenant(ctx, testExternal)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		assert.False(t, result)
+	})
+}
+
+func TestPgRepository_ExistsSubscribed(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))) AND id = $3)`)).
+			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel, testID).
+			WillReturnRows(testdb.RowWhenObjectExist())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		result, err := tenantMappingRepo.ExistsSubscribed(ctx, testID, selfRegDistinguishLabel)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result)
+	})
+
+	t.Run("Error when checking existence", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))) AND id = $3)`)).
+			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel, testID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		result, err := tenantMappingRepo.ExistsSubscribed(ctx, testID, selfRegDistinguishLabel)
 
 		// THEN
 		require.Error(t, err)
@@ -784,6 +828,83 @@ func TestPgRepository_ListByType(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing.T) {
+	parentID := "test"
+
+	tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
+	tntEntity.Initialized = boolToPtr(true)
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		resultTntModel := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, nil, tenantEntity.Account),
+		}
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", tntEntity).Return(resultTntModel[0]).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListBySubscribedRuntimesAndApplicationTemplates(ctx, selfRegDistinguishLabel)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, resultTntModel, result)
+	})
+
+	t.Run("Error when listing", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+			WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListBySubscribedRuntimesAndApplicationTemplates(ctx, selfRegDistinguishLabel)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		require.Nil(t, result)
+	})
+
+	t.Run("Error when missing persistence context", func(t *testing.T) {
+		// GIVEN
+		repo := tenant.NewRepository(nil)
+		ctx := context.TODO()
+
+		// WHEN
+		result, err := repo.ListBySubscribedRuntimesAndApplicationTemplates(ctx, selfRegDistinguishLabel)
+
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: unable to fetch database from context")
+		assert.Nil(t, result)
+	})
+}
+
 func buildQueryWithTenantIDs(ids []string) (string, []driver.Value) {
 	argumentValues := make([]driver.Value, 0)
 	var sb strings.Builder
