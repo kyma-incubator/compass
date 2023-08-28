@@ -153,6 +153,24 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
+	if reset {
+		if fa.State != string(model.ReadyFormationState) {
+			log.C(ctx).Error(err)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+		reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+		if err != nil {
+			log.C(ctx).Error(err)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+		if reverseFA.State != string(model.ReadyFormationState) {
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+	}
+
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	if formationOperation == model.UnassignFormation {
 		log.C(ctx).Infof("Processing formation assignment status update for %q operation", model.UnassignFormation)
