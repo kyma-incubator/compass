@@ -151,7 +151,7 @@ func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) e
 			defer om.transact.RollbackUnlessCommitted(ctx, tx)
 			ctx = persistence.SaveToContext(ctx, tx)
 
-			if err := om.opSvc.RescheduleOperations(ctx, om.cfg.OperationReschedulePeriod); err != nil {
+			if err := om.opSvc.RescheduleOperations(ctx, om.opType, om.cfg.OperationReschedulePeriod); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of RescheduleOperationsJob %v", err)
 			}
 			err = tx.Commit()
@@ -179,7 +179,7 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 			defer om.transact.RollbackUnlessCommitted(ctx, tx)
 			ctx = persistence.SaveToContext(ctx, tx)
 
-			if err := om.opSvc.RescheduleHangedOperations(ctx, om.cfg.OperationHangPeriod); err != nil {
+			if err := om.opSvc.RescheduleHangedOperations(ctx, om.opType, om.cfg.OperationHangPeriod); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of RescheduleHangedOperationsJob %v", err)
 			}
 			err = tx.Commit()

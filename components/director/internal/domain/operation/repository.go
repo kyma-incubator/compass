@@ -118,19 +118,21 @@ func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (b
 }
 
 // RescheduleOperations reschedules the operations.
-func (r *pgRepository) RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
+func (r *pgRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
 	log.C(ctx).Debug("Rescheduling Operations")
 	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
+	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
-	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
+	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, equalTypeCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
 
 // RescheduleHangedOperations reschedules operations that are hanged.
-func (r *pgRepository) RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error {
+func (r *pgRepository) RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error {
 	log.C(ctx).Debug("Rescheduling Operations")
 	equalCondition := repo.NewEqualCondition("status", "IN_PROGRESS")
+	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*hangPeriod))
-	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{equalCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
+	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{equalCondition, equalTypeCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})
 }
 
 func (r *pgRepository) multipleFromEntities(entities EntityCollection) []*model.Operation {
