@@ -280,6 +280,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	log.C(ctx).Infof("RAW Scenario groups before sending them to parinig adapter: %+v", rawScenarioGroups)
 	for _, gr := range rawScenarioGroups {
 		cleanedGr := strings.ReplaceAll(gr, `\`, "")
+		cleanedGr = strings.ReplaceAll(cleanedGr, " \"description", ",\"description")
 		log.C(ctx).Infof("group: %s", gr)
 		log.C(ctx).Infof("Cleaned group: %s", cleanedGr)
 		var scenarioGroup pairing.ScenarioGroup
