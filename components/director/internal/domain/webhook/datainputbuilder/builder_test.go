@@ -791,7 +791,6 @@ func TestWebhookDataInputBuilder_PrepareRuntimeAndRuntimeContextWithLabels(t *te
 }
 
 func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInFormation(t *testing.T) {
-	ctx := context.TODO()
 	testRuntimeContextTenantWithLabels := &webhook.TenantWithLabels{
 		BusinessTenantMapping: testRuntimeCtxOwner,
 		Labels:                convertLabels(testTenantLabels),
@@ -816,15 +815,15 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "success",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
 				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -869,15 +868,15 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when building tenant with labels for runtime context",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
 				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -917,15 +916,15 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when listing runtime contexts labels",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
 				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -959,15 +958,15 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when listing runtimes labels",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
 				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -984,15 +983,15 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when building tenants with labels for runtimes",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
 				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1020,15 +1019,15 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when listing parent runtimes",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
 					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
 				})).Return(nil, testErr).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
 				return repo
 			},
 			FormationName:      ScenarioName,
@@ -1038,12 +1037,12 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when listing runtime contexts",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return(nil, testErr)
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return(nil, testErr)
 				return repo
 			},
 			FormationName:      ScenarioName,
@@ -1053,7 +1052,7 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 			Name: "error when listing runtimes",
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
+				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
 				return repo
 			},
 			FormationName:      ScenarioName,
@@ -1103,8 +1102,6 @@ func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInForm
 }
 
 func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testing.T) {
-	ctx := context.TODO()
-
 	testCases := []struct {
 		Name                         string
 		ApplicationRepoFN            func() *automock.ApplicationRepository
@@ -1120,12 +1117,12 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "success",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
 				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1167,12 +1164,12 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "error when building tenant with labels for application templates",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
 				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1204,12 +1201,12 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "error when building tenant with labels for application templates",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
 				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1247,7 +1244,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "success when there are no applications in scenario",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{}, nil).Once()
 				return repo
 			},
 			FormationName:                ScenarioName,
@@ -1259,7 +1256,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "error when listing app labels",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1276,7 +1273,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "error when listing app labels",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1303,12 +1300,12 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "error when listing app templates",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
 				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
+				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
 				return repo
 			},
 			LabelBuilderFN: func() *automock.LabelInputBuilder {
@@ -1338,7 +1335,7 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			Name: "error when listing application in formation",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
+				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
 				return repo
 			},
 			FormationName:      ScenarioName,
