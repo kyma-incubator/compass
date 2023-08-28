@@ -1277,7 +1277,6 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 		fm.FormationAssignmentIDParam: testFormationAssignmentID,
 	}
 
-	// formation assignment fixtures with ASSIGN operation
 	faWithSourceAppAndTargetRuntime := func(state model.FormationAssignmentState) *model.FormationAssignment {
 		return fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, state, testValidConfig)
 	}
@@ -1313,10 +1312,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 		formationSvcFn      func() *automock.FormationService
 		faStatusSvcFn       func() *automock.FormationAssignmentStatusService
 		reqBody             fm.FormationAssignmentRequestBody
-		hasURLVars          bool
-		headers             map[string][]string
 		expectedStatusCode  int
-		expectedErrOutput   string
 		shouldSleep         bool // set to true for the test cases where we enter the go routine so that we give it some extra time to complete and then be able to assert the mocks
 	}{
 		{
@@ -1349,9 +1345,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
-			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
-			expectedErrOutput:  "",
 			shouldSleep:        true,
 		},
 		{
@@ -1372,10 +1366,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
-			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "",
-			shouldSleep:        true,
 		},
 		{
 			name:       "Fail when assignment is not in READY state",
@@ -1394,10 +1385,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
-			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "",
-			shouldSleep:        true,
 		},
 		{
 			name:       "Fail when failing to get reverse assignment",
@@ -1417,10 +1405,7 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
-			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "",
-			shouldSleep:        true,
 		},
 	}
 
@@ -1431,13 +1416,8 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 			require.NoError(t, err)
 
 			httpReq := httptest.NewRequest(http.MethodPatch, url, bytes.NewBuffer(marshalBody))
-			if tCase.hasURLVars {
-				httpReq = mux.SetURLVars(httpReq, urlVars)
-			}
+			httpReq = mux.SetURLVars(httpReq, urlVars)
 
-			if tCase.headers != nil {
-				httpReq.Header = tCase.headers
-			}
 			w := httptest.NewRecorder()
 
 			persist, transact := fixUnusedTransactioner()
@@ -1478,14 +1458,10 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := io.ReadAll(resp.Body)
+			_, err = io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			if tCase.expectedErrOutput == "" {
-				require.NoError(t, err)
-			} else {
-				require.Contains(t, string(body), tCase.expectedErrOutput)
-			}
+			require.NoError(t, err)
 			require.Equal(t, tCase.expectedStatusCode, resp.StatusCode)
 		})
 	}
