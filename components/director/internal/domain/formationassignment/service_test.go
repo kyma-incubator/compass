@@ -2199,6 +2199,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 	input := &webhook.FormationConfigurationChangeInput{
 		Operation: model.AssignFormation,
+		Formation: formation,
 	}
 
 	reqWebhook := &webhookclient.FormationAssignmentNotificationRequest{

@@ -74,12 +74,11 @@ func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails
 // GenerateFormationAssignmentNotificationOperationDetails contains details applicable to generate formation assignment notifications join point
 type GenerateFormationAssignmentNotificationOperationDetails struct {
 	Operation             model.FormationOperation
-	FormationID           string
-	FormationTemplateID   string
 	ResourceType          model.ResourceType
 	ResourceSubtype       string
 	ResourceID            string
 	CustomerTenantContext *webhook.CustomerTenantContext
+	Formation             *model.Formation
 
 	// fields used when generating notifications from configuration changed webhooks
 	ApplicationTemplate *webhook.ApplicationTemplateWithLabels

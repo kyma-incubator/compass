@@ -14,6 +14,7 @@ import (
 type ApplicationTenantMappingInput struct {
 	Operation                 model.FormationOperation
 	FormationID               string
+	Formation                 *model.Formation
 	SourceApplicationTemplate *ApplicationTemplateWithLabels
 	// SourceApplication is the application that the notification is about
 	SourceApplication         *ApplicationWithLabels

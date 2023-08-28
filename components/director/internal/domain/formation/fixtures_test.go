@@ -72,7 +72,7 @@ const (
 	FormationLifecycleWebhookID      = "517e0235-0d74-4166-a47c-5a577022d468"
 
 	// Formation constants
-	testFormationName       = "test-formation"
+	testFormationName       = "test-formation-name"
 	testFormationState      = string(model.InitialFormationState)
 	testFormationEmptyError = "{}"
 	secondTestFormationName = "second-formation"
@@ -115,7 +115,8 @@ var (
 
 	CustomerTenantContextAccount = fixCustomerTenantContext(TntCustomerID, TntExternalID)
 
-	modelFormation = model.Formation{
+	formationModelWithoutError = fixFormationModelWithoutError()
+	modelFormation             = model.Formation{
 		ID:                  FormationID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
@@ -376,6 +377,7 @@ var (
 		Object: &webhook.FormationConfigurationChangeInput{
 			Operation:   model.AssignFormation,
 			FormationID: fixUUID(),
+			Formation:   formationModelWithoutError,
 			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 				ApplicationTemplate: fixApplicationTemplateModel(),
 				Labels:              fixApplicationTemplateLabelsMap(),
@@ -475,6 +477,7 @@ var (
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:                 model.AssignFormation,
 			FormationID:               fixUUID(),
+			Formation:                 formationModelWithoutError,
 			SourceApplicationTemplate: nil,
 			SourceApplication: &webhook.ApplicationWithLabels{
 				Application: fixApplicationModelWithoutTemplate(Application2ID),
@@ -773,8 +776,8 @@ var (
 	notificationDetails = &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{}
 
 	generateConfigurationChangeNotificationDetails = &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
-		Operation:   model.AssignFormation,
-		FormationID: fixUUID(),
+		Operation: model.AssignFormation,
+		Formation: formationModelWithoutError,
 		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: fixApplicationTemplateModel(),
 			Labels:              fixApplicationTemplateLabelsMap(),
@@ -793,7 +796,7 @@ var (
 
 	generateAppToAppNotificationDetails = &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 model.AssignFormation,
-		FormationID:               fixUUID(),
+		Formation:                 formationModelWithoutError,
 		SourceApplicationTemplate: nil,
 		SourceApplication: &webhook.ApplicationWithLabels{
 			Application: fixApplicationModelWithoutTemplate(Application2ID),

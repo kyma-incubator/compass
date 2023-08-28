@@ -444,6 +444,21 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
 func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	formationName := gjson.GetBytes(bodyBytes, "context.uclFormationName").String()
+	if formationName == "" {
+		err := errors.New("The formation name in the context field in the notification request should not be empty")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+		return
+	}
+
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
@@ -452,6 +467,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
