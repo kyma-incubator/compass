@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -280,7 +281,9 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	for _, gr := range rawScenarioGroups {
 		log.C(ctx).Infof("group: %s", gr)
 		var scenarioGroup pairing.ScenarioGroup
-		err := json.Unmarshal([]byte(gr), &scenarioGroup)
+		groupWithNoBackslash := strings.ReplaceAll(gr, `\`, "")
+		log.C(ctx).Infof("Group with no backslash: %s", groupWithNoBackslash)
+		err := json.Unmarshal([]byte(groupWithNoBackslash), &scenarioGroup)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error while unmarshaling a scenario group")
 		}
