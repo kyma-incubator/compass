@@ -59,7 +59,7 @@ if [[ "$ORD_IMAGE_DIR" == "dev" ]]; then
        ORD_PR_COMMIT_HASH=$(jq -r '.merge_commit_sha' <<< "${ORD_PR_DATA}")
    fi
 else
-  # When the image that is used is from prod registry the value in ORD_PR_NUMBER is actually the short commit hash due to the different naming convention for the dev and prod images
+  # When the image that is used is from prod registry the value under .global.images.ord_service.version is in the format "timestamp-short_hash". The short hash from the image version will be used to checkout the correct correct ORD service source
     ORD_PR_COMMIT_HASH=$(yq e .global.images.ord_service.version /home/prow/go/src/github.com/kyma-incubator/compass/chart/compass/values.yaml | cut -d '-' -f 2 | xargs)
 fi
 
