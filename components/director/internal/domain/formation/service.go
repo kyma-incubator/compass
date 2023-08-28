@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/go-multierror"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -485,7 +483,7 @@ func (s *service) DeleteFormationEntityAndScenarios(ctx context.Context, tnt, fo
 //
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
-func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
 	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
@@ -514,15 +512,69 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if formationFromDB.State == model.DeletingFormationState || formationFromDB.State == model.DeleteErrorFormationState {
 			return nil, fmt.Errorf("cannot assign to formation with ID %q as it is in %q state", formationFromDB.ID, formationFromDB.State)
 		}
-		err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
+
+		err = s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
 		if err != nil {
 			return nil, err
 		}
 
-		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, err
+		// The defer statement after the formation assignment persistence depends on the value of the variable err.
+		// If err is used for the name of the returned error value a new variable that shadows the err variable from the outer scope
+		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the err variable in the same scope
+		// which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
+		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		if terr != nil {
+			return nil, terr
 		}
+
+		// We need to persist the FAs before we proceed to notification processing as for scenarios where there are both
+		// participants with ASYNC notifications and SYNC notifications it is possible that a FA status update request is
+		// received before the FA is persisted in the database.
+		// Example P1 has ASYNC webhook - W1 , P2 has SYNC webhook - W2. Assign both P1 and P2 to a formation.
+		// Formation assignments are generated.
+		// Execute W1, then execute W2. W2 takes for example 10 seconds. Before the W2 processing finishes a FA status update request for W1 is received.
+		// When fetching the corresponding FA from the DB a object not found error is received as the status update is performed in new transaction and the transaction in which the FA were generate is still running.
+		tx, terr := s.transact.Begin()
+		if terr != nil {
+			return nil, terr
+		}
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+		assignments, terr := s.formationAssignmentService.PersistAssignments(transactionCtx, tnt, assignmentInputs)
+		if terr != nil {
+			return nil, terr
+		}
+
+		if terr = tx.Commit(); terr != nil {
+			return nil, terr
+		}
+
+		// If the assigning of the object fails the transaction opened in the resolver fill be rolled back.
+		// The FA records and the labels for the object will not be reverted as they we re persisted as part of another
+		// transaction. The leftover resources should be deleted separately.
+		defer func() {
+			if err == nil {
+				return
+			}
+
+			log.C(ctx).Infof("Failed to assign object with ID %q of type %q to formation %q. Deleting Created Formation Assignment records...", objectID, objectType, formation.Name)
+
+			tx, deferError := s.transact.Begin()
+			if deferError != nil {
+				log.C(ctx).Infof("Failed to open transaction for deleting leftover resources")
+			}
+			transactionCtx := persistence.SaveToContext(ctx, tx)
+			defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+			if deferError := s.formationAssignmentService.DeleteAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID); deferError != nil {
+				log.C(ctx).WithError(deferError).Errorf("Failed to delete assignments fo object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
+			}
+
+			if deferError = tx.Commit(); deferError != nil {
+				log.C(ctx).Infof("Failed to commit transaction for deleting leftover resources")
+			}
+		}()
 
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
 		// If we are in create error state, the formation is not ready, and we should not send notifications
@@ -531,17 +583,20 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return ft.formation, nil
 		}
 
-		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		rtmContextIDsMapping, terr := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		err = terr
 		if err != nil {
 			return nil, err
 		}
 
-		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, assignments)
+		applicationIDToApplicationTemplateIDMapping, terr := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, assignments)
+		err = terr
 		if err != nil {
 			return nil, err
 		}
 
-		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		requests, terr := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		err = terr
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}

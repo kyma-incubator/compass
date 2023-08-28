@@ -290,6 +290,10 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 
 // ListAllForObjectIDs retrieves all FormationAssignment objects for formation with ID `formationID` that have any of the objectIDs as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+
 	var entities EntityCollection
 	conditions := repo.And(
 		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
