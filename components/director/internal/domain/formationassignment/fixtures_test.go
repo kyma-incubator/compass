@@ -289,6 +289,7 @@ func fixAppTenantMappingWebhookInput(formationID string, sourceApp, targetApp *w
 	return &webhook.ApplicationTenantMappingInput{
 		Operation:                 model.AssignFormation,
 		FormationID:               formationID,
+		Formation:                 formation,
 		SourceApplicationTemplate: sourceAppTemplate,
 		SourceApplication:         sourceApp,
 		TargetApplicationTemplate: targetAppTemplate,

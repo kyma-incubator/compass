@@ -31,9 +31,9 @@ type notificationService interface {
 
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationBuilder interface {
-	BuildFormationAssignmentNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
-	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, formationTemplateID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
-	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, formationTemplateID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formation *model.Formation, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formation *model.Formation, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
 
 type formationAssignmentNotificationService struct {
@@ -274,8 +274,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		log.C(ctx).Infof("Preparing join point details for application tenant mapping notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 			operation,
-			fa.FormationID,
-			referencedFormation.FormationTemplateID,
+			referencedFormation,
 			reverseAppTemplateWithLabels,
 			reverseAppWithLabels,
 			appTemplateWithLabels,
@@ -298,7 +297,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, nil
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appToAppWebhook)
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appToAppWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -324,8 +323,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
-			fa.FormationID,
-			referencedFormation.FormationTemplateID,
+			referencedFormation,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtimeWithLabels,
@@ -349,7 +347,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, nil
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -382,8 +380,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			operation,
-			fa.FormationID,
-			referencedFormation.FormationTemplateID,
+			referencedFormation,
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtimeWithLabels,
@@ -407,7 +404,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, nil
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -460,8 +457,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 		operation,
-		fa.FormationID,
-		referencedFormation.FormationTemplateID,
+		referencedFormation,
 		appTemplateWithLabels,
 		applicationWithLabels,
 		runtimeWithLabels,
@@ -477,7 +473,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		return nil, err
 	}
 
-	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
+	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, runtimeWebhook)
 	if err != nil {
 		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err
@@ -536,8 +532,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 		operation,
-		fa.FormationID,
-		referencedFormation.FormationTemplateID,
+		referencedFormation,
 		appTemplateWithLabels,
 		applicationWithLabels,
 		runtimeWithLabels,
@@ -553,7 +548,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		return nil, err
 	}
 
-	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
+	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, runtimeWebhook)
 	if err != nil {
 		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err
