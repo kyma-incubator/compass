@@ -14,12 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var emptyCtx = context.Background()
+
 func TestNewTemplateRenderer(t *testing.T) {
 	t.Run("Creates a new renderer", func(t *testing.T) {
 		appInputOverride := `{"name":"{{name}}"}`
 		templateSvc := &automock.ApplicationTemplateService{}
 		convSvc := &automock.ApplicationConverter{}
-		convSvc.On("CreateInputJSONToModel", context.TODO(), appInputOverride).Return(model.ApplicationRegisterInput{}, nil).Once()
+		convSvc.On("CreateInputJSONToModel", emptyCtx, appInputOverride).Return(model.ApplicationRegisterInput{}, nil).Once()
 		defer mock.AssertExpectationsForObjects(t, templateSvc, convSvc)
 		tr, err := systemfetcher.NewTemplateRenderer(templateSvc, convSvc, appInputOverride, []systemfetcher.PlaceholderMapping{})
 
@@ -32,7 +34,7 @@ func TestNewTemplateRenderer(t *testing.T) {
 
 		templateSvc := &automock.ApplicationTemplateService{}
 		convSvc := &automock.ApplicationConverter{}
-		convSvc.On("CreateInputJSONToModel", context.TODO(), invalidOverrides).Return(model.ApplicationRegisterInput{}, expectedErr).Once()
+		convSvc.On("CreateInputJSONToModel", emptyCtx, invalidOverrides).Return(model.ApplicationRegisterInput{}, expectedErr).Once()
 		defer mock.AssertExpectationsForObjects(t, templateSvc, convSvc)
 
 		tr, err := systemfetcher.NewTemplateRenderer(templateSvc, convSvc, invalidOverrides, []systemfetcher.PlaceholderMapping{})
@@ -88,14 +90,14 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			ID:                   appTemplateID,
 			ApplicationInputJSON: `{ "name": "testtest"}`,
 		}
-		svc.On("Get", context.TODO(), testSystem.TemplateID).Return(template, nil).Once()
+		svc.On("Get", emptyCtx, testSystem.TemplateID).Return(template, nil).Once()
 		svc.On("PrepareApplicationCreateInputJSON", appTemplateWithOverrides, inputValues).Return(appRegisterInputJSON, nil).Once()
 		return svc
 	}
 	appConvSvcNoErrors := func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
 		appInput := fixAppInputBySystem(t, testSystem)
 		conv := &automock.ApplicationConverter{}
-		conv.On("CreateInputJSONToModel", context.TODO(), appRegisterInputJSON).Return(appInput, nil).Once()
+		conv.On("CreateInputJSONToModel", emptyCtx, appRegisterInputJSON).Return(appInput, nil).Once()
 		return conv
 	}
 
@@ -132,7 +134,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 				appTemplateFromDB.ApplicationInputJSON = `{"name": "test1","labels":{"tenant":"123"},"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941"}`
 
 				svc := &automock.ApplicationTemplateService{}
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
 				svc.On("PrepareApplicationCreateInputJSON", &resultTemplate, fixInputValuesForSystem(t, testSystem)).Return(appRegisterInputJSON, nil).Once()
 				return svc
 			},
@@ -160,14 +162,14 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 				}
 
 				svc := &automock.ApplicationTemplateService{}
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
 				svc.On("PrepareApplicationCreateInputJSON", &resultTemplate, fixInputValuesForSystemWhichAppTemplateHasPlaceholders(t, testSystem)).Return(`{"name":"test"}`, nil).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
 				appInput := fixAppInputBySystem(t, testSystem)
 				conv := &automock.ApplicationConverter{}
-				conv.On("CreateInputJSONToModel", context.TODO(), `{"name":"test"}`).Return(appInput, nil).Once()
+				conv.On("CreateInputJSONToModel", emptyCtx, `{"name":"test"}`).Return(appInput, nil).Once()
 				return conv
 			},
 		},
@@ -188,8 +190,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			},
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
 				svc := &automock.ApplicationTemplateService{}
-				//inputValues := fixInputValuesForSystem(testSystem)
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(appTemplate, nil).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(appTemplate, nil).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
@@ -207,7 +208,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 				appTemplateFromDB.ApplicationInputJSON = ``
 
 				svc := &automock.ApplicationTemplateService{}
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
@@ -225,7 +226,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 				appTemplateFromDB.ApplicationInputJSON = `{"name": "{{display-name}}"}`
 
 				svc := &automock.ApplicationTemplateService{}
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
@@ -240,7 +241,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			expectedErr:         errors.New("cannot get template"),
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, err error) *automock.ApplicationTemplateService {
 				svc := &automock.ApplicationTemplateService{}
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(nil, err).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(nil, err).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
@@ -260,7 +261,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 					ID:                   appTemplateID,
 					ApplicationInputJSON: `{ "name": "testtest"}`,
 				}
-				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(template, nil).Once()
+				svc.On("Get", emptyCtx, testSystem.TemplateID).Return(template, nil).Once()
 				svc.On("PrepareApplicationCreateInputJSON", appTemplateWithOverrides, inputValues).Return("", err).Once()
 				return svc
 			},
@@ -277,7 +278,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			setupAppTemplateSvc: appTemplateSvcNoErrors,
 			setupAppConverter: func(testSystem systemfetcher.System, err error) *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.On("CreateInputJSONToModel", context.TODO(), appRegisterInputJSON).Return(model.ApplicationRegisterInput{}, err).Once()
+				conv.On("CreateInputJSONToModel", emptyCtx, appRegisterInputJSON).Return(model.ApplicationRegisterInput{}, err).Once()
 				return conv
 			},
 		},
@@ -287,14 +288,14 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			// GIVEN
 			templateSvc := test.setupAppTemplateSvc(test.system, test.expectedErr)
 			convSvc := test.setupAppConverter(test.system, test.expectedErr)
-			convSvc.On("CreateInputJSONToModel", context.TODO(), test.appInputOverride).Return(model.ApplicationRegisterInput{}, nil).Once()
+			convSvc.On("CreateInputJSONToModel", emptyCtx, test.appInputOverride).Return(model.ApplicationRegisterInput{}, nil).Once()
 			tr, err := systemfetcher.NewTemplateRenderer(templateSvc, convSvc, test.appInputOverride, test.placeholderMappings)
 			require.NoError(t, err)
 
 			defer mock.AssertExpectationsForObjects(t, templateSvc, convSvc)
 
 			// WHEN
-			regIn, err := tr.ApplicationRegisterInputFromTemplate(context.TODO(), testSystem)
+			regIn, err := tr.ApplicationRegisterInputFromTemplate(emptyCtx, testSystem)
 
 			// THEN
 			if test.expectedErr != nil {
