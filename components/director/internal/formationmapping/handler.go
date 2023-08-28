@@ -535,6 +535,11 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	if reset {
+		log.C(ctx).Infof("Resetting formation assignment with ID %q to state %s", fa.ID, model.InitialAssignmentState)
+		fa.State = string(model.InitialAssignmentState)
+	}
+
 	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
 	if err != nil {
@@ -554,7 +559,6 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 
 	if reset {
 		log.C(ctx).Infof("Resetting formation assignment with ID %q to state %s", reverseFA.ID, model.InitialAssignmentState)
-		fa.State = string(model.InitialAssignmentState)
 		reverseFA.State = string(model.InitialAssignmentState)
 	}
 
