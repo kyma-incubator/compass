@@ -147,6 +147,9 @@ const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 // ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
 const ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 
+// InitialAssignmentState indicates that nothing has been done with the formation assignment
+const InitialAssignmentState FormationAssignmentState = "INITIAL"
+
 // ReadyFormationState indicates that the formation is in a ready state
 const ReadyFormationState FormationState = "READY"
 
@@ -452,18 +455,17 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	receiverTenantState := gjson.GetBytes(bodyBytes, "RequestBody.receiverTenant.state").String()
-	if receiverTenantState == "" {
-		err := errors.New("The receiver tenant state in the request body cannot be empty")
+	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
+	if assignedTenantState == "" {
+		err := errors.New("The assigned tenant state in the request body cannot be empty")
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
 
-	receiverTenantConfig := gjson.GetBytes(bodyBytes, "RequestBody.receiverTenant.configuration").String()
-
-	if receiverTenantState == "INITIAL" && receiverTenantConfig == "" {
-		log.C(ctx).Infof("Initial notification request is received with empty config in the receiver tenant. Returning 202 Accepted with noop response func")
-		h.asyncFAResponse(r.Context(), writer, r, Assign, "", AsyncNoopFAResponseFn)
+	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
+	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
+		writer.WriteHeader(http.StatusAccepted)
 		return
 	}
 
@@ -475,6 +477,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	config := "{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"}}}}"
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
