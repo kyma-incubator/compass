@@ -40,19 +40,27 @@ gcp::authenticate \
 chmod -R 0777 /home/prow/go/src/github.com/kyma-incubator/compass/.git
 mkdir -p /home/prow/go/src/github.com/kyma-incubator/compass/components/console/shared/build
 
-log::info "Get ORD commit ID"
-ORD_PR_NUMBER=$(yq e .global.images.ord_service.version /home/prow/go/src/github.com/kyma-incubator/compass/chart/compass/values.yaml | cut -d '-' -f 2 | xargs)
-log::info "ORD_PR_NUMBER PR is: ${ORD_PR_NUMBER}"
+ORD_IMAGE_DIR=$(yq e .global.images.ord_service.dir /home/prow/go/src/github.com/kyma-incubator/compass/chart/compass/values.yaml | cut -d '/' -f 1 | xargs)
+log::info "ORD_IMAGE_DIR is: ${ORD_IMAGE_DIR}"
 
-ORD_PR_DATA=$(curl -sS "https://api.github.com/repos/kyma-incubator/ord-service/pulls/${ORD_PR_NUMBER}")
-log::info "ORD_PR_DATA is: ${ORD_PR_DATA}"
+if [[ "$ORD_IMAGE_DIR" == "dev" ]]; then
+   log::info "Get ORD commit ID"
+   ORD_PR_NUMBER=$(yq e .global.images.ord_service.version /home/prow/go/src/github.com/kyma-incubator/compass/chart/compass/values.yaml | cut -d '-' -f 2 | xargs)
+   log::info "ORD_PR_NUMBER PR is: ${ORD_PR_NUMBER}"
 
-ORD_PR_STATE=$(jq -r '.state' <<< "${ORD_PR_DATA}")
+   ORD_PR_DATA=$(curl -sS "https://api.github.com/repos/kyma-incubator/ord-service/pulls/${ORD_PR_NUMBER}")
+   log::info "ORD_PR_DATA is: ${ORD_PR_DATA}"
 
-if [[ "$ORD_PR_STATE" == "open" ]]; then
-    ORD_PR_COMMIT_HASH=$(jq -r '.head.sha' <<< "${ORD_PR_DATA}")
+   ORD_PR_STATE=$(jq -r '.state' <<< "${ORD_PR_DATA}")
+
+   if [[ "$ORD_PR_STATE" == "open" ]]; then
+       ORD_PR_COMMIT_HASH=$(jq -r '.head.sha' <<< "${ORD_PR_DATA}")
+   else
+       ORD_PR_COMMIT_HASH=$(jq -r '.merge_commit_sha' <<< "${ORD_PR_DATA}")
+   fi
 else
-    ORD_PR_COMMIT_HASH=$(jq -r '.merge_commit_sha' <<< "${ORD_PR_DATA}")
+  # When the image that is used is from prod registry the value under .global.images.ord_service.version is in the format "timestamp-short_hash". The short hash from the image version will be used to checkout the correct correct ORD service source
+    ORD_PR_COMMIT_HASH=$(yq e .global.images.ord_service.version /home/prow/go/src/github.com/kyma-incubator/compass/chart/compass/values.yaml | cut -d '-' -f 2 | xargs)
 fi
 
 log::info "ORD_PR_COMMIT_HASH is: ${ORD_PR_COMMIT_HASH}"
