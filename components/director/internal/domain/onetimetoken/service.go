@@ -267,6 +267,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	}
 
 	rawScenarioGroups := scenariogroups.LoadFromContext(ctx)
+	log.C(ctx).Infof("rawScenarioGroups: %+v", rawScenarioGroups)
 	var scenarioGroups []pairing.ScenarioGroup
 	for _, gr := range rawScenarioGroups {
 
