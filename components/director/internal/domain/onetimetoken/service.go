@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -109,9 +110,9 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 // GenerateOneTimeToken missing godoc
 func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	token, suggestedToken, err := s.getToken(ctx, objectID, tokenType)
-	log.C(ctx).Infof("Token: %+v", token)
-	log.C(ctx).Infof("Token.token: %+v", token.Token)
-	log.C(ctx).Infof("Token.scenarioGroups: %+v", token.ScenarioGroups)
+	//log.C(ctx).Infof("Token: %+v", token)
+	//log.C(ctx).Infof("Token.token: %+v", token.Token)
+	//log.C(ctx).Infof("Token.scenarioGroups: %+v", token.ScenarioGroups)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +193,10 @@ func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuth
 	}
 	oneTimeToken.ExpiresAt = oneTimeToken.CreatedAt.Add(expiresAfter)
 
+	sc := scenariogroups.LoadFromContext(ctx)
+	log.C(ctx).Infof("Updating one time token with scenario groups %+v", sc)
 	oneTimeToken.ScenarioGroups = scenariogroups.LoadFromContext(ctx)
+	log.C(ctx).Infof("UPDATED one time token with scenario groups %+v", oneTimeToken.ScenarioGroups)
 
 	return oneTimeToken, nil
 }
@@ -241,6 +245,8 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 	}
 
 	suggestedAppTokenString := s.getSuggestedTokenForApp(ctx, app, oneTimeToken)
+	log.C(ctx).Infof("final one time token is %+v", oneTimeToken)
+
 	return oneTimeToken, suggestedAppTokenString, nil
 }
 
@@ -271,15 +277,19 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 
 	rawScenarioGroups := scenariogroups.LoadFromContext(ctx)
 	var scenarioGroups []pairing.ScenarioGroup
+	log.C(ctx).Infof("RAW Scenario groups before sending them to parinig adapter: %+v", rawScenarioGroups)
 	for _, gr := range rawScenarioGroups {
-
+		cleanedGr := strings.ReplaceAll(gr, `\`, "")
+		log.C(ctx).Infof("group: %s", gr)
+		log.C(ctx).Infof("Cleaned group: %s", cleanedGr)
 		var scenarioGroup pairing.ScenarioGroup
-		err := json.Unmarshal([]byte(gr), &scenarioGroup)
+		err := json.Unmarshal([]byte(cleanedGr), &scenarioGroup)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error while unmarshaling a scenario group")
 		}
 
 		scenarioGroups = append(scenarioGroups, scenarioGroup)
+		log.C(ctx).Infof("not rawScenarioGroups: %+v", scenarioGroups)
 	}
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	log.C(ctx).Infof("Scenario groups before sending them to parinig adapter: %+v", scenarioGroups)
