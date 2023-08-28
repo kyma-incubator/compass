@@ -407,12 +407,12 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// GenerateAssignments creates and persists two formation assignments per participant in the formation `formation`.
+// GenerateAssignments generates two formation assignments per participant in the formation `formation`.
 // For the first formation assignment the source is the objectID and the target is participant's ID.
 // For the second assignment the source and target are swapped.
 //
 // In case of objectType==RUNTIME_CONTEXT formationAssignments for the object and it's parent runtime are not generated.
-func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error) {
+func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error) {
 	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
 	if err != nil {
 		return nil, err
@@ -512,6 +512,11 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		Error:       nil,
 	})
 
+	return assignments, nil
+}
+
+// PersistAssignments persists the provided formation assignments
+func (s *service) PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error) {
 	ids := make([]string, 0, len(assignments))
 	for _, assignment := range assignments {
 		id, err := s.CreateIfNotExists(ctx, assignment)
