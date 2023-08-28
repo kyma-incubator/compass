@@ -1838,7 +1838,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	healthURL := ptr.String("http://health.com")
 	providerName := ptr.String("test-provider")
 	description := "app description"
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 	namePlaceholder := "name"
 	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
@@ -2060,7 +2060,7 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	}
 	appTmplInput.ApplicationInput.LocalTenantID = ptr.String("{{tenant-id}}")
 
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
 	require.NoError(t, err)
@@ -2073,7 +2073,7 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 
 	outputApp := graphql.ApplicationExt{}
 	//WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplRequest, &outputApp)
 	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN

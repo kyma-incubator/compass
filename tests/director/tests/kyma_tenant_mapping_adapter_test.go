@@ -83,8 +83,8 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 		},
 	}
 
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, appTemplate)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)

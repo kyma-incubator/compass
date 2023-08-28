@@ -122,6 +122,10 @@ global:
       id: ff30da87-7685-4462-869a-baae6441898b
       type: resource-group
       parent: 4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900
+    - name: Test Default Subaccount
+      id: 777ce47b-d901-4647-9223-14e94819830b
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
@@ -143,15 +147,15 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3243"
+      version: "PR-3254"
       name: compass-hydrator
     ias_adapter:
-      dir: prod/incubator/
-      version: "v20230728-78b68ef0"
+      dir: dev/incubator/
+      version: "PR-3254"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3243"
+      version: "PR-3254"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
@@ -163,7 +167,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-96"
+      version: "PR-97"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -188,7 +192,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3243"
+      version: "PR-3256"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -736,7 +740,7 @@ global:
     host: compass-destination-fetcher.compass-system.svc.cluster.local
     prefix: /destination-configuration
     port: 3000
-    jobSchedule: 10m
+    jobSchedule: 10s
     lease:
       lockname: destinationlease
     parallelTenants: 10

@@ -13,6 +13,7 @@ import (
 )
 
 // FormationTemplateConverter converts between the graphql and model
+//
 //go:generate mockery --name=FormationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateConverter interface {
 	FromInputGraphQL(in *graphql.FormationTemplateInput) (*model.FormationTemplateInput, error)
@@ -22,17 +23,19 @@ type FormationTemplateConverter interface {
 }
 
 // FormationTemplateService represents the FormationTemplate service layer
+//
 //go:generate mockery --name=FormationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateService interface {
 	Create(ctx context.Context, in *model.FormationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error)
+	List(ctx context.Context, name *string, pageSize int, cursor string) (*model.FormationTemplatePage, error)
 	Update(ctx context.Context, id string, in *model.FormationTemplateInput) error
 	Delete(ctx context.Context, id string) error
 	ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error)
 }
 
 // WebhookConverter converts between the graphql and model
+//
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -40,12 +43,14 @@ type WebhookConverter interface {
 }
 
 // FormationConstraintService represents the FormationConstraint service layer
+//
 //go:generate mockery --name=FormationConstraintService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationConstraintService interface {
 	ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([][]*model.FormationConstraint, error)
 }
 
 // FormationConstraintConverter represents the FormationConstraint converter
+//
 //go:generate mockery --name=FormationConstraintConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationConstraintConverter interface {
 	MultipleToGraphQL(in []*model.FormationConstraint) []*graphql.FormationConstraint
@@ -74,8 +79,8 @@ func NewResolver(transact persistence.Transactioner, converter FormationTemplate
 	}
 }
 
-// FormationTemplates pagination lists all FormationTemplates based on `first` and `after`
-func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+// FormationTemplatesByName pagination lists all FormationTemplates filtered by name and based on `first` and `after`
+func (r *Resolver) FormationTemplatesByName(ctx context.Context, name *string, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
@@ -92,7 +97,7 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationTemplatePage, err := r.formationTemplateSvc.List(ctx, *first, cursor)
+	formationTemplatePage, err := r.formationTemplateSvc.List(ctx, name, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +121,11 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 			HasNextPage: formationTemplatePage.PageInfo.HasNextPage,
 		},
 	}, nil
+}
+
+// FormationTemplates pagination lists all FormationTemplates based on `first` and `after`
+func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+	return r.FormationTemplatesByName(ctx, nil, first, after)
 }
 
 // FormationTemplate queries the FormationTemplate matching ID `id`

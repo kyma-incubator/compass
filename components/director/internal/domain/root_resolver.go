@@ -456,6 +456,10 @@ func (r *queryResolver) FormationTemplates(ctx context.Context, first *int, afte
 	return r.formationTemplate.FormationTemplates(ctx, first, after)
 }
 
+func (r *queryResolver) FormationTemplatesByName(ctx context.Context, name string, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+	return r.formationTemplate.FormationTemplatesByName(ctx, &name, first, after)
+}
+
 // Viewer missing godoc
 func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 	return r.viewer.Viewer(ctx)
