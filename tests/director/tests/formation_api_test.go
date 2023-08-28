@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 
+	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -3060,7 +3060,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		require.True(stdT, ok)
 		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
-		// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
+		// Create certificate subject mapping with a custom subject that was used to create a certificate for the graphql client above
 		internalConsumerID := appTmpl.ID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 		certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
 		csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
@@ -3424,6 +3424,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
+			assertNotificationsCountForTenant(t, body, localTenantID2, 2)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{

@@ -147,6 +147,9 @@ const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 // ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
 const ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 
+// InitialAssignmentState indicates that nothing has been done with the formation assignment
+const InitialAssignmentState FormationAssignmentState = "INITIAL"
+
 // ReadyFormationState indicates that the formation is in a ready state
 const ReadyFormationState FormationState = "READY"
 
@@ -449,6 +452,20 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
+	if assignedTenantState == "" {
+		err := errors.New("The assigned tenant state in the request body cannot be empty")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+		return
+	}
+
+	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
+	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
+		writer.WriteHeader(http.StatusAccepted)
 		return
 	}
 

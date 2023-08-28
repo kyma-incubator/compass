@@ -48,16 +48,13 @@ func (_m *FormationTemplateRepository) Exists(ctx context.Context, id string) (b
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -72,10 +69,6 @@ func (_m *FormationTemplateRepository) Get(ctx context.Context, id string) (*mod
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.FormationTemplate
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationTemplate, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -84,6 +77,7 @@ func (_m *FormationTemplateRepository) Get(ctx context.Context, id string) (*mod
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -98,10 +92,6 @@ func (_m *FormationTemplateRepository) List(ctx context.Context, name *string, t
 	ret := _m.Called(ctx, name, tenantID, pageSize, cursor)
 
 	var r0 *model.FormationTemplatePage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *string, string, int, string) (*model.FormationTemplatePage, error)); ok {
-		return rf(ctx, name, tenantID, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, *string, string, int, string) *model.FormationTemplatePage); ok {
 		r0 = rf(ctx, name, tenantID, pageSize, cursor)
 	} else {
@@ -110,6 +100,7 @@ func (_m *FormationTemplateRepository) List(ctx context.Context, name *string, t
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *string, string, int, string) error); ok {
 		r1 = rf(ctx, name, tenantID, pageSize, cursor)
 	} else {
