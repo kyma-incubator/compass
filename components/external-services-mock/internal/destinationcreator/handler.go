@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
+
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/gorilla/mux"
@@ -202,7 +204,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
 	certResp := CertificateResponseBody{
 		FileName:         destinationCertName,
-		CommonName:       reqBody.Name,
+		CommonName:       uuid.New().String(),
 		CertificateChain: CertChain,
 	}
 
