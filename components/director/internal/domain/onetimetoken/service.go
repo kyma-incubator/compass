@@ -272,6 +272,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	var scenarioGroups []pairing.ScenarioGroup
 	for _, gr := range rawScenarioGroups {
 		cleanedGr := strings.ReplaceAll(gr, `\`, "")
+		log.C(ctx).Infof("Cleaned group: %s", cleanedGr)
 
 		var scenarioGroup pairing.ScenarioGroup
 		err := json.Unmarshal([]byte(cleanedGr), &scenarioGroup)
@@ -280,6 +281,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		}
 
 		scenarioGroups = append(scenarioGroups, scenarioGroup)
+		log.C(ctx).Infof("not rawScenarioGroups: %+v", scenarioGroups)
 	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)
