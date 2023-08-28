@@ -21,6 +21,7 @@ var (
 	testSubaccountID = "testSubaccountID"
 	testDestName     = "test-dest-name"
 	testCertName     = "test-cert-name"
+	testUUID         = "9a22c33e-ce39-452e-9ac4-16fb0398b9a7" // used for common name
 	testCertChain    = esmdestinationcreator.CertChain
 	testCertFileName = testCertName + destinationcreatorpkg.JavaKeyStoreFileExtension
 
@@ -41,7 +42,7 @@ var (
 	destinationCreatorReqBodyWithoutAuthType = fmt.Sprintf(`{"name":"%s","url":"http://localhost","type":"HTTP","proxyType":"Internet","additionalProperties":{"customKey":"customValue"}}`, noAuthDestName)
 
 	destinationCreatorCertReqBody      = fmt.Sprintf(`{"name":"%s"}`, testCertName)
-	destinationCreatorCertResponseBody = fmt.Sprintf(`{"fileName":"%s","commonName":"%s","certificateChain":"%s"}`, testCertFileName, testCertName, testCertChain)
+	destinationCreatorCertResponseBody = fmt.Sprintf(`{"fileName":"%s","commonName":"%s","certificateChain":"%s"}`, testCertFileName, testUUID, testCertChain)
 	destinationServiceCertResponseBody = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testCertFileName, testCertChain)
 )
 
