@@ -536,6 +536,7 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 
 	if reset {
 		log.C(ctx).Infof("Resetting formation assignment with ID %q to state %s", reverseFA.ID, model.InitialAssignmentState)
+		fa.State = string(model.InitialAssignmentState)
 		reverseFA.State = string(model.InitialAssignmentState)
 	}
 
