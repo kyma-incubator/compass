@@ -97,13 +97,13 @@ func (_m *OperationRepository) PriorityQueueListByType(ctx context.Context, queu
 	return r0, r1
 }
 
-// RescheduleHangedOperations provides a mock function with given fields: ctx, hangPeriod
-func (_m *OperationRepository) RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error {
-	ret := _m.Called(ctx, hangPeriod)
+// RescheduleHangedOperations provides a mock function with given fields: ctx, operationType, hangPeriod
+func (_m *OperationRepository) RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error {
+	ret := _m.Called(ctx, operationType, hangPeriod)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, time.Duration) error); ok {
-		r0 = rf(ctx, hangPeriod)
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType, time.Duration) error); ok {
+		r0 = rf(ctx, operationType, hangPeriod)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -111,13 +111,13 @@ func (_m *OperationRepository) RescheduleHangedOperations(ctx context.Context, h
 	return r0
 }
 
-// RescheduleOperations provides a mock function with given fields: ctx, reschedulePeriod
-func (_m *OperationRepository) RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
-	ret := _m.Called(ctx, reschedulePeriod)
+// RescheduleOperations provides a mock function with given fields: ctx, operationType, reschedulePeriod
+func (_m *OperationRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	ret := _m.Called(ctx, operationType, reschedulePeriod)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, time.Duration) error); ok {
-		r0 = rf(ctx, reschedulePeriod)
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType, time.Duration) error); ok {
+		r0 = rf(ctx, operationType, reschedulePeriod)
 	} else {
 		r0 = ret.Error(0)
 	}
