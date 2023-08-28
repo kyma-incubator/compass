@@ -518,24 +518,27 @@ func TestService_RescheduleOperations(t *testing.T) {
 		Name         string
 		RepositoryFn func() *automock.OperationRepository
 		Input        time.Duration
+		Type         model.OperationType
 		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("RescheduleOperations", ctx, time.Minute).Return(nil).Once()
+				repo.On("RescheduleOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(nil).Once()
 				return repo
 			},
+			Type:  model.OperationTypeOrdAggregation,
 			Input: time.Minute,
 		},
 		{
 			Name: "Error while rescheduling operations",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("RescheduleOperations", ctx, time.Minute).Return(testErr).Once()
+				repo.On("RescheduleOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(testErr).Once()
 				return repo
 			},
+			Type:        model.OperationTypeOrdAggregation,
 			Input:       time.Minute,
 			ExpectedErr: testErr,
 		},
@@ -549,7 +552,7 @@ func TestService_RescheduleOperations(t *testing.T) {
 			svc := operation.NewService(repo, nil)
 
 			// WHEN
-			err := svc.RescheduleOperations(ctx, testCase.Input)
+			err := svc.RescheduleOperations(ctx, testCase.Type, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErr != nil {
@@ -573,6 +576,7 @@ func TestService_RescheduleHangedOperations(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.OperationRepository
+		Type         model.OperationType
 		Input        time.Duration
 		ExpectedErr  error
 	}{
@@ -580,18 +584,20 @@ func TestService_RescheduleHangedOperations(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("RescheduleHangedOperations", ctx, time.Minute).Return(nil).Once()
+				repo.On("RescheduleHangedOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(nil).Once()
 				return repo
 			},
+			Type:  model.OperationTypeOrdAggregation,
 			Input: time.Minute,
 		},
 		{
 			Name: "Error while rescheduling operations",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("RescheduleHangedOperations", ctx, time.Minute).Return(testErr).Once()
+				repo.On("RescheduleHangedOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(testErr).Once()
 				return repo
 			},
+			Type:        model.OperationTypeOrdAggregation,
 			Input:       time.Minute,
 			ExpectedErr: testErr,
 		},
@@ -605,7 +611,7 @@ func TestService_RescheduleHangedOperations(t *testing.T) {
 			svc := operation.NewService(repo, nil)
 
 			// WHEN
-			err := svc.RescheduleHangedOperations(ctx, testCase.Input)
+			err := svc.RescheduleHangedOperations(ctx, testCase.Type, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErr != nil {
