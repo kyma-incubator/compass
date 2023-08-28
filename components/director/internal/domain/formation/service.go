@@ -530,10 +530,10 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// We need to persist the FAs before we proceed to notification processing as for scenarios where there are both
 		// participants with ASYNC notifications and SYNC notifications it is possible that a FA status update request is
 		// received before the FA is persisted in the database.
-		// Example P1 has ASYNC webhook - W1 , P2 has SYNC webhook - W2. Assign both P1 and P2 to a formation.
+		// Example: Participant 1(P1) has ASYNC webhook(W1) and Participant2(P2) has SYNC webhook(W2). Assign both P1 and P2 to a formation.
 		// Formation assignments are generated.
-		// Execute W1, then execute W2. W2 takes for example 10 seconds. Before the W2 processing finishes a FA status update request for W1 is received.
-		// When fetching the corresponding FA from the DB a object not found error is received as the status update is performed in new transaction and the transaction in which the FA were generate is still running.
+		// Execute W1, then execute W2. W2 takes, for example, 10 seconds. Before the W2 processing finishes, an FA status update request for W1 is received.
+		// When fetching the corresponding FA from the DB we get an object not found error, as the status update is performed in new transaction and the transaction in which the FA were generated is still running.
 		tx, terr := s.transact.Begin()
 		if terr != nil {
 			return nil, terr
@@ -550,8 +550,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, terr
 		}
 
-		// If the assigning of the object fails the transaction opened in the resolver fill be rolled back.
-		// The FA records and the labels for the object will not be reverted as they we re persisted as part of another
+		// If the assigning of the object fails, the transaction opened in the resolver will be rolled back.
+		// The FA records and the labels for the object will not be reverted as they were persisted as part of another
 		// transaction. The leftover resources should be deleted separately.
 		defer func() {
 			if err == nil {
