@@ -68,7 +68,7 @@ var (
 	testErr        = errors.New("test error")
 	corrleationIDs []string
 
-	invalidFAConfig              = json.RawMessage("invalid-config")
+	invalidFAConfig              = json.RawMessage("invalid-destination-config")
 	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(
 		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
@@ -87,7 +87,7 @@ var (
 
 	fa                           = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
 	reverseFa                    = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
-	faWithDeletingState          = fixFormationAssignmentWithState(model.DeletingAssignmentState)
+	faWithInitialState           = fixFormationAssignmentWithState(model.InitialAssignmentState)
 	faWithInvalidConfig          = fixFormationAssignmentWithConfig(invalidFAConfig)
 	faWithSAMLCertData           = fixFormationAssignmentWithConfig(destsConfigWithSAMLCertDataRawJSON)
 	faWithClientCertAuthCertData = fixFormationAssignmentWithConfig(destsConfigWithClientCertauthCertDataRawJSON)
@@ -97,13 +97,14 @@ var (
 	inputForUnassignNotificationStatusReturned = fixDestinationCreatorInputForUnassignWithLocationOperation(model.NotificationStatusReturned)
 	inputForUnassignSendNotification           = fixDestinationCreatorInputForUnassignWithLocationOperation(model.SendNotificationOperation)
 
-	inputForAssignWithFormationAssignmentDeletingState = &formationconstraintpkg.DestinationCreatorInput{
+	inputForAssignWithFormationAssignmentInitialState = &formationconstraintpkg.DestinationCreatorInput{
 		Operation:                       model.AssignFormation,
-		JoinPointDetailsFAMemoryAddress: faWithDeletingState.GetAddress(),
+		JoinPointDetailsFAMemoryAddress: faWithInitialState.GetAddress(),
 	}
 
 	preNotificationStatusReturnedLocation = fixJoinPointLocation(model.NotificationStatusReturned, model.PreOperation)
 	preSendNotificationLocation           = fixJoinPointLocation(model.SendNotificationOperation, model.PreOperation)
+	preGenerateFANotificationLocation     = fixJoinPointLocation(model.GenerateFormationAssignmentNotificationOperation, model.PreOperation)
 
 	inputWithAssignmentWithSAMLCertData                                 = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation)
 	inputWithAssignmentWithClientCertAuthCertData                       = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation)
@@ -116,6 +117,7 @@ var (
 	inputForAssignSendNotificationWithInvalidReverseFAConfig               = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, faWithInvalidConfig, preSendNotificationLocation)
 	inputForAssignSendNotificationWhereFAConfigStructureIsDifferent        = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, faConfigWithDifferentStructure, faConfigWithDifferentStructure, preSendNotificationLocation)
 	inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, faConfigWithDifferentStructure, preSendNotificationLocation)
+	inputForAssignGenerateFANotification                                   = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, reverseFa, preGenerateFANotificationLocation)
 
 	inputWithInvalidOperation = &formationconstraintpkg.DestinationCreatorInput{
 		Operation: model.CreateFormation,
