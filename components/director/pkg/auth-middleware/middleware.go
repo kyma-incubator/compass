@@ -319,7 +319,9 @@ func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.R
 	log.C(ctx).Info("IM HERE AND SCENARIUS")
 	if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
 		log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
-		groups := strings.Split(scenarioGroupsValue, ",")
+		groupsWithNoBackslash := strings.ReplaceAll(scenarioGroupsValue, `\`, "")
+		groups := strings.Split(groupsWithNoBackslash, ", ")
+		log.C(ctx).Infof("Gropus were parsed to %+v ", groups)
 
 		ctx = scenariogroups.SaveToContext(ctx, groups)
 	}
