@@ -18,8 +18,8 @@ type OperationService interface {
 	LockOperation(ctx context.Context, operationID string) (bool, error)
 	Get(ctx context.Context, operationID string) (*model.Operation, error)
 	Update(ctx context.Context, input *model.Operation) error
-	RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error
-	RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error
+	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
 	RescheduleOperation(ctx context.Context, operationID string, priority int) error
 }
 

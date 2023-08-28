@@ -261,14 +261,14 @@ func TestRepository_RescheduleOperations(t *testing.T) {
 		operationRepo := operation.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		expectedQuery := regexp.QuoteMeta("UPDATE public.operation SET status = $1, updated_at = $2 WHERE status IN ($3, $4) AND updated_at < $5")
+		expectedQuery := regexp.QuoteMeta("UPDATE public.operation SET status = $1, updated_at = $2 WHERE status IN ($3, $4) AND op_type = $5 AND updated_at < $6")
 		dbMock.ExpectExec(expectedQuery).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		// WHEN
-		err := operationRepo.RescheduleOperations(ctx, time.Second)
+		err := operationRepo.RescheduleOperations(ctx, model.OperationTypeOrdAggregation, time.Second)
 
 		// THEN
 		require.NoError(t, err)
@@ -283,14 +283,14 @@ func TestRepository_RescheduleHangedOperations(t *testing.T) {
 		operationRepo := operation.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		expectedQuery := regexp.QuoteMeta("UPDATE public.operation SET status = $1, updated_at = $2 WHERE status = $3 AND updated_at < $4")
+		expectedQuery := regexp.QuoteMeta("UPDATE public.operation SET status = $1, updated_at = $2 WHERE status = $3 AND op_type = $4 AND updated_at < $5")
 		dbMock.ExpectExec(expectedQuery).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		// WHEN
-		err := operationRepo.RescheduleHangedOperations(ctx, time.Second)
+		err := operationRepo.RescheduleHangedOperations(ctx, model.OperationTypeOrdAggregation, time.Second)
 
 		// THEN
 		require.NoError(t, err)
