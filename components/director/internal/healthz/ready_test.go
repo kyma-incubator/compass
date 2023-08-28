@@ -24,7 +24,7 @@ var (
 
 func TestNewReadinessHandler(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
@@ -46,7 +46,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("success when cached result", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
@@ -69,7 +69,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when ping fails", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
@@ -91,7 +91,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when schema compatibility check fails", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
@@ -111,7 +111,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when schema dirty flag is set", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
@@ -131,7 +131,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail when error is received while getting schema version from database", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(nil)
 
@@ -151,7 +151,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail while opening transaction", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 
 		transactioner := &persistautomock.Transactioner{}
@@ -167,7 +167,7 @@ func TestNewReadinessHandler(t *testing.T) {
 	})
 
 	t.Run("fail while committing", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		tx := &persistautomock.PersistenceTx{}
 		tx.On("Commit").Once().Return(errors.New("commit error"))
 
