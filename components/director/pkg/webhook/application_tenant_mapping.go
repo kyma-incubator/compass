@@ -85,11 +85,12 @@ func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment 
 	}
 }
 
-// Clone return a copy of the ApplicationTenantMappingInput
+// Clone returns a copy of the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInput {
 	return &ApplicationTenantMappingInput{
 		Operation:                 rd.Operation,
 		FormationID:               rd.FormationID,
+		Formation:                 rd.Formation,
 		SourceApplicationTemplate: rd.SourceApplicationTemplate,
 		SourceApplication:         rd.SourceApplication,
 		TargetApplicationTemplate: rd.TargetApplicationTemplate,

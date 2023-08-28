@@ -2198,8 +2198,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	reverseConfigPendingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ConfigPendingAssignmentState), []byte(config), nil)
 
 	input := &webhook.FormationConfigurationChangeInput{
-		Operation: model.AssignFormation,
-		Formation: formation,
+		Operation:   model.AssignFormation,
+		FormationID: TestFormationID,
+		Formation:   formation,
 	}
 
 	reqWebhook := &webhookclient.FormationAssignmentNotificationRequest{
@@ -2694,7 +2695,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, nil, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
-			///WHEN
+			// WHEN
 			isReverseProcessed, err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPairWithOperation)
 
 			require.Equal(t, testCase.ExpectedIsReverseProcessed, isReverseProcessed)
@@ -2705,7 +2706,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			//// THEN
+			// THEN
 			mock.AssertExpectationsForObjects(t, repo, notificationSvc, formationRepo, faStatusService, faNotificationSvc)
 		})
 	}
