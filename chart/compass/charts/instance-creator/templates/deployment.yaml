@@ -92,6 +92,10 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_SM_INSTANCE_OAUTH_TOKEN_PATH
               value: {{ .Values.global.instanceCreator.oauthTokenPath }}
+            - name: APP_SM_ASYNC_API_TICKER
+              value: {{ .Values.global.instanceCreator.ticker }}
+            - name: APP_SM_ASYNC_API_TIMEOUT
+              value: {{ .Values.global.instanceCreator.timeout }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

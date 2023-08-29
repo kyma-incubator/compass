@@ -40,6 +40,9 @@ type Config struct {
 	OAuthTokenPath               string                    `envconfig:"APP_SM_INSTANCE_OAUTH_TOKEN_PATH"`
 	RegionToInstanceConfig       map[string]InstanceConfig `envconfig:"-"`
 
+	Ticker  time.Duration `envconfig:"APP_SM_ASYNC_API_TICKER,default=3s"`
+	Timeout time.Duration `envconfig:"APP_SM_ASYNC_API_TIMEOUT,default=30s"`
+
 	Log        log.Config
 	TenantInfo TenantInfo
 }
@@ -54,6 +57,7 @@ type InstanceConfig struct {
 	CertificateKey string
 }
 
+// PrepareConfiguration loads credentials for each region
 func (c *Config) PrepareConfiguration() error {
 	if err := c.MapInstanceConfigs(); err != nil {
 		return errors.Wrap(err, "while building region instances credentials")

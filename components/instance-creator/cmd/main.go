@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
 
@@ -27,8 +29,7 @@ import (
 )
 
 const (
-	envPrefix       = "APP"
-	healthzEndpoint = "/healthz"
+	envPrefix = "APP"
 )
 
 func main() {
@@ -46,6 +47,9 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
+	err = cfg.PrepareConfiguration()
+	exitOnError(err, "Failed to prepare configuration with regional credentials")
+
 	fetchJWKSClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
@@ -59,7 +63,7 @@ func main() {
 	exitOnError(err, "Error while preparing tenant validation middleware")
 
 	mainRouter := mux.NewRouter()
-	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
+	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(paths.HealthzEndpoint), header.AttachHeadersToContext())
 
 	creator := mainRouter.PathPrefix(cfg.APIRootPath).Subrouter()
 	creator.Use(tokenValidationMiddleware.KymaAdapterHandler()) //todo::: double check to add separate method if that won't do the work
@@ -71,7 +75,7 @@ func main() {
 	c := handler.NewHandler(smClient)
 
 	creator.HandleFunc("/", c.HandlerFunc)
-	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())
+	mainRouter.HandleFunc(paths.HealthzEndpoint, healthz.NewHTTPHandler())
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 

@@ -578,6 +578,8 @@ global:
     certificatePath: "certificate"
     certificateKeyPath: "key"
     oauthTokenPath: "/oauth/token"
+    ticker: 3s
+    timeout: 30s
     local:
       templateMappings:
         clientIDMapping: '{{ printf "\"%s\":\"client_id\"" .Values.global.instanceCreator.clientIdPath }}'
