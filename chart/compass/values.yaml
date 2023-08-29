@@ -126,61 +126,60 @@ global:
       id: 777ce47b-d901-4647-9223-14e94819830b
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-      region: "eu-1"
   images:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230822-dc0a7f84"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230822-dc0a7f84"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230822-dc0a7f84"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
       version: "PR-3241"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230825-f6daa75d"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230825-f6daa75d"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230825-f6daa75d"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
       version: "PR-3241"
       name: compass-instance-creator
     gateway:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230822-dc0a7f84"
       name: compass-gateway
     operations_controller:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230828-dc0a7f84"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-96"
+      dir: prod/incubator/
+      version: "v20230825-ec91cb4d"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3189"
+      dir: prod/incubator/
+      version: "v20230822-237af9b3"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230822-dc0a7f84"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -188,16 +187,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230828-e32481c1"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230828-e32481c1"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -775,7 +774,7 @@ global:
     host: compass-destination-fetcher.compass-system.svc.cluster.local
     prefix: /destination-configuration
     port: 3000
-    jobSchedule: 10m
+    jobSchedule: 10s
     lease:
       lockname: destinationlease
     parallelTenants: 10

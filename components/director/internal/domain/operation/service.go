@@ -23,8 +23,8 @@ type OperationRepository interface {
 	Update(ctx context.Context, model *model.Operation) error
 	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
-	RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error
-	RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error
+	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
 }
 
 // UIDService is responsible for service-layer uid operations
@@ -158,13 +158,13 @@ func (s *service) LockOperation(ctx context.Context, operationID string) (bool, 
 }
 
 // RescheduleOperations reschedules all old operations
-func (s *service) RescheduleOperations(ctx context.Context, reschedulePeriod time.Duration) error {
-	return s.opRepo.RescheduleOperations(ctx, reschedulePeriod)
+func (s *service) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	return s.opRepo.RescheduleOperations(ctx, operationType, reschedulePeriod)
 }
 
 // RescheduleHangedOperations reschedules all hanged operations
-func (s *service) RescheduleHangedOperations(ctx context.Context, hangPeriod time.Duration) error {
-	return s.opRepo.RescheduleHangedOperations(ctx, hangPeriod)
+func (s *service) RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error {
+	return s.opRepo.RescheduleHangedOperations(ctx, operationType, hangPeriod)
 }
 
 // Get loads operation with specified ID

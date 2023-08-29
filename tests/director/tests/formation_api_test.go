@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 
+	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -1468,6 +1468,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
 		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
+		// Create formation constraints for destination creator operator and attach them to a given formation template.
+		// So we can verify the destination creator will not fail if in the configuration there is no destination information
+		attachDestinationCreatorConstraints(t, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
@@ -1643,6 +1647,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualRegisterApplicationWebhook.ID)
 		actualORDWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, fixtures.FixNonFormationNotificationWebhookInput(graphql.WebhookTypeOpenResourceDiscovery), "", appTmpl2.ID)
 		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualORDWebhook.ID)
+
+		// Create formation constraints for destination creator operator and attach them to a given formation template.
+		// So we can verify the destination creator will not fail if in the configuration there is no destination information
+		attachDestinationCreatorConstraints(t, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
@@ -3052,7 +3060,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		require.True(stdT, ok)
 		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
-		// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
+		// Create certificate subject mapping with a custom subject that was used to create a certificate for the graphql client above
 		internalConsumerID := appTmpl.ID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 		certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
 		csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
@@ -3148,6 +3156,10 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
 			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationWebhook.ID)
+
+			// Create formation constraints for destination creator operator and attach them to a given formation template.
+			// So we can verify the destination creator will not fail if in the configuration there is no destination information
+			attachDestinationCreatorConstraints(t, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
 
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)
 			defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)
@@ -3412,6 +3424,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
+			assertNotificationsCountForTenant(t, body, localTenantID2, 2)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
@@ -4014,6 +4027,10 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookTypeApplication, webhookModeApplication, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
 			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationWebhook.ID)
+
+			// Create formation constraints for destination creator operator and attach them to a given formation template.
+			// So we can verify the destination creator will not fail if in the configuration there is no destination information
+			attachDestinationCreatorConstraints(t, ft, graphql.ResourceTypeRuntimeContext, graphql.ResourceTypeApplication)
 
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTemplateName)
 			defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)
@@ -6017,4 +6034,45 @@ func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationI
 			require.Equal(t, expectedFormationStatus.Errors[i].ErrorCode, gotFormation.Status.Errors[i].ErrorCode)
 		}
 	}
+}
+
+func attachDestinationCreatorConstraints(t *testing.T, formationTemplate graphql.FormationTemplate, statusReturnedConstraintResourceType, sendNotificationConstraintResourceType graphql.ResourceType) {
+	firstConstraintInput := graphql.FormationConstraintInput{
+		Name:            "e2e-destination-creator-notification-status-returned",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationNotificationStatusReturned,
+		Operator:        graphql.DestinationCreator,
+		ResourceType:    statusReturnedConstraintResourceType,
+		ResourceSubtype: "ANY",
+		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
+
+	t.Logf("Create formation constraint with name: %s", firstConstraintInput.Name)
+	firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
+	require.NotEmpty(t, firstConstraint.ID)
+
+	t.Logf("Attaching constraint with name: %q to formation template with name: %q", firstConstraint.Name, formationTemplate.Name)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, formationTemplate.ID)
+
+	// second constraint
+	secondConstraintInput := graphql.FormationConstraintInput{
+		Name:            "e2e-destination-creator-send-notification",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationSendNotification,
+		Operator:        graphql.DestinationCreator,
+		ResourceType:    sendNotificationConstraintResourceType,
+		ResourceSubtype: "ANY",
+		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
+
+	t.Logf("Create formation constraint with name: %s", secondConstraintInput.Name)
+	secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
+	require.NotEmpty(t, secondConstraint.ID)
+
+	t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, formationTemplate.Name)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
 }

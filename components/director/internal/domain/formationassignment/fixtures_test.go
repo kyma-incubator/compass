@@ -498,6 +498,82 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 	}
 }
 
+func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignmentInput {
+	return []*model.FormationAssignmentInput{
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      appID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      appID,
+			SourceType:  model.FormationAssignmentTypeApplication,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      rtmID,
+			TargetType:  model.FormationAssignmentTypeRuntime,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmID,
+			SourceType:  model.FormationAssignmentTypeRuntime,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      rtmCtxID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmCtxID,
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		// Self formation assignments
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+	}
+}
+
 func fixFormationAssignmentsForSelf(appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
 	return []*model.FormationAssignment{
 		{
@@ -528,6 +604,41 @@ func fixFormationAssignmentsForSelf(appID, rtmID, rtmCtxID string) []*model.Form
 			ID:          "ID10",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
+			Source:      rtmCtxID,
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
+			Target:      rtmCtxID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+	}
+}
+
+func fixFormationAssignmentInputsForSelf(appID, rtmID, rtmCtxID string) []*model.FormationAssignmentInput {
+	return []*model.FormationAssignmentInput{
+		{
+			FormationID: "ID",
+			Source:      appID,
+			SourceType:  model.FormationAssignmentTypeApplication,
+			Target:      appID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmID,
+			SourceType:  model.FormationAssignmentTypeRuntime,
+			Target:      rtmID,
+			TargetType:  model.FormationAssignmentTypeRuntime,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
 			Source:      rtmCtxID,
 			SourceType:  model.FormationAssignmentTypeRuntimeContext,
 			Target:      rtmCtxID,
@@ -593,6 +704,61 @@ func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType model.Formation
 			ID:          "ID5",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+	}
+}
+
+func fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(objectType model.FormationAssignmentType, objectID, appID, rtmCtxID string) []*model.FormationAssignmentInput {
+	return []*model.FormationAssignmentInput{
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      appID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      appID,
+			SourceType:  model.FormationAssignmentTypeApplication,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      objectID,
+			SourceType:  objectType,
+			Target:      rtmCtxID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
+			Source:      rtmCtxID,
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
+			Target:      objectID,
+			TargetType:  objectType,
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+			Error:       nil,
+		},
+		{
+			FormationID: "ID",
 			Source:      objectID,
 			SourceType:  objectType,
 			Target:      objectID,
