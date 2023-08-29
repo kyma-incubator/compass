@@ -117,6 +117,28 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
+// ForApplicationMinimal missing godoc
+func (fp *GqlFieldsProvider) ForApplicationMinimal(ctx ...FieldCtx) string {
+	return fmt.Sprintf(`
+		id
+		name
+		providerName
+		description
+		baseUrl
+		systemNumber
+		systemStatus
+		integrationSystemID
+		applicationTemplateID
+		labels
+		deletedAt
+		updatedAt
+		error
+		status {condition timestamp}
+		healthCheckURL
+		eventingConfiguration { defaultURL }
+	`)
+}
+
 // ForApplicationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 	return fmt.Sprintf(`
