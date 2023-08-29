@@ -5273,7 +5273,7 @@ func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	// defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
 	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
 
 	formationTemplate := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formation.FormationTemplateID)
