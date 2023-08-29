@@ -3411,6 +3411,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			notificationsForApp1Tenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
+			validateFormationNameInAssignmentNotification(t, notificationsForApp1Tenant.Array()[0], formationName)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp1Tenant.Array(), []*applicationFormationExpectations{
 				{
 					op:            assignOperation,
@@ -3426,6 +3427,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			assertNotificationsCountForTenant(t, body, localTenantID2, 2)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
+			validateFormationNameInAssignmentNotification(t, notificationsForApp2Tenant.Array()[0], formationName)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
 					op:            assignOperation,
@@ -3513,6 +3515,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
 			notificationsForApp2 := gjson.GetBytes(body, localTenantID2)
 			unassignNotificationForApp2 := notificationsForApp2.Array()[0]
+			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp2, formationName)
 			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -5740,6 +5743,14 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 	}
 
 	return nil
+}
+
+func validateFormationNameInAssignmentNotification(t *testing.T, jsonResult gjson.Result, expectedFormationName string) {
+	validateJSONStringProperty(t, jsonResult, "RequestBody.context.uclFormationName", expectedFormationName)
+}
+
+func validateJSONStringProperty(t *testing.T, jsonResult gjson.Result, path, expectedValue string) {
+	require.Equal(t, expectedValue, jsonResult.Get(path).String())
 }
 
 func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntimeID, providerRuntimeID string) {

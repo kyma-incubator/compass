@@ -329,11 +329,11 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             nil,
 				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
 			},
-			ReverseAssignment: nil,
+			ReverseAssignmentReqMapping: nil,
 		},
 		Operation: model.AssignFormation,
 	}
@@ -342,11 +342,11 @@ func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMa
 func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             req,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignment: nil,
+			ReverseAssignmentReqMapping: nil,
 		},
 		Operation: model.AssignFormation,
 	}
@@ -355,11 +355,11 @@ func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.Formatio
 func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, reverseAssignment *model.FormationAssignment, req, reverseReq *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             req,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+			ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             reverseReq,
 				FormationAssignment: reverseAssignment,
 			},

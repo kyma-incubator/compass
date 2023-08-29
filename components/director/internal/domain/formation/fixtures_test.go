@@ -1390,11 +1390,11 @@ func fixFormationAssignmentModelWithParameters(id, formationID, source, target s
 func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
 	res := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             request,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+			ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 				Request:             nil,
 				FormationAssignment: nil,
 			},

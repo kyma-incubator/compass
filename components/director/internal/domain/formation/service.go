@@ -1117,11 +1117,11 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 
 		assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-				Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             notificationForFA,
 					FormationAssignment: fa,
 				},
-				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             notificationForReverseFA,
 					FormationAssignment: reverseFA,
 				},
