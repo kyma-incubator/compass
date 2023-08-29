@@ -150,12 +150,12 @@ global:
       version: "PR-3253"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230825-f6daa75d"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230825-f6daa75d"
       name: compass-kyma-adapter
     gateway:
       dir: dev/incubator/
@@ -166,12 +166,12 @@ global:
       version: "PR-3253"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-97"
+      dir: prod/incubator/
+      version: "v20230825-ec91cb4d"
       name: compass-ord-service
     schema_migrator:
-      dir: dev/incubator/
-      version: "PR-3189"
+      dir: prod/incubator/
+      version: "v20230822-237af9b3"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -191,8 +191,8 @@ global:
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3256"
+      dir: prod/incubator/
+      version: "v20230828-e32481c1"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
