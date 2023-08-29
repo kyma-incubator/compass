@@ -119,7 +119,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 
 // ForApplicationMinimal missing godoc
 func (fp *GqlFieldsProvider) ForApplicationMinimal(ctx ...FieldCtx) string {
-	return fmt.Sprintf(`
+	return `
 		id
 		name
 		providerName
@@ -136,7 +136,7 @@ func (fp *GqlFieldsProvider) ForApplicationMinimal(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		healthCheckURL
 		eventingConfiguration { defaultURL }
-	`)
+	`
 }
 
 // ForApplicationTemplate missing godoc
