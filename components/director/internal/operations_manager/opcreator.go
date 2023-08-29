@@ -3,7 +3,6 @@ package operationsmanager
 import (
 	"context"
 	"encoding/json"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/pkg/operations_manager"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,6 +17,7 @@ const (
 )
 
 // OperationMaintainer is responsible for maintaining of different types of operations.
+//
 //go:generate mockery --name=OperationMaintainer --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationMaintainer interface {
 	Maintain(ctx context.Context) error
@@ -82,13 +82,14 @@ func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Co
 
 	desiredStateOperations := make([]*model.OperationInput, 0)
 	for _, webhook := range ordWebhooks {
-		if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
+		switch webhook.ObjectType {
+		case model.ApplicationTemplateWebhookReference:
 			ops, err := oc.appTemplateWebhookToOperations(ctx, webhook)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "while creating operations from application template webhook")
 			}
 			desiredStateOperations = append(desiredStateOperations, ops...)
-		} else if webhook.ObjectType == model.ApplicationWebhookReference {
+		case model.ApplicationWebhookReference:
 			opData := NewOrdOperationData(webhook.ObjectID, "")
 			data, err := opData.GetData()
 			if err != nil {
@@ -98,13 +99,72 @@ func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Co
 		}
 	}
 
-	// existingOperations := ListAllExistingOps(OpType)
-	// operationsToCreate := substract(desiredStateOperations,existing)
-	// operationsToDelete := substract(allExistingOps,desired)
-	// TODO remove existing operations
-	operationsToCreate := make([]*model.OperationInput, 0) //TODO delete me
-	operationsToDelete := make([]*model.Operation, 0)      //TODO delete me
+	existingOperations, err := oc.opSvc.ListAllByType(ctx, model.OperationTypeOrdAggregation)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	operationsToCreate, err := oc.getOperationsToCreate(desiredStateOperations, existingOperations)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	operationsToDelete, err := oc.getOperationsToDelete(existingOperations, desiredStateOperations)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return operationsToCreate, operationsToDelete, nil
+}
+
+func (oc *ORDOperationMaintainer) getOperationsToCreate(desiredOperations []*model.OperationInput, existingOperations []*model.Operation) ([]*model.OperationInput, error) {
+	result := make([]*model.OperationInput, 0)
+	for _, currentDesiredOperation := range desiredOperations {
+		found := false
+		currentDesiredOperationData, err := ParseOrdOperationData(currentDesiredOperation.Data)
+		if err != nil {
+			return nil, err
+		}
+		for _, currentExistingOperation := range existingOperations {
+			currentExistingOperationData, err := ParseOrdOperationData(currentExistingOperation.Data)
+			if err != nil {
+				return nil, err
+			}
+			if currentDesiredOperationData.Equal(currentExistingOperationData) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result = append(result, currentDesiredOperation)
+		}
+	}
+	return result, nil
+}
+
+func (oc *ORDOperationMaintainer) getOperationsToDelete(existingOperations []*model.Operation, desiredOperations []*model.OperationInput) ([]*model.Operation, error) {
+	result := make([]*model.Operation, 0)
+	for _, currentExistingOperation := range existingOperations {
+		found := false
+		currentExistingOperationData, err := ParseOrdOperationData(currentExistingOperation.Data)
+		if err != nil {
+			return nil, err
+		}
+		for _, currentDesiredOperation := range desiredOperations {
+			currentDesiredOperationData, err := ParseOrdOperationData(currentDesiredOperation.Data)
+			if err != nil {
+				return nil, err
+			}
+			if currentDesiredOperationData.Equal(currentExistingOperationData) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result = append(result, currentExistingOperation)
+		}
+	}
+	return result, nil
 }
 
 func (oc *ORDOperationMaintainer) appTemplateWebhookToOperations(ctx context.Context, webhook *model.Webhook) ([]*model.OperationInput, error) {
@@ -185,7 +245,7 @@ func buildORDOperationInput(data string) *model.OperationInput {
 		Status:    model.OperationStatusScheduled,
 		Data:      json.RawMessage(data),
 		Error:     nil,
-		Priority:  int(operationsmanager.LowOperationPriority),
+		Priority:  int(LowOperationPriority),
 		CreatedAt: &now,
 		UpdatedAt: nil,
 	}

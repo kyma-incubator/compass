@@ -5,7 +5,6 @@ package automock
 import (
 	context "context"
 
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,13 +13,13 @@ type ORDService struct {
 	mock.Mock
 }
 
-// ProcessApplicationTemplates provides a mock function with given fields: ctx, cfg, appTemplateIDs
-func (_m *ORDService) ProcessApplicationTemplates(ctx context.Context, cfg ord.MetricsConfig, appTemplateIDs []string) error {
-	ret := _m.Called(ctx, cfg, appTemplateIDs)
+// ProcessApplication provides a mock function with given fields: ctx, appID
+func (_m *ORDService) ProcessApplication(ctx context.Context, appID string) error {
+	ret := _m.Called(ctx, appID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, ord.MetricsConfig, []string) error); ok {
-		r0 = rf(ctx, cfg, appTemplateIDs)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, appID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +27,13 @@ func (_m *ORDService) ProcessApplicationTemplates(ctx context.Context, cfg ord.M
 	return r0
 }
 
-// ProcessApplications provides a mock function with given fields: ctx, cfg, appIDs
-func (_m *ORDService) ProcessApplications(ctx context.Context, cfg ord.MetricsConfig, appIDs []string) error {
-	ret := _m.Called(ctx, cfg, appIDs)
+// ProcessApplicationTemplate provides a mock function with given fields: ctx, appTemplateID
+func (_m *ORDService) ProcessApplicationTemplate(ctx context.Context, appTemplateID string) error {
+	ret := _m.Called(ctx, appTemplateID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, ord.MetricsConfig, []string) error); ok {
-		r0 = rf(ctx, cfg, appIDs)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, appTemplateID)
 	} else {
 		r0 = ret.Error(0)
 	}

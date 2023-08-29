@@ -29,6 +29,7 @@ const (
 	testApplicationType = "testApplicationType"
 )
 
+// TODO - all tests need to be reconsidered and rewrited if needed
 func TestService_SyncORDDocuments(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -4986,9 +4987,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				ordWebhookMappings = test.webhookMappings
 			}
 
-			ordCfg := ord.NewServiceConfig(4, 100, 0, "", false, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings)
-			err := svc.SyncORDDocuments(context.TODO(), ord.MetricsConfig{})
+			metrixCfg := ord.MetricsConfig{}
+
+			ordCfg := ord.NewServiceConfig(4, 100, credentialExchangeStrategyTenantMappings)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings)
+			//err := svc.SyncORDDocuments(context.TODO())
+			fmt.Print(svc)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
@@ -5212,9 +5216,11 @@ func TestService_ProcessApplications(t *testing.T) {
 			appTemplateVersionSvc := &automock.ApplicationTemplateVersionService{}
 			appTemplateSvc := &automock.ApplicationTemplateService{}
 
-			ordCfg := ord.NewServiceConfig(4, 100, 0, "", false, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
-			err := svc.ProcessApplications(context.TODO(), ord.MetricsConfig{}, test.appIDs())
+			metrixCfg := ord.MetricsConfig{}
+
+			ordCfg := ord.NewServiceConfig(4, 100, credentialExchangeStrategyTenantMappings)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
+			err := svc.ProcessApplication(context.TODO(), test.appIDs()[0])
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
@@ -5481,10 +5487,11 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 			if test.labelSvcFn != nil {
 				labelSvc = test.labelSvcFn()
 			}
+			metricsCfg := ord.MetricsConfig{}
 
-			ordCfg := ord.NewServiceConfig(4, 100, 0, "", false, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConv, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
-			err := svc.ProcessApplicationTemplates(context.TODO(), ord.MetricsConfig{}, test.appTemplateIDs())
+			ordCfg := ord.NewServiceConfig(4, 100, credentialExchangeStrategyTenantMappings)
+			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConv, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
+			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateIDs()[0])
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())

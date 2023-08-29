@@ -14,16 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type operationPriority int
-
 var now = time.Now
-
-const (
-	// LowOperationPriority represents low priority for operations
-	LowOperationPriority operationPriority = 1
-	// HighOperationPriority represents high priority for operations
-	HighOperationPriority operationPriority = 100
-)
 
 // OperationsManager provides methods for operations management
 type OperationsManager struct {
@@ -113,7 +104,7 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorM
 
 // RescheduleOperation reschedules operation with high priority
 func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationID string) error {
-	return om.rescheduleOperation(ctx, operationID, HighOperationPriority)
+	return om.rescheduleOperation(ctx, operationID, operationsmanager.HighOperationPriority)
 }
 
 // RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.
@@ -194,7 +185,7 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 
-func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority operationPriority) error {
+func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority operationsmanager.OperationPriority) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err

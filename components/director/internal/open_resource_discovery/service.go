@@ -194,7 +194,7 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 					break
 				}
 			}
-			if found == false {
+			if !found {
 				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
 			}
 
@@ -229,7 +229,8 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 }
 
 func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
+	switch webhook.ObjectType {
+	case model.ApplicationTemplateWebhookReference:
 		appTemplateID := webhook.ObjectID
 
 		if err := s.processApplicationTemplateWebhook(ctx, cfg, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
@@ -246,7 +247,7 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 				return err
 			}
 		}
-	} else if webhook.ObjectType == model.ApplicationWebhookReference {
+	case model.ApplicationWebhookReference:
 		appID := webhook.ObjectID
 		if err := s.processApplicationWebhook(ctx, cfg, webhook, appID, globalResourcesOrdIDs); err != nil {
 			return err
@@ -339,22 +340,22 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	vendorsInput := make([]*model.VendorInput, 0)
-	productsInput := make([]*model.ProductInput, 0)
-	packagesInput := make([]*model.PackageInput, 0)
-	bundlesInput := make([]*model.BundleCreateInput, 0)
-	apisInput := make([]*model.APIDefinitionInput, 0)
-	eventsInput := make([]*model.EventDefinitionInput, 0)
-	tombstonesInput := make([]*model.TombstoneInput, 0)
-	for _, doc := range documents {
-		vendorsInput = append(vendorsInput, doc.Vendors...)
-		productsInput = append(productsInput, doc.Products...)
-		packagesInput = append(packagesInput, doc.Packages...)
-		bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
-		apisInput = append(apisInput, doc.APIResources...)
-		eventsInput = append(eventsInput, doc.EventResources...)
-		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
-	}
+	// vendorsInput := make([]*model.VendorInput, 0)
+	// productsInput := make([]*model.ProductInput, 0)
+	// packagesInput := make([]*model.PackageInput, 0)
+	// bundlesInput := make([]*model.BundleCreateInput, 0)
+	// apisInput := make([]*model.APIDefinitionInput, 0)
+	// eventsInput := make([]*model.EventDefinitionInput, 0)
+	// tombstonesInput := make([]*model.TombstoneInput, 0)
+	// for _, doc := range documents {
+	// 	vendorsInput = append(vendorsInput, doc.Vendors...)
+	// 	productsInput = append(productsInput, doc.Products...)
+	// 	packagesInput = append(packagesInput, doc.Packages...)
+	// 	bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
+	// 	apisInput = append(apisInput, doc.APIResources...)
+	// 	eventsInput = append(eventsInput, doc.EventResources...)
+	// 	tombstonesInput = append(tombstonesInput, doc.Tombstones...)
+	// }
 
 	ordLocalID := s.getUniqueLocalTenantID(documents)
 	if ordLocalID != "" && resource.LocalTenantID == nil {
@@ -712,9 +713,10 @@ func (s *Service) listVendorsInTx(ctx context.Context, resourceType directorreso
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var vendorsFromDB []*model.Vendor
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -780,9 +782,10 @@ func (s *Service) listProductsInTx(ctx context.Context, resourceType directorres
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var productsFromDB []*model.Product
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		productsFromDB, err = s.productSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		productsFromDB, err = s.productSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -835,9 +838,10 @@ func (s *Service) listPackagesInTx(ctx context.Context, resourceType directorres
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var packagesFromDB []*model.Package
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -923,9 +927,10 @@ func (s *Service) listBundlesInTx(ctx context.Context, resourceType directorreso
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var bundlesFromDB []*model.Bundle
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
 	}
 	if err != nil {
@@ -1115,9 +1120,10 @@ func (s *Service) listAPIsInTx(ctx context.Context, resourceType directorresourc
 
 	var apisFromDB []*model.APIDefinition
 
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1180,9 +1186,10 @@ func (s *Service) listEventsInTx(ctx context.Context, resourceType directorresou
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var eventsFromDB []*model.EventDefinition
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1235,9 +1242,10 @@ func (s *Service) listTombstonesInTx(ctx context.Context, resourceType directorr
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var tombstonesFromDB []*model.Tombstone
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {

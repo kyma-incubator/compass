@@ -30,6 +30,7 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
+	globalLister                  repo.ListerGlobal
 	globalCreator                 repo.CreatorGlobal
 	globalDeleter                 repo.DeleterGlobal
 	globalUpdater                 repo.UpdaterGlobal
@@ -42,6 +43,7 @@ type pgRepository struct {
 // NewRepository creates new operation repository
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
+		globalLister:                  repo.NewListerGlobal(resource.Operation, operationTable, operationColumns),
 		globalCreator:                 repo.NewCreatorGlobal(resource.Operation, operationTable, operationColumns),
 		globalDeleter:                 repo.NewDeleterGlobal(resource.Operation, operationTable),
 		globalUpdater:                 repo.NewUpdaterGlobal(resource.Operation, operationTable, updatableTableColumns, idTableColumns),
@@ -50,6 +52,19 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		scheduledOperationsViewLister: repo.NewListerGlobal(resource.Operation, scheduledOperationsView, operationColumns),
 		conv:                          conv,
 	}
+}
+
+// ListAll missing godoc
+func (r *pgRepository) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	var entities EntityCollection
+
+	err := r.globalLister.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("op_type", opType)}...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
 }
 
 // Create creates operation entity

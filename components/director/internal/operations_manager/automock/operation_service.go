@@ -30,6 +30,20 @@ func (_m *OperationService) CreateMultiple(ctx context.Context, in []*model.Oper
 	return r0
 }
 
+// DeleteMultiple provides a mock function with given fields: ctx, ids
+func (_m *OperationService) DeleteMultiple(ctx context.Context, ids []string) error {
+	ret := _m.Called(ctx, ids)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) error); ok {
+		r0 = rf(ctx, ids)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: ctx, operationID
 func (_m *OperationService) Get(ctx context.Context, operationID string) (*model.Operation, error) {
 	ret := _m.Called(ctx, operationID)
@@ -46,6 +60,29 @@ func (_m *OperationService) Get(ctx context.Context, operationID string) (*model
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, operationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListAllByType provides a mock function with given fields: ctx, opType
+func (_m *OperationService) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	ret := _m.Called(ctx, opType)
+
+	var r0 []*model.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) []*model.Operation); ok {
+		r0 = rf(ctx, opType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.OperationType) error); ok {
+		r1 = rf(ctx, opType)
 	} else {
 		r1 = ret.Error(1)
 	}

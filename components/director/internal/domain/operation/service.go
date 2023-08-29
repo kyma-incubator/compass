@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/pkg/operations_manager"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -20,6 +20,7 @@ import (
 type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
 	Get(ctx context.Context, id string) (*model.Operation, error)
+	ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
 	Update(ctx context.Context, model *model.Operation) error
 	DeleteMultiple(ctx context.Context, ids []string) error
 	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
@@ -176,6 +177,11 @@ func (s *service) RescheduleHangedOperations(ctx context.Context, operationType 
 // Get loads operation with specified ID
 func (s *service) Get(ctx context.Context, operationID string) (*model.Operation, error) {
 	return s.opRepo.Get(ctx, operationID)
+}
+
+// ListAllByType returns all operations for specifiet operation type
+func (s *service) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	return s.opRepo.ListAllByType(ctx, opType)
 }
 
 // OperationError represents an error from operation processing.
