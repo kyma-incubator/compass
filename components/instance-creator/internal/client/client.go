@@ -44,31 +44,10 @@ func (c *client) RetrieveServiceOffering(ctx context.Context, region, catalogNam
 		return "", errors.Wrapf(err, "while building service offerings URL")
 	}
 
-	req, err := http.NewRequest(http.MethodGet, strURL, nil)
-	if err != nil {
-		return "", err
-	}
-
 	log.C(ctx).Infof("Listing service offerings for subaccount with ID: %q...", subaccountID)
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
-	}
-
-	resp, err := caller.Call(req)
-	if err != nil {
-		log.C(ctx).Error(err)
-		return "", err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Errorf("failed to read service offerings response body: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("failed to get service offerings, status: %d, body: %s", resp.StatusCode, body)
+		return "", errors.Wrapf(err, "while executing request for retrieving service offerings for subaccount with ID: %q", subaccountID)
 	}
 	log.C(ctx).Infof("Successfully fetch service offerings for subaccount with ID: %q...", subaccountID)
 
@@ -102,30 +81,10 @@ func (c *client) RetrieveServicePlan(ctx context.Context, region, planName, offe
 		return "", errors.Wrapf(err, "while building service plans URL")
 	}
 
-	req, err := http.NewRequest(http.MethodGet, strURL, nil)
-	if err != nil {
-		return "", err
-	}
-
 	log.C(ctx).Infof("Listing service plans for subaccount with ID: %q...", subaccountID)
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
-	}
-
-	resp, err := caller.Call(req)
-	if err != nil {
-		return "", err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Errorf("failed to read service plans response body: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("failed to get service plans, status: %d, body: %s", resp.StatusCode, body)
+		return "", errors.Wrapf(err, "while executing request for retrieving service plans for subaccount with ID: %q", subaccountID)
 	}
 	log.C(ctx).Infof("Successfully fetch service plans for subaccount with ID: %q...", subaccountID)
 
@@ -160,31 +119,10 @@ func (c *client) RetrieveServiceKeyByID(ctx context.Context, region, serviceKeyI
 		return nil, errors.Wrapf(err, "while building service binding URL")
 	}
 
-	req, err := http.NewRequest(http.MethodGet, strURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	log.C(ctx).Infof("Getting service key by ID: %s for subaccount with ID: %q", serviceKeyID, subaccountID)
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting caller for region: %s", region)
-	}
-
-	resp, err := caller.Call(req)
-	if err != nil {
-		log.C(ctx).Error(err)
-		return nil, err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Errorf("failed to read service binding response body: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("failed to get service bindings, status: %d, body: %s", resp.StatusCode, body)
+		return nil, errors.Wrapf(err, "while executing request for retrieving service key for subaccount with ID: %q", subaccountID)
 	}
 	log.C(ctx).Infof("Successfully fetch service key by ID: %s for subaccount with ID: %q", serviceKeyID, subaccountID)
 
@@ -204,31 +142,10 @@ func (c *client) RetrieveServiceInstanceIDByName(ctx context.Context, region, se
 		return "", errors.Wrapf(err, "while building service instances URL")
 	}
 
-	req, err := http.NewRequest(http.MethodGet, strURL, nil)
-	if err != nil {
-		return "", err
-	}
-
 	log.C(ctx).Infof("Listing service instances for subaccount with ID: %s...", subaccountID)
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
-	}
-
-	resp, err := caller.Call(req)
-	if err != nil {
-		log.C(ctx).Error(err)
-		return "", err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Errorf("failed to read service instances response body: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("failed to get service instances, status: %d, body: %s", resp.StatusCode, body)
+		return "", errors.Wrapf(err, "while executing request for retrieving service instances for subaccount with ID: %q", subaccountID)
 	}
 	log.C(ctx).Infof("Successfully fetch service instances for subaccount with ID: %q", subaccountID)
 
@@ -301,68 +218,15 @@ func (c *client) CreateServiceInstance(ctx context.Context, region, serviceInsta
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous service instance creation...")
-		opStatusPath := resp.Header.Get(LocationHeaderKey)
-		if opStatusPath == "" {
-			return "", errors.Errorf("the service instance operation status path from %s header should not be empty", LocationHeaderKey)
-		}
-
-		opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+		serviceInstanceID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
 		if err != nil {
-			return "", errors.Wrapf(err, "while building asynchronous service instance operation URL")
+			return "", errors.Wrapf(err, "while handling asynchronous creation of service instance with name: %q from plan with ID: %q and subaccount ID: %q", serviceInstanceName, planID, subaccountID)
+		}
+		if serviceInstanceID == "" {
+			return "", errors.New("the service instance ID could not be empty")
 		}
 
-		opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
-		if err != nil {
-			return "", err
-		}
-
-		ticker := time.NewTicker(c.cfg.Ticker)
-		timeout := time.After(c.cfg.Timeout)
-		for {
-			select {
-			case <-ticker.C:
-				log.C(ctx).Infof("Getting asynchronous operation status for service instance with name: %q and subaccount with ID: %q", serviceInstanceName, subaccountID)
-				opResp, err := caller.Call(opReq)
-				if err != nil {
-					return "", err
-				}
-				defer closeResponseBody(ctx, opResp)
-
-				opBody, err := ioutil.ReadAll(opResp.Body)
-				if err != nil {
-					return "", errors.Errorf("failed to read operation response body from asynchronous service instance creation request: %v", err)
-				}
-
-				if opResp.StatusCode != http.StatusOK {
-					return "", errors.Errorf("failed to get asynchronous service instance operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
-				}
-
-				var opStatus types.OperationStatus
-				err = json.Unmarshal(opBody, &opStatus)
-				if err != nil {
-					return "", errors.Errorf("failed to unmarshal service instance operation status: %v", err)
-				}
-
-				if opStatus.State == types.OperationStateInProgress {
-					log.C(ctx).Infof("The asynchronous service instance operation state is still: %q", types.OperationStateInProgress)
-					continue
-				}
-
-				if opStatus.State != types.OperationStateSucceeded {
-					return "", errors.Errorf("The asynchronous service instance operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
-				}
-
-				log.C(ctx).Infof("The asynchronous operation status for service instance with name: %q and subaccount: %q finished with state: %s", serviceInstanceName, subaccountID, opStatus.State)
-				serviceInstanceID := opStatus.ResourceID
-				if serviceInstanceID == "" {
-					return "", errors.New("the service instance ID could not be empty")
-				}
-
-				return serviceInstanceID, nil
-			case <-timeout:
-				return "", errors.New("Timeout waiting for asynchronous operation status to finish")
-			}
-		}
+		return serviceInstanceID, nil
 	}
 
 	var serviceInstance types.ServiceInstance
@@ -426,68 +290,15 @@ func (c *client) CreateServiceKey(ctx context.Context, region, serviceKeyName, s
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous service key creation...")
-		opStatusPath := resp.Header.Get(LocationHeaderKey)
-		if opStatusPath == "" {
-			return "", errors.Errorf("the service key operation status path from %s header should not be empty", LocationHeaderKey)
-		}
-
-		opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+		serviceKeyID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
 		if err != nil {
-			return "", errors.Wrapf(err, "while building asynchronous service key operation URL")
+			return "", errors.Wrapf(err, "while handling asynchronous creation of service key for service instance with ID: %q and subaccount: %q", serviceInstanceID, subaccountID)
+		}
+		if serviceKeyID == "" {
+			return "", errors.New("the service key ID could not be empty")
 		}
 
-		opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
-		if err != nil {
-			return "", err
-		}
-
-		ticker := time.NewTicker(c.cfg.Ticker)
-		timeout := time.After(c.cfg.Timeout)
-		for {
-			select {
-			case <-ticker.C:
-				log.C(ctx).Infof("Getting asynchronous operation status for service key with name: %q and subaccount: %q", serviceKeyName, subaccountID)
-				opResp, err := caller.Call(opReq)
-				if err != nil {
-					return "", err
-				}
-				defer closeResponseBody(ctx, opResp)
-
-				opBody, err := ioutil.ReadAll(opResp.Body)
-				if err != nil {
-					return "", errors.Errorf("failed to read operation response body from asynchronous service key creation request: %v", err)
-				}
-
-				if opResp.StatusCode != http.StatusOK {
-					return "", errors.Errorf("failed to get asynchronous service key operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
-				}
-
-				var opStatus types.OperationStatus
-				err = json.Unmarshal(opBody, &opStatus)
-				if err != nil {
-					return "", errors.Errorf("failed to unmarshal service key operation status: %v", err)
-				}
-
-				if opStatus.State == types.OperationStateInProgress {
-					log.C(ctx).Infof("The asynchronous service key operation state is still: %q", types.OperationStateInProgress)
-					continue
-				}
-
-				if opStatus.State != types.OperationStateSucceeded {
-					return "", errors.Errorf("the asynchronous service key operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
-				}
-
-				log.C(ctx).Infof("The asynchronous operation status for service key with name: %q finished with state: %q", serviceKeyName, opStatus.State)
-				serviceKeyID := opStatus.ResourceID
-				if serviceKeyID == "" {
-					return "", errors.New("the service key ID could not be empty")
-				}
-
-				return serviceKeyID, nil
-			case <-timeout:
-				return "", errors.New("timeout waiting for asynchronous operation status to finish")
-			}
-		}
+		return serviceKeyID, nil
 	}
 
 	var serviceKey types.ServiceKey
@@ -541,63 +352,11 @@ func (c *client) DeleteServiceInstance(ctx context.Context, region, serviceInsta
 
 	if resp.StatusCode == http.StatusAccepted {
 		log.C(ctx).Infof("Handle asynchronous service instance deletion...")
-		opStatusPath := resp.Header.Get(LocationHeaderKey)
-		if opStatusPath == "" {
-			return errors.Errorf("the service instance operation status path from %s header should not be empty", LocationHeaderKey)
-		}
-
-		opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+		_, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, false)
 		if err != nil {
-			return errors.Wrapf(err, "while building asynchronous service instance operation URL")
+			return errors.Wrapf(err, "while deleting service instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
 		}
-
-		opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
-		if err != nil {
-			return err
-		}
-
-		ticker := time.NewTicker(c.cfg.Ticker)
-		timeout := time.After(c.cfg.Timeout)
-		for {
-			select {
-			case <-ticker.C:
-				log.C(ctx).Infof("Getting asynchronous operation status for service instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
-				opResp, err := caller.Call(opReq)
-				if err != nil {
-					return err
-				}
-				defer closeResponseBody(ctx, opResp)
-
-				opBody, err := ioutil.ReadAll(opResp.Body)
-				if err != nil {
-					return errors.Errorf("failed to read operation response body from asynchronous service instance deletion request: %v", err)
-				}
-
-				if opResp.StatusCode != http.StatusOK {
-					return errors.Errorf("failed to get asynchronous service instance operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
-				}
-
-				var opStatus types.OperationStatus
-				err = json.Unmarshal(opBody, &opStatus)
-				if err != nil {
-					return errors.Errorf("failed to unmarshal service instance operation status: %v", err)
-				}
-
-				if opStatus.State == types.OperationStateInProgress {
-					log.C(ctx).Infof("The asynchronous service instance operation state is still: %q", types.OperationStateInProgress)
-					continue
-				}
-
-				if opStatus.State != types.OperationStateSucceeded {
-					return errors.Errorf("the asynchronous service instance operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
-				}
-
-				log.C(ctx).Infof("The asynchronous operation status for service instance with name: %q finished with state: %q", serviceInstanceName, opStatus.State)
-				return nil
-			case <-timeout:
-				return errors.New("timeout waiting for asynchronous operation status to finish")
-			}
-		}
+		return nil
 	}
 
 	log.C(ctx).Infof("Successfully deleted service instance with ID: %q and subaccount: %q synchronously", serviceInstanceID, subaccountID)
@@ -647,63 +406,11 @@ func (c *client) DeleteServiceKeys(ctx context.Context, region, serviceInstanceI
 
 		if resp.StatusCode == http.StatusAccepted {
 			log.C(ctx).Infof("Handle asynchronous service binding deletion...")
-			opStatusPath := resp.Header.Get(LocationHeaderKey)
-			if opStatusPath == "" {
-				return errors.Errorf("the service binding operation status path from %s header should not be empty", LocationHeaderKey)
-			}
-
-			opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+			_, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, false)
 			if err != nil {
-				return errors.Wrapf(err, "while building asynchronous service binding operation URL")
+				return errors.Wrapf(err, "while deleting service binding with ID: %q for subaccount: %q", keyID, subaccountID)
 			}
-
-			opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
-			if err != nil {
-				return err
-			}
-
-			ticker := time.NewTicker(c.cfg.Ticker)
-			timeout := time.After(c.cfg.Timeout)
-			for {
-				select {
-				case <-ticker.C:
-					log.C(ctx).Infof("Getting asynchronous operation status for service binding with ID: %q and subaccount: %q", keyID, subaccountID)
-					opResp, err := caller.Call(opReq)
-					if err != nil {
-						return err
-					}
-					defer closeResponseBody(ctx, opResp)
-
-					opBody, err := ioutil.ReadAll(opResp.Body)
-					if err != nil {
-						return errors.Errorf("failed to read operation response body from asynchronous service binding deletion request: %v", err)
-					}
-
-					if opResp.StatusCode != http.StatusOK {
-						return errors.Errorf("failed to get asynchronous service binding operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
-					}
-
-					var opStatus types.OperationStatus
-					err = json.Unmarshal(opBody, &opStatus)
-					if err != nil {
-						return errors.Errorf("failed to unmarshal service binding operation status: %v", err)
-					}
-
-					if opStatus.State == types.OperationStateInProgress {
-						log.C(ctx).Infof("The asynchronous service binding operation state is still: %q", types.OperationStateInProgress)
-						continue
-					}
-
-					if opStatus.State != types.OperationStateSucceeded {
-						return errors.Errorf("the asynchronous service binding operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
-					}
-
-					log.C(ctx).Infof("The asynchronous operation status for service binding with ID: %q finished with state: %q", keyID, opStatus.State)
-					return nil
-				case <-timeout:
-					return errors.New("timeout waiting for asynchronous operation status to finish")
-				}
-			}
+			return nil
 		}
 
 		log.C(ctx).Infof("Successfully deleted service binding with ID: %q for subaccount: %q synchronously", keyID, subaccountID)
@@ -732,6 +439,101 @@ func buildURL(baseURL, path, tenantKey, tenantValue string) (string, error) {
 func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if err := resp.Body.Close(); err != nil {
 		log.C(ctx).Errorf("An error has occurred while closing response body: %v", err)
+	}
+}
+
+func (c *client) executeSyncRequest(ctx context.Context, strURL, region string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, strURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting caller for region: %s", region)
+	}
+
+	resp, err := caller.Call(req)
+	if err != nil {
+		return nil, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Errorf("failed to read object, response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("failed to get object(s), status: %d, body: %s", resp.StatusCode, body)
+	}
+
+	return body, nil
+}
+
+func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, caller ExternalSvcCaller, subaccountID string, isCreateRequest bool) (string, error) {
+	opStatusPath := resp.Header.Get(LocationHeaderKey)
+	if opStatusPath == "" {
+		return "", errors.Errorf("the operation status path from %s header should not be empty", LocationHeaderKey)
+	}
+
+	opURL, err := buildURL(c.cfg.InstanceSMURLPath, opStatusPath, SubaccountKey, subaccountID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building asynchronous operation URL")
+	}
+
+	opReq, err := http.NewRequest(http.MethodGet, opURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	ticker := time.NewTicker(c.cfg.Ticker)
+	timeout := time.After(c.cfg.Timeout)
+	for {
+		select {
+		case <-ticker.C:
+			log.C(ctx).Info("Getting asynchronous operation status for object")
+			opResp, err := caller.Call(opReq)
+			if err != nil {
+				return "", err
+			}
+			defer closeResponseBody(ctx, opResp)
+
+			opBody, err := ioutil.ReadAll(opResp.Body)
+			if err != nil {
+				return "", errors.Errorf("failed to read operation response body from asynchronous request: %v", err)
+			}
+
+			if opResp.StatusCode != http.StatusOK {
+				return "", errors.Errorf("failed to get asynchronous object operation status. Received status: %d and body: %s", opResp.StatusCode, opBody)
+			}
+
+			var opStatus types.OperationStatus
+			err = json.Unmarshal(opBody, &opStatus)
+			if err != nil {
+				return "", errors.Errorf("failed to unmarshal object operation status: %v", err)
+			}
+
+			if opStatus.State == types.OperationStateInProgress {
+				log.C(ctx).Infof("The asynchronous object operation state is still: %q", types.OperationStateInProgress)
+				continue
+			}
+
+			if opStatus.State != types.OperationStateSucceeded {
+				return "", errors.Errorf("the asynchronous object operation finished with state: %q. Errors: %v", opStatus.State, opStatus.Errors)
+			}
+
+			log.C(ctx).Infof("The asynchronous operation status for object finished with state: %q", opStatus.State)
+
+			if isCreateRequest { // async creation
+				return opStatus.ResourceID, nil
+			} else {
+				return "", nil // to be able to reuse the async function, in case of deletion we return empty object ID because it is not needed in the delete case
+			}
+
+		case <-timeout:
+			return "", errors.New("timeout waiting for asynchronous operation status to finish")
+		}
 	}
 }
 
