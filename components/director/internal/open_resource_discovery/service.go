@@ -92,7 +92,8 @@ func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProc
 
 // Service consists of various resource services responsible for service-layer ORD operations.
 type Service struct {
-	config ServiceConfig
+	config     ServiceConfig
+	metricsCfg MetricsConfig
 
 	transact persistence.Transactioner
 
@@ -122,9 +123,10 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping) *Service {
 	return &Service{
 		config:                config,
+		metricsCfg:            metricsCfg,
 		transact:              transact,
 		appSvc:                appSvc,
 		webhookSvc:            webhookSvc,
@@ -149,10 +151,11 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 	}
 }
 
+// TODO delete me
 // SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
-func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error {
+func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
+	ordWebhooks, err := s.GetWebhooksWithOrdType(ctx)
 	if err != nil {
 		return err
 	}
@@ -174,7 +177,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 				entry = entry.WithField(log.FieldRequestID, uuid.New().String())
 				ctx = log.ContextWithLogger(ctx, entry)
 
-				if err := s.processWebhook(ctx, cfg, webhook, globalResourcesOrdIDs); err != nil {
+				if err := s.processWebhook(ctx, s.metricsCfg, webhook, globalResourcesOrdIDs); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
 					atomic.AddInt32(&webhookErrors, 1)
 				}
@@ -182,13 +185,13 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 		}()
 	}
 
-	if s.config.ordWebhookPartialProcessing {
+	if s.config.ordWebhookPartialProcessing { //TODO delete the configuration from: conf struct, deployment.yaml, values.yaml
 		log.C(ctx).Infof("Partial ord webhook processing is enabled for URL [%s] and max days [%d]", s.config.ordWebhookPartialProcessURL, s.config.ordWebhookPartialProcessMaxDays)
 	}
-	date := time.Now().AddDate(0, 0, -1*s.config.ordWebhookPartialProcessMaxDays)
+	date := time.Now().AddDate(0, 0, -1*s.config.ordWebhookPartialProcessMaxDays) //TODO delete the configuration from: conf struct, deployment.yaml, values.yaml
 	for _, webhook := range ordWebhooks {
 		webhookURL := str.PtrStrToStr(webhook.URL)
-		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL) {
+		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL) { //TODO delete the configuration from: conf struct, deployment.yaml, values.yaml
 			if webhook.CreatedAt == nil || webhook.CreatedAt.After(date) {
 				queue <- webhook
 			}
@@ -206,23 +209,11 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	return nil
 }
 
-// ProcessApplications performs resync of ORD information provided via ORD documents for list of applications
-func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error {
-	if len(appIDs) == 0 {
-		return nil
-	}
-
+// ProcessApplication performs resync of ORD information provided via ORD documents for an applications
+func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	for _, appID := range appIDs {
-		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
-			return errors.Wrapf(err, "processing of ORD data for application with id %q failed", appID)
-		}
-	}
-	return nil
-}
 
-func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appID string) error {
 	webhooks, err := s.getWebhooksForApplication(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving of webhooks for application with id %q failed", appID)
@@ -231,7 +222,7 @@ func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, glo
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
-			if err = s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationWebhook(ctx, s.metricsCfg, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
@@ -239,23 +230,53 @@ func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, glo
 	return nil
 }
 
-// ProcessApplicationTemplates performs resync of ORD information provided via ORD documents for list of application templates
-func (s *Service) ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error {
-	if len(appTemplateIDs) == 0 {
-		return nil
-	}
-
+// ProcessAppInAppTemplateContext todo
+func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplateID, appID string) error {
 	log.C(ctx).Infof("Retrieving global ORD resources")
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	for _, appTemplateID := range appTemplateIDs {
-		if err := s.processApplicationTemplate(ctx, cfg, globalResourcesOrdIDs, appTemplateID); err != nil {
-			return errors.Wrapf(err, "processing of ORD data for application template with id %q failed", appTemplateID)
+
+	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "while retrieving all webhooks for application template with id %q", appTemplateID)
+	}
+
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+
+			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
+			if err = s.processApplicationTemplateWebhook(ctx, s.metricsCfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+				return err
+			}
+
+			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving of applications for application template with id %q failed", appTemplateID)
+			}
+
+			found := false
+			for _, app := range apps {
+				if app.ID == appID {
+					found = true
+					break
+				}
+			}
+			if found == false {
+				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
+			}
+
+			if err = s.processApplicationWebhook(ctx, s.metricsCfg, wh, appID, globalResourcesOrdIDs); err != nil {
+				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
+			}
 		}
 	}
 	return nil
 }
 
-func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appTemplateID string) error {
+// ProcessApplicationTemplate performs resync of static ORD information for an application template
+func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID string) error {
+	log.C(ctx).Infof("Retrieving global ORD resources")
+	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
+
 	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving of webhooks for application template with id %q failed", appTemplateID)
@@ -265,19 +286,8 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationTemplateWebhook(ctx, s.metricsCfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
-			}
-
-			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
-			if err != nil {
-				return errors.Wrapf(err, "retrieving of applications for application template with id %q failed", appTemplateID)
-			}
-
-			for _, app := range apps {
-				if err = s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
-					return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", app.ID)
-				}
 			}
 		}
 	}
@@ -1874,7 +1884,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	return nil
 }
 
-func (s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
+func (s *Service) GetWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err

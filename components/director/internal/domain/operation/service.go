@@ -21,6 +21,7 @@ type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
 	Get(ctx context.Context, id string) (*model.Operation, error)
 	Update(ctx context.Context, model *model.Operation) error
+	DeleteMultiple(ctx context.Context, ids []string) error
 	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
 	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
@@ -77,6 +78,11 @@ func (s *service) CreateMultiple(ctx context.Context, in []*model.OperationInput
 	}
 
 	return nil
+}
+
+// DeleteMultiple deletes multiple operations
+func (s *service) DeleteMultiple(ctx context.Context, ids []string) error {
+	return s.opRepo.DeleteMultiple(ctx, ids)
 }
 
 // MarkAsCompleted marks an operation as completed

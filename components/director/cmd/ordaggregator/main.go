@@ -4,15 +4,45 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
+	operationsmanager2 "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/pkg/operations_manager"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
-	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
@@ -26,60 +56,25 @@ import (
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
-
-	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	httputilpkg "github.com/kyma-incubator/compass/components/director/pkg/http"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
-	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
-	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -103,12 +98,11 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	RetryConfig                    retry.Config
-	CertLoaderConfig               certloader.Config
-	GlobalRegistryConfig           ord.GlobalRegistryConfig
-	ElectionConfig                 cronjob.ElectionConfig
-	ORDAggregatorJobSchedulePeriod time.Duration `envconfig:"APP_ORD_AGGREGATOR_JOB_SCHEDULE_PERIOD,default=60m"`
-	IsORDAggregatorJobScheduleable bool          `envconfig:"APP_ORD_AGGREGATOR_JOB_IS_SCHEDULABLE,default=true"`
+	RetryConfig                     retry.Config
+	CertLoaderConfig                certloader.Config
+	GlobalRegistryConfig            ord.GlobalRegistryConfig
+	ElectionConfig                  cronjob.ElectionConfig
+	SyncORDOperationsSchedulePeriod time.Duration `envconfig:"APP_SYNC_ORD_OPERATIONS_SCHEDULE_PERIOD,default=60m"` //TODO add to values.yaml and deployment.yaml
 
 	MaxParallelWebhookProcessors       int `envconfig:"APP_MAX_PARALLEL_WEBHOOK_PROCESSORS,default=1"`
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
@@ -129,7 +123,8 @@ type config struct {
 	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
 
-	MetricsConfig ord.MetricsConfig
+	MetricsConfig           ord.MetricsConfig
+	OperationsManagerConfig operationsmanager.OperationsManagerConfig // TODO add the configuration in deployment.yaml and values.yaml
 }
 
 type securityConfig struct {
@@ -197,61 +192,6 @@ func main() {
 	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping, tenantMappingConfig, cfg.TenantMappingCallbackURL, credentialExchangeStrategyTenantMappings)
-
-	jwtHTTPClient := &http.Client{
-		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	handler := initHandler(ctx, jwtHTTPClient, ordAggregator, cfg, transact)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
-
-	go func() {
-		<-ctx.Done()
-		// Interrupt signal received - shut down the servers
-		shutdownMainSrv()
-	}()
-
-	if cfg.IsORDAggregatorJobScheduleable {
-		go func() {
-			if err := startSyncORDDocumentsJob(ctx, ordAggregator, cfg); err != nil {
-				log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
-			}
-			cancel()
-		}()
-	}
-
-	runMainSrv()
-}
-
-func startSyncORDDocumentsJob(ctx context.Context, ordAggregator *ord.Service, cfg config) error {
-	resyncJob := cronjob.CronJob{
-		Name: "SyncORDDocuments",
-		Fn: func(jobCtx context.Context) {
-			log.C(jobCtx).Infof("Starting ORD documents aggregation...")
-			if err := ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig); err != nil {
-				log.C(jobCtx).WithError(err).Errorf("error occurred while syncing Open Resource Discovery Documents")
-			}
-			log.C(jobCtx).Infof("ORD documents aggregation finished.")
-		},
-		SchedulePeriod: cfg.ORDAggregatorJobSchedulePeriod,
-	}
-	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
-}
-
-func ctxTenantProvider(ctx context.Context) (string, error) {
-	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return localTenantID, nil
-}
-
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, accessStrategyExecutorProviderWithTenant *accessstrategy.Provider, accessStrategyExecutorProviderWithoutTenant *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor, ordWebhookMapping []application.ORDWebhookMapping, tenantMappingConfig map[string]interface{}, tenantMappingCallbackURL string, credentialExchangeStrategyTenantMappings map[string]ord.CredentialExchangeStrategyTenantMapping) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -322,7 +262,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, tenantMappingCallbackURL)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, cfg.TenantMappingCallbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
@@ -333,16 +273,16 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
-	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
-	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
@@ -350,15 +290,104 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
 
-	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
+	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
 
 	ordClientWithTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 	ordClientWithoutTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
-	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
-	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping)
+	ordConfig := ord.NewServiceConfig(cfg.MaxParallelWebhookProcessors, cfg.MaxParallelSpecificationProcessors, cfg.OrdWebhookPartialProcessMaxDays, cfg.OrdWebhookPartialProcessURL, cfg.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping)
+
+	jwtHTTPClient := &http.Client{
+		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	handler := initHandler(ctx, jwtHTTPClient, ordSvc, cfg, transact)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
+	}()
+
+	opRepo := operation.NewRepository(operation.NewConverter())
+	opSvc := operation.NewService(opRepo, uuid.NewService())
+	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
+	ordOpProcessor := &ord.OperationsProcessor{
+		OrdSvc: ordSvc,
+	}
+	ordOperationCreator := operationsmanager2.NewOperationMaintainer(model.OperationTypeOrdAggregation, transact, opSvc, webhookSvc, appSvc)
+
+	for i := 0; i < cfg.MaxParallelWebhookProcessors; i++ {
+		go func(opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) {
+			for {
+				op, err := opManager.GetOperation(ctx)
+				if err != nil && !apperrors.IsNoScheduledOperationsError(err) {
+					log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", err)
+					time.Sleep(time.Minute)
+					continue
+				}
+
+				if err != nil && apperrors.IsNoScheduledOperationsError(err) {
+					log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", err)
+					time.Sleep(time.Minute)
+					continue
+				}
+
+				if err := opProcessor.Process(ctx, op); err != nil {
+					log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, err)
+					if err := operationsManager.MarkOperationFailed(ctx, op.ID, err.Error()); err != nil {
+						log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, err)
+						continue
+					}
+				}
+				if err := operationsManager.MarkOperationCompleted(ctx, op.ID); err != nil {
+					log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, err)
+				}
+			}
+		}(operationsManager, ordOpProcessor)
+	}
+
+	go func() {
+		if err := startSyncORDOperationsJob(ctx, ordOperationCreator, cfg); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
+		}
+		cancel()
+	}()
+
+	runMainSrv()
+}
+
+func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer operationsmanager2.OperationMaintainer, cfg config) error {
+	resyncJob := cronjob.CronJob{
+		Name: "SyncORDOperations",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Infof("Start syncing ORD operations...")
+
+			if err := ordOperationMaintainer.Maintain(ctx); err != nil {
+				log.C(jobCtx).Errorf("Cannot sync ord operations. Err: %v", err)
+			}
+
+			log.C(jobCtx).Infof("ORD documents aggregation finished.")
+		},
+		SchedulePeriod: cfg.SyncORDOperationsSchedulePeriod,
+	}
+	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
+}
+
+func ctxTenantProvider(ctx context.Context) (string, error) {
+	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return localTenantID, nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

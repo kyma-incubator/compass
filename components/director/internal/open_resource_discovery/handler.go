@@ -23,8 +23,8 @@ type handler struct {
 //
 //go:generate mockery --name=ORDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ORDService interface {
-	ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error
-	ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error
+	ProcessApplication(ctx context.Context, appID string) error
+	ProcessApplicationTemplate(ctx context.Context, appTemplateID string) error
 }
 
 // NewORDAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
@@ -45,16 +45,20 @@ func (h *handler) AggregateORDData(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	if err := h.ordSvc.ProcessApplications(ctx, h.cfg, resources.ApplicationIDs); err != nil {
-		log.C(ctx).WithError(err).Errorf("ORD data aggregation failed for one or more applications")
-		http.Error(writer, "ORD data aggregation failed for one or more applications", http.StatusInternalServerError)
-		return
+	for _, appID := range resources.ApplicationIDs {
+		if err := h.ordSvc.ProcessApplication(ctx, appID); err != nil {
+			log.C(ctx).WithError(err).Errorf("ORD data aggregation failed for one or more applications")
+			http.Error(writer, "ORD data aggregation failed for one or more applications", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	if err := h.ordSvc.ProcessApplicationTemplates(ctx, h.cfg, resources.ApplicationTemplateIDs); err != nil {
-		log.C(ctx).WithError(err).Errorf("ORD data aggregation failed for one or more application templates")
-		http.Error(writer, "ORD data aggregation failed for one or more application templates", http.StatusInternalServerError)
-		return
+	for _, appTemplateID := range resources.ApplicationTemplateIDs {
+		if err := h.ordSvc.ProcessApplicationTemplate(ctx, appTemplateID); err != nil {
+			log.C(ctx).WithError(err).Errorf("ORD data aggregation failed for one or more application templates")
+			http.Error(writer, "ORD data aggregation failed for one or more application templates", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	writer.WriteHeader(http.StatusOK)

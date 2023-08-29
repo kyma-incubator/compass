@@ -3,6 +3,7 @@ package operationsmanager
 import (
 	"context"
 	"encoding/json"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/pkg/operations_manager"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -14,29 +15,45 @@ import (
 const (
 	// OrdCreatorType specifies open resource discovery creator type
 	OrdCreatorType = "ORD"
-	// OrdAggregationOpType specifies open resource discovery operation type
-	OrdAggregationOpType = "ORD_AGGREGATION"
 )
 
-// OperationCreator is responsible for creation of different types of operations.
-//go:generate mockery --name=OperationCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
-type OperationCreator interface {
-	Create(ctx context.Context) error
+// OperationMaintainer is responsible for maintaining of different types of operations.
+//go:generate mockery --name=OperationMaintainer --output=automock --outpkg=automock --case=underscore --disable-version-string
+type OperationMaintainer interface {
+	Maintain(ctx context.Context) error
 }
 
-// ORDOperationCreator consists of various resource services responsible for operations creation.
-type ORDOperationCreator struct {
+// ORDOperationMaintainer consists of various resource services responsible for operations creation.
+type ORDOperationMaintainer struct {
 	transact   persistence.Transactioner
 	opSvc      OperationService
 	webhookSvc WebhookService
 	appSvc     ApplicationService
 }
 
-// Create lists all webhooks of type "OPEN_RESOURCE_DISCOVERY" and for every application creates corresponding operation
-func (oc *ORDOperationCreator) Create(ctx context.Context) error {
-	operations, err := oc.buildOperationInputs(ctx)
+// NewOperationMaintainer creates OperationMaintainer based on kind
+func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationMaintainer {
+	if kind == model.OperationTypeOrdAggregation {
+		return &ORDOperationMaintainer{
+			transact:   transact,
+			opSvc:      opSvc,
+			webhookSvc: webhookSvc,
+			appSvc:     appSvc,
+		}
+	}
+	return nil
+}
+
+// Maintain is responsible to create all missing and remove all obsolete operations
+func (oc *ORDOperationMaintainer) Maintain(ctx context.Context) error {
+	operationsToCreate, operationsToDelete, err := oc.buildNonExistingOperationInputs(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while building operation inputs")
+	}
+
+	operationsToDeleteIDs := make([]string, 0)
+	for _, op := range operationsToDelete {
+		operationsToDeleteIDs = append(operationsToDeleteIDs, op.ID)
 	}
 
 	tx, err := oc.transact.Begin()
@@ -46,45 +63,62 @@ func (oc *ORDOperationCreator) Create(ctx context.Context) error {
 	defer oc.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := oc.opSvc.CreateMultiple(ctx, operations); err != nil {
+	if err := oc.opSvc.CreateMultiple(ctx, operationsToCreate); err != nil {
 		return errors.Wrap(err, "while creating multiple operations")
+	}
+
+	if err := oc.opSvc.DeleteMultiple(ctx, operationsToDeleteIDs); err != nil {
+		return errors.Wrap(err, "while deleting multiple operations")
 	}
 
 	return tx.Commit()
 }
 
-func (oc *ORDOperationCreator) buildOperationInputs(ctx context.Context) ([]*model.OperationInput, error) {
+func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Context) ([]*model.OperationInput, []*model.Operation, error) {
 	ordWebhooks, err := oc.getWebhooksWithOrdType(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting webhooks of type %s", model.WebhookTypeOpenResourceDiscovery)
+		return nil, nil, errors.Wrapf(err, "while getting webhooks of type %s", model.WebhookTypeOpenResourceDiscovery)
 	}
 
-	operations := make([]*model.OperationInput, 0)
+	desiredStateOperations := make([]*model.OperationInput, 0)
 	for _, webhook := range ordWebhooks {
 		if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 			ops, err := oc.appTemplateWebhookToOperations(ctx, webhook)
 			if err != nil {
-				return nil, errors.Wrapf(err, "while creating operations from application template webhook")
+				return nil, nil, errors.Wrapf(err, "while creating operations from application template webhook")
 			}
-			operations = append(operations, ops...)
+			desiredStateOperations = append(desiredStateOperations, ops...)
 		} else if webhook.ObjectType == model.ApplicationWebhookReference {
 			opData := NewOrdOperationData(webhook.ObjectID, "")
 			data, err := opData.GetData()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			operations = append(operations, buildORDOperationInput(data))
+			desiredStateOperations = append(desiredStateOperations, buildORDOperationInput(data))
 		}
 	}
 
-	return operations, nil
+	// existingOperations := ListAllExistingOps(OpType)
+	// operationsToCreate := substract(desiredStateOperations,existing)
+	// operationsToDelete := substract(allExistingOps,desired)
+	// TODO remove existing operations
+	operationsToCreate := make([]*model.OperationInput, 0) //TODO delete me
+	operationsToDelete := make([]*model.Operation, 0)      //TODO delete me
+	return operationsToCreate, operationsToDelete, nil
 }
 
-func (oc *ORDOperationCreator) appTemplateWebhookToOperations(ctx context.Context, webhook *model.Webhook) ([]*model.OperationInput, error) {
+func (oc *ORDOperationMaintainer) appTemplateWebhookToOperations(ctx context.Context, webhook *model.Webhook) ([]*model.OperationInput, error) {
 	operations := make([]*model.OperationInput, 0)
 	if webhook.ObjectType != model.ApplicationTemplateWebhookReference {
 		return operations, nil
 	}
+
+	opData := NewOrdOperationData("", webhook.ObjectID)
+	data, err := opData.GetData()
+	if err != nil {
+		return nil, err
+	}
+	operations = append(operations, buildORDOperationInput(data))
 
 	apps, err := oc.getApplicationsForAppTemplate(ctx, webhook.ObjectID)
 	if err != nil {
@@ -103,7 +137,7 @@ func (oc *ORDOperationCreator) appTemplateWebhookToOperations(ctx context.Contex
 	return operations, nil
 }
 
-func (oc *ORDOperationCreator) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
+func (oc *ORDOperationMaintainer) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
 	tx, err := oc.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -124,7 +158,7 @@ func (oc *ORDOperationCreator) getWebhooksWithOrdType(ctx context.Context) ([]*m
 	return ordWebhooks, nil
 }
 
-func (oc *ORDOperationCreator) getApplicationsForAppTemplate(ctx context.Context, appTemplateID string) ([]*model.Application, error) {
+func (oc *ORDOperationMaintainer) getApplicationsForAppTemplate(ctx context.Context, appTemplateID string) ([]*model.Application, error) {
 	tx, err := oc.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -147,25 +181,12 @@ func (oc *ORDOperationCreator) getApplicationsForAppTemplate(ctx context.Context
 func buildORDOperationInput(data string) *model.OperationInput {
 	now := time.Now()
 	return &model.OperationInput{
-		OpType:    OrdAggregationOpType,
-		Status:    scheduledOpStatus,
+		OpType:    model.OperationTypeOrdAggregation,
+		Status:    model.OperationStatusScheduled,
 		Data:      json.RawMessage(data),
 		Error:     nil,
-		Priority:  1,
+		Priority:  int(operationsmanager.LowOperationPriority),
 		CreatedAt: &now,
 		UpdatedAt: nil,
 	}
-}
-
-// NewOperationCreator creates OperationCreator based on kind
-func NewOperationCreator(kind string, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationCreator {
-	if kind == OrdCreatorType {
-		return &ORDOperationCreator{
-			transact:   transact,
-			opSvc:      opSvc,
-			webhookSvc: webhookSvc,
-			appSvc:     appSvc,
-		}
-	}
-	return nil
 }
