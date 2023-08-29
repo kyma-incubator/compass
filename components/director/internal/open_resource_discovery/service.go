@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -18,7 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -47,9 +45,6 @@ const (
 type ServiceConfig struct {
 	maxParallelWebhookProcessors       int
 	maxParallelSpecificationProcessors int
-	ordWebhookPartialProcessMaxDays    int
-	ordWebhookPartialProcessURL        string
-	ordWebhookPartialProcessing        bool
 
 	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
 }
@@ -79,13 +74,10 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors int, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
 	return ServiceConfig{
 		maxParallelWebhookProcessors:             maxParallelWebhookProcessors,
 		maxParallelSpecificationProcessors:       maxParallelSpecificationProcessors,
-		ordWebhookPartialProcessMaxDays:          ordWebhookPartialProcessMaxDays,
-		ordWebhookPartialProcessURL:              ordWebhookPartialProcessURL,
-		ordWebhookPartialProcessing:              ordWebhookPartialProcessing,
 		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}
 }
@@ -149,64 +141,6 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		labelSvc:              labelService,
 		ordWebhookMapping:     ordWebhookMapping,
 	}
-}
-
-// TODO delete me
-// SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
-func (s *Service) SyncORDDocuments(ctx context.Context) error {
-	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	ordWebhooks, err := s.GetWebhooksWithOrdType(ctx)
-	if err != nil {
-		return err
-	}
-
-	queue := make(chan *model.Webhook)
-	var webhookErrors = int32(0)
-
-	workers := s.config.maxParallelWebhookProcessors
-	wg := &sync.WaitGroup{}
-	wg.Add(workers)
-
-	log.C(ctx).Infof("Starting %d parallel webhook processor workers...", workers)
-	for i := 0; i < workers; i++ {
-		go func() {
-			defer wg.Done()
-
-			for webhook := range queue {
-				entry := log.C(ctx)
-				entry = entry.WithField(log.FieldRequestID, uuid.New().String())
-				ctx = log.ContextWithLogger(ctx, entry)
-
-				if err := s.processWebhook(ctx, s.metricsCfg, webhook, globalResourcesOrdIDs); err != nil {
-					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
-					atomic.AddInt32(&webhookErrors, 1)
-				}
-			}
-		}()
-	}
-
-	if s.config.ordWebhookPartialProcessing { //TODO delete the configuration from: conf struct, deployment.yaml, values.yaml
-		log.C(ctx).Infof("Partial ord webhook processing is enabled for URL [%s] and max days [%d]", s.config.ordWebhookPartialProcessURL, s.config.ordWebhookPartialProcessMaxDays)
-	}
-	date := time.Now().AddDate(0, 0, -1*s.config.ordWebhookPartialProcessMaxDays) //TODO delete the configuration from: conf struct, deployment.yaml, values.yaml
-	for _, webhook := range ordWebhooks {
-		webhookURL := str.PtrStrToStr(webhook.URL)
-		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL) { //TODO delete the configuration from: conf struct, deployment.yaml, values.yaml
-			if webhook.CreatedAt == nil || webhook.CreatedAt.After(date) {
-				queue <- webhook
-			}
-		} else {
-			queue <- webhook
-		}
-	}
-	close(queue)
-	wg.Wait()
-
-	if webhookErrors != 0 {
-		log.C(ctx).Errorf("failed to process %d webhooks", webhookErrors)
-	}
-
-	return nil
 }
 
 // ProcessApplication performs resync of ORD information provided via ORD documents for an applications

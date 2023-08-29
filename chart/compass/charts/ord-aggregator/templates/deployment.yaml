@@ -142,20 +142,10 @@ spec:
               value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
             - name: APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS
               value: "{{ .Values.global.ordAggregator.maxParallelSpecificationProcessors }}"
-            - name: APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL
-              value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessURL }}"
-            - name: APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
-              value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessMaxDays }}"
-            - name: APP_ORD_WEBHOOK_PARTIAL_PROCESSING
-              value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessing }}"
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_ORD_WEBHOOK_MAPPINGS
               value: {{ .Values.global.director.ordWebhookMappings | quote }}
-            - name: APP_ORD_AGGREGATOR_JOB_SCHEDULE_PERIOD
-              value: {{ .Values.global.ordAggregator.job.schedulePeriod | quote }}
-            - name: APP_ORD_AGGREGATOR_JOB_IS_SCHEDULABLE
-              value: {{ .Values.global.ordAggregator.job.isSchedulable | quote }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH

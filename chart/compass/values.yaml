@@ -906,9 +906,6 @@ global:
     port: 3000
     prefix: /ord-aggregator
     name: ord-aggregator
-    job:
-      schedulePeriod: 60m
-      isSchedulable: true
     lease:
       lockname: aggregatorlease
     authentication:
@@ -926,9 +923,6 @@ global:
     maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
-    ordWebhookPartialProcessURL: ""
-    ordWebhookPartialProcessMaxDays: 0
-    ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
     tenantMappingConfiguration: '{}'
   systemFetcher:

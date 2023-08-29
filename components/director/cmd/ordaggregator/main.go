@@ -108,10 +108,6 @@ type config struct {
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 	MaxParallelSpecificationProcessors int `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
-	OrdWebhookPartialProcessURL     string `envconfig:"optional,APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL"`
-	OrdWebhookPartialProcessMaxDays int    `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS,default=0"`
-	OrdWebhookPartialProcessing     bool   `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESSING,default=false"`
-
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
@@ -297,7 +293,7 @@ func main() {
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
-	ordConfig := ord.NewServiceConfig(cfg.MaxParallelWebhookProcessors, cfg.MaxParallelSpecificationProcessors, cfg.OrdWebhookPartialProcessMaxDays, cfg.OrdWebhookPartialProcessURL, cfg.OrdWebhookPartialProcessing, credentialExchangeStrategyTenantMappings)
+	ordConfig := ord.NewServiceConfig(cfg.MaxParallelWebhookProcessors, cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
 	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping)
 
 	jwtHTTPClient := &http.Client{
