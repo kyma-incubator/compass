@@ -41,7 +41,7 @@ func BenchmarkSystemBundles(b *testing.B) {
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(b, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
-	require.Error(b, err)
+	require.NoError(b, err)
 
 	b.ResetTimer() // Reset timer after the initialization
 
