@@ -2980,18 +2980,18 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		webhookType := graphql.WebhookTypeApplicationTenantMapping
-		webhookMode := graphql.WebhookModeSync
+		syncWebhookMode := graphql.WebhookModeSync
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate)
 
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
+		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, syncWebhookMode, app1.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
 		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
 
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app2.ID)
+		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, syncWebhookMode, app2.ID)
 		actualApplicationWebhookApp2 := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
 		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhookApp2.ID)
 
@@ -3069,17 +3069,16 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, app1.ID, 1)
-		notificationsForConsumerTenant := gjson.GetBytes(body, app1.ID)
-		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp, assignOperation, formation.ID, app1.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
+		notificationsForApp1Tenant := gjson.GetBytes(body, app1.ID)
+		assignNotificationForApp1 := notificationsForApp1Tenant.Array()[0]
+		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
 		require.NoError(t, err)
 
 		assertNotificationsCountForTenant(t, body, app2.ID, 1)
-		notificationsForConsumerTenant = gjson.GetBytes(body, app2.ID)
-		assignNotificationForApp = notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp, assignOperation, formation.ID, app2.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
+		notificationsForApp2Tenant := gjson.GetBytes(body, app2.ID)
+		assignNotificationForApp2 := notificationsForApp2Tenant.Array()[0]
+		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
 		require.NoError(t, err)
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -3105,15 +3104,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, app1.ID, 1)
-		notificationsForConsumerTenant = gjson.GetBytes(body, app1.ID)
-		assignNotificationForApp = notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp, assignOperation, formation.ID, app1.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
+		assignNotificationForApp1 = gjson.GetBytes(body, app1.ID)
+		assignNotificationForApp1 = assignNotificationForApp1.Array()[0]
+		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *expectedConfig, tnt, tntParentCustomer)
 		require.NoError(t, err)
 
 		assertNotificationsCountForTenant(t, body, app2.ID, 1)
-		notificationsForConsumerTenant = gjson.GetBytes(body, app2.ID)
-		assignNotificationForApp = notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp, assignOperation, formation.ID, app2.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
+		notificationsForApp2Tenant = gjson.GetBytes(body, app2.ID)
+		assignNotificationForApp2 = notificationsForApp2Tenant.Array()[0]
+		err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, expectedResetConfig, tnt, tntParentCustomer)
 		require.NoError(t, err)
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)

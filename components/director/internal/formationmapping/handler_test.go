@@ -1270,7 +1270,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 }
 
 func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
-	url := fmt.Sprintf("/v1/businessIntegrations/{%s}/assignments/{%s}/status", fm.FormationIDParam, fm.FormationAssignmentIDParam)
+	url := fmt.Sprintf("/v1/businessIntegrations/{%s}/assignments/{%s}/status/reset", fm.FormationIDParam, fm.FormationAssignmentIDParam)
 	testValidConfig := `{"testK":"testV"}`
 	urlVars := map[string]string{
 		fm.FormationIDParam:           testFormationID,
@@ -1394,6 +1394,26 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime(model.ReadyAssignmentState), nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(nil, testErr).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+		},
+		{
+			name:       "Fail when reverse assignment is not found",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime(model.ReadyAssignmentState), nil).Once()
+				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, faWithSourceAppAndTargetRuntime(model.ReadyAssignmentState).ID)).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {

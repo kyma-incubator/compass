@@ -586,7 +586,7 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 			formationAssignmentID = a.ID
 		}
 	}
-	require.NotEmpty(t, formationAssignmentID, "The formation assignment could not be empty")
+	require.NotEmpty(t, formationAssignmentID, "The formation assignment should not be empty")
 	return formationAssignmentID
 }
 
@@ -597,18 +597,20 @@ func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *gr
 			formationAssignmentID = a.ID
 		}
 	}
-	require.NotEmpty(t, formationAssignmentID, "The formation assignment could not be empty")
+	require.NotEmpty(t, formationAssignmentID, "The formation assignment should not be empty")
 	return formationAssignmentID
 }
 
 func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) string {
-	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
-	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
-	return faAsyncStatusAPIURL
+	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncStatusURL, formationID, formationAssignmentID)
 }
 
 func resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID string) string {
-	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncResetStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
+	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncResetStatusURL, formationID, formationAssignmentID)
+}
+
+func resolveStatusAPIURL(url, formationID, formationAssignmentID string) string {
+	faAsyncStatusAPIURL := strings.Replace(url, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
 	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
 	return faAsyncStatusAPIURL
 }
