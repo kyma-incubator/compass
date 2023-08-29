@@ -37,6 +37,7 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 		return nil, err
 	}
 	log.C(ctx).Infof("app in pairing adapter %+v", app)
+	log.C(ctx).Infof("request in pairing adapter %+v", req)
 
 	resp, err := c.doer.Do(req)
 	if err != nil {
