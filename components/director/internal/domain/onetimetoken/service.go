@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -281,15 +280,13 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	for _, gr := range rawScenarioGroups {
 		log.C(ctx).Infof("group: %s", gr)
 		var scenarioGroup pairing.ScenarioGroup
-		groupWithNoBackslash := strings.ReplaceAll(gr, `\`, "")
-		log.C(ctx).Infof("Group with no backslash: %s", groupWithNoBackslash)
-		err := json.Unmarshal([]byte(groupWithNoBackslash), &scenarioGroup)
+		err := json.Unmarshal([]byte(gr), &scenarioGroup)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error while unmarshaling a scenario group")
 		}
 
+		log.C(ctx).Infof("Scenario group: %+v is added to the payload", scenarioGroup)
 		scenarioGroups = append(scenarioGroups, scenarioGroup)
-		log.C(ctx).Infof("not rawScenarioGroups: %+v", scenarioGroups)
 	}
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	log.C(ctx).Infof("Scenario groups before sending them to parinig adapter: %+v", scenarioGroups)
@@ -304,6 +301,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshaling data for adapter")
 	}
+	log.C(ctx).Infof("Marshalled scenario groups: %s", string(asJSON))
 
 	log.C(ctx).Infof("Getting one time token from pairing adapter with URL: %s", adapterURL)
 	var externalToken string
