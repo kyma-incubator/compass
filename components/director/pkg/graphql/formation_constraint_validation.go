@@ -82,6 +82,9 @@ func (i FormationConstraintInput) Validate() error {
 func emptyGenerateFormationAssignmentNotificationOperationDetails() *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails {
 	return &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 		CustomerTenantContext: &webhook.CustomerTenantContext{},
+		Formation: &model.Formation{
+			Error: json.RawMessage{},
+		},
 		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: &model.ApplicationTemplate{},
 			Labels:              map[string]string{},

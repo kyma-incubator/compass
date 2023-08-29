@@ -24,6 +24,9 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 	ReverseAssignment: &webhook.FormationAssignment{
 		Value: "\"\"",
 	},
+	Formation: &model.Formation{
+		Error: json.RawMessage{},
+	},
 	ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]string{},
