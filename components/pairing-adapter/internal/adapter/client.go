@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -120,7 +121,7 @@ func (c *ExternalClient) getBody(reqData RequestData) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	spew.Dump("body template: ", bodyTemplate)
 	if err := bodyTemplate.Execute(body, reqData); err != nil {
 		return nil, err
 	}
