@@ -31,21 +31,17 @@ var respErrorMsg = "An unexpected error occurred while processing the request"
 
 // Handler is responsible to mock and handle any Destination Creator Service and Destination Service requests
 type Handler struct {
-	Config                            *Config
-	DestinationCreatorSvcDestinations map[string]json.RawMessage
-	DestinationCreatorSvcCertificates map[string]json.RawMessage
-	DestinationSvcDestinations        map[string]json.RawMessage
-	DestinationSvcCertificates        map[string]json.RawMessage
+	Config                     *Config
+	DestinationSvcDestinations map[string]json.RawMessage
+	DestinationSvcCertificates map[string]json.RawMessage
 }
 
 // NewHandler creates a new Handler
 func NewHandler(config *Config) *Handler {
 	return &Handler{
-		Config:                            config,
-		DestinationCreatorSvcDestinations: make(map[string]json.RawMessage),
-		DestinationCreatorSvcCertificates: make(map[string]json.RawMessage),
-		DestinationSvcDestinations:        make(map[string]json.RawMessage),
-		DestinationSvcCertificates:        make(map[string]json.RawMessage),
+		Config:                     config,
+		DestinationSvcDestinations: make(map[string]json.RawMessage),
+		DestinationSvcCertificates: make(map[string]json.RawMessage),
 	}
 }
 
@@ -83,40 +79,31 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 
+	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
+	subaccountIDParamValue := routeVars[subaccountIDParam]
+
+	var destinationRequestBody DestinationRequestBody
 	switch destinationcreatorpkg.AuthType(authTypeResult.String()) {
 	case destinationcreatorpkg.AuthTypeNoAuth:
-		statusCode, err := h.createDesignTimeDestination(ctx, bodyBytes)
-		if err != nil {
-			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating design time destination", correlationID, statusCode)
-			return
-		}
-		httputils.Respond(writer, statusCode)
+		destinationRequestBody = &DesignTimeDestRequestBody{}
 	case destinationcreatorpkg.AuthTypeBasic:
-		statusCode, err := h.createBasicDestination(ctx, bodyBytes)
-		if err != nil {
-			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating basic destination", correlationID, statusCode)
-			return
-		}
-		httputils.Respond(writer, statusCode)
+		destinationRequestBody = &BasicDestRequestBody{}
 	case destinationcreatorpkg.AuthTypeSAMLAssertion:
-		statusCode, err := h.createSAMLAssertionDestination(ctx, bodyBytes)
-		if err != nil {
-			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating SAML assertion destination", correlationID, statusCode)
-			return
-		}
-		httputils.Respond(writer, statusCode)
+		destinationRequestBody = &SAMLAssertionDestRequestBody{}
 	case destinationcreatorpkg.AuthTypeClientCertificate:
-		statusCode, err := h.createClientCertificateAuthDestination(ctx, bodyBytes)
-		if err != nil {
-			httphelpers.RespondWithError(ctx, writer, err, "An unexpected error occurred while creating client certificate authentication destination", correlationID, statusCode)
-			return
-		}
-		httputils.Respond(writer, statusCode)
+		destinationRequestBody = &ClientCertificateAuthDestRequestBody{}
 	default:
 		err := errors.Errorf("The provided destination authentication type: %s is invalid", authTypeResult.String())
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
 		return
 	}
+
+	statusCode, err := h.createDestination(ctx, bodyBytes, destinationRequestBody, subaccountIDParamValue)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, fmt.Sprintf("An unexpected error occurred while creating %s destination", destinationRequestBody.GetDestinationType()), correlationID, statusCode)
+		return
+	}
+	httputils.Respond(writer, statusCode)
 }
 
 // DeleteDestinations mocks deletion of destinations from both Destination Creator Service and Destination Service
@@ -138,14 +125,6 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 	destinationNameValue := routeVars[h.Config.DestinationAPIConfig.DestinationNameParam]
-
-	_, isDestinationCreatorDestExist := h.DestinationCreatorSvcDestinations[destinationNameValue]
-	if !isDestinationCreatorDestExist {
-		log.C(ctx).Infof("Destination with name: %q does not exists in the destination creator", destinationNameValue)
-	} else {
-		delete(h.DestinationCreatorSvcDestinations, destinationNameValue)
-		log.C(ctx).Infof("Destination with name: %q was deleted from the destination creator", destinationNameValue)
-	}
 
 	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[destinationNameValue]
 	if !isDestinationSvcDestExists {
@@ -195,27 +174,19 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, ok := h.DestinationCreatorSvcCertificates[reqBody.Name]; ok {
+	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
+
+	if _, ok := h.DestinationSvcCertificates[destinationCertName]; ok {
 		log.C(ctx).Infof("Certificate with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
 		httputils.Respond(writer, http.StatusConflict)
 		return
 	}
 
-	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
 	certResp := CertificateResponseBody{
 		FileName:         destinationCertName,
 		CommonName:       uuid.New().String(),
 		CertificateChain: CertChain,
 	}
-
-	certRespBytes, err := json.Marshal(certResp)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while marshalling certificate response body"), respErrorMsg, correlationID, http.StatusInternalServerError)
-		return
-	}
-
-	log.C(ctx).Infof("Destination certificate with name: %q added to the destination creator", reqBody.Name)
-	h.DestinationCreatorSvcCertificates[reqBody.Name] = certRespBytes
 
 	destSvcCertificateResp := destinationcreator.DestinationSvcCertificateResponse{
 		Name:    destinationCertName,
@@ -254,13 +225,6 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	}
 	certNameValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
 
-	if _, isDestinationCreatorCertExist := h.DestinationCreatorSvcCertificates[certNameValue]; !isDestinationCreatorCertExist {
-		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination creator", certNameValue)
-	} else {
-		delete(h.DestinationCreatorSvcCertificates, certNameValue)
-		log.C(ctx).Infof("Certificate with name: %q was deleted from the destination creator", certNameValue)
-	}
-
 	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
 		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", certNameValue)
 		httputils.Respond(writer, http.StatusNoContent)
@@ -271,172 +235,38 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
-func (h *Handler) createDesignTimeDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody DesignTimeDestRequestBody
+func (h *Handler) createDestination(ctx context.Context, bodyBytes []byte, reqBody DestinationRequestBody, subaccountID string) (int, error) {
+	destinationTypeName := reqBody.GetDestinationType()
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while unmarshalling design time destination request body")
+		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling %s destination request body", destinationTypeName)
 	}
 
-	log.C(ctx).Info("Validating design time destination request body...")
-	if err := reqBody.Validate(); err != nil {
-		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating design time destination request body")
-	}
+	reqBody.SetSubaccountIDValue(subaccountID)
 
-	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
-		log.C(ctx).Infof("Destination with name: %q already exists in the destination creator. Returning 409 Conflict...", reqBody.Name)
-		return http.StatusConflict, nil
-	}
-
-	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	noAuthDest := destinationcreator.NoAuthenticationDestination{
-		Name:           reqBody.Name,
-		URL:            reqBody.URL,
-		Type:           reqBody.Type,
-		ProxyType:      reqBody.ProxyType,
-		Authentication: reqBody.AuthenticationType,
-	}
-
-	noAuthDestBytes, err := json.Marshal(noAuthDest)
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling no authentication destination")
-	}
-
-	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
-	h.DestinationSvcDestinations[reqBody.Name] = noAuthDestBytes
-
-	return http.StatusCreated, nil
-}
-
-func (h *Handler) createBasicDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody BasicDestRequestBody
-	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while unmarshalling basic destination request body")
-	}
-
-	log.C(ctx).Info("Validating basic destination request body...")
+	log.C(ctx).Infof("Validating %s destination request body...", destinationTypeName)
 	if err := reqBody.Validate(h.Config); err != nil {
-		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating basic destination request body")
+		return http.StatusBadRequest, errors.Wrapf(err, "An error occurred while validating %s destination request body", destinationTypeName)
 	}
 
-	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
-		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
+	destinationIdentifier := reqBody.GetDestinationUniqueIdentifier()
+	if _, ok := h.DestinationSvcDestinations[destinationIdentifier]; ok {
+		log.C(ctx).Infof("Destination with identifier: %q already exists. Returning 409 Conflict...", destinationIdentifier)
 		return http.StatusConflict, nil
 	}
 
-	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	basicAuthDest := destinationcreator.BasicDestination{
-		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           reqBody.Name,
-			Type:           reqBody.Type,
-			URL:            reqBody.URL,
-			Authentication: reqBody.AuthenticationType,
-			ProxyType:      reqBody.ProxyType,
-		},
-		User:     reqBody.User,
-		Password: reqBody.Password,
-	}
-
-	basicDestBytes, err := json.Marshal(basicAuthDest)
+	destinationRawMessage, err := reqBody.ToDestination()
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling basic destination")
+		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while marshalling %s destination", destinationTypeName)
 	}
 
-	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
-	h.DestinationSvcDestinations[reqBody.Name] = basicDestBytes
-
-	return http.StatusCreated, nil
-}
-
-func (h *Handler) createSAMLAssertionDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody SAMLAssertionDestRequestBody
-	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling SAML assertion destination request body")
-	}
-
-	log.C(ctx).Info("Validating SAML assertion destination request body...")
-	if err := reqBody.Validate(h.Config); err != nil {
-		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating SAML assertion destination request body")
-	}
-
-	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
-		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
-		return http.StatusConflict, nil
-	}
-
-	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	samlAssertionAuthDest := destinationcreator.SAMLAssertionDestination{
-		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           reqBody.Name,
-			Type:           reqBody.Type,
-			URL:            reqBody.URL,
-			Authentication: reqBody.AuthenticationType,
-			ProxyType:      reqBody.ProxyType,
-		},
-		Audience:         reqBody.Audience,
-		KeyStoreLocation: reqBody.KeyStoreLocation,
-	}
-
-	samlAssertionAuthDestBytes, err := json.Marshal(samlAssertionAuthDest)
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling SAML assertion destination")
-	}
-
-	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
-	h.DestinationSvcDestinations[reqBody.Name] = samlAssertionAuthDestBytes
-
-	return http.StatusCreated, nil
-}
-
-func (h *Handler) createClientCertificateAuthDestination(ctx context.Context, bodyBytes []byte) (int, error) {
-	var reqBody ClientCertificateAuthDestRequestBody
-	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling client certificate authentication destination request body")
-	}
-
-	log.C(ctx).Info("Validating client certificate authentication destination request body...")
-	if err := reqBody.Validate(h.Config); err != nil {
-		return http.StatusBadRequest, errors.Wrap(err, "An error occurred while validating client certificate authentication destination request body")
-	}
-
-	if _, ok := h.DestinationCreatorSvcDestinations[reqBody.Name]; ok {
-		log.C(ctx).Infof("Destination with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
-		return http.StatusConflict, nil
-	}
-
-	log.C(ctx).Infof("Destination with name: %q added to the destination creator", reqBody.Name)
-	h.DestinationCreatorSvcDestinations[reqBody.Name] = bodyBytes
-
-	clientCertAuthDest := destinationcreator.ClientCertificateAuthenticationDestination{
-		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           reqBody.Name,
-			Type:           reqBody.Type,
-			URL:            reqBody.URL,
-			Authentication: reqBody.AuthenticationType,
-			ProxyType:      reqBody.ProxyType,
-		},
-		KeyStoreLocation: reqBody.KeyStoreLocation,
-	}
-
-	clientCertAuthDestBytes, err := json.Marshal(clientCertAuthDest)
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "An error occurred while marshalling client certificate authentication destination")
-	}
-
-	log.C(ctx).Infof("Destination with name: %q added to the destination service", reqBody.Name)
-	h.DestinationSvcDestinations[reqBody.Name] = clientCertAuthDestBytes
+	log.C(ctx).Infof("Destination with identifier: %q added to the destination service", destinationIdentifier)
+	h.DestinationSvcDestinations[destinationIdentifier] = destinationRawMessage
 
 	return http.StatusCreated, nil
 }
 
 // CleanupDestinationCertificates is "internal/technical" handler for deleting in-memory certificates mappings
 func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *http.Request) {
-	h.DestinationCreatorSvcCertificates = make(map[string]json.RawMessage)
 	h.DestinationSvcCertificates = make(map[string]json.RawMessage)
 	log.C(r.Context()).Infof("Destination creator certificates and destination service certificates mappings were successfully deleted")
 	httputils.Respond(writer, http.StatusOK)
@@ -444,7 +274,6 @@ func (h *Handler) CleanupDestinationCertificates(writer http.ResponseWriter, r *
 
 // CleanupDestinations is "internal/technical" handler for deleting in-memory destinations mappings
 func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Request) {
-	h.DestinationCreatorSvcDestinations = make(map[string]json.RawMessage)
 	h.DestinationSvcDestinations = make(map[string]json.RawMessage)
 	log.C(r.Context()).Infof("Destination creator destinations and destination service destinations mappings were successfully deleted")
 	httputils.Respond(writer, http.StatusOK)
@@ -467,8 +296,11 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
+	subaccount := r.Header.Get("subaccount")
 
-	dest, exists := h.DestinationSvcDestinations[destinationNameParamValue]
+	destinationIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", destinationNameParamValue, subaccount, "")
+
+	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
 	if !exists {
 		err := errors.Errorf("Destination with name: %q doest not exists", destinationNameParamValue)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)

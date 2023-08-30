@@ -2,6 +2,7 @@ package destination
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
@@ -40,8 +41,8 @@ type destinationCreatorService interface {
 	CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error
 	CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error
 	CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error
-	DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error
-	DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error
+	DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment) error
+	DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment) error
 	ValidateDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) (string, error)
 	PrepareBasicRequestBody(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string) (*destinationcreator.BasicAuthDestinationRequestBody, error)
 	GetConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error)
@@ -379,12 +380,12 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *m
 			if err != nil {
 				return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destination.Authentication)
 			}
-			if err = s.destinationCreatorSvc.DeleteCertificate(ctx, certName, externalDestSubaccountID, formationAssignment); err != nil {
+			if err = s.destinationCreatorSvc.DeleteCertificate(ctx, certName, externalDestSubaccountID, str.PtrStrToStr(destination.InstanceID), formationAssignment); err != nil {
 				return errors.Wrapf(err, "while deleting destination certificate with name: %q", certName)
 			}
 		}
 
-		if err := s.destinationCreatorSvc.DeleteDestination(ctx, destination.Name, externalDestSubaccountID, formationAssignment); err != nil {
+		if err := s.destinationCreatorSvc.DeleteDestination(ctx, destination.Name, externalDestSubaccountID, str.PtrStrToStr(destination.InstanceID), formationAssignment); err != nil {
 			return err
 		}
 

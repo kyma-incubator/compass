@@ -18,6 +18,7 @@ const (
 	secondDestinationFormationAssignmentID = "098ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationFormationAssignmentID       = "654ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationBundleID                    = "765ac686-5773-4ad0-8eb1-2349e931f852"
+	destinationInstanceID                  = "999ac686-5773-4ad0-8eb1-2349e931f852"
 
 	// Destination constants
 	destinationName        = "test-destination-name"
@@ -41,6 +42,7 @@ const (
 
 var (
 	faID              = destinationFormationAssignmentID
+	instanceID        = destinationInstanceID
 	destinationEntity = fixDestinationEntity(destinationName)
 	destinationModel  = fixDestinationModel(destinationName)
 	initialDepth      = uint8(0)
@@ -54,6 +56,7 @@ func fixDestinationModel(name string) *model.Destination {
 		URL:                   destinationURL,
 		Authentication:        string(destinationNoAuthn),
 		SubaccountID:          destinationSubaccountID,
+		InstanceID:            &instanceID,
 		FormationAssignmentID: &faID,
 	}
 }
@@ -66,6 +69,7 @@ func fixDestinationModelWithAuthnAndFAID(name, authn, formationAssignmentID stri
 		URL:                   destinationURL,
 		Authentication:        authn,
 		SubaccountID:          destinationSubaccountID,
+		InstanceID:            &instanceID,
 		FormationAssignmentID: &formationAssignmentID,
 	}
 }
@@ -78,6 +82,7 @@ func fixDestinationEntity(name string) *destination.Entity {
 		URL:                   destinationURL,
 		Authentication:        string(destinationNoAuthn),
 		TenantID:              destinationSubaccountID,
+		InstanceID:            repo.NewValidNullableString(instanceID),
 		FormationAssignmentID: repo.NewValidNullableString(faID),
 	}
 }
@@ -159,7 +164,7 @@ func fixClientCertAuthDestinationsDetails() []operators.Destination {
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "type", "url", "authentication", "tenant_id", "bundle_id", "revision", "formation_assignment_id"}
+	return []string{"id", "name", "type", "url", "authentication", "tenant_id", "bundle_id", "revision", "instance_id", "formation_assignment_id"}
 }
 
 func fixUUID() string {

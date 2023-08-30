@@ -314,13 +314,17 @@ global:
       destinationAPI:
         baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
+        instanceLevelPath: "/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/destinations"
         regionParam: "region"
+        instanceIDParam: "instanceId"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
         baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
+        instanceLevelPath: "/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
         regionParam: "region"
+        instanceIDParam: "instanceId"
         subaccountIDParam: "subaccountId"
         nameParam: "certificateName"
         fileNameKey: "fileName"
@@ -751,7 +755,9 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantInstanceLevelDestinationsEndpoint: "/v1/instanceDestinations"
       tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
+      tenantInstanceLevelDestinationCertificatesEndpoint: "/v1/instanceCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:

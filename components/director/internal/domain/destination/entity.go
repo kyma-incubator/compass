@@ -12,6 +12,7 @@ type Entity struct {
 	TenantID              string         `db:"tenant_id"`
 	BundleID              sql.NullString `db:"bundle_id"`
 	Revision              sql.NullString `db:"revision"`
+	InstanceID            sql.NullString `db:"instance_id"`
 	FormationAssignmentID sql.NullString `db:"formation_assignment_id"`
 }
 

@@ -6,6 +6,8 @@ import destinationcreatorpkg "github.com/kyma-incubator/compass/components/direc
 type NoAuthenticationDestination struct {
 	Name           string                          `json:"name"`
 	URL            string                          `json:"url"`
+	SubaccountID   string                          `json:"subaccountId"`
+	InstanceID     string                          `json:"instanceId"`
 	Type           destinationcreatorpkg.Type      `json:"type"`
 	ProxyType      destinationcreatorpkg.ProxyType `json:"proxyType"`
 	Authentication destinationcreatorpkg.AuthType  `json:"authentication"`

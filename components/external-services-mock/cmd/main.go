@@ -81,9 +81,11 @@ type config struct {
 
 // DestinationServiceConfig configuration for destination service endpoints.
 type DestinationServiceConfig struct {
-	TenantDestinationsEndpoint           string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
-	TenantDestinationCertificateEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
-	SensitiveDataEndpoint                string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+	TenantDestinationsSubaccountLevelEndpoint           string `envconfig:"APP_DESTINATION_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	TenantDestinationsInstanceLevelEndpoint             string `envconfig:"APP_DESTINATION_TENANT_INSTANCE_LEVEL_ENDPOINT,default=/destination-configuration/v1/instanceDestinations"`
+	TenantDestinationCertificateSubaccountLevelEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
+	TenantDestinationCertificateInstanceLevelEndpoint   string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT,default=/destination-configuration/v1/instanceCertificates"`
+	SensitiveDataEndpoint                               string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -229,7 +231,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Destination Service handler
 	destinationHandler := destinationfetcher.NewHandler()
-	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsEndpoint
+	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsSubaccountLevelEndpoint
 	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
 	router.HandleFunc(tenantDestinationEndpoint,
 		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
@@ -238,10 +240,11 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// destination service handlers but the destination creator handler is used due to shared mappings
-	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationsSubaccountLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationsInstanceLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
 
-	tenantDestinationCertificateEndpoint := cfg.DestinationServiceConfig.TenantDestinationCertificateEndpoint
-	router.HandleFunc(tenantDestinationCertificateEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)
@@ -381,17 +384,29 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
 
 	// destination creator handlers
-	destinationCreatorPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.Path
-	deleteDestinationCreatorPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
+	destinationCreatorSubaccountLevelPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.SubaccountLevelPath
+	deleteDestinationCreatorSubaccountLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
 
-	router.HandleFunc(destinationCreatorPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
-	router.HandleFunc(destinationCreatorPath+deleteDestinationCreatorPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
+	router.HandleFunc(destinationCreatorSubaccountLevelPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorSubaccountLevelPath+deleteDestinationCreatorSubaccountLevelPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
 
-	certificatePath := cfg.DestinationCreatorConfig.CertificateAPIConfig.Path
-	deleteCertificatePathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+	destinationCreatorInstanceLevelPath := cfg.DestinationCreatorConfig.DestinationAPIConfig.InstanceLevelPath
+	deleteDestinationCreatorInstanceLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.DestinationAPIConfig.DestinationNameParam)
 
-	router.HandleFunc(certificatePath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
-	router.HandleFunc(certificatePath+deleteCertificatePathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
+	router.HandleFunc(destinationCreatorInstanceLevelPath, destinationCreatorHandler.CreateDestinations).Methods(http.MethodPost)
+	router.HandleFunc(destinationCreatorInstanceLevelPath+deleteDestinationCreatorInstanceLevelPathSuffix, destinationCreatorHandler.DeleteDestinations).Methods(http.MethodDelete)
+
+	certificateSubaccountLevelPath := cfg.DestinationCreatorConfig.CertificateAPIConfig.SubaccountLevelPath
+	deleteCertificateSubaccountLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+
+	router.HandleFunc(certificateSubaccountLevelPath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
+	router.HandleFunc(certificateSubaccountLevelPath+deleteCertificateSubaccountLevelPathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
+
+	certificateInstanceLevelPath := cfg.DestinationCreatorConfig.CertificateAPIConfig.InstanceLevelPath
+	deleteCertificateInstanceLevelPathSuffix := fmt.Sprintf("/{%s}", cfg.DestinationCreatorConfig.CertificateAPIConfig.CertificateNameParam)
+
+	router.HandleFunc(certificateInstanceLevelPath, destinationCreatorHandler.CreateCertificate).Methods(http.MethodPost)
+	router.HandleFunc(certificateInstanceLevelPath+deleteCertificateInstanceLevelPathSuffix, destinationCreatorHandler.DeleteCertificate).Methods(http.MethodDelete)
 
 	// "internal technical" handlers for deleting in-memory destinations and destination certificates mappings
 	router.HandleFunc("/destinations/cleanup", destinationCreatorHandler.CleanupDestinations).Methods(http.MethodDelete)

@@ -273,8 +273,12 @@ spec:
               value: "{{ .Values.global.director.destinationCreator.destinationAPI.baseURL }}"
             - name: APP_DESTINATION_CREATOR_DESTINATION_PATH
               value: "{{ .Values.global.director.destinationCreator.destinationAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_LEVEL_PATH
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.instanceLevelPath }}"
             - name: APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER
               value: "{{ .Values.global.director.destinationCreator.destinationAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.destinationAPI.instanceIDParam }}"
             - name: APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER
               value: "{{ .Values.global.director.destinationCreator.destinationAPI.subaccountIDParam }}"
             - name: APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER
@@ -283,8 +287,12 @@ spec:
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.baseURL }}"
             - name: APP_DESTINATION_CREATOR_CERTIFICATE_PATH
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.path }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.instanceLevelPath }}"
             - name: APP_DESTINATION_CREATOR_CERTIFICATE_REGION_PARAMETER
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.regionParam }}"
+            - name: APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER
+              value: "{{ .Values.global.director.destinationCreator.certificateAPI.instanceIDParam }}"
             - name: APP_DESTINATION_CREATOR_CERTIFICATE_SUBACCOUNT_ID_PARAMETER
               value: "{{ .Values.global.director.destinationCreator.certificateAPI.subaccountIDParam }}"
             - name: APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER

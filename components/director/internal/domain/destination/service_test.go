@@ -967,9 +967,9 @@ func TestService_DeleteDestinations(t *testing.T) {
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
 				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, &fa).Return(nil).Once()
-				destCreatorSvc.On("DeleteDestination", ctx, samlAssertionDestName, externalDestinationSubaccountID, &fa).Return(nil).Once()
-				destCreatorSvc.On("DeleteDestination", ctx, basicDestName, externalDestinationSubaccountID, &fa).Return(nil).Once()
+				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, samlAssertionDestName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, basicDestName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1050,7 +1050,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
 				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, &fa).Return(testErr).Once()
+				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1070,7 +1070,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
 				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, &fa).Return(testErr).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1090,7 +1090,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
 				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, &fa).Return(nil).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {

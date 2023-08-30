@@ -24,8 +24,8 @@ func TestRepository_Upsert(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.destinations ( id, name, type, url, authentication, tenant_id, bundle_id, revision, formation_assignment_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( name, tenant_id ) DO UPDATE SET name=EXCLUDED.name, type=EXCLUDED.type, url=EXCLUDED.url, authentication=EXCLUDED.authentication, revision=EXCLUDED.revision`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, destinationBundleID, destinationLatestRevision, repo.NewValidNullableString("")).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.destinations ( id, name, type, url, authentication, tenant_id, bundle_id, revision, instance_id, formation_assignment_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( name, instance_id, tenant_id ) DO UPDATE SET name=EXCLUDED.name, type=EXCLUDED.type, url=EXCLUDED.url, authentication=EXCLUDED.authentication, revision=EXCLUDED.revision`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, destinationBundleID, destinationLatestRevision, repo.NewValidNullableString(""), repo.NewValidNullableString("")).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -48,8 +48,8 @@ func TestRepository_UpsertWithEmbeddedTenant(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.destinations ( id, name, type, url, authentication, tenant_id, bundle_id, revision, formation_assignment_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( name, tenant_id ) DO UPDATE SET name=EXCLUDED.name, type=EXCLUDED.type, url=EXCLUDED.url, authentication=EXCLUDED.authentication, revision=EXCLUDED.revision WHERE  public.destinations.tenant_id = ?`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, repo.NewValidNullableString(""), repo.NewValidNullableString(""), destinationFormationAssignmentID, destinationSubaccountID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.destinations ( id, name, type, url, authentication, tenant_id, bundle_id, revision, instance_id, formation_assignment_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( name, instance_id, tenant_id ) DO UPDATE SET name=EXCLUDED.name, type=EXCLUDED.type, url=EXCLUDED.url, authentication=EXCLUDED.authentication, revision=EXCLUDED.revision WHERE  public.destinations.tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, repo.NewValidNullableString(""), repo.NewValidNullableString(""), destinationInstanceID, destinationFormationAssignmentID, destinationSubaccountID).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -104,11 +104,11 @@ func TestRepository_GetDestinationByNameAndTenant(t *testing.T) {
 		MethodName: "GetDestinationByNameAndTenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, type, url, authentication, tenant_id, bundle_id, revision, formation_assignment_id FROM public.destinations WHERE tenant_id = $1 AND name = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, type, url, authentication, tenant_id, bundle_id, revision, instance_id, formation_assignment_id FROM public.destinations WHERE tenant_id = $1 AND name = $2`),
 				Args:     []driver.Value{destinationSubaccountID, destinationName},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, repo.NewValidNullableString(""), repo.NewValidNullableString(""), destinationFormationAssignmentID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, repo.NewValidNullableString(""), repo.NewValidNullableString(""), destinationInstanceID, destinationFormationAssignmentID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -134,11 +134,11 @@ func TestRepository_ListByTenantIDAndAssignmentID(t *testing.T) {
 		MethodName: "ListByTenantIDAndAssignmentID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, type, url, authentication, tenant_id, bundle_id, revision, formation_assignment_id FROM public.destinations WHERE tenant_id = $1 AND formation_assignment_id = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, type, url, authentication, tenant_id, bundle_id, revision, instance_id, formation_assignment_id FROM public.destinations WHERE tenant_id = $1 AND formation_assignment_id = $2`),
 				Args:     []driver.Value{destinationSubaccountID, destinationFormationAssignmentID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, repo.NewValidNullableString(""), repo.NewValidNullableString(""), destinationFormationAssignmentID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(destinationID, destinationName, destinationType, destinationURL, destinationNoAuthn, destinationSubaccountID, repo.NewValidNullableString(""), repo.NewValidNullableString(""), destinationInstanceID, destinationFormationAssignmentID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}

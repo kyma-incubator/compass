@@ -222,7 +222,7 @@ func TestHandler_CreateDestinations(t *testing.T) {
 			}
 
 			if testCase.ExpectedDestinationSvcDestinations != nil {
-				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
+				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinationsBySubaccountID)
 			}
 		})
 	}
@@ -323,7 +323,7 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 
 			if testCase.ExistingDestination != nil {
 				h.DestinationCreatorSvcDestinations = testCase.ExistingDestination
-				h.DestinationSvcDestinations = testCase.ExistingDestination
+				h.DestinationSvcDestinationsBySubaccountID = testCase.ExistingDestination
 			}
 
 			// WHEN
@@ -341,7 +341,7 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 			}
 
 			if testCase.ExpectedDestinationSvcDestinations != nil {
-				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinations)
+				require.Equal(t, testCase.ExpectedDestinationSvcDestinations, h.DestinationSvcDestinationsBySubaccountID)
 			}
 		})
 	}
@@ -673,7 +673,7 @@ func TestHandler_GetDestinationByNameFromDestinationSvc(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingDestination != nil {
-				h.DestinationSvcDestinations = testCase.ExistingDestination
+				h.DestinationSvcDestinationsBySubaccountID = testCase.ExistingDestination
 			}
 
 			// WHEN

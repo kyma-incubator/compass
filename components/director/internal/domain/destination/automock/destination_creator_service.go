@@ -75,13 +75,13 @@ func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.
 	return r0
 }
 
-// DeleteCertificate provides a mock function with given fields: ctx, certificateName, externalDestSubaccountID, formationAssignment
-func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, certificateName string, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
-	ret := _m.Called(ctx, certificateName, externalDestSubaccountID, formationAssignment)
+// DeleteCertificate provides a mock function with given fields: ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment
+func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, certificateName string, externalDestSubaccountID string, instanceID string, formationAssignment *model.FormationAssignment) error {
+	ret := _m.Called(ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.FormationAssignment) error); ok {
-		r0 = rf(ctx, certificateName, externalDestSubaccountID, formationAssignment)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *model.FormationAssignment) error); ok {
+		r0 = rf(ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -89,13 +89,13 @@ func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, cert
 	return r0
 }
 
-// DeleteDestination provides a mock function with given fields: ctx, destinationName, externalDestSubaccountID, formationAssignment
-func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, destinationName string, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
-	ret := _m.Called(ctx, destinationName, externalDestSubaccountID, formationAssignment)
+// DeleteDestination provides a mock function with given fields: ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment
+func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, destinationName string, externalDestSubaccountID string, instanceID string, formationAssignment *model.FormationAssignment) error {
+	ret := _m.Called(ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.FormationAssignment) error); ok {
-		r0 = rf(ctx, destinationName, externalDestSubaccountID, formationAssignment)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *model.FormationAssignment) error); ok {
+		r0 = rf(ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment)
 	} else {
 		r0 = ret.Error(0)
 	}

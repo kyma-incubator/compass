@@ -25,6 +25,7 @@ func (c *converter) ToEntity(in *model.Destination) *Entity {
 		URL:                   in.URL,
 		Authentication:        in.Authentication,
 		TenantID:              in.SubaccountID,
+		InstanceID:            repo.NewNullableString(in.InstanceID),
 		FormationAssignmentID: repo.NewNullableString(in.FormationAssignmentID),
 	}
 }
@@ -42,6 +43,7 @@ func (c *converter) FromEntity(e *Entity) *model.Destination {
 		URL:                   e.URL,
 		Authentication:        e.Authentication,
 		SubaccountID:          e.TenantID,
+		InstanceID:            repo.StringPtrFromNullableString(e.InstanceID),
 		FormationAssignmentID: repo.StringPtrFromNullableString(e.FormationAssignmentID),
 	}
 }
