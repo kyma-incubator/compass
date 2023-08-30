@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"encoding/json"
 	"net/url"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -22,6 +23,9 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 	},
 	ReverseAssignment: &webhook.FormationAssignment{
 		Value: "\"\"",
+	},
+	Formation: &model.Formation{
+		Error: json.RawMessage{},
 	},
 	ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
@@ -66,6 +70,9 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 	},
 	ReverseAssignment: &webhook.FormationAssignment{
 		Value: "\"\"",
+	},
+	Formation: &model.Formation{
+		Error: json.RawMessage{},
 	},
 	SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},

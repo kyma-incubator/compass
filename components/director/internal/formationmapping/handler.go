@@ -544,8 +544,8 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 
 	assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
-			ReverseAssignment: &faReqMapping,
+			AssignmentReqMapping:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
+			ReverseAssignmentReqMapping: &faReqMapping,
 		},
 		Operation: model.AssignFormation,
 	}
