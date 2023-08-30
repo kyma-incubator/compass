@@ -656,8 +656,8 @@ func TestAuthenticator_KymaAdapterHandler(t *testing.T) {
 	})
 
 	t.Run("Success - with one scenario group provided", func(t *testing.T) {
-		scenarioGroups := []string{"FOO"}
-		scenarioGroupsHeaderValue := "foo"
+		scenarioGroups := []string{`{"key": "foo","description": "bar"}`}
+		scenarioGroupsHeaderValue := `{"key": "foo","description": "bar"}`
 		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandlerWithScenarioGroups(t, defaultTenant, scenarioGroups, scopes)
@@ -680,8 +680,8 @@ func TestAuthenticator_KymaAdapterHandler(t *testing.T) {
 	})
 
 	t.Run("Success - with two scenario groups provided", func(t *testing.T) {
-		scenarioGroups := []string{"FOO", "BAR"}
-		scenarioGroupsHeaderValue := "fOo,Bar"
+		scenarioGroups := []string{`{"key": "foo1","description": "bar1"}`, `{"key": "foo2","description": "bar2"}`}
+		scenarioGroupsHeaderValue := `{"key": "foo1","description": "bar1"}, {"key": "foo2","description": "bar2"}`
 		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandlerWithScenarioGroups(t, defaultTenant, scenarioGroups, scopes)

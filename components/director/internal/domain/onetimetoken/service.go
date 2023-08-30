@@ -426,7 +426,7 @@ func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 }
 
 func unmarshalScenarioGroups(rawScenarioGroups []string) ([]pairing.ScenarioGroup, error) {
-	var scenarioGroups []pairing.ScenarioGroup
+	scenarioGroups := make([]pairing.ScenarioGroup, 0)
 	for _, gr := range rawScenarioGroups {
 		var scenarioGroup pairing.ScenarioGroup
 		err := json.Unmarshal([]byte(gr), &scenarioGroup)
