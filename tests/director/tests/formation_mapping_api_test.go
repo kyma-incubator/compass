@@ -548,6 +548,7 @@ func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTP
 	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
+	// The Tenant header is needed in case we are simulating an application reporting status for its own formation assignment.
 	request.Header.Add("Tenant", tnt)
 	response, err := certSecuredHTTPClient.Do(request)
 	require.NoError(t, err)
@@ -586,7 +587,7 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 			formationAssignmentID = a.ID
 		}
 	}
-	require.NotEmpty(t, formationAssignmentID, "The formation assignment should not be empty")
+	require.NotEmptyf(t, formationAssignmentID, "The formation assignment with ID %q should not be empty", formationAssignmentID)
 	return formationAssignmentID
 }
 
@@ -597,7 +598,7 @@ func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *gr
 			formationAssignmentID = a.ID
 		}
 	}
-	require.NotEmpty(t, formationAssignmentID, "The formation assignment should not be empty")
+	require.NotEmptyf(t, formationAssignmentID, "The formation assignment with ID %q should not be empty", formationAssignmentID)
 	return formationAssignmentID
 }
 
