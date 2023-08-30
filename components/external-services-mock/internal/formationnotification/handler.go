@@ -468,6 +468,13 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	formationName := gjson.GetBytes(bodyBytes, "context.uclFormationName").String()
+	if formationName == "" {
+		err := errors.New("The formation name in the context field in the notification request should not be empty")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+		return
+	}
+
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)

@@ -53,8 +53,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 
 	testAssignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			Assignment:        &testReverseFAReqMapping,
-			ReverseAssignment: &testFAReqMapping,
+			AssignmentReqMapping:        &testReverseFAReqMapping,
+			ReverseAssignmentReqMapping: &testFAReqMapping,
 		},
 		Operation: model.AssignFormation,
 	}

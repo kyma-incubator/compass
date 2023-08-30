@@ -70,6 +70,7 @@ type FormationAssignment struct {
 type FormationConfigurationChangeInput struct {
 	Operation             model.FormationOperation
 	FormationID           string
+	Formation             *model.Formation
 	ApplicationTemplate   *ApplicationTemplateWithLabels
 	Application           *ApplicationWithLabels
 	Runtime               *RuntimeWithLabels
@@ -153,7 +154,8 @@ func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignm
 func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplateInput {
 	return &FormationConfigurationChangeInput{
 		Operation:             rd.Operation,
-		FormationID:           rd.FormationID,
+		FormationID:           rd.Formation.ID,
+		Formation:             rd.Formation,
 		ApplicationTemplate:   rd.ApplicationTemplate,
 		Application:           rd.Application,
 		Runtime:               rd.Runtime,

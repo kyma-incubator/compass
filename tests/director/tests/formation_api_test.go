@@ -3263,7 +3263,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
 			asyncCallbackWebhookMode := graphql.WebhookModeAsyncCallback
 			urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/destinations/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
+			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\":\\\"{{.Body.error}}\\\",\\\"success_status_code\\\":202}"
 
 			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication)
@@ -3414,6 +3414,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			notificationsForApp1Tenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
+			validateFormationNameInAssignmentNotification(t, notificationsForApp1Tenant.Array()[0], formationName)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp1Tenant.Array(), []*applicationFormationExpectations{
 				{
 					op:            assignOperation,
@@ -3440,6 +3441,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
 			notificationsForApp2Tenant := gjson.GetBytes(body, localTenantID2)
+			validateFormationNameInAssignmentNotification(t, notificationsForApp2Tenant.Array()[0], formationName)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
 					op:            assignOperation,
@@ -3452,8 +3454,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					customerID:    emptyParentCustomerID,
 				},
 			})
-
-			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 			// configure destination service client
 			region := conf.SubscriptionConfig.SelfRegRegion
@@ -3471,6 +3471,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertClientCertAuthDestination(t, destinationClient, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", instanceID)
 			assertDestinationCertificate(t, destinationClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", "")
 			assertDestinationCertificate(t, destinationClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", "")
+
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 			var unassignFormation graphql.Formation
 			t.Logf("Unassign Application 2 from formation %s", formationName)
@@ -3516,6 +3518,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
 			notificationsForApp2 := gjson.GetBytes(body, localTenantID2)
 			unassignNotificationForApp2 := notificationsForApp2.Array()[0]
+			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp2, formationName)
 			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -3694,7 +3697,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			webhookType := graphql.WebhookTypeConfigurationChanged
 			webhookMode := graphql.WebhookModeSync
 			urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"ucl-formation-name\\\":\\\"{{.Formation.Name}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 			runtimeWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate)
@@ -3783,6 +3786,8 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
 
 			notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
+			validateJSONStringProperty(t, notificationsForConsumerTenant.Array()[0], "RequestBody.ucl-formation-name", formationName)
+			validateJSONStringProperty(t, assignNotificationForApp1, "RequestBody.ucl-formation-name", formationName)
 
 			notificationForApp2Found := false
 			for _, notification := range notificationsForConsumerTenant.Array() {
@@ -3825,6 +3830,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				if op == unassignOperation {
 					unassignNotificationFound = true
 					assertFormationAssignmentsNotificationWithItemsStructure(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+					validateJSONStringProperty(t, notification, "RequestBody.ucl-formation-name", formationName)
 				}
 			}
 			require.True(t, unassignNotificationFound, "notification for unassign app1 not found")
@@ -5743,6 +5749,14 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 	}
 
 	return nil
+}
+
+func validateFormationNameInAssignmentNotification(t *testing.T, jsonResult gjson.Result, expectedFormationName string) {
+	validateJSONStringProperty(t, jsonResult, "RequestBody.context.uclFormationName", expectedFormationName)
+}
+
+func validateJSONStringProperty(t *testing.T, jsonResult gjson.Result, path, expectedValue string) {
+	require.Equal(t, expectedValue, jsonResult.Get(path).String())
 }
 
 func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntimeID, providerRuntimeID string) {
