@@ -252,6 +252,25 @@ deployment:
       runAsGroup: 65534
       runAsNonRoot: true
       runAsUser: 65534
+    jobs:
+      generator:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 100
+      supplier:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
   ################
   lifecycle: {}
   # -- Configure the livenessProbe parameters

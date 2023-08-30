@@ -50,25 +50,18 @@ spec:
             sidecar.istio.io/inject: "false"
         spec:
           initContainers:
-            - name: keys-generator
-              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/newJWKS.json
-              securityContext:
-                allowPrivilegeEscalation: false
-                capabilities:
-                  drop:
-                  - ALL
-                privileged: false
-                runAsGroup: 101
-                runAsNonRoot: true
-                runAsUser: 100
-              volumeMounts:
-                - name: {{ include "oathkeeper.name" . }}-keys-volume
-                  mountPath: {{ .Values.secret.mountPath }}
+          - name: keys-generator
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/newJWKS.json
+            securityContext:
+              {{- toYaml .Values.deployment.securityContext.jobs.generator | nindent 14 }}
+            volumeMounts:
+              - name: {{ include "oathkeeper.name" . }}-keys-volume
+                mountPath: {{ .Values.secret.mountPath }}
           containers:
           - name: keys-supplier
             image: {{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.k8s_tools) }}
@@ -86,14 +79,7 @@ spec:
               --from-file=/tmp/jwks.json \
               -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
             securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                - ALL
-              privileged: false
-              runAsGroup: 65534
-              runAsNonRoot: true
-              runAsUser: 65534
+              {{- toYaml .Values.deployment.securityContext.jobs.supplier | nindent 14 }}
             volumeMounts:
             - name: {{ include "oathkeeper.name" . }}-keys-volume
               mountPath: {{ .Values.secret.mountPath }}
