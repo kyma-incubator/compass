@@ -46,6 +46,13 @@ func NewOperationMaintainer(kind model.OperationType, transact persistence.Trans
 
 // Maintain is responsible to create all missing and remove all obsolete operations
 func (oc *ORDOperationMaintainer) Maintain(ctx context.Context) error {
+	tx, err := oc.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer oc.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	operationsToCreate, operationsToDelete, err := oc.buildNonExistingOperationInputs(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while building operation inputs")
@@ -55,13 +62,6 @@ func (oc *ORDOperationMaintainer) Maintain(ctx context.Context) error {
 	for _, op := range operationsToDelete {
 		operationsToDeleteIDs = append(operationsToDeleteIDs, op.ID)
 	}
-
-	tx, err := oc.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer oc.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
 
 	if err := oc.opSvc.CreateMultiple(ctx, operationsToCreate); err != nil {
 		return errors.Wrap(err, "while creating multiple operations")
