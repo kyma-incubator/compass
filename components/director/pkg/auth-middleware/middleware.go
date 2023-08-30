@@ -319,7 +319,7 @@ func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.R
 
 	if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
 		log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
-		groups := strings.Split(strings.ToUpper(scenarioGroupsValue), ",")
+		groups := strings.Split(scenarioGroupsValue, ", ")
 
 		ctx = scenariogroups.SaveToContext(ctx, groups)
 	}
