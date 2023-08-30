@@ -26,7 +26,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  # TODO!!! Strategy does not exist in OS charts
+  # Custom, does not exist in open source, but is used by our overrides
   strategy:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:

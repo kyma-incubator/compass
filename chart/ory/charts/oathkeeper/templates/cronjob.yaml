@@ -56,7 +56,7 @@ spec:
                 - /bin/sh
                 - -c
                 - |
-                  oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/jwks.json
+                  oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/newJWKS.json
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
@@ -68,7 +68,7 @@ spec:
                 runAsUser: 100
               volumeMounts:
                 - name: {{ include "oathkeeper.name" . }}-keys-volume
-                  mountPath: /etc/secrets
+                  mountPath: {{ .Values.secret.mountPath }}
           containers:
           - name: keys-supplier
             image: {{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.k8s_tools) }}
@@ -77,9 +77,14 @@ spec:
             - -c
             - |
               set -e
+              keepJWKS=$(kubectl get secret {{ include "oathkeeper.secretname" . }} -n {{ .Release.Namespace }} -o json \
+              | jq -r '.data."jwks.json"' | base64 -d | jq -r '.keys[-1]')
+
+              jq ".keys |= [$keepJWKS] + ." {{ .Values.secret.mountPath }}/newJWKS.json > /tmp/jwks.json
+
               kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
-                --from-file={{ .Values.secret.mountPath }}/jwks.json \
-                -n {{ .Release.Namespace }} -o yaml --dry-run | kubectl apply -f -
+              --from-file=/tmp/jwks.json \
+              -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -91,7 +96,7 @@ spec:
               runAsUser: 65534
             volumeMounts:
             - name: {{ include "oathkeeper.name" . }}-keys-volume
-              mountPath: /etc/secrets
+              mountPath: {{ .Values.secret.mountPath }}
               readOnly: true
           volumes:
           - name: {{ include "oathkeeper.name" . }}-keys-volume

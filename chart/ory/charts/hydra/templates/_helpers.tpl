@@ -71,11 +71,10 @@ memory
 
 {{/*
 Generate the name of the secret resource containing secrets
-TODO!!! Custom implemetnation of naming by using existingSecret, might be added in future versions
 */}}
 {{- define "hydra.secretname" -}}
-{{- if .Values.hydra.existingSecret -}}
-{{- .Values.hydra.existingSecret | trunc 63 | trimSuffix "-" -}}
+{{- if .Values.secret.nameOverride -}}
+{{- .Values.secret.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
 {{ include "hydra.fullname" . }}
 {{- end -}}

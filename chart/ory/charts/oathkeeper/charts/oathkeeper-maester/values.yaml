@@ -33,7 +33,7 @@ image:
 imagePullSecrets: []
 
 deployment:
-  # TODO!!! Custom, does not exist, might appear later
+  # Custom, does not exist but is used by the base overrides in the management-plane-config
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
 
   resources:

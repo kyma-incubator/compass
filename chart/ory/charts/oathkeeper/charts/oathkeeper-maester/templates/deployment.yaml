@@ -19,7 +19,7 @@ spec:
       # TODO!!! Different name used; fullname in OS
       app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  # TODO!!! Is hardcoded in OS, might appear later
+  # Custom, does not exist but is used by the base overrides in the management-plane-config
   strategy:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:

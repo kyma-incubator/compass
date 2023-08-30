@@ -37,17 +37,14 @@ global:
       name: "alpine"
       version: "3.15.3"
       directory: "external"
-
 headerRewrite:
   enabled: true
   certificateDataHeader: "Certificate-Data"
   workloadLabel: oathkeeper
-
 # Maintenance options
 maintenance:
   podSecurityPolicy:
     enabled: true
-
 # Overrides for the Hydra chart
 hydra:
   maester:
@@ -92,8 +89,14 @@ hydra:
         type: Utilization
         averageUtilization: 80
   secret:
-    enabled: false
+    enabled: true
+    secretAnnotations:
+      helm.sh/hook-weight: "0"
+      helm.sh/hook: "pre-install"
+      helm.sh/hook-delete-policy: "before-hook-creation"
+      helm.sh/resource-policy: "keep"
   hydra:
+    # Specifically set to 'true' to be able to serve the endpoints on 'http' as they are within Kubernetes
     dev: true
     # The ORY Hydra configuration. For a full list of available settings, check:
     #   https://github.com/ory/hydra/blob/master/docs/config.yaml
@@ -117,8 +120,6 @@ hydra:
             - 192.168.0.0/16
       urls:
         self: {}
-    existingSecret: "ory-hydra-credentials"
-
 # Overrides for the Oathkeeper chart
 oathkeeper:
   # TODO!!! Any version above does not pass the liveness check as it expects at least one rule, our rules are deployed later with compass Helm chart
@@ -225,7 +226,7 @@ oathkeeper:
         api:
           port: 4456
   secret:
-    # Created by the JWKS CronJob
+    # Created by the pre-install job
     enabled: false
   deployment:
     livenessProbe:
@@ -279,7 +280,6 @@ oathkeeper:
         requests:
           cpu: 50m
           memory: 64Mi
-
 # Remote persistance settings
 gcloud-sqlproxy:
   rbac:
