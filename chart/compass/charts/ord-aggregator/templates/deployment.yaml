@@ -136,8 +136,20 @@ spec:
               value: {{ .Values.global.ordAggregator.lease.lockname | quote }}
             - name: APP_ELECTION_LEASE_LOCK_NAMESPACE
               value: {{ .Release.Namespace }}
-            - name: APP_MAX_PARALLEL_WEBHOOK_PROCESSORS
-              value: "{{ .Values.global.ordAggregator.maxParallelWebhookProcessors }}"
+            - name: APP_OPERATIONS_MANAGER_PRIORITY_QUEUE_LIMIT
+              value: "{{ .Values.global.ordAggregator.priorityQueueLimit }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_JOB_INTERVAL
+              value: "{{ .Values.global.ordAggregator.rescheduleJobInterval }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_PERIOD
+              value: "{{ .Values.global.ordAggregator.reschedulePeriod }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_JOB_INTERVAL
+              value: "{{ .Values.global.ordAggregator.rescheduleHangJobInterval }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_PERIOD
+              value: "{{ .Values.global.ordAggregator.rescheduleHangedPeriod }}"
+            - name: APP_MAINTAIN_OPERATIONS_JOB_INTERVAL
+              value: "{{ .Values.global.ordAggregator.maintainOperationsJobInterval }}"
+            - name: APP_PARALLEL_OPERATION_PROCESSORS
+              value: "{{ .Values.global.ordAggregator.parallelOpertionProcessors }}"
             - name: APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION
               value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
             - name: APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS

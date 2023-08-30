@@ -920,11 +920,17 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
-    maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
     tenantMappingConfiguration: '{}'
+    parallelOpertionProcessors: 5
+    priorityQueueLimit: 10
+    rescheduleJobInterval: 24h
+    reschedulePeriod: 168h
+    rescheduleHangJobInterval: 1h
+    rescheduleHangedPeriod: 1h
+    maintainOperationsJobInterval: 60m
   systemFetcher:
     enabled: false
     name: "system-fetcher"

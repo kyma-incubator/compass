@@ -4989,7 +4989,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 			metrixCfg := ord.MetricsConfig{}
 
-			ordCfg := ord.NewServiceConfig(4, 100, credentialExchangeStrategyTenantMappings)
+			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
 			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings)
 			//err := svc.SyncORDDocuments(context.TODO())
 			fmt.Print(svc)
@@ -5218,7 +5218,7 @@ func TestService_ProcessApplications(t *testing.T) {
 
 			metrixCfg := ord.MetricsConfig{}
 
-			ordCfg := ord.NewServiceConfig(4, 100, credentialExchangeStrategyTenantMappings)
+			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
 			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
 			err := svc.ProcessApplication(context.TODO(), test.appIDs()[0])
 			if test.ExpectedErr != nil {
@@ -5489,7 +5489,7 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 			}
 			metricsCfg := ord.MetricsConfig{}
 
-			ordCfg := ord.NewServiceConfig(4, 100, credentialExchangeStrategyTenantMappings)
+			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
 			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConv, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{})
 			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateIDs()[0])
 			if test.ExpectedErr != nil {

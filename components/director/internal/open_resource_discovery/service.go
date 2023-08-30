@@ -43,7 +43,6 @@ const (
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
-	maxParallelWebhookProcessors       int
 	maxParallelSpecificationProcessors int
 
 	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
@@ -74,9 +73,8 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors int, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
+func NewServiceConfig(maxParallelSpecificationProcessors int, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
 	return ServiceConfig{
-		maxParallelWebhookProcessors:             maxParallelWebhookProcessors,
 		maxParallelSpecificationProcessors:       maxParallelSpecificationProcessors,
 		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}

@@ -98,13 +98,13 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	RetryConfig                     retry.Config
-	CertLoaderConfig                certloader.Config
-	GlobalRegistryConfig            ord.GlobalRegistryConfig
-	ElectionConfig                  cronjob.ElectionConfig
-	SyncORDOperationsSchedulePeriod time.Duration `envconfig:"APP_SYNC_ORD_OPERATIONS_SCHEDULE_PERIOD,default=60m"` //TODO add to values.yaml and deployment.yaml
+	RetryConfig                   retry.Config
+	CertLoaderConfig              certloader.Config
+	GlobalRegistryConfig          ord.GlobalRegistryConfig
+	ElectionConfig                cronjob.ElectionConfig
+	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
 
-	MaxParallelWebhookProcessors       int `envconfig:"APP_MAX_PARALLEL_WEBHOOK_PROCESSORS,default=1"`
+	ParallelOperationProcessors        int `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=1"`
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 	MaxParallelSpecificationProcessors int `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
@@ -120,7 +120,7 @@ type config struct {
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
 
 	MetricsConfig           ord.MetricsConfig
-	OperationsManagerConfig operationsmanager.OperationsManagerConfig // TODO add the configuration in deployment.yaml and values.yaml
+	OperationsManagerConfig operationsmanager.OperationsManagerConfig
 }
 
 type securityConfig struct {
@@ -293,7 +293,7 @@ func main() {
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
-	ordConfig := ord.NewServiceConfig(cfg.MaxParallelWebhookProcessors, cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
+	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
 	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping)
 
 	jwtHTTPClient := &http.Client{
@@ -320,7 +320,7 @@ func main() {
 	}
 	ordOperationMaintainer := ord.NewOperationMaintainer(model.OperationTypeOrdAggregation, transact, opSvc, webhookSvc, appSvc)
 
-	for i := 0; i < cfg.MaxParallelWebhookProcessors; i++ {
+	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
 		go func(opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) {
 			for {
 				op, err := opManager.GetOperation(ctx)
@@ -372,7 +372,7 @@ func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer ord.O
 
 			log.C(jobCtx).Infof("ORD documents aggregation finished.")
 		},
-		SchedulePeriod: cfg.SyncORDOperationsSchedulePeriod,
+		SchedulePeriod: cfg.MaintainOperationsJobInterval,
 	}
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }
