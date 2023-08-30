@@ -1,4 +1,6 @@
 {{- if .Values.janitor.enabled -}}
+{{- $janitorExtraEnv := ternary .Values.cronjob.janitor.extraEnv .Values.deployment.extraEnv (not (empty .Values.cronjob.janitor.extraEnv )) -}}
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
