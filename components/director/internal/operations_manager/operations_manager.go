@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -20,14 +19,14 @@ var now = time.Now
 type OperationsManager struct {
 	opType        model.OperationType
 	transact      persistence.Transactioner
-	opSvc         operationsmanager.OperationService
+	opSvc         OperationService
 	mutex         sync.Mutex
 	areJobsStared bool
 	cfg           OperationsManagerConfig
 }
 
 // NewOperationsManager creates new OperationsManager
-func NewOperationsManager(transact persistence.Transactioner, opSvc operationsmanager.OperationService, opType model.OperationType, cfg OperationsManagerConfig) *OperationsManager {
+func NewOperationsManager(transact persistence.Transactioner, opSvc OperationService, opType model.OperationType, cfg OperationsManagerConfig) *OperationsManager {
 	return &OperationsManager{
 		transact: transact,
 		opSvc:    opSvc,
@@ -104,7 +103,7 @@ func (om *OperationsManager) MarkOperationFailed(ctx context.Context, id, errorM
 
 // RescheduleOperation reschedules operation with high priority
 func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationID string) error {
-	return om.rescheduleOperation(ctx, operationID, operationsmanager.HighOperationPriority)
+	return om.rescheduleOperation(ctx, operationID, HighOperationPriority)
 }
 
 // RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.
@@ -185,7 +184,7 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 
-func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority operationsmanager.OperationPriority) error {
+func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority OperationPriority) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err

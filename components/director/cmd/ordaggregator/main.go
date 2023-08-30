@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -34,15 +38,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
-	operationsmanager2 "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/pkg/operations_manager"
 	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
@@ -318,7 +318,7 @@ func main() {
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
-	ordOperationCreator := operationsmanager2.NewOperationMaintainer(model.OperationTypeOrdAggregation, transact, opSvc, webhookSvc, appSvc)
+	ordOperationMaintainer := ord.NewOperationMaintainer(model.OperationTypeOrdAggregation, transact, opSvc, webhookSvc, appSvc)
 
 	for i := 0; i < cfg.MaxParallelWebhookProcessors; i++ {
 		go func(opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) {
@@ -351,7 +351,7 @@ func main() {
 	}
 
 	go func() {
-		if err := startSyncORDOperationsJob(ctx, ordOperationCreator, cfg); err != nil {
+		if err := startSyncORDOperationsJob(ctx, ordOperationMaintainer, cfg); err != nil {
 			log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
 		}
 		cancel()
@@ -360,7 +360,7 @@ func main() {
 	runMainSrv()
 }
 
-func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer operationsmanager2.OperationMaintainer, cfg config) error {
+func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer ord.OperationMaintainer, cfg config) error {
 	resyncJob := cronjob.CronJob{
 		Name: "SyncORDOperations",
 		Fn: func(jobCtx context.Context) {

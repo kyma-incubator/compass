@@ -1,4 +1,4 @@
-package operationsmanager
+package ord
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -26,13 +27,13 @@ type OperationMaintainer interface {
 // ORDOperationMaintainer consists of various resource services responsible for operations creation.
 type ORDOperationMaintainer struct {
 	transact   persistence.Transactioner
-	opSvc      OperationService
+	opSvc      operationsmanager.OperationService
 	webhookSvc WebhookService
 	appSvc     ApplicationService
 }
 
 // NewOperationMaintainer creates OperationMaintainer based on kind
-func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationMaintainer {
+func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc operationsmanager.OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationMaintainer {
 	if kind == model.OperationTypeOrdAggregation {
 		return &ORDOperationMaintainer{
 			transact:   transact,
@@ -245,7 +246,7 @@ func buildORDOperationInput(data string) *model.OperationInput {
 		Status:    model.OperationStatusScheduled,
 		Data:      json.RawMessage(data),
 		Error:     nil,
-		Priority:  int(LowOperationPriority),
+		Priority:  int(operationsmanager.LowOperationPriority),
 		CreatedAt: &now,
 		UpdatedAt: nil,
 	}

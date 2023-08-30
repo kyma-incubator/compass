@@ -1,9 +1,9 @@
-package operationsmanager_test
+package ord_test
 
 import (
 	"testing"
 
-	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ func TestOrdOperationData_GetData(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			opData := operationsmanager.NewOrdOperationData(testCase.AppID, testCase.AppTemplateID)
+			opData := ord.NewOrdOperationData(testCase.AppID, testCase.AppTemplateID)
 
 			// WHEN
 			result, err := opData.GetData()

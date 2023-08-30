@@ -1,4 +1,4 @@
-package operationsmanager_test
+package ord_test
 
 //func TestORDOperationCreator_Create(t *testing.T) {
 //	// GIVEN
