@@ -39,6 +39,16 @@ func GetApplicationPage(t require.TestingT, ctx context.Context, gqlClient *gcli
 	return apps
 }
 
+func GetApplicationPageMinimal(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) graphql.ApplicationPage {
+	getAppReq := FixGetApplicationsRequestWithPaginationMinimal()
+	apps := graphql.ApplicationPage{}
+
+	// THEN
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getAppReq, &apps)
+	require.NoError(t, err)
+	return apps
+}
+
 func GetApplicationPageExt(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) graphql.ApplicationPageExt {
 	getAppReq := FixGetApplicationsRequestWithPagination()
 	apps := graphql.ApplicationPageExt{}
