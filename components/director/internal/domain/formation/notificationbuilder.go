@@ -113,6 +113,7 @@ func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 // PrepareDetailsForConfigurationChangeNotificationGeneration returns GenerateFormationAssignmentNotificationOperationDetails for ConfigurationChanged webhooks
 func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationGeneration(
 	operation model.FormationOperation,
+	formationTemplateID string,
 	formation *model.Formation,
 	applicationTemplate *webhookdir.ApplicationTemplateWithLabels,
 	application *webhookdir.ApplicationWithLabels,
@@ -126,6 +127,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:             operation,
+		FormationTemplateID:   formationTemplateID,
 		CustomerTenantContext: tenantContext,
 		Formation:             formation,
 		ApplicationTemplate:   applicationTemplate,
@@ -175,6 +177,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 // PrepareDetailsForApplicationTenantMappingNotificationGeneration returns GenerateFormationAssignmentNotificationOperationDetails for applicationTenantMapping webhooks
 func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 	operation model.FormationOperation,
+	formationTemplateID string,
 	formation *model.Formation,
 	sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels,
 	sourceApplication *webhookdir.ApplicationWithLabels,
@@ -187,6 +190,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 operation,
+		FormationTemplateID:       formationTemplateID,
 		CustomerTenantContext:     tenantContext,
 		Formation:                 formation,
 		SourceApplicationTemplate: sourceApplicationTemplate,

@@ -74,6 +74,7 @@ func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails
 // GenerateFormationAssignmentNotificationOperationDetails contains details applicable to generate formation assignment notifications join point
 type GenerateFormationAssignmentNotificationOperationDetails struct {
 	Operation             model.FormationOperation
+	FormationTemplateID   string
 	ResourceType          model.ResourceType
 	ResourceSubtype       string
 	ResourceID            string
