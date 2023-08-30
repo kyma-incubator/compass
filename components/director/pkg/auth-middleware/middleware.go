@@ -280,6 +280,7 @@ func (a *Authenticator) getKeyID(token jwt.Token) (string, error) {
 }
 
 func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*idtokenclaims.Claims, int, error) {
+	log.C(ctx).Infof("processing token")
 	bearerToken, err := a.getBearerToken(r)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
@@ -291,7 +292,7 @@ func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*idt
 		log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
 		return nil, http.StatusUnauthorized, err
 	}
-
+	log.C(ctx).Infof("parced token claims")
 	if mdc := log.MdcFromContext(ctx); nil != mdc {
 		mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
 		mdc.Set(logKeyFlow, tokenClaims.Flow)
@@ -307,7 +308,7 @@ func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*idt
 			return nil, http.StatusUnauthorized, err
 		}
 	}
-
+	log.C(ctx).Infof("validated token")
 	return tokenClaims, 0, nil
 }
 
