@@ -7,6 +7,8 @@ const (
 	SystemAuthObjectContextProvider = "SystemAuthObjectContextProvider"
 	// AuthenticatorObjectContextProvider missing godoc
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
+	// DemoObjectContextProvider missing godoc
+	DemoObjectContextProvider = "AuthenticatorObjectContextProvider"
 	// CertServiceObjectContextProvider missing godoc
 	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
 	// TenantHeaderObjectContextProvider missing godoc
