@@ -1,10 +1,11 @@
 package healthz_test
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/healthz"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/healthz"
 
 	"github.com/stretchr/testify/require"
 )
