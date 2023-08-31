@@ -29,7 +29,7 @@ func (c *CallerProvider) GetCaller(config config.Config, region string) (Externa
 
 	callerConfig := securehttp.CallerConfig{
 		Credentials:                  mtlsCredentials,
-		ClientTimeout:                config.ClientTimeout,
+		ClientTimeout:                config.SMClientTimeout,
 		SkipSSLValidation:            config.SkipSSLValidation,
 		ExternalClientCertSecretName: config.ExternalClientCertSecretName,
 	}

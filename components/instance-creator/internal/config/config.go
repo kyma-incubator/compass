@@ -25,11 +25,11 @@ type Config struct {
 	SkipSSLValidation      bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 	JWKSEndpoint           string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
 	ServerTimeout          time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=110s"`
-	ClientTimeout          time.Duration `envconfig:"APP_SM_CLIENT_TIMEOUT,default=30s"`
+	ClientTimeout          time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
 	AuthorizationHeaderKey string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
 	AllowJWTSigningNone    bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	SMInstancesSecretPath  string        `envconfig:"APP_SM_INSTANCES_SECRET_PATH"`
 
-	SMInstancesSecretPath        string                    `envconfig:"APP_SM_INSTANCES_SECRET_PATH"`
 	InstanceClientIDPath         string                    `envconfig:"APP_SM_INSTANCE_CLIENT_ID_PATH"`
 	InstanceSMURLPath            string                    `envconfig:"APP_SM_INSTANCE_SM_URL_PATH"`
 	InstanceTokenURLPath         string                    `envconfig:"APP_SM_INSTANCE_TOKEN_URL_PATH"`
@@ -39,6 +39,7 @@ type Config struct {
 	ExternalClientCertSecretName string                    `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	OAuthTokenPath               string                    `envconfig:"APP_SM_INSTANCE_OAUTH_TOKEN_PATH"`
 	RegionToInstanceConfig       map[string]InstanceConfig `envconfig:"-"`
+	SMClientTimeout              time.Duration             `envconfig:"APP_SM_CLIENT_TIMEOUT,default=30s"`
 
 	Ticker  time.Duration `envconfig:"APP_SM_ASYNC_API_TICKER,default=3s"`
 	Timeout time.Duration `envconfig:"APP_SM_ASYNC_API_TIMEOUT,default=30s"`
