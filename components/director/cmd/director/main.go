@@ -421,8 +421,8 @@ func main() {
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
 
-	fmAuthMiddleware := createFormationMappingAuthenticator(transact, cfg, cfg.DestinationCreatorConfig, appRepo, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	fmHandler := createFormationMappingHandler(transact, appRepo, cfg, cfg.DestinationCreatorConfig, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	fmAuthMiddleware := createFormationMappingAuthenticator(transact, cfg, cfg.DestinationCreatorConfig, appRepo, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	fmHandler := createFormationMappingHandler(transact, appRepo, cfg, cfg.DestinationCreatorConfig, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 
 	asyncFormationAssignmentStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
 	asyncFormationAssignmentStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationAssignmentHandler()) // order is important
@@ -432,6 +432,7 @@ func main() {
 
 	logger.Infof("Registering formation tenant mapping endpoints...")
 	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusAPIEndpoint, fmHandler.UpdateFormationAssignmentStatus).Methods(http.MethodPatch)
+	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusResetAPIEndpoint, fmHandler.ResetFormationAssignmentStatus).Methods(http.MethodPatch)
 	asyncFormationStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationStatusAPIEndpoint, fmHandler.UpdateFormationStatus).Methods(http.MethodPatch)
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))

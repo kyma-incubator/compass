@@ -187,16 +187,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20230828-e32481c1"
+      dir: dev/incubator/
+      version: "PR-3271"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20230828-e32481c1"
+      dir: dev/incubator/
+      version: "PR-3260"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -247,6 +247,7 @@ global:
     formationMappingAsyncStatusApi:
       pathPrefix: "/v1/businessIntegrations"
       formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset"
       formationPath: "/{ucl-formation-id}/status"
     prefix: /director
     graphql:

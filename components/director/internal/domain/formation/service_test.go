@@ -756,7 +756,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				return webhookRepo
 			},
 			TemplateName:       testFormationTemplateName,
-			ExpectedErrMessage: "An error occurred while creating formation with name: \"test-formation\"",
+			ExpectedErrMessage: fmt.Sprintf("An error occurred while creating formation with name: %q", testFormationName),
 		},
 		{
 			Name: "error while enforcing constraint pre operation",
@@ -1682,7 +1682,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			InputFormation:     in,
 			ExpectedFormation:  nil,
-			ExpectedErrMessage: "while deleting formation: An error occurred while getting formation by name: \"test-formation\": Test error",
+			ExpectedErrMessage: fmt.Sprintf("while deleting formation: An error occurred while getting formation by name: %q: Test error", testFormationName),
 		},
 		{
 			Name: "error when deleting formation by name fails",
@@ -1725,7 +1725,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				return webhookRepo
 			},
 			InputFormation:     in,
-			ExpectedErrMessage: "An error occurred while deleting formation with name: \"test-formation\": Test error",
+			ExpectedErrMessage: fmt.Sprintf("An error occurred while deleting formation with name: %q: Test error", testFormationName),
 		},
 		{
 			Name: "error while enforcing constraints pre operation",

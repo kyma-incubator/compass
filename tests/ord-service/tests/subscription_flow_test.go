@@ -527,7 +527,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Find the provider application ID
 		stdT.Logf("List applications with tenant %q", secondaryTenant)
-		appPage := fixtures.GetApplicationPage(stdT, ctx, certSecuredGraphQLClient, secondaryTenant)
+		appPage := fixtures.GetApplicationPageMinimal(stdT, ctx, certSecuredGraphQLClient, secondaryTenant)
 		var providerApp graphql.Application
 		for _, app := range appPage.Data {
 			if app.Name == conf.SubscriptionProviderAppNameValue {
