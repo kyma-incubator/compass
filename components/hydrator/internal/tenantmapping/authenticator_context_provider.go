@@ -89,7 +89,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	isSubaccountToken := false
 	externalTenantID = gjson.Get(extra, authn.Attributes.TenantAttribute.Key).String()
 	if externalTenantID == "" {
-		externalTenantID = gjson.Get(extra, "subaccountid").String()
+		externalTenantID = gjson.Get(extra, "ext_attr.subaccountid").String()
 		log.C(ctx).Infof("Found subaccount tenant in token")
 		isSubaccountToken = true
 		//return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
