@@ -57,31 +57,6 @@ func callerThatGetsCalledOnce(statusCode int, responseBody []byte) func(*testing
 	}
 }
 
-func callerThatGetsCalledTwice(firstStatusCode, secondStatusCode int, firstResponseBody, secondResponseBody []byte) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
-	return func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
-		svcCaller := &automock.ExternalSvcCaller{}
-		firstResponse := httptest.ResponseRecorder{
-			Code: firstStatusCode,
-			Body: bytes.NewBuffer(firstResponseBody),
-		}
-		firstResponseResult := firstResponse.Result()
-		firstResponseResult.Header = make(map[string][]string)
-		firstResponseResult.Header.Set(locationHeaderKey, "/location")
-
-		secondResponse := httptest.ResponseRecorder{
-			Code: secondStatusCode,
-			Body: bytes.NewBuffer(secondResponseBody),
-		}
-
-		svcCaller.On("Call", mock.Anything).Return(firstResponseResult, nil).Once()
-		svcCaller.On("Call", mock.Anything).Return(secondResponse.Result(), nil).Once()
-
-		svcCallerProvider := &automock.ExternalSvcCallerProvider{}
-		svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil).Once()
-		return svcCallerProvider
-	}
-}
-
 func callerThatGetsCalledSeveralTimesInAsyncCase(statusCodes []int, responseBodies [][]byte, shouldSkipLocationHeader bool) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
 	return func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
 		require.Equal(t, len(statusCodes), len(responseBodies))

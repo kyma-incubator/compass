@@ -421,7 +421,7 @@ func TestClient_CreateServiceInstance(t *testing.T) {
 		// Async flow
 		{
 			Name:           "Success in the asynchronous case",
-			CallerProvider: callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, opRespBody),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBody}, false),
 			Config:         testConfig,
 			ExpectedResult: serviceInstanceID,
 		},
@@ -445,25 +445,25 @@ func TestClient_CreateServiceInstance(t *testing.T) {
 		},
 		{
 			Name:             "Error when operation response status code is not 200 OK",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusBadRequest, respBody, opRespBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{respBody, opRespBody}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get asynchronous object operation status. Received status:",
 		},
 		{
 			Name:             "Error when unmarshalling operation status",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, invalidResponseBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, invalidResponseBody}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal object operation status:",
 		},
 		{
 			Name:             "Error when operation state is not 'Succeeded' or 'In Progress'",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, opRespBodyWithFailedState),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithFailedState}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the asynchronous object operation finished with state: %q", types.OperationStateFailed),
 		},
 		{
 			Name:             "Error when returned service instance ID is empty",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, opRespBodyWithEmptyResourceID),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithEmptyResourceID}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "the service instance ID could not be empty",
 		},
@@ -579,7 +579,7 @@ func TestClient_CreateServiceKey(t *testing.T) {
 		// Async flow
 		{
 			Name:           "Success in the asynchronous case",
-			CallerProvider: callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, opRespBody),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBody}, false),
 			Config:         testConfig,
 			ExpectedResult: serviceKeyID,
 		},
@@ -603,25 +603,25 @@ func TestClient_CreateServiceKey(t *testing.T) {
 		},
 		{
 			Name:             "Error when operation response status code is not 200 OK",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusBadRequest, respBody, opRespBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{respBody, opRespBody}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get asynchronous object operation status. Received status:",
 		},
 		{
 			Name:             "Error when unmarshalling operation status",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, invalidResponseBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, invalidResponseBody}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal object operation status:",
 		},
 		{
 			Name:             "Error when operation state is not 'Succeeded' or 'In Progress'",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, opRespBodyWithFailedState),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithFailedState}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the asynchronous object operation finished with state: %q", types.OperationStateFailed),
 		},
 		{
 			Name:             "Error when returned service instance ID is empty",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, respBody, opRespBodyWithEmptyResourceID),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithEmptyResourceID}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "the service key ID could not be empty",
 		},
@@ -704,7 +704,7 @@ func TestClient_DeleteServiceInstance(t *testing.T) {
 		// Async flow
 		{
 			Name:           "Success in the asynchronous case",
-			CallerProvider: callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, emptyResponseBody, opRespBody),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, opRespBody}, false),
 			Config:         testConfig,
 		},
 		{
@@ -726,19 +726,19 @@ func TestClient_DeleteServiceInstance(t *testing.T) {
 		},
 		{
 			Name:             "Error when operation response status code is not 200 OK",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusBadRequest, emptyResponseBody, opRespBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{emptyResponseBody, opRespBody}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get asynchronous object operation status. Received status:",
 		},
 		{
 			Name:             "Error when unmarshalling operation status",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, emptyResponseBody, invalidResponseBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, invalidResponseBody}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal object operation status:",
 		},
 		{
 			Name:             "Error when operation state is not 'Succeeded' or 'In Progress'",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusAccepted, http.StatusOK, emptyResponseBody, opRespBodyWithFailedState),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, opRespBodyWithFailedState}, false),
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the asynchronous object operation finished with state: %q", types.OperationStateFailed),
 		},
@@ -789,7 +789,7 @@ func TestClient_DeleteServiceKeys(t *testing.T) {
 		// Sync flow
 		{
 			Name:           "Success in the synchronous case",
-			CallerProvider: callerThatGetsCalledTwice(http.StatusOK, http.StatusOK, respBody, emptyResponseBody),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusOK}, [][]byte{respBody, emptyResponseBody}, true),
 			Config:         testConfig,
 		},
 		{
@@ -830,7 +830,7 @@ func TestClient_DeleteServiceKeys(t *testing.T) {
 		},
 		{
 			Name:             "Error when caller does not return 200 or 202 on the second call",
-			CallerProvider:   callerThatGetsCalledTwice(http.StatusOK, http.StatusBadRequest, respBody, emptyResponseBody),
+			CallerProvider:   callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusBadRequest}, [][]byte{respBody, emptyResponseBody}, true),
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to delete service binding, status:",
 		},
