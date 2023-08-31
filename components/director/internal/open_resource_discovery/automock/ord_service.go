@@ -13,6 +13,20 @@ type ORDService struct {
 	mock.Mock
 }
 
+// ProcessAppInAppTemplateContext provides a mock function with given fields: ctx, appTemplateID, appID
+func (_m *ORDService) ProcessAppInAppTemplateContext(ctx context.Context, appTemplateID string, appID string) error {
+	ret := _m.Called(ctx, appTemplateID, appID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, appTemplateID, appID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ProcessApplication provides a mock function with given fields: ctx, appID
 func (_m *ORDService) ProcessApplication(ctx context.Context, appID string) error {
 	ret := _m.Called(ctx, appID)

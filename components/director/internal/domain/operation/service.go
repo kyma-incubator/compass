@@ -20,6 +20,7 @@ import (
 type OperationRepository interface {
 	Create(ctx context.Context, model *model.Operation) error
 	Get(ctx context.Context, id string) (*model.Operation, error)
+	GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error)
 	ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
 	Update(ctx context.Context, model *model.Operation) error
 	DeleteMultiple(ctx context.Context, ids []string) error
@@ -177,6 +178,11 @@ func (s *service) RescheduleHangedOperations(ctx context.Context, operationType 
 // Get loads operation with specified ID
 func (s *service) Get(ctx context.Context, operationID string) (*model.Operation, error) {
 	return s.opRepo.Get(ctx, operationID)
+}
+
+// GetByDataAndType loads operation with specified data and type
+func (s *service) GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error) {
+	return s.opRepo.GetByDataAndType(ctx, data, opType)
 }
 
 // ListAllByType returns all operations for specifiet operation type

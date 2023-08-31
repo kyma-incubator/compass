@@ -9,7 +9,7 @@ import (
 // OrdOperationData represents ord operation data.
 type OrdOperationData struct {
 	ApplicationID         string `json:"applicationID"`
-	ApplicationTemplateID string `json:"applicationTemplateID,omitempty"`
+	ApplicationTemplateID string `json:"applicationTemplateID"`
 }
 
 // NewOrdOperationData creates new OrdOperationData.

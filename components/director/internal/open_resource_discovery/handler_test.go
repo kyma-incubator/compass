@@ -10,14 +10,17 @@ import (
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+// TODO Rewrite the whole test ScheduleAggregationForORDData test
 func TestHandler_AggregateORDData(t *testing.T) {
 	apiPath := "/aggregate"
 	metricsConfig := ord.MetricsConfig{}
+	operationsManager := &operationsmanager.OperationsManager{}
 	testErr := errors.New("test error")
 
 	testCases := []struct {
@@ -30,13 +33,13 @@ func TestHandler_AggregateORDData(t *testing.T) {
 		{
 			Name: "Successful ORD data aggregation",
 			RequestBody: ord.AggregationResources{
-				ApplicationIDs:         []string{appID},
-				ApplicationTemplateIDs: []string{appTemplateID},
+				ApplicationID:         appID,
+				ApplicationTemplateID: appTemplateID,
 			},
 			ORDService: func() *automock.ORDService {
 				svc := &automock.ORDService{}
-				svc.On("ProcessApplications", mock.Anything, metricsConfig, []string{appID}).Return(nil)
-				svc.On("ProcessApplicationTemplates", mock.Anything, metricsConfig, []string{appTemplateID}).Return(nil)
+				svc.On("ProcessApplications", mock.Anything, metricsConfig, appID).Return(nil)
+				svc.On("ProcessApplicationTemplates", mock.Anything, metricsConfig, appTemplateID).Return(nil)
 				return svc
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -44,13 +47,13 @@ func TestHandler_AggregateORDData(t *testing.T) {
 		{
 			Name: "Successful ORD data aggregation - empty appIDs and appTemplateIDs",
 			RequestBody: ord.AggregationResources{
-				ApplicationIDs:         []string{},
-				ApplicationTemplateIDs: []string{},
+				ApplicationID:         "",
+				ApplicationTemplateID: "",
 			},
 			ORDService: func() *automock.ORDService {
 				svc := &automock.ORDService{}
-				svc.On("ProcessApplications", mock.Anything, metricsConfig, []string{}).Return(nil)
-				svc.On("ProcessApplicationTemplates", mock.Anything, metricsConfig, []string{}).Return(nil)
+				svc.On("ProcessApplications", mock.Anything, metricsConfig, "").Return(nil)
+				svc.On("ProcessApplicationTemplates", mock.Anything, metricsConfig, "").Return(nil)
 				return svc
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -58,8 +61,8 @@ func TestHandler_AggregateORDData(t *testing.T) {
 		{
 			Name: "Aggregation failed for one or more applications",
 			RequestBody: ord.AggregationResources{
-				ApplicationIDs:         []string{},
-				ApplicationTemplateIDs: []string{},
+				ApplicationID:         "",
+				ApplicationTemplateID: "",
 			},
 			ORDService: func() *automock.ORDService {
 				svc := &automock.ORDService{}
@@ -72,8 +75,8 @@ func TestHandler_AggregateORDData(t *testing.T) {
 		{
 			Name: "Aggregation failed for one or more application templates",
 			RequestBody: ord.AggregationResources{
-				ApplicationIDs:         []string{},
-				ApplicationTemplateIDs: []string{},
+				ApplicationID:         "",
+				ApplicationTemplateID: "",
 			},
 			ORDService: func() *automock.ORDService {
 				svc := &automock.ORDService{}
@@ -91,7 +94,7 @@ func TestHandler_AggregateORDData(t *testing.T) {
 			svc := testCase.ORDService()
 			defer mock.AssertExpectationsForObjects(t, svc)
 
-			handler := ord.NewORDAggregatorHTTPHandler(svc, metricsConfig)
+			handler := ord.NewORDAggregatorHTTPHandler(operationsManager, metricsConfig)
 			requestBody, err := json.Marshal(testCase.RequestBody)
 			assert.NoError(t, err)
 
@@ -99,7 +102,7 @@ func TestHandler_AggregateORDData(t *testing.T) {
 			writer := httptest.NewRecorder()
 
 			// WHEN
-			handler.AggregateORDData(writer, request)
+			handler.ScheduleAggregationForORDData(writer, request)
 
 			// THEN
 			resp := writer.Result()

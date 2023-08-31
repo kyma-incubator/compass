@@ -103,6 +103,16 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.Operation, er
 	return r.conv.FromEntity(&entity), nil
 }
 
+// GetByDataAndType retrieves an operation by data and type
+func (r *pgRepository) GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error) {
+	var entity Entity
+	if err := r.globalSingleGetter.GetGlobal(ctx, repo.Conditions{repo.NewJSONCondition("data", data), repo.NewEqualCondition("op_type", opType)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
 // Delete deletes an operation by id
 func (r *pgRepository) Delete(ctx context.Context, id string) error {
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})

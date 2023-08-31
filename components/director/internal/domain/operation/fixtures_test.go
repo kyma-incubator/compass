@@ -19,6 +19,7 @@ const (
 	highOperationPriority int                 = 2
 	operationErrMsg       string              = "operation processing failed"
 	queueLimit            int                 = 10
+	data                  string              = "{\"applicationID\": \"1c992715-5066-491f-8cbf-9d0fab4cd61c\",  \"applicationTemplateID\": \"a24f7aea-4da1-4caa-9716-76f6f6551b01\"}"
 )
 
 var (
@@ -29,8 +30,8 @@ func fixOperationInput(opType model.OperationType, opStatus model.OperationStatu
 	return &model.OperationInput{
 		OpType:    opType,
 		Status:    opStatus,
-		Data:      json.RawMessage("[]"),
-		Error:     json.RawMessage("[]"),
+		Data:      json.RawMessage(data),
+		Error:     json.RawMessage(data),
 		Priority:  1,
 		CreatedAt: &time.Time{},
 		UpdatedAt: &time.Time{},
@@ -50,8 +51,8 @@ func fixOperationModelWithID(id string, opType model.OperationType, opStatus mod
 		ID:        id,
 		OpType:    opType,
 		Status:    opStatus,
-		Data:      json.RawMessage("[]"),
-		Error:     json.RawMessage("[]"),
+		Data:      json.RawMessage(data),
+		Error:     json.RawMessage(data),
 		Priority:  priority,
 		CreatedAt: &time.Time{},
 		UpdatedAt: &time.Time{},
@@ -63,8 +64,8 @@ func fixEntityOperation(id string, opType model.OperationType, opStatus model.Op
 		ID:        id,
 		Type:      string(opType),
 		Status:    string(opStatus),
-		Data:      repo.NewValidNullableString("[]"),
-		Error:     repo.NewValidNullableString("[]"),
+		Data:      repo.NewValidNullableString(data),
+		Error:     repo.NewValidNullableString(data),
 		Priority:  1,
 		CreatedAt: &time.Time{},
 		UpdatedAt: &time.Time{},

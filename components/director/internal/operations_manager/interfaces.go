@@ -21,6 +21,7 @@ const (
 //
 //go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationService interface {
+	Create(ctx context.Context, in *model.OperationInput) (string, error)
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
 	DeleteMultiple(ctx context.Context, ids []string) error
 	MarkAsCompleted(ctx context.Context, id string) error
@@ -29,6 +30,7 @@ type OperationService interface {
 	ListPriorityQueue(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
 	Get(ctx context.Context, operationID string) (*model.Operation, error)
+	GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error)
 	Update(ctx context.Context, input *model.Operation) error
 	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
 	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error

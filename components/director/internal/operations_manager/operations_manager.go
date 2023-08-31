@@ -70,6 +70,55 @@ func (om *OperationsManager) GetOperation(ctx context.Context) (*model.Operation
 	return nil, apperrors.NewNoScheduledOperationsError()
 }
 
+// CreateOperation creates one operation
+func (om *OperationsManager) CreateOperation(ctx context.Context, in *model.OperationInput) (string, error) {
+	om.mutex.Lock()
+	defer om.mutex.Unlock()
+
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	operationID, err := om.opSvc.Create(ctx, in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating operation %v ", in)
+	}
+
+	return operationID, tx.Commit()
+}
+
+// FindOperationByData retrieves one one operation by it's data
+func (om *OperationsManager) FindOperationByData(ctx context.Context, data interface{}) (*model.Operation, error) {
+	om.mutex.Lock()
+	defer om.mutex.Unlock()
+
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	operation, err := om.opSvc.GetByDataAndType(ctx, data, om.opType)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, err
+		} else {
+			return nil, errors.Wrapf(err, "while fetching operation with data %v and type %v ", data, om.opType)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return operation, nil
+}
+
 // MarkOperationCompleted marks the operation with the given ID as completed
 func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id string) error {
 	tx, err := om.transact.Begin()

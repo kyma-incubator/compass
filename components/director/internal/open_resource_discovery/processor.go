@@ -8,9 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ORDService missing godoc
+//
+//go:generate mockery --name=ORDService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ORDService interface {
+	ProcessApplication(ctx context.Context, appID string) error
+	ProcessApplicationTemplate(ctx context.Context, appTemplateID string) error
+	ProcessAppInAppTemplateContext(ctx context.Context, appTemplateID, appID string) error
+}
+
 // OperationsProcessor defines Open Resource Discovery operation processor
 type OperationsProcessor struct {
-	OrdSvc *Service
+	OrdSvc ORDService
 }
 
 // Process processes the given operation

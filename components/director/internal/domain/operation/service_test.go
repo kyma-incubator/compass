@@ -385,6 +385,66 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetByDataAndType(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		RepositoryFn   func() *automock.OperationRepository
+		Input          string
+		ExpectedErr    error
+		ExpectedOutput *model.Operation
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("GetByDataAndType", ctx, data, model.OperationTypeOrdAggregation).Return(opModel, nil).Once()
+				return repo
+			},
+			Input:          data,
+			ExpectedOutput: opModel,
+		},
+		{
+			Name: "Error while getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("GetByDataAndType", ctx, data, model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:       data,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			op, err := svc.GetByDataAndType(ctx, testCase.Input, model.OperationTypeOrdAggregation)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Equal(t, testCase.ExpectedOutput, op)
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_ListPriorityQueue(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

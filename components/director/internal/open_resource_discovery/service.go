@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/imdario/mergo"
@@ -103,6 +104,7 @@ type Service struct {
 	appTemplateVersionSvc ApplicationTemplateVersionService
 	appTemplateSvc        ApplicationTemplateService
 	labelSvc              LabelService
+	opSvc                 operationsmanager.OperationService
 
 	ordWebhookMapping []application.ORDWebhookMapping
 
@@ -113,7 +115,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
@@ -138,6 +140,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		appTemplateSvc:        appTemplateSvc,
 		labelSvc:              labelService,
 		ordWebhookMapping:     ordWebhookMapping,
+		opSvc:                 opSvc,
 	}
 }
 

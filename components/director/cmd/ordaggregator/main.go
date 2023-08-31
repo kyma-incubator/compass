@@ -293,8 +293,12 @@ func main() {
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
+	opRepo := operation.NewRepository(operation.NewConverter())
+	opSvc := operation.NewService(opRepo, uuid.NewService())
+
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 
 	jwtHTTPClient := &http.Client{
 		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
@@ -303,7 +307,7 @@ func main() {
 		},
 	}
 
-	handler := initHandler(ctx, jwtHTTPClient, ordSvc, cfg, transact)
+	handler := initHandler(ctx, jwtHTTPClient, operationsManager, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -312,9 +316,6 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	opRepo := operation.NewRepository(operation.NewConverter())
-	opSvc := operation.NewService(opRepo, uuid.NewService())
-	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -437,7 +438,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service, cfg config, transact persistence.Transactioner) http.Handler {
+func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, cfg config, transact persistence.Transactioner) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -449,11 +450,11 @@ func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service,
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
+	handler := ord.NewORDAggregatorHTTPHandler(opMgr, cfg.MetricsConfig)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	configureTenantContextMiddleware(apiRouter, transact)
-	apiRouter.HandleFunc(aggregateEndpoint, handler.AggregateORDData).Methods(http.MethodPost)
+	apiRouter.HandleFunc(aggregateEndpoint, handler.ScheduleAggregationForORDData).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
