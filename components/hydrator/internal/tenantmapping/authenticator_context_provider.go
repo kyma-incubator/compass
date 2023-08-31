@@ -113,6 +113,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	if !isSubaccountToken {
 		objCtx = NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
 		log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
+		return objCtx, nil
 	} else {
 		atomIDInt := tenantMapping.Labels["atomResourceID"]
 		atomID, _ := atomIDInt.(string)
