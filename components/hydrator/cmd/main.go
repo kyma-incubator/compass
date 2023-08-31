@@ -229,6 +229,7 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internal
 		tenantmappingconst.UserObjectContextProvider:             tenantmapping.NewUserContextProvider(internalDirectorClientProvider.Client(), staticGroupsRepo),
 		tenantmappingconst.SystemAuthObjectContextProvider:       tenantmapping.NewSystemAuthContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
 		tenantmappingconst.AuthenticatorObjectContextProvider:    tenantmapping.NewAuthenticatorContextProvider(internalDirectorClientProvider.Client(), authenticators),
+		tenantmappingconst.DemoObjectContextProvider:             tenantmapping.NewdemoContextProvider(internalDirectorClientProvider.Client(), authenticators),
 		tenantmappingconst.CertServiceObjectContextProvider:      tenantmapping.NewCertServiceContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
 		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
 		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(internalGatewayClientProvider.Client(), consumerClaimsKeysConfig),
