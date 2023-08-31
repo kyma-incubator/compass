@@ -18,7 +18,6 @@ package tenantmapping
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
@@ -39,28 +38,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewAuthenticatorContextProvider implements the ObjectContextProvider interface by looking for user scopes in the 'scope' token attribute
+// NewdemoContextProvider implements the ObjectContextProvider interface by looking for user scopes in the 'scope' token attribute
 // and also extracts the tenant information from the token by using a dedicated TenantAttribute defined for the specified authenticator.
 // It uses its authenticators to extract authentication details from the requestData.
-func NewAuthenticatorContextProvider(clientProvider DirectorClient, authenticators []authenticator.Config) *authenticatorContextProvider {
-	return &authenticatorContextProvider{
+func NewdemoContextProvider(clientProvider DirectorClient, authenticators []authenticator.Config) *demoContextProvider {
+	return &demoContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
-			TenantKey:         tenantmapping.ConsumerTenantKey,
-			ExternalTenantKey: tenantmapping.ExternalTenantKey,
+			TenantKey:         tenantmapping.ProviderTenantKey,
+			ExternalTenantKey: tenantmapping.ProviderExternalTenantKey,
 		},
 		authenticators: authenticators,
 	}
 }
 
-type authenticatorContextProvider struct {
+type demoContextProvider struct {
 	directorClient DirectorClient
 	tenantKeys     KeysExtra
 	authenticators []authenticator.Config
 }
 
-// GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
-func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+// GetObjectContext is the demoContextProvider implementation of the ObjectContextProvider interface
+func (m *demoContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
@@ -85,18 +84,19 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 
 	clientID := gjson.Get(extra, authn.Attributes.ClientID.Key).String()
 
-	isSubaccountToken := false
 	externalTenantID = gjson.Get(extra, authn.Attributes.TenantAttribute.Key).String()
 	if externalTenantID == "" {
 		externalTenantID = gjson.Get(extra, "subaccountid").String()
 		log.C(ctx).Infof("Found subaccount tenant in token")
-		isSubaccountToken = true
-		//return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
+		if externalTenantID == "" {
+			return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
+		}
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
 
 	tenantMapping, err := m.directorClient.GetTenantByExternalID(ctx, externalTenantID)
+
 	if err != nil {
 		if directorErrors.IsGQLNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
@@ -107,34 +107,14 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	var objCtx ObjectContext
-	var atomTenant *graphql.Tenant
-	if !isSubaccountToken {
-		objCtx = NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
-		log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
-	} else {
-		atomIDInt := tenantMapping.Labels["atomResourceID"]
-		atomID, _ := atomIDInt.(string)
-		atomTenant, _ = m.directorClient.GetTenantByExternalID(ctx, atomID)
-		for {
-			if atomTenant.ParentID == "" {
-				break
-			}
-			atomTenant, err = m.directorClient.GetTenantByInternalID(ctx, atomTenant.ParentID)
-			if err != nil {
-				log.C(ctx).Infof("Failed to fetch tenant with external ID %s", externalTenantID)
-				return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider), nil
-			}
-		}
-	}
-	log.C(ctx).Infof("Providing object context with the atom tenant")
-	objCtx = NewObjectContext(NewTenantContext(atomTenant.ID, atomTenant.InternalID), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, mergeWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.AuthenticatorObjectContextProvider)
+	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
 }
 
 // Match checks whether any of its preconfigured authenticators matches the ReqData and if so builds AuthDetails for the matched authenticator
-func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (m *demoContextProvider) Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
 	coords, exist, err := data.ExtractCoordinates()
 	if err != nil {
 		return false, nil, errors.Wrap(err, "while extracting coordinates")
