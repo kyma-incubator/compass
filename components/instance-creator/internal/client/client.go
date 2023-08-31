@@ -24,13 +24,27 @@ const (
 	LocationHeaderKey = "Location"
 )
 
+// ExternalSvcCaller is used to call external services with given authentication
+//
+//go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ExternalSvcCaller interface {
+	Call(*http.Request) (*http.Response, error)
+}
+
+// ExternalSvcCallerProvider provides ExternalSvcCaller based on the provided config and region
+//
+//go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ExternalSvcCallerProvider interface {
+	GetCaller(cfg config.Config, region string) (ExternalSvcCaller, error)
+}
+
 type client struct {
-	cfg            *config.Config
-	callerProvider *CallerProvider
+	cfg            config.Config
+	callerProvider ExternalSvcCallerProvider
 }
 
 // NewClient creates a new client
-func NewClient(cfg *config.Config, callerProvider *CallerProvider) *client {
+func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *client {
 	return &client{
 		cfg:            cfg,
 		callerProvider: callerProvider,
@@ -196,7 +210,7 @@ func (c *client) CreateServiceInstance(ctx context.Context, region, serviceInsta
 	}
 
 	log.C(ctx).Infof("Creating service instance with name: %q from plan with ID: %q and subaccount ID: %q", serviceInstanceName, planID, subaccountID)
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
 	}
@@ -268,7 +282,7 @@ func (c *client) CreateServiceKey(ctx context.Context, region, serviceKeyName, s
 		return "", err
 	}
 
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
 	}
@@ -330,9 +344,9 @@ func (c *client) DeleteServiceInstance(ctx context.Context, region, serviceInsta
 	}
 
 	log.C(ctx).Infof("Deleting service instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
-		return errors.Errorf("error while getting caller for region %s", region)
+		return errors.Errorf("error while getting caller for region: %s", region)
 	}
 
 	resp, err := caller.Call(req)
@@ -366,9 +380,9 @@ func (c *client) DeleteServiceInstance(ctx context.Context, region, serviceInsta
 
 // DeleteServiceKeys deletes all Service Keys related to a Service Instance both synchronously and asynchronously
 func (c *client) DeleteServiceKeys(ctx context.Context, region, serviceInstanceID, serviceInstanceName, subaccountID string) error {
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
-		return errors.Errorf("error while getting caller for region %s", region)
+		return errors.Errorf("error while getting caller for region: %s", region)
 	}
 
 	svcKeyIDs, err := c.retrieveServiceKeysIDByInstanceID(ctx, caller, serviceInstanceID, serviceInstanceName, subaccountID)
@@ -448,7 +462,7 @@ func (c *client) executeSyncRequest(ctx context.Context, strURL, region string) 
 		return nil, err
 	}
 
-	caller, err := c.callerProvider.GetCaller(*c.cfg, region)
+	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting caller for region: %s", region)
 	}
@@ -569,7 +583,7 @@ func (c *client) retrieveServiceKeysIDByInstanceID(ctx context.Context, caller E
 	var svcKeys types.ServiceKeys
 	err = json.Unmarshal(body, &svcKeys)
 	if err != nil {
-		return nil, errors.Errorf("Failed to unmarshal service keys: %v", err)
+		return nil, errors.Errorf("failed to unmarshal service keys: %v", err)
 	}
 
 	serviceKeysIDs := make([]string, 0, len(svcKeys.Items))

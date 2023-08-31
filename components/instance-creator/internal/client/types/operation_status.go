@@ -7,6 +7,8 @@ const (
 	OperationStateSucceeded OperationState = "succeeded"
 	// OperationStateInProgress represents a operation that is in progress
 	OperationStateInProgress OperationState = "in progress"
+	// OperationStateFailed represents a operation that is failed
+	OperationStateFailed OperationState = "failed"
 )
 
 // OperationStatus holds info about the operation when a call is asynchronous

@@ -66,12 +66,10 @@ func main() {
 	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(paths.HealthzEndpoint), header.AttachHeadersToContext())
 
 	creator := mainRouter.PathPrefix(cfg.APIRootPath).Subrouter()
-	creator.Use(tokenValidationMiddleware.KymaAdapterHandler()) //todo::: double check to add separate method if that won't do the work
+	creator.Use(tokenValidationMiddleware.KymaAdapterHandler())
 	creator.Use(tenantValidationMiddleware.Handler())
 
-	callerProvider := client.NewCallerProvider()
-
-	smClient := client.NewClient(&cfg, callerProvider)
+	smClient := client.NewClient(cfg, client.NewCallerProvider())
 	c := handler.NewHandler(smClient)
 
 	creator.HandleFunc("/", c.HandlerFunc)

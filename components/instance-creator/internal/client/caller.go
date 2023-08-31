@@ -1,27 +1,11 @@
 package client
 
 import (
-	"net/http"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/securehttp"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
 	"github.com/pkg/errors"
 )
-
-// ExternalSvcCaller is used to call external services with given authentication
-//
-//go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ExternalSvcCaller interface {
-	Call(*http.Request) (*http.Response, error)
-}
-
-// ExternalSvcCallerProvider provides ExternalSvcCaller based on the provided config and region
-//
-//go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ExternalSvcCallerProvider interface {
-	GetCaller(cfg config.Config, region string) (ExternalSvcCaller, error)
-}
 
 // CallerProvider is used to provide ExternalSvcCaller to call external services with given authentication
 type CallerProvider struct{}
