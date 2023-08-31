@@ -32,6 +32,7 @@ type CertificateAPIConfig struct {
 	CertificateChainKey  string `envconfig:"APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY"`
 }
 
+// URLConfig contains URL configuration properties
 type URLConfig struct {
 	BaseURL             string
 	SubaccountLevelPath string
@@ -42,6 +43,7 @@ type URLConfig struct {
 	InstanceIDParam     string
 }
 
+// URLParameters contains URL path parameters configuration
 type URLParameters struct {
 	EntityName   string
 	Region       string
