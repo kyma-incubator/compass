@@ -51,8 +51,7 @@ spec:
           command:
             - /manager
           args:
-            # TODO!!! Kyma has added custom port, it is hardcoded in the OS version to 8080
-            - --metrics-addr=0.0.0.0:{{ .Values.port.metrics }}
+            - --metrics-addr=0.0.0.0:8080
             - controller
             - --rulesConfigmapName={{ include "oathkeeper-maester.getCM" . }}
             {{- if .Values.rulesConfigmapNamespace }}
@@ -90,7 +89,7 @@ spec:
       {{- with .Values.deployment.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    # TODO!!! Does not exist in OS
+    # Custom implementation; does not exist in OS
     {{- if .Values.global.priorityClassName }}
       priorityClassName: {{ .Values.global.priorityClassName }}
     {{- end }}

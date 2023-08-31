@@ -1,5 +1,4 @@
-#Kyma resource
-# TODO!!! Custom implementation; this job does not exist in OS
+# Custom implementation; this job does not exist in OS
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -35,6 +34,8 @@ roleRef:
   name: ory-oathkeeper-keys-job-role
   apiGroup: rbac.authorization.k8s.io
 ---
+# Rotate the Oathkeeper JWKS for security measures
+# The new JWKS is used to sign the new tokens, the old one is kept to validate old tokens
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -58,7 +59,7 @@ spec:
               - |
                 oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/newJWKS.json
             securityContext:
-              {{- toYaml .Values.deployment.securityContext.jobs.generator | nindent 14 }}
+              {{- toYaml .Values.deployment.securityContext.oathkeeper | nindent 14 }}
             volumeMounts:
               - name: {{ include "oathkeeper.name" . }}-keys-volume
                 mountPath: {{ .Values.secret.mountPath }}
@@ -79,7 +80,7 @@ spec:
               --from-file=/tmp/jwks.json \
               -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
             securityContext:
-              {{- toYaml .Values.deployment.securityContext.jobs.supplier | nindent 14 }}
+              {{- toYaml .Values.deployment.securityContext.anonymous | nindent 14 }}
             volumeMounts:
             - name: {{ include "oathkeeper.name" . }}-keys-volume
               mountPath: {{ .Values.secret.mountPath }}

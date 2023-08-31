@@ -46,7 +46,7 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "oathkeeper.labels" -}}
-# TODO!!! custom field, does not exist in OS
+# Custom field, does not exist in OS
 app: {{ include "oathkeeper.name" . }}
 app.kubernetes.io/name: {{ include "oathkeeper.name" . }}
 helm.sh/chart: {{ include "oathkeeper.chart" . }}

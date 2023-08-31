@@ -1,3 +1,4 @@
+# Custom resources used to generate the initial Oathkeeper JWKS
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -72,7 +73,7 @@ spec:
           - |
             oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/jwks.json
         securityContext:
-          {{- toYaml .Values.deployment.securityContext.jobs.generator | nindent 10 }}
+          {{- toYaml .Values.deployment.securityContext.oathkeeper | nindent 10 }}
         volumeMounts:
           - name: {{ include "oathkeeper.name" . }}-keys-volume
             mountPath: {{ .Values.secret.mountPath }}
@@ -88,7 +89,7 @@ spec:
             --from-file={{ .Values.secret.mountPath }}/jwks.json \
             -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
         securityContext:
-          {{- toYaml .Values.deployment.securityContext.jobs.supplier | nindent 10 }}
+          {{- toYaml .Values.deployment.securityContext.anonymous | nindent 10 }}
         volumeMounts:
           - name: {{ include "oathkeeper.name" . }}-keys-volume
             mountPath: {{ .Values.secret.mountPath }}

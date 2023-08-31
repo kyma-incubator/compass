@@ -18,7 +18,7 @@ metadata:
       {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-# TODO!!! Custom logic that checks whether autoscaling is enabled, could exist in future Ory versions
+# Custom logic that checks whether autoscaling is enabled
 {{- if not .Values.deployment.autoscaling.enabled}}
   replicas: {{ .Values.replicaCount }}
 {{- end }}
@@ -81,10 +81,10 @@ spec:
             - |
               touch /etc/rules/access-rules.json
               chmod 666 /etc/rules/access-rules.json
-          {{- if .Values.deployment.securityContext.sidecar }}
+          {{- if .Values.deployment.securityContext.anonymous }}
           securityContext:
-            # TODO!!! Custom implementation of security context; in OS charts it is one, in the Kyma one it is divided by sidecar, controller etc.
-            {{- toYaml .Values.deployment.securityContext.sidecar | nindent 12 }}
+            # Custom implementation as there are different security contexts in the default values.yaml
+            {{- toYaml .Values.deployment.securityContext.anonymous | nindent 12 }}
           {{- end }}
       {{- if .Values.deployment.extraInitContainers }}
         {{- tpl  .Values.deployment.extraInitContainers . | nindent 8 }}
@@ -163,7 +163,7 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
-          # TODO!!! this is changed to adapt to the Kyma-specific oathkeeper values.yaml
+          # Custom implementation as there are different security contexts in the default values.yaml
           securityContext:
             {{- toYaml .Values.deployment.securityContext.oathkeeper | nindent 12 }}
         - name: {{ .Chart.Name }}-maester
@@ -176,7 +176,7 @@ spec:
             - sidecar
             - --rulesFilePath=/etc/rules/access-rules.json
           resources:
-            # TODO!!! Kyma have combine the oathkeeper-maester values in the oathkeeper values, look for a way to divide them back
+            # Custom implementation to separate the resources of the Oathkeeper & Oathkeeper maester
             {{- index .Values "oathkeeper-maester" "deployment" "resources" | toYaml | nindent 12 }}
           {{- with .Values.sidecar.envs }}
           env:
@@ -189,7 +189,7 @@ spec:
             - name: {{ include "oathkeeper.name" . }}-rules-volume
               mountPath: /etc/rules
               readOnly: false
-          # TODO!!! security context is divided in the Kyma values, but is the same in OS chart
+          # Custom implementation as there are different security contexts in the default values.yaml
           securityContext:
             {{- toYaml .Values.deployment.securityContext.maester | nindent 12 }}
         {{- if .Values.deployment.extraContainers }}
@@ -197,12 +197,12 @@ spec:
         {{- end }}
       serviceAccountName: {{ default "maester" .Values.maester.nameOverride }}-account
       # TODO!!! This breaks oathkeeerper-maester for some reason
-      # automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       {{- with .Values.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    # TODO!!! Does not exist in the OS chart, might be added later
+    # Custom implementation; does not exist in the OS chart
     {{- if .Values.global.priorityClassName }}
       priorityClassName: {{ .Values.global.priorityClassName }}
     {{- end }}

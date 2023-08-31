@@ -229,6 +229,7 @@ oathkeeper:
     # Created by the pre-install job
     enabled: false
   deployment:
+    automountServiceAccountToken: true
     livenessProbe:
       initialDelaySeconds: 15
       periodSeconds: 10

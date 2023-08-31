@@ -214,9 +214,10 @@ deployment:
   #    cpu: 100m
   #  memory: 128Mi
 
-  # TODO!!! Custom implementation
+  # Custom implementation; the different security contexts are used to run as non-root users
   securityContext:
-    sidecar:
+    # Used to run as non-root user the busybox implementations; this UID is 'anonymous'
+    anonymous:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
@@ -225,16 +226,8 @@ deployment:
       runAsGroup: 65534
       runAsNonRoot: true
       runAsUser: 65534
+    # Oathkeeper images have a custom user 'ory' that is with UID 100 and GID 101
     oathkeeper:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-      privileged: false
-      runAsGroup: 1000
-      runAsNonRoot: true
-      runAsUser: 1000
-    maester:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
@@ -243,34 +236,17 @@ deployment:
       runAsGroup: 101
       runAsNonRoot: true
       runAsUser: 100
-    controller:
+    # Oathkeeper maester images have a custom user with UID 1000
+    maester:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
         - ALL
       privileged: false
-      runAsGroup: 65534
+      runAsGroup: 1000
       runAsNonRoot: true
-      runAsUser: 65534
-    jobs:
-      generator:
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-          - ALL
-        privileged: false
-        runAsGroup: 101
-        runAsNonRoot: true
-        runAsUser: 100
-      supplier:
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-          - ALL
-        privileged: false
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
+      runAsUser: 1000
+      readOnlyRootFilesystem: true
   ################
   lifecycle: {}
   # -- Configure the livenessProbe parameters
