@@ -329,11 +329,11 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230830082353-61887536f715 h1:RQeg/62NNaQOkLQ/0KTCnE4gQigntrzY7SU/NVnu+V4=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230830082353-61887536f715/go.mod h1:my5lL6/8ejfQ7p3lnKpHUbXXOAEI9ypJ+87a8Fh8KNU=
-github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230712073551-229579113461 h1:J/tMSghH254B5I7SPoRT2hkEgyjP4wG/1GWCYF20rBI=
-github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230830082353-61887536f715 h1:OLZpKZWOriPqOZxXGx/U04RC2mdCqanRVK7AlPWRn1s=
-github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230830082353-61887536f715/go.mod h1:SK/T2DZgrgIhgeiVSNqeh7xH2I1iz4lROoIrSvqgXPk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230831051015-22311136f2f9 h1:51Lw0i7o5oiXIOhfMOe0OR4OdYUJ0aWulbdkSDfc76o=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230831051015-22311136f2f9/go.mod h1:23UFj7Qiyh/fgeG+RvqP2+kr+FUYQAIZvVEfPOsnfpQ=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230830082353-61887536f715 h1:t13uYjaR9vxNpKTxQb2BiZibsgqb65esTsBeZH47A9Q=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230831051015-22311136f2f9 h1:Kr4O2FheUtRtMkgsjlyytDYz7n0oX1W+Ecm5QXpCDHk=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230831051015-22311136f2f9/go.mod h1:0Jd/GbANVRRdnaUZRqQ2hifO6r3RBEXkuyxdl6KuK38=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
 github.com/lestrrat-go/blackmagic v1.0.1 h1:lS5Zts+5HIC/8og6cGHb0uCcNCa3OUt1ygh3Qz2Fe80=
 github.com/lestrrat-go/httpcc v1.0.1 h1:ydWCStUeJLkpYyjLDHihupbn2tYmZ7m22BGkcvZZrIE=

@@ -23,8 +23,8 @@ require (
 
 require (
 	github.com/avast/retry-go/v4 v4.3.3
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20230830082353-61887536f715
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230830082353-61887536f715
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230831051015-22311136f2f9
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230831051015-22311136f2f9
 	github.com/prometheus/client_golang v1.14.0
 	golang.org/x/oauth2 v0.7.0
 )
@@ -59,7 +59,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230830082353-61887536f715 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230831051015-22311136f2f9 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
