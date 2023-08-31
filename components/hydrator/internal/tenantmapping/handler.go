@@ -27,6 +27,7 @@ import (
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
+	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
 }
