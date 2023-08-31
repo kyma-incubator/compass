@@ -29,7 +29,7 @@ const (
 
 var respErrorMsg = "An unexpected error occurred while processing the request"
 
-// Handler is responsible to mock and handle any Destination Creator Service and Destination Service requests
+// Handler is responsible to mock and handle any Destination Service requests
 type Handler struct {
 	Config                     *Config
 	DestinationSvcDestinations map[string]json.RawMessage
@@ -79,8 +79,8 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
-	subaccountIDParamValue := routeVars[subaccountIDParam]
+	subaccountIDParamValue := routeVars[h.Config.DestinationAPIConfig.SubaccountIDParam]
+	instanceIDParamValue := routeVars[h.Config.DestinationAPIConfig.InstanceIDParam]
 
 	var destinationRequestBody DestinationRequestBody
 	switch destinationcreatorpkg.AuthType(authTypeResult.String()) {
@@ -98,7 +98,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 
-	statusCode, err := h.createDestination(ctx, bodyBytes, destinationRequestBody, subaccountIDParamValue)
+	statusCode, err := h.createDestination(ctx, bodyBytes, destinationRequestBody, subaccountIDParamValue, instanceIDParamValue)
 	if err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, fmt.Sprintf("An unexpected error occurred while creating %s destination", destinationRequestBody.GetDestinationType()), correlationID, statusCode)
 		return
@@ -175,8 +175,10 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 	}
 
 	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
-
-	if _, ok := h.DestinationSvcCertificates[destinationCertName]; ok {
+	subaccountIDParamValue := routeVars[h.Config.DestinationAPIConfig.SubaccountIDParam]
+	instanceIDParamValue := routeVars[h.Config.DestinationAPIConfig.InstanceIDParam]
+	certificateIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", destinationCertName, subaccountIDParamValue, instanceIDParamValue)
+	if _, ok := h.DestinationSvcCertificates[certificateIdentifier]; ok {
 		log.C(ctx).Infof("Certificate with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
 		httputils.Respond(writer, http.StatusConflict)
 		return
@@ -235,20 +237,18 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
-func (h *Handler) createDestination(ctx context.Context, bodyBytes []byte, reqBody DestinationRequestBody, subaccountID string) (int, error) {
+func (h *Handler) createDestination(ctx context.Context, bodyBytes []byte, reqBody DestinationRequestBody, subaccountID, instanceID string) (int, error) {
 	destinationTypeName := reqBody.GetDestinationType()
 	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
 		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling %s destination request body", destinationTypeName)
 	}
-
-	reqBody.SetSubaccountIDValue(subaccountID)
 
 	log.C(ctx).Infof("Validating %s destination request body...", destinationTypeName)
 	if err := reqBody.Validate(h.Config); err != nil {
 		return http.StatusBadRequest, errors.Wrapf(err, "An error occurred while validating %s destination request body", destinationTypeName)
 	}
 
-	destinationIdentifier := reqBody.GetDestinationUniqueIdentifier()
+	destinationIdentifier := reqBody.GetDestinationUniqueIdentifier(subaccountID, instanceID)
 	if _, ok := h.DestinationSvcDestinations[destinationIdentifier]; ok {
 		log.C(ctx).Infof("Destination with identifier: %q already exists. Returning 409 Conflict...", destinationIdentifier)
 		return http.StatusConflict, nil
@@ -296,9 +296,9 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
-	subaccount := r.Header.Get("subaccount")
-
-	destinationIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", destinationNameParamValue, subaccount, "")
+	subaccountHeaderValue := r.Header.Get("subaccount")      // todo::: adapt
+	instanceIDHeaderValue := r.Header.Get("instance-id-key") // todo::: adapt
+	destinationIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", destinationNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
 
 	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
 	if !exists {
@@ -338,7 +338,11 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 		return
 	}
 
-	cert, exists := h.DestinationSvcCertificates[certificateNameParamValue]
+	subaccountHeaderValue := r.Header.Get("subaccount")      // todo::: adapt
+	instanceIDHeaderValue := r.Header.Get("instance-id-key") // todo::: adapt
+	certificateIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", certificateNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
+
+	cert, exists := h.DestinationSvcCertificates[certificateIdentifier]
 	if !exists {
 		err := errors.Errorf("Certificate with name: %q doest not exists", certificateNameParamValue)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)

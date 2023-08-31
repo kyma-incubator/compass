@@ -3,8 +3,9 @@ package destinationcreator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"regexp"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
@@ -44,17 +45,13 @@ type DestinationRequestBody interface {
 	ToDestination() (json.RawMessage, error)
 	Validate(destinationCreatorCfg *Config) error
 	GetDestinationType() string
-	GetDestinationUniqueIdentifier() string
-	SetSubaccountIDValue(subaccountID string)
-	SetInstanceIDValue(instanceID string)
+	GetDestinationUniqueIdentifier(subaccountID, instanceID string) string
 }
 
 // BaseDestinationRequestBody contains the base fields needed in the destination request body
 type BaseDestinationRequestBody struct {
 	Name                 string                          `json:"name"`
 	URL                  string                          `json:"url"`
-	SubaccountID         string                          `json:"subaccountId"`
-	InstanceID           string                          `json:"instanceId"`
 	Type                 destinationcreatorpkg.Type      `json:"type"`
 	ProxyType            destinationcreatorpkg.ProxyType `json:"proxyType"`
 	AuthenticationType   destinationcreatorpkg.AuthType  `json:"authenticationType"`
@@ -101,16 +98,8 @@ type CertificateResponseBody struct {
 // reqBodyNameRegex is a regex defined by the destination creator API specifying what destination names are allowed
 var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
 
-func (b *BaseDestinationRequestBody) GetDestinationUniqueIdentifier() string {
-	return fmt.Sprintf("name_%s_subacc_%s_instance_%s", b.Name, b.SubaccountID, b.InstanceID)
-}
-
-func (b *BaseDestinationRequestBody) SetSubaccountIDValue(subaccountID string) {
-	b.SubaccountID = subaccountID
-}
-
-func (b *BaseDestinationRequestBody) SetInstanceIDValue(instanceID string) {
-	b.InstanceID = instanceID
+func (b *BaseDestinationRequestBody) GetDestinationUniqueIdentifier(subaccountID, instanceID string) string {
+	return fmt.Sprintf("name_%s_subacc_%s_instance_%s", b.Name, subaccountID, instanceID)
 }
 
 // Validate validates that the AuthTypeNoAuth request body contains the required fields and they are valid

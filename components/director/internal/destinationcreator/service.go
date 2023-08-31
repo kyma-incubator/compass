@@ -120,7 +120,7 @@ func (s *Service) CreateDesignTimeDestinations(
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
-		Name:         "",
+		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -134,7 +134,6 @@ func (s *Service) CreateDesignTimeDestinations(
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:                 destinationName,
 			URL:                  destinationDetails.URL,
-			InstanceId:           destinationDetails.InstanceID,
 			Type:                 destinationcreatorpkg.Type(destinationDetails.Type),
 			ProxyType:            destinationcreatorpkg.ProxyType(destinationDetails.ProxyType),
 			AuthenticationType:   destinationcreatorpkg.AuthType(destinationDetails.Authentication),
@@ -185,7 +184,7 @@ func (s *Service) CreateBasicCredentialDestinations(
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
-		Name:         "",
+		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -239,7 +238,7 @@ func (s *Service) CreateSAMLAssertionDestination(
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
-		Name:         "",
+		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -258,7 +257,6 @@ func (s *Service) CreateSAMLAssertionDestination(
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationName,
 			URL:                samlAuthCreds.URL,
-			InstanceId:         destinationDetails.InstanceID,
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeSAMLAssertion,
@@ -335,7 +333,7 @@ func (s *Service) CreateClientCertificateDestination(
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
-		Name:         "",
+		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -354,7 +352,6 @@ func (s *Service) CreateClientCertificateDestination(
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationName,
 			URL:                clientCertAuthCreds.URL,
-			InstanceId:         destinationDetails.InstanceID,
 			Type:               destinationcreatorpkg.TypeHTTP,
 			ProxyType:          destinationcreatorpkg.ProxyTypeInternet,
 			AuthenticationType: destinationcreatorpkg.AuthTypeClientCertificate,
@@ -426,7 +423,7 @@ func (s *Service) CreateCertificate(
 	}
 
 	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, URLParameters{
-		Name:         "",
+		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationsDetails[0].InstanceID,
@@ -440,7 +437,6 @@ func (s *Service) CreateCertificate(
 		return nil, err
 	}
 
-	//TODO should we add instance ID here as well
 	certReqBody := &CertificateRequestBody{Name: certName}
 
 	if err := certReqBody.Validate(); err != nil {
@@ -526,7 +522,7 @@ func (s *Service) DeleteCertificate(
 	}
 
 	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, URLParameters{
-		Name:         certificateName,
+		EntityName:   certificateName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   instanceID,
@@ -561,7 +557,7 @@ func (s *Service) DeleteDestination(
 	}
 
 	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
-		Name:         destinationName,
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   instanceID,
@@ -1041,11 +1037,11 @@ func buildURL(urlConfig URLConfig, parameters URLParameters, isDeleteRequest boo
 	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", urlConfig.SubaccountIDParam), parameters.SubaccountID, 1)
 
 	if isDeleteRequest {
-		if parameters.Name == "" {
+		if parameters.EntityName == "" {
 			return "", errors.Errorf("The entity name should not be empty in case of %s request", http.MethodDelete)
 		}
 		regionalEndpoint += fmt.Sprintf("/{%s}", urlConfig.NameParam)
-		regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", urlConfig.NameParam), parameters.Name, 1)
+		regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", urlConfig.NameParam), parameters.EntityName, 1)
 	}
 
 	if parameters.InstanceID != "" {

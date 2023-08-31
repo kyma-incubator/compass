@@ -36,7 +36,6 @@ type CertificateResponse struct {
 type BaseDestinationRequestBody struct {
 	Name                 string                          `json:"name"`
 	URL                  string                          `json:"url"`
-	InstanceId           string                          `json:"instanceId"`
 	Type                 destinationcreatorpkg.Type      `json:"type"`
 	ProxyType            destinationcreatorpkg.ProxyType `json:"proxyType"`
 	AuthenticationType   destinationcreatorpkg.AuthType  `json:"authenticationType"`

@@ -43,7 +43,7 @@ type URLConfig struct {
 }
 
 type URLParameters struct {
-	Name         string
+	EntityName   string
 	Region       string
 	SubaccountID string
 	InstanceID   string

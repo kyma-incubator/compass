@@ -130,7 +130,8 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, 
 	url := c.apiURL + subpath + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
-	request.Header.Add("subaccount", subaccountID)
+	request.Header.Add("subaccount", subaccountID)    // todo::: adapt
+	request.Header.Add("instance-id-key", instanceID) // todo::: adapt
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
@@ -157,7 +158,8 @@ func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certif
 	url := c.apiURL + subpath + "/" + url.QueryEscape(certificateName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
-	request.Header.Add("subaccount", subaccountID)
+	request.Header.Add("subaccount", subaccountID)    // todo::: adapt
+	request.Header.Add("instance-id-key", instanceID) // todo::: adapt
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
