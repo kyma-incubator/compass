@@ -213,7 +213,7 @@ func addTenantsToExtra(ctx context.Context, objectContexts []ObjectContext, reqD
 		tenants[tenantmapping.ExternalTenantKey] = tenants[tenantmapping.ProviderExternalTenantKey]
 	}
 
-	log.C(ctx).Infof("tenants after obj ctxs: %v ", reqData)
+	log.C(ctx).Infof("tenants after obj ctxs: %v ", tenants)
 
 	tenantsJSON, err := json.Marshal(tenants)
 	if err != nil {
