@@ -85,6 +85,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 
 	clientID := gjson.Get(extra, authn.Attributes.ClientID.Key).String()
 
+	log.C(ctx).Infof("%v", extra)
 	isSubaccountToken := false
 	externalTenantID = gjson.Get(extra, authn.Attributes.TenantAttribute.Key).String()
 	if externalTenantID == "" {
