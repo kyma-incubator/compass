@@ -124,7 +124,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	}
 	log.C(ctx).Infof("Matched object contexts: [%s]", strings.Join(objCtxNames, ","))
 
-	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
+	if err := addTenantsToExtra(ctx, objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
 		return reqData.Body
 	}
@@ -199,7 +199,7 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 	h.clientInstrumenter.InstrumentClient(details.AuthID, string(details.AuthFlow), flowDetails)
 }
 
-func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
+func addTenantsToExtra(ctx context.Context, objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
 	tenants := make(map[string]string)
 	for _, objCtx := range objectContexts {
 		tenants[objCtx.TenantKey] = objCtx.TenantID
@@ -212,6 +212,8 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 		tenants[tenantmapping.ConsumerTenantKey] = tenants[tenantmapping.ProviderTenantKey]
 		tenants[tenantmapping.ExternalTenantKey] = tenants[tenantmapping.ProviderExternalTenantKey]
 	}
+
+	log.C(ctx).Infof("tenants after obj ctxs: %v ", reqData)
 
 	tenantsJSON, err := json.Marshal(tenants)
 	if err != nil {
