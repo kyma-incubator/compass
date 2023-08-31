@@ -192,7 +192,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3280"
+      version: "PR-3260"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -243,6 +243,7 @@ global:
     formationMappingAsyncStatusApi:
       pathPrefix: "/v1/businessIntegrations"
       formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset"
       formationPath: "/{ucl-formation-id}/status"
     prefix: /director
     graphql:

@@ -261,6 +261,8 @@ spec:
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}
             - name: APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}
+            - name: APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_RESET_API_ENDPOINT
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}
             - name: APP_FORMATION_ASYNC_STATUS_API_ENDPOINT
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL

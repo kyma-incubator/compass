@@ -432,6 +432,7 @@ func main() {
 
 	logger.Infof("Registering formation tenant mapping endpoints...")
 	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusAPIEndpoint, fmHandler.UpdateFormationAssignmentStatus).Methods(http.MethodPatch)
+	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusResetAPIEndpoint, fmHandler.ResetFormationAssignmentStatus).Methods(http.MethodPatch)
 	asyncFormationStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationStatusAPIEndpoint, fmHandler.UpdateFormationStatus).Methods(http.MethodPatch)
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))

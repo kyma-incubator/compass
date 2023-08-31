@@ -37,6 +37,7 @@ type DirectorConfig struct {
 	GatewayOauth                                string
 	DirectorExternalCertSecuredURL              string
 	DirectorExternalCertFAAsyncStatusURL        string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
+	DirectorExternalCertFAAsyncResetStatusURL   string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
 	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
 	SkipSSLValidation                           bool   `envconfig:"default=false"`
 	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
