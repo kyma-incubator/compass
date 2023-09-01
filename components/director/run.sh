@@ -302,6 +302,7 @@ export APP_SELF_REGISTER_OAUTH_X509_KEY="LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0
 export APP_ORD_WEBHOOK_MAPPINGS='[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }, { "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090", "ProxyHeaderTemplate": "{\"target_host\": [\"{{.Application.BaseURL}}\"] }", "OrdUrlPath": "/proxy", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
 export APP_FORMATION_MAPPING_API_PATH_PREFIX='/v1/businessIntegrations'
 export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status'
+export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_RESET_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset'
 export APP_FORMATION_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/status'
 export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
