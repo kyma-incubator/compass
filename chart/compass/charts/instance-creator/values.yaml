@@ -2,8 +2,12 @@ deployment:
   minReplicas: 1
   maxReplicas: 2
   autoscaling:
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 75
+    targetCPU:
+      type: Utilization
+      averageUtilization: 80
+    targetMemory:
+      type: Utilization
+      averageUtilization: 75
   image:
     pullPolicy: IfNotPresent
   resources: {}

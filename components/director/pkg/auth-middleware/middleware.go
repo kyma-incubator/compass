@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/idtokenclaims"
 
 	authenticator_director "github.com/kyma-incubator/compass/components/director/internal/authenticator"
@@ -104,26 +103,6 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			ctx = tokenClaims.ContextWithClaims(ctx)
-
-			ctx = a.storeHeadersDataInContext(ctx, r)
-
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-// KymaAdapterHandler performs authorization checks on requests to the Kyma adapter
-func (a *Authenticator) KymaAdapterHandler() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			tokenClaims, statusCode, err := a.processToken(ctx, r)
-			if err != nil {
-				apperrors.WriteAppError(ctx, w, err, statusCode)
-				return
-			}
-
-			ctx = tokenClaims.ContextWithClaimsAndProviderTenant(ctx)
 
 			ctx = a.storeHeadersDataInContext(ctx, r)
 
@@ -325,18 +304,4 @@ func (a *Authenticator) storeHeadersDataInContext(ctx context.Context, r *http.R
 	}
 
 	return ctx
-}
-
-// LoadExternalTenantFromContext extracts the external tenant ID stored in the context object
-func LoadExternalTenantFromContext(ctx context.Context) (string, error) {
-	tenantFromContext, err := tenant.LoadTenantPairFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-	return tenantFromContext.ExternalID, nil
-}
-
-// SaveToContext stores the tenant in the context object
-func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
-	return tenant.SaveToContext(ctx, internalID, externalID)
 }

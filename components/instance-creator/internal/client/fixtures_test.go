@@ -162,7 +162,7 @@ func callerThatReturnsBadStatus(_ *testing.T, cfg config.Config, region string) 
 func fixConfig() config.Config {
 	return config.Config{
 		InstanceSMURLPath: instanceSMURLPath,
-		Ticker:            time.Second / 3,
+		Ticker:            time.Millisecond * 10,
 		Timeout:           time.Second,
 	}
 }

@@ -11,33 +11,17 @@ spec:
     kind: Deployment
     name: {{ template "fullname" . }}
   metrics:
-  {{- if .Values.deployment.autoscaling.targetCPUUtilizationPercentage }}
+  {{- with .Values.deployment.autoscaling.targetMemory }}
   - type: Resource
     resource:
-      name: cpu
+      name: memory
       target:
-        type: Utilization
-        averageUtilization: {{ .Values.deployment.autoscaling.targetCPUUtilizationPercentage }}
-  {{- else if .Values.deployment.autoscaling.targetCPUAverageValue }}
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: AverageValue
-        averageValue: {{ .Values.deployment.autoscaling.targetCPUAverageValue }}
+        {{- toYaml . | nindent 8 }}
   {{- end }}
-  {{- if .Values.deployment.autoscaling.targetMemoryUtilizationPercentage }}
+  {{- with .Values.deployment.autoscaling.targetCPU }}
   - type: Resource
     resource:
-      name: memory
+      name: cpu
       target:
-        type: Utilization
-        averageUtilization: {{ .Values.deployment.autoscaling.targetMemoryUtilizationPercentage }}
-  {{- else if .Values.deployment.autoscaling.targetMemoryAverageValue }}
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: AverageValue
-        averageValue: {{ .Values.deployment.autoscaling.targetMemoryAverageValue }}
+        {{- toYaml . | nindent 8 }}
   {{- end }}

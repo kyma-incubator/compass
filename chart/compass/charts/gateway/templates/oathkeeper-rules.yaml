@@ -510,7 +510,7 @@ metadata:
   name: compass-gateway-instance-creator
 spec:
   upstream:
-    url: "http://compass-instance-creator.{{ .Release.Namespace }}.svc.cluster.local:8080"
+    url: "http://compass-instance-creator.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.instanceCreator.port }}"
   match:
     methods:
     - PATCH
