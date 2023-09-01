@@ -159,6 +159,7 @@ func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeepe
 			}
 
 			index := coords.Index
+			log.C(ctx).Infof("SCOPE PREFIX IS: %s", authn.TrustedIssuers[index].ScopePrefix)
 			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix, Region: authn.TrustedIssuers[index].Region}, nil
 		}
 	}
