@@ -287,7 +287,7 @@ func (a *Authenticator) processToken(ctx context.Context, r *http.Request) (*idt
 			return nil, http.StatusUnauthorized, err
 		}
 	}
-	log.C(ctx).Infof("validated token")
+	log.C(ctx).Infof("validated token: %v", tokenClaims)
 	return tokenClaims, 0, nil
 }
 
