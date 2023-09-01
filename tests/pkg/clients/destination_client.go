@@ -61,11 +61,15 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 	}
 	originalSubdomain := parts[0]
 
+	customParams := url.Values{}
+	customParams.Add("", "") // todo::: adapt
+
 	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
 	cfg := clientcredentials.Config{
-		ClientID:  instanceConfig.ClientID,
-		TokenURL:  tokenURL,
-		AuthStyle: oauth2.AuthStyleInParams,
+		ClientID:       instanceConfig.ClientID,
+		TokenURL:       tokenURL,
+		AuthStyle:      oauth2.AuthStyleInParams,
+		EndpointParams: customParams,
 	}
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {

@@ -27,7 +27,10 @@ const (
 	CertChain           = "e2e-test-destination-cert-mock-cert-chain"
 )
 
-var respErrorMsg = "An unexpected error occurred while processing the request"
+var (
+	respErrorMsg               = "An unexpected error occurred while processing the request"
+	uniqueEntityNameIdentifier = "name_%s_subacc_%s_instance_%s"
+)
 
 // Handler is responsible to mock and handle any Destination Service requests
 type Handler struct {
@@ -124,15 +127,16 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
-	destinationNameValue := routeVars[h.Config.DestinationAPIConfig.DestinationNameParam]
 
-	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[destinationNameValue]
+	destinationNameValue := routeVars[h.Config.DestinationAPIConfig.DestinationNameParam]
+	destinationIdentifier := h.buildDestinationIdentifier(routeVars, destinationNameValue)
+	_, isDestinationSvcDestExists := h.DestinationSvcDestinations[destinationIdentifier]
 	if !isDestinationSvcDestExists {
-		log.C(ctx).Infof("Destination with name: %q does not exists in the destination service. Returning 204 No Content...", destinationNameValue)
+		log.C(ctx).Infof("Destination with name: %q and identifier: %q does not exists in the destination service. Returning 204 No Content...", destinationNameValue, destinationIdentifier)
 		httputils.Respond(writer, http.StatusNoContent)
 	}
-	delete(h.DestinationSvcDestinations, destinationNameValue)
-	log.C(ctx).Infof("Destination with name: %q was deleted from the destination service", destinationNameValue)
+	delete(h.DestinationSvcDestinations, destinationIdentifier)
+	log.C(ctx).Infof("Destination with name: %q and identifier: %q was deleted from the destination service", destinationNameValue, destinationIdentifier)
 
 	httputils.Respond(writer, http.StatusNoContent)
 }
@@ -174,24 +178,22 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	destinationCertName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
-	subaccountIDParamValue := routeVars[h.Config.DestinationAPIConfig.SubaccountIDParam]
-	instanceIDParamValue := routeVars[h.Config.DestinationAPIConfig.InstanceIDParam]
-	certificateIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", destinationCertName, subaccountIDParamValue, instanceIDParamValue)
+	certName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
+	certificateIdentifier := h.buildDestinationCertificateIdentifier(routeVars, certName)
 	if _, ok := h.DestinationSvcCertificates[certificateIdentifier]; ok {
-		log.C(ctx).Infof("Certificate with name: %q already exists. Returning 409 Conflict...", reqBody.Name)
+		log.C(ctx).Infof("Certificate with name: %q and identifier: %q already exists. Returning 409 Conflict...", certName, certificateIdentifier)
 		httputils.Respond(writer, http.StatusConflict)
 		return
 	}
 
 	certResp := CertificateResponseBody{
-		FileName:         destinationCertName,
+		FileName:         certName,
 		CommonName:       uuid.New().String(),
 		CertificateChain: CertChain,
 	}
 
 	destSvcCertificateResp := destinationcreator.DestinationSvcCertificateResponse{
-		Name:    destinationCertName,
+		Name:    certName,
 		Content: CertChain,
 	}
 
@@ -201,8 +203,8 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	log.C(ctx).Infof("Destination certificate with name: %q added to the destination service", destinationCertName)
-	h.DestinationSvcCertificates[destinationCertName] = destSvcCertificateRespBytes
+	log.C(ctx).Infof("Destination certificate with name: %q and identifier: %q added to the destination service", certName, certificateIdentifier)
+	h.DestinationSvcCertificates[certificateIdentifier] = destSvcCertificateRespBytes
 
 	httputils.RespondWithBody(ctx, writer, http.StatusCreated, certResp)
 }
@@ -227,11 +229,12 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	}
 	certNameValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
 
-	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension]; !isDestinationSvcCertExists {
+	certificateIdentifier := h.buildDestinationCertificateIdentifier(routeVars, certNameValue)
+	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certificateIdentifier]; !isDestinationSvcCertExists {
 		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", certNameValue)
 		httputils.Respond(writer, http.StatusNoContent)
 	}
-	delete(h.DestinationSvcCertificates, certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
+	delete(h.DestinationSvcCertificates, certificateIdentifier)
 	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
 
 	httputils.Respond(writer, http.StatusNoContent)
@@ -298,14 +301,14 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	}
 	subaccountHeaderValue := r.Header.Get("subaccount")      // todo::: adapt
 	instanceIDHeaderValue := r.Header.Get("instance-id-key") // todo::: adapt
-	destinationIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", destinationNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
-
+	destinationIdentifier := fmt.Sprintf(uniqueEntityNameIdentifier, destinationNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
 	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
 	if !exists {
 		err := errors.Errorf("Destination with name: %q doest not exists", destinationNameParamValue)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
+	log.C(ctx).Infof("Destination with identifier: %s was found in the destination service", destinationIdentifier)
 
 	bodyBytes, err := json.Marshal(dest)
 	if err != nil {
@@ -340,7 +343,8 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 
 	subaccountHeaderValue := r.Header.Get("subaccount")      // todo::: adapt
 	instanceIDHeaderValue := r.Header.Get("instance-id-key") // todo::: adapt
-	certificateIdentifier := fmt.Sprintf("name_%s_subacc_%s_instance_%s", certificateNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
+
+	certificateIdentifier := fmt.Sprintf(uniqueEntityNameIdentifier, certificateNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
 
 	cert, exists := h.DestinationSvcCertificates[certificateIdentifier]
 	if !exists {
@@ -348,6 +352,7 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
+	log.C(ctx).Infof("Destination certificate with identifier: %s was found in the destination service", certificateIdentifier)
 
 	bodyBytes, err := json.Marshal(cert)
 	if err != nil {
@@ -362,6 +367,18 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while writing response"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handler) buildDestinationCertificateIdentifier(routeVars map[string]string, certName string) string {
+	subaccountIDParamValue := routeVars[h.Config.CertificateAPIConfig.SubaccountIDParam]
+	instanceIDParamValue := routeVars[h.Config.CertificateAPIConfig.InstanceIDParam]
+	return fmt.Sprintf(uniqueEntityNameIdentifier, certName, subaccountIDParamValue, instanceIDParamValue)
+}
+
+func (h *Handler) buildDestinationIdentifier(routeVars map[string]string, destinationName string) string {
+	subaccountIDParamValue := routeVars[h.Config.DestinationAPIConfig.SubaccountIDParam]
+	instanceIDParamValue := routeVars[h.Config.DestinationAPIConfig.InstanceIDParam]
+	return fmt.Sprintf(uniqueEntityNameIdentifier, destinationName, subaccountIDParamValue, instanceIDParamValue)
 }
 
 func (h *Handler) validateDestinationCreatorPathParams(routeVars map[string]string, isDeleteRequest, isDestinationRequest bool) error {

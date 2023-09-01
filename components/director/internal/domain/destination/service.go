@@ -21,13 +21,14 @@ import (
 type destinationRepository interface {
 	GetDestinationByNameAndTenant(ctx context.Context, destinationName, tenantID string) (*model.Destination, error)
 	DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName, formationAssignmentID, tenantID string) error
-	ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error)
+	ListByAssignmentID(ctx context.Context, formationAssignmentID string) ([]*model.Destination, error)
 	UpsertWithEmbeddedTenant(ctx context.Context, destination *model.Destination) error
 }
 
 //go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // UIDService generates UUIDs for new entities
@@ -130,6 +131,7 @@ func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationD
 		URL:                   destinationDetails.URL,
 		Authentication:        destinationDetails.Authentication,
 		SubaccountID:          t.ID,
+		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
 	}
 
@@ -205,6 +207,7 @@ func (s *Service) createBasicCredentialDestination(
 		URL:                   basicReqBody.URL,
 		Authentication:        string(basicReqBody.AuthenticationType),
 		SubaccountID:          t.ID,
+		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
 	}
 
@@ -273,6 +276,7 @@ func (s *Service) createSAMLAssertionDestination(
 		URL:                   samlAssertionAuthCredentials.URL,
 		Authentication:        string(destinationcreatorpkg.AuthTypeSAMLAssertion),
 		SubaccountID:          t.ID,
+		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
 	}
 
@@ -340,6 +344,7 @@ func (s *Service) createClientCertificateAuthenticationDestination(
 		URL:                   clientCertAuthCredentials.URL,
 		Authentication:        string(destinationcreatorpkg.AuthTypeClientCertificate),
 		SubaccountID:          t.ID,
+		InstanceID:            &destinationDetails.InstanceID,
 		FormationAssignmentID: &formationAssignment.ID,
 	}
 
@@ -353,21 +358,10 @@ func (s *Service) createClientCertificateAuthenticationDestination(
 // DeleteDestinations is responsible to delete all types of destinations associated with the given `formationAssignment`
 // from the DB as well as from the remote destination service
 func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment) error {
-	externalDestSubaccountID, err := s.destinationCreatorSvc.GetConsumerTenant(ctx, formationAssignment)
-	if err != nil {
-		return err
-	}
-
 	formationAssignmentID := formationAssignment.ID
-
-	t, err := s.tenantRepo.GetByExternalTenant(ctx, externalDestSubaccountID)
+	destinations, err := s.destinationRepo.ListByAssignmentID(ctx, formationAssignmentID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting tenant by external ID: %q", externalDestSubaccountID)
-	}
-
-	destinations, err := s.destinationRepo.ListByTenantIDAndAssignmentID(ctx, t.ID, formationAssignmentID)
-	if err != nil {
-		return err
+		return errors.Wrapf(err, "while listing destinations by assignment ID: %q", formationAssignmentID)
 	}
 
 	log.C(ctx).Infof("There is/are %d destination(s) in the DB", len(destinations))
@@ -376,6 +370,12 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *m
 	}
 
 	for _, destination := range destinations {
+		tnt, err := s.tenantRepo.Get(ctx, destination.SubaccountID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting tenant for destination subaccount ID: %q", destination.SubaccountID)
+		}
+		externalDestSubaccountID := tnt.ExternalTenant
+
 		if supportedDestinationsWithCertificate[destination.Authentication] {
 			certName, err := destinationcreator.GetDestinationCertificateName(ctx, destinationcreatorpkg.AuthType(destination.Authentication), formationAssignmentID)
 			if err != nil {
@@ -390,8 +390,8 @@ func (s *Service) DeleteDestinations(ctx context.Context, formationAssignment *m
 			return err
 		}
 
-		if err := s.destinationRepo.DeleteByDestinationNameAndAssignmentID(ctx, destination.Name, formationAssignmentID, t.ID); err != nil {
-			return errors.Wrapf(err, "while deleting destination(s) by name: %q, internal tenant ID: %q and assignment ID: %q from the DB", destination.Name, t.ID, formationAssignmentID)
+		if err := s.destinationRepo.DeleteByDestinationNameAndAssignmentID(ctx, destination.Name, formationAssignmentID, tnt.ID); err != nil {
+			return errors.Wrapf(err, "while deleting destination(s) by name: %q, internal tenant ID: %q and assignment ID: %q from the DB", destination.Name, tnt.ID, formationAssignmentID)
 		}
 	}
 

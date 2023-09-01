@@ -39,7 +39,7 @@ type repository struct {
 	globalDeleter              repo.DeleterGlobal
 	upserterWithEmbeddedTenant repo.UpserterGlobal
 	upserterGlobal             repo.UpserterGlobal
-	lister                     repo.Lister
+	globalLister               repo.ListerGlobal
 }
 
 // NewRepository returns new destination repository
@@ -51,7 +51,7 @@ func NewRepository(converter EntityConverter) *repository {
 		globalDeleter:              repo.NewDeleterGlobal(resource.Destination, destinationTable),
 		upserterWithEmbeddedTenant: repo.NewUpserterWithEmbeddedTenant(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns, tenantIDColumn),
 		upserterGlobal:             repo.NewUpserterGlobal(resource.Destination, destinationTable, destinationColumns, conflictingColumns, updateColumns),
-		lister:                     repo.NewListerWithEmbeddedTenant(destinationTable, tenantIDColumn, destinationColumns),
+		globalLister:               repo.NewListerGlobal(resource.Destination, destinationTable, destinationColumns),
 	}
 }
 
@@ -98,12 +98,12 @@ func (r *repository) GetDestinationByNameAndTenant(ctx context.Context, destinat
 	return r.conv.FromEntity(&dest), nil
 }
 
-// ListByTenantIDAndAssignmentID returns all destinations for a given `tenantID` and `formationAssignmentID`
-func (r *repository) ListByTenantIDAndAssignmentID(ctx context.Context, tenantID, formationAssignmentID string) ([]*model.Destination, error) {
-	log.C(ctx).Infof("Listing destinations by tenant ID: %q and assignment ID: %q from the DB", tenantID, formationAssignmentID)
+// ListByAssignmentID returns all destinations for a given `tenantID` and `formationAssignmentID`
+func (r *repository) ListByAssignmentID(ctx context.Context, formationAssignmentID string) ([]*model.Destination, error) {
+	log.C(ctx).Infof("Listing destinations by assignment ID: %q from the DB globally", formationAssignmentID)
 	var destCollection EntityCollection
 	conditions := repo.Conditions{repo.NewEqualCondition(formationAssignmentIDColumn, formationAssignmentID)}
-	if err := r.lister.List(ctx, resource.Destination, tenantID, &destCollection, conditions...); err != nil {
+	if err := r.globalLister.ListGlobal(ctx, &destCollection, conditions...); err != nil {
 		return nil, err
 	}
 

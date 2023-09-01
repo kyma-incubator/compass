@@ -149,6 +149,8 @@ spec:
                 value: {{ .Values.global.tests.subscription.directDependencySubscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
+              - name: APP_TENANT_CONFIG_TEST_PROVIDER_SUBACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
@@ -185,6 +187,10 @@ spec:
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
+              - name: APP_DESTINATION_SUBACCOUNT_CLAIM_KEY
+                value: "{{ .Values.global.tests.destination.claims.subaccountIDKey }}"
+              - name: APP_DESTINATION_SERVICE_INSTANCE_CLAIM_KEY
+                value: "{{ .Values.global.tests.destination.claims.serviceInstanceIDKey }}"
               - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
                 value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
               - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
@@ -239,6 +245,10 @@ spec:
                 value: "{{ .Values.global.director.destinationCreator.certificateAPI.subaccountIDParam }}"
               - name: APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER
                 value: "{{ .Values.global.director.destinationCreator.certificateAPI.nameParam }}"
+              - name: APP_TEST_DESTINATION_INSTANCE_ID
+                value: {{ .Values.global.tests.destination.instanceID | quote }}
+              - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

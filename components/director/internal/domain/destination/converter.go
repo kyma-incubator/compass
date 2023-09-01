@@ -12,7 +12,7 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-// ToEntity converts from internal model to entity
+// ToEntity converts from an internal model to entity
 func (c *converter) ToEntity(in *model.Destination) *Entity {
 	if in == nil {
 		return nil
@@ -30,7 +30,7 @@ func (c *converter) ToEntity(in *model.Destination) *Entity {
 	}
 }
 
-// FromEntity converts from entity to internal model
+// FromEntity converts from entity to an internal model
 func (c *converter) FromEntity(e *Entity) *model.Destination {
 	if e == nil {
 		return nil

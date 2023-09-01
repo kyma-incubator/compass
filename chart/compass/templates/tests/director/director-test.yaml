@@ -288,6 +288,8 @@ spec:
               value: {{ .Values.global.destinationFetcher.oauthMode }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_TEST_DESTINATION_INSTANCE_ID
+              value: {{ .Values.global.tests.destination.instanceID | quote }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

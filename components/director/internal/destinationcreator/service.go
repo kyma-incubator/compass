@@ -119,7 +119,7 @@ func (s *Service) CreateDesignTimeDestinations(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
 		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -183,7 +183,7 @@ func (s *Service) CreateBasicCredentialDestinations(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
 		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -237,7 +237,7 @@ func (s *Service) CreateSAMLAssertionDestination(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
 		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -332,7 +332,7 @@ func (s *Service) CreateClientCertificateDestination(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
 		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -416,13 +416,13 @@ func (s *Service) CreateCertificate(
 		return nil, err
 	}
 
-	subaccountID := destinationsDetails[0].SubaccountID // we're getting the subaccount ID from the first element but before that we ensured they are all equal
+	subaccountID := destinationsDetails[0].SubaccountID // we're getting the subaccount ID from the first element, but before that we ensured they are all equal
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, URLParameters{
+	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
 		EntityName:   "",
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -521,7 +521,7 @@ func (s *Service) DeleteCertificate(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, URLParameters{
+	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
 		EntityName:   certificateName,
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -556,7 +556,7 @@ func (s *Service) DeleteDestination(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, URLParameters{
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
 		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
@@ -612,7 +612,8 @@ func (s *Service) EnrichAssignmentConfigWithSAMLCertificateData(
 	return json.RawMessage(enrichedCfgStr), nil
 }
 
-// ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one. If it's not provided then we validate the subaccount ID from the formation assignment.
+// ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one.
+// If it's not provided, then we validate the subaccount ID from the formation assignment.
 func (s *Service) ValidateDestinationSubaccount(
 	ctx context.Context,
 	externalDestSubaccountID string,
@@ -992,8 +993,8 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 	}
 }
 
-func buildDestinationURL(destinationCfg *DestinationAPIConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
-	return buildURL(URLConfig{
+func buildDestinationURL(ctx context.Context, destinationCfg *DestinationAPIConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
+	return buildURL(ctx, URLConfig{
 		BaseURL:             destinationCfg.BaseURL,
 		SubaccountLevelPath: destinationCfg.SubaccountLevelPath,
 		InstanceLevelPath:   destinationCfg.InstanceLevelPath,
@@ -1004,8 +1005,8 @@ func buildDestinationURL(destinationCfg *DestinationAPIConfig, parameters URLPar
 	}, parameters, isDeleteRequest)
 }
 
-func buildCertificateURL(certificateCfg *CertificateAPIConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
-	return buildURL(URLConfig{
+func buildCertificateURL(ctx context.Context, certificateCfg *CertificateAPIConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
+	return buildURL(ctx, URLConfig{
 		BaseURL:             certificateCfg.BaseURL,
 		SubaccountLevelPath: certificateCfg.SubaccountLevelPath,
 		InstanceLevelPath:   certificateCfg.InstanceLevelPath,
@@ -1016,7 +1017,7 @@ func buildCertificateURL(certificateCfg *CertificateAPIConfig, parameters URLPar
 	}, parameters, isDeleteRequest)
 }
 
-func buildURL(urlConfig URLConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
+func buildURL(ctx context.Context, urlConfig URLConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
 	if parameters.Region == "" || parameters.SubaccountID == "" {
 		return "", errors.Errorf("The provided region and/or subaccount for the URL couldn't be empty")
 	}
@@ -1025,6 +1026,7 @@ func buildURL(urlConfig URLConfig, parameters URLParameters, isDeleteRequest boo
 	if parameters.InstanceID == "" {
 		path = urlConfig.SubaccountLevelPath
 	} else {
+		log.C(ctx).Infof("The entity with name: %q is on service instance level with ID: %q", parameters.EntityName, parameters.InstanceID)
 		path = urlConfig.InstanceLevelPath
 	}
 

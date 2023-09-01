@@ -24,7 +24,8 @@ var (
 		ID: destinationFormationAssignmentID,
 	}
 	tenant = &model.BusinessTenantMapping{
-		ID: destinationSubaccountID,
+		ID:             internalDestinationSubaccountID,
+		ExternalTenant: externalDestinationSubaccountID,
 	}
 	correlationIDs    []string
 	emptyDestinations []*model.Destination
@@ -43,6 +44,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 		URL:                   designTimeDestDetails.URL,
 		Authentication:        designTimeDestDetails.Authentication,
 		SubaccountID:          tenant.ID,
+		InstanceID:            &designTimeDestDetails.InstanceID,
 		FormationAssignmentID: &fa.ID,
 	}
 	destModelWithDifferentFAID := fixDestinationModelWithAuthnAndFAID(destinationName, string(destinationcreatorpkg.AuthTypeNoAuth), secondDestinationFormationAssignmentID)
@@ -266,6 +268,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 		URL:                   basicReqBody.URL,
 		Authentication:        string(basicReqBody.AuthenticationType),
 		SubaccountID:          tenant.ID,
+		InstanceID:            &basicDestDetails.InstanceID,
 		FormationAssignmentID: &fa.ID,
 	}
 	destModelWithDifferentFAID := fixDestinationModelWithAuthnAndFAID(basicDestName, string(destinationcreatorpkg.AuthTypeBasic), secondDestinationFormationAssignmentID)
@@ -514,6 +517,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 		URL:                   clientCertAuthTypeCreds.URL,
 		Authentication:        clientCertAuthDestDetails.Authentication,
 		SubaccountID:          tenant.ID,
+		InstanceID:            &clientCertAuthDestDetails.InstanceID,
 		FormationAssignmentID: &fa.ID,
 	}
 	destModelWithDifferentFAID := fixDestinationModelWithAuthnAndFAID(clientCertAuthDestName, string(destinationcreatorpkg.AuthTypeClientCertificate), secondDestinationFormationAssignmentID)
@@ -737,6 +741,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 		URL:                   samlAuthCreds.URL,
 		Authentication:        samlAssertionDestDetails.Authentication,
 		SubaccountID:          tenant.ID,
+		InstanceID:            &samlAssertionDestDetails.InstanceID,
 		FormationAssignmentID: &fa.ID,
 	}
 	destModelWithDifferentFAID := fixDestinationModelWithAuthnAndFAID(samlAssertionDestName, string(destinationcreatorpkg.AuthTypeSAMLAssertion), secondDestinationFormationAssignmentID)
@@ -966,7 +971,6 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
 				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
 				destCreatorSvc.On("DeleteDestination", ctx, samlAssertionDestName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
 				destCreatorSvc.On("DeleteDestination", ctx, basicDestName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
@@ -974,12 +978,12 @@ func TestService_DeleteDestinations(t *testing.T) {
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(tenant, nil)
+				tenantRepo.On("Get", ctx, internalDestinationSubaccountID).Return(tenant, nil).Twice()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("ListByTenantIDAndAssignmentID", ctx, tenant.ID, fa.ID).Return(destinations, nil)
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return(destinations, nil)
 				destinationRepo.On("DeleteByDestinationNameAndAssignmentID", ctx, basicDestModel.Name, fa.ID, tenant.ID).Return(nil).Once()
 				destinationRepo.On("DeleteByDestinationNameAndAssignmentID", ctx, samlDestModel.Name, fa.ID, tenant.ID).Return(nil).Once()
 				return destinationRepo
@@ -987,80 +991,50 @@ func TestService_DeleteDestinations(t *testing.T) {
 		},
 		{
 			Name: "Success when there are no destinations",
-			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
-				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				return destCreatorSvc
-			},
-			TenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(tenant, nil)
-				return tenantRepo
-			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("ListByTenantIDAndAssignmentID", ctx, tenant.ID, fa.ID).Return(emptyDestinations, nil)
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return(emptyDestinations, nil)
 				return destinationRepo
 			},
-		},
-		{
-			Name: "Error when getting consumer token",
-			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
-				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return("", testErr)
-				return destCreatorSvc
-			},
-			ExpectedErrMessage: errMsg,
-		},
-		{
-			Name: "Error when getting by external tenant",
-			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
-				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				return destCreatorSvc
-			},
-			TenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(nil, testErr)
-				return tenantRepo
-			},
-			ExpectedErrMessage: "while getting tenant by external ID",
 		},
 		{
 			Name: "Error when listing destinations",
-			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
-				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
-				return destCreatorSvc
+			DestinationRepoFn: func() *automock.DestinationRepository {
+				destinationRepo := &automock.DestinationRepository{}
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return(nil, testErr)
+				return destinationRepo
+			},
+			ExpectedErrMessage: fmt.Sprintf("while listing destinations by assignment ID: %q: %s", destinationFormationAssignmentID, testErr.Error()),
+		},
+		{
+			Name: "Error when getting by tenant",
+			DestinationRepoFn: func() *automock.DestinationRepository {
+				destinationRepo := &automock.DestinationRepository{}
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return(destinations, nil)
+				return destinationRepo
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(tenant, nil)
+				tenantRepo.On("Get", ctx, internalDestinationSubaccountID).Return(nil, testErr).Once()
 				return tenantRepo
 			},
-			DestinationRepoFn: func() *automock.DestinationRepository {
-				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("ListByTenantIDAndAssignmentID", ctx, tenant.ID, fa.ID).Return(nil, testErr)
-				return destinationRepo
-			},
-			ExpectedErrMessage: errMsg,
+			ExpectedErrMessage: fmt.Sprintf("while getting tenant for destination subaccount ID: %q: %s", internalDestinationSubaccountID, testErr.Error()),
 		},
 		{
 			Name: "Error when deleting certificate",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
 				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(tenant, nil)
+				tenantRepo.On("Get", ctx, internalDestinationSubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("ListByTenantIDAndAssignmentID", ctx, tenant.ID, fa.ID).Return([]*model.Destination{samlDestModel}, nil)
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return([]*model.Destination{samlDestModel}, nil)
 				return destinationRepo
 			},
 			ExpectedErrMessage: "while deleting destination certificate with name:",
@@ -1069,18 +1043,17 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Error when deleting destination via destination creator",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
 				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(tenant, nil)
+				tenantRepo.On("Get", ctx, internalDestinationSubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("ListByTenantIDAndAssignmentID", ctx, tenant.ID, fa.ID).Return([]*model.Destination{basicDestModel}, nil)
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return([]*model.Destination{basicDestModel}, nil)
 				return destinationRepo
 			},
 			ExpectedErrMessage: errMsg,
@@ -1089,18 +1062,17 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Error when deleting destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("GetConsumerTenant", ctx, &fa).Return(externalDestinationSubaccountID, nil)
 				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("GetByExternalTenant", ctx, externalDestinationSubaccountID).Return(tenant, nil)
+				tenantRepo.On("Get", ctx, internalDestinationSubaccountID).Return(tenant, nil).Once()
 				return tenantRepo
 			},
 			DestinationRepoFn: func() *automock.DestinationRepository {
 				destinationRepo := &automock.DestinationRepository{}
-				destinationRepo.On("ListByTenantIDAndAssignmentID", ctx, tenant.ID, fa.ID).Return([]*model.Destination{basicDestModel}, nil)
+				destinationRepo.On("ListByAssignmentID", ctx, fa.ID).Return([]*model.Destination{basicDestModel}, nil)
 				destinationRepo.On("DeleteByDestinationNameAndAssignmentID", ctx, basicDestModel.Name, fa.ID, tenant.ID).Return(testErr).Once()
 				return destinationRepo
 			},
