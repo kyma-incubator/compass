@@ -1791,12 +1791,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 			app2.ID: {
 				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 		}
 
@@ -2001,7 +2001,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Equal(t, formation.State, assignedFormation.State)
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+			app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
@@ -2020,12 +2020,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 			app2.ID: {
 				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 		}
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
@@ -2332,7 +2332,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.Equal(t, formation.State, assignedFormation.State)
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+			app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
@@ -2345,12 +2345,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 			app2.ID: {
 				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
 			},
 		}
 

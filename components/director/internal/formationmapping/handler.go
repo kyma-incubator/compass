@@ -138,12 +138,6 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if fa.Source == fa.Target && fa.SourceType == fa.TargetType {
-		errResp := errors.Errorf("Cannot update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
-		respondWithError(ctx, w, http.StatusBadRequest, errResp)
-		return
-	}
-
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	if formationOperation == model.UnassignFormation {
 		log.C(ctx).Infof("Processing status update for formation assignment with ID: %s during %q operation", fa.ID, model.UnassignFormation)

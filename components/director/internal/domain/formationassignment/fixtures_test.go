@@ -339,6 +339,10 @@ func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMa
 	}
 }
 
+func fixAssignmentMappingPairWithAssignment(assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPairWithAssignmentAndRequest(assignment, nil)
+}
+
 func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
@@ -492,7 +496,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},
@@ -568,7 +572,7 @@ func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationA
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},
@@ -764,7 +768,7 @@ func fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(objectType model.Form
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},

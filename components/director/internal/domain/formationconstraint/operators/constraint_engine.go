@@ -138,19 +138,21 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		formationTemplateRepo:   formationTemplateRepo,
 		formationAssignmentRepo: formationAssignmentRepo,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
-			IsNotAssignedToAnyFormationOfTypeOperator:            NewIsNotAssignedToAnyFormationOfTypeInput,
-			DoesNotContainResourceOfSubtypeOperator:              NewDoesNotContainResourceOfSubtypeInput,
-			DoNotGenerateFormationAssignmentNotificationOperator: NewDoNotGenerateFormationAssignmentNotificationInput,
-			DestinationCreatorOperator:                           NewDestinationCreatorInput,
+			IsNotAssignedToAnyFormationOfTypeOperator:                    NewIsNotAssignedToAnyFormationOfTypeInput,
+			DoesNotContainResourceOfSubtypeOperator:                      NewDoesNotContainResourceOfSubtypeInput,
+			DoNotGenerateFormationAssignmentNotificationOperator:         NewDoNotGenerateFormationAssignmentNotificationInput,
+			DoNotGenerateFormationAssignmentNotificationForLoopsOperator: NewDoNotGenerateFormationAssignmentNotificationForLoopsInput,
+			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 	c.operators = map[OperatorName]OperatorFunc{
-		IsNotAssignedToAnyFormationOfTypeOperator:            c.IsNotAssignedToAnyFormationOfType,
-		DoesNotContainResourceOfSubtypeOperator:              c.DoesNotContainResourceOfSubtype,
-		DoNotGenerateFormationAssignmentNotificationOperator: c.DoNotGenerateFormationAssignmentNotification,
-		DestinationCreatorOperator:                           c.DestinationCreator,
+		IsNotAssignedToAnyFormationOfTypeOperator:                    c.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:                      c.DoesNotContainResourceOfSubtype,
+		DoNotGenerateFormationAssignmentNotificationOperator:         c.DoNotGenerateFormationAssignmentNotification,
+		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: c.DoNotGenerateFormationAssignmentNotificationForLoops,
+		DestinationCreatorOperator:                                   c.DestinationCreator,
 	}
 	return c
 }

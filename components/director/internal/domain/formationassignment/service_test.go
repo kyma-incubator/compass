@@ -2352,7 +2352,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				repo.On("Update", ctxWithTenant, readyStateSelfReferencingAssignment).Return(nil).Once()
 				return repo
 			},
-			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment.Clone(), reqWebhook),
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignment(initialStateSelfReferencingAssignment.Clone()),
 		},
 		{
 			Name:    "Error: update assignment to ready state if it is self-referenced formation assignment fails on update",
@@ -2363,7 +2363,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				repo.On("Update", ctxWithTenant, readyStateSelfReferencingAssignment).Return(testErr).Once()
 				return repo
 			},
-			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment.Clone(), reqWebhook),
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignment(initialStateSelfReferencingAssignment.Clone()),
 			ExpectedErrorMsg:                     testErr.Error(),
 		},
 		{

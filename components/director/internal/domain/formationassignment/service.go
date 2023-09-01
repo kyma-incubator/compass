@@ -3,7 +3,6 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -507,7 +506,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		SourceType:  model.FormationAssignmentType(objectType),
 		Target:      objectID,
 		TargetType:  model.FormationAssignmentType(objectType),
-		State:       string(model.ReadyAssignmentState),
+		State:       string(model.InitialFormationState),
 		Value:       nil,
 		Error:       nil,
 	})
@@ -624,15 +623,6 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if assignment.Source == assignment.Target {
-		assignment.State = string(model.ReadyAssignmentState)
-		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q is self-referenced. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
-		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "while updating self-referenced formation assignment for formation with ID: %q with source and target: %q", assignment.FormationID, assignment.Source)
-		}
-		return nil
-	}
-
 	extendedRequest, err := s.faNotificationService.GenerateFormationAssignmentNotificationExt(ctx, assignmentReqMappingClone, reverseAssignmentReqMappingClone, mappingPair.Operation)
 	if err != nil {
 		return errors.Wrap(err, "while creating extended formation assignment request")
@@ -699,6 +689,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	if response.Config != nil && *response.Config != "" {
 		assignment.Value = []byte(*response.Config)
 		shouldSendReverseNotification = true
+	}
+
+	if assignment.Source == assignment.Target {
+		shouldSendReverseNotification = false
 	}
 
 	if err = s.statusService.UpdateWithConstraints(ctx, assignment, mappingPair.Operation); err != nil {
@@ -943,14 +937,18 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			}
 
 			participants := request.Object.GetParticipantsIDs()
-			for _, id := range participants {
-				// We should not generate notifications for self
+			if len(participants) == 2 && participants[0] == participants[1] {
+				mappingObject.Request = requests[j]
+				break assignment
+			} else {
 				if assignment.Source == assignment.Target {
 					break assignment
 				}
-				if assignment.Source == id {
-					mappingObject.Request = requests[j]
-					break assignment
+				for _, id := range participants {
+					if assignment.Source == id {
+						mappingObject.Request = requests[j]
+						break assignment
+					}
 				}
 			}
 		}
