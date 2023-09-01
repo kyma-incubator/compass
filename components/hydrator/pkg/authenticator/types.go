@@ -37,10 +37,10 @@ type Config struct {
 
 // TrustedIssuer missing godoc
 type TrustedIssuer struct {
-	Protocol    string `json:"protocol"`
-	DomainURL   string `json:"domain_url"`
-	ScopePrefix string `json:"scope_prefix"`
-	Region      string `json:"region"`
+	Protocol      string   `json:"protocol"`
+	DomainURL     string   `json:"domain_url"`
+	ScopePrefixes []string `json:"scope_prefix"`
+	Region        string   `json:"region"`
 }
 
 // Coordinates missing godoc
