@@ -54,6 +54,14 @@ hydra:
       enabled: false
     admin:
       enabled: false
+  serviceMonitor:
+    enabled: false
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+      certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+      keyFile: /etc/prometheus/secrets/istio.default/key.pem
+      insecureSkipVerify: true
   deployment:
     initContainerSecurityContext:
       allowPrivilegeEscalation: false
@@ -132,7 +140,16 @@ oathkeeper:
         value: noop,id_token,header,cookie,hydrator
   service:
     metrics:
-      enabled: true
+      # Disable metrics
+      enabled: false
+  # Needed to scrape metrics when using Istio
+  serviceMonitor:
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+      certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+      keyFile: /etc/prometheus/secrets/istio.default/key.pem
+      insecureSkipVerify: true
   oathkeeper:
     # disabled as maester is used
     managedAccessRules: false

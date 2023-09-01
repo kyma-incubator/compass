@@ -3,8 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # TODO!!! different definition used; in os it is fullname
-  name: {{ include "oathkeeper-maester.name" . }}
+  name: {{ include "oathkeeper-maester.fullname" . }}
   {{- if .Release.Namespace }}
   namespace: {{ .Release.Namespace }}
   {{- end }}
@@ -16,8 +15,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-      # TODO!!! Different name used; fullname in OS
-      app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
+      app.kubernetes.io/name: {{ include "oathkeeper-maester.fullname" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   # Custom, does not exist but is used by the base overrides in the management-plane-config
   strategy:
@@ -26,8 +24,7 @@ spec:
     metadata:
       labels:
         control-plane: controller-manager
-        # TODO!!! Different name used; fullname in OS
-        app.kubernetes.io/name: {{ include "oathkeeper-maester.name" . }}
+        app.kubernetes.io/name: {{ include "oathkeeper-maester.fullname" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         {{- with .Values.deployment.podMetadata.labels }}
           {{- toYaml . | nindent 8 }}
@@ -78,8 +75,7 @@ spec:
           securityContext:
             {{- toYaml .Values.deployment.securityContext | nindent 12 }}
           {{- end }}
-      # TODO!!! Different name used; fullname in OS
-      serviceAccountName: {{ include "oathkeeper-maester.name" . }}-account
+      serviceAccountName: {{ include "oathkeeper-maester.fullname" . }}-account
       automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
