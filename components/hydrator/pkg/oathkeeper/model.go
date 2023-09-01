@@ -190,11 +190,13 @@ func (d *ReqData) GetUserScopes(scopePrefixes []string) ([]string, error) {
 			if err != nil {
 				return []string{}, errors.Wrapf(err, "while parsing the value for %s", ScopesKey)
 			}
-			actualScope := ""
+
 			for _, prefix := range scopePrefixes {
-				actualScope = strings.TrimPrefix(scopeString, prefix)
+				fmt.Println("token_test_subaccount_level", scopeString, prefix)
+				scopeString = strings.TrimPrefix(scopeString, prefix)
 			}
-			userScopes = append(userScopes, actualScope)
+			fmt.Println("token_test_subaccount_level scope after trimming", scopeString)
+			userScopes = append(userScopes, scopeString)
 		}
 	}
 
