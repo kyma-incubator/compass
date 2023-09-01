@@ -2,6 +2,7 @@ package scope
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -43,7 +44,7 @@ func (d *directive) VerifyScopes(ctx context.Context, _ interface{}, next graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting required scopes")
 	}
-
+	log.C(ctx).Infof("Actual scopes: %v, required: %v", actualScopes, requiredScopes)
 	if !str.Matches(actualScopes, requiredScopes) {
 		return nil, d.errorProvider.Error(requiredScopes, actualScopes)
 	}

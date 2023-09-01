@@ -102,7 +102,9 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 			acceptSuffix := make([]string, 0, len(a.TrustedIssuers))
 			for _, issuer := range a.TrustedIssuers {
 				// The issuer scope prefixes format is "<value>." while the client ID format is "<ID><value>" so the "." should be trimmed
-				acceptSuffix = append(acceptSuffix, strings.TrimSuffix(issuer.ScopePrefix, "."))
+				for _, prefix := range issuer.ScopePrefixes {
+					acceptSuffix = append(acceptSuffix, strings.TrimSuffix(prefix, "."))
+				}
 			}
 			a.ClientIDSuffixes = acceptSuffix
 		}
