@@ -72,7 +72,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	authn := authDetails.Authenticator
 
 	log.C(ctx).Info("Getting scopes from token attribute")
-	userScopes, err := reqData.GetUserScopes(authDetails.ScopePrefix)
+	userScopes, err := reqData.GetUserScopes(authDetails.ScopePrefixes)
 	if err != nil {
 		return ObjectContext{}, err
 	}
@@ -159,8 +159,8 @@ func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeepe
 			}
 
 			index := coords.Index
-			log.C(ctx).Infof("SCOPE PREFIX IS: %s", authn.TrustedIssuers[index].ScopePrefix)
-			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix, Region: authn.TrustedIssuers[index].Region}, nil
+			log.C(ctx).Infof("SCOPE PREFIX IS: %v", authn.TrustedIssuers[index].ScopePrefixes)
+			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefixes: authn.TrustedIssuers[index].ScopePrefixes, Region: authn.TrustedIssuers[index].Region}, nil
 		}
 	}
 

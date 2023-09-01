@@ -64,7 +64,7 @@ type AuthDetails struct {
 	AuthFlow      AuthFlow
 	CertIssuer    string
 	Authenticator *authenticator.Config
-	ScopePrefix   string
+	ScopePrefixes []string
 	Region        string
 }
 
@@ -177,7 +177,7 @@ func (d *ReqData) GetScopes() (string, error) {
 
 // GetUserScopes returns scopes as string array from the parsed request input if defined;
 // also it strips the scopes from any potential authenticator prefixes
-func (d *ReqData) GetUserScopes(scopePrefix string) ([]string, error) {
+func (d *ReqData) GetUserScopes(scopePrefixes []string) ([]string, error) {
 	userScopes := make([]string, 0)
 	scopesVal, ok := d.Body.Extra[ScopesKey]
 	if !ok {
@@ -190,7 +190,10 @@ func (d *ReqData) GetUserScopes(scopePrefix string) ([]string, error) {
 			if err != nil {
 				return []string{}, errors.Wrapf(err, "while parsing the value for %s", ScopesKey)
 			}
-			actualScope := strings.TrimPrefix(scopeString, scopePrefix)
+			actualScope := ""
+			for _, prefix := range scopePrefixes {
+				actualScope = strings.TrimPrefix(scopeString, prefix)
+			}
 			userScopes = append(userScopes, actualScope)
 		}
 	}
