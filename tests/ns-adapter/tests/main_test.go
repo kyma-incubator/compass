@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
@@ -86,7 +88,7 @@ func TestMain(m *testing.M) {
 }
 
 func getTokenFromExternalSVCMock(t *testing.T) string {
-	return token.GetClientCredentialsToken(t, context.Background(), testConfig.ExternalServicesMockURL+"/secured/oauth/token", testConfig.ClientID, testConfig.ClientSecret, "nsAdapterClaims")
+	return token.GetClientCredentialsToken(t, context.Background(), testConfig.ExternalServicesMockURL+"/secured/oauth/token", testConfig.ClientID, testConfig.ClientSecret, claims.NotificationServiceAdapterClaimKey)
 }
 
 type bindingData struct {

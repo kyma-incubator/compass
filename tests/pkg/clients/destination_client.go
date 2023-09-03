@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -48,7 +50,7 @@ type DestinationClient struct {
 }
 
 func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	subdomain string) (*DestinationClient, error) {
+	subdomain, customClaimKeyParameter string) (*DestinationClient, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -60,9 +62,8 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 		return nil, errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
 	}
 	originalSubdomain := parts[0]
-
 	customParams := url.Values{}
-	customParams.Add("", "") // todo::: adapt
+	customParams.Add(claims.ClaimsKey, customClaimKeyParameter)
 
 	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
 	cfg := clientcredentials.Config{
@@ -124,7 +125,7 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, subaccountID, instanceID string, expectedStatusCode int) json.RawMessage {
+func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, instanceID string, expectedStatusCode int) json.RawMessage {
 	subpath := ""
 	if instanceID != "" {
 		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinations
@@ -134,8 +135,6 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, 
 	url := c.apiURL + subpath + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
-	request.Header.Add("subaccount", subaccountID)    // todo::: adapt
-	request.Header.Add("instance-id-key", instanceID) // todo::: adapt
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
@@ -152,7 +151,7 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, 
 	return body
 }
 
-func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName, subaccountID, instanceID string, expectedStatusCode int) json.RawMessage {
+func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName, instanceID string, expectedStatusCode int) json.RawMessage {
 	subpath := ""
 	if instanceID != "" {
 		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinationCertificates
@@ -162,8 +161,6 @@ func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certif
 	url := c.apiURL + subpath + "/" + url.QueryEscape(certificateName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
-	request.Header.Add("subaccount", subaccountID)    // todo::: adapt
-	request.Header.Add("instance-id-key", instanceID) // todo::: adapt
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)

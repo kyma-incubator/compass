@@ -10,20 +10,19 @@ import (
 )
 
 var (
-	regionParam       = "region"
-	subaccountIDParam = "subaccountId"
-	correlationIDsKey = "correlationIds"
-	destNameParam     = "destinationName"
-	certNameParam     = "certificateName"
-	nameParam         = "name"
+	regionParamValue       = "region"
+	subaccountIDParamValue = "subaccountId"
+	correlationIDsKey      = "correlationIds"
+	destNameParamKey       = "destinationName"
+	certNameParamKey       = "certificateName"
+	nameParamKey           = "name"
 
-	testRegion       = "testRegion"
-	testSubaccountID = "testSubaccountID"
-	testDestName     = "test-dest-name"
-	testCertName     = "test-cert-name"
-	testUUID         = "9a22c33e-ce39-452e-9ac4-16fb0398b9a7" // used for common name
-	testCertChain    = esmdestinationcreator.CertChain
-	testCertFileName = testCertName + destinationcreatorpkg.JavaKeyStoreFileExtension
+	testRegion                       = "testRegion"
+	testSubaccountID                 = "testSubaccountID"
+	testServiceInstanceID            = "testServiceInstanceID"
+	testDestinationCertName          = "test-destination-cert-name"
+	testCertChain                    = esmdestinationcreator.CertChain
+	testDestinationCertWithExtension = testDestinationCertName + destinationcreatorpkg.JavaKeyStoreFileExtension
 
 	url = "https://target-url.com"
 
@@ -41,9 +40,8 @@ var (
 
 	destinationCreatorReqBodyWithoutAuthType = fmt.Sprintf(`{"name":"%s","url":"http://localhost","type":"HTTP","proxyType":"Internet","additionalProperties":{"customKey":"customValue"}}`, noAuthDestName)
 
-	destinationCreatorCertReqBody      = fmt.Sprintf(`{"name":"%s"}`, testCertName)
-	destinationCreatorCertResponseBody = fmt.Sprintf(`{"fileName":"%s","commonName":"%s","certificateChain":"%s"}`, testCertFileName, testUUID, testCertChain)
-	destinationServiceCertResponseBody = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testCertFileName, testCertChain)
+	destinationCreatorCertReqBody      = fmt.Sprintf(`{"name":"%s"}`, testDestinationCertName)
+	destinationServiceCertResponseBody = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestinationCertWithExtension, testCertChain)
 )
 
 func fixDestinationMappings(destName string, bodyBytes []byte) map[string]json.RawMessage {

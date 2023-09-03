@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/tidwall/sjson"
@@ -50,7 +52,6 @@ const (
 	grantTypeFieldName   = "grant_type"
 	passwordGrantType    = "password"
 	credentialsGrantType = "client_credentials"
-	claimsKey            = "claims_key"
 
 	clientIDKey     = "client_id"
 	clientSecretKey = "client_secret"
@@ -161,7 +162,7 @@ func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clie
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(clientSecretKey, clientSecret)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 
 	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
 	log.C(ctx).Info("Successfully issued client_credentials token")
@@ -175,7 +176,7 @@ func GetClientCredentialsTokenWithClient(t *testing.T, ctx context.Context, clie
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(clientSecretKey, clientSecret)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 
 	oauthConfig := OauthConfig{
 		TokenURL:     tokenURL,
@@ -195,7 +196,7 @@ func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientS
 	data := url.Values{}
 	data.Add(grantTypeFieldName, passwordGrantType)
 	data.Add(clientIDKey, clientID)
-	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(claims.ClaimsKey, staticMappingClaimsKey)
 	data.Add(userNameKey, username)
 	data.Add(passwordKey, password)
 

@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
@@ -145,12 +147,14 @@ func main() {
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims":                claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":                 claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
-		"nsAdapterClaims":                    claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
-		"tenantFetcherClaimsTenantHierarchy": claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"destinationProviderClaims":          claimsFunc("dest-provider-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestProviderSubaccountID, "destination-provider-flow-identity", "destination-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestProviderSubaccountID, cfg.DestinationServiceConfig.ServiceInstanceClaimKey: cfg.DestinationServiceConfig.TestDestinationInstanceID}),
-		"destinationConsumerClaims":          claimsFunc("dest-consumer-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "destination-consumer-flow-identity", "destination-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.DestinationServiceConfig.ServiceInstanceClaimKey: cfg.DestinationServiceConfig.TestDestinationInstanceID}),
+		claims.TenantFetcherClaimKey:                   claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		claims.SubscriptionClaimKey:                    claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		claims.NotificationServiceAdapterClaimKey:      claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		claims.TenantFetcherTenantHierarchyClaimKey:    claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		claims.DestinationProviderClaimKey:             claimsFunc("dest-provider-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestProviderSubaccountID, "destination-provider-flow-identity", "destination-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestProviderSubaccountID}),
+		claims.DestinationProviderWithInstanceClaimKey: claimsFunc("dest-provider-with-instance-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestProviderSubaccountID, "destination-provider-with-instance-flow-identity", "destination-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestProviderSubaccountID, cfg.DestinationServiceConfig.ServiceInstanceClaimKey: cfg.DestinationServiceConfig.TestDestinationInstanceID}),
+		claims.DestinationConsumerClaimKey:             claimsFunc("dest-consumer-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "destination-consumer-flow-identity", "destination-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestConsumerSubaccountID}),
+		claims.DestinationConsumerWithInstanceClaimKey: claimsFunc("dest-consumer-with-instance-key-test", "destination-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "destination-consumer-with-instance-flow-identity", "destination-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.DestinationServiceConfig.SubaccountIDClaimKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.DestinationServiceConfig.ServiceInstanceClaimKey: cfg.DestinationServiceConfig.TestDestinationInstanceID}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)

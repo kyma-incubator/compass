@@ -2,6 +2,7 @@ package destinationcreator
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -29,7 +30,7 @@ const (
 
 var (
 	respErrorMsg               = "An unexpected error occurred while processing the request"
-	uniqueEntityNameIdentifier = "name_%s_subacc_%s_instance_%s"
+	UniqueEntityNameIdentifier = "name_%s_subacc_%s_instance_%s"
 )
 
 // Handler is responsible to mock and handle any Destination Service requests
@@ -134,6 +135,7 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 	if !isDestinationSvcDestExists {
 		log.C(ctx).Infof("Destination with name: %q and identifier: %q does not exists in the destination service. Returning 204 No Content...", destinationNameValue, destinationIdentifier)
 		httputils.Respond(writer, http.StatusNoContent)
+		return
 	}
 	delete(h.DestinationSvcDestinations, destinationIdentifier)
 	log.C(ctx).Infof("Destination with name: %q and identifier: %q was deleted from the destination service", destinationNameValue, destinationIdentifier)
@@ -227,15 +229,17 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
-	certNameValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
+	certNameParamValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
+	certName := certNameParamValue + destinationcreatorpkg.JavaKeyStoreFileExtension
 
-	certificateIdentifier := h.buildDestinationCertificateIdentifier(routeVars, certNameValue)
+	certificateIdentifier := h.buildDestinationCertificateIdentifier(routeVars, certName)
 	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certificateIdentifier]; !isDestinationSvcCertExists {
-		log.C(ctx).Infof("Certificate with name: %q does not exists in the destination service. Returning 204 No Content...", certNameValue)
+		log.C(ctx).Infof("Certificate with name: %q and identifier: %q does not exists in the destination service. Returning 204 No Content...", certName, certificateIdentifier)
 		httputils.Respond(writer, http.StatusNoContent)
+		return
 	}
 	delete(h.DestinationSvcCertificates, certificateIdentifier)
-	log.C(ctx).Infof("Certificate with name: %q was deleted from the destination service", certNameValue+destinationcreatorpkg.JavaKeyStoreFileExtension)
+	log.C(ctx).Infof("Certificate with name: %q and identifier: %q was deleted from the destination service", certName, certificateIdentifier)
 
 	httputils.Respond(writer, http.StatusNoContent)
 }
@@ -289,8 +293,9 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	if err := validateAuthorization(ctx, r); err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+	tokenValue, err := validateAuthorization(ctx, r)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
 	}
 
@@ -299,20 +304,26 @@ func (h *Handler) GetDestinationByNameFromDestinationSvc(writer http.ResponseWri
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
-	subaccountHeaderValue := r.Header.Get("subaccount")      // todo::: adapt
-	instanceIDHeaderValue := r.Header.Get("instance-id-key") // todo::: adapt
-	destinationIdentifier := fmt.Sprintf(uniqueEntityNameIdentifier, destinationNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
+
+	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
+		return
+	}
+	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
+
+	destinationIdentifier := fmt.Sprintf(UniqueEntityNameIdentifier, destinationNameParamValue, subaccountID, serviceInstanceID)
 	dest, exists := h.DestinationSvcDestinations[destinationIdentifier]
 	if !exists {
-		err := errors.Errorf("Destination with name: %q doest not exists", destinationNameParamValue)
+		err := errors.Errorf("Destination with name: %q and identifier: %q does not exists", destinationNameParamValue, destinationIdentifier)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
-	log.C(ctx).Infof("Destination with identifier: %s was found in the destination service", destinationIdentifier)
+	log.C(ctx).Infof("Destination with name: %q and identifier: %q was found in the destination service", destinationNameParamValue, destinationIdentifier)
 
 	bodyBytes, err := json.Marshal(dest)
 	if err != nil {
-		errMsg := fmt.Sprintf("An error occurred while marshalling destination with name: %s", destinationNameParamValue)
+		errMsg := fmt.Sprintf("An error occurred while marshalling destination with name: %q and identifier: %q", destinationNameParamValue, destinationIdentifier)
 		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
@@ -330,8 +341,9 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	if err := validateAuthorization(ctx, r); err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+	tokenValue, err := validateAuthorization(ctx, r)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
 	}
 
@@ -341,22 +353,25 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 		return
 	}
 
-	subaccountHeaderValue := r.Header.Get("subaccount")      // todo::: adapt
-	instanceIDHeaderValue := r.Header.Get("instance-id-key") // todo::: adapt
+	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
+		return
+	}
+	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
-	certificateIdentifier := fmt.Sprintf(uniqueEntityNameIdentifier, certificateNameParamValue, subaccountHeaderValue, instanceIDHeaderValue)
-
+	certificateIdentifier := fmt.Sprintf(UniqueEntityNameIdentifier, certificateNameParamValue, subaccountID, serviceInstanceID)
 	cert, exists := h.DestinationSvcCertificates[certificateIdentifier]
 	if !exists {
-		err := errors.Errorf("Certificate with name: %q doest not exists", certificateNameParamValue)
+		err := errors.Errorf("Certificate with name: %q and identifier: %q does not exists in the destination service", certificateNameParamValue, certificateIdentifier)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusNotFound)
 		return
 	}
-	log.C(ctx).Infof("Destination certificate with identifier: %s was found in the destination service", certificateIdentifier)
+	log.C(ctx).Infof("Destination certificate with name: %q and identifier: %q was found in the destination service", certificateNameParamValue, certificateIdentifier)
 
 	bodyBytes, err := json.Marshal(cert)
 	if err != nil {
-		errMsg := fmt.Sprintf("An error occurred while marshalling certificate with name: %s", certificateNameParamValue)
+		errMsg := fmt.Sprintf("An error occurred while marshalling certificate with name: %q and identifier: %q", certificateNameParamValue, certificateIdentifier)
 		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, errMsg), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
@@ -372,18 +387,24 @@ func (h *Handler) GetDestinationCertificateByNameFromDestinationSvc(writer http.
 func (h *Handler) buildDestinationCertificateIdentifier(routeVars map[string]string, certName string) string {
 	subaccountIDParamValue := routeVars[h.Config.CertificateAPIConfig.SubaccountIDParam]
 	instanceIDParamValue := routeVars[h.Config.CertificateAPIConfig.InstanceIDParam]
-	return fmt.Sprintf(uniqueEntityNameIdentifier, certName, subaccountIDParamValue, instanceIDParamValue)
+	return fmt.Sprintf(UniqueEntityNameIdentifier, certName, subaccountIDParamValue, instanceIDParamValue)
 }
 
 func (h *Handler) buildDestinationIdentifier(routeVars map[string]string, destinationName string) string {
 	subaccountIDParamValue := routeVars[h.Config.DestinationAPIConfig.SubaccountIDParam]
 	instanceIDParamValue := routeVars[h.Config.DestinationAPIConfig.InstanceIDParam]
-	return fmt.Sprintf(uniqueEntityNameIdentifier, destinationName, subaccountIDParamValue, instanceIDParamValue)
+	return fmt.Sprintf(UniqueEntityNameIdentifier, destinationName, subaccountIDParamValue, instanceIDParamValue)
 }
 
 func (h *Handler) validateDestinationCreatorPathParams(routeVars map[string]string, isDeleteRequest, isDestinationRequest bool) error {
-	regionParam := h.Config.DestinationAPIConfig.RegionParam
-	subaccountIDParam := h.Config.DestinationAPIConfig.SubaccountIDParam
+	var regionParam, subaccountIDParam string
+	if isDestinationRequest {
+		regionParam = h.Config.DestinationAPIConfig.RegionParam
+		subaccountIDParam = h.Config.DestinationAPIConfig.SubaccountIDParam
+	} else {
+		regionParam = h.Config.CertificateAPIConfig.RegionParam
+		subaccountIDParam = h.Config.CertificateAPIConfig.SubaccountIDParam
+	}
 
 	regionParamValue := routeVars[regionParam]
 	subaccountIDParamValue := routeVars[subaccountIDParam]
@@ -418,20 +439,50 @@ func validateDestinationSvcPathParams(routeVars map[string]string) (string, erro
 	return nameParamValue, nil
 }
 
-func validateAuthorization(ctx context.Context, r *http.Request) error {
+func validateAuthorization(ctx context.Context, r *http.Request) (string, error) {
 	log.C(ctx).Info("Validating authorization header...")
 	authorizationHeaderValue := r.Header.Get(httphelpers.AuthorizationHeaderKey)
 
 	if authorizationHeaderValue == "" {
-		return errors.New("Missing authorization header")
+		return "", errors.New("Missing authorization header")
 	}
 
-	tokenValue := strings.TrimPrefix(authorizationHeaderValue, "Bearer ")
+	tokenValue := strings.TrimSpace(strings.TrimPrefix(authorizationHeaderValue, "Bearer "))
 	if tokenValue == "" {
-		return errors.New("The token value cannot be empty")
+		return "", errors.New("The token value cannot be empty")
 	}
 
-	return nil
+	return tokenValue, nil
+}
+
+func extractSubaccountIDAndServiceInstanceIDFromDestinationToken(token string) (string, string, error) {
+	// JWT format: <header>.<payload>.<signature>
+	tokenParts := strings.Split(token, ".")
+	if len(tokenParts) != 3 {
+		return "", "", errors.New("invalid JWT token format")
+	}
+	payload := tokenParts[1]
+
+	decodedToken, err := base64.RawURLEncoding.DecodeString(payload)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "An error occurred while decoding JWT token payload")
+	}
+
+	data := &struct {
+		ExternalAttributes struct {
+			SubaccountID      string `json:"subaccountid"`
+			ServiceInstanceID string `json:"serviceinstanceid"`
+		} `json:"ext_attr"`
+	}{}
+	if err := json.Unmarshal(decodedToken, data); err != nil {
+		return "", "", errors.Wrapf(err, "while unmarhalling destination JWT token")
+	}
+
+	if data.ExternalAttributes.SubaccountID == "" {
+		return "", "", errors.Errorf("The subaccount ID claim in the token could not be empty")
+	}
+
+	return data.ExternalAttributes.SubaccountID, data.ExternalAttributes.ServiceInstanceID, nil
 }
 
 func respondWithHeader(ctx context.Context, writer http.ResponseWriter, logErrMsg string, statusCode int) {
