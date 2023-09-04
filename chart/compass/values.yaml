@@ -423,7 +423,7 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "text"
+    format: "json"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
