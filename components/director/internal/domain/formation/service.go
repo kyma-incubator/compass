@@ -863,6 +863,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if objectType != graphql.FormationObjectTypeTenant && formationFromDB.State == model.ReadyFormationState {
 		requests, err = s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return formationFromDB, nil
+			}
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 	}
