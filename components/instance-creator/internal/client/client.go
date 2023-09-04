@@ -243,7 +243,10 @@ func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccount
 		if err != nil {
 			return err
 		}
-		return c.DeleteResource(ctx, region, subaccountID, resource, resourceParams)
+		err = c.DeleteResource(ctx, region, subaccountID, resource, resourceParams)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

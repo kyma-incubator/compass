@@ -91,15 +91,6 @@ func callerThatDoesNotGetCalled(t *testing.T, _ config.Config, _ string) *automo
 	return svcCallerProvider
 }
 
-func callerThatDoesNotGetCalledButProviderIs(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
-	svcCaller := &automock.ExternalSvcCaller{}
-	svcCaller.AssertNotCalled(t, "Call", mock.Anything)
-
-	svcCallerProvider := &automock.ExternalSvcCallerProvider{}
-	svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil).Once()
-	return svcCallerProvider
-}
-
 func callerProviderThatFails(_ *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
 	svcCallerProvider := &automock.ExternalSvcCallerProvider{}
 	svcCallerProvider.On("GetCaller", cfg, region).Return(nil, testError).Once()
