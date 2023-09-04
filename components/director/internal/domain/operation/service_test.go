@@ -403,20 +403,20 @@ func TestService_GetByDataAndType(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("GetByDataAndType", ctx, data, model.OperationTypeOrdAggregation).Return(opModel, nil).Once()
+				repo.On("GetByDataAndType", ctx, fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(opModel, nil).Once()
 				return repo
 			},
-			Input:          data,
+			Input:          fixOperationDataAsString(applicationID, applicationTemplateID),
 			ExpectedOutput: opModel,
 		},
 		{
 			Name: "Error while getting operation",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("GetByDataAndType", ctx, data, model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
+				repo.On("GetByDataAndType", ctx, fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
 				return repo
 			},
-			Input:       data,
+			Input:       fixOperationDataAsString(applicationID, applicationTemplateID),
 			ExpectedErr: testErr,
 		},
 	}

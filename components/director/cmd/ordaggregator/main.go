@@ -307,7 +307,7 @@ func main() {
 		},
 	}
 
-	handler := initHandler(ctx, jwtHTTPClient, operationsManager, cfg, transact)
+	handler := initHandler(ctx, jwtHTTPClient, operationsManager, webhookSvc, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -438,7 +438,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, cfg config, transact persistence.Transactioner) http.Handler {
+func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -450,7 +450,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	handler := ord.NewORDAggregatorHTTPHandler(opMgr, cfg.MetricsConfig)
+	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, cfg.MetricsConfig)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	configureTenantContextMiddleware(apiRouter, transact)

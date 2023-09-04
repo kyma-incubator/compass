@@ -26,6 +26,7 @@ import (
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
+	GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
@@ -93,6 +94,11 @@ func (s *service) Get(ctx context.Context, id string, objectType model.WebhookRe
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
 	}
 	return
+}
+
+// GetGlobalByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType
+func (s *service) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+	return s.webhookRepo.GetByIDAndWebhookTypeGlobal(ctx, objectID, objectType, webhookType)
 }
 
 // ListForApplication missing godoc

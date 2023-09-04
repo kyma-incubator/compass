@@ -150,7 +150,7 @@ func TestPgRepository_GetByDataAndType(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE data @> $1 AND op_type = $2`),
-				Args:  []driver.Value{operationID, model.OperationTypeOrdAggregation},
+				Args:  []driver.Value{fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation},
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
@@ -166,7 +166,7 @@ func TestPgRepository_GetByDataAndType(t *testing.T) {
 		RepoConstructorFunc:       operation.NewRepository,
 		ExpectedModelEntity:       operationModel,
 		ExpectedDBEntity:          operationEntity,
-		MethodArgs:                []interface{}{operationID, model.OperationTypeOrdAggregation},
+		MethodArgs:                []interface{}{fixOperationData(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation},
 		DisableConverterErrorTest: true,
 		MethodName:                "GetByDataAndType",
 	}

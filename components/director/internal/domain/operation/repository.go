@@ -2,6 +2,7 @@ package operation
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -105,8 +106,12 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.Operation, er
 
 // GetByDataAndType retrieves an operation by data and type
 func (r *pgRepository) GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error) {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
 	var entity Entity
-	if err := r.globalSingleGetter.GetGlobal(ctx, repo.Conditions{repo.NewJSONCondition("data", data), repo.NewEqualCondition("op_type", opType)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.globalSingleGetter.GetGlobal(ctx, repo.Conditions{repo.NewJSONCondition("data", string(dataBytes)), repo.NewEqualCondition("op_type", opType)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
