@@ -423,7 +423,7 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "text"
+    format: "json"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
@@ -908,7 +908,7 @@ global:
     prefix: /ord-aggregator
     name: ord-aggregator
     job:
-      schedulePeriod: 60m
+      schedulePeriod: 4m
       isSchedulable: true
     lease:
       lockname: aggregatorlease
