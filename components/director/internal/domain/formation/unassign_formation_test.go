@@ -691,6 +691,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
+			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(true, nil)
@@ -969,6 +974,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignAppDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, nil).Once()
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
@@ -1011,6 +1021,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignAppDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, nil).Once()
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
@@ -1047,6 +1062,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignAppDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, nil).Once()
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
@@ -1079,6 +1099,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignAppDetails, FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, nil).Once()
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
@@ -1114,6 +1139,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignAppDetails, FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, nil).Once()
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
@@ -1193,6 +1223,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, testErr)
 				return engine
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
 			InputFormation:     in,
@@ -1226,6 +1261,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.AsaEngine{}
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
@@ -1268,6 +1308,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignRuntimeDetails, FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
@@ -1315,6 +1360,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
 			InputFormation:     in,
@@ -1347,6 +1397,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignRuntimeDetails, FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
@@ -1385,6 +1440,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignRuntimeDetails, FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
@@ -1431,6 +1491,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine := &automock.AsaEngine{}
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				svc := &automock.NotificationsService{}
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
@@ -1522,17 +1587,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error when object type is unknown",
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return repo
-			},
+			Name:               "error when object type is unknown",
 			ObjectType:         "UNKNOWN",
 			InputFormation:     in,
 			ExpectedErrMessage: "unknown formation type",
@@ -1542,14 +1597,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
-					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormationName},
-					ObjectID:   ApplicationID,
-					ObjectType: model.ApplicationLabelableObject,
-					Version:    0,
-				}).Return(nil).Once()
 				return labelService
 			},
 			LabelRepoFn: unusedLabelRepo,
@@ -1583,14 +1630,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
-					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormationName},
-					ObjectID:   RuntimeID,
-					ObjectType: model.RuntimeLabelableObject,
-					Version:    0,
-				}).Return(nil).Once()
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1611,11 +1650,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignRuntimeDetails, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			ASAEngineFn: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
 			LabelRepoFn:        unusedLabelRepo,
