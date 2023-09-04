@@ -1843,17 +1843,10 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 
 	if len(documents) > 0 {
 		log.C(ctx).Infof("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
-		var validationErrors error
+		var validationError error
 
-		err = s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, &validationErrors)
-		if err != nil {
-			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
-
-			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
-			return errors.Wrapf(err, "error processing ORD documents")
-		}
-		if ordValidationError, ok := (validationErrors).(*ORDDocumentValidationError); ok {
+		err = s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, &validationError)
+		if ordValidationError, ok := (validationError).(*ORDDocumentValidationError); ok {
 			validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
 
 			// the first item in the slice is the message 'invalid documents' for the wrapped errors
@@ -1866,9 +1859,20 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 				metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
 			}
 
-			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
-			return errors.Wrapf(ordValidationError.Err, "error processing ORD documents")
+			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error validating ORD documents")
 		}
+		if err != nil {
+			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
+
+			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
+			return errors.Wrap(err, "error processing ORD documents")
+		}
+
+		if validationError != nil {
+			return errors.Wrap(err, "error validating ORD documents")
+		}
+
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
 	return nil
