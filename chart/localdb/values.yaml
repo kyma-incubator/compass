@@ -13,11 +13,7 @@ global:
         name: "hydra"
 
 postgresql:
-  # Admin user name; used by `install-ory.sh`
+  # Admin username; used by `install-ory.sh`
   postgresqlUsername: postgres
   # Admin user password; used by `install-ory.sh
   postgresqlPassword: postgres
-  # Without this annotation the hydra-automigrate is not able to connect to the database
-  master:
-    podAnnotations:
-      sidecar.istio.io/inject: "false"

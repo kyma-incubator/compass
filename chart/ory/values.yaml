@@ -110,7 +110,18 @@ hydra:
     #   https://github.com/ory/hydra/blob/master/docs/config.yaml
     automigration:
       enabled: true
-      type: initContainer
+      # Automigration is run as a Job to enabled Istio;
+      # Previously it was an initContainer that started before the Istio proxy, which made the connection insecure/impossible.
+      # Now the Job waits for the Istio proxy to start and then does the migration.
+      type: job
+      customCommand: ["/bin/sh"]
+      customArgs:
+        - -c
+        - |
+          until wget -q --spider http://127.0.0.1:15021/healthz/ready 2>/dev/null; do echo "Waiting for Istio sidecar..."; sleep 3; done;
+          echo \"Sidecar available. Running...\";
+          hydra migrate sql -e --yes --config /etc/config/hydra.yaml;
+          x=$?; wget -q --post-data='' -S -O /dev/null http://127.0.0.1:15020/quitquitquit && exit $x
     config:
       dsn: memory
       log:
