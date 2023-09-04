@@ -482,7 +482,7 @@ func TestClient_CreateResource(t *testing.T) {
 		// Async flow
 		{
 			Name:           "Success in the asynchronous case",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
@@ -494,7 +494,7 @@ func TestClient_CreateResource(t *testing.T) {
 		},
 		{
 			Name:           "Success in the asynchronous case when initially operation state is 'In Progress'",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK, http.StatusOK}, [][]byte{respBody, inProgressResponseBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK, http.StatusOK}, [][]byte{respBody, inProgressResponseBody, opRespBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
@@ -518,13 +518,13 @@ func TestClient_CreateResource(t *testing.T) {
 		},
 		{
 			Name:             "Error when caller fails the second time it is called",
-			CallerProvider:   callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusAccepted}, [][]byte{respBody}),
+			CallerProvider:   callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusAccepted}, [][]byte{respBody}, 1),
 			Config:           testConfig,
 			ExpectedErrorMsg: "while handling asynchronous creation of service instance in subaccount with ID:",
 		},
 		{
 			Name:           "Error when operation response status code is not 200 OK",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{respBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{respBody, opRespBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
@@ -536,7 +536,7 @@ func TestClient_CreateResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when unmarshalling operation status",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, invalidResponseBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, invalidResponseBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
@@ -548,7 +548,7 @@ func TestClient_CreateResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when operation state is not 'Succeeded' or 'In Progress'",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithFailedState}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithFailedState}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
@@ -560,7 +560,7 @@ func TestClient_CreateResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when returned service instance ID is empty",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithEmptyResourceID}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{respBody, opRespBodyWithEmptyResourceID}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
@@ -706,7 +706,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		// Async flow
 		{
 			Name:           "Success in the asynchronous case",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, opRespBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceID").Return(serviceInstanceID)
@@ -722,7 +722,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		},
 		{
 			Name:           "Success in the asynchronous case when initially operation state is 'In Progress'",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK, http.StatusOK}, [][]byte{emptyResponseBody, inProgressResponseBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK, http.StatusOK}, [][]byte{emptyResponseBody, inProgressResponseBody, opRespBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceID").Return(serviceInstanceID)
@@ -755,7 +755,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when caller fails the second time it is called",
-			CallerProvider: callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusAccepted}, [][]byte{emptyResponseBody}),
+			CallerProvider: callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusAccepted}, [][]byte{emptyResponseBody}, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceID").Return(serviceInstanceID)
@@ -772,7 +772,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when operation response status code is not 200 OK",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{emptyResponseBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusBadRequest}, [][]byte{emptyResponseBody, opRespBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceID").Return(serviceInstanceID)
@@ -789,7 +789,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when unmarshalling operation status",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, invalidResponseBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, invalidResponseBody}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceID").Return(serviceInstanceID)
@@ -806,7 +806,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		},
 		{
 			Name:           "Error when operation state is not 'Succeeded' or 'In Progress'",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, opRespBodyWithFailedState}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusAccepted, http.StatusOK}, [][]byte{emptyResponseBody, opRespBodyWithFailedState}, false, 1),
 			ResourceFn: func() *resmock.Resource {
 				resource := &resmock.Resource{}
 				resource.On("GetResourceID").Return(serviceInstanceID)
@@ -870,7 +870,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		// Sync flow
 		{
 			Name:           "Success in the synchronous case",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusOK}, [][]byte{respBody, emptyResponseBody}, true),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusOK}, [][]byte{respBody, emptyResponseBody}, true, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -956,7 +956,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when caller fails on the second call",
-			CallerProvider: callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusOK}, [][]byte{respBody}),
+			CallerProvider: callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusOK}, [][]byte{respBody}, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -973,7 +973,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when caller does not return 200 or 202 on the second call",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusBadRequest}, [][]byte{respBody, emptyResponseBody}, true),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusBadRequest}, [][]byte{respBody, emptyResponseBody}, true, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -991,7 +991,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		// Async flow
 		{
 			Name:           "Success in the asynchronous case",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK}, [][]byte{respBody, emptyResponseBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK}, [][]byte{respBody, emptyResponseBody, opRespBody}, false, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -1007,7 +1007,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Success in the asynchronous case when initially operation state is 'In Progress'",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK, http.StatusOK}, [][]byte{respBody, emptyResponseBody, inProgressResponseBody, opRespBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK, http.StatusOK}, [][]byte{respBody, emptyResponseBody, inProgressResponseBody, opRespBody}, false, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -1023,7 +1023,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when location header key is missing",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted}, [][]byte{respBody, emptyResponseBody}, true),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted}, [][]byte{respBody, emptyResponseBody}, true, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -1040,7 +1040,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when caller fails the last time it is called",
-			CallerProvider: callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusOK, http.StatusAccepted}, [][]byte{respBody, emptyResponseBody}),
+			CallerProvider: callerThatDoesNotSucceedTheLastTimeWhenCalled([]int{http.StatusOK, http.StatusAccepted}, [][]byte{respBody, emptyResponseBody}, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -1057,7 +1057,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when operation response status code is not 200 OK",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusBadRequest}, [][]byte{respBody, emptyResponseBody, emptyResponseBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusBadRequest}, [][]byte{respBody, emptyResponseBody, emptyResponseBody}, false, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -1074,7 +1074,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when unmarshalling operation status",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK}, [][]byte{respBody, emptyResponseBody, invalidResponseBody}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK}, [][]byte{respBody, emptyResponseBody, invalidResponseBody}, false, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
@@ -1091,7 +1091,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		},
 		{
 			Name:           "Error when operation state is not 'Succeeded' or 'In Progress'",
-			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK}, [][]byte{respBody, emptyResponseBody, opRespBodyWithFailedState}, false),
+			CallerProvider: callerThatGetsCalledSeveralTimesInAsyncCase([]int{http.StatusOK, http.StatusAccepted, http.StatusOK}, [][]byte{respBody, emptyResponseBody, opRespBodyWithFailedState}, false, 2),
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)

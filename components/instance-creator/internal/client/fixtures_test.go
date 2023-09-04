@@ -55,7 +55,7 @@ func callerThatGetsCalledOnce(statusCode int, responseBody []byte) func(*testing
 	}
 }
 
-func callerThatGetsCalledSeveralTimesInAsyncCase(statusCodes []int, responseBodies [][]byte, shouldSkipLocationHeader bool) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
+func callerThatGetsCalledSeveralTimesInAsyncCase(statusCodes []int, responseBodies [][]byte, shouldSkipLocationHeader bool, numberOfCallerProviderInvocations int) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
 	return func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
 		require.Equal(t, len(statusCodes), len(responseBodies))
 
@@ -77,7 +77,7 @@ func callerThatGetsCalledSeveralTimesInAsyncCase(statusCodes []int, responseBodi
 		}
 
 		svcCallerProvider := &automock.ExternalSvcCallerProvider{}
-		svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil)
+		svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil).Times(numberOfCallerProviderInvocations)
 		return svcCallerProvider
 	}
 }
@@ -106,7 +106,7 @@ func callerThatDoesNotSucceed(_ *testing.T, cfg config.Config, region string) *a
 	return svcCallerProvider
 }
 
-func callerThatDoesNotSucceedTheLastTimeWhenCalled(statusCodes []int, responseBodies [][]byte) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
+func callerThatDoesNotSucceedTheLastTimeWhenCalled(statusCodes []int, responseBodies [][]byte, numberOfCallerProviderInvocations int) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
 	return func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
 		require.Equal(t, len(statusCodes), len(responseBodies))
 
@@ -130,7 +130,7 @@ func callerThatDoesNotSucceedTheLastTimeWhenCalled(statusCodes []int, responseBo
 		}
 
 		svcCallerProvider := &automock.ExternalSvcCallerProvider{}
-		svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil)
+		svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil).Times(numberOfCallerProviderInvocations)
 		return svcCallerProvider
 	}
 }
@@ -144,7 +144,7 @@ func callerThatReturnsBadStatus(_ *testing.T, cfg config.Config, region string) 
 	svcCaller.On("Call", mock.Anything).Return(response.Result(), nil).Once()
 
 	svcCallerProvider := &automock.ExternalSvcCallerProvider{}
-	svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil)
+	svcCallerProvider.On("GetCaller", cfg, region).Return(svcCaller, nil).Once()
 	return svcCallerProvider
 }
 
