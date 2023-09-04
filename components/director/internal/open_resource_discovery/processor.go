@@ -48,7 +48,5 @@ func (p *OperationsProcessor) Process(ctx context.Context, operation *model.Oper
 			return err
 		}
 	}
-
 	return nil
-
 }

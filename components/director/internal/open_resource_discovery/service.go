@@ -219,7 +219,6 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
 			if err = s.processApplicationTemplateWebhook(ctx, s.metricsCfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
@@ -1827,6 +1826,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	return nil
 }
 
+// GetWebhooksWithOrdType returns the ORD webhooks
 func (s *Service) GetWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {

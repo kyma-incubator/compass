@@ -4992,7 +4992,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
 			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings, nil)
 			//err := svc.SyncORDDocuments(context.TODO())
-			fmt.Print(svc)
+			fmt.Print(svc) // TODO adjust this test
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())

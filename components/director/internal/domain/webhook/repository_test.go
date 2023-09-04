@@ -881,7 +881,7 @@ func TestRepositoryGetByIDAndWebhookTypeGlobal(t *testing.T) {
 	whAppTemplateEntity := fixApplicationTemplateWebhookEntityWithTimestampAndProxy(t, createdAt)
 
 	suite := testdb.RepoGetTestSuite{
-		Name: "Get Global Webhook By Applicaiton ID",
+		Name: "Get Global Webhook By Application ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_id = $1 AND type = $2`),
