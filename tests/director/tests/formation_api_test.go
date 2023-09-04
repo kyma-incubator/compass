@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -3153,6 +3154,117 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+	})
+
+	t.Run("Formation Assignment notifications with self-referenced notifications", func(t *testing.T) {
+		queryRequest := fixtures.FixQueryFormationConstraintsRequest()
+		const constraintName = "DoNotGenerateFormationAssignmentNotificationForLoopsGlobalApplication"
+
+		var actualFormationConstraints []*graphql.FormationConstraint
+		require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
+
+		updateInput := graphql.FormationConstraintUpdateInput{
+			InputTemplate: fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"APPLICATION\\\",\\\"source_resource_id\\\":\\\"{{ if .SourceApplication }}{{.SourceApplication.ID}}{{else}}{{.Assignment.Source}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"except_subtypes\\\":[\\\"%s\\\", \\\"%s\\\"]}", applicationType1, applicationType2),
+		}
+
+		originalConstraint := findConstraintByName(t, constraintName, actualFormationConstraints)
+
+		originalInput := graphql.FormationConstraintUpdateInput{
+			InputTemplate: strings.Trim(strconv.Quote(originalConstraint.InputTemplate), "\""),
+		}
+
+		defer fixtures.UpdateFormationConstraint(t, ctx, originalConstraint.ID, originalInput, certSecuredGraphQLClient)
+		fixtures.UpdateFormationConstraint(t, ctx, originalConstraint.ID, updateInput, certSecuredGraphQLClient)
+
+		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
+
+		urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+		outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
+
+		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication)
+
+		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1.ID)
+		actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationAsyncWebhookInput.ID)
+
+		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication)
+
+		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2.ID)
+		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
+
+		formationName := "formation-name-from-template-with-webhook"
+		t.Logf("Creating formation with name: %q from template with name: %q that has %q webhook", formationName, formationTmplName, graphql.WebhookTypeFormationLifecycle)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
+		require.NotEmpty(t, formation.ID)
+		require.Equal(t, "READY", formation.State)
+		require.Empty(t, formation.Error)
+		t.Run("Assign and Unassign should correctly send notifications", func(t *testing.T) {
+			t.Logf("Assign application 1 to formation: %q", formationName)
+			defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
+			assignedFormation := fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
+			require.Equal(t, formation.ID, assignedFormation.ID)
+			require.Equal(t, formation.State, assignedFormation.State)
+
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
+			}
+			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			asyncConfig := str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: asyncConfig, Value: asyncConfig, Error: nil}},
+			}
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 0)
+
+			t.Logf("Unassign Application 1 from formation %s", formationName)
+			unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
+			var unassignFormation graphql.Formation
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, formationName, unassignFormation.Name)
+
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {app1.ID: fixtures.AssignmentState{State: "DELETING", Config: nil, Value: nil, Error: nil}},
+			}
+			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 0)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+			t.Logf("Assign application 2 to formation: %q", formationName)
+			defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
+			assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
+			require.Equal(t, formation.ID, assignedFormation.ID)
+			require.Equal(t, formation.State, assignedFormation.State)
+
+			syncConfig := str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app2.ID: {
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: syncConfig, Value: syncConfig, Error: nil},
+				},
+			}
+			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+			t.Logf("Unassign application 2 from formation: %q", formationName)
+			unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, formationName, unassignFormation.Name)
+
+			assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		})
 	})
 }
 
