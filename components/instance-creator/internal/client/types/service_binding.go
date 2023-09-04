@@ -28,10 +28,10 @@ func (rb ServiceKeyReqBody) GetResourceName() string {
 
 // ServiceKey represents a Service Key
 type ServiceKey struct {
-	ID           string          `json:"id"`
-	Name         string          `json:"name"`
-	ServiceKeyID string          `json:"service_instance_id"`
-	Credentials  json.RawMessage `json:"credentials"`
+	ID                string          `json:"id"`
+	Name              string          `json:"name"`
+	ServiceInstanceID string          `json:"service_instance_id"`
+	Credentials       json.RawMessage `json:"credentials"`
 }
 
 // GetResourceID gets the ServiceKey ID
@@ -64,7 +64,7 @@ func (sk ServiceKeys) Match(args resources.ResourceArguments) (string, error) {
 func (sk ServiceKeys) MatchMultiple(args resources.ResourceArguments) []string {
 	serviceKeyIDs := make([]string, 0, sk.NumItems)
 	for _, item := range sk.Items {
-		if item.ServiceKeyID == args.(ServiceKeyArguments).ServiceKeyID {
+		if item.ServiceInstanceID == args.(ServiceKeyArguments).ServiceInstanceID {
 			serviceKeyIDs = append(serviceKeyIDs, item.ID)
 		}
 	}
@@ -78,7 +78,7 @@ func (sk ServiceKeys) GetType() string {
 
 // ServiceKeyArguments holds all the necessary fields that are used when matching ServiceKeys
 type ServiceKeyArguments struct {
-	ServiceKeyID string
+	ServiceInstanceID string
 }
 
 // GetURLPath gets the URL Path of the ServiceKey
