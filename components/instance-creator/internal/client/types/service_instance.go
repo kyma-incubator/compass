@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/json"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 )
@@ -56,8 +58,13 @@ type ServiceInstances struct {
 }
 
 // Match matches a ServiceInstance based on some criteria
-func (si ServiceInstances) Match(args resources.ResourceArguments) (string, error) {
-	serviceInstanceName := args.(ServiceInstanceArguments).ServiceInstanceName
+func (si ServiceInstances) Match(params resources.ResourceMatchParameters) (string, error) {
+	serviceInstanceParams, ok := params.(ServiceInstanceMatchParameters)
+	if !ok {
+		return "", errors.New("while type asserting ResourceMatchParameters to ServiceInstanceMatchParameters")
+	}
+
+	serviceInstanceName := serviceInstanceParams.ServiceInstanceName
 	for _, item := range si.Items {
 		if item.Name == serviceInstanceName {
 			return item.ID, nil
@@ -67,7 +74,7 @@ func (si ServiceInstances) Match(args resources.ResourceArguments) (string, erro
 }
 
 // MatchMultiple matches several ServiceInstances based on some criteria
-func (si ServiceInstances) MatchMultiple(args resources.ResourceArguments) []string {
+func (si ServiceInstances) MatchMultiple(args resources.ResourceMatchParameters) []string {
 	return nil // implement me when needed
 }
 
@@ -76,12 +83,12 @@ func (si ServiceInstances) GetType() string {
 	return ServiceInstancesType
 }
 
-// ServiceInstanceArguments holds all the necessary fields that are used when matching ServiceInstances
-type ServiceInstanceArguments struct {
+// ServiceInstanceMatchParameters holds all the necessary fields that are used when matching ServiceInstances
+type ServiceInstanceMatchParameters struct {
 	ServiceInstanceName string
 }
 
 // GetURLPath gets the URL Path of the ServiceInstance
-func (sia ServiceInstanceArguments) GetURLPath() string {
+func (sia ServiceInstanceMatchParameters) GetURLPath() string {
 	return paths.ServiceInstancesPath
 }

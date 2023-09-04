@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
@@ -35,13 +37,14 @@ func TestClient_RetrieveResource(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		Name             string
-		CallerProvider   func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
-		ResourcesFn      func() *resmock.Resources
-		ResourcesArgsFN  func() *resmock.ResourceArguments
-		Config           config.Config
-		ExpectedResult   string
-		ExpectedErrorMsg string
+		Name                  string
+		CallerProvider        func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
+		ResourcesFn           func() *resmock.Resources
+		ResourceMatchParamsFN func() *resmock.ResourceMatchParameters
+		Config                config.Config
+		WrongMatchParams      bool
+		ExpectedResult        string
+		ExpectedErrorMsg      string
 	}{
 		{
 			Name:           "Success",
@@ -49,13 +52,13 @@ func TestClient_RetrieveResource(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceOfferingType)
-				resources.On("Match", types.ServiceOfferingArguments{CatalogName: catalogName}).Return(offeringID)
+				resources.On("Match", types.ServiceOfferingMatchParameters{CatalogName: catalogName}).Return(offeringID, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:         testConfig,
 			ExpectedResult: offeringID,
@@ -68,10 +71,10 @@ func TestClient_RetrieveResource(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceOfferingType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfigWithInvalidURL,
 			ExpectedErrorMsg: "while building service offerings URL",
@@ -84,10 +87,10 @@ func TestClient_RetrieveResource(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceOfferingType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "while getting caller for region:",
@@ -100,13 +103,13 @@ func TestClient_RetrieveResource(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceOfferingType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
-			ExpectedErrorMsg: "while executing request for retrieving service offerings for subaccount with ID:",
+			ExpectedErrorMsg: "while executing request for listing service offerings for subaccount with ID:",
 		},
 		{
 			Name:           "Error when response status code is not 200 OK",
@@ -116,10 +119,10 @@ func TestClient_RetrieveResource(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceOfferingType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get object(s), status:",
@@ -132,13 +135,31 @@ func TestClient_RetrieveResource(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceOfferingType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal service offerings:",
+		},
+		{
+			Name:           "Error when Match fails due to type assertion error",
+			CallerProvider: callerThatGetsCalledOnce(http.StatusOK, respBodyWithNoMatchingCatalogName),
+			ResourcesFn: func() *resmock.Resources {
+				resources := &resmock.Resources{}
+				resources.On("GetType").Return(types.ServiceOfferingType)
+				resources.On("Match", types.ServicePlanMatchParameters{}).Return("", testError).Once()
+				return resources
+			},
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
+			},
+			Config:           testConfig,
+			WrongMatchParams: true,
+			ExpectedErrorMsg: "while type asserting ResourceMatchParameters to ServiceOfferingMatchParameters",
 		},
 		{
 			Name:           "Error when offering ID is empty",
@@ -146,13 +167,13 @@ func TestClient_RetrieveResource(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceOfferingType)
-				resources.On("Match", types.ServiceOfferingArguments{CatalogName: catalogName}).Return("")
+				resources.On("Match", types.ServiceOfferingMatchParameters{CatalogName: catalogName}).Return("", testError).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceOfferingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceOfferingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "couldn't find service offering for catalog name:",
@@ -166,8 +187,15 @@ func TestClient_RetrieveResource(t *testing.T) {
 
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
+		var matchParams resources.ResourceMatchParameters
+		if testCase.WrongMatchParams {
+			matchParams = types.ServicePlanMatchParameters{}
+		} else {
+			matchParams = types.ServiceOfferingMatchParameters{CatalogName: catalogName}
+		}
+
 		// WHEN
-		resultResourceID, err := testClient.RetrieveResource(ctx, region, subaccountID, &types.ServiceOfferings{}, types.ServiceOfferingArguments{CatalogName: catalogName})
+		resultResourceID, err := testClient.RetrieveResource(ctx, region, subaccountID, &types.ServiceOfferings{}, matchParams)
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {
@@ -187,13 +215,13 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		Name             string
-		CallerProvider   func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
-		ResourceFn       func() *resmock.Resource
-		ResourcesArgsFN  func() *resmock.ResourceArguments
-		Config           config.Config
-		ExpectedResult   *types.ServiceKey
-		ExpectedErrorMsg string
+		Name                  string
+		CallerProvider        func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
+		ResourceFn            func() *resmock.Resource
+		ResourceMatchParamsFN func() *resmock.ResourceMatchParameters
+		Config                config.Config
+		ExpectedResult        *types.ServiceKey
+		ExpectedErrorMsg      string
 	}{
 		{
 			Name:           "Success",
@@ -204,10 +232,10 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceBindingType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:         testConfig,
 			ExpectedResult: fixServiceKey(),
@@ -221,10 +249,10 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceBindingType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfigWithInvalidURL,
 			ExpectedErrorMsg: "while building service binding URL",
@@ -238,10 +266,10 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceBindingType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "while getting caller for region:",
@@ -255,13 +283,13 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceBindingType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
-			ExpectedErrorMsg: "while executing request for retrieving service binding for subaccount with ID:",
+			ExpectedErrorMsg: "while executing request for getting service binding for subaccount with ID:",
 		},
 		{
 			Name:           "Error when response status code is not 200 OK",
@@ -272,10 +300,10 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceBindingType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get object(s), status:",
@@ -289,10 +317,10 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceBindingType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal service binding:",
@@ -307,7 +335,7 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 		// WHEN
-		resultServiceKey, err := testClient.RetrieveResourceByID(ctx, region, subaccountID, &types.ServiceKey{}, types.ServiceKeyArguments{})
+		resultServiceKey, err := testClient.RetrieveResourceByID(ctx, region, subaccountID, &types.ServiceKey{}, types.ServiceKeyMatchParameters{})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {
@@ -583,12 +611,12 @@ func TestClient_DeleteResource(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		Name             string
-		CallerProvider   func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
-		ResourceFn       func() *resmock.Resource
-		ResourcesArgsFN  func() *resmock.ResourceArguments
-		Config           config.Config
-		ExpectedErrorMsg string
+		Name                  string
+		CallerProvider        func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
+		ResourceFn            func() *resmock.Resource
+		ResourceMatchParamsFN func() *resmock.ResourceMatchParameters
+		Config                config.Config
+		ExpectedErrorMsg      string
 	}{
 		// Sync flow
 		{
@@ -600,10 +628,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config: testConfig,
 		},
@@ -616,10 +644,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfigWithInvalidURL,
 			ExpectedErrorMsg: "while building service instance URL",
@@ -633,10 +661,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "while getting caller for region:",
@@ -650,10 +678,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: testError.Error(),
@@ -667,10 +695,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to delete service instance, status:",
@@ -685,10 +713,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config: testConfig,
 		},
@@ -701,10 +729,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config: testConfig,
 		},
@@ -717,10 +745,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the operation status path from %s header should not be empty", locationHeaderKey),
@@ -734,10 +762,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "while deleting service instance with ID:",
@@ -751,10 +779,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get asynchronous object operation status. Received status:",
@@ -768,10 +796,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal object operation status:",
@@ -785,10 +813,10 @@ func TestClient_DeleteResource(t *testing.T) {
 				resource.On("GetResourceType").Return(types.ServiceInstanceType)
 				return resource
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceInstancesPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceInstancesPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the asynchronous object operation finished with state: %q", types.OperationStateFailed),
@@ -803,7 +831,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 		// WHEN
-		err := testClient.DeleteResource(ctx, region, subaccountID, types.ServiceInstance{ID: serviceInstanceID}, types.ServiceInstanceArguments{})
+		err := testClient.DeleteResource(ctx, region, subaccountID, types.ServiceInstance{ID: serviceInstanceID}, types.ServiceInstanceMatchParameters{})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {
@@ -831,13 +859,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		Name             string
-		CallerProvider   func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
-		ResourcesFn      func() *resmock.Resources
-		ResourcesArgsFN  func() *resmock.ResourceArguments
-		Config           config.Config
-		ExpectedResult   error
-		ExpectedErrorMsg string
+		Name                  string
+		CallerProvider        func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider
+		ResourcesFn           func() *resmock.Resources
+		ResourceMatchParamsFN func() *resmock.ResourceMatchParameters
+		Config                config.Config
+		ExpectedResult        error
+		ExpectedErrorMsg      string
 	}{
 		// Sync flow
 		{
@@ -846,37 +874,37 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config: testConfig,
+		},
+		{
+			Name:           "Error when building URL",
+			CallerProvider: callerThatDoesNotGetCalled,
+			ResourcesFn: func() *resmock.Resources {
+				resources := &resmock.Resources{}
+				resources.On("GetType").Return(types.ServiceBindingsType)
+				return resources
+			},
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
+			},
+			Config:           testConfigWithInvalidURL,
+			ExpectedErrorMsg: "while building service bindings URL",
 		},
 		{
 			Name:             "Error when getting caller fails",
 			CallerProvider:   callerProviderThatFails,
 			Config:           testConfig,
 			ExpectedErrorMsg: "while getting caller for region:",
-		},
-		{
-			Name:           "Error when building URL",
-			CallerProvider: callerThatDoesNotGetCalledButProviderIs,
-			ResourcesFn: func() *resmock.Resources {
-				resources := &resmock.Resources{}
-				resources.On("GetType").Return(types.ServiceBindingsType)
-				return resources
-			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
-			},
-			Config:           testConfigWithInvalidURL,
-			ExpectedErrorMsg: "while building service bindings URL",
 		},
 		{
 			Name:           "Error when caller fails",
@@ -886,10 +914,10 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceBindingsType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: testError.Error(),
@@ -902,13 +930,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceBindingsType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
-			ExpectedErrorMsg: "failed to get service bindings, status:",
+			ExpectedErrorMsg: "while executing request for listing service bindings for subaccount with ID:",
 		},
 		{
 			Name:           "Error when unmarshalling service keys",
@@ -918,10 +946,10 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 				resources.On("GetType").Return(types.ServiceBindingsType)
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal service bindings:",
@@ -932,13 +960,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: testError.Error(),
@@ -949,16 +977,16 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
-			ExpectedErrorMsg: "failed to delete a record of service bindings, status:",
+			ExpectedErrorMsg: "failed to delete service binding, status:",
 		},
 		// Async flow
 		{
@@ -967,13 +995,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config: testConfig,
 		},
@@ -983,13 +1011,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config: testConfig,
 		},
@@ -999,13 +1027,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the operation status path from %s header should not be empty", locationHeaderKey),
@@ -1016,16 +1044,16 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
-			ExpectedErrorMsg: "while deleting a record of service bindings with ID:",
+			ExpectedErrorMsg: "while deleting service binding with ID:",
 		},
 		{
 			Name:           "Error when operation response status code is not 200 OK",
@@ -1033,13 +1061,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to get asynchronous object operation status. Received status:",
@@ -1050,13 +1078,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: "failed to unmarshal object operation status:",
@@ -1067,13 +1095,13 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 			ResourcesFn: func() *resmock.Resources {
 				resources := &resmock.Resources{}
 				resources.On("GetType").Return(types.ServiceBindingsType)
-				resources.On("MatchMultiple", types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID})
+				resources.On("MatchMultiple", types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID}).Return([]string{serviceKeyID}, nil).Once()
 				return resources
 			},
-			ResourcesArgsFN: func() *resmock.ResourceArguments {
-				resourceArgs := &resmock.ResourceArguments{}
-				resourceArgs.On("GetURLPath").Return(paths.ServiceBindingsPath)
-				return resourceArgs
+			ResourceMatchParamsFN: func() *resmock.ResourceMatchParameters {
+				resourceMatchParams := &resmock.ResourceMatchParameters{}
+				resourceMatchParams.On("GetURLPath").Return(paths.ServiceBindingsPath)
+				return resourceMatchParams
 			},
 			Config:           testConfig,
 			ExpectedErrorMsg: fmt.Sprintf("the asynchronous object operation finished with state: %q", types.OperationStateFailed),
@@ -1088,7 +1116,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 		// WHEN
-		err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, types.ServiceKeyArguments{ServiceInstanceID: serviceInstanceID})
+		err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {

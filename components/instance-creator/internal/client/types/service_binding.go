@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/json"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 )
@@ -56,19 +58,23 @@ type ServiceKeys struct {
 }
 
 // Match matches a ServiceKey based on some criteria
-func (sk ServiceKeys) Match(args resources.ResourceArguments) (string, error) {
+func (sk ServiceKeys) Match(params resources.ResourceMatchParameters) (string, error) {
 	return "", nil // implement me when needed
 }
 
 // MatchMultiple matches several ServiceKeys based on some criteria
-func (sk ServiceKeys) MatchMultiple(args resources.ResourceArguments) []string {
+func (sk ServiceKeys) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
+	serviceKeyParams, ok := params.(ServiceKeyMatchParameters)
+	if !ok {
+		return nil, errors.New("while type asserting ResourceMatchParameters to ServiceKeyMatchParameters")
+	}
 	serviceKeyIDs := make([]string, 0, sk.NumItems)
 	for _, item := range sk.Items {
-		if item.ServiceInstanceID == args.(ServiceKeyArguments).ServiceInstanceID {
+		if item.ServiceInstanceID == serviceKeyParams.ServiceInstanceID {
 			serviceKeyIDs = append(serviceKeyIDs, item.ID)
 		}
 	}
-	return serviceKeyIDs
+	return serviceKeyIDs, nil
 }
 
 // GetType gets the type of the ServiceKeys
@@ -76,12 +82,12 @@ func (sk ServiceKeys) GetType() string {
 	return ServiceBindingsType
 }
 
-// ServiceKeyArguments holds all the necessary fields that are used when matching ServiceKeys
-type ServiceKeyArguments struct {
+// ServiceKeyMatchParameters holds all the necessary fields that are used when matching ServiceKeys
+type ServiceKeyMatchParameters struct {
 	ServiceInstanceID string
 }
 
 // GetURLPath gets the URL Path of the ServiceKey
-func (ska ServiceKeyArguments) GetURLPath() string {
+func (ska ServiceKeyMatchParameters) GetURLPath() string {
 	return paths.ServiceBindingsPath
 }

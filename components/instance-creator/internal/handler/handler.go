@@ -10,11 +10,11 @@ import (
 // Client is used to call SM
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) (string, error)
-	RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceArgs resources.ResourceArguments) (resources.Resource, error)
+	RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error)
+	RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) (resources.Resource, error)
 	CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error)
-	DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceArgs resources.ResourceArguments) error
-	DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) error
+	DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) error
+	DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) error
 }
 
 // InstanceCreatorHandler processes received requests

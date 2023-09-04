@@ -45,8 +45,13 @@ type ServiceOfferings struct {
 }
 
 // Match matches a ServiceOffering based on some criteria
-func (so ServiceOfferings) Match(args resources.ResourceArguments) (string, error) {
-	catalogName := args.(ServiceOfferingArguments).CatalogName
+func (so ServiceOfferings) Match(params resources.ResourceMatchParameters) (string, error) {
+	serviceOfferingParams, ok := params.(ServiceOfferingMatchParameters)
+	if !ok {
+		return "", errors.New("while type asserting ResourceMatchParameters to ServiceOfferingMatchParameters")
+	}
+
+	catalogName := serviceOfferingParams.CatalogName
 	for _, item := range so.Items {
 		if item.CatalogName == catalogName {
 			return item.ID, nil
@@ -56,8 +61,8 @@ func (so ServiceOfferings) Match(args resources.ResourceArguments) (string, erro
 }
 
 // MatchMultiple matches several ServiceOfferings based on some criteria
-func (so ServiceOfferings) MatchMultiple(args resources.ResourceArguments) []string {
-	return nil // implement me when needed
+func (so ServiceOfferings) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
+	return nil, nil // implement me when needed
 }
 
 // GetType gets the type of the ServiceOfferings
@@ -65,12 +70,12 @@ func (so ServiceOfferings) GetType() string {
 	return ServiceOfferingsType
 }
 
-// ServiceOfferingArguments holds all the necessary fields that are used when matching ServiceOfferings
-type ServiceOfferingArguments struct {
+// ServiceOfferingMatchParameters holds all the necessary fields that are used when matching ServiceOfferings
+type ServiceOfferingMatchParameters struct {
 	CatalogName string
 }
 
 // GetURLPath gets the URL Path of the ServiceOffering
-func (sp ServiceOfferingArguments) GetURLPath() string {
+func (sp ServiceOfferingMatchParameters) GetURLPath() string {
 	return paths.ServiceOfferingsPath
 }

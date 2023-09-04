@@ -29,18 +29,18 @@ func (_m *Resources) GetType() string {
 }
 
 // Match provides a mock function with given fields: params
-func (_m *Resources) Match(params resources.ResourceArguments) (string, error) {
+func (_m *Resources) Match(params resources.ResourceMatchParameters) (string, error) {
 	ret := _m.Called(params)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(resources.ResourceArguments) string); ok {
+	if rf, ok := ret.Get(0).(func(resources.ResourceMatchParameters) string); ok {
 		r0 = rf(params)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(resources.ResourceArguments) error); ok {
+	if rf, ok := ret.Get(1).(func(resources.ResourceMatchParameters) error); ok {
 		r1 = rf(params)
 	} else {
 		r1 = ret.Error(1)
@@ -50,11 +50,11 @@ func (_m *Resources) Match(params resources.ResourceArguments) (string, error) {
 }
 
 // MatchMultiple provides a mock function with given fields: params
-func (_m *Resources) MatchMultiple(params resources.ResourceArguments) []string {
+func (_m *Resources) MatchMultiple(params resources.ResourceMatchParameters) []string {
 	ret := _m.Called(params)
 
 	var r0 []string
-	if rf, ok := ret.Get(0).(func(resources.ResourceArguments) []string); ok {
+	if rf, ok := ret.Get(0).(func(resources.ResourceMatchParameters) []string); ok {
 		r0 = rf(params)
 	} else {
 		if ret.Get(0) != nil {

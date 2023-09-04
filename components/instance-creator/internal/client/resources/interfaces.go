@@ -13,15 +13,15 @@ type Resource interface {
 //
 //go:generate mockery --name=Resources --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Resources interface {
-	Match(params ResourceArguments) (string, error)
-	MatchMultiple(params ResourceArguments) []string
+	Match(params ResourceMatchParameters) (string, error)
+	MatchMultiple(params ResourceMatchParameters) ([]string, error)
 	GetType() string
 }
 
-// ResourceArguments holds all specific arguments needed for matching resources and provides the specific URL Path of each one
+// ResourceMatchParameters holds all specific parameters needed for matching resources and provides the specific URL Path of each one
 //
-//go:generate mockery --name=ResourceArguments --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ResourceArguments interface {
+//go:generate mockery --name=ResourceMatchParameters --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ResourceMatchParameters interface {
 	GetURLPath() string
 }
 

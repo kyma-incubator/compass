@@ -45,9 +45,14 @@ type ServicePlans struct {
 }
 
 // Match matches a ServicePlan based on some criteria
-func (sp ServicePlans) Match(args resources.ResourceArguments) (string, error) {
-	planName := args.(ServicePlanArguments).PlanName
-	offeringID := args.(ServicePlanArguments).OfferingID
+func (sp ServicePlans) Match(params resources.ResourceMatchParameters) (string, error) {
+	servicePlanParams, ok := params.(ServicePlanMatchParameters)
+	if !ok {
+		return "", errors.New("while type asserting ResourceMatchParameters to ServicePlanMatchParameters")
+	}
+
+	planName := servicePlanParams.PlanName
+	offeringID := servicePlanParams.OfferingID
 
 	for _, item := range sp.Items {
 		if item.CatalogName == planName && item.ServiceOfferingId == offeringID {
@@ -58,8 +63,8 @@ func (sp ServicePlans) Match(args resources.ResourceArguments) (string, error) {
 }
 
 // MatchMultiple matches several ServicePlans based on some criteria
-func (sp ServicePlans) MatchMultiple(args resources.ResourceArguments) []string {
-	return nil // implement me when needed
+func (sp ServicePlans) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
+	return nil, nil // implement me when needed
 }
 
 // GetType gets the type of the ServicePlans
@@ -67,13 +72,13 @@ func (sp ServicePlans) GetType() string {
 	return ServicePlansType
 }
 
-// ServicePlanArguments holds all the necessary fields that are used when matching ServicePlans
-type ServicePlanArguments struct {
+// ServicePlanMatchParameters holds all the necessary fields that are used when matching ServicePlans
+type ServicePlanMatchParameters struct {
 	PlanName   string
 	OfferingID string
 }
 
 // GetURLPath gets the URL Path of the ServicePlan
-func (spa ServicePlanArguments) GetURLPath() string {
+func (spa ServicePlanMatchParameters) GetURLPath() string {
 	return paths.ServicePlansPath
 }
