@@ -73,7 +73,7 @@ Generate the secret name
 {{- end -}}
 
 {{/*
-Check if any types of credentials are defined
+Check if any type of credentials are defined
 */}}
 {{- define "gcloud-sqlproxy.hasCredentials" -}}
 {{ or .Values.serviceAccountKey ( or .Values.existingSecret .Values.usingGCPController ) -}}
@@ -88,4 +88,22 @@ Create the name of the service account to use
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Create the short instance name
+*/}}
+{{- define "gcloud-sqlproxy.instanceShortName" -}}
+{{ .instanceShortName | default (.instance | trunc 15 | trimSuffix "-") }}
+{{- end -}}
+
+{{/*
+Renders a value that contains template.
+*/}}
+{{- define "common.tplvalues.render" -}}
+    {{- if typeIs "string" .value }}
+        {{- tpl .value .context }}
+    {{- else }}
+        {{- tpl (.value | toYaml) .context }}
+    {{- end }}
 {{- end -}}

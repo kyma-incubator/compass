@@ -1,4 +1,5 @@
 {{- if .Values.deployment.autoscaling.enabled }}
+# Custom apiVersion as our Kubernetes servers are behind on version, at least the local ones
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:

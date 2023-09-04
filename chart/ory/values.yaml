@@ -311,10 +311,20 @@ oathkeeper:
           memory: 64Mi
 # Remote persistance settings
 gcloud-sqlproxy:
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    privileged: false
+    runAsGroup: 65532
+    runAsNonRoot: true
+    runAsUser: 65532
   rbac:
     create: true
   extraArgs:
     log_debug_stdout: true
     term_timeout: 30s
+  # TODO!!! See if this can be removed as we have automigrate as job now
   podAnnotations:
     sidecar.istio.io/inject: "false"
