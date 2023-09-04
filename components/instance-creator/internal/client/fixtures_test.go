@@ -24,10 +24,8 @@ const (
 	catalogName         = "test-catalog-name"
 	subaccountID        = "test-subaccount-id"
 	offeringID          = "test-offering-id"
-	planName            = "test-plan-name"
 	planID              = "test-plan-id"
 	serviceKeyID        = "test-service-key-id"
-	serviceKeyName      = "test-service-key-name"
 	serviceInstanceID   = "test-service-instance-id"
 	serviceInstanceName = "test-service-instance-name"
 
@@ -194,28 +192,6 @@ func fixServiceOfferingsWithNoMatchingCatalogName() types.ServiceOfferings {
 	}
 }
 
-func fixServicePlan(id, catalogName, offeringID string) types.ServicePlan {
-	return types.ServicePlan{
-		ID:                id,
-		CatalogName:       catalogName,
-		ServiceOfferingId: offeringID,
-	}
-}
-
-func fixServicePlans() types.ServicePlans {
-	return types.ServicePlans{
-		NumItems: 2,
-		Items:    []types.ServicePlan{fixServicePlan(planID, planName, offeringID), fixServicePlan(testID, testName, testID)},
-	}
-}
-
-func fixServicePlansWithNoMatchingCatalogNameAndOfferingID() types.ServicePlans {
-	return types.ServicePlans{
-		NumItems: 2,
-		Items:    []types.ServicePlan{fixServicePlan(testID, testName, testID), fixServicePlan(testID, testName, testID)},
-	}
-}
-
 func fixServiceKey() *types.ServiceKey {
 	return &types.ServiceKey{
 		ID:                serviceKeyID,
@@ -235,20 +211,6 @@ func fixServiceInstance(id, name string) types.ServiceInstance {
 	return types.ServiceInstance{
 		ID:   id,
 		Name: name,
-	}
-}
-
-func fixServiceInstances() types.ServiceInstances {
-	return types.ServiceInstances{
-		NumItems: 2,
-		Items:    []types.ServiceInstance{fixServiceInstance(serviceInstanceID, serviceInstanceName), fixServiceInstance(testID, testName)},
-	}
-}
-
-func fixServiceInstancesWithNoMatchingName() types.ServiceInstances {
-	return types.ServiceInstances{
-		NumItems: 2,
-		Items:    []types.ServiceInstance{fixServiceInstance(serviceInstanceID, testName), fixServiceInstance(testID, testName)},
 	}
 }
 

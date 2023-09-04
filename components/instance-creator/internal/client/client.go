@@ -10,8 +10,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
 	"github.com/pkg/errors"
@@ -51,165 +52,84 @@ func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *cli
 	}
 }
 
-// RetrieveServiceOffering retrieves a Service Offering
-func (c *client) RetrieveServiceOffering(ctx context.Context, region, catalogName, subaccountID string) (string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, paths.ServiceOfferingsPath, SubaccountKey, subaccountID)
+// RetrieveResource retrieves a given resource from SM by some criteria
+// Example call, delete after initial usage of the client:
+// RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, types.ServiceOfferingArguments{CatalogName: catalogName})
+func (c *client) RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) (string, error) {
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourceArgs.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
-		return "", errors.Wrapf(err, "while building service offerings URL")
+		return "", errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
 
-	log.C(ctx).Infof("Listing service offerings for subaccount with ID: %q...", subaccountID)
+	log.C(ctx).Infof("Listing %s for subaccount with ID: %q...", resources.GetType(), subaccountID)
 	body, err := c.executeSyncRequest(ctx, strURL, region)
 	if err != nil {
-		return "", errors.Wrapf(err, "while executing request for retrieving service offerings for subaccount with ID: %q", subaccountID)
+		return "", errors.Wrapf(err, "while executing request for retrieving %s for subaccount with ID: %q", resources.GetType(), subaccountID)
 	}
-	log.C(ctx).Infof("Successfully fetch service offerings for subaccount with ID: %q...", subaccountID)
+	log.C(ctx).Infof("Successfully fetch %s for subaccount with ID: %q...", resources.GetType(), subaccountID)
 
-	var offerings types.ServiceOfferings
-	err = json.Unmarshal(body, &offerings)
+	err = json.Unmarshal(body, &resources)
 	if err != nil {
-		return "", errors.Errorf("failed to unmarshal service offerings: %v", err)
+		return "", errors.Errorf("failed to unmarshal %s: %v", resources.GetType(), err)
 	}
 
-	var offeringID string
-	for _, item := range offerings.Items {
-		if item.CatalogName == catalogName {
-			offeringID = item.ID
-			break
-		}
-	}
-
-	if offeringID == "" {
-		return "", errors.Errorf("couldn't find service offering for catalog name: %s", catalogName)
-	}
-
-	log.C(ctx).Infof("Service offering with ID: %q for catalog name: %q and subaccount: %q is found", offeringID, catalogName, subaccountID)
-
-	return offeringID, nil
-}
-
-// RetrieveServicePlan retrieves a Service Plan
-func (c *client) RetrieveServicePlan(ctx context.Context, region, planName, offeringID, subaccountID string) (string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, paths.ServicePlansPath, SubaccountKey, subaccountID)
-	if err != nil {
-		return "", errors.Wrapf(err, "while building service plans URL")
-	}
-
-	log.C(ctx).Infof("Listing service plans for subaccount with ID: %q...", subaccountID)
-	body, err := c.executeSyncRequest(ctx, strURL, region)
-	if err != nil {
-		return "", errors.Wrapf(err, "while executing request for retrieving service plans for subaccount with ID: %q", subaccountID)
-	}
-	log.C(ctx).Infof("Successfully fetch service plans for subaccount with ID: %q...", subaccountID)
-
-	var plans types.ServicePlans
-	err = json.Unmarshal(body, &plans)
-	if err != nil {
-		return "", errors.Errorf("failed to unmarshal service plans: %v", err)
-	}
-
-	var planID string
-	for _, item := range plans.Items {
-		if item.CatalogName == planName && item.ServiceOfferingId == offeringID {
-			planID = item.ID
-			break
-		}
-	}
-
-	if planID == "" {
-		return "", errors.Errorf("couldn't find service plan for catalog name: %s and offering ID: %s", planName, offeringID)
-	}
-
-	log.C(ctx).Infof("Service plan with ID: %q for offering with ID: %q and subaccount: %q is found", planID, offeringID, subaccountID)
-
-	return planID, nil
-}
-
-// RetrieveServiceKeyByID retrieves a Service Key by its ID
-func (c *client) RetrieveServiceKeyByID(ctx context.Context, region, serviceKeyID, subaccountID string) (*types.ServiceKey, error) {
-	svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", serviceKeyID)
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, svcKeyPath, SubaccountKey, subaccountID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while building service binding URL")
-	}
-
-	log.C(ctx).Infof("Getting service key by ID: %s for subaccount with ID: %q", serviceKeyID, subaccountID)
-	body, err := c.executeSyncRequest(ctx, strURL, region)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while executing request for retrieving service key for subaccount with ID: %q", subaccountID)
-	}
-	log.C(ctx).Infof("Successfully fetch service key by ID: %s for subaccount with ID: %q", serviceKeyID, subaccountID)
-
-	var serviceKey types.ServiceKey
-	err = json.Unmarshal(body, &serviceKey)
-	if err != nil {
-		return nil, errors.Errorf("failed to unmarshal service key: %v", err)
-	}
-
-	return &serviceKey, nil
-}
-
-// RetrieveServiceInstanceIDByName retrieves a Service Instance by its name
-func (c *client) RetrieveServiceInstanceIDByName(ctx context.Context, region, serviceInstanceName, subaccountID string) (string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, paths.ServiceInstancesPath, SubaccountKey, subaccountID)
-	if err != nil {
-		return "", errors.Wrapf(err, "while building service instances URL")
-	}
-
-	log.C(ctx).Infof("Listing service instances for subaccount with ID: %s...", subaccountID)
-	body, err := c.executeSyncRequest(ctx, strURL, region)
-	if err != nil {
-		return "", errors.Wrapf(err, "while executing request for retrieving service instances for subaccount with ID: %q", subaccountID)
-	}
-	log.C(ctx).Infof("Successfully fetch service instances for subaccount with ID: %q", subaccountID)
-
-	var instances types.ServiceInstances
-	err = json.Unmarshal(body, &instances)
-	if err != nil {
-		return "", errors.Errorf("failed to unmarshal service instances: %v", err)
-	}
-
-	var instanceID string
-	for _, item := range instances.Items {
-		if item.Name == serviceInstanceName {
-			instanceID = item.ID
-			break
-		}
-	}
-
-	if instanceID == "" {
-		log.C(ctx).Warnf("No instance ID found by name: %q for subaccount with ID: %q", serviceInstanceName, subaccountID)
-		return "", nil
-	}
-
-	log.C(ctx).Infof("Successfully found service instance with ID: %q by instance name: %q for subaccount with ID: %q", instanceID, serviceInstanceName, subaccountID)
-	return instanceID, nil
-}
-
-// CreateServiceInstance creates a Service Instance both synchronously and asynchronously
-func (c *client) CreateServiceInstance(ctx context.Context, region, serviceInstanceName, planID, subaccountID string, parameters []byte) (string, error) {
-	siReqBody := &types.ServiceInstanceReqBody{
-		Name:          serviceInstanceName,
-		ServicePlanID: planID,
-		Parameters:    parameters, // todo::: most probably should be provided as `parameters` label in the TM notification body - `receiverTenant.parameters`?
-	}
-
-	siReqBodyBytes, err := json.Marshal(siReqBody)
-	if err != nil {
-		return "", errors.Errorf("failed to marshal service instance body: %v", err)
-	}
-
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, paths.ServiceInstancesPath, SubaccountKey, subaccountID)
-	if err != nil {
-		return "", errors.Wrapf(err, "while building service instances URL")
-	}
-
-	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(siReqBodyBytes))
+	resourceID, err := resources.Match(resourceArgs)
 	if err != nil {
 		return "", err
 	}
 
-	log.C(ctx).Infof("Creating service instance with name: %q from plan with ID: %q and subaccount ID: %q", serviceInstanceName, planID, subaccountID)
+	log.C(ctx).Infof("%s record with ID: %q and subaccount: %q is found", resources.GetType(), resourceID, subaccountID)
+
+	return resourceID, nil
+}
+
+// RetrieveResourceByID retrieves a given resource from SM by its ID
+// Example call, delete after initial usage of the client:
+//
+// RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, types.ServiceKeyArguments{})
+func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceArgs resources.ResourceArguments) (resources.Resource, error) {
+	resourcePath := resourceArgs.GetURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
+	}
+
+	log.C(ctx).Infof("Getting %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
+	body, err := c.executeSyncRequest(ctx, strURL, region)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while executing request for retrieving %s for subaccount with ID: %q", resource.GetResourceType(), subaccountID)
+	}
+	log.C(ctx).Infof("Successfully fetched %s by ID: %s for subaccount with ID: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
+
+	err = json.Unmarshal(body, &resource)
+	if err != nil {
+		return nil, errors.Errorf("failed to unmarshal %s: %v", resource.GetResourceType(), err)
+	}
+
+	return resource, nil
+}
+
+// CreateResource creates a given resource in SM
+// Example call, delete after initial usage of the client:
+//
+// CreateResource(ctx, region, subaccountID, types.ServiceInstanceReqBody{Name: name, ServicePlanID: id, Parameters: params}, &types.ServiceInstance{})
+func (c *client) CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error) {
+	resourceReqBodyBytes, err := json.Marshal(resourceReqBody)
+	if err != nil {
+		return "", errors.Errorf("failed to marshal %s body: %v", resource.GetResourceType(), err)
+	}
+
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resource.GetResourceURLPath(), SubaccountKey, subaccountID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
+	}
+
+	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(resourceReqBodyBytes))
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Infof("Creating %s for subaccount with ID: %q", resource.GetResourceType(), subaccountID)
 	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
@@ -223,119 +143,49 @@ func (c *client) CreateServiceInstance(ctx context.Context, region, serviceInsta
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Errorf("failed to read response body from service instance creation request: %v", err)
+		return "", errors.Errorf("failed to read response body from %s creation request: %v", resource.GetResourceType(), err)
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
-		return "", errors.Errorf("failed to create service instance, status: %d, body: %s", resp.StatusCode, body)
+		return "", errors.Errorf("failed to create record of %s, status: %d, body: %s", resource.GetResourceType(), resp.StatusCode, body)
 	}
 
 	if resp.StatusCode == http.StatusAccepted {
-		log.C(ctx).Infof("Handle asynchronous service instance creation...")
-		serviceInstanceID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
+		log.C(ctx).Infof("Handle asynchronous creation of %s...", resource.GetResourceType())
+		resourceID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
 		if err != nil {
-			return "", errors.Wrapf(err, "while handling asynchronous creation of service instance with name: %q from plan with ID: %q and subaccount ID: %q", serviceInstanceName, planID, subaccountID)
+			return "", errors.Wrapf(err, "while handling asynchronous creation of %s in subaccount with ID: %q", resource.GetResourceType(), subaccountID)
 		}
-		if serviceInstanceID == "" {
-			return "", errors.New("the service instance ID could not be empty")
+		if resourceID == "" {
+			return "", errors.Errorf("the %s ID could not be empty", resource.GetResourceType())
 		}
 
-		return serviceInstanceID, nil
+		return resourceID, nil
 	}
 
-	var serviceInstance types.ServiceInstance
-	err = json.Unmarshal(body, &serviceInstance)
+	err = json.Unmarshal(body, &resource)
 	if err != nil {
-		return "", errors.Errorf("failed to unmarshal service instance: %v", err)
+		return "", errors.Errorf("failed to unmarshal %s: %v", resource.GetResourceType(), err)
 	}
 
-	serviceInstanceID := serviceInstance.ID
-	if serviceInstanceID == "" {
-		return "", errors.New("the service instance ID could not be empty")
+	resourceID := resource.GetResourceID()
+	if resourceID == "" {
+		return "", errors.Errorf("the %s ID could not be empty", resource.GetResourceType())
 	}
-	log.C(ctx).Infof("Successfully created service instance with name: %q, ID: %q and subaccount ID: %q synchronously", serviceInstanceName, serviceInstanceID, subaccountID)
+	log.C(ctx).Infof("Successfully created %s for subaccount with ID: %q synchronously", resource.GetResourceType(), subaccountID)
 
-	return serviceInstanceID, nil
+	return resourceID, nil
 }
 
-// CreateServiceKey creates a Service Key both synchronously and asynchronously
-func (c *client) CreateServiceKey(ctx context.Context, region, serviceKeyName, serviceInstanceID, subaccountID string, parameters []byte) (string, error) {
-	serviceKeyReqBody := &types.ServiceKeyReqBody{
-		Name:              serviceKeyName,
-		ServiceInstanceID: serviceInstanceID,
-		Parameters:        parameters,
-	}
-
-	serviceKeyReqBodyBytes, err := json.Marshal(serviceKeyReqBody)
+// DeleteResource deletes a given resource from SM by its ID
+// Example call, delete after initial usage of the client:
+//
+// DeleteResource(ctx, region, subaccountID, types.ServiceInstance{ID: id}, types.ServiceInstanceArguments{})
+func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceArgs resources.ResourceArguments) error {
+	resourcePath := resourceArgs.GetURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
-		return "", errors.Errorf("failed to marshal service key body: %v", err)
-	}
-
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, paths.ServiceBindingsPath, SubaccountKey, subaccountID)
-	if err != nil {
-		return "", errors.Wrapf(err, "while building service bindings URL")
-	}
-
-	log.C(ctx).Infof("Creating service key for service instance with ID: %q and subaccount: %q", serviceInstanceID, subaccountID)
-	req, err := http.NewRequest(http.MethodPost, strURL, bytes.NewBuffer(serviceKeyReqBodyBytes))
-	if err != nil {
-		return "", err
-	}
-
-	caller, err := c.callerProvider.GetCaller(c.cfg, region)
-	if err != nil {
-		return "", errors.Wrapf(err, "while getting caller for region: %s", region)
-	}
-
-	resp, err := caller.Call(req)
-	if err != nil {
-		return "", err
-	}
-	defer closeResponseBody(ctx, resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Errorf("failed to read response body from service key creation request: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
-		return "", errors.Errorf("failed to create service key, status: %d, body: %s", resp.StatusCode, body)
-	}
-
-	if resp.StatusCode == http.StatusAccepted {
-		log.C(ctx).Infof("Handle asynchronous service key creation...")
-		serviceKeyID, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, true)
-		if err != nil {
-			return "", errors.Wrapf(err, "while handling asynchronous creation of service key for service instance with ID: %q and subaccount: %q", serviceInstanceID, subaccountID)
-		}
-		if serviceKeyID == "" {
-			return "", errors.New("the service key ID could not be empty")
-		}
-
-		return serviceKeyID, nil
-	}
-
-	var serviceKey types.ServiceKey
-	err = json.Unmarshal(body, &serviceKey)
-	if err != nil {
-		return "", errors.Errorf("failed to unmarshal service key: %v", err)
-	}
-
-	serviceKeyID := serviceKey.ID
-	if serviceKeyID == "" {
-		return "", errors.New("the service key ID could not be empty")
-	}
-	log.C(ctx).Infof("Successfully created service key with name: %q and subaccount: %q synchronously", serviceKeyName, subaccountID)
-
-	return serviceKeyID, nil
-}
-
-// DeleteServiceInstance deletes a Service Instance both synchronously and asynchronously
-func (c *client) DeleteServiceInstance(ctx context.Context, region, serviceInstanceID, serviceInstanceName, subaccountID string) error {
-	svcInstancePath := paths.ServiceInstancesPath + fmt.Sprintf("/%s", serviceInstanceID)
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, svcInstancePath, SubaccountKey, subaccountID)
-	if err != nil {
-		return errors.Wrapf(err, "while building service instances URL")
+		return errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, strURL, nil)
@@ -343,7 +193,7 @@ func (c *client) DeleteServiceInstance(ctx context.Context, region, serviceInsta
 		return err
 	}
 
-	log.C(ctx).Infof("Deleting service instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
+	log.C(ctx).Infof("Deleting %s with ID: %q and subaccount: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
 	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
 		return errors.Errorf("error while getting caller for region: %s", region)
@@ -357,44 +207,47 @@ func (c *client) DeleteServiceInstance(ctx context.Context, region, serviceInsta
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Errorf("failed to read response body from service instance deletion request: %v", err)
+		return errors.Errorf("failed to read response body from %s deletion request: %v", resource.GetResourceType(), err)
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return errors.Errorf("failed to delete service instance, status: %d, body: %s", resp.StatusCode, body)
+		return errors.Errorf("failed to delete %s, status: %d, body: %s", resource.GetResourceType(), resp.StatusCode, body)
 	}
 
 	if resp.StatusCode == http.StatusAccepted {
-		log.C(ctx).Infof("Handle asynchronous service instance deletion...")
+		log.C(ctx).Infof("Handle asynchronous %s deletion...", resource.GetResourceType())
 		_, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, false)
 		if err != nil {
-			return errors.Wrapf(err, "while deleting service instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
+			return errors.Wrapf(err, "while deleting %s with ID: %q and subaccount: %q", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
 		}
 		return nil
 	}
 
-	log.C(ctx).Infof("Successfully deleted service instance with ID: %q and subaccount: %q synchronously", serviceInstanceID, subaccountID)
+	log.C(ctx).Infof("Successfully deleted %s with ID: %q and subaccount: %q synchronously", resource.GetResourceType(), resource.GetResourceID(), subaccountID)
 
 	return nil
 }
 
-// DeleteServiceKeys deletes all Service Keys related to a Service Instance both synchronously and asynchronously
-func (c *client) DeleteServiceKeys(ctx context.Context, region, serviceInstanceID, serviceInstanceName, subaccountID string) error {
+// DeleteMultipleResources deletes multiple resources from SM by some criteria
+// Example call, delete after initial usage of the client:
+//
+// DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, types.ServiceKeyArguments{ServiceInstanceID: id})
+func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) error {
 	caller, err := c.callerProvider.GetCaller(c.cfg, region)
 	if err != nil {
 		return errors.Errorf("error while getting caller for region: %s", region)
 	}
 
-	svcKeyIDs, err := c.retrieveServiceKeysIDByInstanceID(ctx, caller, serviceInstanceID, serviceInstanceName, subaccountID)
+	resourceIDs, err := c.retrieveMultipleResources(ctx, caller, subaccountID, resources, resourceArgs)
 	if err != nil {
 		return err
 	}
 
-	for _, keyID := range svcKeyIDs {
-		svcKeyPath := paths.ServiceBindingsPath + fmt.Sprintf("/%s", keyID)
-		strURL, err := buildURL(c.cfg.InstanceSMURLPath, svcKeyPath, SubaccountKey, subaccountID)
+	for _, resourceID := range resourceIDs {
+		resourcePath := resourceArgs.GetURLPath() + fmt.Sprintf("/%s", resourceID)
+		strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
 		if err != nil {
-			return errors.Wrapf(err, "while building service binding URL")
+			return errors.Wrapf(err, "while building %s URL", resources.GetType())
 		}
 
 		req, err := http.NewRequest(http.MethodDelete, strURL, nil)
@@ -402,7 +255,7 @@ func (c *client) DeleteServiceKeys(ctx context.Context, region, serviceInstanceI
 			return err
 		}
 
-		log.C(ctx).Infof("Deleting service binding with ID: %q for subaccount: %q", keyID, subaccountID)
+		log.C(ctx).Infof("Deleting record of %s with ID: %q for subaccount: %q", resources.GetType(), resourceID, subaccountID)
 		resp, err := caller.Call(req)
 		if err != nil {
 			return err
@@ -411,23 +264,23 @@ func (c *client) DeleteServiceKeys(ctx context.Context, region, serviceInstanceI
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return errors.Errorf("failed to read response body from service binding deletion request: %v", err)
+			return errors.Errorf("failed to read response body from %s deletion request: %v", resources.GetType(), err)
 		}
 
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-			return errors.Errorf("failed to delete service binding, status: %d, body: %s", resp.StatusCode, body)
+			return errors.Errorf("failed to delete a record of %s, status: %d, body: %s", resources.GetType(), resp.StatusCode, body)
 		}
 
 		if resp.StatusCode == http.StatusAccepted {
-			log.C(ctx).Infof("Handle asynchronous service binding deletion...")
+			log.C(ctx).Infof("Handle asynchronous %s deletion...", resources.GetType())
 			_, err := c.executeAsyncRequest(ctx, resp, caller, subaccountID, false)
 			if err != nil {
-				return errors.Wrapf(err, "while deleting service binding with ID: %q for subaccount: %q", keyID, subaccountID)
+				return errors.Wrapf(err, "while deleting a record of %s with ID: %q for subaccount: %q", resources.GetType(), resourceID, subaccountID)
 			}
 			return nil
 		}
 
-		log.C(ctx).Infof("Successfully deleted service binding with ID: %q for subaccount: %q synchronously", keyID, subaccountID)
+		log.C(ctx).Infof("Successfully deleted a record of %s with ID: %q for subaccount: %q synchronously", resources.GetType(), resourceID, subaccountID)
 	}
 
 	return nil
@@ -551,10 +404,10 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 	}
 }
 
-func (c *client) retrieveServiceKeysIDByInstanceID(ctx context.Context, caller ExternalSvcCaller, serviceInstanceID, serviceInstanceName, subaccountID string) ([]string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, paths.ServiceBindingsPath, SubaccountKey, subaccountID)
+func (c *client) retrieveMultipleResources(ctx context.Context, caller ExternalSvcCaller, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) ([]string, error) {
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourceArgs.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while building service binding URL")
+		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
 
 	req, err := http.NewRequest(http.MethodGet, strURL, nil)
@@ -562,7 +415,7 @@ func (c *client) retrieveServiceKeysIDByInstanceID(ctx context.Context, caller E
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Listing service bindings for instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
+	log.C(ctx).Infof("Listing %s for subaccount: %q", resources.GetType(), subaccountID)
 	resp, err := caller.Call(req)
 	if err != nil {
 		log.C(ctx).Error(err)
@@ -572,27 +425,22 @@ func (c *client) retrieveServiceKeysIDByInstanceID(ctx context.Context, caller E
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Errorf("failed to read service binding response body: %v", err)
+		return nil, errors.Errorf("failed to read %s response body: %v", resources.GetType(), err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("failed to get service bindings, status: %d, body: %s", resp.StatusCode, body)
+		return nil, errors.Errorf("failed to get %s, status: %d, body: %s", resources.GetType(), resp.StatusCode, body)
 	}
-	log.C(ctx).Infof("Successfully fetch service bindings for instance with ID: %q, name: %q and subaccount: %q", serviceInstanceID, serviceInstanceName, subaccountID)
+	log.C(ctx).Infof("Successfully fetched %s for subaccount: %q", resources.GetType(), subaccountID)
 
-	var svcKeys types.ServiceKeys
-	err = json.Unmarshal(body, &svcKeys)
+	err = json.Unmarshal(body, &resources)
 	if err != nil {
-		return nil, errors.Errorf("failed to unmarshal service keys: %v", err)
+		return nil, errors.Errorf("failed to unmarshal %s: %v", resources.GetType(), err)
 	}
 
-	serviceKeysIDs := make([]string, 0, len(svcKeys.Items))
-	for _, key := range svcKeys.Items {
-		if key.ServiceInstanceID == serviceInstanceID {
-			serviceKeysIDs = append(serviceKeysIDs, key.ID)
-		}
-	}
-	log.C(ctx).Infof("Service instance with ID: %q and name: %q has/have %d keys(s)", serviceInstanceID, serviceInstanceName, len(serviceKeysIDs))
+	resourceIDs := resources.MatchMultiple(resourceArgs)
 
-	return serviceKeysIDs, nil
+	log.C(ctx).Infof("%d %s are found", len(resourceIDs), resources.GetType())
+
+	return resourceIDs, nil
 }

@@ -4,20 +4,17 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 )
 
 // Client is used to call SM
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
-	RetrieveServiceOffering(ctx context.Context, region, catalogName, subaccountID string) (string, error)
-	RetrieveServicePlan(ctx context.Context, region, planName, offeringID, subaccountID string) (string, error)
-	RetrieveServiceKeyByID(ctx context.Context, region, serviceKeyID, subaccountID string) (*types.ServiceKey, error)
-	RetrieveServiceInstanceIDByName(ctx context.Context, region, serviceInstanceName, subaccountID string) (string, error)
-	CreateServiceInstance(ctx context.Context, region, serviceInstanceName, planID, subaccountID string, parameters []byte) (string, error)
-	CreateServiceKey(ctx context.Context, region, serviceKeyName, serviceInstanceID, subaccountID string, parameters []byte) (string, error)
-	DeleteServiceInstance(ctx context.Context, region, serviceInstanceID, serviceInstanceName, subaccountID string) error
-	DeleteServiceKeys(ctx context.Context, region, serviceInstanceID, serviceInstanceName, subaccountID string) error
+	RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) (string, error)
+	RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceArgs resources.ResourceArguments) (resources.Resource, error)
+	CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error)
+	DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceArgs resources.ResourceArguments) error
+	DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceArgs resources.ResourceArguments) error
 }
 
 // InstanceCreatorHandler processes received requests
