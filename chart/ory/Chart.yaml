@@ -6,7 +6,7 @@ home: https://kyma-project.io
 icon: https://github.com/kyma-project/kyma/blob/main/logo.png?raw=true
 dependencies:
   - name: gcloud-sqlproxy
-    version: 0.22.6
+    version: 0.25.1
     condition: global.ory.hydra.persistence.gcloud.enabled
   - name: oathkeeper
     version: 0.35.0

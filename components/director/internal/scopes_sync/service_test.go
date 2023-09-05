@@ -187,7 +187,7 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 			},
 		}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(&oauth20.ClientDetails{
-			Scopes:     []string{"scope"},
+			Scopes:     []string{scope},
 			GrantTypes: []string{},
 		}, nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
@@ -253,10 +253,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 			},
 		}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(&oauth20.ClientDetails{
-			Scopes:     []string{"scope"},
+			Scopes:     []string{scope},
 			GrantTypes: []string{},
 		}, nil)
-		oauthSvc.On("UpdateClient", mock.Anything, "client-id", pkgmodel.ApplicationReference).Return(errors.New("fail"))
+		oauthSvc.On("UpdateClient", mock.Anything, clientID, pkgmodel.ApplicationReference).Return(errors.New("fail"))
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]pkgmodel.SystemAuth{
 			{
@@ -291,10 +291,10 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 			},
 		}, nil)
 		oauthSvc.On("GetClientDetails", pkgmodel.ApplicationReference).Return(&oauth20.ClientDetails{
-			Scopes:     []string{"scope"},
+			Scopes:     []string{scope},
 			GrantTypes: []string{},
 		}, nil)
-		oauthSvc.On("UpdateClient", mock.Anything, "client-id", pkgmodel.ApplicationReference).Return(nil)
+		oauthSvc.On("UpdateClient", mock.Anything, clientID, pkgmodel.ApplicationReference).Return(nil)
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]pkgmodel.SystemAuth{
 			{
