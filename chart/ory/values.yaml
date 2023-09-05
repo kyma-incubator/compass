@@ -14,7 +14,6 @@ global:
         enabled: true
         gcloud:
           enabled: false
-          saJson: ""
   containerRegistry:
     path: eu.gcr.io/kyma-project
   images:
@@ -22,29 +21,6 @@ global:
       name: "k8s-tools"
       version: "20220525-4bd6d72e"
       directory: "tpi"
-    ## Google Cloud SQL Proxy image
-    ## ref: https://cloud.google.com/sql/docs/mysql/sql-proxy
-    ## ref: https://cloud.google.com/sql/docs/postgres/sql-proxy
-    gce_proxy:
-      name: "gce-proxy"
-      version: "v1.30.1-alpine-3cba814e"
-      directory: "tpi/cloudsql-docker"
-    busybox:
-      name: "busybox"
-      version: "1.34.1"
-      directory: "external"
-    alpine:
-      name: "alpine"
-      version: "3.15.3"
-      directory: "external"
-headerRewrite:
-  enabled: true
-  certificateDataHeader: "Certificate-Data"
-  workloadLabel: oathkeeper
-# Maintenance options
-maintenance:
-  podSecurityPolicy:
-    enabled: true
 # Overrides for the Hydra chart
 hydra:
   maester:
@@ -77,8 +53,6 @@ hydra:
       rollingUpdate:
         maxSurge: "50%"
         maxUnavailable: "0%"
-    serviceAccount:
-      create: false
     resources:
       limits:
         cpu: 1000m
@@ -106,8 +80,6 @@ hydra:
   hydra:
     # Specifically set to 'true' to be able to serve the endpoints on 'http' as they are within Kubernetes
     dev: true
-    # The ORY Hydra configuration. For a full list of available settings, check:
-    #   https://github.com/ory/hydra/blob/master/docs/config.yaml
     automigration:
       enabled: true
       # Automigration is run as a Job to enabled Istio;
@@ -122,6 +94,8 @@ hydra:
           echo \"Sidecar available. Running...\";
           hydra migrate sql -e --yes --config /etc/config/hydra.yaml;
           x=$?; wget -q --post-data='' -S -O /dev/null http://127.0.0.1:15020/quitquitquit && exit $x
+    # The ORY Hydra configuration. For a full list of available settings, check:
+    # https://github.com/ory/hydra/blob/master/docs/config.yaml
     config:
       dsn: memory
       log:
@@ -141,7 +115,8 @@ hydra:
         self: {}
 # Overrides for the Oathkeeper chart
 oathkeeper:
-  # TODO!!! Any version above does not pass the liveness check as it expects at least one rule, our rules are deployed later with compass Helm chart
+  # Any version above does not pass the liveness check as it expects at least one rule, our rules are deployed later with compass Helm chart
+  # https://github.com/ory/k8s/issues/595
   image:
     tag: v0.40.1
   sidecar:
@@ -247,16 +222,15 @@ oathkeeper:
       serve:
         proxy:
           port: 4455
-          timeout:
-            idle: 3600s
-            read: 3600s
-            write: 3600s
         api:
           port: 4456
   secret:
     # Created by the pre-install job
     enabled: false
   deployment:
+    # The Service account created by the Oathkeeper maester is used
+    serviceAccount:
+      create: false
     automountServiceAccountToken: true
     livenessProbe:
       initialDelaySeconds: 15
@@ -299,9 +273,6 @@ oathkeeper:
     # Should be the same as oathkeeper.maester.nameOverride; otherwise, the maester SA, used by the sidecar, is never found
     fullnameOverride: "oathkeeper-stack-maester"
     deployment:
-      automountServiceAccountToken: false
-      annotations:
-        sidecar.istio.io/inject: "false"
       resources:
         limits:
           cpu: 100m
@@ -309,6 +280,7 @@ oathkeeper:
         requests:
           cpu: 50m
           memory: 64Mi
+
 # Remote persistance settings
 gcloud-sqlproxy:
   containerSecurityContext:
