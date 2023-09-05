@@ -758,24 +758,10 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 }
 
 func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
-	switch objectType {
-	case graphql.FormationObjectTypeApplication:
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return err
-		}
-	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
-			return err
-		} else if isFormationComingFromASA {
-			return apperrors.NewCannotUnassignObjectComingFromASAError(objectID)
-		}
-
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return err
-		}
-
-	default:
-		return nil
+	if objectType == graphql.FormationObjectTypeApplication ||
+		objectType == graphql.FormationObjectTypeRuntime ||
+		objectType == graphql.FormationObjectTypeRuntimeContext {
+		return s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation)
 	}
 	return nil
 }
@@ -859,27 +845,18 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 	formationFromDB := ft.formation
 
-	var requests []*webhookclient.FormationAssignmentNotificationRequest
-	if objectType != graphql.FormationObjectTypeTenant && formationFromDB.State == model.ReadyFormationState {
-		requests, err = s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return formationFromDB, nil
-			}
-			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
-		}
-	}
-
-	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "while unassigning from formation")
-	}
-	if apperrors.IsCannotUnassignObjectComingFromASAError(err) || apperrors.IsNotFoundError(err) {
-		// No need to enforce post-constraints as nothing is done
+	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+		return nil, err
+	} else if isFormationComingFromASA {
 		return formationFromDB, nil
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
+		err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while unassigning from formation")
+		}
+
 		asa, err := s.asaService.GetForScenarioName(ctx, formationName)
 		if err != nil {
 			return nil, err
@@ -909,28 +886,35 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return ft.formation, nil
 	}
 
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
-	if err != nil {
-		return nil, err
-	}
-
-	applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, formationAssignmentsForObject)
-	if err != nil {
-		return nil, err
-	}
-
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
-
 	transactionCtx := persistence.SaveToContext(ctx, tx)
 	defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+	requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(transactionCtx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return formationFromDB, nil
+		}
+		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
+	}
+
+	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	}
+
+	rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, formationAssignmentsForObject)
+	if err != nil {
+		return nil, err
+	}
+
+	applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, formationAssignmentsForObject)
+	if err != nil {
+		return nil, err
+	}
 
 	if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); err != nil {
 		commitErr := tx.Commit()
@@ -940,23 +924,35 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, err
 	}
 
-	// It is important to do the list in the inner transaction
-	pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
 	err = tx.Commit()
 	if err != nil {
 		return nil, errors.Wrapf(err, "while committing transaction")
 	}
 
-	if len(pendingAsyncAssignments) > 0 {
+	scenarioTx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
+	defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
+
+	// It is important to do the list in the inner transaction
+	pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	}
+
+	if len(pendingAsyncAssignments) == 0 {
 		log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-		err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is important to do the re-assign in the outer transaction.
+		err = s.unassign(scenarioTransactionCtx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+			return nil, errors.Wrapf(err, "while unassigning from formation")
 		}
+	}
+
+	err = scenarioTx.Commit()
+	if err != nil {
+		return nil, errors.Wrapf(err, "while committing transaction")
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
@@ -1101,8 +1097,13 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 
 			if len(leftAssignmentsInFormation) == 0 {
 				log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
+				if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+					return nil, err
+				} else if isFormationComingFromASA {
+					return formation, nil
+				}
 				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
-				if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
+				if err != nil {
 					return nil, errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
 				}
 			}
