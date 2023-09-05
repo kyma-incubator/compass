@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"net/http"
 	"os"
 	"time"
 
-	gqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
 
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/handler"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
 
 	"github.com/gorilla/mux"
 	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
@@ -20,18 +20,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/claims"
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/config"
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/healthz"
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/tenant"
-	"github.com/machinebox/graphql"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/claims"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/healthz"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/tenant"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 const (
-	envPrefix       = "APP"
-	healthzEndpoint = "/healthz"
+	envPrefix = "APP"
 )
 
 func main() {
@@ -49,16 +47,8 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	internalClientTransport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: cfg.SkipSSLValidation,
-		},
-	}
-
-	internalGatewayHTTPClient := &http.Client{
-		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(internalClientTransport), cfg.AuthorizationHeaderKey)),
-	}
+	err = cfg.PrepareConfiguration()
+	exitOnError(err, "Failed to prepare configuration with regional credentials")
 
 	fetchJWKSClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -73,20 +63,17 @@ func main() {
 	exitOnError(err, "Error while preparing tenant validation middleware")
 
 	mainRouter := mux.NewRouter()
-	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
+	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(paths.HealthzEndpoint), header.AttachHeadersToContext())
 
-	adapter := mainRouter.PathPrefix(cfg.APIRootPath).Subrouter()
-	adapter.Use(tokenValidationMiddleware.Handler())
-	adapter.Use(tenantValidationMiddleware.Handler())
+	creator := mainRouter.PathPrefix(cfg.APIRootPath).Subrouter()
+	creator.Use(tokenValidationMiddleware.Handler())
+	creator.Use(tenantValidationMiddleware.Handler())
 
-	directorGqlClient := gqlClient.NewClient(graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient)))
-	directorGqlClient.Log = func(s string) {
-		log.D().Info(s)
-	}
-	h := handler.NewHandler(directorGqlClient)
+	smClient := client.NewClient(cfg, client.NewCallerProvider())
+	c := handler.NewHandler(smClient)
 
-	adapter.HandleFunc(cfg.APITenantMappingsEndpoint, h.HandlerFunc).Methods(http.MethodPatch)
-	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())
+	creator.HandleFunc("/", c.HandlerFunc)
+	mainRouter.HandleFunc(paths.HealthzEndpoint, healthz.NewHTTPHandler())
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 
