@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -48,8 +46,8 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 
 		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
 
-		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, *appTemplate)
+		appTemplate = createAppTemplate(t, ctx, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", *appTemplate)
 	}
 
 	appTmplInput := directorSchema.ApplicationFromTemplateInput{
@@ -194,7 +192,7 @@ func updateAdaptersConfigmapWithDefaultValues(t *testing.T, ctx context.Context,
 	t.Log("Successfully updated adapters configmap with default values")
 }
 
-func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, newIntSysID, templateName, namePlaceholderKey, displayNamePlaceholderKey string) *directorSchema.ApplicationTemplate {
+func createAppTemplate(t *testing.T, ctx context.Context, newIntSysID, templateName, namePlaceholderKey, displayNamePlaceholderKey string) *directorSchema.ApplicationTemplate {
 	appTemplateDesc := "pairing-adapter-app-template-desc"
 	providerName := "compass-e2e-tests"
 	namePlaceholderDescription := "name-description"
@@ -227,14 +225,12 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 				JSONPath:    &displayNameJSONPath,
 			},
 		},
-		Labels: directorSchema.Labels{
-			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-		},
+		Labels:      directorSchema.Labels{},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}
 
 	t.Logf("Registering application template with name %q...", templateName)
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplateInput)
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTemplateInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTmpl.ID)
 	require.NotEmpty(t, appTmpl.Name)
@@ -248,9 +244,6 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOutput)
 
-	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
-	appTemplateInput.Labels[tenantfetcher.RegionKey] = appTemplateOutput.Labels[tenantfetcher.RegionKey]
-	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestCompassProviderSubaccount)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName, "displayName": fmt.Sprintf("{{%s}}", displayNamePlaceholderKey)}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 

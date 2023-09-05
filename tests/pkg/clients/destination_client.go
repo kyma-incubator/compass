@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -21,11 +23,13 @@ import (
 )
 
 type DestinationServiceAPIConfig struct {
-	EndpointTenantDestinations            string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
-	EndpointTenantDestinationCertificates string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/subaccountCertificates"`
-	Timeout                               time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
-	SkipSSLVerify                         bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
-	OAuthTokenPath                        string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
+	EndpointTenantSubaccountLevelDestinations            string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
+	EndpointTenantInstanceLevelDestinations              string        `envconfig:"APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATIONS,default=/destination-configuration/v1/instanceDestinations"`
+	EndpointTenantSubaccountLevelDestinationCertificates string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/subaccountCertificates"`
+	EndpointTenantInstanceLevelDestinationCertificates   string        `envconfig:"APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES,default=/destination-configuration/v1/instanceCertificates"`
+	Timeout                                              time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
+	SkipSSLVerify                                        bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
+	OAuthTokenPath                                       string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
 type Destination struct {
@@ -46,7 +50,7 @@ type DestinationClient struct {
 }
 
 func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	subdomain string) (*DestinationClient, error) {
+	subdomain, customClaimKeyParameter string) (*DestinationClient, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -58,12 +62,15 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 		return nil, errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
 	}
 	originalSubdomain := parts[0]
+	customParams := url.Values{}
+	customParams.Add(claims.ClaimsKey, customClaimKeyParameter)
 
 	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
 	cfg := clientcredentials.Config{
-		ClientID:  instanceConfig.ClientID,
-		TokenURL:  tokenURL,
-		AuthStyle: oauth2.AuthStyleInParams,
+		ClientID:       instanceConfig.ClientID,
+		TokenURL:       tokenURL,
+		AuthStyle:      oauth2.AuthStyleInParams,
+		EndpointParams: customParams,
 	}
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {
@@ -98,7 +105,7 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 	destinationBytes, err := json.Marshal(destination)
 	require.NoError(t, err)
 
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations
+	url := c.apiURL + c.apiConfig.EndpointTenantSubaccountLevelDestinations
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(destinationBytes))
 	require.NoError(t, err)
 
@@ -109,7 +116,7 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 }
 
 func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName string) {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "/" + url.QueryEscape(destinationName)
+	url := c.apiURL + c.apiConfig.EndpointTenantSubaccountLevelDestinations + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
@@ -118,8 +125,14 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName string, expectedStatusCode int) json.RawMessage {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "/" + url.QueryEscape(destinationName)
+func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, instanceID string, expectedStatusCode int) json.RawMessage {
+	subpath := ""
+	if instanceID != "" {
+		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinations
+	} else {
+		subpath = c.apiConfig.EndpointTenantSubaccountLevelDestinations
+	}
+	url := c.apiURL + subpath + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 
@@ -138,8 +151,14 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName s
 	return body
 }
 
-func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName string, expectedStatusCode int) json.RawMessage {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinationCertificates + "/" + url.QueryEscape(certificateName)
+func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName, instanceID string, expectedStatusCode int) json.RawMessage {
+	subpath := ""
+	if instanceID != "" {
+		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinationCertificates
+	} else {
+		subpath = c.apiConfig.EndpointTenantSubaccountLevelDestinationCertificates
+	}
+	url := c.apiURL + subpath + "/" + url.QueryEscape(certificateName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 

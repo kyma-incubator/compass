@@ -73,13 +73,13 @@ func (_m *FormationTemplateService) Get(ctx context.Context, id string) (*model.
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, pageSize, cursor
-func (_m *FormationTemplateService) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
-	ret := _m.Called(ctx, pageSize, cursor)
+// List provides a mock function with given fields: ctx, name, pageSize, cursor
+func (_m *FormationTemplateService) List(ctx context.Context, name *string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+	ret := _m.Called(ctx, name, pageSize, cursor)
 
 	var r0 *model.FormationTemplatePage
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.FormationTemplatePage); ok {
-		r0 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, *string, int, string) *model.FormationTemplatePage); ok {
+		r0 = rf(ctx, name, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FormationTemplatePage)
@@ -87,8 +87,8 @@ func (_m *FormationTemplateService) List(ctx context.Context, pageSize int, curs
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
-		r1 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, *string, int, string) error); ok {
+		r1 = rf(ctx, name, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

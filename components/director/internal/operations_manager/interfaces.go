@@ -2,6 +2,7 @@ package operationsmanager
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -11,6 +12,15 @@ import (
 //go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationService interface {
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
+	MarkAsCompleted(ctx context.Context, id string) error
+	MarkAsFailed(ctx context.Context, id, errorMsg string) error
+	ListPriorityQueue(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
+	LockOperation(ctx context.Context, operationID string) (bool, error)
+	Get(ctx context.Context, operationID string) (*model.Operation, error)
+	Update(ctx context.Context, input *model.Operation) error
+	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
+	RescheduleOperation(ctx context.Context, operationID string, priority int) error
 }
 
 // WebhookService is responsible for the service-layer Webhook operations.

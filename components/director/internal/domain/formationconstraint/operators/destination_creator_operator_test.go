@@ -46,8 +46,8 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedResult: true,
 		},
 		{
-			Name:           "Success when formation assignment state is not 'Ready' or 'Config pending'",
-			Input:          inputForAssignWithFormationAssignmentDeletingState,
+			Name:           "Success when formation assignment state is in 'INITIAL' state",
+			Input:          inputForAssignWithFormationAssignmentInitialState,
 			ExpectedResult: true,
 		},
 		{
@@ -126,7 +126,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedErrorMsg: fmt.Sprintf("while creating design time destinations: %s", testErr.Error()),
 		},
 		{
-			Name:  "No-op/Success when operation is 'assign', location is 'NotificationStatusReturned' and SAML assertion certificate data is already exists",
+			Name:  "Success(no-op) when operation is 'assign', location is 'NotificationStatusReturned' and SAML assertion certificate data is already exists",
 			Input: inputWithAssignmentWithSAMLCertData,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
@@ -167,7 +167,7 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:  "No-op/Success when operation is 'assign', location is 'NotificationStatusReturned' and client cert auth certificate data is already exists",
+			Name:  "Success(no-op) when operation is 'assign', location is 'NotificationStatusReturned' and client cert auth certificate data is already exists",
 			Input: inputWithAssignmentWithClientCertAuthCertData,
 			DestinationSvc: func() *automock.DestinationService {
 				destSvc := &automock.DestinationService{}
@@ -222,14 +222,22 @@ func TestConstraintOperators_DestinationCreator(t *testing.T) {
 			ExpectedErrorMsg: "while unmarshalling tenant mapping configuration response from reverse assignment with ID:",
 		},
 		{
-			Name:             "Error when operation is 'assign' and location is 'SendNotification' and inbound details are nil",
+			Name:             "Success(no-op) when operation is 'assign' and location is 'SendNotification' and inbound details are nil",
 			Input:            inputForAssignSendNotificationWhereFAConfigStructureIsDifferent,
-			ExpectedErrorMsg: "The inbound communication destination details could not be empty",
+			ExpectedResult:   true,
+			ExpectedErrorMsg: "",
 		},
 		{
-			Name:             "Error when operation is 'assign' and location is 'SendNotification' and outbound details are nil",
+			Name:             "Success(no-op) when operation is 'assign' and location is 'SendNotification' and outbound details are nil",
 			Input:            inputForAssignSendNotificationWhereReverseFAConfigStructureIsDifferent,
-			ExpectedErrorMsg: "The outbound communication credentials could not be empty",
+			ExpectedResult:   true,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:             "Success(no-op) when operation is 'assign' and location is neither 'NotificationStatusReturned' or 'SendNotification'",
+			Input:            inputForAssignGenerateFANotification,
+			ExpectedResult:   true,
+			ExpectedErrorMsg: "",
 		},
 		{
 			Name:             "Error when operation is 'assign' and location is 'SendNotification' and retrieving reverse assignment pointer fails",

@@ -33,6 +33,7 @@ const (
 	destinationExternalSubaccountID  = "destination-external-subaccount-id"
 	destinationExternalSubaccountID2 = "destination-external-subaccount-id-2"
 	destinationTenantName            = "testDestinationTenantName"
+	destinationInstanceID            = "destination-instance"
 	basicDestURL                     = "basic-url"
 	basicDestUser                    = "basic-user"
 	basicDestPassword                = "basic-pwd"
@@ -143,14 +144,14 @@ func fixDestinationConfig() *destinationcreator.Config {
 		CorrelationIDsKey: "testCorrelationIDsKey",
 		DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
 			BaseURL:              "testDestinationBaseURL/",
-			Path:                 "testDestinationPath",
+			SubaccountLevelPath:  "testDestinationPath",
 			RegionParam:          "testDestinationRegionParam",
 			SubaccountIDParam:    "testDestinationSubaccountIDParam",
 			DestinationNameParam: "testDestinationNameParam",
 		},
 		CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
 			BaseURL:              "testCertificateBaseURL/",
-			Path:                 "testCertificatePath",
+			SubaccountLevelPath:  "testCertificatePath",
 			RegionParam:          "testCertificateRegionParam",
 			SubaccountIDParam:    "testCertificateSubaccountIDParam",
 			CertificateNameParam: "testCertificateNameParam",

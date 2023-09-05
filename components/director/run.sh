@@ -302,6 +302,7 @@ export APP_SELF_REGISTER_OAUTH_X509_KEY="LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0
 export APP_ORD_WEBHOOK_MAPPINGS='[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }, { "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090", "ProxyHeaderTemplate": "{\"target_host\": [\"{{.Application.BaseURL}}\"] }", "OrdUrlPath": "/proxy", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
 export APP_FORMATION_MAPPING_API_PATH_PREFIX='/v1/businessIntegrations'
 export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status'
+export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_RESET_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset'
 export APP_FORMATION_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/status'
 export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
@@ -336,6 +337,8 @@ export APP_DESTINATION_CREATOR_DESTINATION_PATH="/regions/{region}/subaccounts/{
 export APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER="region"
 export APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
 export APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER="destinationName"
+export APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_LEVEL_PATH="/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/destinations"
+export APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_ID_PARAMETER="instanceId"
 
 export APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL="https://destination-creator-local-certificate-api-url.com"
 export APP_DESTINATION_CREATOR_CERTIFICATE_PATH="/regions/{region}/subaccounts/{subaccountId}/certificates"
@@ -345,6 +348,8 @@ export APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER="certificateName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_FILE_NAME_KEY="fileName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY="commonName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY="certificateChain"
+export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH="/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
+export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER="instanceId"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig

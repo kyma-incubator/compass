@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
@@ -174,7 +176,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 		createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, conf.SubscriptionConfig.StandardFlow)
@@ -368,7 +370,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
 
@@ -536,6 +538,25 @@ func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTT
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
+func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
+	reqBody := FormationAssignmentRequestBody{
+		State:         "READY",
+		Configuration: json.RawMessage(testConfig),
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID)
+	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	require.NoError(t, err)
+	request.Header.Add("Content-Type", "application/json")
+	// The Tenant header is needed in case we are simulating an application reporting status for its own formation assignment.
+	request.Header.Add("Tenant", tnt)
+	response, err := certSecuredHTTPClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
 func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, formationID string, expectedStatusCode int) {
 	reqBody := FormationRequestBody{
 		State: "READY",
@@ -568,12 +589,31 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 			formationAssignmentID = a.ID
 		}
 	}
-	require.NotEmpty(t, formationAssignmentID, "The formation assignment could not be empty")
+	require.NotEmptyf(t, formationAssignmentID, "The formation assignment with ID %q should not be empty", formationAssignmentID)
+	return formationAssignmentID
+}
+
+func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, sourceID, targetID string) string {
+	var formationAssignmentID string
+	for _, a := range assignmentsPage.Data {
+		if a.Source == sourceID && a.Target == targetID {
+			formationAssignmentID = a.ID
+		}
+	}
+	require.NotEmptyf(t, formationAssignmentID, "The formation assignment with ID %q should not be empty", formationAssignmentID)
 	return formationAssignmentID
 }
 
 func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) string {
-	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
+	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncStatusURL, formationID, formationAssignmentID)
+}
+
+func resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID string) string {
+	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncResetStatusURL, formationID, formationAssignmentID)
+}
+
+func resolveStatusAPIURL(url, formationID, formationAssignmentID string) string {
+	faAsyncStatusAPIURL := strings.Replace(url, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
 	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
 	return faAsyncStatusAPIURL
 }

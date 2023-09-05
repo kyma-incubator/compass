@@ -250,7 +250,7 @@ func TestRepository_List(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       formationtemplate.NewRepository,
-		MethodArgs:                []interface{}{"", 3, ""},
+		MethodArgs:                []interface{}{nil, "", 3, ""},
 		DisableConverterErrorTest: false,
 	}
 
@@ -296,11 +296,58 @@ func TestRepository_List(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       formationtemplate.NewRepository,
-		MethodArgs:                []interface{}{testTenantID, 3, ""},
+		MethodArgs:                []interface{}{nil, testTenantID, 3, ""},
+		DisableConverterErrorTest: false,
+	}
+
+	suiteWithTenantIDandName := testdb.RepoListPageableTestSuite{
+		Name:       "List Formation Templates with paging when tenant is passed",
+		MethodName: "List",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, supports_reset, tenant_id FROM public.formation_templates WHERE ((tenant_id IS NULL OR tenant_id = $1) AND name = $2) ORDER BY id LIMIT 3 OFFSET 0`),
+				Args:     []driver.Value{testTenantID, formationTemplateEntity.Name},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.TenantID)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.formation_templates`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{&formationTemplateModel},
+				ExpectedDBEntities:    []interface{}{&formationTemplateEntity},
+				ExpectedPage: &model.FormationTemplatePage{
+					Data: []*model.FormationTemplate{&formationTemplateModel},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationtemplate.NewRepository,
+		MethodArgs:                []interface{}{&formationTemplateEntity.Name, testTenantID, 3, ""},
 		DisableConverterErrorTest: false,
 	}
 
 	suiteWithEmptyTenantID.Run(t)
+	suiteWithTenantIDandName.Run(t)
 	suiteWithTenantID.Run(t)
 }
 

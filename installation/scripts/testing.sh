@@ -160,6 +160,16 @@ do
           running_test="none"
         fi
         echo "Running test is ${running_test}"
+        if [[ ! "${running_test}" == "none" ]]; then
+          logs_from_last_min=$(kubectl logs -n kyma-system --since=1m ${running_test})
+          if echo "${logs_from_last_min}" | grep -q "FAIL:"; then
+            echo "----------------------------"
+            echo "A test has failed in the last minute."
+            echo "Logs from test execution:"
+            echo "${logs_from_last_min}"
+            echo "----------------------------"
+          fi
+        fi
         previousPrintTime=${min}
     fi
     sleep 3

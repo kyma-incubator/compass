@@ -1308,6 +1308,11 @@ func TestService_GenerateAssignments(t *testing.T) {
 
 	allAssignments := append(append(formationAssignmentsForApplication, append(formationAssignmentsForRuntime, append(formationAssignmentsForRuntimeContext, formationAssignmentsForRuntimeContextWithParentInTheFormation...)...)...), formationAssignmentsForSelf...)
 
+	formationAssignmentInputsForApplication := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputsForRuntime := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputsForRuntimeContext := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputsForRuntimeContextWithParentInTheFormation := fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimeContexts[0].ID)
+
 	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
 	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4", "ID5"}
 
@@ -1324,7 +1329,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 		RuntimeRepo             func() *automock.RuntimeRepository
 		RuntimeContextRepo      func() *automock.RuntimeContextRepository
 		UIDService              func() *automock.UIDService
-		ExpectedOutput          []*model.FormationAssignment
+		ExpectedOutput          []*model.FormationAssignmentInput
 		ExpectedErrorMsg        string
 	}{
 		{
@@ -1334,12 +1339,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, formationParticipantsIDs).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1364,7 +1363,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForApplication,
+			ExpectedOutput: formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for entity that is being unassigned asynchronously",
@@ -1374,12 +1373,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				unassignAppFormationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(append(allAssignments, unassignAppFormationAssignments...), nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1404,7 +1397,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForApplication,
+			ExpectedOutput: formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for application and itself",
@@ -1413,12 +1406,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1443,7 +1430,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForApplication,
+			ExpectedOutput: formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime and itself",
@@ -1452,12 +1439,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, runtimes[0].ID, objectID, runtimeContexts[0].ID}).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForRuntime {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntime[i].Target, formationAssignmentsForRuntime[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntime[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForRuntime, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1482,7 +1463,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForRuntime,
+			ExpectedOutput: formationAssignmentInputsForRuntime,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and itself",
@@ -1491,12 +1472,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForRuntimeContext {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[i].Target, formationAssignmentsForRuntimeContext[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntimeContext[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForRuntimeContext, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1522,7 +1497,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: "random"}, nil)
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForRuntimeContext,
+			ExpectedOutput: formationAssignmentInputsForRuntimeContext,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and it's parent runtime",
@@ -1531,12 +1506,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForRuntimeContextWithParentInTheFormation {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Target, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDsRtmCtxParentInFormation).Return(formationAssignmentsForRuntimeContextWithParentInTheFormation, nil).Once()
-
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1562,7 +1531,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: runtimes[0].ID}, nil)
 				return repo
 			},
-			ExpectedOutput: formationAssignmentsForRuntimeContextWithParentInTheFormation,
+			ExpectedOutput: formationAssignmentInputsForRuntimeContextWithParentInTheFormation,
 		},
 		{
 			Name:                    "Error while listing applications",
@@ -1682,80 +1651,6 @@ func TestService_GenerateAssignments(t *testing.T) {
 			ExpectedOutput:   nil,
 			ExpectedErrorMsg: testErr.Error(),
 		},
-		{
-			Name:       "Error while creating formation assignment",
-			Context:    ctxWithTenant,
-			ObjectType: graphql.FormationObjectTypeRuntimeContext,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[0].Target, formationAssignmentsForRuntimeContext[0].Source, TestTenantID, formationAssignmentsForRuntimeContext[0].FormationID).Return(nil, testErr).Once()
-				return repo
-			},
-			UIDService: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(formationAssignmentIDs[0]).Once()
-				return uidSvc
-			},
-			ApplicationRepo: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
-				return repo
-			},
-			RuntimeRepo: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
-				return repo
-			},
-			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(append(runtimeContexts, &model.RuntimeContext{ID: objectID}), nil).Once()
-				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: "random"}, nil)
-				return repo
-			},
-			ExpectedOutput:   nil,
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:       "Error while listing formation assignments",
-			Context:    ctxWithTenant,
-			ObjectType: graphql.FormationObjectTypeApplication,
-			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, formationParticipantsIDs).Return(allAssignments, nil).Once()
-				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
-					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
-				}
-				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(nil, testErr).Once()
-
-				return repo
-			},
-			UIDService: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				for i := range formationAssignmentIDs {
-					uidSvc.On("Generate").Return(formationAssignmentIDs[i]).Once()
-				}
-				return uidSvc
-			},
-			ApplicationRepo: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
-				return repo
-			},
-			RuntimeRepo: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
-				return repo
-			},
-			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
-				return repo
-			},
-			ExpectedOutput:   nil,
-			ExpectedErrorMsg: testErr.Error(),
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -1781,6 +1676,129 @@ func TestService_GenerateAssignments(t *testing.T) {
 			require.Equal(t, testCase.ExpectedOutput, r)
 
 			mock.AssertExpectationsForObjects(t, formationAssignmentRepo, appRepo, runtimeRepo, runtimeContextRepo)
+		})
+	}
+}
+
+func TestService_PersistAssignments(t *testing.T) {
+	// GIVEN
+	objectID := "objectID"
+	applications := []*model.Application{{BaseEntity: &model.BaseEntity{ID: "app"}}}
+	runtimes := []*model.Runtime{{ID: "runtime"}}
+	runtimeContexts := []*model.RuntimeContext{{ID: "runtimeContext"}}
+
+	formationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputs := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+
+	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		Input                   []*model.FormationAssignmentInput
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		UIDService              func() *automock.UIDService
+		ExpectedOutput          []*model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				for i := range formationAssignments {
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[i].Target, formationAssignments[i].Source, TestTenantID, formationAssignments[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("Create", ctxWithTenant, formationAssignments[i]).Return(nil).Once()
+				}
+				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignments, nil).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				for i := range formationAssignmentIDs {
+					uidSvc.On("Generate").Return(formationAssignmentIDs[i]).Once()
+				}
+				return uidSvc
+			},
+			ExpectedOutput: formationAssignments,
+		},
+		{
+			Name:    "error while listing for ids",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				for i := range formationAssignments {
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[i].Target, formationAssignments[i].Source, TestTenantID, formationAssignments[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("Create", ctxWithTenant, formationAssignments[i]).Return(nil).Once()
+				}
+				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(nil, testErr).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				for i := range formationAssignmentIDs {
+					uidSvc.On("Generate").Return(formationAssignmentIDs[i]).Once()
+				}
+				return uidSvc
+			},
+			ExpectedErrorMsg: "while listing formationAssignments",
+		},
+		{
+			Name:    "error while creating formation assignments",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[0].Target, formationAssignments[0].Source, TestTenantID, formationAssignments[0].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+				repo.On("Create", ctxWithTenant, formationAssignments[0]).Return(testErr).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(formationAssignmentIDs[0]).Once()
+				return uidSvc
+			},
+			ExpectedErrorMsg: "while creating formationAssignment for formation",
+		},
+		{
+			Name:    "error while getting formation assignments",
+			Context: ctxWithTenant,
+			Input:   formationAssignmentInputs,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignments[0].Target, formationAssignments[0].Source, TestTenantID, formationAssignments[0].FormationID).Return(nil, testErr).Once()
+				return repo
+			},
+			UIDService: func() *automock.UIDService {
+				uidSvc := &automock.UIDService{}
+				uidSvc.On("Generate").Return(formationAssignmentIDs[0]).Once()
+				return uidSvc
+			},
+			ExpectedErrorMsg: "while getting formation assignment by target",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			formationAssignmentRepo := testCase.FormationAssignmentRepo()
+			uidSvc := testCase.UIDService()
+			svc := formationassignment.NewService(formationAssignmentRepo, uidSvc, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
+
+			// WHEN
+			r, err := svc.PersistAssignments(testCase.Context, TestTenantID, formationAssignmentInputs)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, formationAssignmentRepo)
 		})
 	}
 }
@@ -1885,11 +1903,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequests[0],
 							FormationAssignment: matchedApplicationAssignment,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequests[1],
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
@@ -1898,11 +1916,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				},
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequests[1],
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequests[0],
 							FormationAssignment: matchedApplicationAssignment,
 						},
@@ -1924,11 +1942,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequestsWithAppTemplateWebhook[0],
 							FormationAssignment: matchedApplicationAssignment,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequestsWithAppTemplateWebhook[1],
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
@@ -1937,11 +1955,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				},
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequestsWithAppTemplateWebhook[1],
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequestsWithAppTemplateWebhook[0],
 							FormationAssignment: matchedApplicationAssignment,
 						},
@@ -1962,11 +1980,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequests2[0],
 							FormationAssignment: matchedApplicationAssignment,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             appToAppRequests2[1],
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
@@ -1988,11 +2006,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             rtmCtxToAppRequests[0],
 							FormationAssignment: matchedRuntimeContextAssignment,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             rtmCtxToAppRequests[1],
 							FormationAssignment: matchedRuntimeContextAssignmentReverse,
 						},
@@ -2001,11 +2019,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				},
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             rtmCtxToAppRequests[1],
 							FormationAssignment: matchedRuntimeContextAssignmentReverse,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             rtmCtxToAppRequests[0],
 							FormationAssignment: matchedRuntimeContextAssignment,
 						},
@@ -2032,11 +2050,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: sourseNotMatchedAssignment,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: sourseNotMatchedAssignmentReverse,
 						},
@@ -2045,11 +2063,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				},
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: sourseNotMatchedAssignmentReverse,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: sourseNotMatchedAssignment,
 						},
@@ -2070,11 +2088,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: targetNotMatchedAssignment,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: targetNotMatchedAssignmentReverse,
 						},
@@ -2083,11 +2101,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				},
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: targetNotMatchedAssignmentReverse,
 						},
-						ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 							Request:             nil,
 							FormationAssignment: targetNotMatchedAssignment,
 						},
@@ -2180,7 +2198,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	reverseConfigPendingAssignment := fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestTarget, TestSource, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ConfigPendingAssignmentState), []byte(config), nil)
 
 	input := &webhook.FormationConfigurationChangeInput{
-		Operation: model.AssignFormation,
+		Operation:   model.AssignFormation,
+		FormationID: TestFormationID,
+		Formation:   formation,
 	}
 
 	reqWebhook := &webhookclient.FormationAssignmentNotificationRequest{
@@ -2222,11 +2242,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentPairWithOperation: &formationassignment.AssignmentMappingPairWithOperation{
 				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-					Assignment: &formationassignment.FormationAssignmentRequestMapping{
+					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 						Request:             nil,
 						FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(readyStateAssignment),
 					},
-					ReverseAssignment: nil,
+					ReverseAssignmentReqMapping: nil,
 				},
 				Operation: model.AssignFormation,
 			},
@@ -2236,11 +2256,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentPairWithOperation: &formationassignment.AssignmentMappingPairWithOperation{
 				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-					Assignment: &formationassignment.FormationAssignmentRequestMapping{
+					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 						Request:             nil,
 						FormationAssignment: initialStateAssignment.Clone(),
 					},
-					ReverseAssignment: nil,
+					ReverseAssignmentReqMapping: nil,
 				},
 				Operation: model.AssignFormation,
 			},
@@ -2256,11 +2276,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentPairWithOperation: &formationassignment.AssignmentMappingPairWithOperation{
 				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-					Assignment: &formationassignment.FormationAssignmentRequestMapping{
+					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 						Request:             nil,
 						FormationAssignment: initialStateAssignment.Clone(),
 					},
-					ReverseAssignment: nil,
+					ReverseAssignmentReqMapping: nil,
 				},
 				Operation: model.AssignFormation,
 			},
@@ -2288,7 +2308,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment.Clone(), reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -2313,7 +2333,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -2352,7 +2372,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment.Clone(), reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(nil, testErr).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(nil, testErr).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2374,7 +2394,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2396,7 +2416,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(deletingStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(reqWebhook, deletingStateAssignment), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(reqWebhook, deletingStateAssignment), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(deletingStateAssignment, reqWebhook),
@@ -2418,7 +2438,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2439,7 +2459,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2464,7 +2484,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -2489,7 +2509,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -2513,7 +2533,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -2541,7 +2561,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2563,7 +2583,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook),
@@ -2590,7 +2610,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
@@ -2616,7 +2636,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReqAsync, nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhookWithAsyncCallbackMode),
@@ -2638,7 +2658,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateAssignment, reqWebhook)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialReq, nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -2675,7 +2695,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, nil, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
-			///WHEN
+			// WHEN
 			isReverseProcessed, err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPairWithOperation)
 
 			require.Equal(t, testCase.ExpectedIsReverseProcessed, isReverseProcessed)
@@ -2686,7 +2706,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			//// THEN
+			// THEN
 			mock.AssertExpectationsForObjects(t, repo, notificationSvc, formationRepo, faStatusService, faNotificationSvc)
 		})
 	}
@@ -2734,20 +2754,20 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		assignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-				Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             mappingRequest,
 					FormationAssignment: initialStateAssignment,
 				},
-				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             reverseMappingRequest,
 					FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment),
 				},
 			},
 			Operation: model.AssignFormation,
 		}
-		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment).Once()
+		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignmentReqMapping.FormationAssignment).Once()
 
-		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignment.FormationAssignment).Once()
+		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignmentReqMapping.FormationAssignment).Once()
 
 		// once while processing the assignment and once when processing in the recursion call
 		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Twice()
@@ -2778,10 +2798,10 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		faNotificationSvc := &automock.FaNotificationService{}
 		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
 
 		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configAssignment, reverseMappingRequest, mappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, lblSvc, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
@@ -2835,11 +2855,11 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		assignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-				Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             mappingRequest,
 					FormationAssignment: initialStateAssignment,
 				},
-				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             reverseMappingRequest,
 					FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment),
 				},
@@ -2849,7 +2869,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Once()
 		inputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment)).Once()
 
-		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment).Once()
+		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignmentReqMapping.FormationAssignment).Once()
 		reverseInputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Once()
 
 		lblSvc := &automock.LabelService{}
@@ -2873,10 +2893,10 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		faNotificationSvc := &automock.FaNotificationService{}
 		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
 
 		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configAssignment, reverseMappingRequest, mappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, lblSvc, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
@@ -2951,20 +2971,20 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		assignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-				Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             mappingRequest,
 					FormationAssignment: initialStateAssignment.Clone(),
 				},
-				ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             reverseMappingRequest,
 					FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment),
 				},
 			},
 			Operation: model.AssignFormation,
 		}
-		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
+		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignmentReqMapping.FormationAssignment)
 
-		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
+		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignmentReqMapping.FormationAssignment)
 
 		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configPendingStateWithConfigAssignment))
 		inputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigPendingAssignment))
@@ -2993,19 +3013,19 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		faNotificationSvc := &automock.FaNotificationService{}
 		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFA, nil)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFA, nil)
 
 		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configAssignment, reverseMappingRequest, mappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil)
 
 		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseInitialStateAssignment, configPendingStateWithConfigAssignment, reverseMappingRequest, mappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil)
 
 		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(configPendingStateWithConfigAssignment, reverseConfigPendingAssignment, mappingRequest, reverseMappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotificationSecond, nil)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotificationSecond, nil)
 
 		assignmentMapping = fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(reverseConfigPendingAssignment, configPendingStateWithConfigAssignment, reverseMappingRequest, mappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotificationThird, nil)
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotificationThird, nil)
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, lblSvc, formationRepo, faStatusService, rtmTypeLabelKey, appTypeLabelKey)
 
@@ -3139,7 +3159,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3165,7 +3185,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3187,7 +3207,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
@@ -3209,7 +3229,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithoutConfig.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithoutConfig.Clone(), req),
@@ -3221,7 +3241,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(nil, testErr).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(nil, testErr).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3244,7 +3264,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
@@ -3261,7 +3281,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3289,7 +3309,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(callbackReq, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
@@ -3347,7 +3367,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3370,7 +3390,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3393,7 +3413,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithoutConfig.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithoutConfig), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithoutConfig.Clone(), req),
@@ -3410,7 +3430,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3438,7 +3458,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3460,7 +3480,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3487,7 +3507,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3515,7 +3535,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3536,7 +3556,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FormationAssignmentMappingPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req),
@@ -3553,7 +3573,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {
@@ -3574,7 +3594,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FANotificationSvc: func() *automock.FaNotificationService {
 				faNotificationSvc := &automock.FaNotificationService{}
 				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), req)
-				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.Assignment, assignmentMapping.ReverseAssignment, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(fixExtendedFormationAssignmentNotificationReq(req, configAssignmentWithTenantAndID), nil).Once()
 				return faNotificationSvc
 			},
 			FAStatusService: func() *automock.StatusService {

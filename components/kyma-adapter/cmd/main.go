@@ -76,7 +76,7 @@ func main() {
 	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
 
 	adapter := mainRouter.PathPrefix(cfg.APIRootPath).Subrouter()
-	adapter.Use(tokenValidationMiddleware.KymaAdapterHandler())
+	adapter.Use(tokenValidationMiddleware.Handler())
 	adapter.Use(tenantValidationMiddleware.Handler())
 
 	directorGqlClient := gqlClient.NewClient(graphql.NewClient(cfg.DirectorURL, graphql.WithHTTPClient(internalGatewayHTTPClient)))

@@ -23,16 +23,13 @@ func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationRe
 	ret := _m.Called(ctx, in)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) (string, error)); ok {
-		return rf(ctx, in)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -75,10 +72,6 @@ func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Applic
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
-		return rf(ctx, id)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -87,6 +80,7 @@ func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Applic
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -101,10 +95,6 @@ func (_m *ApplicationService) GetByLocalTenantIDAndAppTemplateID(ctx context.Con
 	ret := _m.Called(ctx, localTenantID, appTemplateID)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
-		return rf(ctx, localTenantID, appTemplateID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
 		r0 = rf(ctx, localTenantID, appTemplateID)
 	} else {
@@ -113,6 +103,7 @@ func (_m *ApplicationService) GetByLocalTenantIDAndAppTemplateID(ctx context.Con
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, localTenantID, appTemplateID)
 	} else {
@@ -127,10 +118,6 @@ func (_m *ApplicationService) GetBySystemNumber(ctx context.Context, systemNumbe
 	ret := _m.Called(ctx, systemNumber)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
-		return rf(ctx, systemNumber)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, systemNumber)
 	} else {
@@ -139,6 +126,7 @@ func (_m *ApplicationService) GetBySystemNumber(ctx context.Context, systemNumbe
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, systemNumber)
 	} else {
@@ -153,10 +141,6 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 	ret := _m.Called(ctx, applicationID, key)
 
 	var r0 *model.Label
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
-		return rf(ctx, applicationID, key)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
 		r0 = rf(ctx, applicationID, key)
 	} else {
@@ -165,6 +149,7 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, applicationID, key)
 	} else {
@@ -179,10 +164,6 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, filter, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -191,6 +172,7 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -205,10 +187,6 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 	ret := _m.Called(ctx)
 
 	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.Application, error)); ok {
-		return rf(ctx)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.Application); ok {
 		r0 = rf(ctx)
 	} else {
@@ -217,6 +195,7 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -231,10 +210,6 @@ func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID u
 	ret := _m.Called(ctx, runtimeUUID, pageSize, cursor)
 
 	var r0 *model.ApplicationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, runtimeUUID, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, string) *model.ApplicationPage); ok {
 		r0 = rf(ctx, runtimeUUID, pageSize, cursor)
 	} else {
@@ -243,6 +218,7 @@ func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID u
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, int, string) error); ok {
 		r1 = rf(ctx, runtimeUUID, pageSize, cursor)
 	} else {
@@ -257,10 +233,6 @@ func (_m *ApplicationService) ListLabels(ctx context.Context, applicationID stri
 	ret := _m.Called(ctx, applicationID)
 
 	var r0 map[string]*model.Label
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
-		return rf(ctx, applicationID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, applicationID)
 	} else {
@@ -269,6 +241,7 @@ func (_m *ApplicationService) ListLabels(ctx context.Context, applicationID stri
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, applicationID)
 	} else {
@@ -283,10 +256,6 @@ func (_m *ApplicationService) Merge(ctx context.Context, destID string, sourceID
 	ret := _m.Called(ctx, destID, sourceID)
 
 	var r0 *model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
-		return rf(ctx, destID, sourceID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
 		r0 = rf(ctx, destID, sourceID)
 	} else {
@@ -295,6 +264,7 @@ func (_m *ApplicationService) Merge(ctx context.Context, destID string, sourceID
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, destID, sourceID)
 	} else {
@@ -346,12 +316,13 @@ func (_m *ApplicationService) Update(ctx context.Context, id string, in model.Ap
 	return r0
 }
 
-// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewApplicationService(t interface {
+type mockConstructorTestingTNewApplicationService interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ApplicationService {
+}
+
+// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewApplicationService(t mockConstructorTestingTNewApplicationService) *ApplicationService {
 	mock := &ApplicationService{}
 	mock.Mock.Test(t)
 

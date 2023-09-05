@@ -81,6 +81,7 @@ linters:
     # - bodyclose
     # - cyclop
     # - dupl
+    # - depguard
     # - errname
     # - errorlint
     # - exhaustive
@@ -127,7 +128,6 @@ linters:
     - unused
     - varcheck
     - asciicheck
-    - depguard
     - dogsled
     - durationcheck
     - exportloopref

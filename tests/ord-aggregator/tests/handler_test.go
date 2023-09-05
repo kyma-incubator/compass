@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"golang.org/x/oauth2"
@@ -528,7 +530,7 @@ func TestORDAggregator(stdT *testing.T) {
 		productsMap[secondProductTitle] = secondProductShortDescription
 
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
-		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
+		appTemplateInput := fixAppTemplateInputWitSelfRegLabel(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		placeholderName := "name"
 		placeholderDisplayName := "display-name"
 		appTemplateInput.Placeholders = []*directorSchema.PlaceholderDefinitionInput{
@@ -543,8 +545,8 @@ func TestORDAggregator(stdT *testing.T) {
 				JSONPath:    str.Ptr(fmt.Sprintf("$.%s", testConfig.SubscriptionProviderAppNameProperty)),
 			},
 		}
-		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestSubaccount, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestSubaccount, appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
@@ -576,7 +578,7 @@ func TestORDAggregator(stdT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testConfig.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
@@ -798,8 +800,8 @@ func TestORDAggregator(stdT *testing.T) {
 		// Create Application Template
 		appTemplateInput := fixAppTemplateInput(testConfig.ProxyApplicationTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 
-		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
@@ -1156,6 +1158,12 @@ func createAppTemplateName(name string) string {
 }
 
 func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemplateInput {
+	input := fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
+
+	return input
+}
+
+func fixAppTemplateInputWitSelfRegLabel(name, webhookURL string) directorSchema.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
 	input.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue
 
