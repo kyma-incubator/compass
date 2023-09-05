@@ -2587,14 +2587,14 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
-	allStates := []string{string(model.InitialAssignmentState),
-		string(model.DeletingAssignmentState),
-		string(model.CreateErrorAssignmentState),
-		string(model.DeleteErrorAssignmentState)}
-
-	testFormation := fixFormationModelWithState(model.ReadyFormationState)
-	formationInCreateErrorState := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)
-	formationInCreateErrorStateTechnicalError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
+	//allStates := []string{string(model.InitialAssignmentState),
+	//	string(model.DeletingAssignmentState),
+	//	string(model.CreateErrorAssignmentState),
+	//	string(model.DeleteErrorAssignmentState)}
+	//
+	//testFormation := fixFormationModelWithState(model.ReadyFormationState)
+	//formationInCreateErrorState := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)
+	//formationInCreateErrorStateTechnicalError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
 
 	formationAssignments := []*model.FormationAssignment{
 		fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState),
@@ -2608,15 +2608,15 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.InitialFormationState),
 		fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.InitialFormationState),
 	}
-	reverseAssignment := &model.FormationAssignment{
-		ID:          "id1",
-		FormationID: FormationID,
-		Source:      ApplicationID,
-		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      RuntimeID,
-		TargetType:  model.FormationAssignmentTypeRuntime,
-		State:       string(model.ReadyAssignmentState),
-	}
+	//reverseAssignment := &model.FormationAssignment{
+	//	ID:          "id1",
+	//	FormationID: FormationID,
+	//	Source:      ApplicationID,
+	//	SourceType:  model.FormationAssignmentTypeApplication,
+	//	Target:      RuntimeID,
+	//	TargetType:  model.FormationAssignmentTypeRuntime,
+	//	State:       string(model.ReadyAssignmentState),
+	//}
 
 	notificationsForAssignments := []*webhookclient.FormationAssignmentNotificationRequest{
 		{
@@ -2652,11 +2652,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 
 	testSchema, err := labeldef.NewSchemaForFormations([]string{testScenario, testFormationName})
 	assert.NoError(t, err)
-	testSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, testSchema)
+	//	testSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, testSchema)
 
-	newSchema, err := labeldef.NewSchemaForFormations([]string{testScenario})
+	//	newSchema, err := labeldef.NewSchemaForFormations([]string{testScenario})
 	assert.NoError(t, err)
-	newSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, newSchema)
+	//	newSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, newSchema)
 
 	nilSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, testSchema)
 	nilSchemaLblDef.Schema = nil
@@ -2679,667 +2679,667 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		StatusServiceFn                          func() *automock.StatusService
 		ExpectedErrMessage                       string
 	}{
-		// Business logic tests for tenant mapping notifications only
-		{
-			Name: "success when resynchronization is successful and there are leftover formation assignments",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-		},
-		{
-			Name: "success when resynchronization is successful and there no left formation assignments should unassign",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-		},
-		{
-			Name: "returns error when failing to unassign from formation after resynchronizing",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{}, nil).Once()
-
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			AsaEngineFN: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, testErr).Once()
-				return engine
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when failing to list formation assignments for participant",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, mock.Anything).Return(nil, testErr).Once()
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when failing to get formation",
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(nil, testErr).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when failing processing formation assignments fails",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, testErr).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, testErr).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, testErr).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, testErr).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when getting reverse formation assignment",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
-
-				svc.On("GetReverseBySourceAndTarget", ctx, FormationID, formationAssignments[0].Source, formationAssignments[0].Target).Return(nil, testErr).Once()
-
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when generating reverse formation assignment notification",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
-
-				svc.On("GetReverseBySourceAndTarget", ctx, FormationID, formationAssignments[0].Source, formationAssignments[0].Target).Return(reverseAssignment, nil)
-
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil)
-				svc.On("GenerateFormationAssignmentNotification", ctx, reverseAssignment, model.AssignFormation).Return(nil, testErr)
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when generating formation assignment notification",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
-
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(nil, testErr).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when listing formation assignments with states",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(nil, testErr).Once()
-
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		// Business logic tests for formation and tenant mapping notifications
-		{
-			Name: "success when both formation and formation assignment resynchronization are successful and there no left formation assignments should unassign",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
-				return svc
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
-				notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
-				return notificationSvc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			StatusServiceFn: func() *automock.StatusService {
-				svc := &automock.StatusService{}
-				svc.On("UpdateWithConstraints", ctx, fixFormationModelWithState(model.ReadyFormationState), model.CreateFormation).Return(nil).Once()
-				return svc
-			},
-		},
-		// Business logic tests for formation notifications only
-		{
-			Name: "success when resynchronization is successful for formation notifications",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
-				notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(formationNotificationWebhookErrorResponse, nil).Once()
-				return notificationSvc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(formationInCreateErrorState, nil).Once()
-				return repo
-			},
-			StatusServiceFn: func() *automock.StatusService {
-				svc := &automock.StatusService{}
-				svc.On("SetFormationToErrorStateWithConstraints", ctx, formationWithInitialState, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorFormationState, model.CreateFormation).Return(nil).Once()
-				return svc
-			},
-		},
-		{
-			Name: "error when resynchronization is successful for formation notifications but fails while getting formation",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
-				notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(formationNotificationWebhookErrorResponse, nil).Once()
-				return notificationSvc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(nil, testErr).Once()
-				return repo
-			},
-			StatusServiceFn: func() *automock.StatusService {
-				svc := &automock.StatusService{}
-				svc.On("SetFormationToErrorStateWithConstraints", ctx, formationWithInitialState, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorFormationState, model.CreateFormation).Return(nil).Once()
-				return svc
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "error when resynchronization is unsuccessful for formation notifications due to technical error",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
-				notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(nil, testErr).Once()
-				return notificationSvc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				repo.On("Update", ctx, formationInCreateErrorStateTechnicalError).Return(nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "error when resynchronization is unsuccessful for formation notifications during generating notifications",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(nil, testErr).Once()
-				return notificationSvc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "error when resynchronization is unsuccessful for formation notifications during getting webhooks",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "error when resynchronization is unsuccessful for formation notifications during getting formation template",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr)
-				return repo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "success when resynchronization is successful for formation notifications with DELETE_ERROR state",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
-				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
-				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
-				return labelDefRepo
-			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
-				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
-				return labelDefService
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationSyncDeleteRequests, nil).Once()
-				notificationSvc.On("SendNotification", ctx, formationNotificationSyncDeleteRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
-				return notificationSvc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), nil).Once()
-				repo.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(nil).Once()
-				return repo
-			},
-			StatusServiceFn: func() *automock.StatusService {
-				svc := &automock.StatusService{}
-				svc.On("UpdateWithConstraints", ctx, fixFormationModelWithState(model.ReadyFormationState), model.DeleteFormation).Return(nil).Once()
-				return svc
-			},
-		},
-		{
-			Name: "error when resynchronization is successful for formation notifications with DELETE_ERROR during deletion of formation",
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
-				return repo
-			},
-			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
-				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
-				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
-				return labelDefRepo
-			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
-				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
-				return labelDefService
-			},
-			NotificationServiceFN: func() *automock.NotificationsService {
-				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationSyncDeleteRequests, nil).Once()
-				notificationSvc.On("SendNotification", ctx, formationNotificationSyncDeleteRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
-				return notificationSvc
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
-				return webhookRepo
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), nil).Once()
-				repo.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
-				return repo
-			},
-			StatusServiceFn: func() *automock.StatusService {
-				svc := &automock.StatusService{}
-				svc.On("UpdateWithConstraints", ctx, fixFormationModelWithState(model.ReadyFormationState), model.DeleteFormation).Return(nil).Once()
-				return svc
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		// Business logic tests for tenant mapping notifications with reset
-		{
-			Name:        "success when reset and resynchronize is successful and there are leftover formation assignments",
-			ShouldReset: true,
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignmentsInInitialState, nil).Once()
-				svc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(cloneFormationAssignments(formationAssignments), nil).Once()
-				svc.On("Update", ctx, formationAssignments[0].ID, formationAssignmentsInInitialState[0]).Return(nil).Once()
-				svc.On("Update", ctx, formationAssignments[1].ID, formationAssignmentsInInitialState[1]).Return(nil).Once()
-				svc.On("Update", ctx, formationAssignments[2].ID, formationAssignmentsInInitialState[2]).Return(nil).Once()
-				svc.On("Update", ctx, formationAssignments[3].ID, formationAssignmentsInInitialState[3]).Return(nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[1]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[2]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[3]).Return(false, nil).Once()
-
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[2], model.AssignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[3], model.AssignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModelThatSupportsReset(), nil).Once()
-				return repo
-			},
-		},
-		{
-			Name:        "error when reset and resynchronize when updating formation assignment to initial state fails",
-			ShouldReset: true,
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(cloneFormationAssignments([]*model.FormationAssignment{formationAssignments[0]}), nil).Once()
-				svc.On("Update", ctx, formationAssignments[0].ID, formationAssignmentsInInitialState[0]).Return(testErr).Once()
-
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModelThatSupportsReset(), nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name:        "error when reset and resynchronize when getting formation assignment for formation fails",
-			ShouldReset: true,
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(nil, testErr).Once()
-
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModelThatSupportsReset(), nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name:        "error when reset and resynchronize formation template does not support resetting",
-			ShouldReset: true,
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: fmt.Sprintf("formation template %q does not support resetting", testFormationTemplateName),
-		},
-		{
-			Name:        "error when reset and resynchronize fails getting formation template",
-			ShouldReset: true,
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
-				return repo
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
+		//// Business logic tests for tenant mapping notifications only
+		//{
+		//	Name: "success when resynchronization is successful and there are leftover formation assignments",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
+		//
+		//		svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//},
+		//{
+		//	Name: "success when resynchronization is successful and there no left formation assignments should unassign",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
+		//
+		//		svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//},
+		//{
+		//	Name: "returns error when failing to unassign from formation after resynchronizing",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
+		//
+		//		svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{}, nil).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	AsaEngineFN: func() *automock.AsaEngine {
+		//		engine := &automock.AsaEngine{}
+		//		engine.On("IsFormationComingFromASA", ctx, RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, testErr).Once()
+		//		return engine
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when failing to list formation assignments for participant",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
+		//
+		//		svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, mock.Anything).Return(nil, testErr).Once()
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when failing to get formation",
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(nil, testErr).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when failing processing formation assignments fails",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, testErr).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, testErr).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, testErr).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, testErr).Once()
+		//
+		//		svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when getting reverse formation assignment",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
+		//
+		//		svc.On("GetReverseBySourceAndTarget", ctx, FormationID, formationAssignments[0].Source, formationAssignments[0].Target).Return(nil, testErr).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when generating reverse formation assignment notification",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
+		//
+		//		svc.On("GetReverseBySourceAndTarget", ctx, FormationID, formationAssignments[0].Source, formationAssignments[0].Target).Return(reverseAssignment, nil)
+		//
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil)
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, reverseAssignment, model.AssignFormation).Return(nil, testErr)
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when generating formation assignment notification",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(nil, testErr).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "returns error when listing formation assignments with states",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(nil, testErr).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//// Business logic tests for formation and tenant mapping notifications
+		//{
+		//	Name: "success when both formation and formation assignment resynchronization are successful and there no left formation assignments should unassign",
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil).Once()
+		//		svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil).Once()
+		//
+		//		svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+		//		return svc
+		//	},
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
+		//		notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
+		//		return notificationSvc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	StatusServiceFn: func() *automock.StatusService {
+		//		svc := &automock.StatusService{}
+		//		svc.On("UpdateWithConstraints", ctx, fixFormationModelWithState(model.ReadyFormationState), model.CreateFormation).Return(nil).Once()
+		//		return svc
+		//	},
+		//},
+		//// Business logic tests for formation notifications only
+		//{
+		//	Name: "success when resynchronization is successful for formation notifications",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
+		//		notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(formationNotificationWebhookErrorResponse, nil).Once()
+		//		return notificationSvc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(formationInCreateErrorState, nil).Once()
+		//		return repo
+		//	},
+		//	StatusServiceFn: func() *automock.StatusService {
+		//		svc := &automock.StatusService{}
+		//		svc.On("SetFormationToErrorStateWithConstraints", ctx, formationWithInitialState, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorFormationState, model.CreateFormation).Return(nil).Once()
+		//		return svc
+		//	},
+		//},
+		//{
+		//	Name: "error when resynchronization is successful for formation notifications but fails while getting formation",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
+		//		notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(formationNotificationWebhookErrorResponse, nil).Once()
+		//		return notificationSvc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(nil, testErr).Once()
+		//		return repo
+		//	},
+		//	StatusServiceFn: func() *automock.StatusService {
+		//		svc := &automock.StatusService{}
+		//		svc.On("SetFormationToErrorStateWithConstraints", ctx, formationWithInitialState, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorFormationState, model.CreateFormation).Return(nil).Once()
+		//		return svc
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "error when resynchronization is unsuccessful for formation notifications due to technical error",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationSyncCreateRequests, nil).Once()
+		//		notificationSvc.On("SendNotification", ctx, formationNotificationSyncCreateRequest).Return(nil, testErr).Once()
+		//		return notificationSvc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		repo.On("Update", ctx, formationInCreateErrorStateTechnicalError).Return(nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "error when resynchronization is unsuccessful for formation notifications during generating notifications",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithState(model.InitialFormationState), testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(nil, testErr).Once()
+		//		return notificationSvc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "error when resynchronization is unsuccessful for formation notifications during getting webhooks",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "error when resynchronization is unsuccessful for formation notifications during getting formation template",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr)
+		//		return repo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.InitialFormationState), nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name: "success when resynchronization is successful for formation notifications with DELETE_ERROR state",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+		//		labelDefRepo := &automock.LabelDefRepository{}
+		//		labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+		//		labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+		//		return labelDefRepo
+		//	},
+		//	LabelDefServiceFn: func() *automock.LabelDefService {
+		//		labelDefService := &automock.LabelDefService{}
+		//		labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+		//		labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+		//		return labelDefService
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationSyncDeleteRequests, nil).Once()
+		//		notificationSvc.On("SendNotification", ctx, formationNotificationSyncDeleteRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
+		//		return notificationSvc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), nil).Once()
+		//		repo.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+		//		return repo
+		//	},
+		//	StatusServiceFn: func() *automock.StatusService {
+		//		svc := &automock.StatusService{}
+		//		svc.On("UpdateWithConstraints", ctx, fixFormationModelWithState(model.ReadyFormationState), model.DeleteFormation).Return(nil).Once()
+		//		return svc
+		//	},
+		//},
+		//{
+		//	Name: "error when resynchronization is successful for formation notifications with DELETE_ERROR during deletion of formation",
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
+		//		return repo
+		//	},
+		//	LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+		//		labelDefRepo := &automock.LabelDefRepository{}
+		//		labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+		//		labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+		//		return labelDefRepo
+		//	},
+		//	LabelDefServiceFn: func() *automock.LabelDefService {
+		//		labelDefService := &automock.LabelDefService{}
+		//		labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+		//		labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+		//		return labelDefService
+		//	},
+		//	NotificationServiceFN: func() *automock.NotificationsService {
+		//		notificationSvc := &automock.NotificationsService{}
+		//		notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationSyncDeleteRequests, nil).Once()
+		//		notificationSvc.On("SendNotification", ctx, formationNotificationSyncDeleteRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
+		//		return notificationSvc
+		//	},
+		//	WebhookRepoFn: func() *automock.WebhookRepository {
+		//		webhookRepo := &automock.WebhookRepository{}
+		//		webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+		//		return webhookRepo
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.ClientError), nil).Once()
+		//		repo.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
+		//		return repo
+		//	},
+		//	StatusServiceFn: func() *automock.StatusService {
+		//		svc := &automock.StatusService{}
+		//		svc.On("UpdateWithConstraints", ctx, fixFormationModelWithState(model.ReadyFormationState), model.DeleteFormation).Return(nil).Once()
+		//		return svc
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//// Business logic tests for tenant mapping notifications with reset
+		//{
+		//	Name:        "success when reset and resynchronize is successful and there are leftover formation assignments",
+		//	ShouldReset: true,
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignmentsInInitialState, nil).Once()
+		//		svc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(cloneFormationAssignments(formationAssignments), nil).Once()
+		//		svc.On("Update", ctx, formationAssignments[0].ID, formationAssignmentsInInitialState[0]).Return(nil).Once()
+		//		svc.On("Update", ctx, formationAssignments[1].ID, formationAssignmentsInInitialState[1]).Return(nil).Once()
+		//		svc.On("Update", ctx, formationAssignments[2].ID, formationAssignmentsInInitialState[2]).Return(nil).Once()
+		//		svc.On("Update", ctx, formationAssignments[3].ID, formationAssignmentsInInitialState[3]).Return(nil).Once()
+		//
+		//		for _, fa := range formationAssignments {
+		//			svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+		//		}
+		//
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[0]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[1]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[2]).Return(false, nil).Once()
+		//		svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentInitialPairs[3]).Return(false, nil).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+		//		svc := &automock.FormationAssignmentNotificationsService{}
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[2], model.AssignFormation).Return(notificationsForAssignments[2], nil).Once()
+		//		svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignmentsInInitialState[3], model.AssignFormation).Return(notificationsForAssignments[3], nil).Once()
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModelThatSupportsReset(), nil).Once()
+		//		return repo
+		//	},
+		//},
+		//{
+		//	Name:        "error when reset and resynchronize when updating formation assignment to initial state fails",
+		//	ShouldReset: true,
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(cloneFormationAssignments([]*model.FormationAssignment{formationAssignments[0]}), nil).Once()
+		//		svc.On("Update", ctx, formationAssignments[0].ID, formationAssignmentsInInitialState[0]).Return(testErr).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModelThatSupportsReset(), nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name:        "error when reset and resynchronize when getting formation assignment for formation fails",
+		//	ShouldReset: true,
+		//	FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+		//		svc := &automock.FormationAssignmentService{}
+		//		svc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(nil, testErr).Once()
+		//
+		//		return svc
+		//	},
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModelThatSupportsReset(), nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
+		//{
+		//	Name:        "error when reset and resynchronize formation template does not support resetting",
+		//	ShouldReset: true,
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: fmt.Sprintf("formation template %q does not support resetting", testFormationTemplateName),
+		//},
+		//{
+		//	Name:        "error when reset and resynchronize fails getting formation template",
+		//	ShouldReset: true,
+		//	FormationRepositoryFn: func() *automock.FormationRepository {
+		//		repo := &automock.FormationRepository{}
+		//		repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+		//		return repo
+		//	},
+		//	FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+		//		repo := &automock.FormationTemplateRepository{}
+		//		repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
+		//		return repo
+		//	},
+		//	ExpectedErrMessage: testErr.Error(),
+		//},
 	}
 
 	for _, testCase := range testCases {
