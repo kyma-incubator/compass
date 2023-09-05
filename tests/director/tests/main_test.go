@@ -47,6 +47,7 @@ type DirectorConfig struct {
 	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
 	DestinationsConfig                                 cfg.DestinationsConfig
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string
 	TestConsumerAccountID                              string

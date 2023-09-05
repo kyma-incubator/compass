@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
@@ -110,7 +112,7 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 
-	tkn := token.GetClientCredentialsToken(t, context.Background(), externalServicesMockURL+"/secured/oauth/token", clientID, clientSecret, "tenantFetcherClaims")
+	tkn := token.GetClientCredentialsToken(t, context.Background(), externalServicesMockURL+"/secured/oauth/token", clientID, clientSecret, claims.TenantFetcherClaimKey)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 	return request

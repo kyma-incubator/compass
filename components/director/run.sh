@@ -337,6 +337,8 @@ export APP_DESTINATION_CREATOR_DESTINATION_PATH="/regions/{region}/subaccounts/{
 export APP_DESTINATION_CREATOR_DESTINATION_REGION_PARAMETER="region"
 export APP_DESTINATION_CREATOR_DESTINATION_SUBACCOUNT_ID_PARAMETER="subaccountId"
 export APP_DESTINATION_CREATOR_DESTINATION_NAME_PARAMETER="destinationName"
+export APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_LEVEL_PATH="/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/destinations"
+export APP_DESTINATION_CREATOR_DESTINATION_INSTANCE_ID_PARAMETER="instanceId"
 
 export APP_DESTINATION_CREATOR_CERTIFICATE_BASE_URL="https://destination-creator-local-certificate-api-url.com"
 export APP_DESTINATION_CREATOR_CERTIFICATE_PATH="/regions/{region}/subaccounts/{subaccountId}/certificates"
@@ -346,6 +348,8 @@ export APP_DESTINATION_CREATOR_CERTIFICATE_NAME_PARAMETER="certificateName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_FILE_NAME_KEY="fileName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY="commonName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY="certificateChain"
+export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH="/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
+export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER="instanceId"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig

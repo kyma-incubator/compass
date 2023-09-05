@@ -13,11 +13,12 @@ import (
 const (
 	// IDs constants
 	destinationID                          = "126ac686-5773-4ad0-8eb1-2349e931f852"
-	destinationSubaccountID                = "553ac686-5773-4ad0-8eb1-2349e931f852"
+	internalDestinationSubaccountID        = "553ac686-5773-4ad0-8eb1-2349e931f852"
 	externalDestinationSubaccountID        = "452ac686-5773-4ad0-8eb1-2349e931f852"
 	secondDestinationFormationAssignmentID = "098ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationFormationAssignmentID       = "654ac686-5773-4ad0-8eb1-2349e931f852"
 	destinationBundleID                    = "765ac686-5773-4ad0-8eb1-2349e931f852"
+	destinationInstanceID                  = "999ac686-5773-4ad0-8eb1-2349e931f852"
 
 	// Destination constants
 	destinationName        = "test-destination-name"
@@ -41,6 +42,7 @@ const (
 
 var (
 	faID              = destinationFormationAssignmentID
+	instanceID        = destinationInstanceID
 	destinationEntity = fixDestinationEntity(destinationName)
 	destinationModel  = fixDestinationModel(destinationName)
 	initialDepth      = uint8(0)
@@ -53,7 +55,8 @@ func fixDestinationModel(name string) *model.Destination {
 		Type:                  string(destinationType),
 		URL:                   destinationURL,
 		Authentication:        string(destinationNoAuthn),
-		SubaccountID:          destinationSubaccountID,
+		SubaccountID:          internalDestinationSubaccountID,
+		InstanceID:            &instanceID,
 		FormationAssignmentID: &faID,
 	}
 }
@@ -65,7 +68,8 @@ func fixDestinationModelWithAuthnAndFAID(name, authn, formationAssignmentID stri
 		Type:                  string(destinationType),
 		URL:                   destinationURL,
 		Authentication:        authn,
-		SubaccountID:          destinationSubaccountID,
+		SubaccountID:          internalDestinationSubaccountID,
+		InstanceID:            &instanceID,
 		FormationAssignmentID: &formationAssignmentID,
 	}
 }
@@ -77,7 +81,8 @@ func fixDestinationEntity(name string) *destination.Entity {
 		Type:                  string(destinationType),
 		URL:                   destinationURL,
 		Authentication:        string(destinationNoAuthn),
-		TenantID:              destinationSubaccountID,
+		TenantID:              internalDestinationSubaccountID,
+		InstanceID:            repo.NewValidNullableString(instanceID),
 		FormationAssignmentID: repo.NewValidNullableString(faID),
 	}
 }
@@ -100,6 +105,7 @@ func fixDestinationDetails(name, authentication, subaccountID string) operators.
 		Authentication: authentication,
 		URL:            destinationURL,
 		SubaccountID:   subaccountID,
+		InstanceID:     destinationInstanceID,
 	}
 }
 
@@ -159,7 +165,7 @@ func fixClientCertAuthDestinationsDetails() []operators.Destination {
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "type", "url", "authentication", "tenant_id", "bundle_id", "revision", "formation_assignment_id"}
+	return []string{"id", "name", "type", "url", "authentication", "tenant_id", "bundle_id", "revision", "instance_id", "formation_assignment_id"}
 }
 
 func fixUUID() string {
