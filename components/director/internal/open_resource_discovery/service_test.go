@@ -5005,7 +5005,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	}
 }
 
-func TestService_ProcessApplications(t *testing.T) {
+func TestService_ProcessApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -5038,11 +5038,11 @@ func TestService_ProcessApplications(t *testing.T) {
 		globalRegistrySvcFn func() *automock.GlobalRegistryService
 		labelSvcFn          func() *automock.LabelService
 		clientFn            func() *automock.Client
-		appIDs              func() []string
+		appID               string
 		ExpectedErr         error
 	}{
 		{
-			Name: "Success when empty app IDs array",
+			Name: "Success when empty app ID",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntStartTransaction()
 			},
@@ -5061,9 +5061,7 @@ func TestService_ProcessApplications(t *testing.T) {
 			clientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
-			appIDs: func() []string {
-				return []string{}
-			},
+			appID: "",
 		},
 		{
 			Name: "Success",
@@ -5079,9 +5077,7 @@ func TestService_ProcessApplications(t *testing.T) {
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn:            successfulClientFetch,
-			appIDs: func() []string {
-				return []string{appID}
-			},
+			appID:               appID,
 			labelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetByKey", txtest.CtxWithDBMatcher(), tenantID, model.ApplicationLabelableObject, testApplication.Name, application.ApplicationTypeLabelKey).Return(fixApplicationTypeLabel(), nil).Once()
@@ -5091,7 +5087,7 @@ func TestService_ProcessApplications(t *testing.T) {
 		{
 			Name: "Error while listing webhooks for application",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(1)
+				return txGen.ThatDoesntExpectCommit()
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				return &automock.ApplicationService{}
@@ -5104,13 +5100,13 @@ func TestService_ProcessApplications(t *testing.T) {
 				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return whSvc
 			},
-			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
+				return &automock.GlobalRegistryService{}
+			},
 			clientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
-			appIDs: func() []string {
-				return []string{appID}
-			},
+			appID:       appID,
 			ExpectedErr: testErr,
 		},
 		{
@@ -5133,9 +5129,7 @@ func TestService_ProcessApplications(t *testing.T) {
 			clientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
-			appIDs: func() []string {
-				return []string{appID}
-			},
+			appID:       appID,
 			ExpectedErr: testErr,
 		},
 		{
@@ -5160,9 +5154,7 @@ func TestService_ProcessApplications(t *testing.T) {
 			clientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
-			appIDs: func() []string {
-				return []string{appID}
-			},
+			appID:       appID,
 			ExpectedErr: testErr,
 		},
 	}
@@ -5220,7 +5212,7 @@ func TestService_ProcessApplications(t *testing.T) {
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
 			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
-			err := svc.ProcessApplication(context.TODO(), test.appIDs()[0])
+			err := svc.ProcessApplication(context.TODO(), test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
@@ -5233,21 +5225,13 @@ func TestService_ProcessApplications(t *testing.T) {
 	}
 }
 
-func TestService_ProcessApplicationTemplates(t *testing.T) {
+func TestService_ProcessApplicationTemplate(t *testing.T) {
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	emptyORDMapping := application.ORDWebhookMapping{}
 	ordRequestObject := webhook.OpenResourceDiscoveryWebhookRequestObject{Headers: &sync.Map{}}
 
-	testApplication := fixApplications()[0]
-	testResourceApp := ord.Resource{
-		Type:          resource.Application,
-		ID:            testApplication.ID,
-		Name:          testApplication.Name,
-		LocalTenantID: testApplication.LocalTenantID,
-		ParentID:      &appTemplateID,
-	}
 	testResourceAppTemplate := ord.Resource{
 		Type: resource.ApplicationTemplate,
 		ID:   appTemplateID,
@@ -5258,13 +5242,7 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 	successfulClientFetchForAppTemplate := func() *automock.Client {
 		client := &automock.Client{}
 		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceApp, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
-		return client
-	}
-
-	successfulClientFetchForOnlyAppTemplate := func() *automock.Client {
-		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceAppTemplate, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
+		// client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testResourceApp, testWebhookForAppTemplate, emptyORDMapping, ordRequestObject).Return(ord.Documents{}, baseURL, nil).Once()
 		return client
 	}
 
@@ -5280,7 +5258,7 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 		appTemplateVersionSvcFn func() *automock.ApplicationTemplateVersionService
 		labelSvcFn              func() *automock.LabelService
 		clientFn                func() *automock.Client
-		appTemplateIDs          func() []string
+		appTemplateID           string
 		ExpectedErr             error
 	}{
 		{
@@ -5303,17 +5281,19 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 			clientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
-			appTemplateIDs: func() []string {
-				return []string{}
-			},
+			appTemplateID: "",
 		},
 		{
 			Name: "Success",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(5)
+				return txGen.ThatSucceedsMultipleTimes(2)
 			},
-			appSvcFn:    successfulAppSvc,
-			tenantSvcFn: successfulTenantSvc,
+			appSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
+			tenantSvcFn: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
@@ -5321,20 +5301,16 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 			},
 			globalRegistrySvcFn: successfulGlobalRegistrySvc,
 			clientFn:            successfulClientFetchForAppTemplate,
-			appTemplateIDs: func() []string {
-				return []string{appTemplateID}
-			},
-			appTemplateSvcFn: successAppTemplateGetSvc,
+			appTemplateID:       appTemplateID,
+			appTemplateSvcFn:    successAppTemplateGetSvc,
 			labelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", txtest.CtxWithDBMatcher(), tenantID, model.ApplicationLabelableObject, testApplication.Name, application.ApplicationTypeLabelKey).Return(fixApplicationTypeLabel(), nil).Once()
-				return svc
+				return &automock.LabelService{}
 			},
 		},
 		{
 			Name: "Error while listing webhooks for application templates",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(1)
+				return txGen.ThatDoesntExpectCommit()
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				return &automock.ApplicationService{}
@@ -5347,93 +5323,14 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 				whSvc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), appTemplateID).Return(nil, testErr).Once()
 				return whSvc
 			},
-			globalRegistrySvcFn: successfulGlobalRegistrySvc,
+			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
+				return &automock.GlobalRegistryService{}
+			},
 			clientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
-			appTemplateIDs: func() []string {
-				return []string{appTemplateID}
-			},
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error while listing applications by application template id",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
-			},
-			appSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(nil, testErr).Once()
-				return appSvc
-			},
-			tenantSvcFn: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			webhookSvcFn: func() *automock.WebhookService {
-				whSvc := &automock.WebhookService{}
-				whSvc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
-				return whSvc
-			},
-			globalRegistrySvcFn: successfulGlobalRegistrySvc,
-			clientFn:            successfulClientFetchForOnlyAppTemplate,
-			appTemplateIDs: func() []string {
-				return []string{appTemplateID}
-			},
-			appTemplateSvcFn: successAppTemplateGetSvc,
-			ExpectedErr:      testErr,
-		},
-		{
-			Name: "Error while getting application",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(4)
-			},
-			appSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
-				appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				return appSvc
-			},
-			tenantSvcFn: successfulTenantSvcOnce,
-			webhookSvcFn: func() *automock.WebhookService {
-				whSvc := &automock.WebhookService{}
-				whSvc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
-				return whSvc
-			},
-			globalRegistrySvcFn: successfulGlobalRegistrySvc,
-			clientFn:            successfulClientFetchForOnlyAppTemplate,
-			appTemplateIDs: func() []string {
-				return []string{appTemplateID}
-			},
-			appTemplateSvcFn: successAppTemplateGetSvc,
-			ExpectedErr:      testErr,
-		},
-		{
-			Name: "Error while getting lowest owner of resource",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(4)
-			},
-			appSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
-				return appSvc
-			},
-			tenantSvcFn: func() *automock.TenantService {
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
-				return tenantSvc
-			},
-			webhookSvcFn: func() *automock.WebhookService {
-				whSvc := &automock.WebhookService{}
-				whSvc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
-				return whSvc
-			},
-			globalRegistrySvcFn: successfulGlobalRegistrySvc,
-			clientFn:            successfulClientFetchForOnlyAppTemplate,
-			appTemplateIDs: func() []string {
-				return []string{appTemplateID}
-			},
-			appTemplateSvcFn: successAppTemplateGetSvc,
-			ExpectedErr:      testErr,
+			appTemplateID: appTemplateID,
+			ExpectedErr:   testErr,
 		},
 	}
 	for _, test := range testCases {
@@ -5491,7 +5388,7 @@ func TestService_ProcessApplicationTemplates(t *testing.T) {
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
 			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConv, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
-			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateIDs()[0])
+			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
