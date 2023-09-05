@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/healthz"
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/healthz"
 
 	"github.com/stretchr/testify/require"
 )

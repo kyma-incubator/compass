@@ -2,13 +2,12 @@ package middlewares
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
+	"github.com/gin-gonic/gin"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/jwk"
@@ -17,7 +16,6 @@ import (
 
 const (
 	authorizationHeader = "Authorization"
-	tenantCtxKey        = "tenant"
 	keyIDHeader         = "kid"
 )
 
@@ -41,20 +39,12 @@ func (m JWTMiddleware) JWT(ctx *gin.Context) {
 		return
 	}
 
-	jwtClaims, err := m.verifyJWT(ctx, bearerToken)
+	_, err = m.verifyJWT(ctx, bearerToken)
 	if err != nil {
 		log.Err(err).Msg("Failed to verify Authorization header token")
 		internal.RespondWithError(ctx, http.StatusUnauthorized, err)
 		return
 	}
-
-	tenant, err := jwtClaims.extractTenant()
-	if err != nil {
-		log.Err(err).Msg("Failed to extract tenant from claims")
-		internal.RespondWithError(ctx, http.StatusUnauthorized, err)
-		return
-	}
-	ctx.Set(tenantCtxKey, tenant)
 
 	ctx.Next()
 }
@@ -70,18 +60,6 @@ func getBearerToken(r *http.Request) (string, error) {
 type jwtClaims struct {
 	Tenants string `json:"tenant"`
 	jwt.RegisteredClaims
-}
-
-type tenant struct {
-	ProviderExternalTenant string
-}
-
-func (c jwtClaims) extractTenant() (string, error) {
-	tenant := tenant{}
-	if err := json.Unmarshal([]byte(c.Tenants), &tenant); err != nil {
-		return "", errors.Newf("failed to unmarshal tenant claim: %w", err)
-	}
-	return tenant.ProviderExternalTenant, nil
 }
 
 func (m JWTMiddleware) verifyJWT(ctx context.Context, jwtToken string) (jwtClaims, error) {
