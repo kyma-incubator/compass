@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	claimspkg "github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -22,7 +23,6 @@ const (
 	CredentialsGrantType = "client_credentials"
 	PasswordGrantType    = "password"
 	ScopesFieldName      = "scopes"
-	ClaimsKey            = "claims_key"
 
 	ClientIDKey     = "client_id"
 	ClientSecretKey = "client_secret"
@@ -99,7 +99,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := make(map[string]interface{})
-	claimsFunc, ok := h.staticMappingClaims[r.FormValue(ClaimsKey)]
+	claimsFunc, ok := h.staticMappingClaims[r.FormValue(claimspkg.ClaimsKey)]
 	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
 		claims = claimsFunc()
 	} else { // If there is no claims key provided use default claims
