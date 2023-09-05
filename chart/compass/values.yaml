@@ -188,7 +188,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3271"
+      version: "PR-3282"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -319,13 +319,17 @@ global:
       destinationAPI:
         baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
+        instanceLevelPath: "/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/destinations"
         regionParam: "region"
+        instanceIDParam: "instanceId"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
         baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
+        instanceLevelPath: "/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
         regionParam: "region"
+        instanceIDParam: "instanceId"
         subaccountIDParam: "subaccountId"
         nameParam: "certificateName"
         fileNameKey: "fileName"
@@ -786,7 +790,9 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantInstanceLevelDestinationsEndpoint: "/v1/instanceDestinations"
       tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
+      tenantInstanceLevelDestinationCertificatesEndpoint: "/v1/instanceCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:
@@ -1198,6 +1204,10 @@ global:
       region2: "eu-2"
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
+      instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
+      claims:
+        subaccountIDKey: "subaccountid"
+        serviceInstanceIDKey: "serviceinstanceid"
     subscription:
       labelKey: "subscriptions"
       standardFlow: "standard"

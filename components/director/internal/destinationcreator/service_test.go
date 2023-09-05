@@ -1032,6 +1032,7 @@ func Test_DeleteDestination(t *testing.T) {
 		name                    string
 		destinationName         string
 		destinationSubaccountID string
+		destinationInstanceID   string
 		formationAssignment     *model.FormationAssignment
 		httpClient              func() *automock.HttpClient
 		labelRepoFn             func() *automock.LabelRepository
@@ -1042,6 +1043,7 @@ func Test_DeleteDestination(t *testing.T) {
 			name:                    "Success",
 			destinationName:         basicDestName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1070,6 +1072,7 @@ func Test_DeleteDestination(t *testing.T) {
 			name:                    "Error while getting region and get external tenant fail",
 			destinationName:         basicDestName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
@@ -1087,6 +1090,7 @@ func Test_DeleteDestination(t *testing.T) {
 			name:                    "Error while building url and region is empty",
 			destinationName:         basicDestName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
@@ -1104,6 +1108,7 @@ func Test_DeleteDestination(t *testing.T) {
 		{
 			name:                    "Error while building url and destination name is empty",
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
@@ -1122,6 +1127,7 @@ func Test_DeleteDestination(t *testing.T) {
 			name:                    "Error when executing remote delete destination request fail",
 			destinationName:         basicDestName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1145,6 +1151,7 @@ func Test_DeleteDestination(t *testing.T) {
 			name:                    "Error when executing remote delete destination request return unexpected status code",
 			destinationName:         basicDestName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1186,7 +1193,7 @@ func Test_DeleteDestination(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.DeleteDestination(emptyCtx, testCase.destinationName, testCase.destinationSubaccountID, testCase.formationAssignment)
+			err := svc.DeleteDestination(emptyCtx, testCase.destinationName, testCase.destinationSubaccountID, testCase.destinationInstanceID, testCase.formationAssignment)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -1532,6 +1539,7 @@ func Test_DeleteCertificate(t *testing.T) {
 		name                    string
 		certificateName         string
 		destinationSubaccountID string
+		destinationInstanceID   string
 		formationAssignment     *model.FormationAssignment
 		httpClient              func() *automock.HttpClient
 		labelRepoFn             func() *automock.LabelRepository
@@ -1542,6 +1550,7 @@ func Test_DeleteCertificate(t *testing.T) {
 			name:                    "Success",
 			certificateName:         certificateName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1570,6 +1579,7 @@ func Test_DeleteCertificate(t *testing.T) {
 			name:                    "Error while getting region and get external tenant fail",
 			certificateName:         certificateName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
@@ -1587,6 +1597,7 @@ func Test_DeleteCertificate(t *testing.T) {
 			name:                    "Error while building url and region is empty",
 			certificateName:         certificateName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
@@ -1604,6 +1615,7 @@ func Test_DeleteCertificate(t *testing.T) {
 		{
 			name:                    "Error while building url and certificate name is empty",
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
@@ -1622,6 +1634,7 @@ func Test_DeleteCertificate(t *testing.T) {
 			name:                    "Error when executing remote delete certificate request fail",
 			certificateName:         certificateName,
 			destinationSubaccountID: destinationExternalSubaccountID,
+			destinationInstanceID:   destinationInstanceID,
 			formationAssignment:     faWithSourceAppAndTargetApp,
 			httpClient: func() *automock.HttpClient {
 				client := &automock.HttpClient{}
@@ -1663,7 +1676,7 @@ func Test_DeleteCertificate(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.DeleteCertificate(emptyCtx, testCase.certificateName, testCase.destinationSubaccountID, testCase.formationAssignment)
+			err := svc.DeleteCertificate(emptyCtx, testCase.certificateName, testCase.destinationSubaccountID, testCase.destinationInstanceID, testCase.formationAssignment)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)

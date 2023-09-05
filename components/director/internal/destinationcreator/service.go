@@ -119,7 +119,12 @@ func (s *Service) CreateDesignTimeDestinations(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   "",
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationDetails.InstanceID,
+	}, false)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
 	}
@@ -153,7 +158,7 @@ func (s *Service) CreateDesignTimeDestinations(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
@@ -178,7 +183,12 @@ func (s *Service) CreateBasicCredentialDestinations(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   "",
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationDetails.InstanceID,
+	}, false)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
 	}
@@ -202,7 +212,7 @@ func (s *Service) CreateBasicCredentialDestinations(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
@@ -227,7 +237,12 @@ func (s *Service) CreateSAMLAssertionDestination(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   "",
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationDetails.InstanceID,
+	}, false)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
 	}
@@ -292,7 +307,7 @@ func (s *Service) CreateSAMLAssertionDestination(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
@@ -317,7 +332,12 @@ func (s *Service) CreateClientCertificateDestination(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, "", false)
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   "",
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationDetails.InstanceID,
+	}, false)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
 	}
@@ -374,7 +394,7 @@ func (s *Service) CreateClientCertificateDestination(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
@@ -396,13 +416,18 @@ func (s *Service) CreateCertificate(
 		return nil, err
 	}
 
-	subaccountID := destinationsDetails[0].SubaccountID // we're getting the subaccount ID from the first element but before that we ensured they are all equal
+	subaccountID := destinationsDetails[0].SubaccountID // we're getting the subaccount ID from the first element, but before that we ensured they are all equal
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, "", false)
+	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
+		EntityName:   "",
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   destinationsDetails[0].InstanceID,
+	}, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building certificate URL")
 	}
@@ -431,7 +456,7 @@ func (s *Service) CreateCertificate(
 			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteCertificate(ctx, certName, subaccountID, formationAssignment); err != nil {
+		if err := s.DeleteCertificate(ctx, certName, subaccountID, destinationsDetails[0].InstanceID, formationAssignment); err != nil {
 			return nil, errors.Wrapf(err, "while deleting certificate with name: %q and subaccount ID: %q", certName, subaccountID)
 		}
 
@@ -483,7 +508,7 @@ func GetDestinationCertificateName(ctx context.Context, destinationAuthenticatio
 // DeleteCertificate is responsible to delete certificate resource from the remote destination service
 func (s *Service) DeleteCertificate(
 	ctx context.Context,
-	certificateName, externalDestSubaccountID string,
+	certificateName, externalDestSubaccountID, instanceID string,
 	formationAssignment *model.FormationAssignment,
 ) error {
 	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
@@ -496,7 +521,12 @@ func (s *Service) DeleteCertificate(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildCertificateURL(s.config.CertificateAPIConfig, region, subaccountID, certificateName, true)
+	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
+		EntityName:   certificateName,
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   instanceID,
+	}, true)
 	if err != nil {
 		return errors.Wrapf(err, "while building certificate URL")
 	}
@@ -513,7 +543,7 @@ func (s *Service) DeleteCertificate(
 // DeleteDestination is responsible to delete destination resource from the remote destination service
 func (s *Service) DeleteDestination(
 	ctx context.Context,
-	destinationName, externalDestSubaccountID string,
+	destinationName, externalDestSubaccountID, instanceID string,
 	formationAssignment *model.FormationAssignment,
 ) error {
 	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
@@ -526,7 +556,12 @@ func (s *Service) DeleteDestination(
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
-	strURL, err := buildDestinationURL(s.config.DestinationAPIConfig, region, subaccountID, destinationName, true)
+	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
+		EntityName:   destinationName,
+		Region:       region,
+		SubaccountID: subaccountID,
+		InstanceID:   instanceID,
+	}, true)
 	if err != nil {
 		return errors.Wrapf(err, "while building destination URL")
 	}
@@ -577,7 +612,8 @@ func (s *Service) EnrichAssignmentConfigWithSAMLCertificateData(
 	return json.RawMessage(enrichedCfgStr), nil
 }
 
-// ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one. If it's not provided then we validate the subaccount ID from the formation assignment.
+// ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one.
+// If it's not provided, then we validate the subaccount ID from the formation assignment.
 func (s *Service) ValidateDestinationSubaccount(
 	ctx context.Context,
 	externalDestSubaccountID string,
@@ -957,44 +993,61 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 	}
 }
 
-func buildDestinationURL(
-	destinationCfg *DestinationAPIConfig,
-	region, subaccountID, destinationName string,
-	isDeleteRequest bool,
-) (string, error) {
-	return buildURL(destinationCfg.BaseURL, destinationCfg.Path, destinationCfg.RegionParam, destinationCfg.SubaccountIDParam, destinationCfg.DestinationNameParam, region, subaccountID, destinationName, isDeleteRequest)
+func buildDestinationURL(ctx context.Context, destinationCfg *DestinationAPIConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
+	return buildURL(ctx, URLConfig{
+		BaseURL:             destinationCfg.BaseURL,
+		SubaccountLevelPath: destinationCfg.SubaccountLevelPath,
+		InstanceLevelPath:   destinationCfg.InstanceLevelPath,
+		RegionParam:         destinationCfg.RegionParam,
+		NameParam:           destinationCfg.DestinationNameParam,
+		SubaccountIDParam:   destinationCfg.SubaccountIDParam,
+		InstanceIDParam:     destinationCfg.InstanceIDParam,
+	}, parameters, isDeleteRequest)
 }
 
-func buildCertificateURL(
-	certificateCfg *CertificateAPIConfig,
-	region, subaccountID, certificateName string,
-	isDeleteRequest bool,
-) (string, error) {
-	return buildURL(certificateCfg.BaseURL, certificateCfg.Path, certificateCfg.RegionParam, certificateCfg.SubaccountIDParam, certificateCfg.CertificateNameParam, region, subaccountID, certificateName, isDeleteRequest)
+func buildCertificateURL(ctx context.Context, certificateCfg *CertificateAPIConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
+	return buildURL(ctx, URLConfig{
+		BaseURL:             certificateCfg.BaseURL,
+		SubaccountLevelPath: certificateCfg.SubaccountLevelPath,
+		InstanceLevelPath:   certificateCfg.InstanceLevelPath,
+		RegionParam:         certificateCfg.RegionParam,
+		NameParam:           certificateCfg.CertificateNameParam,
+		SubaccountIDParam:   certificateCfg.SubaccountIDParam,
+		InstanceIDParam:     certificateCfg.InstanceIDParam,
+	}, parameters, isDeleteRequest)
 }
 
-func buildURL(
-	baseURL, path, regionParam, subaccountIDParam, entityNameParam, region, subaccountID, entityName string,
-	isDeleteRequest bool,
-) (string, error) {
-	if region == "" || subaccountID == "" {
+func buildURL(ctx context.Context, urlConfig URLConfig, parameters URLParameters, isDeleteRequest bool) (string, error) {
+	if parameters.Region == "" || parameters.SubaccountID == "" {
 		return "", errors.Errorf("The provided region and/or subaccount for the URL couldn't be empty")
 	}
 
-	base, err := url.Parse(baseURL)
+	var path string
+	if parameters.InstanceID == "" {
+		path = urlConfig.SubaccountLevelPath
+	} else {
+		log.C(ctx).Infof("The entity with name: %q is on service instance level with ID: %q", parameters.EntityName, parameters.InstanceID)
+		path = urlConfig.InstanceLevelPath
+	}
+
+	base, err := url.Parse(urlConfig.BaseURL)
 	if err != nil {
 		return "", err
 	}
 
-	regionalEndpoint := strings.Replace(path, fmt.Sprintf("{%s}", regionParam), region, 1)
-	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", subaccountIDParam), subaccountID, 1)
+	regionalEndpoint := strings.Replace(path, fmt.Sprintf("{%s}", urlConfig.RegionParam), parameters.Region, 1)
+	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", urlConfig.SubaccountIDParam), parameters.SubaccountID, 1)
 
 	if isDeleteRequest {
-		if entityName == "" {
+		if parameters.EntityName == "" {
 			return "", errors.Errorf("The entity name should not be empty in case of %s request", http.MethodDelete)
 		}
-		regionalEndpoint += fmt.Sprintf("/{%s}", entityNameParam)
-		regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", entityNameParam), entityName, 1)
+		regionalEndpoint += fmt.Sprintf("/{%s}", urlConfig.NameParam)
+		regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", urlConfig.NameParam), parameters.EntityName, 1)
+	}
+
+	if parameters.InstanceID != "" {
+		regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", urlConfig.InstanceIDParam), parameters.InstanceID, 1)
 	}
 
 	// Path params

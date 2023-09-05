@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"golang.org/x/oauth2"
@@ -576,7 +578,7 @@ func TestORDAggregator(stdT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testConfig.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)

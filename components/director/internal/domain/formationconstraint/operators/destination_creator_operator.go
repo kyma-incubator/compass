@@ -321,6 +321,7 @@ type Destination struct {
 	Authentication       string          `json:"authentication,omitempty"`
 	URL                  string          `json:"url,omitempty"`
 	SubaccountID         string          `json:"subaccountId,omitempty"`
+	InstanceID           string          `json:"instanceId,omitempty"`
 	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
 	FileName             string          `json:"fileName,omitempty"`
 	CommonName           string          `json:"commonName,omitempty"`
