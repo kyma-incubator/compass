@@ -977,11 +977,11 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 
 	if formation.State != model.ReadyFormationState {
 		previousState := formation.State
-		formation, err = s.resynchronizeFormationNotifications(ctx, tenantID, formation)
+		formation, isDeleted, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation, previousState)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formationID)
 		}
-		if previousState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState {
+		if isDeleted {
 			return formation, nil
 		}
 		if formation.State != model.ReadyFormationState {
@@ -1134,10 +1134,10 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	return formation, errs.ErrorOrNil()
 }
 
-func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {
+func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation, previousState model.FormationState) (*model.Formation, bool, error) {
 	formationResyncTx, err := s.transact.Begin()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	formationResyncTransactionCtx := persistence.SaveToContext(ctx, formationResyncTx)
 
@@ -1145,44 +1145,55 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 
 	fTmpl, err := s.formationTemplateRepository.Get(formationResyncTransactionCtx, formation.FormationTemplateID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "An error occurred while getting formation template with ID: %q", formation.FormationTemplateID)
+		return nil, false, errors.Wrapf(err, "An error occurred while getting formation template with ID: %q", formation.FormationTemplateID)
 	}
 	formationTemplateID := fTmpl.ID
 	formationTemplateName := fTmpl.Name
 
 	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(formationResyncTransactionCtx, formationTemplateID, model.FormationTemplateWebhookReference)
 	if err != nil {
-		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
+		return nil, false, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 	operation := determineFormationOperationFromState(formation.State)
 	errorState := determineFormationErrorStateFromOperation(operation)
 
 	formationReqs, err := s.notificationsService.GenerateFormationNotifications(formationResyncTransactionCtx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, operation)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
+		return nil, false, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
 	}
 
 	for _, formationReq := range formationReqs {
 		if err = s.processFormationNotifications(formationResyncTransactionCtx, formation, formationReq, errorState); err != nil {
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
 			log.C(ctx).Error(processErr)
-			return nil, processErr
+			return nil, false, processErr
 		}
 		if errorState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState && formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeSync {
 			if err = s.DeleteFormationEntityAndScenarios(formationResyncTransactionCtx, tenantID, formation.Name); err != nil {
-				return nil, errors.Wrapf(err, "while deleting formation with name %s", formation.Name)
+				return nil, false, errors.Wrapf(err, "while deleting formation with name %s", formation.Name)
 			}
 		}
 	}
+
+	if previousState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState {
+		err = formationResyncTx.Commit()
+		if err != nil {
+			return nil, false, err
+		}
+		return formation, true, nil
+	}
+
 	formation, err = s.formationRepository.Get(formationResyncTransactionCtx, formation.ID, tenantID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formation.ID)
+		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formation.ID)
 	}
+
 	err = formationResyncTx.Commit()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return formation, nil
+
+	return formation, false, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
