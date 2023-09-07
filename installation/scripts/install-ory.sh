@@ -86,15 +86,13 @@ echo "Helm install ORY components..."
 RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 
-kubectl create ns $RELEASE_NS || true
-
-LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
+CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
 
 # The System secret and cookie secret, needed by Hydra, are created by the Secret component of the Helm chart
 # Rotating the secrets has to be done manually; the rotation of the Hydra Secrets should be done following this guide: https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
 # Hydra requires data persistence, locally the postgres DB of compass is used.
 # The connection string(DSN) has to be created
-if [ "$LOCAL_PERSISTENCE" = false ]; then
+if [ "$CLOUD_PERSISTENCE" = false ]; then
   echo "Creating secret to be used by the Ory Hydra Helm Chart..."
   # Hydra uses the `localdb` instance as its persistence backend
   VALUES_FILE_DB="${ROOT_PATH}"/chart/localdb/values.yaml
