@@ -84,6 +84,7 @@ export GCLOUD_SUBNET_NAME="${gcp_set_vars_for_network_return_subnet_name:?}"
 DNS_SUBDOMAIN="${COMMON_NAME}"
 COMPASS_SCRIPTS_DIR="${COMPASS_SOURCES_DIR}/installation/scripts"
 
+ORY_BENCHMARK_OVERRIDES="~/ory_benchmark_overrides.yaml"
 function createCluster() {
   #Used to detect errors for logging purposes
   ERROR_LOGGING_GUARD="true"
@@ -148,7 +149,7 @@ function createCluster() {
   envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-overrides-gke-benchmark.yaml" > "$PWD/compass_benchmark_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
-  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > ~/ory_benchmark_overrides.yaml
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > "$ORY_BENCHMARK_OVERRIDES"
 }
 
 function installYQ() {
@@ -196,25 +197,8 @@ function installKyma() {
 function installOry() {
   ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
 
-  if [[ -f "$ORY_SCRIPT_PATH" ]]; then
-    log::info "Installing Ory Helm chart..."
-    bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
-  # This else statement only exists as currently the main branch does not have the ory charts and still uses Ory created by Kyma
-  else
-    log::warn "Ory installation script is missing"
-    # If the installation is missing Kyma has installed Ory for us, we should schedule the cronjob
-    # as this is done by 'install-ory.sh'
-    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-    until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath="{.status.lastScheduleTime}") ]]; do
-      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-      sleep 3
-    done
-    kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
-    
-    # Copy the Hydra Secret created by the Kyma deployment to avoid benchmark tests crashing with 401 due to HMAC key changes
-    kubectl create ns ory || true
-    kubectl get secret ory-hydra-credentials -n kyma-system -o yaml | sed 's/namespace: .*/namespace: ory/' | kubectl apply -f -
-  fi
+  log::info "Installing Ory Helm chart..."
+  bash "${ORY_SCRIPT_PATH}" --overrides-file "$ORY_BENCHMARK_OVERRIDES"
 }
 
 function installCompassOld() {
@@ -226,17 +210,14 @@ function installCompassOld() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
-  echo 'Installing Kyma'
-  installKyma
-
-  echo "Installing Ory"
-  installOry
-
   echo 'Installing DB'
   mkdir "$COMPASS_SOURCES_DIR/installation/data"
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
+
+  echo 'Installing Ory'
+  installOry
 
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
@@ -263,18 +244,15 @@ function installCompassNew() {
 
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
-
-  echo 'Installing Kyma'
-  installKyma
-
-  echo "Installing Ory"
-  installOry
-
+  
   echo 'Installing DB'
   bash "${COMPASS_SCRIPTS_DIR}"/install-db.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
 
+  echo 'Installing Ory'
+  installOry
+  
   echo 'Installing Compass'
   bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
   STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
@@ -322,6 +300,9 @@ installHelm
 
 log::info "Install Kyma CLI"
 installKymaCLI
+
+log::info "Installing Kyma"
+installKyma
 
 NEW_VERSION_COMMIT_ID=$(cd "$COMPASS_SOURCES_DIR" && git rev-parse --short HEAD)
 log::info "Install Compass version from main"
