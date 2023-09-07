@@ -93,7 +93,6 @@ CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE
 # Hydra requires data persistence, locally the postgres DB of compass is used.
 # The connection string(DSN) has to be created
 if [ "$CLOUD_PERSISTENCE" = false ]; then
-  echo "Creating secret to be used by the Ory Hydra Helm Chart..."
   # Hydra uses the `localdb` instance as its persistence backend
   VALUES_FILE_DB="${ROOT_PATH}"/chart/localdb/values.yaml
   POSTGRES_USERNAME=$(yq ".postgresql.postgresqlUsername" $VALUES_FILE_DB)
