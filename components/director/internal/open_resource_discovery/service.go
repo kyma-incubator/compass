@@ -167,7 +167,7 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 				globalResourcesLoaded = true
 			}
 			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
-			if err = s.processApplicationWebhook(ctx, s.metricsCfg, wh, appID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
@@ -202,7 +202,7 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 			}
 
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, s.metricsCfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 
@@ -222,7 +222,7 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
 			}
 
-			if err = s.processApplicationWebhook(ctx, s.metricsCfg, wh, appID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
@@ -254,7 +254,7 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 			}
 
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, s.metricsCfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
@@ -262,12 +262,13 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 	return nil
 }
 
-func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+// TODO - remove - ProcessWebhook performs resync of single ORD webhook
+func (s *Service) ProcessWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
 	switch webhook.ObjectType {
 	case model.ApplicationTemplateWebhookReference:
 		appTemplateID := webhook.ObjectID
 
-		if err := s.processApplicationTemplateWebhook(ctx, cfg, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
+		if err := s.processApplicationTemplateWebhook(ctx, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
 			return err
 		}
 
@@ -277,13 +278,13 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 		}
 
 		for _, app := range apps {
-			if err = s.processApplicationWebhook(ctx, cfg, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
 	case model.ApplicationWebhookReference:
 		appID := webhook.ObjectID
-		if err := s.processApplicationWebhook(ctx, cfg, webhook, appID, globalResourcesOrdIDs); err != nil {
+		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
 			return err
 		}
 	}
@@ -1754,7 +1755,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	}, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var (
 		documents      Documents
 		webhookBaseURL string
@@ -1762,10 +1763,10 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	)
 
 	metricsCfg := metrics.PusherConfig{
-		Enabled:    len(cfg.PushEndpoint) > 0,
-		Endpoint:   cfg.PushEndpoint,
-		MetricName: strings.ReplaceAll(strings.ToLower(cfg.JobName), "-", "_") + "_job_sync_failure_number",
-		Timeout:    cfg.ClientTimeout,
+		Enabled:    len(s.metricsCfg.PushEndpoint) > 0,
+		Endpoint:   s.metricsCfg.PushEndpoint,
+		MetricName: strings.ReplaceAll(strings.ToLower(s.metricsCfg.JobName), "-", "_") + "_job_sync_failure_number",
+		Timeout:    s.metricsCfg.ClientTimeout,
 		Subsystem:  metrics.OrdAggregatorSubsystem,
 		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
@@ -1919,7 +1920,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 	return ctx, nil
 }
 
-func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -1956,14 +1957,14 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		Name:          app.Name,
 		LocalTenantID: app.LocalTenantID,
 	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
 		return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
 	}
 
 	return nil
 }
 
-func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -1988,7 +1989,7 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
 		return err
 	}
 

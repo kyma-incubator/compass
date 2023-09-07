@@ -148,8 +148,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			http.Error(writer, "Sheduling Operation for ORD data aggregation failed", http.StatusInternalServerError)
 			return
 		}
+		// TODO notify OperationProcessors for new operation
 	}
-
 	writer.WriteHeader(http.StatusOK)
-	// TODO notify OperationProcessors for new operation
 }
