@@ -127,7 +127,7 @@ function createCluster() {
   gcp::provision_k8s_cluster \
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
-        -v "1.23.17" \
+        -v "1.24.17" \
         -j "$JOB_NAME" \
         -J "$PROW_JOB_ID" \
         -z "$CLOUDSDK_COMPUTE_ZONE" \
