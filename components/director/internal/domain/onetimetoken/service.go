@@ -30,6 +30,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// This is temporary code
+const (
+	UnrestrictedKey         = "UNRESTRICTED"
+	UnrestrictedDescription = "All Communication Scenarios"
+	EventMeshKey            = "EVENT_MESH"
+	EventMeshDescription    = "Eventing between SAP Cloud Systems"
+	SapStartKey             = "SAP_START"
+	SapStartDescription     = "Integration with SAP Start"
+	AribaBuyKey             = "ARIBA_BUY"
+	AribaBuyDescription     = "Integration with SAP Ariba Buying"
+)
+
 // SystemAuthService missing godoc
 //
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -266,7 +278,11 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		clientUser = correlation.CorrelationIDFromContext(ctx)
 	}
 
-	scenarioGroups := scenariogroups.LoadFromContext(ctx)
+	rawScenarioGroups := scenariogroups.LoadFromContext(ctx)
+	scenarioGroups, err := unmarshalScenarioGroups(rawScenarioGroups)
+	if err != nil {
+		return nil, err
+	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
@@ -419,4 +435,38 @@ func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func unmarshalScenarioGroups(rawScenarioGroups []string) ([]pairing.ScenarioGroup, error) {
+	scenarioGroups := make([]pairing.ScenarioGroup, 0)
+	for _, gr := range rawScenarioGroups {
+		var scenarioGroup pairing.ScenarioGroup
+		err := json.Unmarshal([]byte(gr), &scenarioGroup)
+		if err != nil {
+			// This is temporary code
+			description := determineDescription(gr)
+			if description == "" {
+				return nil, errors.Wrap(err, "Error while unmarshaling a scenario group")
+			}
+			scenarioGroup = pairing.ScenarioGroup{Key: gr, Description: description}
+		}
+		scenarioGroups = append(scenarioGroups, scenarioGroup)
+	}
+	return scenarioGroups, nil
+}
+
+// This is temporary code
+func determineDescription(group string) string {
+	switch group {
+	case UnrestrictedKey:
+		return UnrestrictedDescription
+	case EventMeshKey:
+		return EventMeshDescription
+	case SapStartKey:
+		return SapStartDescription
+	case AribaBuyKey:
+		return AribaBuyDescription
+	default:
+		return ""
+	}
 }
