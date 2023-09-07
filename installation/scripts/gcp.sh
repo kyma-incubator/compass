@@ -190,8 +190,8 @@ function gcp::provision_k8s_cluster {
     fi
     # serverless tests are failing when are running on a cluster with contianerD
     if [[ "$gkeReleaseChannel" == "rapid" ]]; then
-        # COS depricated with k8s 1.24, COS_containerd is the default
-        params+=("--image-type=cos_containerd")
+        # set image type to the image that uses docker instead of containerD
+        params+=("--image-type=cos")
     elif [ "$imageType" ]; then
         params+=("--image-type=$imageType")
     fi

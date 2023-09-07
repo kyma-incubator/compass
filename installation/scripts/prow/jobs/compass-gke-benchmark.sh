@@ -128,6 +128,8 @@ function createCluster() {
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
         -v "1.24.16" \
+        -i "cos_containerd" \
+        -C "stable" \
         -j "$JOB_NAME" \
         -J "$PROW_JOB_ID" \
         -z "$CLOUDSDK_COMPUTE_ZONE" \
