@@ -105,4 +105,4 @@ if [ "$CLOUD_PERSISTENCE" = false ]; then
   yq -i ".hydra.hydra.config.dsn = \"$DSN\"" "${OVERRIDE_TEMP_ORY}"
 fi
 
-helm upgrade --atomic --install --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
+helm upgrade --atomic --install --create-namespace --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
