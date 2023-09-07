@@ -3,7 +3,12 @@
 package automock
 
 import (
-	admin "github.com/ory/hydra-client-go/client/admin"
+	context "context"
+
+	client "github.com/ory/hydra-client-go/v2"
+
+	http "net/http"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -12,29 +17,88 @@ type OryHydraService struct {
 	mock.Mock
 }
 
-// CreateOAuth2Client provides a mock function with given fields: params, opts
-func (_m *OryHydraService) CreateOAuth2Client(params *admin.CreateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.CreateOAuth2ClientCreated, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, params)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// CreateOAuth2Client provides a mock function with given fields: ctx
+func (_m *OryHydraService) CreateOAuth2Client(ctx context.Context) client.OAuth2ApiCreateOAuth2ClientRequest {
+	ret := _m.Called(ctx)
 
-	var r0 *admin.CreateOAuth2ClientCreated
-	if rf, ok := ret.Get(0).(func(*admin.CreateOAuth2ClientParams, ...admin.ClientOption) *admin.CreateOAuth2ClientCreated); ok {
-		r0 = rf(params, opts...)
+	var r0 client.OAuth2ApiCreateOAuth2ClientRequest
+	if rf, ok := ret.Get(0).(func(context.Context) client.OAuth2ApiCreateOAuth2ClientRequest); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(client.OAuth2ApiCreateOAuth2ClientRequest)
+	}
+
+	return r0
+}
+
+// CreateOAuth2ClientExecute provides a mock function with given fields: r
+func (_m *OryHydraService) CreateOAuth2ClientExecute(r client.OAuth2ApiCreateOAuth2ClientRequest) (*client.OAuth2Client, *http.Response, error) {
+	ret := _m.Called(r)
+
+	var r0 *client.OAuth2Client
+	var r1 *http.Response
+	var r2 error
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiCreateOAuth2ClientRequest) (*client.OAuth2Client, *http.Response, error)); ok {
+		return rf(r)
+	}
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiCreateOAuth2ClientRequest) *client.OAuth2Client); ok {
+		r0 = rf(r)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*admin.CreateOAuth2ClientCreated)
+			r0 = ret.Get(0).(*client.OAuth2Client)
 		}
 	}
 
+	if rf, ok := ret.Get(1).(func(client.OAuth2ApiCreateOAuth2ClientRequest) *http.Response); ok {
+		r1 = rf(r)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(client.OAuth2ApiCreateOAuth2ClientRequest) error); ok {
+		r2 = rf(r)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// DeleteOAuth2Client provides a mock function with given fields: ctx, id
+func (_m *OryHydraService) DeleteOAuth2Client(ctx context.Context, id string) client.OAuth2ApiDeleteOAuth2ClientRequest {
+	ret := _m.Called(ctx, id)
+
+	var r0 client.OAuth2ApiDeleteOAuth2ClientRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string) client.OAuth2ApiDeleteOAuth2ClientRequest); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(client.OAuth2ApiDeleteOAuth2ClientRequest)
+	}
+
+	return r0
+}
+
+// DeleteOAuth2ClientExecute provides a mock function with given fields: r
+func (_m *OryHydraService) DeleteOAuth2ClientExecute(r client.OAuth2ApiDeleteOAuth2ClientRequest) (*http.Response, error) {
+	ret := _m.Called(r)
+
+	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*admin.CreateOAuth2ClientParams, ...admin.ClientOption) error); ok {
-		r1 = rf(params, opts...)
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiDeleteOAuth2ClientRequest) (*http.Response, error)); ok {
+		return rf(r)
+	}
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiDeleteOAuth2ClientRequest) *http.Response); ok {
+		r0 = rf(r)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(client.OAuth2ApiDeleteOAuth2ClientRequest) error); ok {
+		r1 = rf(r)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -42,103 +106,110 @@ func (_m *OryHydraService) CreateOAuth2Client(params *admin.CreateOAuth2ClientPa
 	return r0, r1
 }
 
-// DeleteOAuth2Client provides a mock function with given fields: params, opts
-func (_m *OryHydraService) DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams, opts ...admin.ClientOption) (*admin.DeleteOAuth2ClientNoContent, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, params)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// ListOAuth2Clients provides a mock function with given fields: ctx
+func (_m *OryHydraService) ListOAuth2Clients(ctx context.Context) client.OAuth2ApiListOAuth2ClientsRequest {
+	ret := _m.Called(ctx)
 
-	var r0 *admin.DeleteOAuth2ClientNoContent
-	if rf, ok := ret.Get(0).(func(*admin.DeleteOAuth2ClientParams, ...admin.ClientOption) *admin.DeleteOAuth2ClientNoContent); ok {
-		r0 = rf(params, opts...)
+	var r0 client.OAuth2ApiListOAuth2ClientsRequest
+	if rf, ok := ret.Get(0).(func(context.Context) client.OAuth2ApiListOAuth2ClientsRequest); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(client.OAuth2ApiListOAuth2ClientsRequest)
+	}
+
+	return r0
+}
+
+// ListOAuth2ClientsExecute provides a mock function with given fields: r
+func (_m *OryHydraService) ListOAuth2ClientsExecute(r client.OAuth2ApiListOAuth2ClientsRequest) ([]client.OAuth2Client, *http.Response, error) {
+	ret := _m.Called(r)
+
+	var r0 []client.OAuth2Client
+	var r1 *http.Response
+	var r2 error
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiListOAuth2ClientsRequest) ([]client.OAuth2Client, *http.Response, error)); ok {
+		return rf(r)
+	}
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiListOAuth2ClientsRequest) []client.OAuth2Client); ok {
+		r0 = rf(r)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*admin.DeleteOAuth2ClientNoContent)
+			r0 = ret.Get(0).([]client.OAuth2Client)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*admin.DeleteOAuth2ClientParams, ...admin.ClientOption) error); ok {
-		r1 = rf(params, opts...)
+	if rf, ok := ret.Get(1).(func(client.OAuth2ApiListOAuth2ClientsRequest) *http.Response); ok {
+		r1 = rf(r)
 	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListOAuth2Clients provides a mock function with given fields: params, opts
-func (_m *OryHydraService) ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, opts ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, params)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	var r0 *admin.ListOAuth2ClientsOK
-	if rf, ok := ret.Get(0).(func(*admin.ListOAuth2ClientsParams, ...admin.ClientOption) *admin.ListOAuth2ClientsOK); ok {
-		r0 = rf(params, opts...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*admin.ListOAuth2ClientsOK)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*http.Response)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*admin.ListOAuth2ClientsParams, ...admin.ClientOption) error); ok {
-		r1 = rf(params, opts...)
+	if rf, ok := ret.Get(2).(func(client.OAuth2ApiListOAuth2ClientsRequest) error); ok {
+		r2 = rf(r)
 	} else {
-		r1 = ret.Error(1)
+		r2 = ret.Error(2)
 	}
 
-	return r0, r1
+	return r0, r1, r2
 }
 
-// UpdateOAuth2Client provides a mock function with given fields: params, opts
-func (_m *OryHydraService) UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.UpdateOAuth2ClientOK, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, params)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// SetOAuth2Client provides a mock function with given fields: ctx, id
+func (_m *OryHydraService) SetOAuth2Client(ctx context.Context, id string) client.OAuth2ApiSetOAuth2ClientRequest {
+	ret := _m.Called(ctx, id)
 
-	var r0 *admin.UpdateOAuth2ClientOK
-	if rf, ok := ret.Get(0).(func(*admin.UpdateOAuth2ClientParams, ...admin.ClientOption) *admin.UpdateOAuth2ClientOK); ok {
-		r0 = rf(params, opts...)
+	var r0 client.OAuth2ApiSetOAuth2ClientRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string) client.OAuth2ApiSetOAuth2ClientRequest); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(client.OAuth2ApiSetOAuth2ClientRequest)
+	}
+
+	return r0
+}
+
+// SetOAuth2ClientExecute provides a mock function with given fields: r
+func (_m *OryHydraService) SetOAuth2ClientExecute(r client.OAuth2ApiSetOAuth2ClientRequest) (*client.OAuth2Client, *http.Response, error) {
+	ret := _m.Called(r)
+
+	var r0 *client.OAuth2Client
+	var r1 *http.Response
+	var r2 error
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiSetOAuth2ClientRequest) (*client.OAuth2Client, *http.Response, error)); ok {
+		return rf(r)
+	}
+	if rf, ok := ret.Get(0).(func(client.OAuth2ApiSetOAuth2ClientRequest) *client.OAuth2Client); ok {
+		r0 = rf(r)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*admin.UpdateOAuth2ClientOK)
+			r0 = ret.Get(0).(*client.OAuth2Client)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*admin.UpdateOAuth2ClientParams, ...admin.ClientOption) error); ok {
-		r1 = rf(params, opts...)
+	if rf, ok := ret.Get(1).(func(client.OAuth2ApiSetOAuth2ClientRequest) *http.Response); ok {
+		r1 = rf(r)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*http.Response)
+		}
 	}
 
-	return r0, r1
-}
+	if rf, ok := ret.Get(2).(func(client.OAuth2ApiSetOAuth2ClientRequest) error); ok {
+		r2 = rf(r)
+	} else {
+		r2 = ret.Error(2)
+	}
 
-type mockConstructorTestingTNewOryHydraService interface {
-	mock.TestingT
-	Cleanup(func())
+	return r0, r1, r2
 }
 
 // NewOryHydraService creates a new instance of OryHydraService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOryHydraService(t mockConstructorTestingTNewOryHydraService) *OryHydraService {
+// The first argument is typically a *testing.T value.
+func NewOryHydraService(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *OryHydraService {
 	mock := &OryHydraService{}
 	mock.Mock.Test(t)
 

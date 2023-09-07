@@ -1,3 +1,7 @@
+{{- include "hydra.automigration.typeVerification" . -}}
+{{- $migrationExtraEnv := ternary .Values.deployment.automigration.extraEnv .Values.deployment.extraEnv (not (empty .Values.deployment.automigration.extraEnv )) -}}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,7 +10,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   {{- end }}
   labels:
-{{ include "hydra.labels" . | indent 4 }}
+    {{- include "hydra.labels" . | nindent 4 }}
     {{- with .Values.deployment.labels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -18,22 +22,29 @@ spec:
 {{- if not .Values.deployment.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
 {{- end }}
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "hydra.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  strategy:
-     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
-{{ include "hydra.labels" . | indent 8 }}
+        {{- include "hydra.labels" . | nindent 8 }}
         {{- with .Values.deployment.labels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- with $.Values.deployment.podMetadata.labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
-        {{- include "hydra.annotations.checksum" . | indent 8 -}}
+        {{- include "hydra.annotations.checksum" . | nindent 8 -}}
         {{- with .Values.deployment.annotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with $.Values.deployment.podMetadata.annotations }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -41,142 +52,95 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- if .Values.hydra.autoMigrate }}
-      initContainers:
-        {{- if not .Values.global.ory.hydra.persistence.gcloud.enabled }} #Use only for in-cluster databases that may not be ready yet. External databases are made ready before installation.
-        - name: wait-for-db
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.busybox) }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command:
-            - /bin/sh
-            - -c
-            - |
-{{ .Files.Get "files/wait-for-db.sh" | printf "%s" | indent 14 }}
-          env:
-            - name: DSN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "hydra.secretname" . }}
-                  key: dsn
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            privileged: false
-            runAsGroup: 65534
-            runAsNonRoot: true
-            runAsUser: 65534
-        {{- end }}
-        - name: {{ .Chart.Name }}-automigrate
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.hydra) }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["hydra"]
-          args: ["migrate", "sql", "-e", "--yes", "--config", "/etc/config/config.yaml"]
-          volumeMounts:
-            - name: {{ include "hydra.name" . }}-config-volume
-              mountPath: /etc/config
-              readOnly: true
-            {{- if .Values.deployment.extraVolumeMounts }}
-{{ toYaml .Values.deployment.extraVolumeMounts | indent 12 }}
-            {{- end }}
-          env:
-            - name: DSN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "hydra.secretname" . }}
-                  key: dsn
-            {{- with .Values.deployment.extraEnv }}
-              {{- toYaml . | nindent 12 }}
-            {{- end }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            privileged: false
-            runAsGroup: 1000
-            runAsNonRoot: true
-            runAsUser: 1000
-    {{- end}}
       volumes:
         - name: {{ include "hydra.name" . }}-config-volume
           configMap:
             name: {{ include "hydra.fullname" . }}
         {{- if .Values.deployment.extraVolumes }}
-{{ toYaml .Values.deployment.extraVolumes | indent 8 }}
+          {{- toYaml .Values.deployment.extraVolumes | nindent 8 }}
         {{- end }}
       serviceAccountName: {{ include "hydra.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.deployment.automountServiceAccountToken }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.hydra) }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["hydra"]
+          command: {{- toYaml .Values.hydra.command | nindent 12 }}
+          {{- if .Values.hydra.customArgs }}
+          args: {{- toYaml .Values.hydra.customArgs | nindent 12 }}
+          {{- else }}
+          args:
+            - serve
+            - all
+            {{- if .Values.hydra.dev }}
+            - "--dev"
+            {{- end }}
+            - --config
+            - /etc/config/hydra.yaml
+          {{- end }}
           volumeMounts:
             - name: {{ include "hydra.name" . }}-config-volume
               mountPath: /etc/config
               readOnly: true
             {{- if .Values.deployment.extraVolumeMounts }}
-{{ toYaml .Values.deployment.extraVolumeMounts | indent 12 }}
+              {{- toYaml .Values.deployment.extraVolumeMounts | nindent 12 }}
             {{- end }}
-          args: [
-            "serve",
-            "all",
-            {{- if .Values.hydra.dangerousForceHttp }}
-            "--dangerous-force-http",
-            {{- end}}
-            {{- if .Values.hydra.dangerousAllowInsecureRedirectUrls }}
-            "--dangerous-allow-insecure-redirect-urls",
-            {{ include "hydra.utils.joinListWithComma" .Values.hydra.dangerousAllowInsecureRedirectUrls | quote }},
-            {{- end}}
-            "--config",
-            "/etc/config/config.yaml"
-          ]
           ports:
             - name: http-public
-              containerPort: 4444
+              containerPort: {{ .Values.hydra.config.serve.public.port }}
               protocol: TCP
             - name: http-admin
-              containerPort: 4445
+              containerPort: {{ .Values.hydra.config.serve.admin.port }}
               protocol: TCP
           livenessProbe:
+            {{- if .Values.deployment.customLivenessProbe }}  
+              {{- toYaml .Values.deployment.customLivenessProbe | nindent 12 }} 
+            {{- else }}
             httpGet:
               path: /health/alive
-              port: http-admin
+              port: {{ .Values.hydra.config.serve.admin.port }}
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
             {{- toYaml .Values.deployment.livenessProbe | nindent 12 }}
+            {{- end }}
           readinessProbe:
+            {{- if .Values.deployment.customReadinessProbe }} 
+              {{- toYaml .Values.deployment.customReadinessProbe | nindent 12 }}
+            {{- else }}
             httpGet:
               path: /health/ready
-              port: http-admin
+              port: {{ .Values.hydra.config.serve.admin.port }}
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
             {{- toYaml .Values.deployment.readinessProbe | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            {{- if .Values.deployment.customStartupProbe }} 
+              {{- toYaml .Values.deployment.customStartupProbe | nindent 12 }}
+            {{- else }}
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.hydra.config.serve.admin.port }}
+              httpHeaders:
+                - name: Host
+                  value: '127.0.0.1'
+            {{- toYaml .Values.deployment.startupProbe | nindent 12 }}
+            {{- end }}
           env:
-            {{- if .Values.deployment.tracing.datadog.enabled }}
-            - name: TRACING_PROVIDER
-              value: datadog
-            - name: DD_ENV
-              value: {{ .Values.deployment.tracing.datadog.env | default "none" | quote }}
-            - name: DD_VERSION
-              value: {{ .Values.deployment.tracing.datadog.version | default .Values.global.images.hydra.version | quote }}
-            - name: DD_SERVICE
-              value: {{ .Values.deployment.tracing.datadog.service | default "ory/hydra" | quote }}
-            {{- if .Values.deployment.tracing.datadog.useHostIP }}
-            - name: DD_AGENT_HOST
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            {{- end }}
-            {{- end }}
             {{- $issuer := include "hydra.config.urls.issuer" . -}}
             {{- if $issuer }}
             - name: URLS_SELF_ISSUER
               value: {{ $issuer | quote }}
             {{- end }}
+            {{- if not (empty ( include "hydra.dsn" . )) }}
             - name: DSN
               valueFrom:
                 secretKeyRef:
                   name: {{ include "hydra.secretname" . }}
                   key: dsn
+            {{- end }}
             - name: SECRETS_SYSTEM
               valueFrom:
                 secretKeyRef:
@@ -199,11 +163,52 @@ spec:
           lifecycle:
             {{- toYaml .Values.deployment.lifecycle | nindent 12 }}
         {{- if .Values.deployment.extraContainers }}
-{{ tpl .Values.deployment.extraContainers . | indent 8 }}
+          {{- tpl .Values.deployment.extraContainers . | nindent 8 }}
         {{- end }}
-      {{- if .Values.deployment.extraInitContainers }}
       initContainers:
-{{ tpl .Values.deployment.extraInitContainers . | indent 8 }}
+      {{- if .Values.deployment.extraInitContainers }}
+        {{- tpl .Values.deployment.extraInitContainers . | nindent 8 }}
+      {{- end }}
+      {{- if and ( .Values.hydra.automigration.enabled ) ( eq .Values.hydra.automigration.type "initContainer" ) }}
+        - name: {{ .Chart.Name }}-automigrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.hydra.automigration.customCommand }}
+          command: {{- toYaml .Values.hydra.automigration.customCommand | nindent 12 }}
+          {{- else }}
+          command: ["hydra"]
+          {{- end }}
+          {{- if .Values.hydra.automigration.customArgs }}
+          args: {{- toYaml .Values.hydra.automigration.customArgs | nindent 12 }}
+          {{- else }}
+          args: ["migrate", "sql", "-e", "--yes", "--config", "/etc/config/hydra.yaml"]
+          {{- end }}
+          volumeMounts:
+            - name: {{ include "hydra.name" . }}-config-volume
+              mountPath: /etc/config
+              readOnly: true
+          {{- with .Values.deployment.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- if not (empty ( include "hydra.dsn" . )) }}
+            - name: DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hydra.secretname" . }}
+                  key: dsn
+            {{- end }}
+            {{- with $migrationExtraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.hydra.automigration.resources }}
+          resources:
+            {{- toYaml .Values.hydra.automigration.resources | nindent 12 }}
+          {{- end }}
+          {{- with .Values.deployment.initContainerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- end }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
@@ -218,5 +223,17 @@ spec:
       {{- end }}
       {{- with .Values.affinity }}
       affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.dnsConfig }}
+      dnsConfig:
         {{- toYaml . | nindent 8 }}
       {{- end }}

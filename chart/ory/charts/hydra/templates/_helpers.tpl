@@ -53,6 +53,9 @@ Common labels
 "app.kubernetes.io/version": {{ include "hydra.version" . | quote }}
 "app.kubernetes.io/managed-by": {{ .Release.Service | quote }}
 "helm.sh/chart": {{ include "hydra.chart" . | quote }}
+{{- if $.Values.watcher.enabled }}
+{{ printf "\"%s\": \"%s\"" $.Values.watcher.watchLabelKey (include "hydra.name" .) }}
+{{- end }}
 {{- end -}}
 
 {{/*
@@ -70,8 +73,8 @@ memory
 Generate the name of the secret resource containing secrets
 */}}
 {{- define "hydra.secretname" -}}
-{{- if .Values.hydra.existingSecret -}}
-{{- .Values.hydra.existingSecret | trunc 63 | trimSuffix "-" -}}
+{{- if .Values.secret.nameOverride -}}
+{{- .Values.secret.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
 {{ include "hydra.fullname" . }}
 {{- end -}}
@@ -159,6 +162,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Create the name of the service account for the Job to use
+*/}}
+{{- define "hydra.job.serviceAccountName" -}}
+{{- if .Values.job.serviceAccount.create }}
+{{- printf "%s-job" (default (include "hydra.fullname" .) .Values.job.serviceAccount.name) }}
+{{- else }}
+{{- include "hydra.serviceAccountName" . }}
+{{- end }}
+{{- end }}
+
+{{/*
 Checksum annotations generated from configmaps and secrets
 */}}
 {{- define "hydra.annotations.checksum" -}}
@@ -169,3 +183,26 @@ checksum/hydra-config: {{ include (print $.Template.BasePath "/configmap.yaml") 
 checksum/hydra-secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
 {{- end }}
 {{- end }}
+
+{{/*
+Check the migration type value and fail if unexpected 
+*/}}
+{{- define "hydra.automigration.typeVerification" -}}
+{{- if and .Values.hydra.automigration.enabled  .Values.hydra.automigration.type }}
+  {{- if and (ne .Values.hydra.automigration.type "initContainer") (ne .Values.hydra.automigration.type "job") }}
+    {{- fail "hydra.automigration.type must be either 'initContainer' or 'job'" -}}
+  {{- end }}  
+{{- end }}
+{{- end }}
+
+{{/*
+Common labels for the janitor cron job
+*/}}
+{{- define "hydra.janitor.labels" -}}
+"app.kubernetes.io/name": {{ printf "%s-janitor" (include "hydra.name" .) | quote }}
+"app.kubernetes.io/instance": {{ .Release.Name | quote }}
+"app.kubernetes.io/version": {{ include "hydra.version" . | quote }}
+"app.kubernetes.io/managed-by": {{ .Release.Service | quote }}
+"app.kubernetes.io/component": janitor
+"helm.sh/chart": {{ include "hydra.chart" . | quote }}
+{{- end -}}

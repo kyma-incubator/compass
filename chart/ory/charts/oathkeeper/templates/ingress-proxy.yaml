@@ -18,6 +18,11 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  ingressClassName: {{ .Values.ingress.proxy.className }}
+  defaultBackend:
+  {{- with .Values.ingress.proxy.defaultBackend }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- if .Values.ingress.proxy.tls }}
   tls:
     {{- range .Values.ingress.proxy.tls }}
@@ -36,7 +41,7 @@ spec:
           {{- range .paths }}
           - path: {{ .path }}
             {{- if .pathType }}
-            pathType: ImplementationSpecific
+            pathType: {{ .pathType }}
             {{- end }}
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}

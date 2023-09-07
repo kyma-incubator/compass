@@ -1,13 +1,27 @@
-## Specify an imagePullPolicy
-## 'Always' if imageTag is 'latest', otherwise set to 'IfNotPresent'
-## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-##
-imagePullPolicy: IfNotPresent
+## Google Cloud SQL Proxy image
+## ref: https://cloud.google.com/sql/docs/mysql/sql-proxy
+## ref: https://cloud.google.com/sql/docs/postgres/sql-proxy
+image:
+  repository: gcr.io/cloud-sql-connectors/cloud-sql-proxy
+  # Note that by default we use appVersion to get image tag
+  # tag:
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  pullPolicy: IfNotPresent
 
 ## Replicas Set count
 replicasCount: 1
 
-deploymentStrategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+## Common labels for all K8S objects
+commonLabels: {}
+
+## Set to true to use a statefulset for the deployable.
+## You can then access the nodes using the known-hostnames of a statefulset
+useStatefulset: false
+
+## Specify the deployment strategy for pods
+deploymentStrategy: {}
 
 ## Set the GCP service account key JSON file.
 ## Service account has access be set to Cloud SQL instances
@@ -19,7 +33,7 @@ serviceAccountKey: ""
 
 ## Specify an existing secret holding the cloud-sql service account credentials
 existingSecret: ""
-## The key in the existing secret that stores the credenials
+## The key in the existing secret that stores the credentials
 existingSecretKey: ""
 
 ## serviceAccountName to specify the service account name that will be generated
@@ -36,9 +50,9 @@ cloudsql:
   ## and the name of your Cloud SQL instance
   ## PostgreSQL port 5432 or MySQL port 3306, or other port you set for your SQL instance.
   ## Use different ports for different instances.
-  instance:
+  instances:
     # GCP instance name.
-    instanceName: "instance"
+  - instance: "instance"
     # Optional abbreviation used to override the truncated instance name if the
     # 15 character instance name prefix is not unique for use as a port
     # identifier.
@@ -58,14 +72,21 @@ serviceAccount:
   create: true
   annotations: {}
   # The name of the ServiceAccount to use.
-  # If name not set and create set to true, a name is generated using the fullname template
+  # If not set and create is true, a name is generated using the fullname template
   name:
 
 ## Specifies service type and option to enable internal LoadBalancer
 ## If service.internalLB is true, service.type should be: LoadBalancer
 service:
+  enabled: true
   type: ClusterIP
   internalLB: false
+  # Configures custom LoadBalancer IP. Compatibility depends on the cloud provider.
+  # For instance, GCP Internal LoadBalancer will take it into account.
+  # If left blank or if not supported by your cloud provider, it will be ignored.
+  loadBalancerIP: ""
+  annotations: {}
+  loadBalancerSourceRanges: []
 
 networkPolicy:
   ## Specifies whether a NetworkPolicy should be created
@@ -95,23 +116,47 @@ resources: {}
 #    memory: 256Mi
 #    cpu: 256m
 
+# Port to check liveness, readiness & startup
+httpPortProbe: 9090
+
 livenessProbe:
   enabled: false
-  port: 5432
+  port: 9090
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
-  failureThreshold: 6
+  failureThreshold: 18
   successThreshold: 1
+
+# Http Liveness Probe if enabled will override default tcp port check
+httpLivenessProbe:
+  enabled: false
+
+# Http Readiness Probe if enabled will override default tcp port check
+httpReadinessProbe:
+  enabled: false
 
 readinessProbe:
   enabled: false
-  port: 5432
+  port: 9090
   initialDelaySeconds: 5
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 6
   successThreshold: 1
+
+# Http Startup Probe if enabled will override default tcp port check
+httpStartupProbe:
+  enabled: false
+
+startupProbe:
+  enabled: false
+  port: 9090
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 1
 
 ## Configure a HorizontalPodAutoscaler for pod autoscaling.
 ## Requires that resources requests are set above.
@@ -131,6 +176,19 @@ terminationGracePeriodSeconds: 30
 ## Pod annotations
 podAnnotations: {}
 
+## Pod labels
+podLabels: {}
+
+## Configure Pod Security Context
+podSecurityContext: {}
+#   runAsUser: 1000
+#   fsGroup: 1000
+
+## Configure Container Security Context
+containerSecurityContext: {}
+#   allowPrivilegeEscalation: false
+
+
 ## Configure Pod Priority
 priorityClassName: ""
 
@@ -142,6 +200,12 @@ tolerations: []
 
 ## Affinity
 affinity: {}
+
+## Extra environment variables. Might be used to fetch instance data from
+## Config maps or Secrets and used via interpolation '$()' syntax in
+## cloudsql.instances[].* helm variables. See:
+## https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#use-configmap-defined-environment-variables-in-pod-commands
+env: {}
 
 ## Lifecycle hooks
 ## These can be helpful for custom graceful termination logic
@@ -158,4 +222,18 @@ podDisruptionBudget: |
 ## Additional container arguments
 ## Uncomment the term_timeout line for the proxy to wait your chosen time before terminating connections
 extraArgs: {}
-#  term_timeout: 30s
+#  admin-port: 8091
+
+## Additional container flags (single-hypen '-' arguments)
+## Uncomment the log_debug_stdout line if you don't want connection-related messages to log as errors
+extraFlags: []
+#  - private-ip
+#  - run-connection-test
+
+topologySpreadConstraints: []
+  ## e.g.
+  # - maxSkew: 1
+  #   topologyKey: zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #       key: value

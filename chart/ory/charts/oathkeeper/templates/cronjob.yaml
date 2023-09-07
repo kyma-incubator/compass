@@ -1,5 +1,4 @@
-#Kyma resource
-
+# Custom implementation; this job does not exist in OS
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -16,7 +15,7 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "update", "patch"]
-    resourceNames: ["{{ include "oathkeeper.fullname" . }}-jwks-secret"]
+    resourceNames: ["{{ include "oathkeeper.secretname" . }}"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["create"]
@@ -35,6 +34,8 @@ roleRef:
   name: ory-oathkeeper-keys-job-role
   apiGroup: rbac.authorization.k8s.io
 ---
+# Rotate the Oathkeeper JWKS for security measures
+# The new JWKS is used to sign the new tokens, the old one is kept to validate old tokens
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -50,25 +51,18 @@ spec:
             sidecar.istio.io/inject: "false"
         spec:
           initContainers:
-            - name: keys-generator
-              image: "{{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.oathkeeper) }}"
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  oathkeeper credentials generate --alg RS256 > /etc/secrets/jwks.json
-              securityContext:
-                allowPrivilegeEscalation: false
-                capabilities:
-                  drop:
-                  - ALL
-                privileged: false
-                runAsGroup: 101
-                runAsNonRoot: true
-                runAsUser: 100
-              volumeMounts:
-                - name: {{ include "oathkeeper.name" . }}-keys-volume
-                  mountPath: /etc/secrets
+          - name: keys-generator
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                oathkeeper credentials generate --alg RS256 > {{ .Values.secret.mountPath }}/newJWKS.json
+            securityContext:
+              {{- toYaml .Values.deployment.securityContext.oathkeeper | nindent 14 }}
+            volumeMounts:
+              - name: {{ include "oathkeeper.name" . }}-keys-volume
+                mountPath: {{ .Values.secret.mountPath }}
           containers:
           - name: keys-supplier
             image: {{ include "imageurl" (dict "reg" .Values.global.containerRegistry "img" .Values.global.images.k8s_tools) }}
@@ -77,21 +71,19 @@ spec:
             - -c
             - |
               set -e
-              kubectl create secret generic {{ include "oathkeeper.fullname" . }}-jwks-secret \
-                --from-file=/etc/secrets/jwks.json \
-                -n ory -o yaml --dry-run | kubectl apply -f -
+              keepJWKS=$(kubectl get secret {{ include "oathkeeper.secretname" . }} -n {{ .Release.Namespace }} -o json \
+              | jq -r '.data."jwks.json"' | base64 -d | jq -r '.keys[-1]')
+
+              jq ".keys |= [$keepJWKS] + ." {{ .Values.secret.mountPath }}/newJWKS.json > /tmp/jwks.json
+
+              kubectl create secret generic {{ include "oathkeeper.secretname" . }} \
+              --from-file=/tmp/jwks.json \
+              -n {{ .Release.Namespace }} -o yaml --dry-run=client | kubectl apply -f -
             securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                - ALL
-              privileged: false
-              runAsGroup: 65534
-              runAsNonRoot: true
-              runAsUser: 65534
+              {{- toYaml .Values.deployment.securityContext.anonymous | nindent 14 }}
             volumeMounts:
             - name: {{ include "oathkeeper.name" . }}-keys-volume
-              mountPath: /etc/secrets
+              mountPath: {{ .Values.secret.mountPath }}
               readOnly: true
           volumes:
           - name: {{ include "oathkeeper.name" . }}-keys-volume

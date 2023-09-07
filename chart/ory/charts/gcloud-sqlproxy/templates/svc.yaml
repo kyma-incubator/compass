@@ -1,21 +1,36 @@
+{{- if .Values.service.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "gcloud-sqlproxy.fullname" . }}
-  {{- if .Values.service.internalLB  }}
   annotations:
+  {{- if .Values.service.internalLB  }}
     cloud.google.com/load-balancer-type: "Internal"
+  {{- end }}
+  {{- range  $key, $value := .Values.service.annotations  }}
+    {{ $key }}: {{ $value | quote }}
   {{- end }}
   labels:
     {{- include "gcloud-sqlproxy.labels" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
 spec:
   type: {{ .Values.service.type }}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
   ports:
-  {{- with .Values.cloudsql.instance }}
-  - name: {{ .instanceName }}
+  {{- range .Values.cloudsql.instances }}
+  {{- $instanceShortName := include "gcloud-sqlproxy.instanceShortName" . }}
+  - name: {{ $instanceShortName }}
     protocol: TCP
     port: {{ .port }}
-    targetPort: {{ .instanceShortName | default (.instanceName | trunc 15) }}
+    targetPort: {{ $instanceShortName }}
   {{- end }}
   selector:
     {{- include "gcloud-sqlproxy.selectorLabels" . | nindent 4 }}
+  {{- if eq .Values.service.type "LoadBalancer" }}
+  loadBalancerSourceRanges: {{- toYaml .Values.service.loadBalancerSourceRanges | nindent 4 }}
+  {{- end }}
+{{- end }}

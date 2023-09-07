@@ -43,11 +43,6 @@ do
             shift # past argument
             shift
         ;;
-        --skip-jwks-rotation)
-            # Skip the manual trigger of the Oathkeeper JWKS rotation CronJob
-            SKIP_JWKS_ROTATION=true
-            shift # past argument
-        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -90,68 +85,24 @@ trap cleanup_trap EXIT INT TERM
 echo "Helm install ORY components..."
 RELEASE_NS=ory
 RELEASE_NAME=ory-stack
-SECRET_NAME=ory-hydra-credentials
 
-kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
+CLOUD_PERSISTENCE=$(yq ".global.ory.hydra.persistence.gcloud.enabled" ${OVERRIDE_TEMP_ORY})
 
-LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.postgresql.enabled" ${OVERRIDE_TEMP_ORY})
-
-# Create Secret that is referenced as 'existingSecret' under chart/ory/values.yaml
-# Secret should not be recreated if it exists, mainly during Helm updates, as it will create new random values.
-# The new random values will trigger the redeployment of the Postgres database and Hydra - that breaks the deployment.
+# The System secret and cookie secret, needed by Hydra, are created by the Secret component of the Helm chart
 # Rotating the secrets has to be done manually; the rotation of the Hydra Secrets should be done following this guide: https://www.ory.sh/docs/hydra/self-hosted/secrets-key-rotation
-if [ ! "$(kubectl get secret $SECRET_NAME -n ${RELEASE_NS})" -a "$LOCAL_PERSISTENCE" = true ]; then
-  echo "Creating secret to be used by the Ory Helm Chart..."
-  POSTGRES_USERNAME=$(yq .global.postgresql.postgresqlUsername ${OVERRIDE_TEMP_ORY})
-  POSTGRES_PASSWORD=$(generate_random 10)
-  POSTGRES_DB=$(yq .global.postgresql.postgresqlDatabase ${OVERRIDE_TEMP_ORY})
+# Hydra requires data persistence, locally the postgres DB of compass is used.
+# The connection string(DSN) has to be created
+if [ "$CLOUD_PERSISTENCE" = false ]; then
+  echo "Creating secret to be used by the Ory Hydra Helm Chart..."
+  # Hydra uses the `localdb` instance as its persistence backend
+  VALUES_FILE_DB="${ROOT_PATH}"/chart/localdb/values.yaml
+  POSTGRES_USERNAME=$(yq ".postgresql.postgresqlUsername" $VALUES_FILE_DB)
+  POSTGRES_PASSWORD=$(yq ".postgresql.postgresqlPassword" $VALUES_FILE_DB)
+  POSTGRES_DB=$(yq ".global.database.embedded.hydra.name" $VALUES_FILE_DB)
 
-  DSN=postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${RELEASE_NAME}-postgresql.${RELEASE_NS}.svc.cluster.local:5432/${POSTGRES_DB}?sslmode=disable\&max_conn_lifetime=10s
+  DSN=postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@compass-postgresql.compass-system.svc.cluster.local:5432/${POSTGRES_DB}?sslmode=disable\&max_conn_lifetime=10s
 
-  SYSTEM=$(generate_random 32)
-  COOKIE=$(generate_random 32)
-
-  kubectl create secret generic "$SECRET_NAME" -n "$RELEASE_NS" \
-    --from-literal=dsn="${DSN}" \
-    --from-literal=secretsSystem="${SYSTEM}" \
-    --from-literal=secretsCookie="${COOKIE}" \
-    --from-literal=postgresql-password="${POSTGRES_PASSWORD}" \
-    --dry-run=client -o yaml | kubectl apply -f -
+  yq -i ".hydra.hydra.config.dsn = \"$DSN\"" "${OVERRIDE_TEMP_ORY}"
 fi
 
-# --wait is excluded as the deployment hangs; it hangs as there is a cronjob that creates the JWKS Secret for Oathkeeper
-# This CronJob is triggered in the statements below
-helm upgrade --install $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory
-
-if [[ ! ${SKIP_JWKS_ROTATION} ]]; then
-  CRONJOB=oathkeeper-jwks-rotator
-  # CronJob creates a Secret that is needed for the successful deployment of Oathkeeper
-  kubectl set image -n $RELEASE_NS cronjob $CRONJOB keys-generator=oryd/oathkeeper:v0.38.23
-  kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "*/1 * * * *"}}'
-  until [[ $(kubectl get cronjob -n $RELEASE_NS $CRONJOB --output=jsonpath={.status.lastScheduleTime}) ]]; do
-      echo "Waiting for cronjob $CRONJOB to be scheduled"
-      sleep 3
-  done
-  kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
-fi
-
-RESULT=0
-PIDS=""
-
-kubectl rollout status deployment $RELEASE_NAME-hydra -n $RELEASE_NS --timeout=$TIMEOUT &
-PIDS="$PIDS $!"
-
-kubectl rollout status deployment $RELEASE_NAME-oathkeeper -n $RELEASE_NS --timeout=$TIMEOUT &
-PIDS="$PIDS $!"
-
-# Wait for Ory deployment to roll out as they needs to be ready for successful Compass installation
-for PID in $PIDS; do
-  wait $PID || let "RESULT=1"
-done
-
-if [ "$RESULT" == "1" ]; then
-  echo "Ory components did not deploy correctly..."
-  echo "Uninstalling Ory Helm chart..."
-  helm uninstall $RELEASE_NAME -n $RELEASE_NS
-  exit 1
-fi
+helm upgrade --atomic --install --create-namespace --timeout "${TIMEOUT}" $RELEASE_NAME -f "${OVERRIDE_TEMP_ORY}" -n $RELEASE_NS "${ROOT_PATH}"/chart/ory

@@ -260,6 +260,13 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
+if [[ ! ${SKIP_DB_INSTALL} ]]; then
+  DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+  bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
+  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+  echo "DB installation status ${STATUS}"
+fi
+
 if [[ ! ${SKIP_ORY_INSTALL} ]]; then
   echo "Installing ORY Stack..."
   bash "${ROOT_PATH}"/installation/scripts/install-ory.sh
@@ -271,13 +278,6 @@ if [[ ! "$(helm status ory-stack -n ory)" ]]; then
 fi
 
 mount_k3d_ca_to_oathkeeper
-
-if [[ ! ${SKIP_DB_INSTALL} ]]; then
-  DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-  bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-  echo "DB installation status ${STATUS}"
-fi
 
 patchJWKS&
 

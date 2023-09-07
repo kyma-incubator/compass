@@ -1,3 +1,4 @@
+# TODO!!! Is this needed?
 {{- if .Values.global.ory.hydra.persistence.gcloud.enabled -}}
 ---
 apiVersion: networking.istio.io/v1alpha3

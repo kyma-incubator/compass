@@ -1,53 +1,40 @@
-# Number of ORY Hydra members
+# -- Number of ORY Hydra members
 replicaCount: 1
 
 image:
-  # Image pull policy
-  pullPolicy: Always
+  # -- ORY Hydra image
+  repository: oryd/hydra
+  # -- ORY Hydra version
+  tag: v2.1.2
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
 
-# Image pull secrets
+# -- Image pull secrets
 imagePullSecrets: []
 # Chart name override
 nameOverride: ""
-# Full chart name override
+# -- Full chart name override
 fullnameOverride: ""
 
-## -- Pod priority
-## https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+# -- Pod priority
+# https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
 # priorityClassName: ""
 
-# Configures the Kubernetes service
+# -- Configures the Kubernetes service
 service:
-  # Configures the Kubernetes service for the proxy port.
+  # -- Configures the Kubernetes service for the proxy port.
   public:
-    # En-/disable the service
+    # -- En-/disable the service
     enabled: true
-    # The service type
+    # -- The service type
     type: ClusterIP
-    # The service port
+    # -- The load balancer IP
+    loadBalancerIP: ""
+    # -- The service port
     port: 4444
-    name: http
-    # If you do want to specify annotations, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
-    annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-    labels: { }
-    #      If you do want to specify additional labels, uncomment the following
-    #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
-    #      e.g.  app: hydra
-  # Configures the Kubernetes service for the api port.
-  admin:
-    # En-/disable the service
-    enabled: true
-    # The service type
-    type: ClusterIP
-    # The service port
-    port: 4445
     # -- The service port name. Useful to set a custom service port name if it must follow a scheme (e.g. Istio)
     name: http
-    # If you do want to specify annotations, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
+    # -- If you do want to specify annotations, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
     annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
@@ -55,11 +42,34 @@ service:
     #      If you do want to specify additional labels, uncomment the following
     #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
     #      e.g.  app: hydra
+  # -- Configures the Kubernetes service for the api port.
+  admin:
+    # -- En-/disable the service
+    enabled: true
+    # -- The service type
+    type: ClusterIP
+    # -- The load balancer IP
+    loadBalancerIP: ""
+    # -- The service port
+    port: 4445
+    # -- The service port name. Useful to set a custom service port name if it must follow a scheme (e.g. Istio)
+    name: http
+    # -- If you do want to specify annotations, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
+    annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    labels: {}
+    #      If you do want to specify additional labels, uncomment the following
+    #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
+    #      e.g.  app: hydra
+    # -- Path to the metrics endpoint
+    metricsPath: /admin/metrics/prometheus
 
 secret:
   # -- switch to false to prevent creating the secret
-  enabled: false
+  enabled: true
   # -- Provide custom name of existing secret, or custom name of secret to be created
+  nameOverride: ""
   # nameOverride: "myCustomSecret"
   # -- Annotations to be added to secret. Annotations are added only when secret is being created. Existing secret will not be modified.
   secretAnnotations:
@@ -72,13 +82,13 @@ secret:
   # -- switch to false to prevent checksum annotations being maintained and propogated to the pods
   hashSumEnabled: true
 
-# Configure ingress
+# -- Configure ingress
 ingress:
-  # Configure ingress for the proxy port.
+  # -- Configure ingress for the proxy port.
   public:
-    # En-/Disable the proxy ingress.
+    # -- En-/Disable the proxy ingress.
     enabled: false
-    classname: ""
+    className: ""
     annotations: {}
     #     kubernetes.io/ingress.class: nginx
     #     kubernetes.io/tls-acme: "true"
@@ -93,9 +103,9 @@ ingress:
   #      - secretName: hydra-proxy-example-tls
 
   admin:
-    # En-/Disable the api ingress.
+    # -- En-/Disable the api ingress.
     enabled: false
-    classname: ""
+    className: ""
     annotations: {}
     #      If you do want to specify annotations, uncomment the following
     #      lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
@@ -111,10 +121,15 @@ ingress:
 #        - api.hydra.local
 #      - secretName: hydra-api-example-tls
 
-# Configure ORY Hydra itself
+# -- Configure ORY Hydra itself
 hydra:
-  # The ORY Hydra configuration. For a full list of available settings, check:
-  #   https://github.com/ory/hydra/blob/master/docs/config.yaml
+  # -- Ability to override the entrypoint of hydra container
+  # (e.g. to source dynamic secrets or export environment dynamic variables)
+  command: ["hydra"]
+  # -- Ability to override arguments of the entrypoint. Can be used in-depended of customCommand
+  customArgs: []
+  # -- The ORY Hydra configuration. For a full list of available settings, check:
+  #  https://www.ory.sh/docs/hydra/reference/configuration
   config:
     serve:
       public:
@@ -138,13 +153,37 @@ hydra:
     urls:
       self: {}
 
-  autoMigrate: false
-  dangerousForceHttp: false
-  dangerousAllowInsecureRedirectUrls: false
+    # -- Enables database migration
+  automigration:
+    enabled: false
+    # -- Configure the way to execute database migration. Possible values: job, initContainer
+    # When set to job, the migration will be executed as a job on release or upgrade.
+    # When set to initContainer, the migration will be executed when kratos pod is created
+    # Defaults to job
+    type: job
+    # -- Ability to override the entrypoint of the automigration container
+    # (e.g. to source dynamic secrets or export environment dynamic variables)
+    customCommand: []
+    # -- Ability to override arguments of the entrypoint. Can be used in-depended of customCommand
+    # eg:
+    # - sleep 5;
+    #   - kratos
+    customArgs: []
+    # -- resource requests and limits for the automigration initcontainer
+    resources: {}
+
+  # -- Enable dev mode, not secure in production environments
+  dev: false
 
 deployment:
-  #  We usually recommend not to specify default resources and to leave this as a conscious
-  #  choice for the user. This also increases chances charts run on environments with little
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "25%"
+      maxUnavailable: "25%"
+
+  # -- We usually recommend not to specify default resources and to leave this as a conscious choice for the user.
+  #  This also increases chances charts run on environments with little
   #  resources, such as Minikube. If you do want to specify resources, uncomment the following
   #  lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   #  limits:
@@ -155,10 +194,19 @@ deployment:
   #  memory: 128Mi
   resources: {}
 
+  ## -- initContainer securityContext for hydra & migration init
+  initContainerSecurityContext: {}
+
+  ## -- pod securityContext for hydra & migration init
+  podSecurityContext: {}
+
+  ## -- container securityContext for hydra & migration init
   securityContext:
     capabilities:
       drop:
         - ALL
+    seccompProfile:
+      type: RuntimeDefault
     readOnlyRootFilesystem: true
     runAsNonRoot: true
     runAsUser: 100
@@ -167,63 +215,55 @@ deployment:
 
   lifecycle: {}
 
+  # -- Set custom deployment level labels
   labels: {}
-  #      If you do want to specify additional labels, uncomment the following
-  #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
-  #      e.g.  type: app
 
+  # -- Set custom deployment level annotations
   annotations: {}
-  #      If you do want to specify annotations, uncomment the following
-  #      lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
-  #      e.g.  sidecar.istio.io/rewriteAppHTTPProbers: "true"
 
-  # Node labels for pod assignment.
+  # -- Specify pod metadata, this metadata is added directly to the pod, and not higher objects
+  podMetadata:
+    # -- Extra pod level labels
+    labels: {}
+    # -- Extra pod level annotations
+    annotations: {}
+
+  # -- Node labels for pod assignment.
   nodeSelector: {}
   # If you do want to specify node labels, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'nodeSelector:'.
   #   foo: bar
 
-  # If you want to use Jaeger with agents being deployed in a daemonset, you can
-  # use the following ENV vars to configure the right endpoints using the IP
-  # address of the node the pod has been deployed to.
-  #
-  # extraEnv:
-  #   - name: JAEGER_AGENT_HOST
-  #     valueFrom:
-  #       fieldRef:
-  #         fieldPath: status.hostIP
-  #   - name: TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS
-  #     value: $(JAEGER_AGENT_HOST):6831
-  #   - name: TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL
-  #     value: http://$(JAEGER_AGENT_HOST):5778
+  # -- Array of extra envs to be passed to the deployment. Kubernetes format is expected
+  # - name: FOO
+  #   value: BAR
   extraEnv: []
 
-  # Configuration for tracing providers. Only datadog is currently supported through this block.
-  # If you need to use a different tracing provider, please manually set the configuration values
-  # via "hydra.config" or via "deployment.extraEnv".
-  tracing:
-    datadog:
-      enabled: false
+  # -- Parameters for the automigration initContainer
+  automigration:
+    # -- Array of extra envs to be passed to the initContainer. Kubernetes format is expected
+    # - name: FOO
+    #   value: BAR
+    extraEnv: []
 
-      # Sets the datadog DD_ENV environment variable. This value indicates the environment where hydra is running.
-      # Default value: "none".
-      # env: production
-
-      # Sets the datadog DD_VERSION environment variable. This value indicates the version that hydra is running.
-      # Default value: .Values.image.tag (i.e. the tag used for the docker image).
-      # version: X.Y.Z
-
-      # Sets the datadog DD_SERVICE environment variable. This value indicates the name of the service running.
-      # Default value: "ory/hydra".
-      # service: ory/hydra
-
-      # Sets the datadog DD_AGENT_HOST environment variable. This value indicates the host address of the datadog agent.
-      # If set to true, this configuration will automatically set DD_AGENT_HOST to the field "status.hostIP" of the pod.
-      # Default value: false.
-      # useHostIP: true
-
-  # Configure node tolerations.
+  # -- Configure node tolerations.
   tolerations: []
+
+  # -- Configure pod topologySpreadConstraints.
+  topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: topology.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/name: hydra
+  #       app.kubernetes.io/instance: hydra
+
+  # -- Configure pod dnsConfig.
+  dnsConfig: {}
+  #   options:
+  #     - name: "ndots"
+  #       value: "1"
 
   # -- Specify the serviceAccountName value.
   # In some situations it is needed to provides specific permissions to Hydra deployments
@@ -235,7 +275,7 @@ deployment:
   # Uncoment if it is needed to provide a ServiceAccount for the Hydra deployment.
   serviceAccount:
     # -- Specifies whether a service account should be created
-    create: false
+    create: true
     # -- Annotations to add to the service account
     annotations: {}
     # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
@@ -251,7 +291,6 @@ deployment:
   #   mountPath: /etc/secrets/my-secret
   #   readOnly: true
 
-  # If you want to mount external volume
   # For example, mount a secret containing Certificate root CA to verify database
   # TLS connection.
   # extraVolumes:
@@ -263,45 +302,144 @@ deployment:
   #     mountPath: "/etc/postgresql-tls"
   #     readOnly: true
 
-  # Configure HPA
+  # -- Configure HPA
   autoscaling:
     enabled: false
-  # minReplicas: 1
-  # maxReplicas: 3
-  # targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPU: {}
+    #   type: Utilization
+    #   averageUtilization: 80
+    targetMemory: {}
+    #   type: Utilization
+    #   averageUtilization: 80
 
-  # -- Configure the probes for when the deployment is considered ready and ongoing health check
+  # -- Default probe timers
   livenessProbe:
-    initialDelaySeconds: 30
+    initialDelaySeconds: 5
     periodSeconds: 10
     failureThreshold: 5
+  # -- Default probe timers
   readinessProbe:
-    initialDelaySeconds: 30
+    initialDelaySeconds: 5
     periodSeconds: 10
     failureThreshold: 5
+  # -- Default probe timers
+  startupProbe:
+    failureThreshold: 60
+    successThreshold: 1
+    periodSeconds: 1
+    timeoutSeconds: 1
 
   # https://github.com/kubernetes/kubernetes/issues/57601
   automountServiceAccountToken: true
 
-  # -- If you want to add extra init containers.
-  extraInitContainers: {}
+  # -- If you want to add extra init containers. These are processed before the migration init container.
+  extraInitContainers: ""
   # extraInitContainers: |
   #  - name: ...
   #    image: ...
 
   # -- If you want to add extra sidecar containers.
-  extraContainers: {}
+  extraContainers: ""
   # extraContainers: |
   #  - name: ...
   #    image: ...
 
-# Configure node affinity
+  # -- Configure a custom livenessProbe. This overwrites the default object
+  customLivenessProbe: {}
+  # -- Configure a custom readinessProbe. This overwrites the default object
+  customReadinessProbe: {}
+  # -- Configure a custom startupProbe. This overwrites the default object
+  customStartupProbe: {}
+  # -- Number of revisions kept in history
+  revisionHistoryLimit: 5
+
+# -- Values for initialization job
+job:
+  # -- If you do want to specify annotations, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
+  annotations:
+    helm.sh/hook-weight: "1"
+    helm.sh/hook: "pre-install, pre-upgrade"
+    helm.sh/hook-delete-policy: "before-hook-creation"
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+
+  # -- Set custom deployment level labels
+  labels: {}
+
+  # -- If you want to add extra sidecar containers.
+  extraContainers: ""
+  # extraContainers: |
+  #  - name: ...
+  #    image: ...
+
+  # -- Array of extra envs to be passed to the job. This takes precedence over deployment variables. Kubernetes format is expected
+  # - name: FOO
+  #   value: BAR
+  extraEnv: []
+
+  # -- Specify pod metadata, this metadata is added directly to the pod, and not higher objects
+  podMetadata:
+    # -- Extra pod level labels
+    labels: {}
+    # -- Extra pod level annotations
+    annotations: {}
+
+  # -- If you want to add extra init containers.
+  # extraInitContainers: |
+  #  - name: ...
+  #    image: ...
+  extraInitContainers: ""
+
+  # -- Node labels for pod assignment.
+  nodeSelector: {}
+  # If you do want to specify node labels, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'nodeSelector:'.
+  #   foo: bar
+
+  # -- Configure node tolerations.
+  tolerations: []
+
+  # -- If you want to add lifecycle hooks.
+  lifecycle: ""
+  # lifecycle: |
+  #   preStop:
+  #     exec:
+  #       command: [...]
+
+  # -- Set automounting of the SA token
+  automountServiceAccountToken: true
+
+  # -- Set sharing process namespace
+  shareProcessNamespace: false
+
+  # -- Specify the serviceAccountName value.
+  # In some situations it is needed to provides specific permissions to Hydra deployments
+  # Like for example installing Hydra on a cluster with a PosSecurityPolicy and Istio.
+  # Uncoment if it is needed to provide a ServiceAccount for the Hydra deployment.
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations:
+      helm.sh/hook-weight: "0"
+      helm.sh/hook: "pre-install, pre-upgrade"
+      helm.sh/hook-delete-policy: "before-hook-creation"
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  spec:
+    # -- Set job back off limit
+    backoffLimit: 10
+
+# -- Configure node affinity
 affinity: {}
 
 # -- Configures controller setup
 maester:
-  enabled: false
+  enabled: true
 
 # -- Values for the hydra admin service arguments to hydra-maester
 hydra-maester:
@@ -314,9 +452,120 @@ hydra-maester:
 # -- Sidecar watcher configuration
 watcher:
   enabled: false
-  #image: oryd/k8s-toolbox:0.0.2
+  image: oryd/k8s-toolbox:0.0.5
+  # -- Path to mounted file, which wil be monitored for changes. eg: /etc/secrets/my-secret/foo
   mountFile: ""
-  # mountFile: /etc/secrets/my-secret/foo
+  # -- Specify pod metadata, this metadata is added directly to the pod, and not higher objects
+  podMetadata:
+    # -- Extra pod level labels
+    labels: {}
+    # -- Extra pod level annotations
+    annotations: {}
+  # -- Label key used for managing applications
+  watchLabelKey: "ory.sh/watcher"
+  # -- Number of revisions kept in history
+  revisionHistoryLimit: 5
+
+  # -- pod securityContext for watcher deployment
+  podSecurityContext: {}
+
+  # -- container securityContext for watcher deployment
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 100
+    allowPrivilegeEscalation: false
+    privileged: false
+
+# -- Janitor cron job configuration
+janitor:
+  # -- Enable cleanup of stale database rows by periodically running the janitor command
+  enabled: false
+
+  # -- Configure if the trust relationships must be cleaned up
+  cleanupGrants: false
+
+  # -- Configure if the consent and authentication requests must be cleaned up
+  cleanupRequests: false
+
+  # -- Configure if the access and refresh tokens must be cleaned up
+  cleanupTokens: false
+
+  # -- Configure how many records are deleted with each iteration
+  batchSize: 100
+
+  # -- Configure how many records are retrieved from database for deletion
+  limit: 10000
+
+# -- CronJob configuration
+cronjob:
+  janitor:
+    # -- Configure how often the cron job is ran
+    schedule: "0 */1 * * *"
+
+    # -- Configure the arguments of the entrypoint, overriding the default value
+    customArgs: []
+
+    # -- Array of extra envs to be passed to the cronjob. This takes precedence over deployment variables. Kubernetes format is expected
+    # - name: FOO
+    #   value: BAR
+    extraEnv: []
+
+    # -- Set custom cron job level labels
+    labels: {}
+
+    # -- Set custom cron job level annotations
+    annotations: {}
+
+    # -- Specify pod metadata, this metadata is added directly to the pod, and not higher objects
+    podMetadata:
+      # -- Extra pod level labels
+      labels: {}
+
+      # -- Extra pod level annotations
+      annotations: {}
+
+    # -- Configure node labels for pod assignment
+    nodeSelector: {}
+
+    # -- Configure node tolerations
+    tolerations: []
+
+    # -- Configure node affinity
+    affinity: {}
+
+    # -- Configure the containers' SecurityContext for the janitor cronjob
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 100
+      allowPrivilegeEscalation: false
+      privileged: false
+
+    ## -- pod securityContext for the janitor cronjob
+    podSecurityContext: {}
+
+    # -- We usually recommend not to specify default resources and to leave this as a conscious choice for the user.
+    #  This also increases chances charts run on environments with little
+    #  resources, such as Minikube. If you do want to specify resources, uncomment the following
+    #  lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    #  limits:
+    #    cpu: 100m
+    #    memory: 128Mi
+    #  requests:
+    #    cpu: 100m
+    #  memory: 128Mi
+    resources:
+      limits: {}
+      requests: {}
 
 # -- PodDistributionBudget configuration
 pdb:
@@ -324,6 +573,30 @@ pdb:
   spec:
     minAvailable: 1
 
+# -- Parameters for the Prometheus ServiceMonitor objects.
+# Reference: https://docs.openshift.com/container-platform/4.6/rest_api/monitoring_apis/servicemonitor-monitoring-coreos-com-v1.html
+serviceMonitor:
+  # -- switch to false to prevent creating the ServiceMonitor
+  enabled: true
+  # -- HTTP scheme to use for scraping.
+  scheme: http
+  # -- Interval at which metrics should be scraped
+  scrapeInterval: 60s
+  # -- Timeout after which the scrape is ended
+  scrapeTimeout: 30s
+  # -- Provide additionnal labels to the ServiceMonitor ressource metadata
+  labels: {}
+  # -- TLS configuration to use when scraping the endpoint
+  tlsConfig: {}
+
 configmap:
   # -- switch to false to prevent checksum annotations being maintained and propogated to the pods
   hashSumEnabled: true
+
+test:
+  # -- Provide additional labels to the test pod
+  labels: {}
+  # -- use a busybox image from another repository
+  busybox:
+    repository: busybox
+    tag: 1
