@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"k8s.io/utils/strings/slices"
 	"net/http"
 	"strings"
 
@@ -281,13 +282,20 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 		c.ConsumerType = objectContexts[0].ConsumerType
 		c.Flow = objectContexts[0].AuthFlow
 	} else {
-		c = getCertServiceObjectContextProviderConsumer(objectContexts)
-		c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
+		providers := make([]string, 0, len(objectContexts))
+		for _, objectContext := range objectContexts {
+			providers = append(providers, objectContext.ContextProvider)
+		}
 
-		if c.OnBehalfOf != "" { // i.e. make sure that regions match only during consumer-provider flow
-			for _, objCtx := range objectContexts {
-				if objCtx.TenantID != "" && objCtx.Region != region {
-					return errors.Errorf("mismatched region for consumer ID REDACTED_%x: actual %s, expected: %s)", sha256.Sum256([]byte(objCtx.ConsumerID)), objCtx.Region, region)
+		if !slices.Contains(providers, tenantmapping.DemoObjectContextProvider) {
+			c = getCertServiceObjectContextProviderConsumer(objectContexts)
+			c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
+
+			if c.OnBehalfOf != "" { // i.e. make sure that regions match only during consumer-provider flow
+				for _, objCtx := range objectContexts {
+					if objCtx.TenantID != "" && objCtx.Region != region {
+						return errors.Errorf("mismatched region for consumer ID REDACTED_%x: actual %s, expected: %s)", sha256.Sum256([]byte(objCtx.ConsumerID)), objCtx.Region, region)
+					}
 				}
 			}
 		}
