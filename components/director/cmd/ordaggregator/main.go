@@ -104,11 +104,10 @@ type config struct {
 	ElectionConfig                cronjob.ElectionConfig
 	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
 
-	ParallelOperationProcessors               int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
-	OperationProcessorQuietPeriod             time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=1s"`
-	OperationProcessorSleepOnEmptiQueuePeriod time.Duration `envconfig:"APP_OPERATION_PROCESSORS_SLEEP_ON_EMPTY_QUEUE_PERIOD,default=1m"`
-	MaxParallelDocumentsPerApplication        int           `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
-	MaxParallelSpecificationProcessors        int           `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
+	ParallelOperationProcessors        int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
+	OperationProcessorQuietPeriod      time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=5s"`
+	MaxParallelDocumentsPerApplication int           `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
+	MaxParallelSpecificationProcessors int           `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
@@ -343,7 +342,6 @@ func main() {
 				} else {
 					// Queue is empty - no operation claimed
 					log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
-					time.Sleep(cfg.OperationProcessorSleepOnEmptiQueuePeriod)
 				}
 			}
 		}(ctx, operationsManager, ordOpProcessor, i)
