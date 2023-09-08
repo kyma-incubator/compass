@@ -124,6 +124,7 @@ func (m *demoContextProvider) Match(ctx context.Context, data oathkeeper.ReqData
 			if authn.Name != coords.Name {
 				continue
 			}
+			log.C(ctx).Infof("demo ctx provider")
 			log.C(ctx).Infof("Request token matches %q authenticator", authn.Name)
 
 			extra, err := data.MarshalExtra()
