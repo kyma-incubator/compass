@@ -84,7 +84,6 @@ export GCLOUD_SUBNET_NAME="${gcp_set_vars_for_network_return_subnet_name:?}"
 DNS_SUBDOMAIN="${COMMON_NAME}"
 COMPASS_SCRIPTS_DIR="${COMPASS_SOURCES_DIR}/installation/scripts"
 
-ORY_BENCHMARK_OVERRIDES="~/ory_benchmark_overrides.yaml"
 function createCluster() {
   #Used to detect errors for logging purposes
   ERROR_LOGGING_GUARD="true"
@@ -151,7 +150,7 @@ function createCluster() {
   envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-overrides.tpl.yaml" > "$PWD/compass_common_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/compass-overrides-gke-benchmark.yaml" > "$PWD/compass_benchmark_overrides.yaml"
   CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${TEST_INFRA_SOURCES_DIR}/prow/scripts/resources/compass-gke-kyma-overrides.tpl.yaml" > "$PWD/kyma_overrides.yaml"
-  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > "$ORY_BENCHMARK_OVERRIDES"
+  CLOUDSDK_CORE_PROJECT=${CLOUDSDK_CORE_PROJECT} CLOUDSDK_COMPUTE_ZONE=${CLOUDSDK_COMPUTE_ZONE} COMMON_NAME=${COMMON_NAME} envsubst < "${COMPASS_SOURCES_DIR}/installation/resources/ory-overrides-gke-benchmark.tpl.yaml" > "$PWD/ory_benchmark_overrides.yaml"
 }
 
 function installYQ() {
@@ -200,7 +199,7 @@ function installOry() {
   ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
 
   log::info "Installing Ory Helm chart..."
-  bash "${ORY_SCRIPT_PATH}" --overrides-file "$ORY_BENCHMARK_OVERRIDES"
+  bash "${ORY_SCRIPT_PATH}" --overrides-file "$PWD/ory_benchmark_overrides.yaml"
 }
 
 function installCompassOld() {
