@@ -366,10 +366,13 @@ type ComplexityRoot struct {
 	FormationConstraint struct {
 		ConstraintScope func(childComplexity int) int
 		ConstraintType  func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		Description     func(childComplexity int) int
 		ID              func(childComplexity int) int
 		InputTemplate   func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Operator        func(childComplexity int) int
+		Priority        func(childComplexity int) int
 		ResourceSubtype func(childComplexity int) int
 		ResourceType    func(childComplexity int) int
 		TargetOperation func(childComplexity int) int
@@ -2455,6 +2458,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationConstraint.ConstraintType(childComplexity), true
 
+	case "FormationConstraint.createdAt":
+		if e.complexity.FormationConstraint.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.CreatedAt(childComplexity), true
+
+	case "FormationConstraint.description":
+		if e.complexity.FormationConstraint.Description == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.Description(childComplexity), true
+
 	case "FormationConstraint.id":
 		if e.complexity.FormationConstraint.ID == nil {
 			break
@@ -2482,6 +2499,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationConstraint.Operator(childComplexity), true
+
+	case "FormationConstraint.priority":
+		if e.complexity.FormationConstraint.Priority == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.Priority(childComplexity), true
 
 	case "FormationConstraint.resourceSubtype":
 		if e.complexity.FormationConstraint.ResourceSubtype == nil {
@@ -5857,6 +5881,7 @@ input FetchRequestInput {
 
 input FormationConstraintInput {
 	name: String!
+	description: String!
 	constraintType: ConstraintType!
 	targetOperation: TargetOperation!
 	operator: String!
@@ -5864,10 +5889,13 @@ input FormationConstraintInput {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
+	priority: Int
 }
 
 input FormationConstraintUpdateInput {
 	inputTemplate: String!
+	priority: Int
+	description: String
 }
 
 input FormationInput {
@@ -6414,6 +6442,7 @@ type FormationAssignmentPage implements Pageable {
 type FormationConstraint {
 	id: ID!
 	name: String!
+	description: String!
 	constraintType: String!
 	targetOperation: String!
 	operator: String!
@@ -6421,6 +6450,8 @@ type FormationConstraint {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: String!
+	priority: Int!
+	createdAt: Timestamp!
 }
 
 type FormationError {
@@ -17532,6 +17563,40 @@ func (ec *executionContext) _FormationConstraint_name(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FormationConstraint_description(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationConstraint_constraintType(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -17768,6 +17833,74 @@ func (ec *executionContext) _FormationConstraint_constraintScope(ctx context.Con
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_priority(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Priority, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_createdAt(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationError_message(ctx context.Context, field graphql.CollectedField, obj *FormationError) (ret graphql.Marshaler) {
@@ -33462,6 +33595,12 @@ func (ec *executionContext) unmarshalInputFormationConstraintInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "constraintType":
 			var err error
 			it.ConstraintType, err = ec.unmarshalNConstraintType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintType(ctx, v)
@@ -33504,6 +33643,12 @@ func (ec *executionContext) unmarshalInputFormationConstraintInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "priority":
+			var err error
+			it.Priority, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -33519,6 +33664,18 @@ func (ec *executionContext) unmarshalInputFormationConstraintUpdateInput(ctx con
 		case "inputTemplate":
 			var err error
 			it.InputTemplate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "priority":
+			var err error
+			it.Priority, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -36093,6 +36250,11 @@ func (ec *executionContext) _FormationConstraint(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "description":
+			out.Values[i] = ec._FormationConstraint_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "constraintType":
 			out.Values[i] = ec._FormationConstraint_constraintType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -36125,6 +36287,16 @@ func (ec *executionContext) _FormationConstraint(ctx context.Context, sel ast.Se
 			}
 		case "constraintScope":
 			out.Values[i] = ec._FormationConstraint_constraintScope(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "priority":
+			out.Values[i] = ec._FormationConstraint_priority(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._FormationConstraint_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

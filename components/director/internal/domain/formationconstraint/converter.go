@@ -18,9 +18,15 @@ func (c *converter) ToGraphQL(in *model.FormationConstraint) *graphql.FormationC
 		return nil
 	}
 
+	createdAt := graphql.Timestamp{}
+	if in.CreatedAt != nil {
+		createdAt = graphql.Timestamp(*in.CreatedAt)
+	}
+
 	return &graphql.FormationConstraint{
 		ID:              in.ID,
 		Name:            in.Name,
+		Description:     in.Description,
 		ConstraintType:  string(in.ConstraintType),
 		TargetOperation: string(in.TargetOperation),
 		Operator:        in.Operator,
@@ -28,6 +34,8 @@ func (c *converter) ToGraphQL(in *model.FormationConstraint) *graphql.FormationC
 		ResourceSubtype: in.ResourceSubtype,
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: string(in.ConstraintScope),
+		Priority:        in.Priority,
+		CreatedAt:       createdAt,
 	}
 }
 
@@ -58,6 +66,7 @@ func (c *converter) ToEntity(in *model.FormationConstraint) *Entity {
 	return &Entity{
 		ID:              in.ID,
 		Name:            in.Name,
+		Description:     in.Description,
 		ConstraintType:  string(in.ConstraintType),
 		TargetOperation: string(in.TargetOperation),
 		Operator:        in.Operator,
@@ -65,6 +74,8 @@ func (c *converter) ToEntity(in *model.FormationConstraint) *Entity {
 		ResourceSubtype: in.ResourceSubtype,
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: string(in.ConstraintScope),
+		Priority:        in.Priority,
+		CreatedAt:       in.CreatedAt,
 	}
 }
 
@@ -77,6 +88,7 @@ func (c *converter) FromEntity(e *Entity) *model.FormationConstraint {
 	return &model.FormationConstraint{
 		ID:              e.ID,
 		Name:            e.Name,
+		Description:     e.Description,
 		ConstraintType:  model.FormationConstraintType(e.ConstraintType),
 		TargetOperation: model.TargetOperation(e.TargetOperation),
 		Operator:        e.Operator,
@@ -84,13 +96,20 @@ func (c *converter) FromEntity(e *Entity) *model.FormationConstraint {
 		ResourceSubtype: e.ResourceSubtype,
 		InputTemplate:   e.InputTemplate,
 		ConstraintScope: model.FormationConstraintScope(e.ConstraintScope),
+		Priority:        e.Priority,
+		CreatedAt:       e.CreatedAt,
 	}
 }
 
 // FromInputGraphQL converts from GraphQL input to internal model input
 func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput {
+	priority := 0
+	if in.Priority != nil {
+		priority = *in.Priority
+	}
 	return &model.FormationConstraintInput{
 		Name:            in.Name,
+		Description:     in.Description,
 		ConstraintType:  model.FormationConstraintType(in.ConstraintType),
 		TargetOperation: model.TargetOperation(in.TargetOperation),
 		Operator:        in.Operator,
@@ -98,6 +117,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *mode
 		ResourceSubtype: in.ResourceSubtype,
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: model.FormationConstraintScope(in.ConstraintScope),
+		Priority:        priority,
 	}
 }
 
@@ -106,6 +126,7 @@ func (c *converter) FromModelInputToModel(in *model.FormationConstraintInput, id
 	return &model.FormationConstraint{
 		ID:              id,
 		Name:            in.Name,
+		Description:     in.Description,
 		ConstraintType:  in.ConstraintType,
 		TargetOperation: in.TargetOperation,
 		Operator:        in.Operator,
@@ -113,5 +134,6 @@ func (c *converter) FromModelInputToModel(in *model.FormationConstraintInput, id
 		ResourceSubtype: in.ResourceSubtype,
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: in.ConstraintScope,
+		Priority:        in.Priority,
 	}
 }
