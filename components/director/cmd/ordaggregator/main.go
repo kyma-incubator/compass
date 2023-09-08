@@ -104,9 +104,11 @@ type config struct {
 	ElectionConfig                cronjob.ElectionConfig
 	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
 
-	ParallelOperationProcessors        int `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=1"`
-	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
-	MaxParallelSpecificationProcessors int `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
+	ParallelOperationProcessors               int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
+	OperationProcessorQuietPeriod             time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=1s"`
+	OperationProcessorSleepOnEmptiQueuePeriod time.Duration `envconfig:"APP_OPERATION_PROCESSORS_SLEEP_ON_EMPTY_QUEUE_PERIOD,default=1m"`
+	MaxParallelDocumentsPerApplication        int           `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
+	MaxParallelSpecificationProcessors        int           `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
@@ -307,7 +309,9 @@ func main() {
 		},
 	}
 
-	handler := initHandler(ctx, jwtHTTPClient, operationsManager, webhookSvc, cfg, transact)
+	onDemandChannel := make(chan string)
+
+	handler := initHandler(ctx, jwtHTTPClient, operationsManager, webhookSvc, cfg, transact, onDemandChannel)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -322,33 +326,27 @@ func main() {
 	ordOperationMaintainer := ord.NewOperationMaintainer(model.OperationTypeOrdAggregation, transact, opSvc, webhookSvc, appSvc)
 
 	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
-		go func(opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) {
+		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor, executorIndex int) {
 			for {
-				op, err := opManager.GetOperation(ctx)
-				if err != nil && !apperrors.IsNoScheduledOperationsError(err) {
-					log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", err)
-					time.Sleep(time.Minute)
-					continue
+				select {
+				case operationID := <-onDemandChannel:
+					log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+				case <-time.After(cfg.OperationProcessorQuietPeriod):
+					log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
 				}
-
-				if err != nil && apperrors.IsNoScheduledOperationsError(err) {
-					log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", err)
-					time.Sleep(time.Minute)
-					continue
+				processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
+				if err != nil {
+					log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
 				}
-
-				if err := opProcessor.Process(ctx, op); err != nil {
-					log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, err)
-					if err := operationsManager.MarkOperationFailed(ctx, op.ID, err.Error()); err != nil {
-						log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, err)
-						continue
-					}
-				}
-				if err := operationsManager.MarkOperationCompleted(ctx, op.ID); err != nil {
-					log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, err)
+				if len(processedOperationID) > 0 {
+					log.C(ctx).Infof("Processed Operation: %s by executor %d", processedOperationID, executorIndex)
+				} else {
+					// Queue is empty - no operation claimed
+					log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
+					time.Sleep(cfg.OperationProcessorSleepOnEmptiQueuePeriod)
 				}
 			}
-		}(operationsManager, ordOpProcessor)
+		}(ctx, operationsManager, ordOpProcessor, i)
 	}
 
 	go func() {
@@ -359,6 +357,33 @@ func main() {
 	}()
 
 	runMainSrv()
+}
+
+func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) (string, error) {
+	op, errGetOperation := opManager.GetOperation(ctx)
+	if errGetOperation != nil {
+		if apperrors.IsNoScheduledOperationsError(errGetOperation) {
+			log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", errGetOperation)
+			return "", nil
+		} else {
+			log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
+			return "", errGetOperation
+		}
+	}
+	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
+	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
+		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
+		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
+			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+			return op.ID, errMarkAsFailed
+		}
+		return op.ID, errProcess
+	}
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID); errMarkAsCompleted != nil {
+		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+		return op.ID, errMarkAsCompleted
+	}
+	return op.ID, nil
 }
 
 func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer ord.OperationMaintainer, cfg config) error {
@@ -438,7 +463,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner) http.Handler {
+func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -450,7 +475,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, cfg.MetricsConfig)
+	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, cfg.MetricsConfig, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	configureTenantContextMiddleware(apiRouter, transact)

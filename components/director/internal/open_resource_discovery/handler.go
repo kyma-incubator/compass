@@ -18,17 +18,19 @@ type AggregationResources struct {
 }
 
 type handler struct {
-	opMgr      *operationsmanager.OperationsManager
-	webhookSvc WebhookService
-	cfg        MetricsConfig
+	opMgr           *operationsmanager.OperationsManager
+	webhookSvc      WebhookService
+	cfg             MetricsConfig
+	onDemandChannel chan string
 }
 
 // NewORDAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewORDAggregatorHTTPHandler(opMgr *operationsmanager.OperationsManager, webhookSvc WebhookService, cfg MetricsConfig) *handler {
+func NewORDAggregatorHTTPHandler(opMgr *operationsmanager.OperationsManager, webhookSvc WebhookService, cfg MetricsConfig, onDemandChannel chan string) *handler {
 	return &handler{
-		opMgr:      opMgr,
-		webhookSvc: webhookSvc,
-		cfg:        cfg,
+		opMgr:           opMgr,
+		webhookSvc:      webhookSvc,
+		cfg:             cfg,
+		onDemandChannel: onDemandChannel,
 	}
 }
 
@@ -148,7 +150,8 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			http.Error(writer, "Sheduling Operation for ORD data aggregation failed", http.StatusInternalServerError)
 			return
 		}
-		// TODO notify OperationProcessors for new operation
+		// Notify OperationProcessors for new operation
+		h.onDemandChannel <- operationID
 	}
 	writer.WriteHeader(http.StatusOK)
 }

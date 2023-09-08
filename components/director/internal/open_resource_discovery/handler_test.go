@@ -93,8 +93,9 @@ func TestHandler_AggregateORDData(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := testCase.ORDService()
 			defer mock.AssertExpectationsForObjects(t, svc)
+			onDemandChannel := make(chan string)
 
-			handler := ord.NewORDAggregatorHTTPHandler(operationsManager, nil, metricsConfig)
+			handler := ord.NewORDAggregatorHTTPHandler(operationsManager, nil, metricsConfig, onDemandChannel)
 			requestBody, err := json.Marshal(testCase.RequestBody)
 			assert.NoError(t, err)
 
