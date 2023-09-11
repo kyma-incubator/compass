@@ -198,6 +198,7 @@ function installKyma() {
 function installOry() {
   ORY_SCRIPT_PATH="${COMPASS_SCRIPTS_DIR}"/install-ory.sh
 
+  echo "test"
   if [[ -f "$ORY_SCRIPT_PATH" ]]; then
     log::info "Installing Ory Helm chart..."
     bash "${ORY_SCRIPT_PATH}" --overrides-file ~/ory_benchmark_overrides.yaml
