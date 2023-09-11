@@ -54,7 +54,7 @@ func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *cli
 
 // RetrieveResource retrieves a given resource from SM by some criteria
 // Example call, delete after initial usage of the client:
-// RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, types.ServiceOfferingMatchParameters{CatalogName: catalogName})
+// RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: catalogName})
 func (c *client) RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error) {
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourceMatchParams.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 // RetrieveResourceByID retrieves a given resource from SM by its ID
 // Example call, delete after initial usage of the client:
 //
-// RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, types.ServiceKeyMatchParameters{})
+// RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
 func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) (resources.Resource, error) {
 	resourcePath := resourceMatchParams.GetURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
@@ -112,7 +112,7 @@ func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID 
 // CreateResource creates a given resource in SM
 // Example call, delete after initial usage of the client:
 //
-// CreateResource(ctx, region, subaccountID, types.ServiceInstanceReqBody{Name: name, ServicePlanID: id, Parameters: params}, &types.ServiceInstance{})
+// CreateResource(ctx, region, subaccountID, &types.ServiceInstanceReqBody{Name: name, ServicePlanID: id, Parameters: params}, &types.ServiceInstance{})
 func (c *client) CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error) {
 	resourceReqBodyBytes, err := json.Marshal(resourceReqBody)
 	if err != nil {
@@ -180,7 +180,7 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 // DeleteResource deletes a given resource from SM by its ID
 // Example call, delete after initial usage of the client:
 //
-// DeleteResource(ctx, region, subaccountID, types.ServiceInstance{ID: id}, types.ServiceInstanceMatchParameters{})
+// DeleteResource(ctx, region, subaccountID, &types.ServiceInstance{ID: id}, &types.ServiceInstanceMatchParameters{})
 func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) error {
 	resourcePath := resourceMatchParams.GetURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
@@ -231,7 +231,7 @@ func (c *client) DeleteResource(ctx context.Context, region, subaccountID string
 // DeleteMultipleResources deletes multiple resources from SM by some criteria
 // Example call, delete after initial usage of the client:
 //
-// DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, types.ServiceKeyMatchParameters{ServiceInstanceID: id})
+// DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstanceID: id})
 func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) error {
 	resourceIDs, err := c.retrieveMultipleResources(ctx, region, subaccountID, resources, resourceMatchParams)
 	if err != nil {
@@ -254,13 +254,13 @@ func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccount
 func (c *client) prepareResourceForDeletion(resourceType, resourceID string) (resources.Resource, resources.ResourceMatchParameters, error) {
 	switch resourceType {
 	case types.ServiceOfferingsType:
-		return types.ServiceOffering{ID: resourceID}, types.ServiceOfferingMatchParameters{}, nil
+		return &types.ServiceOffering{ID: resourceID}, &types.ServiceOfferingMatchParameters{}, nil
 	case types.ServicePlansType:
-		return types.ServicePlan{ID: resourceID}, types.ServicePlanMatchParameters{}, nil
+		return &types.ServicePlan{ID: resourceID}, &types.ServicePlanMatchParameters{}, nil
 	case types.ServiceInstancesType:
-		return types.ServiceInstance{ID: resourceID}, types.ServiceInstanceMatchParameters{}, nil
+		return &types.ServiceInstance{ID: resourceID}, &types.ServiceInstanceMatchParameters{}, nil
 	case types.ServiceBindingsType:
-		return types.ServiceKey{ID: resourceID}, types.ServiceKeyMatchParameters{}, nil
+		return &types.ServiceKey{ID: resourceID}, &types.ServiceKeyMatchParameters{}, nil
 	default:
 		return nil, nil, errors.New("unknown resource type")
 	}

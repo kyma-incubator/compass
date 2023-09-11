@@ -24,7 +24,7 @@ type ServiceKeyReqBody struct {
 }
 
 // GetResourceName gets the ServiceKey name from the request body
-func (rb ServiceKeyReqBody) GetResourceName() string {
+func (rb *ServiceKeyReqBody) GetResourceName() string {
 	return rb.Name
 }
 
@@ -37,34 +37,34 @@ type ServiceKey struct {
 }
 
 // GetResourceID gets the ServiceKey ID
-func (s ServiceKey) GetResourceID() string {
+func (s *ServiceKey) GetResourceID() string {
 	return s.ID
 }
 
 // GetResourceType gets the return type of the ServiceKey
-func (s ServiceKey) GetResourceType() string {
+func (s *ServiceKey) GetResourceType() string {
 	return ServiceBindingType
 }
 
 // GetResourceURLPath gets the ServiceKey URL Path
-func (s ServiceKey) GetResourceURLPath() string {
+func (s *ServiceKey) GetResourceURLPath() string {
 	return paths.ServiceBindingsPath
 }
 
 // ServiceKeys represents a collection of Service Key
 type ServiceKeys struct {
-	NumItems int          `json:"num_items"`
-	Items    []ServiceKey `json:"items"`
+	NumItems int           `json:"num_items"`
+	Items    []*ServiceKey `json:"items"`
 }
 
 // Match matches a ServiceKey based on some criteria
-func (sk ServiceKeys) Match(params resources.ResourceMatchParameters) (string, error) {
+func (sk *ServiceKeys) Match(params resources.ResourceMatchParameters) (string, error) {
 	return "", nil // implement me when needed
 }
 
 // MatchMultiple matches several ServiceKeys based on some criteria
-func (sk ServiceKeys) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
-	serviceKeyParams, ok := params.(ServiceKeyMatchParameters)
+func (sk *ServiceKeys) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
+	serviceKeyParams, ok := params.(*ServiceKeyMatchParameters)
 	if !ok {
 		return nil, errors.New("while type asserting ResourceMatchParameters to ServiceKeyMatchParameters")
 	}
@@ -78,7 +78,7 @@ func (sk ServiceKeys) MatchMultiple(params resources.ResourceMatchParameters) ([
 }
 
 // GetType gets the type of the ServiceKeys
-func (sk ServiceKeys) GetType() string {
+func (sk *ServiceKeys) GetType() string {
 	return ServiceBindingsType
 }
 
@@ -88,6 +88,6 @@ type ServiceKeyMatchParameters struct {
 }
 
 // GetURLPath gets the URL Path of the ServiceKey
-func (ska ServiceKeyMatchParameters) GetURLPath() string {
+func (ska *ServiceKeyMatchParameters) GetURLPath() string {
 	return paths.ServiceBindingsPath
 }

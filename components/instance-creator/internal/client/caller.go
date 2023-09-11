@@ -7,16 +7,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// CallerProvider is used to provide ExternalSvcCaller to call external services with given authentication
-type CallerProvider struct{}
+// callerProvider is used to provide ExternalSvcCaller to call external services with given authentication
+type callerProvider struct{}
 
-// NewCallerProvider creates new CallerProvider
-func NewCallerProvider() *CallerProvider {
-	return &CallerProvider{}
+// NewCallerProvider creates new callerProvider
+func NewCallerProvider() *callerProvider {
+	return &callerProvider{}
 }
 
 // GetCaller provides ExternalSvcCaller to call external services with given authentication
-func (c *CallerProvider) GetCaller(config config.Config, region string) (ExternalSvcCaller, error) {
+func (c *callerProvider) GetCaller(config config.Config, region string) (ExternalSvcCaller, error) {
 	instanceConfig, exists := config.RegionToInstanceConfig[region]
 	if !exists {
 		return nil, errors.Errorf("missing configuration for region: %s", region)

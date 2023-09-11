@@ -189,9 +189,9 @@ func TestClient_RetrieveResource(t *testing.T) {
 
 		var matchParams resources.ResourceMatchParameters
 		if testCase.WrongMatchParams {
-			matchParams = types.ServicePlanMatchParameters{}
+			matchParams = &types.ServicePlanMatchParameters{}
 		} else {
-			matchParams = types.ServiceOfferingMatchParameters{CatalogName: catalogName}
+			matchParams = &types.ServiceOfferingMatchParameters{CatalogName: catalogName}
 		}
 
 		// WHEN
@@ -335,7 +335,7 @@ func TestClient_RetrieveResourceByID(t *testing.T) {
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 		// WHEN
-		resultServiceKey, err := testClient.RetrieveResourceByID(ctx, region, subaccountID, &types.ServiceKey{}, types.ServiceKeyMatchParameters{})
+		resultServiceKey, err := testClient.RetrieveResourceByID(ctx, region, subaccountID, &types.ServiceKey{}, &types.ServiceKeyMatchParameters{})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {
@@ -585,7 +585,7 @@ func TestClient_CreateResource(t *testing.T) {
 		}
 
 		// WHEN
-		resultServiceInstanceID, err := testClient.CreateResource(ctx, region, subaccountID, types.ServiceInstanceReqBody{Name: serviceInstanceName, ServicePlanID: planID, Parameters: inputParams}, &types.ServiceInstance{})
+		resultServiceInstanceID, err := testClient.CreateResource(ctx, region, subaccountID, &types.ServiceInstanceReqBody{Name: serviceInstanceName, ServicePlanID: planID, Parameters: inputParams}, &types.ServiceInstance{})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {
@@ -831,7 +831,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 		// WHEN
-		err := testClient.DeleteResource(ctx, region, subaccountID, types.ServiceInstance{ID: serviceInstanceID}, types.ServiceInstanceMatchParameters{})
+		err := testClient.DeleteResource(ctx, region, subaccountID, &types.ServiceInstance{ID: serviceInstanceID}, &types.ServiceInstanceMatchParameters{})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {
@@ -1116,7 +1116,7 @@ func TestClient_DeleteMultipleResources(t *testing.T) {
 		testClient := client.NewClient(testCase.Config, callerProviderSvc)
 
 		// WHEN
-		err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID})
+		err := testClient.DeleteMultipleResources(ctx, region, subaccountID, &types.ServiceKeys{}, &types.ServiceKeyMatchParameters{ServiceInstanceID: serviceInstanceID})
 
 		// THEN
 		if testCase.ExpectedErrorMsg != "" {

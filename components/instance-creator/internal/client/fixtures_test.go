@@ -162,8 +162,8 @@ func fixConfigWithInvalidURL() config.Config {
 	}
 }
 
-func fixServiceOffering(id, catalogName string) types.ServiceOffering {
-	return types.ServiceOffering{
+func fixServiceOffering(id, catalogName string) *types.ServiceOffering {
+	return &types.ServiceOffering{
 		ID:          id,
 		CatalogName: catalogName,
 	}
@@ -172,14 +172,14 @@ func fixServiceOffering(id, catalogName string) types.ServiceOffering {
 func fixServiceOfferings() types.ServiceOfferings {
 	return types.ServiceOfferings{
 		NumItems: 2,
-		Items:    []types.ServiceOffering{fixServiceOffering(offeringID, catalogName), fixServiceOffering(testID, testName)},
+		Items:    []*types.ServiceOffering{fixServiceOffering(offeringID, catalogName), fixServiceOffering(testID, testName)},
 	}
 }
 
 func fixServiceOfferingsWithNoMatchingCatalogName() types.ServiceOfferings {
 	return types.ServiceOfferings{
 		NumItems: 2,
-		Items:    []types.ServiceOffering{fixServiceOffering(offeringID, testName), fixServiceOffering(testID, testName)},
+		Items:    []*types.ServiceOffering{fixServiceOffering(offeringID, testName), fixServiceOffering(testID, testName)},
 	}
 }
 
@@ -194,7 +194,7 @@ func fixServiceKey() *types.ServiceKey {
 func fixServiceKeys() *types.ServiceKeys {
 	return &types.ServiceKeys{
 		NumItems: 1,
-		Items:    []types.ServiceKey{*fixServiceKey()},
+		Items:    []*types.ServiceKey{fixServiceKey()},
 	}
 }
 

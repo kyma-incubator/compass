@@ -24,29 +24,29 @@ type ServicePlan struct {
 }
 
 // GetResourceID gets the ServicePlan ID
-func (s ServicePlan) GetResourceID() string {
+func (s *ServicePlan) GetResourceID() string {
 	return s.ID
 }
 
 // GetResourceType gets the return type of the ServicePlan
-func (s ServicePlan) GetResourceType() string {
+func (s *ServicePlan) GetResourceType() string {
 	return ServicePlanType
 }
 
 // GetResourceURLPath gets the ServicePlan URL Path
-func (s ServicePlan) GetResourceURLPath() string {
+func (s *ServicePlan) GetResourceURLPath() string {
 	return paths.ServicePlansPath
 }
 
 // ServicePlans represents a collection of Service Plan
 type ServicePlans struct {
-	NumItems int           `json:"num_items"`
-	Items    []ServicePlan `json:"items"`
+	NumItems int            `json:"num_items"`
+	Items    []*ServicePlan `json:"items"`
 }
 
 // Match matches a ServicePlan based on some criteria
-func (sp ServicePlans) Match(params resources.ResourceMatchParameters) (string, error) {
-	servicePlanParams, ok := params.(ServicePlanMatchParameters)
+func (sp *ServicePlans) Match(params resources.ResourceMatchParameters) (string, error) {
+	servicePlanParams, ok := params.(*ServicePlanMatchParameters)
 	if !ok {
 		return "", errors.New("while type asserting ResourceMatchParameters to ServicePlanMatchParameters")
 	}
@@ -63,12 +63,12 @@ func (sp ServicePlans) Match(params resources.ResourceMatchParameters) (string, 
 }
 
 // MatchMultiple matches several ServicePlans based on some criteria
-func (sp ServicePlans) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
+func (sp *ServicePlans) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
 	return nil, nil // implement me when needed
 }
 
 // GetType gets the type of the ServicePlans
-func (sp ServicePlans) GetType() string {
+func (sp *ServicePlans) GetType() string {
 	return ServicePlansType
 }
 
@@ -79,6 +79,6 @@ type ServicePlanMatchParameters struct {
 }
 
 // GetURLPath gets the URL Path of the ServicePlan
-func (spa ServicePlanMatchParameters) GetURLPath() string {
+func (spa *ServicePlanMatchParameters) GetURLPath() string {
 	return paths.ServicePlansPath
 }

@@ -24,29 +24,29 @@ type ServiceOffering struct {
 }
 
 // GetResourceID gets the ServiceOffering ID
-func (s ServiceOffering) GetResourceID() string {
+func (s *ServiceOffering) GetResourceID() string {
 	return s.ID
 }
 
 // GetResourceType gets the return type of the ServiceOffering
-func (s ServiceOffering) GetResourceType() string {
+func (s *ServiceOffering) GetResourceType() string {
 	return ServiceOfferingType
 }
 
 // GetResourceURLPath gets the ServiceOffering URL Path
-func (s ServiceOffering) GetResourceURLPath() string {
+func (s *ServiceOffering) GetResourceURLPath() string {
 	return paths.ServiceOfferingsPath
 }
 
 // ServiceOfferings represents a collection of Service Offering
 type ServiceOfferings struct {
-	NumItems int               `json:"num_items"`
-	Items    []ServiceOffering `json:"items"`
+	NumItems int                `json:"num_items"`
+	Items    []*ServiceOffering `json:"items"`
 }
 
 // Match matches a ServiceOffering based on some criteria
-func (so ServiceOfferings) Match(params resources.ResourceMatchParameters) (string, error) {
-	serviceOfferingParams, ok := params.(ServiceOfferingMatchParameters)
+func (so *ServiceOfferings) Match(params resources.ResourceMatchParameters) (string, error) {
+	serviceOfferingParams, ok := params.(*ServiceOfferingMatchParameters)
 	if !ok {
 		return "", errors.New("while type asserting ResourceMatchParameters to ServiceOfferingMatchParameters")
 	}
@@ -61,12 +61,12 @@ func (so ServiceOfferings) Match(params resources.ResourceMatchParameters) (stri
 }
 
 // MatchMultiple matches several ServiceOfferings based on some criteria
-func (so ServiceOfferings) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
+func (so *ServiceOfferings) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
 	return nil, nil // implement me when needed
 }
 
 // GetType gets the type of the ServiceOfferings
-func (so ServiceOfferings) GetType() string {
+func (so *ServiceOfferings) GetType() string {
 	return ServiceOfferingsType
 }
 
@@ -76,6 +76,6 @@ type ServiceOfferingMatchParameters struct {
 }
 
 // GetURLPath gets the URL Path of the ServiceOffering
-func (sp ServiceOfferingMatchParameters) GetURLPath() string {
+func (sp *ServiceOfferingMatchParameters) GetURLPath() string {
 	return paths.ServiceOfferingsPath
 }
