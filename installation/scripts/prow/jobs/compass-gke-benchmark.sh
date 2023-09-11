@@ -251,6 +251,12 @@ function installCompassNew() {
   STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
   echo "DB installation status ${STATUS}"
 
+  # TODO!!!: This has to be removed whenever PR 3290 reaches the main branch
+  # The old Ory installation created a secret named 'ory-hydra-credentials', which helps us identify an old installation
+  # The release is uninstalled as we now have a Secret with 'pre-install' Helm hooks, which does not run on updates and breaks the deployment
+  if [ "$(kubectl get secret ory-hydra-credentials -n ory)" ]; then
+    helm uninstall ory-stack -n ory
+  fi
   echo 'Installing Ory'
   installOry
   
