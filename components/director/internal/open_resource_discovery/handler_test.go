@@ -95,7 +95,7 @@ func TestHandler_AggregateORDData(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, svc)
 			onDemandChannel := make(chan string)
 
-			handler := ord.NewORDAggregatorHTTPHandler(operationsManager, nil, metricsConfig, onDemandChannel)
+			handler := ord.NewORDAggregatorHTTPHandler(operationsManager, nil, metricsConfig, nil, onDemandChannel)
 			requestBody, err := json.Marshal(testCase.RequestBody)
 			assert.NoError(t, err)
 

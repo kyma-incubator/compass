@@ -473,7 +473,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, cfg.MetricsConfig, onDemandChannel)
+	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, cfg.MetricsConfig, transact, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	configureTenantContextMiddleware(apiRouter, transact)

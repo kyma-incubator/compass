@@ -96,7 +96,7 @@ func (s *service) Get(ctx context.Context, id string, objectType model.WebhookRe
 	return
 }
 
-// GetGlobalByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType
+// GetByIDAndWebhookTypeGlobal returns a webhook given an objectID, objectType and webhookType
 func (s *service) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	return s.webhookRepo.GetByIDAndWebhookTypeGlobal(ctx, objectID, objectType, webhookType)
 }
