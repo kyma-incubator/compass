@@ -22,10 +22,10 @@ const (
 	inputTemplateUpdated    = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}", "newField": "value"}`
 	testTenantID            = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testName                = "test"
-	description             = "description"
 )
 
 var (
+	description              = "description"
 	createdAt                = time.Now()
 	priority                 = 2
 	formationConstraintModel = &model.FormationConstraint{
@@ -113,7 +113,7 @@ var (
 	}
 	formationConstraintInput = graphql.FormationConstraintInput{
 		Name:            formationConstraintName,
-		Description:     description,
+		Description:     &description,
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
 		Operator:        operatorName,
@@ -125,7 +125,7 @@ var (
 	}
 	formationConstraintInputUpdated = graphql.FormationConstraintInput{
 		Name:            formationConstraintName,
-		Description:     description,
+		Description:     &description,
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
 		Operator:        operatorName,
