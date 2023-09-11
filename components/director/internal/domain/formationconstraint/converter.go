@@ -107,9 +107,14 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *mode
 	if in.Priority != nil {
 		priority = *in.Priority
 	}
+	description := ""
+	if in.Description != nil {
+		description = *in.Description
+	}
+
 	return &model.FormationConstraintInput{
 		Name:            in.Name,
-		Description:     in.Description,
+		Description:     description,
 		ConstraintType:  model.FormationConstraintType(in.ConstraintType),
 		TargetOperation: model.TargetOperation(in.TargetOperation),
 		Operator:        in.Operator,

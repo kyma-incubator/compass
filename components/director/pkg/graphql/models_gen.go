@@ -550,7 +550,7 @@ type FormationConstraint struct {
 
 type FormationConstraintInput struct {
 	Name            string          `json:"name"`
-	Description     string          `json:"description"`
+	Description     *string         `json:"description"`
 	ConstraintType  ConstraintType  `json:"constraintType"`
 	TargetOperation TargetOperation `json:"targetOperation"`
 	Operator        string          `json:"operator"`

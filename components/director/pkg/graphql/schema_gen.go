@@ -5881,7 +5881,7 @@ input FetchRequestInput {
 
 input FormationConstraintInput {
 	name: String!
-	description: String!
+	description: String
 	constraintType: ConstraintType!
 	targetOperation: TargetOperation!
 	operator: String!
@@ -33597,7 +33597,7 @@ func (ec *executionContext) unmarshalInputFormationConstraintInput(ctx context.C
 			}
 		case "description":
 			var err error
-			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

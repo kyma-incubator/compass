@@ -197,9 +197,9 @@ func (r *Resolver) UpdateFormationConstraint(ctx context.Context, id string, in 
 	if in.Priority != nil {
 		priority = *in.Priority
 	}
-	description := currentConstraint.Description
+	description := &currentConstraint.Description
 	if in.Description != nil {
-		description = *in.Description
+		description = in.Description
 	}
 	updatedConstraintInput := &graphql.FormationConstraintInput{
 		Name:            currentConstraint.Name,
