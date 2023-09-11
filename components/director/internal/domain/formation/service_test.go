@@ -3324,7 +3324,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 		{
-			Name: "error when resynchronization is successful for formation notifications but fails while commiting transaction",
+			Name: "error when resynchronization is successful for formation notifications but fails while committing transaction",
 			TxFn: txGen.ThatFailsOnCommit,
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
