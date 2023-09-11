@@ -883,6 +883,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
+		err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while unassigning from formation")
+		}
 		return ft.formation, nil
 	}
 
