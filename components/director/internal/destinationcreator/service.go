@@ -107,12 +107,7 @@ func NewService(
 }
 
 // CreateDesignTimeDestinations is responsible to create so-called design time(destinationcreator.AuthTypeNoAuth) destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateDesignTimeDestinations(
-	ctx context.Context,
-	destinationDetails operators.Destination,
-	formationAssignment *model.FormationAssignment,
-	depth uint8,
-) error {
+func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
@@ -158,25 +153,18 @@ func (s *Service) CreateDesignTimeDestinations(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
-		return s.CreateDesignTimeDestinations(ctx, destinationDetails, formationAssignment, depth)
+		return s.CreateDesignTimeDestinations(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
 	}
 
 	return nil
 }
 
 // CreateBasicCredentialDestinations is responsible to create a basic destination resource in the remote destination service
-func (s *Service) CreateBasicCredentialDestinations(
-	ctx context.Context,
-	destinationDetails operators.Destination,
-	basicAuthenticationCredentials operators.BasicAuthentication,
-	formationAssignment *model.FormationAssignment,
-	correlationIDs []string,
-	depth uint8,
-) error {
+func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
@@ -212,25 +200,18 @@ func (s *Service) CreateBasicCredentialDestinations(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
-		return s.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth)
+		return s.CreateBasicCredentialDestinations(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
 	return nil
 }
 
 // CreateSAMLAssertionDestination is responsible to create SAML Assertion destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateSAMLAssertionDestination(
-	ctx context.Context,
-	destinationDetails operators.Destination,
-	samlAuthCreds *operators.SAMLAssertionAuthentication,
-	formationAssignment *model.FormationAssignment,
-	correlationIDs []string,
-	depth uint8,
-) error {
+func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
@@ -307,25 +288,18 @@ func (s *Service) CreateSAMLAssertionDestination(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
-		return s.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth)
+		return s.CreateSAMLAssertionDestination(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
 	return nil
 }
 
 // CreateClientCertificateDestination is responsible to create client certificate destination resource in the DB as well as in the remote destination service
-func (s *Service) CreateClientCertificateDestination(
-	ctx context.Context,
-	destinationDetails operators.Destination,
-	clientCertAuthCreds *operators.ClientCertAuthentication,
-	formationAssignment *model.FormationAssignment,
-	correlationIDs []string,
-	depth uint8,
-) error {
+func (s *Service) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
 	subaccountID := destinationDetails.SubaccountID
 	region, err := s.getRegionLabel(ctx, subaccountID)
 	if err != nil {
@@ -394,25 +368,19 @@ func (s *Service) CreateClientCertificateDestination(
 			return errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment); err != nil {
+		if err := s.DeleteDestination(ctx, destinationName, subaccountID, destinationDetails.InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
 			return errors.Wrapf(err, "while deleting destination with name: %q and subaccount ID: %q", destinationName, subaccountID)
 		}
 
-		return s.CreateClientCertificateDestination(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth)
+		return s.CreateClientCertificateDestination(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	}
 
 	return nil
 }
 
 // CreateCertificate is responsible to create certificate resource in the remote destination service
-func (s *Service) CreateCertificate(
-	ctx context.Context,
-	destinationsDetails []operators.Destination,
-	destinationAuthType destinationcreatorpkg.AuthType,
-	formationAssignment *model.FormationAssignment,
-	depth uint8,
-) (*operators.CertificateData, error) {
-	if err := s.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment); err != nil {
+func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreatorpkg.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) (*operators.CertificateData, error) {
+	if err := s.EnsureDestinationSubaccountIDsCorrectness(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation); err != nil {
 		return nil, err
 	}
 
@@ -456,11 +424,11 @@ func (s *Service) CreateCertificate(
 			return nil, errors.Errorf("Destination creator service retry limit: %d is exceeded", DepthLimit)
 		}
 
-		if err := s.DeleteCertificate(ctx, certName, subaccountID, destinationsDetails[0].InstanceID, formationAssignment); err != nil {
+		if err := s.DeleteCertificate(ctx, certName, subaccountID, destinationsDetails[0].InstanceID, formationAssignment, skipSubaccountValidation); err != nil {
 			return nil, errors.Wrapf(err, "while deleting certificate with name: %q and subaccount ID: %q", certName, subaccountID)
 		}
 
-		return s.CreateCertificate(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth)
+		return s.CreateCertificate(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
 	}
 
 	var certResp CertificateResponse
@@ -506,12 +474,8 @@ func GetDestinationCertificateName(ctx context.Context, destinationAuthenticatio
 }
 
 // DeleteCertificate is responsible to delete certificate resource from the remote destination service
-func (s *Service) DeleteCertificate(
-	ctx context.Context,
-	certificateName, externalDestSubaccountID, instanceID string,
-	formationAssignment *model.FormationAssignment,
-) error {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
+func (s *Service) DeleteCertificate(ctx context.Context, certificateName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	subaccountID, err := s.DetermineDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
 	if err != nil {
 		return err
 	}
@@ -541,12 +505,8 @@ func (s *Service) DeleteCertificate(
 }
 
 // DeleteDestination is responsible to delete destination resource from the remote destination service
-func (s *Service) DeleteDestination(
-	ctx context.Context,
-	destinationName, externalDestSubaccountID, instanceID string,
-	formationAssignment *model.FormationAssignment,
-) error {
-	subaccountID, err := s.ValidateDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment)
+func (s *Service) DeleteDestination(ctx context.Context, destinationName, externalDestSubaccountID, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	subaccountID, err := s.DetermineDestinationSubaccount(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
 	if err != nil {
 		return err
 	}
@@ -612,13 +572,15 @@ func (s *Service) EnrichAssignmentConfigWithSAMLCertificateData(
 	return json.RawMessage(enrichedCfgStr), nil
 }
 
-// ValidateDestinationSubaccount validates if the subaccount ID in the destination details is provided, it's the correct/valid one.
-// If it's not provided, then we validate the subaccount ID from the formation assignment.
-func (s *Service) ValidateDestinationSubaccount(
-	ctx context.Context,
-	externalDestSubaccountID string,
-	formationAssignment *model.FormationAssignment,
-) (string, error) {
+// DetermineDestinationSubaccount finds the correct subaccount for the destination
+// If it's provided in the configuration and validation is enabled, it validates that it is either the consumer or the provider subaccount.
+// If it's not provided, then the consumer subaccount ID of the target of the FA is used.
+// If validation is disabled, the provided subaccount in the configuration is directly used without any validations.
+func (s *Service) DetermineDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) (string, error) {
+	if skipSubaccountValidation && len(externalDestSubaccountID) > 0 {
+		log.C(ctx).Infof("Subaccount validation is disabled. Proceeding with the provided destination subaccount ID: %q", externalDestSubaccountID)
+		return externalDestSubaccountID, nil
+	}
 	var subaccountID string
 	if externalDestSubaccountID == "" {
 		consumerSubaccountID, err := s.GetConsumerTenant(ctx, formationAssignment)
@@ -754,8 +716,8 @@ func (s *Service) GetConsumerTenant(ctx context.Context, formationAssignment *mo
 }
 
 // EnsureDestinationSubaccountIDsCorrectness is responsible to populate all the subaccount IDs in the destination details if they are not provided, and after that to check if they are all equal.
-func (s *Service) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment) error {
-	if err := s.sanitizeDestinationSubaccountIDs(ctx, destinationsDetails, formationAssignment); err != nil {
+func (s *Service) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	if err := s.sanitizeDestinationSubaccountIDs(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation); err != nil {
 		return errors.Wrap(err, "while sanitizing destination subaccount IDs")
 	}
 
@@ -776,10 +738,10 @@ func (s *Service) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context,
 }
 
 // sanitizeDestinationSubaccountIDs is responsible to populate the subaccount ID of every destination element in the slice if it's not provided
-func (s *Service) sanitizeDestinationSubaccountIDs(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment) error {
+func (s *Service) sanitizeDestinationSubaccountIDs(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	for i, destDetails := range destinationsDetails {
 		if destDetails.SubaccountID == "" {
-			subaccID, err := s.ValidateDestinationSubaccount(ctx, "", formationAssignment)
+			subaccID, err := s.DetermineDestinationSubaccount(ctx, "", formationAssignment, skipSubaccountValidation)
 			if err != nil {
 				return err
 			}
