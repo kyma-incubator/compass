@@ -243,7 +243,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateDesignTimeDestinations(ctx, designTimeDestsDetails, &fa, false) //TODO:: propagate
+			err := svc.CreateDesignTimeDestinations(ctx, designTimeDestsDetails, &fa, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -492,7 +492,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateBasicCredentialDestinations(ctx, basicDestsDetails, basicAuthCreds, &fa, correlationIDs, false) //TODO:: propagate
+			err := svc.CreateBasicCredentialDestinations(ctx, basicDestsDetails, basicAuthCreds, &fa, correlationIDs, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -716,7 +716,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateClientCertificateAuthenticationDestination(ctx, clientCertAuthDestsDetails, clientCertAuthTypeCreds, &fa, correlationIDs, false) //TODO:: propagate
+			err := svc.CreateClientCertificateAuthenticationDestination(ctx, clientCertAuthDestsDetails, clientCertAuthTypeCreds, &fa, correlationIDs, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -940,7 +940,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateSAMLAssertionDestination(ctx, samlAssertionDestsDetails, samlAuthCreds, &fa, correlationIDs, false)//TODO:: propagate
+			err := svc.CreateSAMLAssertionDestination(ctx, samlAssertionDestsDetails, samlAuthCreds, &fa, correlationIDs, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -1102,7 +1102,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, nil, destCreatorSvc)
 
 			// WHEN
-			err := svc.DeleteDestinations(ctx, &fa, false) //TODO:: propagate
+			err := svc.DeleteDestinations(ctx, &fa, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

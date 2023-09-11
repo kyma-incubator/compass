@@ -317,7 +317,7 @@ func Test_CreateDesignTimeDestinations(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, testCase.config, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateDesignTimeDestinations(emptyCtx, testCase.destinationDetails, testCase.formationAssignment, 0, false) //TODO:: propagate
+			err := svc.CreateDesignTimeDestinations(emptyCtx, testCase.destinationDetails, testCase.formationAssignment, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -516,7 +516,7 @@ func Test_CreateBasicDestinations(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateBasicCredentialDestinations(emptyCtx, testCase.destinationDetails, basicAuthCreds, testCase.formationAssignment, correlationIDs, 0, false) //TODO:: propagate
+			err := svc.CreateBasicCredentialDestinations(emptyCtx, testCase.destinationDetails, basicAuthCreds, testCase.formationAssignment, correlationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -794,7 +794,7 @@ func Test_CreateSAMLAssertionDestinations(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, appRepo, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateSAMLAssertionDestination(emptyCtx, testCase.destinationDetails, samlAssertionAuthCreds, testCase.formationAssignment, correlationIDs, 0, false) //TODO:: propagate
+			err := svc.CreateSAMLAssertionDestination(emptyCtx, testCase.destinationDetails, samlAssertionAuthCreds, testCase.formationAssignment, correlationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -1016,7 +1016,7 @@ func Test_CreateClientCertificateDestination(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.CreateClientCertificateDestination(emptyCtx, testCase.destinationDetails, clientCertAuthTypeCreds, testCase.formationAssignment, correlationIDs, 0, false)//TODO:: propagate
+			err := svc.CreateClientCertificateDestination(emptyCtx, testCase.destinationDetails, clientCertAuthTypeCreds, testCase.formationAssignment, correlationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -1193,7 +1193,7 @@ func Test_DeleteDestination(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.DeleteDestination(emptyCtx, testCase.destinationName, testCase.destinationSubaccountID, testCase.destinationInstanceID, testCase.formationAssignment, false) //TODO:: propagate
+			err := svc.DeleteDestination(emptyCtx, testCase.destinationName, testCase.destinationSubaccountID, testCase.destinationInstanceID, testCase.formationAssignment, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
@@ -1520,7 +1520,7 @@ func Test_CreateCertificate(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			result, err := svc.CreateCertificate(emptyCtx, testCase.destinationsDetails, testCase.destinationAuthType, testCase.formationAssignment, 0, false) //TODO:: propagate
+			result, err := svc.CreateCertificate(emptyCtx, testCase.destinationsDetails, testCase.destinationAuthType, testCase.formationAssignment, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Empty(t, result)
 				require.Error(t, err)
@@ -1676,7 +1676,7 @@ func Test_DeleteCertificate(t *testing.T) {
 
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
-			err := svc.DeleteCertificate(emptyCtx, testCase.certificateName, testCase.destinationSubaccountID, testCase.destinationInstanceID, testCase.formationAssignment, false) //TODO:: propagate
+			err := svc.DeleteCertificate(emptyCtx, testCase.certificateName, testCase.destinationSubaccountID, testCase.destinationInstanceID, testCase.formationAssignment, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)
