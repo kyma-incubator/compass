@@ -545,6 +545,9 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if terr != nil {
 			return nil, terr
 		}
+		if terr = tx.Commit(); terr != nil {
+			return nil, terr
+		}
 
 		// If the assigning of the object fails, the transaction opened in the resolver will be rolled back.
 		// The FA records and the labels for the object will not be reverted as they were persisted as part of another
