@@ -16,6 +16,8 @@ const TenantContextKey tntCtxKey = iota
 // LocalTenantIDContextKey is the key under which the local tenant id is saved in a given context.Context.
 const LocalTenantIDContextKey localTntIDCtxKey = iota
 
+const ProviderTenantKey = "providerTntKey"
+
 // TenantCtx is the structure can be saved in a request context. It is used to determine the tenant context in which the request is being executed.
 type TenantCtx struct {
 	InternalID string
@@ -52,6 +54,21 @@ func LoadTenantPairFromContext(ctx context.Context) (TenantCtx, error) {
 	return tenant, nil
 }
 
+// LoadProviderTenantPairFromContext retrieves the whole tenant context from the provided request context. It returns error if such ID cannot be found.
+func LoadProviderTenantPairFromContext(ctx context.Context) (TenantCtx, error) {
+	tenant, ok := ctx.Value(ProviderTenantKey).(TenantCtx)
+
+	if !ok {
+		return TenantCtx{}, apperrors.NewCannotReadTenantError()
+	}
+
+	if tenant.InternalID == "" {
+		return TenantCtx{}, apperrors.NewTenantRequiredError()
+	}
+
+	return tenant, nil
+}
+
 // LoadTenantPairFromContextNoChecks retrieves the whole tenant context from the provided request context. Checks for the values of the InternalID/ExternalID are not included and should be done outside the func case by case.
 func LoadTenantPairFromContextNoChecks(ctx context.Context) (TenantCtx, error) {
 	tenant, ok := ctx.Value(TenantContextKey).(TenantCtx)
@@ -68,6 +85,12 @@ func LoadTenantPairFromContextNoChecks(ctx context.Context) (TenantCtx, error) {
 func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
 	tenantCtx := TenantCtx{InternalID: internalID, ExternalID: externalID}
 	return context.WithValue(ctx, TenantContextKey, tenantCtx)
+}
+
+// SaveExternalTenantToContext .
+func SaveExternalTenantToContext(ctx context.Context, internalID, externalID string) context.Context {
+	tenantCtx := TenantCtx{InternalID: internalID, ExternalID: externalID}
+	return context.WithValue(ctx, ProviderTenantKey, tenantCtx)
 }
 
 // LoadLocalTenantIDFromContext retrieves the local tenant ID from the provided context. It returns error if such ID cannot be found.
