@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"net/http"
 	"testing"
 	"time"
@@ -893,7 +892,7 @@ func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
 
 func expectEmptySliceApplicationRepo() *automock.ApplicationRepository {
 	appRepo := &automock.ApplicationRepository{}
-	appRepo.On("ListAllByIDs", txtest.CtxWithDBMatcher(), TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
 	return appRepo
 }
 

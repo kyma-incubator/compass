@@ -243,11 +243,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeRuntime,
+			ObjectID:          RuntimeID,
+			InputFormation:    in,
+			ExpectedFormation: expected,
 		},
 		{
 			Name: "success for runtime when formation has state different that ready should delete FA without sending notifications",
@@ -290,11 +289,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     in,
-			ExpectedFormation:  formationInInitialState,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeRuntime,
+			ObjectID:          RuntimeID,
+			InputFormation:    in,
+			ExpectedFormation: formationInInitialState,
 		},
 		{
 			Name: "error for runtime when formation has state different that ready should delete FA without sending notifications but fails while updating scenario label",
@@ -386,11 +384,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeRuntime,
+			ObjectID:          RuntimeID,
+			InputFormation:    in,
+			ExpectedFormation: expected,
 		},
 		{
 			Name: "success for runtime if formation do not exist",
@@ -458,11 +455,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, secondTestFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     secondIn,
-			ExpectedFormation:  &secondFormation,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeRuntime,
+			ObjectID:          RuntimeID,
+			InputFormation:    secondIn,
+			ExpectedFormation: &secondFormation,
 		},
 		{
 			Name: "success for runtime when formation is last",
@@ -522,11 +518,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(false, nil)
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeRuntime,
+			ObjectID:          RuntimeID,
+			InputFormation:    in,
+			ExpectedFormation: expected,
 		},
 		{
 			Name: "success for tenant",
@@ -569,11 +564,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			ObjectID:           TargetTenant,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeTenant,
+			ObjectID:          TargetTenant,
+			InputFormation:    in,
+			ExpectedFormation: expected,
 		},
 		{
 			Name: "error for runtime when formation has state different than ready and fails to delete the formation assignments",
@@ -1959,11 +1953,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 				engine.On("IsFormationComingFromASA", ctx, RuntimeID, testFormationName, graphql.FormationObjectTypeRuntime).Return(true, nil)
 				return engine
 			},
-			ObjectType:         graphql.FormationObjectTypeRuntime,
-			ObjectID:           RuntimeID,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
+			ObjectType:        graphql.FormationObjectTypeRuntime,
+			ObjectID:          RuntimeID,
+			InputFormation:    in,
+			ExpectedFormation: expected,
 		},
 	}
 
