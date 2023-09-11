@@ -126,11 +126,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
-	asa := model.AutomaticScenarioAssignment{
-		ScenarioName:   testFormationName,
-		Tenant:         TntInternalID,
-		TargetTenantID: TargetTenant,
-	}
 	expectedFormationTemplate := &model.FormationTemplate{
 		ID:               FormationTemplateID,
 		Name:             testFormationTemplateName,
@@ -171,19 +166,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 	testCases := []struct {
 		Name                          string
 		TxFn                          func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		UIDServiceFn                  func() *automock.UuidService
 		ApplicationRepoFn             func() *automock.ApplicationRepository
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepoFn                   func() *automock.LabelRepository
-		AsaServiceFN                  func() *automock.AutomaticFormationAssignmentService
-		AsaRepoFN                     func() *automock.AutomaticFormationAssignmentRepository
-		RuntimeRepoFN                 func() *automock.RuntimeRepository
 		RuntimeContextRepoFn          func() *automock.RuntimeContextRepository
 		FormationRepositoryFn         func() *automock.FormationRepository
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		NotificationServiceFN         func() *automock.NotificationsService
 		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
-		TenantServiceFn               func() *automock.TenantService
 		ConstraintEngineFn            func() *automock.ConstraintEngine
 		ASAEngineFn                   func() *automock.AsaEngine
 		ObjectType                    graphql.FormationObjectType
@@ -520,52 +510,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ObjectType:        graphql.FormationObjectTypeRuntime,
 			ObjectID:          RuntimeID,
-			InputFormation:    in,
-			ExpectedFormation: expected,
-		},
-		{
-			Name: "success for tenant",
-			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
-				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
-
-				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
-
-				return asaRepo
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
-				return asaService
-			},
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return repo
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			ASAEngineFn: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
-				return engine
-			},
-			ObjectType:        graphql.FormationObjectTypeTenant,
-			ObjectID:          TargetTenant,
 			InputFormation:    in,
 			ExpectedFormation: expected,
 		},
@@ -925,131 +869,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error for tenant when delete fails",
-			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
-				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
-				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
-				return asaRepo
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
-				return asaService
-			},
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return repo
-			},
-			ASAEngineFn: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				return engine
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			ObjectID:           TargetTenant,
-			InputFormation:     in,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "error for tenant while enforcing post constraints",
-			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
-				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
-
-				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
-
-				return asaRepo
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
-				return asaService
-			},
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return repo
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(testErr).Once()
-				return engine
-			},
-			ASAEngineFn: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
-				return engine
-			},
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			ObjectID:           TargetTenant,
-			InputFormation:     in,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "error for tenant when getting asa fails",
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(model.AutomaticScenarioAssignment{}, testErr).Once()
-				return asaService
-			},
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
-				return svc
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return repo
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			ASAEngineFn: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				return engine
-			},
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			ObjectID:           TargetTenant,
-			InputFormation:     in,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
 			Name: "error when fetching formation fails",
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -1061,12 +880,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			InputFormation:     in,
 			ExpectedFormation:  expected,
 			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name:               "error when object type is unknown",
-			ObjectType:         "UNKNOWN",
-			InputFormation:     in,
-			ExpectedErrMessage: "unknown formation type",
 		},
 		{
 			Name: "success for runtime if generating notifications fails with not found",
@@ -1967,10 +1780,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			if testCase.TxFn != nil {
 				persist, transact = testCase.TxFn()
 			}
-			uidService := unusedUUIDService()
-			if testCase.UIDServiceFn != nil {
-				uidService = testCase.UIDServiceFn()
-			}
 			applicationRepository := unusedApplicationRepository()
 			if testCase.ApplicationRepoFn != nil {
 				applicationRepository = testCase.ApplicationRepoFn()
@@ -1978,18 +1787,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			labelService := unusedLabelService()
 			if testCase.LabelServiceFn != nil {
 				labelService = testCase.LabelServiceFn()
-			}
-			asaRepo := unusedASARepo()
-			if testCase.AsaRepoFN != nil {
-				asaRepo = testCase.AsaRepoFN()
-			}
-			asaService := unusedASAService()
-			if testCase.AsaServiceFN != nil {
-				asaService = testCase.AsaServiceFN()
-			}
-			runtimeRepo := unusedRuntimeRepo()
-			if testCase.RuntimeRepoFN != nil {
-				runtimeRepo = testCase.RuntimeRepoFN()
 			}
 			runtimeContextRepo := unusedRuntimeContextRepo()
 			if testCase.RuntimeContextRepoFn != nil {
@@ -2019,16 +1816,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			if testCase.ConstraintEngineFn != nil {
 				constraintEngine = testCase.ConstraintEngineFn()
 			}
-			tenantSvc := unusedTenantService()
-			if testCase.TenantServiceFn != nil {
-				tenantSvc = testCase.TenantServiceFn()
-			}
 			asaEngine := unusedASAEngine()
 			if testCase.ASAEngineFn != nil {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil)
+			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
@@ -2042,7 +1835,281 @@ func TestServiceUnassignFormation(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 				require.Nil(t, actual)
 			}
-			mock.AssertExpectationsForObjects(t, persist, uidService, labelService, applicationRepository, asaRepo, asaService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, labelRepo, notificationsSvc, formationAssignmentSvc, constraintEngine, tenantSvc, asaEngine)
+			mock.AssertExpectationsForObjects(t, persist, labelService, applicationRepository, runtimeContextRepo, formationRepo, formationTemplateRepo, labelRepo, notificationsSvc, formationAssignmentSvc, constraintEngine, asaEngine)
+		})
+	}
+}
+
+func TestServiceUnassignFormation_Tenant(t *testing.T) {
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
+
+	transactionError := errors.New("transaction error")
+	txGen := txtest.NewTransactionContextGenerator(transactionError)
+
+	in := model.Formation{
+		Name: testFormationName,
+	}
+
+	expected := &model.Formation{
+		ID:                  fixUUID(),
+		Name:                testFormationName,
+		FormationTemplateID: FormationTemplateID,
+		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
+	}
+	asa := model.AutomaticScenarioAssignment{
+		ScenarioName:   testFormationName,
+		Tenant:         TntInternalID,
+		TargetTenantID: TargetTenant,
+	}
+
+	testCases := []struct {
+		Name                          string
+		TxFn                          func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		AsaServiceFN                  func() *automock.AutomaticFormationAssignmentService
+		AsaRepoFN                     func() *automock.AutomaticFormationAssignmentRepository
+		FormationRepositoryFn         func() *automock.FormationRepository
+		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
+		TenantServiceFn               func() *automock.TenantService
+		ConstraintEngineFn            func() *automock.ConstraintEngine
+		ASAEngineFn                   func() *automock.AsaEngine
+		ObjectType                    graphql.FormationObjectType
+		ObjectID                      string
+		InputFormation                model.Formation
+		ExpectedFormation             *model.Formation
+		ExpectedErrMessage            string
+	}{
+		{
+			Name: "success for tenant",
+			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
+				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
+
+				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+
+				return asaRepo
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
+				return asaService
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ASAEngineFn: func() *automock.AsaEngine {
+				engine := &automock.AsaEngine{}
+				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
+				return engine
+			},
+			ObjectType:        graphql.FormationObjectTypeTenant,
+			ObjectID:          TargetTenant,
+			InputFormation:    in,
+			ExpectedFormation: expected,
+		},
+		{
+			Name: "error for tenant when delete fails",
+			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
+				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
+				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
+				return asaRepo
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
+				return asaService
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				return repo
+			},
+			ASAEngineFn: func() *automock.AsaEngine {
+				engine := &automock.AsaEngine{}
+				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				return engine
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			ObjectID:           TargetTenant,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for tenant while enforcing post constraints",
+			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
+				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
+
+				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+
+				return asaRepo
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
+				return asaService
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			ASAEngineFn: func() *automock.AsaEngine {
+				engine := &automock.AsaEngine{}
+				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			ObjectID:           TargetTenant,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for tenant when getting asa fails",
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(model.AutomaticScenarioAssignment{}, testErr).Once()
+				return asaService
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ASAEngineFn: func() *automock.AsaEngine {
+				engine := &automock.AsaEngine{}
+				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			ObjectID:           TargetTenant,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:               "error when object type is unknown",
+			ObjectType:         "UNKNOWN",
+			InputFormation:     in,
+			ExpectedErrMessage: "unknown formation type",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := txGen.ThatDoesntStartTransaction()
+			if testCase.TxFn != nil {
+				persist, transact = testCase.TxFn()
+			}
+			asaRepo := unusedASARepo()
+			if testCase.AsaRepoFN != nil {
+				asaRepo = testCase.AsaRepoFN()
+			}
+			asaService := unusedASAService()
+			if testCase.AsaServiceFN != nil {
+				asaService = testCase.AsaServiceFN()
+			}
+			formationRepo := unusedFormationRepo()
+			if testCase.FormationRepositoryFn != nil {
+				formationRepo = testCase.FormationRepositoryFn()
+			}
+			formationTemplateRepo := unusedFormationTemplateRepo()
+			if testCase.FormationTemplateRepositoryFn != nil {
+				formationTemplateRepo = testCase.FormationTemplateRepositoryFn()
+			}
+			constraintEngine := unusedConstraintEngine()
+			if testCase.ConstraintEngineFn != nil {
+				constraintEngine = testCase.ConstraintEngineFn()
+			}
+			tenantSvc := unusedTenantService()
+			if testCase.TenantServiceFn != nil {
+				tenantSvc = testCase.TenantServiceFn()
+			}
+			asaEngine := unusedASAEngine()
+			if testCase.ASAEngineFn != nil {
+				asaEngine = testCase.ASAEngineFn()
+			}
+
+			svc := formation.NewServiceWithAsaEngine(transact, nil, nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, asaService, tenantSvc, nil, nil, nil, nil, nil, nil, constraintEngine, runtimeType, applicationType, asaEngine, nil)
+
+			// WHEN
+			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
+			mock.AssertExpectationsForObjects(t, persist, asaRepo, asaService, formationRepo, formationTemplateRepo, constraintEngine, tenantSvc, asaEngine)
 		})
 	}
 }
