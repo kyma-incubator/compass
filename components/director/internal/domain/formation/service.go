@@ -1051,7 +1051,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			return nil, err
 		}
 		if reverseFA != nil {
-			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, operation)
+			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(faResyncTransactionCtx, reverseFA, operation)
 			if err != nil && !apperrors.IsNotFoundError(err) {
 				return nil, err
 			}
@@ -1116,7 +1116,11 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(scenarioTransactionCtx, objectID, formation.Name, objectType); err != nil {
 					return nil, err
 				} else if isFormationComingFromASA {
-					return formation, nil
+					err = scenarioTx.Commit()
+					if err != nil {
+						return nil, err
+					}
+					return formation, errs.ErrorOrNil()
 				}
 				err = s.unassign(scenarioTransactionCtx, tenantID, objectID, objectType, formation)
 				if err != nil {
@@ -1149,6 +1153,7 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 	}
 	formationTemplateID := fTmpl.ID
 	formationTemplateName := fTmpl.Name
+	formationID := formation.ID
 
 	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(formationResyncTransactionCtx, formationTemplateID, model.FormationTemplateWebhookReference)
 	if err != nil {
@@ -1159,12 +1164,12 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 
 	formationReqs, err := s.notificationsService.GenerateFormationNotifications(formationResyncTransactionCtx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, operation)
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
+		return nil, false, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formationID, formation.Name)
 	}
 
 	for _, formationReq := range formationReqs {
 		if err = s.processFormationNotifications(formationResyncTransactionCtx, formation, formationReq, errorState); err != nil {
-			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
+			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formation.Name)
 			log.C(ctx).Error(processErr)
 			return nil, false, processErr
 		}
@@ -1183,9 +1188,9 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 		return formation, true, nil
 	}
 
-	formation, err = s.formationRepository.Get(formationResyncTransactionCtx, formation.ID, tenantID)
+	formation, err = s.formationRepository.Get(formationResyncTransactionCtx, formationID, tenantID)
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formation.ID)
+		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
 	}
 
 	err = formationResyncTx.Commit()
