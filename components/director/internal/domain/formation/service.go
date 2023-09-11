@@ -852,11 +852,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
-		err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while unassigning from formation")
-		}
-
 		asa, err := s.asaService.GetForScenarioName(ctx, formationName)
 		if err != nil {
 			return nil, err
@@ -890,6 +885,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return ft.formation, nil
 	}
 
+	// It is important that all operations regarding formation assignments should be in the inner transaction
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -900,6 +896,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(transactionCtx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
+			commitErr := tx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
 			return formationFromDB, nil
 		}
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -933,6 +933,8 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while committing transaction")
 	}
 
+	// It is important that we have committed the previous transaction before formation assignments are listed
+	// They could be deleted by either it or another operation altogether (e.g. async API status report)
 	scenarioTx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -940,7 +942,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
 	defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
 
-	// It is important to do the list in the inner transaction
 	pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)

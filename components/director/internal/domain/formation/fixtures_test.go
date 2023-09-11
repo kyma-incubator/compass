@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"net/http"
 	"testing"
 	"time"
@@ -885,9 +886,15 @@ func unusedDataInputBuilder() *databuilderautomock.DataInputBuilder {
 }
 
 func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
-	repo := &automock.RuntimeContextRepository{}
-	repo.On("ListByIDs", mock.Anything, TntInternalID, []string{}).Return(nil, nil).Once()
-	return repo
+	rtmCtxRepo := &automock.RuntimeContextRepository{}
+	rtmCtxRepo.On("ListByIDs", mock.Anything, TntInternalID, []string{}).Return(nil, nil).Once()
+	return rtmCtxRepo
+}
+
+func expectEmptySliceApplicationRepo() *automock.ApplicationRepository {
+	appRepo := &automock.ApplicationRepository{}
+	appRepo.On("ListAllByIDs", txtest.CtxWithDBMatcher(), TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+	return appRepo
 }
 
 func unusedApplicationRepo() *automock.ApplicationRepository {
