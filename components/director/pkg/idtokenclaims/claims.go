@@ -73,6 +73,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 // ContextWithClaims missing godoc
 func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant[tenantmapping.ConsumerTenantKey], c.Tenant[tenantmapping.ExternalTenantKey])
+	ctxWithTenants = tenant.SaveExternalTenantToContext(ctxWithTenants, c.Tenant[tenantmapping.ProviderTenantKey], c.Tenant[tenantmapping.ProviderExternalTenantKey])
 	scopesArray := strings.Split(c.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
 	apiConsumer := consumer.Consumer{ConsumerID: c.ConsumerID, ConsumerType: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf, Region: c.Region, TokenClientID: c.TokenClientID}

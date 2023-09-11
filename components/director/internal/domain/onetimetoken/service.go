@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"time"
 
@@ -254,9 +255,16 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 }
 
 func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, app model.Application) (*model.OneTimeToken, error) {
-	tntCtx, err := tenant.LoadTenantPairFromContext(ctx)
+	tntCtx, err := tenant.LoadProviderTenantPairFromContext(ctx)
 	if err != nil {
-		return nil, err
+		log.C(ctx).Infof("Did not find provider tenant, will use consumer tenant")
+		spew.Dump(err)
+		tntCtx, err = tenant.LoadTenantPairFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		log.C(ctx).Infof("Found provider tenant with id: %s", tntCtx.ExternalID)
 	}
 
 	tnt, err := s.extTenantsSvc.GetTenantByID(ctx, tntCtx.InternalID)
