@@ -670,7 +670,7 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 		inputTemplate: "{{.InputTemplate}}"
 		constraintScope: {{.ConstraintScope}}
         {{- if .Priority }}
-		priority: "{{.Priority}}"
+		priority: {{.Priority}}
 		{{- end }}
 	}`)
 }
@@ -683,7 +683,7 @@ func (g *Graphqlizer) FormationConstraintUpdateInputToGQL(in graphql.FormationCo
 		description: "{{.Description}}"
 		{{- end }}
         {{- if .Priority }}
-		priority: "{{.Priority}}"
+		priority: {{.Priority}}
 		{{- end }}
 	}`)
 }
