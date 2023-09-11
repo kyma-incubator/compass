@@ -741,6 +741,16 @@ var (
 		TenantID:            TntInternalID,
 	}
 
+	unassignRuntimeContextDetails = &formationconstraint.UnassignFormationOperationDetails{
+		ResourceType:        model.RuntimeContextResourceType,
+		ResourceSubtype:     runtimeType,
+		ResourceID:          RuntimeContextID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            TntInternalID,
+	}
+
 	assignRuntimeOtherTemplateDetails = &formationconstraint.AssignFormationOperationDetails{
 		ResourceType:        model.RuntimeResourceType,
 		ResourceSubtype:     runtimeType,
