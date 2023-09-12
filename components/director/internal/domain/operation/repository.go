@@ -125,6 +125,9 @@ func (r *pgRepository) Delete(ctx context.Context, id string) error {
 
 // DeleteMultiple deletes all operations by given list of ids
 func (r *pgRepository) DeleteMultiple(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
 	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", ids)})
 }
 

@@ -146,8 +146,9 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 
 // ProcessApplication performs resync of ORD information provided via ORD documents for an applications
 func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
-	if len(appID) == 0 {
-		return nil
+	ctx, err := s.saveLowestOwnerForAppToContextInTx(ctx, appID)
+	if err != nil {
+		return err
 	}
 
 	webhooks, err := s.getWebhooksForApplication(ctx, appID)
@@ -160,7 +161,7 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			// lasy loading of global ORD resources on first need
+			// lazy loading of global ORD resources on first need
 			if !globalResourcesLoaded {
 				log.C(ctx).Infof("Retrieving global ORD resources")
 				globalResourcesOrdIDs = s.retrieveGlobalResources(ctx)
@@ -177,12 +178,6 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 
 // ProcessAppInAppTemplateContext performs resync of ORD information provided via ORD documents for an applications in context of application template
 func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplateID, appID string) error {
-	if len(appID) == 0 {
-		return nil
-	}
-	if len(appTemplateID) == 0 {
-		return nil
-	}
 
 	var globalResourcesOrdIDs map[string]bool
 	globalResourcesLoaded := false
@@ -246,7 +241,7 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			// lasy loading of global ORD resources on first need
+			// lazy loading of global ORD resources on first need
 			if !globalResourcesLoaded {
 				log.C(ctx).Infof("Retrieving global ORD resources")
 				globalResourcesOrdIDs = s.retrieveGlobalResources(ctx)
@@ -262,35 +257,35 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 	return nil
 }
 
-// TODO - remove - ProcessWebhook performs resync of single ORD webhook
-func (s *Service) ProcessWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-	switch webhook.ObjectType {
-	case model.ApplicationTemplateWebhookReference:
-		appTemplateID := webhook.ObjectID
-
-		if err := s.processApplicationTemplateWebhook(ctx, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
-			return err
-		}
-
-		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
-		if err != nil {
-			return err
-		}
-
-		for _, app := range apps {
-			if err = s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
-				return err
-			}
-		}
-	case model.ApplicationWebhookReference:
-		appID := webhook.ObjectID
-		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
+//// TODO - remove - ProcessWebhook performs resync of single ORD webhook
+//func (s *Service) ProcessWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+//	switch webhook.ObjectType {
+//	case model.ApplicationTemplateWebhookReference:
+//		appTemplateID := webhook.ObjectID
+//
+//		if err := s.processApplicationTemplateWebhook(ctx, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
+//			return err
+//		}
+//
+//		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
+//		if err != nil {
+//			return err
+//		}
+//
+//		for _, app := range apps {
+//			if err = s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+//				return err
+//			}
+//		}
+//	case model.ApplicationWebhookReference:
+//		appID := webhook.ObjectID
+//		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
+//			return err
+//		}
+//	}
+//
+//	return nil
+//}
 
 func (s *Service) retrieveGlobalResources(ctx context.Context) map[string]bool {
 	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
@@ -2243,4 +2238,20 @@ func isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels []*
 	}
 
 	return false, nil
+}
+
+func (s *Service) saveLowestOwnerForAppToContextInTx(ctx context.Context, appID string) (context.Context, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ctx, err = s.saveLowestOwnerForAppToContext(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ctx, tx.Commit()
 }

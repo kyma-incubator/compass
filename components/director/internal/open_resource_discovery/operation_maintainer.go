@@ -12,11 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	// OrdCreatorType specifies open resource discovery creator type
-	OrdCreatorType = "ORD"
-)
-
 // OperationMaintainer is responsible for maintaining of different types of operations.
 //
 //go:generate mockery --name=OperationMaintainer --output=automock --outpkg=automock --case=underscore --disable-version-string

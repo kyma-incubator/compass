@@ -5042,34 +5042,17 @@ func TestService_ProcessApplication(t *testing.T) {
 		ExpectedErr         error
 	}{
 		{
-			Name: "Success when empty app ID",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatDoesntStartTransaction()
-			},
-			appSvcFn: func() *automock.ApplicationService {
-				return &automock.ApplicationService{}
-			},
-			tenantSvcFn: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			webhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
-				return &automock.GlobalRegistryService{}
-			},
-			clientFn: func() *automock.Client {
-				return &automock.Client{}
-			},
-			appID: "",
-		},
-		{
 			Name: "Success",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
+				return txGen.ThatSucceedsMultipleTimes(4)
 			},
-			appSvcFn:    successfulAppGet,
-			tenantSvcFn: successfulTenantSvc,
+			appSvcFn: successfulAppGet,
+			tenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Times(3)
+				tenantSvc.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(&model.BusinessTenantMapping{ExternalTenant: externalTenantID}, nil).Times(3)
+				return tenantSvc
+			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooksForApplication(), nil).Once()
@@ -5087,14 +5070,15 @@ func TestService_ProcessApplication(t *testing.T) {
 		{
 			Name: "Error while listing webhooks for application",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatDoesntExpectCommit()
+				persistTx, transact := txGen.ThatSucceeds()
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				return &automock.ApplicationService{}
 			},
-			tenantSvcFn: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
+			tenantSvcFn: successfulTenantSvcOnce,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -5112,14 +5096,14 @@ func TestService_ProcessApplication(t *testing.T) {
 		{
 			Name: "Error while retrieving application",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return appSvc
 			},
-			tenantSvcFn: successfulTenantSvcOnce,
+			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooksForApplication(), nil).Once()
@@ -5135,13 +5119,15 @@ func TestService_ProcessApplication(t *testing.T) {
 		{
 			Name: "Error while getting lowest owner of resource",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				return &automock.ApplicationService{}
 			},
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(&model.BusinessTenantMapping{ExternalTenant: externalTenantID}, nil).Once()
 				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
 				return tenantSvc
 			},
@@ -5453,29 +5439,6 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 		ExpectedErr             error
 	}{
 		{
-			Name: "Success when empty application template IDs array",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatDoesntStartTransaction()
-			},
-			appSvcFn: func() *automock.ApplicationService {
-				return &automock.ApplicationService{}
-			},
-			tenantSvcFn: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			webhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			globalRegistrySvcFn: func() *automock.GlobalRegistryService {
-				return &automock.GlobalRegistryService{}
-			},
-			clientFn: func() *automock.Client {
-				return &automock.Client{}
-			},
-			appID:         "",
-			appTemplateID: "",
-		},
-		{
 			Name: "Success",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(5)
@@ -5671,7 +5634,7 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 
 func successfulGlobalRegistrySvc() *automock.GlobalRegistryService {
 	globalRegistrySvcFn := &automock.GlobalRegistryService{}
-	globalRegistrySvcFn.On("SyncGlobalResources", context.TODO()).Return(map[string]bool{ord.SapVendor: true}, nil).Once()
+	globalRegistrySvcFn.On("SyncGlobalResources", mock.Anything).Return(map[string]bool{ord.SapVendor: true}, nil).Once()
 	return globalRegistrySvcFn
 }
 

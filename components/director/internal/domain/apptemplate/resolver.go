@@ -5,10 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	"regexp"
 	"strings"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
@@ -118,32 +118,36 @@ type SelfRegisterManager interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc                  ApplicationService
-	appConverter            ApplicationConverter
-	appTemplateSvc          ApplicationTemplateService
-	appTemplateConverter    ApplicationTemplateConverter
-	webhookSvc              WebhookService
-	webhookConverter        WebhookConverter
-	selfRegManager          SelfRegisterManager
-	uidService              UIDService
-	appTemplateProductLabel string
-	certSubjectMappingSvc   CertSubjectMappingService
+	appSvc                    ApplicationService
+	appConverter              ApplicationConverter
+	appTemplateSvc            ApplicationTemplateService
+	appTemplateConverter      ApplicationTemplateConverter
+	webhookSvc                WebhookService
+	webhookConverter          WebhookConverter
+	selfRegManager            SelfRegisterManager
+	uidService                UIDService
+	appTemplateProductLabel   string
+	certSubjectMappingSvc     CertSubjectMappingService
+	ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig
+	ordClient                 *apiclient.ORDClient
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
-		transact:                transact,
-		appSvc:                  appSvc,
-		appConverter:            appConverter,
-		appTemplateSvc:          appTemplateSvc,
-		appTemplateConverter:    appTemplateConverter,
-		webhookSvc:              webhookService,
-		webhookConverter:        webhookConverter,
-		selfRegManager:          selfRegisterManager,
-		uidService:              uidService,
-		appTemplateProductLabel: appTemplateProductLabel,
-		certSubjectMappingSvc:   certSubjectMappingSvc,
+		transact:                  transact,
+		appSvc:                    appSvc,
+		appConverter:              appConverter,
+		appTemplateSvc:            appTemplateSvc,
+		appTemplateConverter:      appTemplateConverter,
+		webhookSvc:                webhookService,
+		webhookConverter:          webhookConverter,
+		selfRegManager:            selfRegisterManager,
+		uidService:                uidService,
+		appTemplateProductLabel:   appTemplateProductLabel,
+		certSubjectMappingSvc:     certSubjectMappingSvc,
+		ordAggregatorClientConfig: ordAggregatorClientConfig,
+		ordClient:                 apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -327,6 +331,15 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, errors.Wrapf(err, "while converting Application Template with id %s to GraphQL", id)
 	}
 
+	for _, wh := range convertedIn.Webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery {
+			if err := r.ordClient.Aggregate(ctx, "", id); err != nil {
+				log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppTemplateID %q", id)
+			}
+			break
+		}
+	}
+
 	return gqlAppTemplate, nil
 }
 
@@ -454,6 +467,11 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 
 	gqlApp := r.appConverter.ToGraphQL(app)
+
+	if err := r.ordClient.Aggregate(ctx, app.ID, appTemplate.ID); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q and AppTemplateID %q", app.ID, id)
+	}
+
 	return gqlApp, nil
 }
 

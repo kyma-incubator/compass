@@ -905,6 +905,7 @@ global:
   ordAggregator:
     port: 3000
     prefix: /ord-aggregator
+    aggregateEndpoint: /aggregate
     name: ord-aggregator
     lease:
       lockname: aggregatorlease
