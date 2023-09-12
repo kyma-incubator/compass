@@ -11,9 +11,9 @@ import (
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error)
-	RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) (resources.Resource, error)
+	RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (resources.Resource, error)
 	CreateResource(ctx context.Context, region, subaccountID string, resourceReqBody resources.ResourceRequestBody, resource resources.Resource) (string, error)
-	DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) error
+	DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource) error
 	DeleteMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) error
 }
 
