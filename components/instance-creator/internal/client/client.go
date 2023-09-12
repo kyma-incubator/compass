@@ -56,7 +56,7 @@ func NewClient(cfg config.Config, callerProvider ExternalSvcCallerProvider) *cli
 // Example call, delete after initial usage of the client:
 // RetrieveResource(ctx, region, sa, &types.ServiceOfferings{}, &types.ServiceOfferingMatchParameters{CatalogName: catalogName})
 func (c *client) RetrieveResource(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) (string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourceMatchParams.GetURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
@@ -73,7 +73,7 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 		return "", errors.Errorf("failed to unmarshal %s: %v", resources.GetType(), err)
 	}
 
-	resourceID, err := resources.Match(resourceMatchParams)
+	resourceID, err := resourceMatchParams.Match(resources)
 	if err != nil {
 		return "", err
 	}
@@ -87,8 +87,8 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 // Example call, delete after initial usage of the client:
 //
 // RetrieveResourceByID(ctx , region, subaccountID, &types.ServiceKey{ID: serviceKeyID}, &types.ServiceKeyMatchParameters{})
-func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) (resources.Resource, error) {
-	resourcePath := resourceMatchParams.GetURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
+func (c *client) RetrieveResourceByID(ctx context.Context, region, subaccountID string, resource resources.Resource) (resources.Resource, error) {
+	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
@@ -181,8 +181,8 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 // Example call, delete after initial usage of the client:
 //
 // DeleteResource(ctx, region, subaccountID, &types.ServiceInstance{ID: id}, &types.ServiceInstanceMatchParameters{})
-func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) error {
-	resourcePath := resourceMatchParams.GetURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
+func (c *client) DeleteResource(ctx context.Context, region, subaccountID string, resource resources.Resource) error {
+	resourcePath := resource.GetResourceURLPath() + fmt.Sprintf("/%s", resource.GetResourceID())
 	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourcePath, SubaccountKey, subaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while building %s URL", resource.GetResourceType())
@@ -239,11 +239,11 @@ func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccount
 	}
 
 	for _, resourceID := range resourceIDs {
-		resource, resourceParams, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)
+		resource, err := c.prepareResourceForDeletion(resources.GetType(), resourceID)
 		if err != nil {
 			return err
 		}
-		err = c.DeleteResource(ctx, region, subaccountID, resource, resourceParams)
+		err = c.DeleteResource(ctx, region, subaccountID, resource)
 		if err != nil {
 			return err
 		}
@@ -251,18 +251,18 @@ func (c *client) DeleteMultipleResources(ctx context.Context, region, subaccount
 	return nil
 }
 
-func (c *client) prepareResourceForDeletion(resourceType, resourceID string) (resources.Resource, resources.ResourceMatchParameters, error) {
+func (c *client) prepareResourceForDeletion(resourceType, resourceID string) (resources.Resource, error) {
 	switch resourceType {
 	case types.ServiceOfferingsType:
-		return &types.ServiceOffering{ID: resourceID}, &types.ServiceOfferingMatchParameters{}, nil
+		return &types.ServiceOffering{ID: resourceID}, nil
 	case types.ServicePlansType:
-		return &types.ServicePlan{ID: resourceID}, &types.ServicePlanMatchParameters{}, nil
+		return &types.ServicePlan{ID: resourceID}, nil
 	case types.ServiceInstancesType:
-		return &types.ServiceInstance{ID: resourceID}, &types.ServiceInstanceMatchParameters{}, nil
+		return &types.ServiceInstance{ID: resourceID}, nil
 	case types.ServiceBindingsType:
-		return &types.ServiceKey{ID: resourceID}, &types.ServiceKeyMatchParameters{}, nil
+		return &types.ServiceKey{ID: resourceID}, nil
 	default:
-		return nil, nil, errors.New("unknown resource type")
+		return nil, errors.New("unknown resource type")
 	}
 }
 
@@ -385,7 +385,7 @@ func (c *client) executeAsyncRequest(ctx context.Context, resp *http.Response, c
 }
 
 func (c *client) retrieveMultipleResources(ctx context.Context, region, subaccountID string, resources resources.Resources, resourceMatchParams resources.ResourceMatchParameters) ([]string, error) {
-	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resourceMatchParams.GetURLPath(), SubaccountKey, subaccountID)
+	strURL, err := buildURL(c.cfg.InstanceSMURLPath, resources.GetURLPath(), SubaccountKey, subaccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building %s URL", resources.GetType())
 	}
@@ -401,7 +401,7 @@ func (c *client) retrieveMultipleResources(ctx context.Context, region, subaccou
 		return nil, errors.Errorf("failed to unmarshal %s: %v", resources.GetType(), err)
 	}
 
-	resourceIDs, err := resources.MatchMultiple(resourceMatchParams)
+	resourceIDs, err := resourceMatchParams.MatchMultiple(resources)
 	if err != nil {
 		return nil, err
 	}

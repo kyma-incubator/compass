@@ -44,32 +44,14 @@ type ServicePlans struct {
 	Items    []*ServicePlan `json:"items"`
 }
 
-// Match matches a ServicePlan based on some criteria
-func (sp *ServicePlans) Match(params resources.ResourceMatchParameters) (string, error) {
-	servicePlanParams, ok := params.(*ServicePlanMatchParameters)
-	if !ok {
-		return "", errors.New("while type asserting ResourceMatchParameters to ServicePlanMatchParameters")
-	}
-
-	planName := servicePlanParams.PlanName
-	offeringID := servicePlanParams.OfferingID
-
-	for _, item := range sp.Items {
-		if item.CatalogName == planName && item.ServiceOfferingId == offeringID {
-			return item.ID, nil
-		}
-	}
-	return "", errors.Errorf("couldn't find service plan for catalog name: %s and offering ID: %s", planName, offeringID)
-}
-
-// MatchMultiple matches several ServicePlans based on some criteria
-func (sp *ServicePlans) MatchMultiple(params resources.ResourceMatchParameters) ([]string, error) {
-	return nil, nil // implement me when needed
-}
-
 // GetType gets the type of the ServicePlans
 func (sp *ServicePlans) GetType() string {
 	return ServicePlansType
+}
+
+// GetURLPath gets the URL Path of the ServicePlan
+func (sp *ServicePlans) GetURLPath() string {
+	return paths.ServicePlansPath
 }
 
 // ServicePlanMatchParameters holds all the necessary fields that are used when matching ServicePlans
@@ -78,7 +60,22 @@ type ServicePlanMatchParameters struct {
 	OfferingID string
 }
 
-// GetURLPath gets the URL Path of the ServicePlan
-func (spa *ServicePlanMatchParameters) GetURLPath() string {
-	return paths.ServicePlansPath
+// Match matches a ServicePlan based on some criteria
+func (spp *ServicePlanMatchParameters) Match(resources resources.Resources) (string, error) {
+	servicePlans, ok := resources.(*ServicePlans)
+	if !ok {
+		return "", errors.New("while type asserting Resources to ServicePlans")
+	}
+
+	for _, sp := range servicePlans.Items {
+		if sp.CatalogName == spp.PlanName && sp.ServiceOfferingId == spp.OfferingID {
+			return sp.ID, nil
+		}
+	}
+	return "", errors.Errorf("couldn't find service plan for catalog name: %s and offering ID: %s", spp.PlanName, spp.OfferingID)
+}
+
+// MatchMultiple matches several ServicePlans based on some criteria
+func (spp *ServicePlanMatchParameters) MatchMultiple(resources resources.Resources) ([]string, error) {
+	return nil, nil // implement me when needed
 }

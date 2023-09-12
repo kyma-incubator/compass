@@ -3,10 +3,10 @@ package types
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
-	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources"
 )
 
 const (
@@ -57,30 +57,14 @@ type ServiceInstances struct {
 	Items    []*ServiceInstance `json:"items"`
 }
 
-// Match matches a ServiceInstance based on some criteria
-func (si *ServiceInstances) Match(params resources.ResourceMatchParameters) (string, error) {
-	serviceInstanceParams, ok := params.(*ServiceInstanceMatchParameters)
-	if !ok {
-		return "", errors.New("while type asserting ResourceMatchParameters to ServiceInstanceMatchParameters")
-	}
-
-	serviceInstanceName := serviceInstanceParams.ServiceInstanceName
-	for _, item := range si.Items {
-		if item.Name == serviceInstanceName {
-			return item.ID, nil
-		}
-	}
-	return "", nil // for ServiceInstances we don't want to fail if nothing is found
-}
-
-// MatchMultiple matches several ServiceInstances based on some criteria
-func (si *ServiceInstances) MatchMultiple(args resources.ResourceMatchParameters) []string {
-	return nil // implement me when needed
-}
-
 // GetType gets the type of the ServiceInstances
 func (si *ServiceInstances) GetType() string {
 	return ServiceInstancesType
+}
+
+// GetURLPath gets the URL Path of the ServiceInstance
+func (si *ServiceInstances) GetURLPath() string {
+	return paths.ServiceInstancesPath
 }
 
 // ServiceInstanceMatchParameters holds all the necessary fields that are used when matching ServiceInstances
@@ -88,7 +72,22 @@ type ServiceInstanceMatchParameters struct {
 	ServiceInstanceName string
 }
 
-// GetURLPath gets the URL Path of the ServiceInstance
-func (sia *ServiceInstanceMatchParameters) GetURLPath() string {
-	return paths.ServiceInstancesPath
+// Match matches a ServiceInstance based on some criteria
+func (sip *ServiceInstanceMatchParameters) Match(resources resources.Resources) (string, error) {
+	serviceInstances, ok := resources.(*ServiceInstances)
+	if !ok {
+		return "", errors.New("while type asserting Resources to ServiceInstances")
+	}
+
+	for _, si := range serviceInstances.Items {
+		if si.Name == sip.ServiceInstanceName {
+			return si.ID, nil
+		}
+	}
+	return "", nil // for ServiceInstances we don't want to fail if nothing is found
+}
+
+// MatchMultiple matches several ServiceInstances based on some criteria
+func (sip *ServiceInstanceMatchParameters) MatchMultiple(resources resources.Resources) ([]string, error) {
+	return nil, nil // implement me when needed
 }
