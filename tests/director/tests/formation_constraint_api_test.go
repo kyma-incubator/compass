@@ -147,8 +147,12 @@ func TestUpdateFormationConstraint(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
+	priority := 7
+	description := "description"
 	updateInput := graphql.FormationConstraintUpdateInput{
 		InputTemplate: "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"key\\\": \\\"value\\\"}",
+		Description:   &description,
+		Priority:      &priority,
 	}
 
 	formationConstraintGQL, err := testctx.Tc.Graphqlizer.FormationConstraintUpdateInputToGQL(updateInput)
@@ -163,6 +167,7 @@ func TestUpdateFormationConstraint(t *testing.T) {
 	expectedConstraint := &graphql.FormationConstraint{
 		ID:              constraint.ID,
 		Name:            "test_constraint",
+		Description:     description,
 		ConstraintType:  string(graphql.ConstraintTypePre),
 		TargetOperation: string(graphql.TargetOperationAssignFormation),
 		Operator:        graphql.IsNotAssignedToAnyFormationOfType,
@@ -170,6 +175,7 @@ func TestUpdateFormationConstraint(t *testing.T) {
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\",\"key\": \"value\"}",
 		ConstraintScope: string(graphql.ConstraintScopeFormationType),
+		Priority:        priority,
 	}
 
 	assertConstraint(t, expectedConstraint, actualFormationConstraint)

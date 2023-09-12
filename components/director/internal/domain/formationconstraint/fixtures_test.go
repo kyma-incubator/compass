@@ -26,8 +26,10 @@ const (
 
 var (
 	description              = "description"
+	updatedDescription       = "updatedDescription"
 	createdAt                = time.Now()
 	priority                 = 2
+	updatedPriority          = 7
 	formationConstraintModel = &model.FormationConstraint{
 		ID:              testID,
 		Name:            formationConstraintName,
@@ -42,10 +44,36 @@ var (
 		Priority:        priority,
 		CreatedAt:       &createdAt,
 	}
-	formationConstraintModelUpdated = &model.FormationConstraint{
+	formationConstraintModelUpdatedAllFields = &model.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		Description:     updatedDescription,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+		Priority:        updatedPriority,
+	}
+	formationConstraintModelUpdatedTemplateAndPriority = &model.FormationConstraint{
 		ID:              testID,
 		Name:            formationConstraintName,
 		Description:     description,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+		Priority:        updatedPriority,
+	}
+	formationConstraintModelUpdatedTemplateAndDescription = &model.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		Description:     updatedDescription,
 		ConstraintType:  model.PreOperation,
 		TargetOperation: model.AssignFormationOperation,
 		Operator:        operatorName,
@@ -73,6 +101,34 @@ var (
 		ID:              testID,
 		Name:            formationConstraintName,
 		Description:     description,
+		ConstraintType:  string(model.PreOperation),
+		TargetOperation: string(model.AssignFormationOperation),
+		Operator:        operatorName,
+		ResourceType:    string(model.ApplicationResourceType),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: string(model.FormationTypeFormationConstraintScope),
+		Priority:        priority,
+		CreatedAt:       graphql.Timestamp(createdAt),
+	}
+	gqlFormationConstraintUpdatedTemplateAndPriority = &graphql.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		Description:     description,
+		ConstraintType:  string(model.PreOperation),
+		TargetOperation: string(model.AssignFormationOperation),
+		Operator:        operatorName,
+		ResourceType:    string(model.ApplicationResourceType),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: string(model.FormationTypeFormationConstraintScope),
+		Priority:        updatedPriority,
+		CreatedAt:       graphql.Timestamp(createdAt),
+	}
+	gqlFormationConstraintUpdatedTemplateAndDescription = &graphql.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		Description:     updatedDescription,
 		ConstraintType:  string(model.PreOperation),
 		TargetOperation: string(model.AssignFormationOperation),
 		Operator:        operatorName,
@@ -123,9 +179,33 @@ var (
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 		Priority:        &priority,
 	}
-	formationConstraintInputUpdated = graphql.FormationConstraintInput{
+	formationConstraintInputUpdatedAllFields = graphql.FormationConstraintInput{
+		Name:            formationConstraintName,
+		Description:     &updatedDescription,
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+		Priority:        &updatedPriority,
+	}
+	formationConstraintInputUpdatedTemplateAndPriority = graphql.FormationConstraintInput{
 		Name:            formationConstraintName,
 		Description:     &description,
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+		Priority:        &updatedPriority,
+	}
+	formationConstraintInputUpdatedTemplateAndDescription = graphql.FormationConstraintInput{
+		Name:            formationConstraintName,
+		Description:     &updatedDescription,
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
 		Operator:        operatorName,
@@ -147,10 +227,54 @@ var (
 		ConstraintScope: model.FormationTypeFormationConstraintScope,
 		Priority:        priority,
 	}
+	formationConstraintModelInputUpdatedAllFields = &model.FormationConstraintInput{
+		Name:            formationConstraintName,
+		Description:     updatedDescription,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+		Priority:        updatedPriority,
+	}
+	formationConstraintModelInputUpdatedTemplateAndPriority = &model.FormationConstraintInput{
+		Name:            formationConstraintName,
+		Description:     description,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+		Priority:        updatedPriority,
+	}
+	formationConstraintModelInputUpdatedTemplateAndDescription = &model.FormationConstraintInput{
+		Name:            formationConstraintName,
+		Description:     updatedDescription,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+		Priority:        priority,
+	}
 	formationConstraintUpdateInput = graphql.FormationConstraintUpdateInput{
 		InputTemplate: inputTemplateUpdated,
-		Priority:      &priority,
-		Description:   str.Ptr(description),
+		Priority:      &updatedPriority,
+		Description:   str.Ptr(updatedDescription),
+	}
+	formationConstraintUpdateInputWithTemplateAndDescription = graphql.FormationConstraintUpdateInput{
+		InputTemplate: inputTemplateUpdated,
+		Priority:      &updatedPriority,
+	}
+	formationConstraintUpdateInputWithTemplateAndPriority = graphql.FormationConstraintUpdateInput{
+		InputTemplate: inputTemplateUpdated,
+		Description:   str.Ptr(updatedDescription),
 	}
 	entity = formationconstraint.Entity{
 		ID:              testID,
