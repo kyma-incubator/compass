@@ -564,6 +564,31 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// AsyncFail handles asynchronous formation assignment notification requests for both Assign and Unassign operations by failing and setting error states.
+func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	operation := Assign
+	if r.Method == http.MethodPatch {
+		operation = Assign
+	} else if r.Method == http.MethodDelete {
+		operation = Unassign
+	}
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		state := CreateErrorAssignmentState
+		if operation == Unassign {
+			state = DeleteErrorAssignmentState
+		}
+
+		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}
+	config := "test error"
+	h.asyncFAResponse(ctx, writer, r, operation, config, responseFunc)
+}
+
 // executeFormationAssignmentStatusUpdateRequest prepares a request with the given inputs and sends it to the formation assignment status API
 func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPClient *http.Client, correlationID string, state FormationAssignmentState, testConfig, formationID, formationAssignmentID string) error {
 	ctx, cancel := context.WithCancel(context.TODO())
