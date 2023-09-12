@@ -630,7 +630,7 @@ func TestResolver_UpdateFormationConstraint(t *testing.T) {
 		},
 		{
 			Name:  "Success when only input template and description are updated",
-			Input: formationConstraintUpdateInputWithTemplateAndPriority,
+			Input: formationConstraintUpdateInputWithTemplateAndDescription,
 			TxFn:  txGen.ThatSucceeds,
 			FormationConstraintService: func() *automock.FormationConstraintService {
 				svc := &automock.FormationConstraintService{}
@@ -651,8 +651,8 @@ func TestResolver_UpdateFormationConstraint(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name:  "Success when all updatable fields are provided",
-			Input: formationConstraintUpdateInputWithTemplateAndDescription,
+			Name:  "Success when only input template and priority are updated",
+			Input: formationConstraintUpdateInputWithTemplateAndPriority,
 			TxFn:  txGen.ThatSucceeds,
 			FormationConstraintService: func() *automock.FormationConstraintService {
 				svc := &automock.FormationConstraintService{}

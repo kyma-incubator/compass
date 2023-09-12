@@ -268,11 +268,11 @@ var (
 		Priority:      &updatedPriority,
 		Description:   str.Ptr(updatedDescription),
 	}
-	formationConstraintUpdateInputWithTemplateAndDescription = graphql.FormationConstraintUpdateInput{
+	formationConstraintUpdateInputWithTemplateAndPriority = graphql.FormationConstraintUpdateInput{
 		InputTemplate: inputTemplateUpdated,
 		Priority:      &updatedPriority,
 	}
-	formationConstraintUpdateInputWithTemplateAndPriority = graphql.FormationConstraintUpdateInput{
+	formationConstraintUpdateInputWithTemplateAndDescription = graphql.FormationConstraintUpdateInput{
 		InputTemplate: inputTemplateUpdated,
 		Description:   str.Ptr(updatedDescription),
 	}
