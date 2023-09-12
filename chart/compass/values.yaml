@@ -143,7 +143,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3296"
+      version: "PR-3294"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -174,8 +174,8 @@ global:
       version: "v20230825-ec91cb4d"
       name: compass-ord-service
     schema_migrator:
-      dir: prod/incubator/
-      version: "v20230907-a783eb0a"
+      dir: dev/incubator/
+      version: "PR-3294"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
@@ -195,8 +195,8 @@ global:
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20230907-a783eb0a"
+      dir: dev/incubator/
+      version: "PR-3294"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

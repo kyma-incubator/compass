@@ -708,6 +708,7 @@ input FetchRequestInput {
 
 input FormationConstraintInput {
 	name: String!
+	description: String
 	constraintType: ConstraintType!
 	targetOperation: TargetOperation!
 	operator: String!
@@ -715,10 +716,13 @@ input FormationConstraintInput {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
+	priority: Int
 }
 
 input FormationConstraintUpdateInput {
 	inputTemplate: String!
+	priority: Int
+	description: String
 }
 
 input FormationInput {
@@ -1265,6 +1269,7 @@ type FormationAssignmentPage implements Pageable {
 type FormationConstraint {
 	id: ID!
 	name: String!
+	description: String!
 	constraintType: String!
 	targetOperation: String!
 	operator: String!
@@ -1272,6 +1277,8 @@ type FormationConstraint {
 	resourceSubtype: String!
 	inputTemplate: String!
 	constraintScope: String!
+	priority: Int!
+	createdAt: Timestamp!
 }
 
 type FormationError {
