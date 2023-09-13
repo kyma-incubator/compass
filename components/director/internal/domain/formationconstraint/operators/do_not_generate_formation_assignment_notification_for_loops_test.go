@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *testing.T) {
+func TestConstraintOperators_DoNotGenerateFormationAssignmentNotificationForLoops(t *testing.T) {
 	testCases := []struct {
 		Name                  string
 		Input                 operators.OperatorInput
@@ -22,11 +22,16 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		ExpectedErrorMsg      string
 	}{
 		{
+			Name:           "Success for a system when notifications should NOT be skipped when notification is not about a loop",
+			Input:          in,
+			ExpectedResult: true,
+		},
+		{
 			Name:  "Success for a system when notifications should be skipped",
-			Input: in,
+			Input: inLoop,
 			LabelSvc: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
+				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
 				return svc
 			},
 			ExpectedResult: false,
@@ -38,15 +43,14 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 				ResourceSubtype:    inputAppType,
 				ResourceID:         inputAppID,
 				SourceResourceType: model.ApplicationResourceType,
-				SourceResourceID:   appID,
+				SourceResourceID:   inputAppID,
 				Tenant:             testTenantID,
 			},
-			LabelSvc:       unusedLabelService,
 			ExpectedResult: false,
 		},
 		{
 			Name:  "Success for a formation type that is excepted and notifications should NOT be skipped",
-			Input: inWithFormationTypeException,
+			Input: inWithFormationTypeExceptionLoop,
 			LabelSvc: func() *automock.LabelService {
 				return &automock.LabelService{}
 			},
@@ -59,7 +63,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		},
 		{
 			Name:     "Error when get formation type fails",
-			Input:    inWithFormationTypeException,
+			Input:    inWithFormationTypeExceptionLoop,
 			LabelSvc: unusedLabelService,
 			FormationTemplateRepo: func() *automock.FormationTemplateRepo {
 				repo := &automock.FormationTemplateRepo{}
@@ -71,85 +75,21 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 		},
 		{
 			Name:  "Success for a system that is excepted and notifications should NOT be skipped",
-			Input: in,
+			Input: inLoop,
 			LabelSvc: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(&model.Label{Value: exceptType}, nil).Once()
+				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(&model.Label{Value: exceptType}, nil).Once()
 				return svc
 			},
 			ExpectedResult: true,
 		},
 		{
 			Name:  "Error for a system if get label fail",
-			Input: in,
+			Input: inLoop,
 			LabelSvc: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(nil, testErr).Once()
+				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(nil, testErr).Once()
 				return svc
-			},
-			ExpectedResult:   false,
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:  "Success for runtime when notifications should be skipped",
-			Input: runtimeIn,
-			LabelSvc: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
-				return svc
-			},
-			ExpectedResult: false,
-		},
-		{
-			Name:  "Error for runtime if get label fail",
-			Input: runtimeIn,
-			LabelSvc: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(nil, testErr).Once()
-				return svc
-			},
-			ExpectedResult:   false,
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:  "Success for runtime context when notifications should be skipped",
-			Input: runtimeContextIn,
-			LabelSvc: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
-				return svc
-			},
-			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
-				repo := &automock.RuntimeContextRepo{}
-				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(&model.RuntimeContext{RuntimeID: runtimeID}, nil).Once()
-				return repo
-			},
-			ExpectedResult: false,
-		},
-		{
-			Name:     "Error for runtime context when get rt ctx fails",
-			Input:    runtimeContextIn,
-			LabelSvc: unusedLabelService,
-			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
-				repo := &automock.RuntimeContextRepo{}
-				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(nil, testErr).Once()
-				return repo
-			},
-			ExpectedResult:   false,
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:  "Error for runtime context if runtime get label fail",
-			Input: runtimeContextIn,
-			LabelSvc: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.RuntimeLabelableObject, runtimeID, runtimeTypeLabel).Return(nil, testErr).Once()
-				return svc
-			},
-			RuntimeContextRepo: func() *automock.RuntimeContextRepo {
-				repo := &automock.RuntimeContextRepo{}
-				repo.On("GetByID", ctx, testTenantID, runtimeCtxID).Return(&model.RuntimeContext{RuntimeID: runtimeID}, nil).Once()
-				return repo
 			},
 			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
@@ -177,7 +117,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 			}
 			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, labelSvc, nil, runtimeContextRepo, formationTemplateRepo, nil, runtimeType, applicationType)
 
-			result, err := engine.DoNotGenerateFormationAssignmentNotification(ctx, testCase.Input)
+			result, err := engine.DoNotGenerateFormationAssignmentNotificationForLoops(ctx, testCase.Input)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

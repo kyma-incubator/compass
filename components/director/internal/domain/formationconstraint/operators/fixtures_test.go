@@ -202,6 +202,16 @@ var (
 		ExceptSubtypes:     []string{exceptType},
 	}
 
+	inLoop = &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
+		ResourceType:       model.ApplicationResourceType,
+		ResourceSubtype:    inputAppType,
+		ResourceID:         inputAppID,
+		SourceResourceType: model.ApplicationResourceType,
+		SourceResourceID:   inputAppID,
+		Tenant:             testTenantID,
+		ExceptSubtypes:     []string{exceptType},
+	}
+
 	inWithFormationTypeException = &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
 		ResourceType:         model.ApplicationResourceType,
 		FormationTemplateID:  formationTemplateID,
@@ -209,6 +219,18 @@ var (
 		ResourceID:           inputAppID,
 		SourceResourceType:   model.ApplicationResourceType,
 		SourceResourceID:     appID,
+		Tenant:               testTenantID,
+		ExceptSubtypes:       []string{exceptType},
+		ExceptFormationTypes: []string{formationType},
+	}
+
+	inWithFormationTypeExceptionLoop = &formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{
+		ResourceType:         model.ApplicationResourceType,
+		FormationTemplateID:  formationTemplateID,
+		ResourceSubtype:      inputAppType,
+		ResourceID:           inputAppID,
+		SourceResourceType:   model.ApplicationResourceType,
+		SourceResourceID:     inputAppID,
 		Tenant:               testTenantID,
 		ExceptSubtypes:       []string{exceptType},
 		ExceptFormationTypes: []string{formationType},
