@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // FormationConstraintType represents the constraint type. It is part of the Join point location along with TargetOperation
 type FormationConstraintType string
 
@@ -61,6 +63,7 @@ const (
 // FormationConstraintInput represents the input for creating FormationConstraint
 type FormationConstraintInput struct {
 	Name            string
+	Description     string
 	ConstraintType  FormationConstraintType
 	TargetOperation TargetOperation
 	Operator        string
@@ -68,12 +71,14 @@ type FormationConstraintInput struct {
 	ResourceSubtype string
 	InputTemplate   string
 	ConstraintScope FormationConstraintScope
+	Priority        int
 }
 
 // FormationConstraint represents the constraint entity
 type FormationConstraint struct {
 	ID              string
 	Name            string
+	Description     string
 	ConstraintType  FormationConstraintType
 	TargetOperation TargetOperation
 	Operator        string
@@ -81,4 +86,6 @@ type FormationConstraint struct {
 	ResourceSubtype string
 	InputTemplate   string
 	ConstraintScope FormationConstraintScope
+	Priority        int
+	CreatedAt       *time.Time
 }

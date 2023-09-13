@@ -534,19 +534,23 @@ type FormationAssignmentPage struct {
 func (FormationAssignmentPage) IsPageable() {}
 
 type FormationConstraint struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	ConstraintType  string `json:"constraintType"`
-	TargetOperation string `json:"targetOperation"`
-	Operator        string `json:"operator"`
-	ResourceType    string `json:"resourceType"`
-	ResourceSubtype string `json:"resourceSubtype"`
-	InputTemplate   string `json:"inputTemplate"`
-	ConstraintScope string `json:"constraintScope"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Description     string    `json:"description"`
+	ConstraintType  string    `json:"constraintType"`
+	TargetOperation string    `json:"targetOperation"`
+	Operator        string    `json:"operator"`
+	ResourceType    string    `json:"resourceType"`
+	ResourceSubtype string    `json:"resourceSubtype"`
+	InputTemplate   string    `json:"inputTemplate"`
+	ConstraintScope string    `json:"constraintScope"`
+	Priority        int       `json:"priority"`
+	CreatedAt       Timestamp `json:"createdAt"`
 }
 
 type FormationConstraintInput struct {
 	Name            string          `json:"name"`
+	Description     *string         `json:"description"`
 	ConstraintType  ConstraintType  `json:"constraintType"`
 	TargetOperation TargetOperation `json:"targetOperation"`
 	Operator        string          `json:"operator"`
@@ -554,10 +558,13 @@ type FormationConstraintInput struct {
 	ResourceSubtype string          `json:"resourceSubtype"`
 	InputTemplate   string          `json:"inputTemplate"`
 	ConstraintScope ConstraintScope `json:"constraintScope"`
+	Priority        *int            `json:"priority"`
 }
 
 type FormationConstraintUpdateInput struct {
-	InputTemplate string `json:"inputTemplate"`
+	InputTemplate string  `json:"inputTemplate"`
+	Priority      *int    `json:"priority"`
+	Description   *string `json:"description"`
 }
 
 type FormationError struct {

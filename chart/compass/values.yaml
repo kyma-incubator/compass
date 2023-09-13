@@ -130,44 +130,44 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
       version: "PR-3300"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3298"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3297"
       name: compass-instance-creator
     gateway:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-gateway
     operations_controller:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-operations-controller
     ord_service:
       dir: prod/incubator/
@@ -175,11 +175,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3287"
+      version: "PR-3294"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -187,8 +187,8 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3287"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
