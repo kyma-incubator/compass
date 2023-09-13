@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -232,7 +233,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -297,7 +300,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 
 		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -483,7 +486,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -565,7 +570,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 
 		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -747,7 +752,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -816,7 +823,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 
 		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{

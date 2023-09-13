@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -229,7 +230,9 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 				},
 			}
 
-			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			deps, err := json.Marshal([]string{selfRegLabelValue})
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
 			defer func() {
@@ -335,7 +338,9 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 				},
 			}
 
-			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			deps, err := json.Marshal([]string{selfRegLabelValue})
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
 			defer func() {

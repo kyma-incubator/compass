@@ -97,6 +97,8 @@ global:
     systemsAPIFilterCriteria: "no"
   tests:
     subscription:
+      destinationOauthSecret:
+        manage: true
       oauthSecret:
         manage: true
     basicCredentials:
