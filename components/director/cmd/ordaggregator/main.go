@@ -327,6 +327,9 @@ func main() {
 	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
 		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor, executorIndex int) {
 			for {
+				if len(onDemandChannel) != 0 {
+					<-onDemandChannel
+				}
 				processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
 				if err != nil {
 					log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
