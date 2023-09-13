@@ -24,9 +24,10 @@ require (
 require (
 	github.com/avast/retry-go/v4 v4.3.3
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20230905130352-fff88773e851
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230905130352-fff88773e851
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230913091847-bf6123892c6a
 	github.com/prometheus/client_golang v1.14.0
 	golang.org/x/oauth2 v0.7.0
+	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
 require (
@@ -102,7 +103,6 @@ require (
 	k8s.io/client-go v0.26.3 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	sigs.k8s.io/controller-runtime v0.14.5 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
