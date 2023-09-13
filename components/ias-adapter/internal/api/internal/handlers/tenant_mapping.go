@@ -58,6 +58,13 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	}
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
+		operation := tenantMapping.AssignedTenants[0].Operation
+
+		if operation == types.OperationAssign && errors.Is(err, errors.IASApplicationNotFound) {
+			internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
+			return
+		}
+
 		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)
 		return
 	}
