@@ -13,6 +13,15 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// OperationsManager missing godoc
+//
+//go:generate mockery --name=OperationsManager --output=automock --outpkg=automock --case=underscore --disable-version-string
+type OperationsManager interface {
+	FindOperationByData(ctx context.Context, data interface{}) (*model.Operation, error)
+	CreateOperation(ctx context.Context, in *model.OperationInput) (string, error)
+	RescheduleOperation(ctx context.Context, operationID string) error
+}
+
 // AggregationResources holds ids of resources for ord data aggregation
 type AggregationResources struct {
 	ApplicationID         string `json:"applicationID"`
@@ -20,19 +29,17 @@ type AggregationResources struct {
 }
 
 type handler struct {
-	opMgr           *operationsmanager.OperationsManager
+	opMgr           OperationsManager
 	webhookSvc      WebhookService
-	cfg             MetricsConfig
 	transact        persistence.Transactioner
 	onDemandChannel chan string
 }
 
 // NewORDAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewORDAggregatorHTTPHandler(opMgr *operationsmanager.OperationsManager, webhookSvc WebhookService, cfg MetricsConfig, transact persistence.Transactioner, onDemandChannel chan string) *handler {
+func NewORDAggregatorHTTPHandler(opMgr OperationsManager, webhookSvc WebhookService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
 	return &handler{
 		opMgr:           opMgr,
 		webhookSvc:      webhookSvc,
-		cfg:             cfg,
 		transact:        transact,
 		onDemandChannel: onDemandChannel,
 	}
@@ -55,8 +62,6 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		http.Error(writer, "Invalid payload, neither Application ID and Application Template ID are provided.", http.StatusBadRequest)
 		return
 	}
-
-	var operationID string
 
 	operation, err := h.opMgr.FindOperationByData(ctx, NewOrdOperationData(payload.ApplicationID, payload.ApplicationTemplateID))
 	if err != nil {
@@ -133,28 +138,25 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			CreatedAt: &now,
 		}
 
-		operationID, err = h.opMgr.CreateOperation(ctx, newOperationInput)
+		_, err = h.opMgr.CreateOperation(ctx, newOperationInput)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Creating Operation for ORD data aggregation failed")
 			http.Error(writer, "Creating Operation for ORD data aggregation failed", http.StatusInternalServerError)
 			return
 		}
+		// TODO Notify OperationProcessors for new operation ???
+		writer.WriteHeader(http.StatusOK)
+		return
 	}
 
-	if operation != nil {
-		operationID = operation.ID
+	if err = h.opMgr.RescheduleOperation(ctx, operation.ID); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to reschedule operation with ID %s", operation.ID)
+		http.Error(writer, "Scheduling Operation for ORD data aggregation failed", http.StatusInternalServerError)
+		return
 	}
+	// Notify OperationProcessors for new operation
+	// h.onDemandChannel <- operationID //TODO what if there are no active processors ? the handler will hang?
 
-	if len(operationID) != 0 {
-		err = h.opMgr.RescheduleOperation(ctx, operationID)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to reschedule operation with ID %s", operationID)
-			http.Error(writer, "Scheduling Operation for ORD data aggregation failed", http.StatusInternalServerError)
-			return
-		}
-		// Notify OperationProcessors for new operation
-		h.onDemandChannel <- operationID
-	}
 	writer.WriteHeader(http.StatusOK)
 }
 
