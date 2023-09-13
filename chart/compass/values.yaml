@@ -163,7 +163,7 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-" #todo::: populate
+      version: "PR-3304"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: prod/incubator/
