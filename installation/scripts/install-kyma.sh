@@ -42,5 +42,15 @@ KYMA_SOURCE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
 
 echo "Using Kyma source ${KYMA_SOURCE}"
 
+# Reuse Kyma source, otherwise the Kyma source is fetched everytime
+KYMA_WORKSPACE=${HOME}/.kyma/sources/${KYMA_SOURCE}
+if [[ -d "$KYMA_WORKSPACE" ]]
+then
+   echo "Kyma ${KYMA_SOURCE} already exists locally."
+else
+   echo "Pulling Kyma ${KYMA_SOURCE}"
+   git clone --single-branch --branch "${KYMA_SOURCE}" https://github.com/kyma-project/kyma.git "$KYMA_WORKSPACE"
+fi
+
 echo "Installing minimal Kyma"
-kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source="$KYMA_SOURCE"
+kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source=local --workspace "$KYMA_WORKSPACE"
