@@ -161,6 +161,10 @@ global:
       dir: dev/incubator/
       version: "PR-3297"
       name: compass-instance-creator
+    default_tenant_mapping_handler:
+      dir: dev/incubator/
+      version: "PR-" #todo::: populate
+      name: compass-default-tenant-mapping-handler
     gateway:
       dir: prod/incubator/
       version: "v20230907-a783eb0a"
@@ -592,6 +596,14 @@ global:
         appNameMapping: '{{ printf "\"%s\":\"app_name\"" .Values.global.instanceCreator.appNamePath }}'
         certificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.instanceCreator.certificatePath .Values.global.connector.caCertificate }}'
         certificateKeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.instanceCreator.certificateKeyPath .Values.global.connector.caKey }}'
+  defaultTenantMappingHandler:
+    port: 8080
+    apiRootPath: "/default-tenant-mapping-handler"
+    apiTenantMappingsEndpoint: "/v1/tenantMappings/{tenant-id}"
+    tenantInfo:
+      requestTimeout: 30s
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
   operations_controller:
     enabled: true
   connectivity_adapter:
