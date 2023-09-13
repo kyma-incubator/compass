@@ -13,6 +13,7 @@ import (
 const (
 	SuccessStatusCode    = http.StatusOK
 	IncompleteStatusCode = http.StatusUnprocessableEntity
+	NotFoundStatusCode   = http.StatusNotFound
 	ErrorStatusCode      = http.StatusInternalServerError
 )
 
