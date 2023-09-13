@@ -188,7 +188,7 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			// lasy loading of global ORD resources on first need
+			// lazy loading of global ORD resources on first need
 			if !globalResourcesLoaded {
 				log.C(ctx).Infof("Retrieving global ORD resources")
 				globalResourcesOrdIDs = s.retrieveGlobalResources(ctx)
@@ -226,10 +226,6 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 
 // ProcessApplicationTemplate performs resync of static ORD information for an application template
 func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID string) error {
-	if len(appTemplateID) == 0 {
-		return nil
-	}
-
 	var globalResourcesOrdIDs map[string]bool
 	globalResourcesLoaded := false
 
@@ -310,7 +306,7 @@ func (s *Service) getWebhooksForApplicationTemplate(ctx context.Context, appTemp
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListForApplicationTemplate(ctx, appTemplateID)
+	webhooks, err := s.webhookSvc.ListForApplicationTemplate(ctx, appTemplateID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application template with id %s", appTemplateID)
 		return nil, err
@@ -320,7 +316,7 @@ func (s *Service) getWebhooksForApplicationTemplate(ctx context.Context, appTemp
 		return nil, err
 	}
 
-	return ordWebhooks, nil
+	return webhooks, nil
 }
 
 func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) ([]*model.Webhook, error) {
@@ -331,7 +327,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListForApplication(ctx, appID)
+	webhooks, err := s.webhookSvc.ListForApplication(ctx, appID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application with id %s", appID)
 		return nil, err
@@ -341,7 +337,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 		return nil, err
 	}
 
-	return ordWebhooks, nil
+	return webhooks, nil
 }
 
 func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
