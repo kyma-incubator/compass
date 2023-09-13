@@ -68,6 +68,7 @@ type FormationAssignment struct {
 	Error       string                        `json:"error"`
 }
 
+// TrustDetails represents the certificate details
 type TrustDetails struct {
 	Subjects []string
 }

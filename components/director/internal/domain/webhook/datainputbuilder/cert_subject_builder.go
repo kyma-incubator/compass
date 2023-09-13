@@ -25,6 +25,7 @@ func NewWebhookCertSubjectBuilder(certSubjectRepository certSubjectRepository) *
 	}
 }
 
+// GetTrustDetailsForObjects builds trust details for objects with IDs objectIDs
 func (b *WebhookCertSubjectBuilder) GetTrustDetailsForObjects(ctx context.Context, objectIDs []string) (map[string]*webhook.TrustDetails, error) {
 	if len(objectIDs) == 0 {
 		return nil, nil
@@ -44,6 +45,7 @@ func (b *WebhookCertSubjectBuilder) GetTrustDetailsForObjects(ctx context.Contex
 	return result, nil
 }
 
+// GetTrustDetailsForObject builds trust details for objects with ID objectID
 func (b *WebhookCertSubjectBuilder) GetTrustDetailsForObject(ctx context.Context, objectID string) (*webhook.TrustDetails, error) {
 	trustDetails, err := b.GetTrustDetailsForObjects(ctx, []string{objectID})
 	if err != nil {
