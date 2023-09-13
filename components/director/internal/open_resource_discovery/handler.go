@@ -138,13 +138,16 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			CreatedAt: &now,
 		}
 
-		_, err = h.opMgr.CreateOperation(ctx, newOperationInput)
+		opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Creating Operation for ORD data aggregation failed")
 			http.Error(writer, "Creating Operation for ORD data aggregation failed", http.StatusInternalServerError)
 			return
 		}
-		// TODO Notify OperationProcessors for new operation ???
+
+		// Notify OperationProcessors for new operation
+		h.onDemandChannel <- opID //TODO what if there are no active processors ? the handler will hang?
+
 		writer.WriteHeader(http.StatusOK)
 		return
 	}
@@ -155,7 +158,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		return
 	}
 	// Notify OperationProcessors for new operation
-	// h.onDemandChannel <- operationID //TODO what if there are no active processors ? the handler will hang?
+	h.onDemandChannel <- operation.ID //TODO what if there are no active processors ? the handler will hang?
 
 	writer.WriteHeader(http.StatusOK)
 }
