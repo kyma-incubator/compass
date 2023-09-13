@@ -45,7 +45,7 @@ spec:
       {{ end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.default_tenant_mapping_handler.dir }}compass-default_tenant_mapping_handler:{{ $.Values.global.images.default_tenant_mapping_handler.version }}
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.default_tenant_mapping_handler.dir }}compass-default-tenant-mapping-handler:{{ $.Values.global.images.default_tenant_mapping_handler.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
