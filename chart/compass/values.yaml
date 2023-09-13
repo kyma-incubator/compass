@@ -1203,7 +1203,8 @@ global:
       region: "eu-1"
       region2: "eu-2"
     destination:
-      consumerSubdomain: "compass-external-services-mock-sap-mtls"
+      consumerSubdomain: "compass-external-services-mock"
+      consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
       instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
       claims:
         subaccountIDKey: "subaccountid"

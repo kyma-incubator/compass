@@ -48,6 +48,7 @@ type DirectorConfig struct {
 	DestinationsConfig                                 directorcfg.DestinationsConfig
 	ProviderDestinationConfig                          config.ProviderDestinationConfig
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	DestinationConsumerSubdomainMtls                   string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string

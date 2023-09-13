@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -3650,15 +3651,16 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			region := conf.SubscriptionConfig.SelfRegRegion
 			instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 			require.True(t, ok)
+			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
+			require.NoError(t, err)
 
-			subdomain := conf.DestinationConsumerSubdomain
-			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+			consumerTokenURL, err := buildConsumerTokenURL(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain)
 			require.NoError(t, err)
 
 			destinationProviderToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderClaimKey)
 			destinationProviderWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderWithInstanceClaimKey)
-			destinationConsumerToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
-			destinationConsumerWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerWithInstanceClaimKey)
+			destinationConsumerToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
+			destinationConsumerWithInstanceToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerWithInstanceClaimKey)
 
 			t.Log("Assert destinations and destination certificates are created...")
 			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", destinationProviderToken)
@@ -6293,4 +6295,19 @@ func attachDestinationCreatorConstraints(t *testing.T, formationTemplate graphql
 
 	t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, formationTemplate.Name)
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
+}
+
+func buildConsumerTokenURL(providerTokenURL, consumerSubdomain string) (string, error) {
+	baseTokenURL, err := url.Parse(providerTokenURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "Failed to parse auth url '%s'", providerTokenURL)
+	}
+	parts := strings.Split(baseTokenURL.Hostname(), ".")
+	if len(parts) < 2 {
+		return "", errors.Errorf("Provider auth URL: '%s' should have a subdomain", providerTokenURL)
+	}
+	originalSubdomain := parts[0]
+
+	tokenURL := strings.Replace(providerTokenURL, originalSubdomain, consumerSubdomain, 1)
+	return tokenURL, nil
 }

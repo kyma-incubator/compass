@@ -299,7 +299,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomain
+		subdomain := conf.DestinationConsumerSubdomainMtls
 		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
@@ -569,7 +569,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomain
+		subdomain := conf.DestinationConsumerSubdomainMtls
 		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
@@ -822,7 +822,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomain
+		subdomain := conf.DestinationConsumerSubdomainMtls
 		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
