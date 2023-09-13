@@ -26,15 +26,17 @@ type ApplicationWithLabels struct {
 // ApplicationTemplateWithLabels represents an application template with its corresponding labels
 type ApplicationTemplateWithLabels struct {
 	*model.ApplicationTemplate
-	Labels map[string]string
-	Tenant *TenantWithLabels
+	Labels       map[string]string
+	Tenant       *TenantWithLabels
+	TrustDetails *TrustDetails
 }
 
 // RuntimeWithLabels represents a runtime with its corresponding labels
 type RuntimeWithLabels struct {
 	*model.Runtime
-	Labels map[string]string
-	Tenant *TenantWithLabels
+	Labels       map[string]string
+	Tenant       *TenantWithLabels
+	TrustDetails *TrustDetails
 }
 
 // RuntimeContextWithLabels represents runtime context with its corresponding labels
@@ -64,6 +66,10 @@ type FormationAssignment struct {
 	State       string                        `json:"state"`
 	Value       string                        `json:"value"`
 	Error       string                        `json:"error"`
+}
+
+type TrustDetails struct {
+	Subjects []string
 }
 
 // FormationConfigurationChangeInput struct contains the input for a formation notification

@@ -34,6 +34,9 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
 		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
+		},
 	},
 	Application: &webhook.ApplicationWithLabels{
 		Application: &model.Application{
@@ -51,6 +54,9 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 		Tenant: &webhook.TenantWithLabels{
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
+		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
 		},
 	},
 	RuntimeContext: &webhook.RuntimeContextWithLabels{
@@ -81,6 +87,9 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
 		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
+		},
 	},
 	SourceApplication: &webhook.ApplicationWithLabels{
 		Application: &model.Application{
@@ -98,6 +107,9 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		Tenant: &webhook.TenantWithLabels{
 			BusinessTenantMapping: &model.BusinessTenantMapping{},
 			Labels:                map[string]string{},
+		},
+		TrustDetails: &webhook.TrustDetails{
+			Subjects: []string{},
 		},
 	},
 	TargetApplication: &webhook.ApplicationWithLabels{

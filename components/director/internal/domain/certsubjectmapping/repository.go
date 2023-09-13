@@ -20,6 +20,8 @@ var (
 	idTableColumns        = []string{"id"}
 	updatableTableColumns = []string{"subject", "consumer_type", "internal_consumer_id", "tenant_access_levels"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
+
+	internalConsumerIDColumn = "internal_consumer_id"
 )
 
 // entityConverter converts between the internal model and entity
@@ -139,6 +141,33 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByConsumerID queries all certificate subject mappings with given consumer id
+func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
+	log.C(ctx).Debug("Listing certificate subject mappings from DB")
+	var entityCollection EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(internalConsumerIDColumn, consumerID),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.CertSubjectMapping, 0, len(entityCollection))
+
+	for _, entity := range entityCollection {
+		certSubjectMapping, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", entity.ID)
+		}
+
+		result = append(result, certSubjectMapping)
+	}
+
+	return result, nil
 }
 
 // DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/avast/retry-go/v4 v4.3.3
+	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230905130352-fff88773e851
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20230905130352-fff88773e851
@@ -32,7 +33,6 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
