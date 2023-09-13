@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/pkg/errors"
@@ -50,7 +50,7 @@ type DestinationClient struct {
 }
 
 func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	subdomain, customClaimKeyParameter string) (*DestinationClient, error) {
+	subdomain string) (*DestinationClient, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -62,15 +62,12 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 		return nil, errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
 	}
 	originalSubdomain := parts[0]
-	customParams := url.Values{}
-	customParams.Add(claims.ClaimsKey, customClaimKeyParameter)
 
 	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
 	cfg := clientcredentials.Config{
-		ClientID:       instanceConfig.ClientID,
-		TokenURL:       tokenURL,
-		AuthStyle:      oauth2.AuthStyleInParams,
-		EndpointParams: customParams,
+		ClientID:  instanceConfig.ClientID,
+		TokenURL:  tokenURL,
+		AuthStyle: oauth2.AuthStyleInParams,
 	}
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {
@@ -125,18 +122,22 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, instanceID string, expectedStatusCode int) json.RawMessage {
+func (c *DestinationClient) GetDestinationByName(t *testing.T, serviceURL, destinationName, instanceID, token string, expectedStatusCode int) json.RawMessage {
 	subpath := ""
 	if instanceID != "" {
 		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinations
 	} else {
 		subpath = c.apiConfig.EndpointTenantSubaccountLevelDestinations
 	}
-	url := c.apiURL + subpath + "/" + url.QueryEscape(destinationName)
+	url := serviceURL + subpath + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
+	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 
-	resp, err := c.httpClient.Do(request)
+	httpClient := &http.Client{}
+	httpClient.Timeout = c.apiConfig.Timeout
+
+	resp, err := httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -151,16 +152,20 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, destinationName, 
 	return body
 }
 
-func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, certificateName, instanceID string, expectedStatusCode int) json.RawMessage {
+func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, serviceURL, certificateName, instanceID, token string, expectedStatusCode int) json.RawMessage {
 	subpath := ""
 	if instanceID != "" {
 		subpath = c.apiConfig.EndpointTenantInstanceLevelDestinationCertificates
 	} else {
 		subpath = c.apiConfig.EndpointTenantSubaccountLevelDestinationCertificates
 	}
-	url := c.apiURL + subpath + "/" + url.QueryEscape(certificateName)
+	url := serviceURL + subpath + "/" + url.QueryEscape(certificateName)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
+	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+
+	httpClient := &http.Client{}
+	httpClient.Timeout = c.apiConfig.Timeout
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
