@@ -282,10 +282,7 @@ spec:
                   name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
             - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
-                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
             - name: APP_PROVIDER_DESTINATION_SERVICE_URL
               valueFrom:
                 secretKeyRef:

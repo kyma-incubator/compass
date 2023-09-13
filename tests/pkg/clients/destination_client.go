@@ -135,6 +135,11 @@ func (c *DestinationClient) GetDestinationByName(t *testing.T, serviceURL, desti
 	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 
 	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
+		},
+	}
 	httpClient.Timeout = c.apiConfig.Timeout
 
 	resp, err := httpClient.Do(request)
@@ -165,9 +170,14 @@ func (c *DestinationClient) GetDestinationCertificateByName(t *testing.T, servic
 	request.Header.Set(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 
 	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
+		},
+	}
 	httpClient.Timeout = c.apiConfig.Timeout
 
-	resp, err := c.httpClient.Do(request)
+	resp, err := httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
