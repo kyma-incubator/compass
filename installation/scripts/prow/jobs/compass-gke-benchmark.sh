@@ -178,7 +178,7 @@ function installKyma() {
   KYMA_VERSION=$(<"${COMPASS_SOURCES_DIR}/installation/resources/KYMA_VERSION")
 
   MINIMAL_KYMA="${COMPASS_SOURCES_DIR}/installation/resources/kyma/kyma-components-minimal.yaml"
-  kyma deploy --ci --source=local --workspace --source="${KYMA_VERSION}" --verbose -c "${MINIMAL_KYMA}" --values-file "$PWD/kyma_overrides.yaml"
+  kyma deploy --ci --source=local --source="${KYMA_VERSION}" --verbose -c "${MINIMAL_KYMA}" --values-file "$PWD/kyma_overrides.yaml"
 }
 
 function installOry() {
