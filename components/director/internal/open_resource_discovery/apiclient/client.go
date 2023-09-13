@@ -12,11 +12,13 @@ import (
 	"net/http"
 )
 
+// ORDClient handles the communication with ord aggregator API
 type ORDClient struct {
 	cfg    OrdAggregatorClientConfig
 	client *http.Client
 }
 
+// NewORDClient creates new ord aggregator client
 func NewORDClient(cfg OrdAggregatorClientConfig) *ORDClient {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -39,6 +41,7 @@ func (c *ORDClient) SetHTTPClient(client *http.Client) {
 	c.client = client
 }
 
+// Aggregate call ord aggregator API
 func (c *ORDClient) Aggregate(ctx context.Context, appID, appTemplateID string) error {
 	ordData := ord.AggregationResources{
 		ApplicationID:         appID,

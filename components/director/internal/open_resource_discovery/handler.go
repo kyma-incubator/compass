@@ -68,13 +68,13 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 
 		// Check if the provided application has an ORD webhook
 		if payload.ApplicationID != "" && payload.ApplicationTemplateID == "" {
-			if _, err := h.getWebhookByIDAndWebhookTypeGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery); err != nil {
+			if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference); err != nil {
 				if apperrors.IsNotFoundError(err) {
 					log.C(ctx).WithError(err).Errorf("Application with id %q does not have ORD webhook", payload.ApplicationID)
 					http.Error(writer, "The provided Application does not have ORD webhook", http.StatusBadRequest)
 					return
 				}
-				log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of applicaiton with id %q for ORD aggregation failed", payload.ApplicationID)
+				log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of application with id %q for ORD aggregation failed", payload.ApplicationID)
 				http.Error(writer, "Loading ORD webhooks of Application for ORD data aggregation failed", http.StatusInternalServerError)
 				return
 			}
@@ -82,13 +82,13 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 
 		// Check if the provided application template has an ORD webhook
 		if payload.ApplicationID == "" && payload.ApplicationTemplateID != "" {
-			if _, err := h.getWebhookByIDAndWebhookTypeGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery); err != nil {
+			if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference); err != nil {
 				if apperrors.IsNotFoundError(err) {
 					log.C(ctx).WithError(err).Errorf("ApplicationTemplate with id %q does not have ORD webhook", payload.ApplicationTemplateID)
 					http.Error(writer, "The provided ApplicationTemplate does not have ORD webhook", http.StatusBadRequest)
 					return
 				}
-				log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of applicaiton template with id %q for ORD aggregation failed", payload.ApplicationTemplateID)
+				log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of application template with id %q for ORD aggregation failed", payload.ApplicationTemplateID)
 				http.Error(writer, "Loading ORD webhooks of Application Template for ORD data aggregation failed", http.StatusInternalServerError)
 				return
 			}
@@ -96,20 +96,20 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 
 		// Check if the provided application has ORD webhook. If it does not - check if the application template has
 		if payload.ApplicationID != "" && payload.ApplicationTemplateID != "" {
-			if _, err := h.getWebhookByIDAndWebhookTypeGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery); err != nil {
+			if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference); err != nil {
 				if !apperrors.IsNotFoundError(err) {
-					log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of applicaiton with id %q for ORD aggregation failed", payload.ApplicationID)
+					log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of application with id %q for ORD aggregation failed", payload.ApplicationID)
 					http.Error(writer, "Loading ORD webhooks of Application for ORD data aggregation failed", http.StatusInternalServerError)
 					return
 				}
 
-				if _, err := h.getWebhookByIDAndWebhookTypeGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery); err != nil {
+				if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference); err != nil {
 					if apperrors.IsNotFoundError(err) {
 						log.C(ctx).WithError(err).Errorf("ApplicationTemplate with id %q does not have ORD webhook", payload.ApplicationTemplateID)
 						http.Error(writer, "The provided ApplicationTemplate does not have ORD webhook", http.StatusBadRequest)
 						return
 					}
-					log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of applicaiton template with id %q for ORD aggregation failed", payload.ApplicationTemplateID)
+					log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of application template with id %q for ORD aggregation failed", payload.ApplicationTemplateID)
 					http.Error(writer, "Loading ORD webhooks of Application Template for ORD data aggregation failed", http.StatusInternalServerError)
 					return
 				}
@@ -158,14 +158,14 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) getWebhookByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+func (h *handler) getORDWebhookByIDGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error) {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhook, err := h.webhookSvc.GetByIDAndWebhookTypeGlobal(ctx, objectID, objectType, webhookType)
+	ordWebhook, err := h.webhookSvc.GetByIDAndWebhookTypeGlobal(ctx, objectID, objectType, model.WebhookTypeOpenResourceDiscovery)
 	if err != nil {
 		return nil, err
 	}

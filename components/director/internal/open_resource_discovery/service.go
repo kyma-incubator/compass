@@ -178,7 +178,6 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 
 // ProcessAppInAppTemplateContext performs resync of ORD information provided via ORD documents for an applications in context of application template
 func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplateID, appID string) error {
-
 	var globalResourcesOrdIDs map[string]bool
 	globalResourcesLoaded := false
 

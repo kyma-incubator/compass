@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// OrdAggregatorClientConfig is the configuration needed for ord aggregator client
 type OrdAggregatorClientConfig struct {
 	ClientTimeout             time.Duration `envconfig:"default=30s"`
 	OrdAggregatorAggregateAPI string        `envconfig:"APP_ORD_AGGREGATOR_AGGREGATE_API"`
