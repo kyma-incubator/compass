@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	resmock "github.com/kyma-incubator/compass/components/instance-creator/internal/client/resources/automock"
+
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/automock"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/types"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/config"
@@ -55,7 +57,7 @@ func callerThatGetsCalledOnce(statusCode int, responseBody []byte) func(*testing
 	}
 }
 
-func callerThatGetsCalledSeveralTimesInAsyncCase(statusCodes []int, responseBodies [][]byte, shouldSkipLocationHeader bool, numberOfCallerProviderInvocations int) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
+func callerThatGetsCalledSeveralTimes(statusCodes []int, responseBodies [][]byte, shouldSkipLocationHeader bool, numberOfCallerProviderInvocations int) func(*testing.T, config.Config, string) *automock.ExternalSvcCallerProvider {
 	return func(t *testing.T, cfg config.Config, region string) *automock.ExternalSvcCallerProvider {
 		require.Equal(t, len(statusCodes), len(responseBodies))
 
@@ -162,8 +164,8 @@ func fixConfigWithInvalidURL() config.Config {
 	}
 }
 
-func fixServiceOffering(id, catalogName string) types.ServiceOffering {
-	return types.ServiceOffering{
+func fixServiceOffering(id, catalogName string) *types.ServiceOffering {
+	return &types.ServiceOffering{
 		ID:          id,
 		CatalogName: catalogName,
 	}
@@ -172,14 +174,14 @@ func fixServiceOffering(id, catalogName string) types.ServiceOffering {
 func fixServiceOfferings() types.ServiceOfferings {
 	return types.ServiceOfferings{
 		NumItems: 2,
-		Items:    []types.ServiceOffering{fixServiceOffering(offeringID, catalogName), fixServiceOffering(testID, testName)},
+		Items:    []*types.ServiceOffering{fixServiceOffering(offeringID, catalogName), fixServiceOffering(testID, testName)},
 	}
 }
 
 func fixServiceOfferingsWithNoMatchingCatalogName() types.ServiceOfferings {
 	return types.ServiceOfferings{
 		NumItems: 2,
-		Items:    []types.ServiceOffering{fixServiceOffering(offeringID, testName), fixServiceOffering(testID, testName)},
+		Items:    []*types.ServiceOffering{fixServiceOffering(offeringID, testName), fixServiceOffering(testID, testName)},
 	}
 }
 
@@ -194,7 +196,7 @@ func fixServiceKey() *types.ServiceKey {
 func fixServiceKeys() *types.ServiceKeys {
 	return &types.ServiceKeys{
 		NumItems: 1,
-		Items:    []types.ServiceKey{*fixServiceKey()},
+		Items:    []*types.ServiceKey{fixServiceKey()},
 	}
 }
 
@@ -216,4 +218,8 @@ func fixOperationStatusWithEmptyResourceID(state types.OperationState) types.Ope
 	return types.OperationStatus{
 		State: state,
 	}
+}
+
+func unusedResourceMatchParams() *resmock.ResourceMatchParameters {
+	return &resmock.ResourceMatchParameters{}
 }

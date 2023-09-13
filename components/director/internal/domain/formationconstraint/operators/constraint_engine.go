@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
@@ -168,6 +169,11 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 	if err != nil {
 		return errors.Wrapf(err, "While listing matching constraints for target operation %q, constraint type %q, resource type %q and resource subtype %q", location.OperationName, location.ConstraintType, matchingDetails.ResourceType, matchingDetails.ResourceSubtype)
 	}
+
+	sort.Slice(constraints, func(i, j int) bool {
+		return constraints[i].Priority > constraints[j].Priority ||
+			(constraints[i].Priority == constraints[j].Priority && constraints[i].CreatedAt.Before(*constraints[j].CreatedAt))
+	})
 
 	matchedConstraintsNames := make([]string, 0, len(constraints))
 	for _, c := range constraints {
