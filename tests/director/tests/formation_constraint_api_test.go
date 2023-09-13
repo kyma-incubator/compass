@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -452,6 +451,6 @@ func findConstraintByName(t *testing.T, name string, actualFormationConstraints 
 			return constraint
 		}
 	}
-	assert.Failf(t, "Could not find constraint with name %q", name)
+	require.Failf(t, "Could not find constraint with name %q", name)
 	return nil
 }
