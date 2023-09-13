@@ -55,38 +55,38 @@ spec:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
-  {{ toYaml . | indent 12 }}
-  {{- end }}
-env:
-  - name: APP_API_ROOT_PATH
-    value: {{ .Values.global.defaultTenantMappingHandler.apiRootPath }}
-  - name: API_TENANT_MAPPINGS_ENDPOINT
-    value: {{ .Values.global.defaultTenantMappingHandler.apiTenantMappingsEndpoint }}
-  - name: APP_ADDRESS
-    value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-  - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
-    value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
-  - name: APP_JWKS_ENDPOINT
-    value: {{ .Values.global.defaultTenantMappingHandler.authentication.jwksEndpoint | quote }}
-  - name: APP_TENANT_INFO_ENDPOINT
-    value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
-  - name: APP_TENANT_INFO_REQUEST_TIMEOUT
-    value: {{ .Values.global.defaultTenantMappingHandler.tenantInfo.requestTimeout }}
-  - name: APP_TENANT_INFO_INSECURE_SKIP_VERIFY
-    value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
-  - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
-    value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-livenessProbe:
-  httpGet:
-    port: {{.Values.deployment.args.containerPort }}
-    path: "/healthz"
-  initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
-  timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
-  periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
-readinessProbe:
-  httpGet:
-    port: {{.Values.deployment.args.containerPort }}
-    path: "/healthz"
-  initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
-  timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
-  periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          env:
+            - name: APP_API_ROOT_PATH
+              value: {{ .Values.global.defaultTenantMappingHandler.apiRootPath }}
+            - name: API_TENANT_MAPPINGS_ENDPOINT
+              value: {{ .Values.global.defaultTenantMappingHandler.apiTenantMappingsEndpoint }}
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_JWKS_ENDPOINT
+              value: {{ .Values.global.defaultTenantMappingHandler.authentication.jwksEndpoint | quote }}
+            - name: APP_TENANT_INFO_ENDPOINT
+              value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
+            - name: APP_TENANT_INFO_REQUEST_TIMEOUT
+              value: {{ .Values.global.defaultTenantMappingHandler.tenantInfo.requestTimeout }}
+            - name: APP_TENANT_INFO_INSECURE_SKIP_VERIFY
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+          livenessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
