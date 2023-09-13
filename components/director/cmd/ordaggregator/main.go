@@ -308,7 +308,7 @@ func main() {
 		},
 	}
 
-	onDemandChannel := make(chan string)
+	onDemandChannel := make(chan string, 100)
 
 	handler := initHandler(ctx, jwtHTTPClient, operationsManager, webhookSvc, cfg, transact, onDemandChannel)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
@@ -328,11 +328,10 @@ func main() {
 		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor, executorIndex int) {
 			for {
 				select {
-				case operationID := <-onDemandChannel:
-					log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
-				case <-time.After(cfg.OperationProcessorQuietPeriod):
-					log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
+				case <-onDemandChannel:
+				default:
 				}
+
 				processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
 				if err != nil {
 					log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
@@ -342,6 +341,13 @@ func main() {
 				} else {
 					// Queue is empty - no operation claimed
 					log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
+
+					select {
+					case operationID := <-onDemandChannel:
+						log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+					case <-time.After(cfg.OperationProcessorQuietPeriod):
+						log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
+					}
 				}
 			}
 		}(ctx, operationsManager, ordOpProcessor, i)
