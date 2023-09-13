@@ -940,13 +940,11 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			if assignment.Source == assignment.Target && len(participants) == 2 && participants[0] == participants[1] {
 				mappingObject.Request = requests[j]
 				break assignment
-			} else {
-				if assignment.Source != assignment.Target {
-					for _, id := range participants {
-						if assignment.Source == id {
-							mappingObject.Request = requests[j]
-							break assignment
-						}
+			} else if assignment.Source != assignment.Target {
+				for _, id := range participants {
+					if assignment.Source == id {
+						mappingObject.Request = requests[j]
+						break assignment
 					}
 				}
 			}
