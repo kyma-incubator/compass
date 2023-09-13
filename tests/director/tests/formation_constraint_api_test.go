@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
