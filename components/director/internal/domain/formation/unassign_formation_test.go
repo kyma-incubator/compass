@@ -607,11 +607,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			{
 				Name: "error when fails to check if formations are coming from ASAs",
-				LabelServiceFn: func() *automock.LabelService {
-					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
-					return labelService
-				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
 					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
@@ -621,11 +616,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 					repo := &automock.FormationTemplateRepository{}
 					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
-				},
-				ConstraintEngineFn: func() *automock.ConstraintEngine {
-					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
@@ -1749,6 +1739,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
 					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
@@ -1773,6 +1768,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
 					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
@@ -1786,11 +1786,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			{
 				Name: "success when formation is coming from ASA",
-				LabelServiceFn: func() *automock.LabelService {
-					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
-					return labelService
-				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
 					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
@@ -1800,11 +1795,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 					repo := &automock.FormationTemplateRepository{}
 					repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 					return repo
-				},
-				ConstraintEngineFn: func() *automock.ConstraintEngine {
-					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}

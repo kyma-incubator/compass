@@ -834,6 +834,14 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
 	}
 
+	formationFromDB := ft.formation
+
+	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+		return nil, err
+	} else if isFormationComingFromASA {
+		return formationFromDB, nil
+	}
+
 	joinPointDetails, err := s.prepareDetailsForUnassign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
@@ -841,13 +849,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
-	}
-	formationFromDB := ft.formation
-
-	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
-		return nil, err
-	} else if isFormationComingFromASA {
-		return formationFromDB, nil
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
@@ -868,8 +869,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
 	// there are no notifications sent for them, and we have created formation assignments for them.
-	// We should clean those up because on an earlier step we have removed it from the LabelDefinition,
-	// and it would result in leftover formation assignments that could cause problems on future assigns
 	// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
 	if formationFromDB.State != model.ReadyFormationState {
 		log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
@@ -878,7 +877,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 		err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while unassigning from formation")
 		}
 		return ft.formation, nil
@@ -947,7 +946,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	if len(pendingAsyncAssignments) == 0 {
-		log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
+		log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
 		err = s.unassign(scenarioTransactionCtx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while unassigning from formation")
@@ -1117,17 +1116,8 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 
 			if len(leftAssignmentsInFormation) == 0 {
 				log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
-				if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(scenarioTransactionCtx, objectID, formation.Name, objectType); err != nil {
-					return nil, err
-				} else if isFormationComingFromASA {
-					err = scenarioTx.Commit()
-					if err != nil {
-						return nil, err
-					}
-					return formation, errs.ErrorOrNil()
-				}
 				err = s.unassign(scenarioTransactionCtx, tenantID, objectID, objectType, formation)
-				if err != nil {
+				if err != nil && !apperrors.IsNotFoundError(err) {
 					return nil, errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
 				}
 			}

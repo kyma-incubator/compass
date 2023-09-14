@@ -423,6 +423,14 @@ func unusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
 
+func unusedFormationTemplateRepo() *automock.FormationTemplateRepo {
+	return &automock.FormationTemplateRepo{}
+}
+
+func unusedRuntimeContextRepo() *automock.RuntimeContextRepo {
+	return &automock.RuntimeContextRepo{}
+}
+
 func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }

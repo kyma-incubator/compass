@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/hashicorp/go-multierror"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
+	"k8s.io/utils/strings/slices"
 )
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
@@ -937,15 +937,16 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			}
 
 			participants := request.Object.GetParticipantsIDs()
-			if assignment.Source == assignment.Target && len(participants) == 2 && participants[0] == participants[1] {
-				mappingObject.Request = requests[j]
-				break assignment
-			} else if assignment.Source != assignment.Target {
-				for _, id := range participants {
-					if assignment.Source == id {
-						mappingObject.Request = requests[j]
-						break assignment
-					}
+
+			// Remove objectID from participants
+			objectIndex := slices.Index(participants, objectID)
+			if objectIndex != -1 {
+				participants = append(participants[:objectIndex], participants[objectIndex+1:]...)
+			}
+			for _, id := range participants {
+				if assignment.Source == id {
+					mappingObject.Request = requests[j]
+					break assignment
 				}
 			}
 		}

@@ -2690,7 +2690,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		TxFn                                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		LabelServiceFn                           func() *automock.LabelService
 		LabelRepoFn                              func() *automock.LabelRepository
-		AsaEngineFN                              func() *automock.AsaEngine
 		FormationRepositoryFn                    func() *automock.FormationRepository
 		FormationTemplateRepositoryFn            func() *automock.FormationTemplateRepository
 		FormationAssignmentNotificationServiceFN func() *automock.FormationAssignmentNotificationsService
@@ -2764,11 +2763,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
 			},
-			AsaEngineFN: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", txtest.CtxWithDBMatcher(), RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, nil).Once()
-				return engine
-			},
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
@@ -2786,85 +2780,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
-		},
-		{
-			Name: "success when resynchronization is successful and there no left formation assignments should unassign but is coming from ASA",
-			TxFn: txGen.ThatSucceedsTwice,
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return(nil, nil).Once()
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			AsaEngineFN: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", txtest.CtxWithDBMatcher(), RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(true, nil).Once()
-				return engine
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-		},
-		{
-			Name: "error when resynchronization is successful and there no left formation assignments should unassign coming from ASA fails during commit",
-			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(1)
-			},
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
-				}
-
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
-				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return(nil, nil).Once()
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
-				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
-				return svc
-			},
-			AsaEngineFN: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", txtest.CtxWithDBMatcher(), RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(true, nil).Once()
-				return engine
-			},
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: transactionError.Error(),
 		},
 		{
 			Name: "returns error when failing unassign formation",
@@ -2894,11 +2809,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
 				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
 				return svc
-			},
-			AsaEngineFN: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", txtest.CtxWithDBMatcher(), RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, nil).Once()
-				return engine
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3052,10 +2962,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
-			AsaEngineFN: func() *automock.AsaEngine {
-				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", txtest.CtxWithDBMatcher(), RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, testErr).Once()
-				return engine
+			LabelServiceFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, runtimeLblInput).Return(nil, testErr).Once()
+				return svc
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -3773,10 +3683,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			if testCase.FormationAssignmentServiceFn != nil {
 				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
 			}
-			asaEngine := unusedASAEngine()
-			if testCase.AsaEngineFN != nil {
-				asaEngine = testCase.AsaEngineFN()
-			}
 			formationAssignmentNotificationService := unusedFormationAssignmentNotificationService()
 			if testCase.FormationAssignmentNotificationServiceFN != nil {
 				formationAssignmentNotificationService = testCase.FormationAssignmentNotificationServiceFN()
@@ -3798,7 +3704,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				statusService = testCase.StatusServiceFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, asaEngine, statusService)
+			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, nil, statusService)
 
 			// WHEN
 			_, err := svc.ResynchronizeFormationNotifications(ctx, FormationID, testCase.ShouldReset)
@@ -3810,7 +3716,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
-			mock.AssertExpectationsForObjects(t, persist, transact, labelService, runtimeContextRepo, asaEngine, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService)
+			mock.AssertExpectationsForObjects(t, persist, transact, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService)
 		})
 	}
 	t.Run("returns error when empty tenant", func(t *testing.T) {

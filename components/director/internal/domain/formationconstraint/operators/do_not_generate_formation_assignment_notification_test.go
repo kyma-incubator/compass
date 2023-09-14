@@ -1,6 +1,7 @@
 package operators_test
 
 import (
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -163,15 +164,16 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			var labelSvc *automock.LabelService
+			labelSvc := unusedLabelService()
 			if testCase.LabelSvc != nil {
 				labelSvc = testCase.LabelSvc()
 			}
-			var runtimeContextRepo *automock.RuntimeContextRepo
+			runtimeContextRepo := unusedRuntimeContextRepo()
 			if testCase.RuntimeContextRepo != nil {
 				runtimeContextRepo = testCase.RuntimeContextRepo()
 			}
-			var formationTemplateRepo *automock.FormationTemplateRepo
+
+			formationTemplateRepo := unusedFormationTemplateRepo()
 			if testCase.FormationTemplateRepo != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
@@ -187,15 +189,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 				assert.NoError(t, err)
 			}
 
-			if labelSvc != nil {
-				labelSvc.AssertExpectations(t)
-			}
-			if runtimeContextRepo != nil {
-				runtimeContextRepo.AssertExpectations(t)
-			}
-			if formationTemplateRepo != nil {
-				formationTemplateRepo.AssertExpectations(t)
-			}
+			mock.AssertExpectationsForObjects(t, formationTemplateRepo, runtimeContextRepo, labelSvc)
 		})
 	}
 }

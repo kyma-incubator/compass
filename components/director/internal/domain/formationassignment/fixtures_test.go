@@ -3,6 +3,7 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -791,7 +792,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		webhook.RuntimeID = &objectID
 	}
 
-	templateInput.Mock.On("GetParticipantsIDs").Return(participants).Times(1)
+	templateInput.Mock.On("GetParticipantsIDs").Return(slices.Clone(participants)).Times(1)
 	templateInput.Mock.On("SetAssignment", assignment).Times(2)
 	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
 
