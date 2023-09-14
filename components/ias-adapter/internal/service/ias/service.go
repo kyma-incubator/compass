@@ -94,7 +94,7 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	}
 
 	if len(applications.Applications) == 0 {
-		return types.Application{}, errors.Newf("no applications found with clientID '%s'", clientID)
+		return types.Application{}, errors.Newf("no applications found with clientID '%s': %w", clientID, errors.IASApplicationNotFound)
 	}
 
 	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
@@ -108,7 +108,7 @@ func filterByAppTenantID(applications []types.Application, clientID, appTenantID
 		}
 	}
 	return types.Application{}, errors.Newf(
-		"application with clientID '%s' and appTenantID '%s' not found", clientID, appTenantID)
+		"application with clientID '%s' and appTenantID '%s' not found: %w", clientID, appTenantID, errors.IASApplicationNotFound)
 }
 
 func addConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) {

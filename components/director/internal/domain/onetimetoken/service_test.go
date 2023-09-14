@@ -65,8 +65,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	headers := http.Header{}
 	headers.Add(suggestedTokenHeaderKey, "true")
 
-	ctxScenarioGroups := "test_scenario_group"
-	ctxScenarioGroupsValue := []string{"test_scenario_group"}
+	ctxScenarioGroups := `{\"key\": \"test_scenario_group\", \"description\": \"test_description\"}`
+	ctxScenarioGroupsValue := []string{`{"key": "test_scenario_group", "description": "test_description"}`}
 
 	subaccountExternalID := "sub-external-tenant"
 	subaccountInternalID := "sub-test-tenant"

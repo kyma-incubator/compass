@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	gcli "github.com/machinebox/graphql"
 
@@ -355,7 +357,7 @@ func TestGetDependenciesHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
-			config.ClientSecret, "tenantFetcherClaims")
+			config.ClientSecret, claims.TenantFetcherClaimKey)
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN
@@ -384,7 +386,7 @@ func TestGetDependenciesHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
-			config.ClientSecret, "tenantFetcherClaims")
+			config.ClientSecret, claims.TenantFetcherClaimKey)
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN
@@ -417,7 +419,7 @@ func TestGetDependenciesHandler(t *testing.T) {
 		request.URL.RawQuery = q.Encode()
 
 		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
-			config.ClientSecret, "tenantFetcherClaims")
+			config.ClientSecret, claims.TenantFetcherClaimKey)
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN
@@ -448,7 +450,7 @@ func TestGetDependenciesHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
-			config.ClientSecret, "tenantFetcherClaims")
+			config.ClientSecret, claims.TenantFetcherClaimKey)
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN

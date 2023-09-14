@@ -19,13 +19,13 @@ type DestinationCreatorService struct {
 	mock.Mock
 }
 
-// CreateBasicCredentialDestinations provides a mock function with given fields: ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth
-func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
-	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth)
+// CreateBasicCredentialDestinations provides a mock function with given fields: ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx context.Context, destinationDetails operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8) error); ok {
-		r0 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth)
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r0 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -33,13 +33,13 @@ func (_m *DestinationCreatorService) CreateBasicCredentialDestinations(ctx conte
 	return r0
 }
 
-// CreateClientCertificateDestination provides a mock function with given fields: ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth
-func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
-	ret := _m.Called(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth)
+// CreateClientCertificateDestination provides a mock function with given fields: ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCreds *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8) error); ok {
-		r0 = rf(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth)
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r0 = rf(ctx, destinationDetails, clientCertAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -47,13 +47,13 @@ func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx cont
 	return r0
 }
 
-// CreateDesignTimeDestinations provides a mock function with given fields: ctx, destinationDetails, formationAssignment, depth
-func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8) error {
-	ret := _m.Called(ctx, destinationDetails, formationAssignment, depth)
+// CreateDesignTimeDestinations provides a mock function with given fields: ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *model.FormationAssignment, uint8) error); ok {
-		r0 = rf(ctx, destinationDetails, formationAssignment, depth)
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *model.FormationAssignment, uint8, bool) error); ok {
+		r0 = rf(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -61,13 +61,13 @@ func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Co
 	return r0
 }
 
-// CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAssertionAuthCreds, formationAssignment, correlationIDs, depth
-func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8) error {
-	ret := _m.Called(ctx, destinationDetails, samlAssertionAuthCreds, formationAssignment, correlationIDs, depth)
+// CreateSAMLAssertionDestination provides a mock function with given fields: ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAuthCreds *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8) error); ok {
-		r0 = rf(ctx, destinationDetails, samlAssertionAuthCreds, formationAssignment, correlationIDs, depth)
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r0 = rf(ctx, destinationDetails, samlAuthCreds, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -75,13 +75,13 @@ func (_m *DestinationCreatorService) CreateSAMLAssertionDestination(ctx context.
 	return r0
 }
 
-// DeleteCertificate provides a mock function with given fields: ctx, certificateName, externalDestSubaccountID, formationAssignment
-func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, certificateName string, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
-	ret := _m.Called(ctx, certificateName, externalDestSubaccountID, formationAssignment)
+// DeleteCertificate provides a mock function with given fields: ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation
+func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, certificateName string, externalDestSubaccountID string, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.FormationAssignment) error); ok {
-		r0 = rf(ctx, certificateName, externalDestSubaccountID, formationAssignment)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *model.FormationAssignment, bool) error); ok {
+		r0 = rf(ctx, certificateName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -89,13 +89,13 @@ func (_m *DestinationCreatorService) DeleteCertificate(ctx context.Context, cert
 	return r0
 }
 
-// DeleteDestination provides a mock function with given fields: ctx, destinationName, externalDestSubaccountID, formationAssignment
-func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, destinationName string, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) error {
-	ret := _m.Called(ctx, destinationName, externalDestSubaccountID, formationAssignment)
+// DeleteDestination provides a mock function with given fields: ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation
+func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, destinationName string, externalDestSubaccountID string, instanceID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.FormationAssignment) error); ok {
-		r0 = rf(ctx, destinationName, externalDestSubaccountID, formationAssignment)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *model.FormationAssignment, bool) error); ok {
+		r0 = rf(ctx, destinationName, externalDestSubaccountID, instanceID, formationAssignment, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -103,13 +103,34 @@ func (_m *DestinationCreatorService) DeleteDestination(ctx context.Context, dest
 	return r0
 }
 
-// EnsureDestinationSubaccountIDsCorrectness provides a mock function with given fields: ctx, destinationsDetails, formationAssignment
-func (_m *DestinationCreatorService) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment) error {
-	ret := _m.Called(ctx, destinationsDetails, formationAssignment)
+// DetermineDestinationSubaccount provides a mock function with given fields: ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation
+func (_m *DestinationCreatorService) DetermineDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) (string, error) {
+	ret := _m.Called(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, bool) string); ok {
+		r0 = rf(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, bool) error); ok {
+		r1 = rf(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EnsureDestinationSubaccountIDsCorrectness provides a mock function with given fields: ctx, destinationsDetails, formationAssignment, skipSubaccountValidation
+func (_m *DestinationCreatorService) EnsureDestinationSubaccountIDsCorrectness(ctx context.Context, destinationsDetails []operators.Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
+	ret := _m.Called(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *model.FormationAssignment) error); ok {
-		r0 = rf(ctx, destinationsDetails, formationAssignment)
+	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *model.FormationAssignment, bool) error); ok {
+		r0 = rf(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -154,27 +175,6 @@ func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) error); ok {
 		r1 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ValidateDestinationSubaccount provides a mock function with given fields: ctx, externalDestSubaccountID, formationAssignment
-func (_m *DestinationCreatorService) ValidateDestinationSubaccount(ctx context.Context, externalDestSubaccountID string, formationAssignment *model.FormationAssignment) (string, error) {
-	ret := _m.Called(ctx, externalDestSubaccountID, formationAssignment)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment) string); ok {
-		r0 = rf(ctx, externalDestSubaccountID, formationAssignment)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment) error); ok {
-		r1 = rf(ctx, externalDestSubaccountID, formationAssignment)
 	} else {
 		r1 = ret.Error(1)
 	}

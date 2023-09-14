@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
+
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal/handlers/automock"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
@@ -41,8 +39,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 		It("Should fail with 400", func() {
 			handler := TenantMappingsHandler{Service: &automock.TenantMappingsService{}}
 
-			body := strings.NewReader("unprocessable body")
-			w, ctx := createTestRequest(body)
+			w, ctx := createTestRequest("unprocessable body")
 
 			handler.Patch(ctx)
 			responseBody, err := io.ReadAll(w.Body)
@@ -55,8 +52,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 		It("Should fail with 400", func() {
 			handler := TenantMappingsHandler{Service: &automock.TenantMappingsService{}}
 
-			body := strings.NewReader(`{"assignedTenants":[{"configuration": ""}]}`)
-			w, ctx := createTestRequest(body)
+			w, ctx := createTestRequest(`{"assignedTenants":[{"configuration": ""}]}`)
 
 			handler.Patch(ctx)
 			responseBody, err := io.ReadAll(w.Body)
@@ -74,10 +70,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			service.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(nil)
 			handler := TenantMappingsHandler{Service: service}
 
-			data, err := json.Marshal(tenantMapping)
-			Expect(err).Error().ToNot(HaveOccurred())
-			body := bytes.NewReader(data)
-			w, ctx := createTestRequest(body)
+			w, ctx := createTestRequest(tenantMapping)
 
 			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
@@ -92,13 +85,28 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			service.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.New("error"))
 			handler := TenantMappingsHandler{Service: service}
 
-			data, err := json.Marshal(tenantMapping)
-			Expect(err).Error().ToNot(HaveOccurred())
-			body := bytes.NewReader(data)
-			w, ctx := createTestRequest(body)
+			w, ctx := createTestRequest(tenantMapping)
 
 			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusInternalServerError))
+		})
+	})
+	When("Consumed APIs cannot be updated due to not found IAS application", func() {
+		When("Operation is Assign", func() {
+			BeforeEach(func() {
+				tenantMapping.AssignedTenants[0].ReverseAssignmentState = types.StateInitial
+				tenantMapping.AssignedTenants[0].Operation = types.OperationAssign
+			})
+			It("Should return 404", func() {
+				service := &automock.TenantMappingsService{}
+				service.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.Newf("could not process tenant mapping: %w", errors.IASApplicationNotFound))
+				handler := TenantMappingsHandler{Service: service}
+
+				w, ctx := createTestRequest(tenantMapping)
+
+				handler.Patch(ctx)
+				Expect(w.Code).To(Equal(http.StatusNotFound))
+			})
 		})
 	})
 	When("Consumed APIs are successfully updated", func() {
@@ -110,10 +118,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			service.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(nil)
 			handler := TenantMappingsHandler{Service: service}
 
-			data, err := json.Marshal(tenantMapping)
-			Expect(err).Error().ToNot(HaveOccurred())
-			body := bytes.NewReader(data)
-			w, ctx := createTestRequest(body)
+			w, ctx := createTestRequest(tenantMapping)
 
 			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusOK))

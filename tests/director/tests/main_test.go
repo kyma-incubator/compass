@@ -37,6 +37,7 @@ type DirectorConfig struct {
 	GatewayOauth                                string
 	DirectorExternalCertSecuredURL              string
 	DirectorExternalCertFAAsyncStatusURL        string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
+	DirectorExternalCertFAAsyncResetStatusURL   string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
 	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
 	SkipSSLValidation                           bool   `envconfig:"default=false"`
 	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
@@ -46,6 +47,7 @@ type DirectorConfig struct {
 	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
 	DestinationsConfig                                 cfg.DestinationsConfig
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string
 	TestConsumerAccountID                              string

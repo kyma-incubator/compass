@@ -130,52 +130,56 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
       version: "PR-3273"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3254"
+      version: "PR-3298"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3254"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-kyma-adapter
-    gateway:
+    instance_creator:
       dir: dev/incubator/
-      version: "PR-3243"
+      version: "PR-3297"
+      name: compass-instance-creator
+    gateway:
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-gateway
     operations_controller:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-operations-controller
     ord_service:
-      dir: dev/incubator/
-      version: "PR-97"
+      dir: prod/incubator/
+      version: "v20230825-ec91cb4d"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3189"
+      version: "PR-3305"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -183,8 +187,8 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3243"
+      dir: prod/incubator/
+      version: "v20230907-a783eb0a"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -192,7 +196,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3256"
+      version: "PR-3294"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -243,6 +247,7 @@ global:
     formationMappingAsyncStatusApi:
       pathPrefix: "/v1/businessIntegrations"
       formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset"
       formationPath: "/{ucl-formation-id}/status"
     prefix: /director
     graphql:
@@ -314,13 +319,17 @@ global:
       destinationAPI:
         baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/destinations"
+        instanceLevelPath: "/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/destinations"
         regionParam: "region"
+        instanceIDParam: "instanceId"
         subaccountIDParam: "subaccountId"
         nameParam: "destinationName"
       certificateAPI:
         baseURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8081"
         path: "/regions/{region}/subaccounts/{subaccountId}/certificates"
+        instanceLevelPath: "/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
         regionParam: "region"
+        instanceIDParam: "instanceId"
         subaccountIDParam: "subaccountId"
         nameParam: "certificateName"
         fileNameKey: "fileName"
@@ -422,7 +431,7 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "text"
+    format: "json"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
@@ -553,6 +562,36 @@ global:
       outputTemplate: '{"error":"{{.Body.error}}","state":"{{.Body.state}}","success_status_code": 200,"incomplete_status_code": 422}'
     authentication:
       jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+  instanceCreator:
+    port: 8080
+    apiRootPath: "/instance-creator"
+    tenantInfo:
+      requestTimeout: 30s
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+    client:
+      timeout: 30s
+    secrets:
+      name: "regional-sm-instances-credentials"
+      key: "keyConfig"
+      path: "/tmp"
+    clientIdPath: "clientid"
+    smUrlPath: "sm_url"
+    tokenURLPath: "certurl"
+    appNamePath: "appName"
+    certificatePath: "certificate"
+    certificateKeyPath: "key"
+    oauthTokenPath: "/oauth/token"
+    ticker: 3s
+    timeout: 300s
+    local:
+      templateMappings:
+        clientIDMapping: '{{ printf "\"%s\":\"client_id\"" .Values.global.instanceCreator.clientIdPath }}'
+        smUrlMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.instanceCreator.smUrlPath .Release.Namespace (.Values.service.port | toString) }}'
+        tokenURLMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.instanceCreator.tokenURLPath .Release.Namespace (.Values.service.port | toString) }}'
+        appNameMapping: '{{ printf "\"%s\":\"app_name\"" .Values.global.instanceCreator.appNamePath }}'
+        certificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.instanceCreator.certificatePath .Values.global.connector.caCertificate }}'
+        certificateKeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.instanceCreator.certificateKeyPath .Values.global.connector.caKey }}'
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -751,7 +790,9 @@ global:
       appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
     server:
       tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      tenantInstanceLevelDestinationsEndpoint: "/v1/instanceDestinations"
       tenantDestinationCertificatesEndpoint: "/v1/subaccountCertificates"
+      tenantInstanceLevelDestinationCertificatesEndpoint: "/v1/instanceCertificates"
       sensitiveDataEndpoint: "/v1/destinations"
       sensitiveDataQueryParam: "name"
     request:
@@ -1102,6 +1143,8 @@ global:
       manage: false
     regionInstancesCredentials:
       manage: false
+    regionSMInstancesCredentials:
+      manage: false
     oauthSecret:
       manage: false
       name: compass-external-services-mock-oauth-credentials
@@ -1162,6 +1205,10 @@ global:
       region2: "eu-2"
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
+      instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
+      claims:
+        subaccountIDKey: "subaccountid"
+        serviceInstanceIDKey: "serviceinstanceid"
     subscription:
       labelKey: "subscriptions"
       standardFlow: "standard"

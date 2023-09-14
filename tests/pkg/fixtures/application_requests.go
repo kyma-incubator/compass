@@ -353,6 +353,16 @@ func FixGetApplicationsRequestWithPagination() *gcli.Request {
 			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
+func FixGetApplicationsRequestWithPaginationMinimal() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applications {
+						%s
+					}
+				}`,
+			testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplicationMinimal())))
+}
+
 func FixApplicationsFilteredPageableRequest(labelFilterInGQL string, first int, after string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {

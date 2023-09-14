@@ -12,7 +12,7 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-// ToEntity converts from internal model to entity
+// ToEntity converts from an internal model to entity
 func (c *converter) ToEntity(in *model.Destination) *Entity {
 	if in == nil {
 		return nil
@@ -25,11 +25,12 @@ func (c *converter) ToEntity(in *model.Destination) *Entity {
 		URL:                   in.URL,
 		Authentication:        in.Authentication,
 		TenantID:              in.SubaccountID,
+		InstanceID:            repo.NewNullableString(in.InstanceID),
 		FormationAssignmentID: repo.NewNullableString(in.FormationAssignmentID),
 	}
 }
 
-// FromEntity converts from entity to internal model
+// FromEntity converts from entity to an internal model
 func (c *converter) FromEntity(e *Entity) *model.Destination {
 	if e == nil {
 		return nil
@@ -42,6 +43,7 @@ func (c *converter) FromEntity(e *Entity) *model.Destination {
 		URL:                   e.URL,
 		Authentication:        e.Authentication,
 		SubaccountID:          e.TenantID,
+		InstanceID:            repo.StringPtrFromNullableString(e.InstanceID),
 		FormationAssignmentID: repo.StringPtrFromNullableString(e.FormationAssignmentID),
 	}
 }

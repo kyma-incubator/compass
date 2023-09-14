@@ -14,6 +14,7 @@ import (
 type ApplicationTenantMappingInput struct {
 	Operation                 model.FormationOperation
 	FormationID               string
+	Formation                 *model.Formation
 	SourceApplicationTemplate *ApplicationTemplateWithLabels
 	// SourceApplication is the application that the notification is about
 	SourceApplication         *ApplicationWithLabels
@@ -84,11 +85,12 @@ func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment 
 	}
 }
 
-// Clone return a copy of the ApplicationTenantMappingInput
+// Clone returns a copy of the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInput {
 	return &ApplicationTenantMappingInput{
 		Operation:                 rd.Operation,
 		FormationID:               rd.FormationID,
+		Formation:                 rd.Formation,
 		SourceApplicationTemplate: rd.SourceApplicationTemplate,
 		SourceApplication:         rd.SourceApplication,
 		TargetApplicationTemplate: rd.TargetApplicationTemplate,

@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/tidwall/sjson"
@@ -244,7 +246,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(stdT, err)
-		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
@@ -275,7 +277,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Successfully created subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
-		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		headers := map[string][]string{util.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
@@ -295,7 +297,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 
 		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -495,7 +497,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(stdT, err)
-		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
@@ -527,7 +529,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Find the provider application ID
 		stdT.Logf("List applications with tenant %q", secondaryTenant)
-		appPage := fixtures.GetApplicationPage(stdT, ctx, certSecuredGraphQLClient, secondaryTenant)
+		appPage := fixtures.GetApplicationPageMinimal(stdT, ctx, certSecuredGraphQLClient, secondaryTenant)
 		var providerApp graphql.Application
 		for _, app := range appPage.Data {
 			if app.Name == conf.SubscriptionProviderAppNameValue {
@@ -543,7 +545,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
 
 		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
-		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		headers := map[string][]string{util.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
@@ -563,7 +565,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 
 		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
@@ -759,7 +761,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(stdT, err)
-		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
@@ -791,7 +793,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Successfully created subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
-		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
 		consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
 		require.NoError(t, err)
@@ -814,7 +816,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.True(t, ok)
 
 		subdomain := conf.DestinationConsumerSubdomain
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, "")
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
