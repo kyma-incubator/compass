@@ -659,6 +659,9 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstraintInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}"
+        {{- if .Description }}
+		description: "{{.Description}}"
+		{{- end }}
 		constraintType: {{.ConstraintType}}
 		targetOperation: {{.TargetOperation}}
 		operator: "{{.Operator}}"
@@ -666,6 +669,9 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 		resourceSubtype: "{{.ResourceSubtype}}"
 		inputTemplate: "{{.InputTemplate}}"
 		constraintScope: {{.ConstraintScope}}
+        {{- if .Priority }}
+		priority: {{.Priority}}
+		{{- end }}
 	}`)
 }
 
@@ -673,6 +679,12 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 func (g *Graphqlizer) FormationConstraintUpdateInputToGQL(in graphql.FormationConstraintUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		inputTemplate: "{{.InputTemplate}}"
+        {{- if .Description }}
+		description: "{{.Description}}"
+		{{- end }}
+        {{- if .Priority }}
+		priority: {{.Priority}}
+		{{- end }}
 	}`)
 }
 

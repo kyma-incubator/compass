@@ -52,13 +52,13 @@ func (_m *Client) DeleteMultipleResources(ctx context.Context, region string, su
 	return r0
 }
 
-// DeleteResource provides a mock function with given fields: ctx, region, subaccountID, resource, resourceMatchParams
-func (_m *Client) DeleteResource(ctx context.Context, region string, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) error {
-	ret := _m.Called(ctx, region, subaccountID, resource, resourceMatchParams)
+// DeleteResource provides a mock function with given fields: ctx, region, subaccountID, resource
+func (_m *Client) DeleteResource(ctx context.Context, region string, subaccountID string, resource resources.Resource) error {
+	ret := _m.Called(ctx, region, subaccountID, resource)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resource, resources.ResourceMatchParameters) error); ok {
-		r0 = rf(ctx, region, subaccountID, resource, resourceMatchParams)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resource) error); ok {
+		r0 = rf(ctx, region, subaccountID, resource)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -87,13 +87,13 @@ func (_m *Client) RetrieveResource(ctx context.Context, region string, subaccoun
 	return r0, r1
 }
 
-// RetrieveResourceByID provides a mock function with given fields: ctx, region, subaccountID, resource, resourceMatchParams
-func (_m *Client) RetrieveResourceByID(ctx context.Context, region string, subaccountID string, resource resources.Resource, resourceMatchParams resources.ResourceMatchParameters) (resources.Resource, error) {
-	ret := _m.Called(ctx, region, subaccountID, resource, resourceMatchParams)
+// RetrieveResourceByID provides a mock function with given fields: ctx, region, subaccountID, resource
+func (_m *Client) RetrieveResourceByID(ctx context.Context, region string, subaccountID string, resource resources.Resource) (resources.Resource, error) {
+	ret := _m.Called(ctx, region, subaccountID, resource)
 
 	var r0 resources.Resource
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resource, resources.ResourceMatchParameters) resources.Resource); ok {
-		r0 = rf(ctx, region, subaccountID, resource, resourceMatchParams)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resources.Resource) resources.Resource); ok {
+		r0 = rf(ctx, region, subaccountID, resource)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(resources.Resource)
@@ -101,8 +101,8 @@ func (_m *Client) RetrieveResourceByID(ctx context.Context, region string, subac
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, resources.Resource, resources.ResourceMatchParameters) error); ok {
-		r1 = rf(ctx, region, subaccountID, resource, resourceMatchParams)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, resources.Resource) error); ok {
+		r1 = rf(ctx, region, subaccountID, resource)
 	} else {
 		r1 = ret.Error(1)
 	}

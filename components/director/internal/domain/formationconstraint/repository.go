@@ -2,6 +2,7 @@ package formationconstraint
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -19,8 +20,8 @@ const (
 )
 
 var (
-	tableColumns     = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
-	updatableColumns = []string{"input_template"}
+	tableColumns     = []string{"id", "name", "description", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope", "priority", "created_at"}
+	updatableColumns = []string{"input_template", "priority", "description"}
 	idColumns        = []string{"id"}
 )
 
@@ -63,6 +64,11 @@ func (r *repository) Create(ctx context.Context, item *model.FormationConstraint
 
 	log.C(ctx).Debugf("Converting Formation Constraint with id %s to entity", item.ID)
 	entity := r.conv.ToEntity(item)
+
+	if entity.CreatedAt == nil || entity.CreatedAt.IsZero() {
+		now := time.Now()
+		entity.CreatedAt = &now
+	}
 
 	log.C(ctx).Debugf("Persisting Formation Constraint entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
