@@ -2,7 +2,6 @@ package ord_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -63,8 +62,8 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
-				opManager.On("CreateOperation", context.TODO(), mock.Anything).Return(operationID, nil).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return(operationID, nil).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -83,8 +82,8 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
-				opManager.On("CreateOperation", context.TODO(), mock.Anything).Return(operationID, nil).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return(operationID, nil).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -103,8 +102,8 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
-				opManager.On("CreateOperation", context.TODO(), mock.Anything).Return(operationID, nil).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return(operationID, nil).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -123,7 +122,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, "")).Return(nil, testErr).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, testErr).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -141,7 +140,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -161,7 +160,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -181,7 +180,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -201,7 +200,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -221,7 +220,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -246,7 +245,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -272,7 +271,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -293,8 +292,8 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
-				opManager.On("CreateOperation", context.TODO(), mock.Anything).Return("", testErr).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return("", testErr).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -314,8 +313,8 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, appTemplateID)).Return(operation, nil).Once()
-				opManager.On("RescheduleOperation", context.TODO(), operationID).Return(testErr).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(operation, nil).Once()
+				opManager.On("RescheduleOperation", mock.Anything, operationID).Return(testErr).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
