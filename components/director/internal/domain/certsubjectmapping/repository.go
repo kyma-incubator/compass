@@ -148,11 +148,9 @@ func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([
 	log.C(ctx).Debug("Listing certificate subject mappings from DB")
 	var entityCollection EntityCollection
 
-	conditions := repo.Conditions{
-		repo.NewEqualCondition(internalConsumerIDColumn, consumerID),
-	}
+	condition := repo.NewEqualCondition(internalConsumerIDColumn, consumerID)
 
-	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, condition); err != nil {
 		return nil, err
 	}
 
