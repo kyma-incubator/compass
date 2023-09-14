@@ -24,7 +24,7 @@ RESET_VALUES_YAML=true
 
 K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
-APISERVER_VERSION=1.22.16
+APISERVER_VERSION=1.23.8
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -240,7 +240,6 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
   kyma provision k3d \
   --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
-  --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
   --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
   --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
   --k3d-arg='--volume '"${DATA_DIR}:/tmp/dbdata" \
