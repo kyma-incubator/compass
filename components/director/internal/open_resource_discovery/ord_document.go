@@ -2,11 +2,11 @@ package ord
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/imdario/mergo"
 	"net/url"
 	"path"
 	"regexp"
-
-	"github.com/imdario/mergo"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -69,6 +69,9 @@ type Document struct {
 	DescribedSystemVersion *model.ApplicationTemplateVersionInput `json:"describedSystemVersion"`
 
 	Perspective DocumentPerspective `json:"-"`
+
+	PolicyLevel       *string `json:"policyLevel"`
+	CustomPolicyLevel *string `json:"customPolicyLevel"`
 
 	Packages           []*model.PackageInput         `json:"packages"`
 	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
@@ -180,7 +183,9 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 				continue
 			}
 			resourceIDs.PackageIDs[pkg.OrdID] = true
-			resourceIDs.PackagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
+			if pkg.PolicyLevel != nil {
+				resourceIDs.PackagePolicyLevels[pkg.OrdID] = *pkg.PolicyLevel
+			}
 		}
 	}
 
@@ -275,7 +280,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 
 func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
 	errs := &multierror.Error{}
-
+	fmt.Println("CHECK")
 	resourceIDs := ResourceIDs{
 		PackageIDs:          make(map[string]bool),
 		PackagePolicyLevels: resourceID.PackagePolicyLevels,
@@ -302,6 +307,9 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, pkg := range doc.Packages {
+			if err := validatePackageInputWithSuppressedErrors(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating package with ord id %q", pkg.OrdID))
+			}
 			if err := validatePackageInput(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 				invalidPackagesIndices = append(invalidPackagesIndices, i)
@@ -310,6 +318,9 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, bndl := range doc.ConsumptionBundles {
+			if err := validateBundleInputWithSuppressedErrors(bndl, resourcesFromDB.Bundles, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
+			}
 			if err := validateBundleInput(bndl, resourcesFromDB.Bundles, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 				invalidBundlesIndices = append(invalidBundlesIndices, i)
@@ -336,6 +347,9 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, api := range doc.APIResources {
+			if err := validateAPIInputWithSuppressedErrors(api, resourcesFromDB.APIs, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating api with ord id %q", stringPtrToString(api.OrdID)))
+			}
 			if err := validateAPIInput(api, resourceIDs.PackagePolicyLevels, resourcesFromDB.APIs, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 				invalidApisIndices = append(invalidApisIndices, i)
@@ -350,6 +364,9 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, event := range doc.EventResources {
+			if err := validateEventInputWithSuppressedErrors(event, resourcesFromDB.Events, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating event with ord id %q", stringPtrToString(event.OrdID)))
+			}
 			if err := validateEventInput(event, resourceIDs.PackagePolicyLevels, resourcesFromDB.Events, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventsIndices = append(invalidEventsIndices, i)
@@ -410,7 +427,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
 func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
-
+	fmt.Println("sanitize")
 	// Use the ProxyURL for all relative link substitution except for the API's TargetURLs.
 	// They are externally consumable and we should not expose those URLs through the Proxy but rather from webhook's BaseURL
 	url := webhookBaseURL
@@ -479,11 +496,26 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			packages[pkg.OrdID] = pkg
+			if pkg.PolicyLevel == nil {
+				pkg.PolicyLevel = doc.PolicyLevel
+				pkg.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
 		}
 	}
 
 	for _, doc := range docs {
+		//for _, pkg := range doc.Packages {
+		//	if pkg.PolicyLevel == nil {
+		//		pkg.PolicyLevel = doc.PolicyLevel
+		//		pkg.CustomPolicyLevel = doc.CustomPolicyLevel
+		//	}
+		//}
 		for _, api := range doc.APIResources {
+			if api.PolicyLevel == nil {
+				api.PolicyLevel = doc.PolicyLevel
+				api.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
+
 			referredPkg, ok := packages[*api.OrdPackageID]
 			if !ok {
 				return errors.Errorf("api with ord id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
@@ -509,6 +541,10 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			assignDefaultEntryPointIfNeeded(api.PartOfConsumptionBundles, api.TargetURLs)
 		}
 		for _, event := range doc.EventResources {
+			if event.PolicyLevel == nil {
+				event.PolicyLevel = doc.PolicyLevel
+				event.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
 			referredPkg, ok := packages[*event.OrdPackageID]
 			if !ok {
 				return errors.Errorf("event with ord id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)

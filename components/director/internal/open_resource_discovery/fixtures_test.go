@@ -64,11 +64,12 @@ const (
 	event1specID = "event1specID"
 	event2specID = "event2specID"
 
-	cursor                    = "cursor"
-	policyLevel               = "sap:core:v1"
-	apiImplementationStandard = "cff:open-service-broker:v2"
-	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
-	partners                  = `["microsoft:vendor:Microsoft:"]`
+	cursor                      = "cursor"
+	policyLevel                 = "sap:core:v1"
+	apiImplementationStandard   = "cff:open-service-broker:v2"
+	eventImplementationStandard = "sap.foo.bar:some-event-contract:v1"
+	correlationIDs              = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
+	partners                    = `["microsoft:vendor:Microsoft:"]`
 
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
@@ -329,24 +330,30 @@ func fixSanitizedStaticORDDocument() *ord.Document {
 }
 
 func sanitizeResources(doc *ord.Document) {
+	doc.Packages[0].PolicyLevel = str.Ptr(policyLevel)
+
+	doc.APIResources[0].PolicyLevel = str.Ptr(policyLevel)
 	doc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
 	doc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
 	doc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.APIResources[0].Labels = json.RawMessage(mergedLabels)
 
+	doc.APIResources[1].PolicyLevel = str.Ptr(policyLevel)
 	doc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
 	doc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
 	doc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.APIResources[1].Labels = json.RawMessage(mergedLabels)
 
+	doc.EventResources[0].PolicyLevel = str.Ptr(policyLevel)
 	doc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	doc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
 	doc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.EventResources[0].Labels = json.RawMessage(mergedLabels)
 
+	doc.EventResources[1].PolicyLevel = str.Ptr(policyLevel)
 	doc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
 	doc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
 	doc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
@@ -366,6 +373,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			Tags:                json.RawMessage(tags),
 			DocumentationLabels: json.RawMessage(documentLabels),
 		},
+		PolicyLevel: str.Ptr(policyLevel),
 		Packages: []*model.PackageInput{
 			{
 				OrdID:               packageORDID,
@@ -382,7 +390,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Countries:           json.RawMessage(`["BG","EN"]`),
 				Labels:              json.RawMessage(packageLabels),
 				DocumentationLabels: json.RawMessage(documentLabels),
-				PolicyLevel:         policyLevel,
+				PolicyLevel:         nil,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
@@ -490,6 +498,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
+				Direction: str.Ptr("inbound"),
 			},
 			{
 				Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
@@ -556,29 +565,32 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		},
 		EventResources: []*model.EventDefinitionInput{
 			{
-				OrdID:               str.Ptr(event1ORDID),
-				LocalTenantID:       str.Ptr(localTenantID),
-				OrdPackageID:        str.Ptr(packageORDID),
-				Name:                "EVENT TITLE",
-				Description:         str.Ptr("lorem ipsum dolor sit amet"),
-				ShortDescription:    str.Ptr("lorem ipsum"),
-				SystemInstanceAware: &boolPtr,
-				ChangeLogEntries:    json.RawMessage(changeLogEntries),
-				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				Tags:                json.RawMessage(`["eventTestTag"]`),
-				Countries:           json.RawMessage(`["BG","US"]`),
-				ReleaseStatus:       str.Ptr("active"),
-				SunsetDate:          nil,
-				Successors:          nil,
-				Labels:              json.RawMessage(labels),
-				Hierarchy:           json.RawMessage(hierarchy),
-				DocumentationLabels: json.RawMessage(documentLabels),
-				Visibility:          str.Ptr("public"),
-				Disabled:            &boolPtr,
-				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
-				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
-				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				OrdID:                                   str.Ptr(event1ORDID),
+				LocalTenantID:                           str.Ptr(localTenantID),
+				OrdPackageID:                            str.Ptr(packageORDID),
+				Name:                                    "EVENT TITLE",
+				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+				ShortDescription:                        str.Ptr("lorem ipsum"),
+				SystemInstanceAware:                     &boolPtr,
+				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
+				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Tags:                                    json.RawMessage(`["eventTestTag"]`),
+				Countries:                               json.RawMessage(`["BG","US"]`),
+				ReleaseStatus:                           str.Ptr("active"),
+				SunsetDate:                              nil,
+				Successors:                              nil,
+				Labels:                                  json.RawMessage(labels),
+				Hierarchy:                               json.RawMessage(hierarchy),
+				DocumentationLabels:                     json.RawMessage(documentLabels),
+				Visibility:                              str.Ptr("public"),
+				Disabled:                                &boolPtr,
+				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				LineOfBusiness:                          json.RawMessage(`["Finance","Sales"]`),
+				Industry:                                json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+				Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				ImplementationStandard:                  str.Ptr(custom),
+				CustomImplementationStandard:            str.Ptr("sap.foo.bar:some-event-contract:v1"),
+				CustomImplementationStandardDescription: str.Ptr("description"),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -913,7 +925,7 @@ func fixPackages() []*model.Package {
 			Countries:           json.RawMessage(`["BG","EN"]`),
 			Labels:              json.RawMessage(packageLabels),
 			DocumentationLabels: json.RawMessage(documentLabels),
-			PolicyLevel:         policyLevel,
+			PolicyLevel:         str.Ptr(policyLevel),
 			PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),

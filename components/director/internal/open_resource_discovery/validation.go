@@ -139,6 +139,16 @@ const (
 	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
+	// EventImplementationStandardCustom is one of the available event implementation standard options
+	EventImplementationStandardCustom = custom
+
+	// APIDirectionInbound is one of the available direction options
+	APIDirectionInbound = "inbound"
+	// APIDirectionMixed is one of the available direction options
+	APIDirectionMixed = "mixed"
+	// APIDirectionOutbound is one of the available direction options
+	APIDirectionOutbound = "outbound"
+
 	// SapVendor is a valid Vendor ordID
 	SapVendor = "sap:vendor:SAP:"
 	// PartnerVendor is a valid partner Vendor ordID
@@ -243,7 +253,10 @@ func ValidateSystemVersionInput(appTemplateVersion *model.ApplicationTemplateVer
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1.*$"))))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1\\.\\d$"))),
+		validation.Field(&doc.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelCustom, PolicyLevelNone), validation.When(doc.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&doc.CustomPolicyLevel, validation.When(doc.PolicyLevel != nil && *doc.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
+	)
 }
 
 func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
@@ -253,14 +266,12 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
-		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
-		})),
-		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
-		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
+		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+		validation.Field(&pkg.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != nil && *pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
-		validation.Field(&pkg.Vendor, validation.Required, validation.When(pkg.PolicyLevel == PolicyLevelSap, validation.In(SapVendor)), validation.When(pkg.PolicyLevel == PolicyLevelSapPartner, validation.NotIn(SapVendor)), validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
+		validation.Field(&pkg.Vendor, validation.Required, validation.When(pkg.PolicyLevel != nil && *pkg.PolicyLevel == PolicyLevelSap, validation.In(SapVendor)), validation.When(pkg.PolicyLevel != nil && *pkg.PolicyLevel == PolicyLevelSapPartner, validation.NotIn(SapVendor)), validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&pkg.PartOfProducts, validation.Required, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
@@ -273,7 +284,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		})),
 		validation.Field(&pkg.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				if pkg.PolicyLevel != PolicyLevelSap {
+				if pkg.PolicyLevel != nil && *pkg.PolicyLevel != PolicyLevelSap {
 					return nil
 				}
 				return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
@@ -284,7 +295,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		),
 		validation.Field(&pkg.Industry,
 			validation.By(func(value interface{}) error {
-				if pkg.PolicyLevel != PolicyLevelSap {
+				if pkg.PolicyLevel != nil && *pkg.PolicyLevel != PolicyLevelSap {
 					return nil
 				}
 				return validateJSONArrayOfStringsContainsInMap(value, Industries)
@@ -297,6 +308,13 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 	)
 }
 
+func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+	return validation.ValidateStruct(pkg,
+		validation.Field(&pkg.Version, validation.By(func(value interface{}) error {
+			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
+		})))
+}
+
 func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
@@ -304,9 +322,7 @@ func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string
 		validation.Field(&bndl.Name, validation.Required),
 		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules...),
 		validation.Field(&bndl.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
-		validation.Field(&bndl.Version, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validateBundleVersionInput(value, *bndl, bundlesFromDB, resourceHashes)
-		})),
+		validation.Field(&bndl.Version, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
@@ -330,6 +346,13 @@ func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string
 	)
 }
 
+func validateBundleInputWithSuppressedErrors(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64) error {
+	return validation.ValidateStruct(bndl,
+		validation.Field(&bndl.Version, validation.By(func(value interface{}) error {
+			return validateBundleVersionInput(value, *bndl, bundlesFromDB, resourceHashes)
+		})))
+}
+
 func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
@@ -339,9 +362,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&api.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(api.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&api.CustomPolicyLevel, validation.When(api.PolicyLevel != nil && *api.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
-		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
-		})),
+		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
@@ -408,7 +429,16 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
+		validation.Field(&api.Direction, validation.In(APIDirectionInbound, APIDirectionMixed, APIDirectionOutbound)),
 	)
+}
+
+// fields with validation errors will lead to persisting of the API resource
+func validateAPIInputWithSuppressedErrors(api *model.APIDefinitionInput, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
+	return validation.ValidateStruct(api,
+		validation.Field(&api.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
+		})))
 }
 
 func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
@@ -420,9 +450,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&event.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(event.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&event.CustomPolicyLevel, validation.When(event.PolicyLevel != nil && *event.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
-		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
-			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
-		})),
+		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&event.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
@@ -469,6 +497,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error {
 			return validateDefaultConsumptionBundle(value, event.PartOfConsumptionBundles)
 		})),
+		validation.Field(&event.ImplementationStandard, validation.In(EventImplementationStandardCustom)),
+		validation.Field(&event.CustomImplementationStandard, validation.When(event.ImplementationStandard != nil && *event.ImplementationStandard == EventImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+		validation.Field(&event.CustomImplementationStandardDescription, validation.When(event.ImplementationStandard != nil && *event.ImplementationStandard == EventImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
 		})),
@@ -477,6 +508,13 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 	)
+}
+
+func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
+	return validation.ValidateStruct(event,
+		validation.Field(&event.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
+		})))
 }
 
 func validateProductInput(product *model.ProductInput) error {
