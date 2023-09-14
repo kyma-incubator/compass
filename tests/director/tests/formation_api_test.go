@@ -9,9 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -1181,7 +1184,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	formationTmplName := "app-only-formation-template-name"
 
 	certSubjcetMappingCN := "csm-async-callback-cn"
+	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
 	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
+	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component
@@ -1248,6 +1253,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
 	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
 	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
+
+	// Create second certificate subject mapping with custom subject that was used to test that trust details are send to the target
+	certSubjectMappingCustomSubjectWithCommaSeparatorSecond := strings.ReplaceAll(strings.TrimLeft(certSubjectMappingCustomSubjectSecond, "/"), "/", ",")
+	csmInputSecond := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparatorSecond, consumerType, &internalConsumerID, tenantAccessLevels)
+	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparatorSecond, consumerType, tenantAccessLevels)
+
+	var csmCreateSecond graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreateSecond)
+	csmCreateSecond = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInputSecond)
 
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
@@ -1746,7 +1760,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
 		asyncCallbackWebhookMode := graphql.WebhookModeAsyncCallback
 		urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"source-trust-details\\\":[{{ Join  .SourceApplicationTemplate.TrustDetails.Subjects }}],\\\"target-trust-details\\\":[{{ Join  .TargetApplicationTemplate.TrustDetails.Subjects }}] }]}"
 		outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
 		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication)
@@ -1835,6 +1849,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
 		assertFormationAssignmentsNotificationWithItemsStructure(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
+
 		t.Logf("Unassign Application 1 from formation: %q", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		var unassignFormation graphql.Formation
@@ -1861,6 +1878,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
+
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assignNotificationAboutApp2 = notificationsForApp1.Array()[0]
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
 
 		t.Logf("Assign application 1 to formation: %q again", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, graphql.FormationObjectTypeApplication, tnt)
@@ -1897,6 +1918,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 		require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
 
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assignNotificationAboutApp2 = notificationsForApp1.Array()[0]
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
+
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
@@ -1922,6 +1947,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			}
 		}
 		require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
+
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assignNotificationAboutApp2 = notificationsForApp1.Array()[0]
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -6838,4 +6867,32 @@ func attachDestinationCreatorConstraints(t *testing.T, formationTemplate graphql
 
 	t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, formationTemplate.Name)
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
+}
+
+func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjectOne, expectedSubjectSecond string) {
+	t.Logf("Assert trust details are send to the target")
+	notificationItems := assignNotificationAboutApp2.Get("RequestBody.items")
+	app1FromNotification := notificationItems.Array()[0]
+	targetTrustDetails := app1FromNotification.Get("target-trust-details")
+	certificateDetails := targetTrustDetails.Array()[0].String()
+	certificateDetailsSecond := targetTrustDetails.Array()[1].String()
+	require.ElementsMatch(t, []string{sortSubject(expectedSubjectOne), sortSubject(expectedSubjectSecond)}, []string{certificateDetails, certificateDetailsSecond})
+
+	t.Logf("Assert that there are no trust details for the source")
+	sourceTrustDetails := app1FromNotification.Get("source-trust-details")
+	require.Equal(t, 0, len(sourceTrustDetails.Array()))
+}
+
+func sortSubject(subject string) string {
+	cn := fmt.Sprintf("CN=%s", cert.GetCommonName(subject))
+	o := fmt.Sprintf("O=%s", cert.GetOrganization(subject))
+	l := fmt.Sprintf("L=%s", cert.GetLocality(subject))
+	c := fmt.Sprintf("C=%s", cert.GetCountry(subject))
+	ous := cert.GetAllOrganizationalUnits(subject)
+	sort.Strings(ous)
+	for i, ou := range ous {
+		ous[i] = fmt.Sprintf("OU=%s", ou)
+	}
+
+	return strings.Join([]string{cn, strings.Join(ous, ", "), o, l, c}, ", ")
 }
