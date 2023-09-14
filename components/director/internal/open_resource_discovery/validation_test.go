@@ -4010,7 +4010,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			if test.AfterTest != nil {
 				test.AfterTest()
 			}
-			fmt.Println(err, "end")
+
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

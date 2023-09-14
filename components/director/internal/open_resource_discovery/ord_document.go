@@ -2,7 +2,6 @@ package ord
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/imdario/mergo"
 	"net/url"
 	"path"
@@ -280,7 +279,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 
 func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
 	errs := &multierror.Error{}
-	fmt.Println("CHECK")
+
 	resourceIDs := ResourceIDs{
 		PackageIDs:          make(map[string]bool),
 		PackagePolicyLevels: resourceID.PackagePolicyLevels,
@@ -427,7 +426,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
 func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
-	fmt.Println("sanitize")
+
 	// Use the ProxyURL for all relative link substitution except for the API's TargetURLs.
 	// They are externally consumable and we should not expose those URLs through the Proxy but rather from webhook's BaseURL
 	url := webhookBaseURL
@@ -504,12 +503,6 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 	}
 
 	for _, doc := range docs {
-		//for _, pkg := range doc.Packages {
-		//	if pkg.PolicyLevel == nil {
-		//		pkg.PolicyLevel = doc.PolicyLevel
-		//		pkg.CustomPolicyLevel = doc.CustomPolicyLevel
-		//	}
-		//}
 		for _, api := range doc.APIResources {
 			if api.PolicyLevel == nil {
 				api.PolicyLevel = doc.PolicyLevel
