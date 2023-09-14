@@ -78,6 +78,7 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	h.xsappnameClones = make([]string, 0)
 	for _, dep := range deps {
 		if dep == "" {
 			log.C(ctx).Warnf("The provided dependency is empty. Continue with the next one...")
