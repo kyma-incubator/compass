@@ -431,7 +431,8 @@ global:
       clientCertKey: client-cert
       clientKeyKey: client-key
   log:
-    format: "json"
+    format: "text"
+    formatJson: "json"
   tenantConfig:
     useDefaultTenants: true
     dbPool:
