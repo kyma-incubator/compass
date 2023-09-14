@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -128,6 +130,7 @@ func main() {
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 	formationAssignmentConv := formationassignment.NewConverter()
+	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConv)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -152,6 +155,7 @@ func main() {
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -171,7 +175,8 @@ func main() {
 
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
-	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder)
+	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder, certSubjectInputBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
 	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tntSvc, scenarioAssignmentSvc, nil, nil, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
