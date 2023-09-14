@@ -73,7 +73,8 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 
 		// Check if the provided application has an ORD webhook
 		if payload.ApplicationID != "" && payload.ApplicationTemplateID == "" {
-			if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference); err != nil {
+			ordWebhook, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference)
+			if err != nil {
 				if apperrors.IsNotFoundError(err) {
 					log.C(ctx).WithError(err).Errorf("Application with id %q does not have ORD webhook", payload.ApplicationID)
 					http.Error(writer, "The provided Application does not have ORD webhook", http.StatusBadRequest)
@@ -83,11 +84,13 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 				http.Error(writer, "Loading ORD webhooks of Application for ORD data aggregation failed", http.StatusInternalServerError)
 				return
 			}
+			log.C(ctx).Debugf("ORD webhook with id %q was found", ordWebhook.ID)
 		}
 
 		// Check if the provided application template has an ORD webhook
 		if payload.ApplicationID == "" && payload.ApplicationTemplateID != "" {
-			if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference); err != nil {
+			ordWebhook, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference)
+			if err != nil {
 				if apperrors.IsNotFoundError(err) {
 					log.C(ctx).WithError(err).Errorf("ApplicationTemplate with id %q does not have ORD webhook", payload.ApplicationTemplateID)
 					http.Error(writer, "The provided ApplicationTemplate does not have ORD webhook", http.StatusBadRequest)
@@ -97,18 +100,21 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 				http.Error(writer, "Loading ORD webhooks of Application Template for ORD data aggregation failed", http.StatusInternalServerError)
 				return
 			}
+			log.C(ctx).Debugf("ORD webhook with id %q was found", ordWebhook.ID)
 		}
 
 		// Check if the provided application has ORD webhook. If it does not - check if the application template has
 		if payload.ApplicationID != "" && payload.ApplicationTemplateID != "" {
-			if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference); err != nil {
+			ordWebhook, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationID, model.ApplicationWebhookReference)
+			if err != nil {
 				if !apperrors.IsNotFoundError(err) {
 					log.C(ctx).WithError(err).Errorf("Loading ORD webhooks of application with id %q for ORD aggregation failed", payload.ApplicationID)
 					http.Error(writer, "Loading ORD webhooks of Application for ORD data aggregation failed", http.StatusInternalServerError)
 					return
 				}
 
-				if _, err := h.getORDWebhookByIDGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference); err != nil {
+				ordWebhook, err = h.getORDWebhookByIDGlobal(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference)
+				if err != nil {
 					if apperrors.IsNotFoundError(err) {
 						log.C(ctx).WithError(err).Errorf("ApplicationTemplate with id %q does not have ORD webhook", payload.ApplicationTemplateID)
 						http.Error(writer, "The provided ApplicationTemplate does not have ORD webhook", http.StatusBadRequest)
@@ -119,6 +125,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 					return
 				}
 			}
+			log.C(ctx).Debugf("ORD webhook with id %q was found", ordWebhook.ID)
 		}
 
 		now := time.Now()
@@ -146,7 +153,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		}
 
 		// Notify OperationProcessors for new operation
-		h.onDemandChannel <- opID //TODO what if there are no active processors ? the handler will hang?
+		h.onDemandChannel <- opID
 
 		writer.WriteHeader(http.StatusOK)
 		return
@@ -158,7 +165,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		return
 	}
 	// Notify OperationProcessors for new operation
-	h.onDemandChannel <- operation.ID //TODO what if there are no active processors ? the handler will hang?
+	h.onDemandChannel <- operation.ID
 
 	writer.WriteHeader(http.StatusOK)
 }

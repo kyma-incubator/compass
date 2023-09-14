@@ -252,36 +252,6 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 	return nil
 }
 
-//// TODO - remove - ProcessWebhook performs resync of single ORD webhook
-//func (s *Service) ProcessWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-//	switch webhook.ObjectType {
-//	case model.ApplicationTemplateWebhookReference:
-//		appTemplateID := webhook.ObjectID
-//
-//		if err := s.processApplicationTemplateWebhook(ctx, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
-//			return err
-//		}
-//
-//		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
-//		if err != nil {
-//			return err
-//		}
-//
-//		for _, app := range apps {
-//			if err = s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
-//				return err
-//			}
-//		}
-//	case model.ApplicationWebhookReference:
-//		appID := webhook.ObjectID
-//		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
-
 func (s *Service) retrieveGlobalResources(ctx context.Context) map[string]bool {
 	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
 	if err != nil {
