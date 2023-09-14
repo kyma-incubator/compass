@@ -24,13 +24,14 @@ func TestOrdOperationData_GetData(t *testing.T) {
 			ExpectedData:  "{\"applicationID\":\"app-id\",\"applicationTemplateID\":\"app-template-id\"}",
 		},
 		{
-			Name:         "Success - missing application template id",
-			AppID:        "app-id",
-			ExpectedData: "{\"applicationID\":\"app-id\"}",
+			Name:          "Success - missing application template id",
+			AppID:         "app-id",
+			AppTemplateID: "",
+			ExpectedData:  "{\"applicationID\":\"app-id\",\"applicationTemplateID\":\"\"}",
 		},
 		{
 			Name:         "Success - missing application id",
-			ExpectedData: "{\"applicationID\":\"\"}",
+			ExpectedData: "{\"applicationID\":\"\",\"applicationTemplateID\":\"\"}",
 		},
 	}
 
