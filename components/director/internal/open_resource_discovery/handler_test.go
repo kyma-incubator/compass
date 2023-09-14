@@ -45,8 +45,8 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", context.TODO(), ord.NewOrdOperationData(applicationID, appTemplateID)).Return(&model.Operation{ID: operationID}, nil).Once()
-				opManager.On("RescheduleOperation", context.TODO(), operationID).Return(nil).Once()
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(&model.Operation{ID: operationID}, nil).Once()
+				opManager.On("RescheduleOperation", mock.Anything, operationID).Return(nil).Once()
 				return opManager
 			},
 			WebhookSvcFn: func() *automock.WebhookService {

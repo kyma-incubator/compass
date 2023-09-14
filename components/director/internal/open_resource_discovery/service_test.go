@@ -5224,7 +5224,6 @@ func TestService_Processing(t *testing.T) {
 				err = svc.ProcessAppInAppTemplateContext(context.TODO(), appTemplateID, appID)
 			case processApplicationTemplateFnName:
 				err = svc.ProcessApplicationTemplate(context.TODO(), appTemplateID)
-
 			}
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
