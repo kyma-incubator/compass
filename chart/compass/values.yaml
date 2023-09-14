@@ -1227,7 +1227,7 @@ global:
         consumerSubaccountIDTenantHierarchy: "3cfcdd62-320d-403b-b66a-4ee3cdd06947" # TestIntegrationSystemManagedSubaccount from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
       destinationOauthSecret:
         manage: false
-        name: tests-provider-destination-secret
+        name: provider-destination-instance-tests
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
