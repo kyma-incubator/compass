@@ -25,7 +25,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 	applicationID := "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	appTemplateID := "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	operationID := "ccccccccc-cccc-cccc-cccc-cccccccccccc"
+	webhookID := "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	operation := &model.Operation{ID: operationID}
+	webhook := &model.Webhook{ID: webhookID}
 
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -68,7 +70,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -88,7 +90,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -108,7 +110,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -298,7 +300,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
