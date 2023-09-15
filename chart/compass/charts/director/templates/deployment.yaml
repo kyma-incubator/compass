@@ -265,6 +265,8 @@ spec:
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}
             - name: APP_FORMATION_ASYNC_STATUS_API_ENDPOINT
               value: {{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}
+            - name: APP_UCL_CERT_OU_SUBACCOUNT_ID
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH

@@ -15,7 +15,7 @@ type TenantInfo struct {
 
 // Config contains necessary configurations for the default-tenant-mapping-handler to operate
 type Config struct {
-	APIRootPath               string        `envconfig:"APP_API_ROOT_PATH,default=/instance-creator"`
+	APIRootPath               string        `envconfig:"APP_API_ROOT_PATH,default=/default-tenant-mapping-handler"`
 	APITenantMappingsEndpoint string        `envconfig:"API_TENANT_MAPPINGS_ENDPOINT,default=/v1/tenantMappings/{tenant-id}"`
 	Address                   string        `envconfig:"APP_ADDRESS,default=localhost:8080"`
 	SkipSSLValidation         bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`

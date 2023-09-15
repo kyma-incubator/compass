@@ -304,6 +304,7 @@ export APP_FORMATION_MAPPING_API_PATH_PREFIX='/v1/businessIntegrations'
 export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status'
 export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_RESET_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset'
 export APP_FORMATION_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/status'
+export APP_UCL_CERT_OU_SUBACCOUNT_ID='f8075207-1478-4a80-bd26-24a4785a2bfd'
 export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
 export APP_APPLICATION_TEMPLATE_PRODUCT_LABEL="systemRole"
