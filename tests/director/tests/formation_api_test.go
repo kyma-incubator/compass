@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -916,7 +917,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 				},
 			}
 
-			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			deps, err := json.Marshal([]string{selfRegLabelValue})
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
 			defer func() {
@@ -973,7 +976,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 				},
 			}
 
-			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			deps, err := json.Marshal([]string{selfRegLabelValue})
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
 			defer func() {
@@ -1050,7 +1055,9 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(t, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -3828,7 +3835,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		require.True(stdT, ok)
 		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue, conf.ProviderDestinationConfig.Dependency})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -4224,29 +4233,28 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
-			// Configure destination service clients
+			// Configure destination service client
 			region := conf.SubscriptionConfig.SelfRegRegion
 			instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 			require.True(t, ok)
-
-			subdomain := conf.DestinationConsumerSubdomain
-			destinationProviderClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationProviderClaimKey)
-			require.NoError(t, err)
-			destinationProviderWithInstanceClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationProviderWithInstanceClaimKey)
+			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 			require.NoError(t, err)
 
-			destinationConsumerClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationConsumerClaimKey)
+			consumerTokenURL, err := buildConsumerTokenURL(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain)
 			require.NoError(t, err)
-			destinationConsumerWithInstanceClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationConsumerWithInstanceClaimKey)
-			require.NoError(t, err)
+
+			destinationProviderToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderClaimKey)
+			destinationProviderWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderWithInstanceClaimKey)
+			destinationConsumerToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
+			destinationConsumerWithInstanceToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerWithInstanceClaimKey)
 
 			t.Log("Assert destinations and destination certificates are created...")
-			assertNoAuthDestination(t, destinationProviderClient, noAuthDestinationName, noAuthDestinationURL, "")
-			assertBasicDestination(t, destinationProviderWithInstanceClient, basicDestinationName, basicDestinationURL, testDestinationInstanceID)
-			assertSAMLAssertionDestination(t, destinationConsumerWithInstanceClient, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID)
-			assertClientCertAuthDestination(t, destinationConsumerClient, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "")
-			assertDestinationCertificate(t, destinationConsumerWithInstanceClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID)
-			assertDestinationCertificate(t, destinationConsumerClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "")
+			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", destinationProviderToken)
+			assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, basicDestinationURL, testDestinationInstanceID, destinationProviderWithInstanceToken)
+			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", destinationConsumerToken)
+			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -4275,12 +4283,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.Empty(t, formation.Error)
 
 			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
-			assertNoDestinationIsFound(t, destinationProviderClient, noAuthDestinationName, "")
-			assertNoDestinationIsFound(t, destinationProviderWithInstanceClient, basicDestinationName, testDestinationInstanceID)
-			assertNoDestinationIsFound(t, destinationConsumerWithInstanceClient, samlAssertionDestinationName, testDestinationInstanceID)
-			assertNoDestinationIsFound(t, destinationConsumerClient, clientCertAuthDestinationName, "")
-			assertNoDestinationCertificateIsFound(t, destinationConsumerWithInstanceClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID)
-			assertNoDestinationCertificateIsFound(t, destinationConsumerClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "")
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, "", destinationProviderToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, testDestinationInstanceID, destinationProviderWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, "", destinationConsumerToken)
+			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Logf("Destinations and destination certificates are successfully deleted as part of the unassign operation")
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
@@ -4378,7 +4386,9 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(t, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -6159,16 +6169,16 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 	return body
 }
 
-func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, destinationName, instanceID string) {
-	_ = client.GetDestinationByName(t, destinationName, instanceID, http.StatusNotFound)
+func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, destinationName, instanceID, token string) {
+	_ = client.GetDestinationByName(t, serviceURL, destinationName, instanceID, token, http.StatusNotFound)
 }
 
-func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.DestinationClient, certificateName, instanceID string) {
-	_ = client.GetDestinationCertificateByName(t, certificateName, instanceID, http.StatusNotFound)
+func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
+	_ = client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusNotFound)
 }
 
-func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, noAuthDestinationName, noAuthDestinationURL, instanceID string) {
-	noAuthDestBytes := client.GetDestinationByName(t, noAuthDestinationName, instanceID, http.StatusOK)
+func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, noAuthDestinationName, noAuthDestinationURL, instanceID, token string) {
+	noAuthDestBytes := client.GetDestinationByName(t, serviceURL, noAuthDestinationName, instanceID, token, http.StatusOK)
 	var noAuthDest esmdestinationcreator.NoAuthenticationDestination
 	err := json.Unmarshal(noAuthDestBytes, &noAuthDest)
 	require.NoError(t, err)
@@ -6179,8 +6189,8 @@ func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, no
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, noAuthDest.ProxyType)
 }
 
-func assertBasicDestination(t *testing.T, client *clients.DestinationClient, basicDestinationName, basicDestinationURL, instanceID string) {
-	basicDestBytes := client.GetDestinationByName(t, basicDestinationName, instanceID, http.StatusOK)
+func assertBasicDestination(t *testing.T, client *clients.DestinationClient, serviceURL, basicDestinationName, basicDestinationURL, instanceID, token string) {
+	basicDestBytes := client.GetDestinationByName(t, serviceURL, basicDestinationName, instanceID, token, http.StatusOK)
 	var basicDest esmdestinationcreator.BasicDestination
 	err := json.Unmarshal(basicDestBytes, &basicDest)
 	require.NoError(t, err)
@@ -6191,8 +6201,8 @@ func assertBasicDestination(t *testing.T, client *clients.DestinationClient, bas
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.ProxyType)
 }
 
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID string) {
-	samlAssertionDestBytes := client.GetDestinationByName(t, samlAssertionDestinationName, instanceID, http.StatusOK)
+func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, serviceURL, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID, token string) {
+	samlAssertionDestBytes := client.GetDestinationByName(t, serviceURL, samlAssertionDestinationName, instanceID, token, http.StatusOK)
 	var samlAssertionDest esmdestinationcreator.SAMLAssertionDestination
 	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
 	require.NoError(t, err)
@@ -6205,8 +6215,8 @@ func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationCli
 	require.Equal(t, samlAssertionCertName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
 }
 
-func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID string) {
-	clientCertAuthDestBytes := client.GetDestinationByName(t, clientCertAuthDestinationName, instanceID, http.StatusOK)
+func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID, token string) {
+	clientCertAuthDestBytes := client.GetDestinationByName(t, serviceURL, clientCertAuthDestinationName, instanceID, token, http.StatusOK)
 	var clientCertAuthDest esmdestinationcreator.ClientCertificateAuthenticationDestination
 	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
 	require.NoError(t, err)
@@ -6218,8 +6228,8 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 	require.Equal(t, clientCertAuthCertName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
 }
 
-func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, certificateName, instanceID string) {
-	certBytes := client.GetDestinationCertificateByName(t, certificateName, instanceID, http.StatusOK)
+func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
+	certBytes := client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusOK)
 	var destCertificate esmdestinationcreator.DestinationSvcCertificateResponse
 	err := json.Unmarshal(certBytes, &destCertificate)
 	require.NoError(t, err)
@@ -6910,4 +6920,19 @@ func sortSubject(subject string) string {
 	}
 
 	return strings.Join([]string{cn, strings.Join(ous, ", "), o, l, c}, ", ")
+}
+
+func buildConsumerTokenURL(providerTokenURL, consumerSubdomain string) (string, error) {
+	baseTokenURL, err := url.Parse(providerTokenURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "Failed to parse auth url '%s'", providerTokenURL)
+	}
+	parts := strings.Split(baseTokenURL.Hostname(), ".")
+	if len(parts) < 2 {
+		return "", errors.Errorf("Provider auth URL: '%s' should have a subdomain", providerTokenURL)
+	}
+	originalSubdomain := parts[0]
+
+	tokenURL := strings.Replace(providerTokenURL, originalSubdomain, consumerSubdomain, 1)
+	return tokenURL, nil
 }

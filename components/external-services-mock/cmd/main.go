@@ -216,10 +216,10 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
 	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
-	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
+	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without a need of these mocks.
 
-	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
 	providerHandler := provider.NewHandler(cfg.DirectDependencyXsappname)
+	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
 	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant

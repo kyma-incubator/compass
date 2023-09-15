@@ -793,7 +793,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	requestWebhookMode := mappingPair.AssignmentReqMapping.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
+		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment with ID: %q to state: %q and waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, assignment.ID, string(model.DeletingAssignmentState))
 		assignment.State = string(model.DeletingAssignmentState)
 		// clearing the error and configuration as new notification has been sent
 		ResetAssignmentConfigAndError(assignment)
