@@ -44,4 +44,5 @@ type DestinationCreatorInput struct {
 	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 	Location                               JoinPointLocation        `json:"join_point_location"`
+	SkipSubaccountValidation               bool                     `json:"skip_subaccount_validation"`
 }

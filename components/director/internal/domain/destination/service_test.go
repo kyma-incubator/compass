@@ -61,8 +61,8 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -86,8 +86,8 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Success when there is no destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -111,7 +111,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Error when validating destination subaccount",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return("", testErr)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return("", testErr)
 				return destCreatorSvc
 			},
 			ExpectedErrMessage: errMsg,
@@ -120,7 +120,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Error when getting tenant by external ID",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -134,7 +134,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Error when getting destination from db and error is different from 'Not Found'",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -153,7 +153,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Error when destination from db is found but its formation assignment id is different from the provided formation assignment",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -172,8 +172,8 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Error when creating destination via destination creator service",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth).Return(testErr)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth, false).Return(testErr)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -192,8 +192,8 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			Name: "Error when upserting destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa).Return(designTimeDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, designTimeDestDetails.SubaccountID, &fa, false).Return(designTimeDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateDesignTimeDestinations", ctx, designTimeDestDetails, &fa, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -243,7 +243,7 @@ func TestService_CreateDesignTimeDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateDesignTimeDestinations(ctx, designTimeDestsDetails, &fa)
+			err := svc.CreateDesignTimeDestinations(ctx, designTimeDestsDetails, &fa, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -286,8 +286,8 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				destCreatorSvc.On("PrepareBasicRequestBody", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs).Return(basicReqBody, nil)
 				return destCreatorSvc
 			},
@@ -312,8 +312,8 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Success when there is no destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				destCreatorSvc.On("PrepareBasicRequestBody", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs).Return(basicReqBody, nil)
 				return destCreatorSvc
 			},
@@ -338,7 +338,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when validating destination subaccount",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return("", testErr)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return("", testErr)
 				return destCreatorSvc
 			},
 			ExpectedErrMessage: errMsg,
@@ -347,7 +347,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when getting tenant by external ID",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -361,7 +361,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when getting destination from db and error is different from 'Not Found'",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -380,7 +380,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when destination from db is found but its formation assignment id is different from the provided formation assignment",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -399,8 +399,8 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when creating destination via destination creator service",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth).Return(testErr)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth, false).Return(testErr)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -419,8 +419,8 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when preparing basic req body",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				destCreatorSvc.On("PrepareBasicRequestBody", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs).Return(nil, testErr)
 				return destCreatorSvc
 			},
@@ -440,8 +440,8 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			Name: "Error when upserting destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("ValidateDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa).Return(basicDestDetails.SubaccountID, nil)
-				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("DetermineDestinationSubaccount", ctx, basicDestDetails.SubaccountID, &fa, false).Return(basicDestDetails.SubaccountID, nil)
+				destCreatorSvc.On("CreateBasicCredentialDestinations", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				destCreatorSvc.On("PrepareBasicRequestBody", ctx, basicDestDetails, basicAuthCreds, &fa, correlationIDs).Return(basicReqBody, nil)
 				return destCreatorSvc
 			},
@@ -492,7 +492,7 @@ func TestService_CreateBasicCredentialDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateBasicCredentialDestinations(ctx, basicDestsDetails, basicAuthCreds, &fa, correlationIDs)
+			err := svc.CreateBasicCredentialDestinations(ctx, basicDestsDetails, basicAuthCreds, &fa, correlationIDs, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -534,8 +534,8 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -559,8 +559,8 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Success when there is no destination in DB",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -584,7 +584,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Error when ensuring destination subaccount correctness fails",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(testErr)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(testErr)
 				return destCreatorSvc
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -593,7 +593,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Error when getting tenant by external ID",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -607,7 +607,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Error when getting destination from db and error is different from 'Not Found'",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -626,7 +626,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Error when destination from db is found but its formation assignment id is different from the provided formation assignment",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -645,8 +645,8 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Error when creating destination via destination creator service",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth).Return(testErr)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth, false).Return(testErr)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -665,8 +665,8 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			Name: "Error when upserting destination in DB",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, clientCertAuthDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateClientCertificateDestination", ctx, clientCertAuthDestDetails, clientCertAuthTypeCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -716,7 +716,7 @@ func TestService_CreateClientCertificateAuthenticationDestination(t *testing.T) 
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateClientCertificateAuthenticationDestination(ctx, clientCertAuthDestsDetails, clientCertAuthTypeCreds, &fa, correlationIDs)
+			err := svc.CreateClientCertificateAuthenticationDestination(ctx, clientCertAuthDestsDetails, clientCertAuthTypeCreds, &fa, correlationIDs, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -758,8 +758,8 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -783,8 +783,8 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Success when there is no destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -808,7 +808,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Error when validating destination subaccount",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(testErr)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(testErr)
 				return destCreatorSvc
 			},
 			ExpectedErrMessage: errMsg,
@@ -817,7 +817,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Error when getting tenant by external ID",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -831,7 +831,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Error when getting destination from db and error is different from 'Not Found'",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -850,7 +850,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Error when destination from db is found but its formation assignment id is different from the provided formation assignment",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -869,8 +869,8 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Error when creating destination via destination creator service",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth).Return(testErr)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth, false).Return(testErr)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -889,8 +889,8 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			Name: "Error when upserting destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa).Return(nil)
-				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth).Return(nil)
+				destCreatorSvc.On("EnsureDestinationSubaccountIDsCorrectness", ctx, samlAssertionDestsDetails, &fa, false).Return(nil)
+				destCreatorSvc.On("CreateSAMLAssertionDestination", ctx, samlAssertionDestDetails, samlAuthCreds, &fa, correlationIDs, initialDepth, false).Return(nil)
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -940,7 +940,7 @@ func TestService_CreateSAMLAssertionDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, uidSvc, destCreatorSvc)
 
 			// WHEN
-			err := svc.CreateSAMLAssertionDestination(ctx, samlAssertionDestsDetails, samlAuthCreds, &fa, correlationIDs)
+			err := svc.CreateSAMLAssertionDestination(ctx, samlAssertionDestsDetails, samlAuthCreds, &fa, correlationIDs, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -971,9 +971,9 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Success",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
-				destCreatorSvc.On("DeleteDestination", ctx, samlAssertionDestName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
-				destCreatorSvc.On("DeleteDestination", ctx, basicDestName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
+				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa, false).Return(nil).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, samlAssertionDestName, externalDestinationSubaccountID, destinationInstanceID, &fa, false).Return(nil).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, basicDestName, externalDestinationSubaccountID, destinationInstanceID, &fa, false).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1024,7 +1024,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Error when deleting certificate",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(testErr).Once()
+				destCreatorSvc.On("DeleteCertificate", ctx, samlDestCertName, externalDestinationSubaccountID, destinationInstanceID, &fa, false).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1043,7 +1043,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Error when deleting destination via destination creator",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(testErr).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa, false).Return(testErr).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1062,7 +1062,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			Name: "Error when deleting destination in db",
 			DestinationCreatorServiceFn: func() *automock.DestinationCreatorService {
 				destCreatorSvc := &automock.DestinationCreatorService{}
-				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa).Return(nil).Once()
+				destCreatorSvc.On("DeleteDestination", ctx, basicDestModel.Name, externalDestinationSubaccountID, destinationInstanceID, &fa, false).Return(nil).Once()
 				return destCreatorSvc
 			},
 			TenantRepoFn: func() *automock.TenantRepository {
@@ -1102,7 +1102,7 @@ func TestService_DeleteDestinations(t *testing.T) {
 			svc := destination.NewService(nil, destRepo, tntRepo, nil, destCreatorSvc)
 
 			// WHEN
-			err := svc.DeleteDestinations(ctx, &fa)
+			err := svc.DeleteDestinations(ctx, &fa, false)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

@@ -8,9 +8,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
@@ -910,7 +914,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 				},
 			}
 
-			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			deps, err := json.Marshal([]string{selfRegLabelValue})
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
 			defer func() {
@@ -967,7 +973,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 				},
 			}
 
-			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			deps, err := json.Marshal([]string{selfRegLabelValue})
+			require.NoError(t, err)
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
 			defer func() {
@@ -1044,7 +1052,9 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(t, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -1180,7 +1190,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	formationTmplName := "app-only-formation-template-name"
 
 	certSubjcetMappingCN := "csm-async-callback-cn"
+	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
 	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
+	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component
@@ -1247,6 +1259,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
 	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
 	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
+
+	// Create second certificate subject mapping with custom subject that was used to test that trust details are send to the target
+	certSubjectMappingCustomSubjectWithCommaSeparatorSecond := strings.ReplaceAll(strings.TrimLeft(certSubjectMappingCustomSubjectSecond, "/"), "/", ",")
+	csmInputSecond := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparatorSecond, consumerType, &internalConsumerID, tenantAccessLevels)
+	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparatorSecond, consumerType, tenantAccessLevels)
+
+	var csmCreateSecond graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreateSecond)
+	csmCreateSecond = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInputSecond)
 
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
@@ -1745,7 +1766,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
 		asyncCallbackWebhookMode := graphql.WebhookModeAsyncCallback
 		urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"source-trust-details\\\":[{{ Join  .SourceApplicationTemplate.TrustDetails.Subjects }}],\\\"target-trust-details\\\":[{{ Join  .TargetApplicationTemplate.TrustDetails.Subjects }}] }]}"
 		outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
 		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication)
@@ -1834,6 +1855,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
 		assertFormationAssignmentsNotificationWithItemsStructure(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
+
 		t.Logf("Unassign Application 1 from formation: %q", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		var unassignFormation graphql.Formation
@@ -1860,6 +1884,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
+
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assignNotificationAboutApp2 = notificationsForApp1.Array()[0]
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
 
 		t.Logf("Assign application 1 to formation: %q again", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, graphql.FormationObjectTypeApplication, tnt)
@@ -1896,6 +1924,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 		require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
 
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assignNotificationAboutApp2 = notificationsForApp1.Array()[0]
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
+
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
@@ -1921,6 +1953,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			}
 		}
 		require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
+
+		// Check that there are trust details for the target and there are no trust details for the source.
+		assignNotificationAboutApp2 = notificationsForApp1.Array()[0]
+		assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutApp2, certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond)
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -3242,7 +3278,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		require.True(stdT, ok)
 		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue, conf.ProviderDestinationConfig.Dependency})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -3638,29 +3676,28 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			})
 
-			// Configure destination service clients
+			// Configure destination service client
 			region := conf.SubscriptionConfig.SelfRegRegion
 			instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 			require.True(t, ok)
-
-			subdomain := conf.DestinationConsumerSubdomain
-			destinationProviderClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationProviderClaimKey)
-			require.NoError(t, err)
-			destinationProviderWithInstanceClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationProviderWithInstanceClaimKey)
+			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 			require.NoError(t, err)
 
-			destinationConsumerClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationConsumerClaimKey)
+			consumerTokenURL, err := buildConsumerTokenURL(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain)
 			require.NoError(t, err)
-			destinationConsumerWithInstanceClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain, claims.DestinationConsumerWithInstanceClaimKey)
-			require.NoError(t, err)
+
+			destinationProviderToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderClaimKey)
+			destinationProviderWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderWithInstanceClaimKey)
+			destinationConsumerToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
+			destinationConsumerWithInstanceToken := token.GetClientCredentialsToken(t, ctx, consumerTokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerWithInstanceClaimKey)
 
 			t.Log("Assert destinations and destination certificates are created...")
-			assertNoAuthDestination(t, destinationProviderClient, noAuthDestinationName, noAuthDestinationURL, "")
-			assertBasicDestination(t, destinationProviderWithInstanceClient, basicDestinationName, basicDestinationURL, testDestinationInstanceID)
-			assertSAMLAssertionDestination(t, destinationConsumerWithInstanceClient, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID)
-			assertClientCertAuthDestination(t, destinationConsumerClient, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "")
-			assertDestinationCertificate(t, destinationConsumerWithInstanceClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID)
-			assertDestinationCertificate(t, destinationConsumerClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "")
+			assertNoAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", destinationProviderToken)
+			assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, basicDestinationURL, testDestinationInstanceID, destinationProviderWithInstanceToken)
+			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", destinationConsumerToken)
+			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertDestinationCertificate(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -3689,12 +3726,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.Empty(t, formation.Error)
 
 			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
-			assertNoDestinationIsFound(t, destinationProviderClient, noAuthDestinationName, "")
-			assertNoDestinationIsFound(t, destinationProviderWithInstanceClient, basicDestinationName, testDestinationInstanceID)
-			assertNoDestinationIsFound(t, destinationConsumerWithInstanceClient, samlAssertionDestinationName, testDestinationInstanceID)
-			assertNoDestinationIsFound(t, destinationConsumerClient, clientCertAuthDestinationName, "")
-			assertNoDestinationCertificateIsFound(t, destinationConsumerWithInstanceClient, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID)
-			assertNoDestinationCertificateIsFound(t, destinationConsumerClient, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "")
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, "", destinationProviderToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, basicDestinationName, testDestinationInstanceID, destinationProviderWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, "", destinationConsumerToken)
+			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, testDestinationInstanceID, destinationConsumerWithInstanceToken)
+			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Logf("Destinations and destination certificates are successfully deleted as part of the unassign operation")
 
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
@@ -3792,7 +3829,9 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(t, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
@@ -5569,16 +5608,16 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 	return body
 }
 
-func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, destinationName, instanceID string) {
-	_ = client.GetDestinationByName(t, destinationName, instanceID, http.StatusNotFound)
+func assertNoDestinationIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, destinationName, instanceID, token string) {
+	_ = client.GetDestinationByName(t, serviceURL, destinationName, instanceID, token, http.StatusNotFound)
 }
 
-func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.DestinationClient, certificateName, instanceID string) {
-	_ = client.GetDestinationCertificateByName(t, certificateName, instanceID, http.StatusNotFound)
+func assertNoDestinationCertificateIsFound(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
+	_ = client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusNotFound)
 }
 
-func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, noAuthDestinationName, noAuthDestinationURL, instanceID string) {
-	noAuthDestBytes := client.GetDestinationByName(t, noAuthDestinationName, instanceID, http.StatusOK)
+func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, noAuthDestinationName, noAuthDestinationURL, instanceID, token string) {
+	noAuthDestBytes := client.GetDestinationByName(t, serviceURL, noAuthDestinationName, instanceID, token, http.StatusOK)
 	var noAuthDest esmdestinationcreator.NoAuthenticationDestination
 	err := json.Unmarshal(noAuthDestBytes, &noAuthDest)
 	require.NoError(t, err)
@@ -5589,8 +5628,8 @@ func assertNoAuthDestination(t *testing.T, client *clients.DestinationClient, no
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, noAuthDest.ProxyType)
 }
 
-func assertBasicDestination(t *testing.T, client *clients.DestinationClient, basicDestinationName, basicDestinationURL, instanceID string) {
-	basicDestBytes := client.GetDestinationByName(t, basicDestinationName, instanceID, http.StatusOK)
+func assertBasicDestination(t *testing.T, client *clients.DestinationClient, serviceURL, basicDestinationName, basicDestinationURL, instanceID, token string) {
+	basicDestBytes := client.GetDestinationByName(t, serviceURL, basicDestinationName, instanceID, token, http.StatusOK)
 	var basicDest esmdestinationcreator.BasicDestination
 	err := json.Unmarshal(basicDestBytes, &basicDest)
 	require.NoError(t, err)
@@ -5601,8 +5640,8 @@ func assertBasicDestination(t *testing.T, client *clients.DestinationClient, bas
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.ProxyType)
 }
 
-func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID string) {
-	samlAssertionDestBytes := client.GetDestinationByName(t, samlAssertionDestinationName, instanceID, http.StatusOK)
+func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationClient, serviceURL, samlAssertionDestinationName, samlAssertionCertName, samlAssertionDestinationURL, app1BaseURL, instanceID, token string) {
+	samlAssertionDestBytes := client.GetDestinationByName(t, serviceURL, samlAssertionDestinationName, instanceID, token, http.StatusOK)
 	var samlAssertionDest esmdestinationcreator.SAMLAssertionDestination
 	err := json.Unmarshal(samlAssertionDestBytes, &samlAssertionDest)
 	require.NoError(t, err)
@@ -5615,8 +5654,8 @@ func assertSAMLAssertionDestination(t *testing.T, client *clients.DestinationCli
 	require.Equal(t, samlAssertionCertName+directordestinationcreator.JavaKeyStoreFileExtension, samlAssertionDest.KeyStoreLocation)
 }
 
-func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID string) {
-	clientCertAuthDestBytes := client.GetDestinationByName(t, clientCertAuthDestinationName, instanceID, http.StatusOK)
+func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationClient, serviceURL, clientCertAuthDestinationName, clientCertAuthCertName, clientCertAuthDestinationURL, instanceID, token string) {
+	clientCertAuthDestBytes := client.GetDestinationByName(t, serviceURL, clientCertAuthDestinationName, instanceID, token, http.StatusOK)
 	var clientCertAuthDest esmdestinationcreator.ClientCertificateAuthenticationDestination
 	err := json.Unmarshal(clientCertAuthDestBytes, &clientCertAuthDest)
 	require.NoError(t, err)
@@ -5628,8 +5667,8 @@ func assertClientCertAuthDestination(t *testing.T, client *clients.DestinationCl
 	require.Equal(t, clientCertAuthCertName+directordestinationcreator.JavaKeyStoreFileExtension, clientCertAuthDest.KeyStoreLocation)
 }
 
-func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, certificateName, instanceID string) {
-	certBytes := client.GetDestinationCertificateByName(t, certificateName, instanceID, http.StatusOK)
+func assertDestinationCertificate(t *testing.T, client *clients.DestinationClient, serviceURL, certificateName, instanceID, token string) {
+	certBytes := client.GetDestinationCertificateByName(t, serviceURL, certificateName, instanceID, token, http.StatusOK)
 	var destCertificate esmdestinationcreator.DestinationSvcCertificateResponse
 	err := json.Unmarshal(certBytes, &destCertificate)
 	require.NoError(t, err)
@@ -6285,4 +6324,47 @@ func attachDestinationCreatorConstraints(t *testing.T, formationTemplate graphql
 
 	t.Logf("Attaching constraint with name: %q to formation template with name: %q", secondConstraint.Name, formationTemplate.Name)
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
+}
+
+func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjectOne, expectedSubjectSecond string) {
+	t.Logf("Assert trust details are send to the target")
+	notificationItems := assignNotificationAboutApp2.Get("RequestBody.items")
+	app1FromNotification := notificationItems.Array()[0]
+	targetTrustDetails := app1FromNotification.Get("target-trust-details")
+	certificateDetails := targetTrustDetails.Array()[0].String()
+	certificateDetailsSecond := targetTrustDetails.Array()[1].String()
+	require.ElementsMatch(t, []string{sortSubject(expectedSubjectOne), sortSubject(expectedSubjectSecond)}, []string{certificateDetails, certificateDetailsSecond})
+
+	t.Logf("Assert that there are no trust details for the source")
+	sourceTrustDetails := app1FromNotification.Get("source-trust-details")
+	require.Equal(t, 0, len(sourceTrustDetails.Array()))
+}
+
+func sortSubject(subject string) string {
+	cn := fmt.Sprintf("CN=%s", cert.GetCommonName(subject))
+	o := fmt.Sprintf("O=%s", cert.GetOrganization(subject))
+	l := fmt.Sprintf("L=%s", cert.GetLocality(subject))
+	c := fmt.Sprintf("C=%s", cert.GetCountry(subject))
+	ous := cert.GetAllOrganizationalUnits(subject)
+	sort.Strings(ous)
+	for i, ou := range ous {
+		ous[i] = fmt.Sprintf("OU=%s", ou)
+	}
+
+	return strings.Join([]string{cn, strings.Join(ous, ", "), o, l, c}, ", ")
+}
+
+func buildConsumerTokenURL(providerTokenURL, consumerSubdomain string) (string, error) {
+	baseTokenURL, err := url.Parse(providerTokenURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "Failed to parse auth url '%s'", providerTokenURL)
+	}
+	parts := strings.Split(baseTokenURL.Hostname(), ".")
+	if len(parts) < 2 {
+		return "", errors.Errorf("Provider auth URL: '%s' should have a subdomain", providerTokenURL)
+	}
+	originalSubdomain := parts[0]
+
+	tokenURL := strings.Replace(providerTokenURL, originalSubdomain, consumerSubdomain, 1)
+	return tokenURL, nil
 }

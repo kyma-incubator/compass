@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -16,9 +14,12 @@ import (
 func TestCreateFormationConstraint(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	priority := 7
+	description := "description"
 
 	in := graphql.FormationConstraintInput{
 		Name:            "test_constraint",
+		Description:     &description,
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
 		Operator:        "IsNotAssignedToAnyFormationOfType",
@@ -26,6 +27,7 @@ func TestCreateFormationConstraint(t *testing.T) {
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
 		ConstraintScope: graphql.ConstraintScopeFormationType,
+		Priority:        &priority,
 	}
 
 	t.Logf("Create formation constraint")
@@ -42,6 +44,7 @@ func TestCreateFormationConstraint(t *testing.T) {
 
 	expectedConstraint := &graphql.FormationConstraint{
 		Name:            "test_constraint",
+		Description:     description,
 		ConstraintType:  string(graphql.ConstraintTypePre),
 		TargetOperation: string(graphql.TargetOperationAssignFormation),
 		Operator:        graphql.IsNotAssignedToAnyFormationOfType,
@@ -49,6 +52,7 @@ func TestCreateFormationConstraint(t *testing.T) {
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 		ConstraintScope: string(graphql.ConstraintScopeFormationType),
+		Priority:        priority,
 	}
 	assertConstraint(t, expectedConstraint, &formationConstraint)
 }
@@ -120,7 +124,7 @@ func TestFormationConstraint(t *testing.T) {
 		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 		ConstraintScope: string(graphql.ConstraintScopeFormationType),
 	}
-	require.Equal(t, expectedConstraint, actualFormationConstraint)
+	assertConstraint(t, expectedConstraint, actualFormationConstraint)
 }
 
 func TestUpdateFormationConstraint(t *testing.T) {
@@ -143,8 +147,12 @@ func TestUpdateFormationConstraint(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
+	priority := 7
+	description := "description"
 	updateInput := graphql.FormationConstraintUpdateInput{
 		InputTemplate: "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"key\\\": \\\"value\\\"}",
+		Description:   &description,
+		Priority:      &priority,
 	}
 
 	formationConstraintGQL, err := testctx.Tc.Graphqlizer.FormationConstraintUpdateInputToGQL(updateInput)
@@ -159,6 +167,7 @@ func TestUpdateFormationConstraint(t *testing.T) {
 	expectedConstraint := &graphql.FormationConstraint{
 		ID:              constraint.ID,
 		Name:            "test_constraint",
+		Description:     description,
 		ConstraintType:  string(graphql.ConstraintTypePre),
 		TargetOperation: string(graphql.TargetOperationAssignFormation),
 		Operator:        graphql.IsNotAssignedToAnyFormationOfType,
@@ -166,9 +175,10 @@ func TestUpdateFormationConstraint(t *testing.T) {
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\",\"key\": \"value\"}",
 		ConstraintScope: string(graphql.ConstraintScopeFormationType),
+		Priority:        priority,
 	}
 
-	require.Equal(t, expectedConstraint, actualFormationConstraint)
+	assertConstraint(t, expectedConstraint, actualFormationConstraint)
 }
 
 func TestListFormationConstraints(t *testing.T) {
@@ -213,8 +223,8 @@ func TestListFormationConstraints(t *testing.T) {
 	var actualFormationConstraints []*graphql.FormationConstraint
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
 
-	expectedConstraints := map[string]*graphql.FormationConstraint{
-		"test_constraint": {
+	expectedConstraints := []*graphql.FormationConstraint{
+		{
 			ID:              constraint.ID,
 			Name:            "test_constraint",
 			ConstraintType:  string(graphql.ConstraintTypePre),
@@ -225,7 +235,7 @@ func TestListFormationConstraints(t *testing.T) {
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
-		"test_constraint_second": {
+		{
 			ID:              constraintSecond.ID,
 			Name:            "test_constraint_second",
 			ConstraintType:  string(graphql.ConstraintTypePost),
@@ -240,9 +250,7 @@ func TestListFormationConstraints(t *testing.T) {
 
 	// Require there are at least len(expectedConstraints) as there may be more constraints created outside the test
 	require.GreaterOrEqual(t, len(actualFormationConstraints), len(expectedConstraints))
-	for _, f := range expectedConstraints {
-		assert.Contains(t, actualFormationConstraints, f)
-	}
+	assertConstraints(t, expectedConstraints, actualFormationConstraints)
 }
 
 func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
@@ -382,8 +390,8 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	var actualFormationConstraints []*graphql.FormationConstraint
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
 
-	expectedConstraints := map[string]*graphql.FormationConstraint{
-		"test_constraint": {
+	expectedConstraints := []*graphql.FormationConstraint{
+		{
 			ID:              constraint.ID,
 			Name:            "test_constraint",
 			ConstraintType:  string(graphql.ConstraintTypePre),
@@ -394,7 +402,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
-		"test_constraint_second": {
+		{
 			ID:              constraintSecond.ID,
 			Name:            "test_constraint_second",
 			ConstraintType:  string(graphql.ConstraintTypePost),
@@ -409,14 +417,13 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 
 	// Require there are at least len(expectedConstraints) as there may be more constraints created outside the test
 	require.GreaterOrEqual(t, len(actualFormationConstraints), len(expectedConstraints))
-	for _, f := range expectedConstraints {
-		assert.Contains(t, actualFormationConstraints, f)
-	}
+	assertConstraints(t, expectedConstraints, actualFormationConstraints)
 }
 
 func assertConstraint(t *testing.T, expected, actual *graphql.FormationConstraint) {
 	require.NotEmpty(t, actual.ID)
 	require.Equal(t, expected.Name, actual.Name)
+	require.Equal(t, expected.Description, actual.Description)
 	require.Equal(t, expected.ConstraintType, actual.ConstraintType)
 	require.Equal(t, expected.TargetOperation, actual.TargetOperation)
 	require.Equal(t, expected.Operator, actual.Operator)
@@ -424,4 +431,16 @@ func assertConstraint(t *testing.T, expected, actual *graphql.FormationConstrain
 	require.Equal(t, expected.ResourceSubtype, actual.ResourceSubtype)
 	require.Equal(t, expected.InputTemplate, actual.InputTemplate)
 	require.Equal(t, expected.ConstraintScope, actual.ConstraintScope)
+	require.Equal(t, expected.Priority, actual.Priority)
+}
+
+func assertConstraints(t *testing.T, expected, actual []*graphql.FormationConstraint) {
+	constraintToName := make(map[string]*graphql.FormationConstraint, len(actual))
+	for _, constraint := range actual {
+		constraintToName[constraint.Name] = constraint
+	}
+
+	for _, constraint := range expected {
+		assertConstraint(t, constraint, constraintToName[constraint.Name])
+	}
 }

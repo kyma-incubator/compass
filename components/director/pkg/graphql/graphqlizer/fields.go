@@ -243,6 +243,7 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 	return `
 			id
 			name
+            description
 			constraintType
 			targetOperation
 			operator
@@ -250,6 +251,8 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 			resourceSubtype
 			inputTemplate
 			constraintScope
+            priority
+            createdAt
 	`
 }
 

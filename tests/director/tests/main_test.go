@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
+	directorcfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -45,8 +45,10 @@ type DirectorConfig struct {
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                                 subscription.Config
 	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
-	DestinationsConfig                                 cfg.DestinationsConfig
+	DestinationsConfig                                 directorcfg.DestinationsConfig
+	ProviderDestinationConfig                          config.ProviderDestinationConfig
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	DestinationConsumerSubdomainMtls                   string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string
