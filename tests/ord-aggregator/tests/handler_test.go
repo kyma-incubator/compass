@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -569,7 +570,9 @@ func TestORDAggregator(stdT *testing.T) {
 			},
 		}
 
-		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(t, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		defer func() {
