@@ -2,8 +2,8 @@ package apiclient_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
@@ -12,71 +12,86 @@ import (
 )
 
 const (
-	externalID    = "externalID"
-	internalID    = "internalID"
-	tenantHeader  = "Tenant"
-	appID         = "appID"
-	appTemplateID = "appTemplateID"
-	fakeEndpoint  = "http://fake-endpoint"
+	appID             = "appID"
+	appTemplateID     = "appTemplateID"
+	fakeEndpoint      = "http://fake-endpoint"
+	aggregateEndpoint = "/aggregate"
 )
 
 func TestORDClient_Aggregate(t *testing.T) {
 	// GIVEN
-	mockClient, mockServerCloseFn, endpoint := fixOrdClient()
-	defer mockServerCloseFn()
+	ctx := context.TODO()
 
-	ORDClientConfig := apiclient.OrdAggregatorClientConfig{
-		ClientTimeout:             time.Second * 30,
-		OrdAggregatorAggregateAPI: endpoint,
-		SkipSSLValidation:         true,
+	testCases := []struct {
+		Name          string
+		Endpoint      string
+		OrdClientFunc func() (*http.Client, func(), string)
+		ExpectedErr   error
+	}{
+		{
+			Name:          "Success calling aggregate api",
+			Endpoint:      aggregateEndpoint,
+			OrdClientFunc: fixOrdClient,
+			ExpectedErr:   nil,
+		},
+		{
+			Name:          "Error when status code is 404",
+			Endpoint:      aggregateEndpoint,
+			OrdClientFunc: fixErrorNotFoundOrdClient,
+			ExpectedErr:   errors.New("received unexpected status code"),
+		},
+		{
+			Name:          "Error when calling aggregate api",
+			Endpoint:      fakeEndpoint,
+			OrdClientFunc: fixOrdClient,
+			ExpectedErr:   errors.New("while executing request to ord aggregator"),
+		},
 	}
 
-	client := apiclient.NewORDClient(ORDClientConfig)
+	for _, test := range testCases {
+		t.Run(test.Name, func(t *testing.T) {
+			mockClient, mockServerCloseFn, URL := test.OrdClientFunc()
+			defer mockServerCloseFn()
 
-	client.SetHTTPClient(mockClient)
+			ORDClientConfig := apiclient.OrdAggregatorClientConfig{
+				ClientTimeout:             time.Second * 30,
+				OrdAggregatorAggregateAPI: URL + test.Endpoint,
+				SkipSSLValidation:         true,
+			}
+			client := apiclient.NewORDClient(ORDClientConfig)
+			client.SetHTTPClient(mockClient)
 
-	t.Run("Success calling aggregate api", func(t *testing.T) {
-		//GIVEN
-		ctx := tenant.SaveToContext(context.TODO(), internalID, externalID)
-		// WHEN
-		err := client.Aggregate(ctx, appID, appTemplateID)
-		// THEN
-		require.NoError(t, err)
-	})
-	t.Run("Error when tenant is missing from context", func(t *testing.T) {
-		// WHEN
-		err := client.Aggregate(context.TODO(), appID, appTemplateID)
-		// THEN
-		require.Error(t, err)
-	})
-	t.Run("Error when calling aggregate api", func(t *testing.T) {
-		//GIVEN
-		ctx := tenant.SaveToContext(context.TODO(), internalID, externalID)
+			// WHEN
+			err := client.Aggregate(ctx, appID, appTemplateID)
 
-		ORDClientConfig = apiclient.OrdAggregatorClientConfig{
-			ClientTimeout:             time.Second * 30,
-			OrdAggregatorAggregateAPI: fakeEndpoint,
-			SkipSSLValidation:         true,
-		}
-		client = apiclient.NewORDClient(ORDClientConfig)
+			// THEN
+			if test.ExpectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), test.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
 
-		client.SetHTTPClient(mockClient)
-		// WHEN
-		err := client.Aggregate(ctx, appID, appTemplateID)
-		// THEN
-		require.Error(t, err)
-	})
+		})
+	}
 }
 
 func fixOrdClient() (*http.Client, func(), string) {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/aggregate", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set(tenantHeader, externalID)
+	mux.HandleFunc(aggregateEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+	ts := httptest.NewServer(mux)
 
+	return ts.Client(), ts.Close, ts.URL
+}
+
+func fixErrorNotFoundOrdClient() (*http.Client, func(), string) {
+	mux := http.NewServeMux()
+	mux.HandleFunc(aggregateEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
 	ts := httptest.NewServer(mux)
 
 	return ts.Client(), ts.Close, ts.URL

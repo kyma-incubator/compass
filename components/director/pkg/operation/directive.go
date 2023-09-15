@@ -176,7 +176,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 	committed = true
 
-	if operationType == graphql.OperationTypeCreate {
+	if operationType == graphql.OperationTypeCreate || operationType == graphql.OperationTypeUpdate {
 		appID := entity.GetID()
 
 		if err := d.ordOperationSchedulerFunc(ctx, appID, ""); err != nil {
@@ -324,7 +324,7 @@ func (d *directive) executeSyncOperation(ctx context.Context, next gqlgen.Resolv
 		log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", err)
 		return nil, apperrors.NewInternalError("Failed to process operation")
 	}
-	if operationType == graphql.OperationTypeCreate {
+	if operationType == graphql.OperationTypeCreate || operationType == graphql.OperationTypeUpdate {
 		appID := entity.GetID()
 		if err := d.ordOperationSchedulerFunc(ctx, appID, ""); err != nil {
 			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API: %v", err)

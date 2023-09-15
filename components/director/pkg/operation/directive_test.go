@@ -952,7 +952,7 @@ func TestHandleOperation(t *testing.T) {
 			require.Nil(t, errorMsg)
 			require.Equal(t, model.ApplicationStatusConditionUpdating, appStatusCondition)
 			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler, nil)
+		}, mockedTenantLoaderFunc, mockedScheduler, mockedORDOperationSchedulerFunc)
 
 		dummyResolver := &dummyResolver{}
 

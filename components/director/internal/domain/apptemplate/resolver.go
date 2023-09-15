@@ -118,36 +118,34 @@ type SelfRegisterManager interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc                    ApplicationService
-	appConverter              ApplicationConverter
-	appTemplateSvc            ApplicationTemplateService
-	appTemplateConverter      ApplicationTemplateConverter
-	webhookSvc                WebhookService
-	webhookConverter          WebhookConverter
-	selfRegManager            SelfRegisterManager
-	uidService                UIDService
-	appTemplateProductLabel   string
-	certSubjectMappingSvc     CertSubjectMappingService
-	ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig
-	ordClient                 *apiclient.ORDClient
+	appSvc                  ApplicationService
+	appConverter            ApplicationConverter
+	appTemplateSvc          ApplicationTemplateService
+	appTemplateConverter    ApplicationTemplateConverter
+	webhookSvc              WebhookService
+	webhookConverter        WebhookConverter
+	selfRegManager          SelfRegisterManager
+	uidService              UIDService
+	appTemplateProductLabel string
+	certSubjectMappingSvc   CertSubjectMappingService
+	ordClient               *apiclient.ORDClient
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
-		transact:                  transact,
-		appSvc:                    appSvc,
-		appConverter:              appConverter,
-		appTemplateSvc:            appTemplateSvc,
-		appTemplateConverter:      appTemplateConverter,
-		webhookSvc:                webhookService,
-		webhookConverter:          webhookConverter,
-		selfRegManager:            selfRegisterManager,
-		uidService:                uidService,
-		appTemplateProductLabel:   appTemplateProductLabel,
-		certSubjectMappingSvc:     certSubjectMappingSvc,
-		ordAggregatorClientConfig: ordAggregatorClientConfig,
-		ordClient:                 apiclient.NewORDClient(ordAggregatorClientConfig),
+		transact:                transact,
+		appSvc:                  appSvc,
+		appConverter:            appConverter,
+		appTemplateSvc:          appTemplateSvc,
+		appTemplateConverter:    appTemplateConverter,
+		webhookSvc:              webhookService,
+		webhookConverter:        webhookConverter,
+		selfRegManager:          selfRegisterManager,
+		uidService:              uidService,
+		appTemplateProductLabel: appTemplateProductLabel,
+		certSubjectMappingSvc:   certSubjectMappingSvc,
+		ordClient:               apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -470,6 +468,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 
 	if err := r.ordClient.Aggregate(ctx, app.ID, appTemplate.ID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q and AppTemplateID %q", app.ID, id)
+	}
+
+	if err := r.ordClient.Aggregate(ctx, app.ID, ""); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q", app.ID)
 	}
 
 	return gqlApp, nil
