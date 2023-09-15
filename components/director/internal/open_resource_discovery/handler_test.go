@@ -70,7 +70,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -227,58 +227,6 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
-				return whSvc
-			},
-			RequestBody: ord.AggregationResources{
-				ApplicationID:         applicationID,
-				ApplicationTemplateID: appTemplateID,
-			},
-			ExpectedStatusCode:  http.StatusInternalServerError,
-			ExpectedErrorOutput: "Loading ORD webhooks of Application for ORD data aggregation failed",
-		},
-		{
-			Name: "BadRequest - provided application and application template do not have ord webhook",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx, transact := txGen.ThatDoesntExpectCommit()
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			OperationManagerFn: func() *automock.OperationsManager {
-				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
-				return opManager
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, apperrors.NewNotFoundError(resource.Webhook, operationID)).Once()
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, apperrors.NewNotFoundError(resource.Webhook, operationID)).Once()
-				return whSvc
-			},
-			RequestBody: ord.AggregationResources{
-				ApplicationID:         applicationID,
-				ApplicationTemplateID: appTemplateID,
-			},
-			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: "The provided ApplicationTemplate does not have ORD webhook",
-		},
-		{
-			Name: "InternalServerError - error while checking if the provided app template has ord webhook",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx, transact := txGen.ThatDoesntExpectCommit()
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
-				return persistTx, transact
-			},
-			OperationManagerFn: func() *automock.OperationsManager {
-				opManager := &automock.OperationsManager{}
-				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
-				return opManager
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, apperrors.NewNotFoundError(resource.Webhook, operationID)).Once()
 				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
 				return whSvc
 			},
@@ -288,6 +236,28 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
 			ExpectedErrorOutput: "Loading ORD webhooks of Application Template for ORD data aggregation failed",
+		},
+		{
+			Name: "BadRequest - provided application and application template do not have ord webhook",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatDoesntExpectCommit()
+			},
+			OperationManagerFn: func() *automock.OperationsManager {
+				opManager := &automock.OperationsManager{}
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				return opManager
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, apperrors.NewNotFoundError(resource.Webhook, webhookID)).Once()
+				return whSvc
+			},
+			RequestBody: ord.AggregationResources{
+				ApplicationID:         applicationID,
+				ApplicationTemplateID: appTemplateID,
+			},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "The provided ApplicationTemplate does not have ORD webhook",
 		},
 		{
 			Name:            "InternalServerError - create operation fail",
