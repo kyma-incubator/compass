@@ -800,6 +800,16 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 		ExpectedToBeValid bool
 	}{
 		{
+			Name: "Valid `OpenResourceDiscovery` field with value 1.x",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = "1.3"
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
 			Name: "Missing `OpenResourceDiscovery` field for Document",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -825,6 +835,41 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `policyLevel` field value is valid for Document",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `policyLevel` field value for Document",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(invalidPolicyLevel)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`policyLevel` field for Document is not of type `custom` when `customPolicyLevel` is set",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.CustomPolicyLevel = str.Ptr("myCustomPolicyLevel")
+				doc.PolicyLevel = str.Ptr(policyLevel)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customPolicyLevel` field value for Document when `policyLevel` is set to `custom`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.CustomPolicyLevel = str.Ptr("invalid-value")
+				doc.PolicyLevel = str.Ptr(custom)
+
+				return []*ord.Document{doc}
+			},
 		},
 	}
 
@@ -1014,6 +1059,15 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			},
 			AfterTest: func() {
 				resourceHashes = fixResourceHashes()
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `policyLevel` field value is valid for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = nil
+
+				return []*ord.Document{doc}
 			},
 			ExpectedToBeValid: true,
 		}, {
@@ -3956,7 +4010,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid type of direction field",
+			Name: "Invalid type of `direction` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Direction = str.Ptr(invalidType)

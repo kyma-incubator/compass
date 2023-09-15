@@ -28,15 +28,15 @@ const (
 	// SemVerRegex represents the valid structure of the field
 	SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 	// PackageOrdIDRegex represents the valid structure of the ordID of the Package
-	PackageOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	PackageOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// VendorOrdIDRegex represents the valid structure of the ordID of the Vendor
 	VendorOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	// ProductOrdIDRegex represents the valid structure of the ordID of the Product
 	ProductOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(product):([a-zA-Z0-9._\\-]+):()$"
 	// BundleOrdIDRegex represents the valid structure of the ordID of the ConsumptionBundle
-	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -46,9 +46,9 @@ const (
 	// CountryRegex represents the valid structure of the field
 	CountryRegex = "^[A-Z]{2}$"
 	// APIOrdIDRegex represents the valid structure of the ordID of the API
-	APIOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	APIOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// EventOrdIDRegex represents the valid structure of the ordID of the Event
-	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CorrelationIDsRegex represents the valid structure of the field
 	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
@@ -259,7 +259,7 @@ func validateDocumentInput(doc *Document) error {
 	)
 }
 
-func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+func validatePackageInput(pkg *model.PackageInput) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&pkg.Title, validation.Length(1, 255), validation.Required),
@@ -315,7 +315,7 @@ func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, packagesF
 		})))
 }
 
-func validateBundleInput(bndl *model.BundleCreateInput, bundlesFromDB map[string]*model.Bundle, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
+func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
@@ -353,7 +353,7 @@ func validateBundleInputWithSuppressedErrors(bndl *model.BundleCreateInput, bund
 		})))
 }
 
-func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error {
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string) error {
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
@@ -441,7 +441,7 @@ func validateAPIInputWithSuppressedErrors(api *model.APIDefinitionInput, apisFro
 		})))
 }
 
-func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
+func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string) error {
 	return validation.ValidateStruct(event,
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
