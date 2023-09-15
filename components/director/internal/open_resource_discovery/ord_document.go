@@ -307,7 +307,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 
 		for i, pkg := range doc.Packages {
 			if err := validatePackageInputWithSuppressedErrors(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating package with ord id %q", pkg.OrdID))
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating package with ord id %q", pkg.OrdID))
 			}
 			if err := validatePackageInput(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
@@ -318,7 +318,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 
 		for i, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInputWithSuppressedErrors(bndl, resourcesFromDB.Bundles, resourceHashes); err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 			}
 			if err := validateBundleInput(bndl, resourcesFromDB.Bundles, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
@@ -347,7 +347,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 
 		for i, api := range doc.APIResources {
 			if err := validateAPIInputWithSuppressedErrors(api, resourcesFromDB.APIs, resourceHashes); err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating api with ord id %q", stringPtrToString(api.OrdID)))
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating api with ord id %q", stringPtrToString(api.OrdID)))
 			}
 			if err := validateAPIInput(api, resourceIDs.PackagePolicyLevels, resourcesFromDB.APIs, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
@@ -364,7 +364,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 
 		for i, event := range doc.EventResources {
 			if err := validateEventInputWithSuppressedErrors(event, resourcesFromDB.Events, resourceHashes); err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "supressed errors validating event with ord id %q", stringPtrToString(event.OrdID)))
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating event with ord id %q", stringPtrToString(event.OrdID)))
 			}
 			if err := validateEventInput(event, resourceIDs.PackagePolicyLevels, resourcesFromDB.Events, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))

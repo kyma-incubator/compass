@@ -64,12 +64,11 @@ const (
 	event1specID = "event1specID"
 	event2specID = "event2specID"
 
-	cursor                      = "cursor"
-	policyLevel                 = "sap:core:v1"
-	apiImplementationStandard   = "cff:open-service-broker:v2"
-	eventImplementationStandard = "sap.foo.bar:some-event-contract:v1"
-	correlationIDs              = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
-	partners                    = `["microsoft:vendor:Microsoft:"]`
+	cursor                    = "cursor"
+	policyLevel               = "sap:core:v1"
+	apiImplementationStandard = "cff:open-service-broker:v2"
+	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
+	partners                  = `["microsoft:vendor:Microsoft:"]`
 
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"

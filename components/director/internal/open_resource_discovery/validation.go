@@ -253,7 +253,7 @@ func ValidateSystemVersionInput(appTemplateVersion *model.ApplicationTemplateVer
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1\\.\\d$"))),
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile(`^1\.\d$`))),
 		validation.Field(&doc.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelCustom, PolicyLevelNone), validation.When(doc.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&doc.CustomPolicyLevel, validation.When(doc.PolicyLevel != nil && *doc.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 	)
