@@ -938,8 +938,9 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 
 			participants := request.Object.GetParticipantsIDs()
 
-			// Remove objectID from participants
-			objectIndex := slices.Index(participants, objectID)
+			// Remove assignment.Target from participants, as target and objectID are change via the mappings
+			// This is in order to not match loops in cases where they are not applicable
+			objectIndex := slices.Index(participants, assignment.Target)
 			if objectIndex != -1 {
 				participants = append(participants[:objectIndex], participants[objectIndex+1:]...)
 			}
