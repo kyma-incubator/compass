@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -3194,14 +3196,27 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		var actualFormationConstraints []*graphql.FormationConstraint
 		require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
 
-		updateInput := graphql.FormationConstraintUpdateInput{
-			InputTemplate: fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"APPLICATION\\\",\\\"source_resource_id\\\":\\\"{{ if .SourceApplication }}{{.SourceApplication.ID}}{{else}}{{.Assignment.Source}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"except_subtypes\\\":[\\\"%s\\\", \\\"%s\\\"]}", applicationType1, applicationType2),
-		}
-
 		originalConstraint := findConstraintByName(t, constraintName, actualFormationConstraints)
 
 		originalInput := graphql.FormationConstraintUpdateInput{
 			InputTemplate: strings.Trim(strconv.Quote(originalConstraint.InputTemplate), "\""),
+		}
+		output := formationconstraintpkg.DoNotGenerateFormationAssignmentNotificationInput{}
+		unquoted := strings.ReplaceAll(originalInput.InputTemplate, "\\", "")
+		err = formationconstraintpkg.ParseInputTemplate(unquoted, struct {
+			SourceApplication *struct {
+				ID string `json:"id"`
+			} `json:"source_application"`
+			ResourceID      string `json:"resource_id"`
+			ResourceSubtype string `json:"resource_subtype"`
+			ResourceType    string `json:"resource_type"`
+			TenantID        string `json:"tenant_id"`
+		}{}, &output)
+
+		exceptSubtypes := `\"` + strings.Join(append(output.ExceptSubtypes, []string{applicationType1, applicationType2}...), "\\\", \\\"") + `\"`
+
+		updateInput := graphql.FormationConstraintUpdateInput{
+			InputTemplate: fmt.Sprintf("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"APPLICATION\\\",\\\"source_resource_id\\\":\\\"{{ if .SourceApplication }}{{.SourceApplication.ID}}{{end}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"except_subtypes\\\":[%s]}", exceptSubtypes),
 		}
 
 		defer fixtures.UpdateFormationConstraint(t, ctx, originalConstraint.ID, originalInput, certSecuredGraphQLClient)
