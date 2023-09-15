@@ -17,12 +17,13 @@ var now = time.Now
 
 // OperationsManager provides methods for operations management
 type OperationsManager struct {
-	opType        model.OperationType
-	transact      persistence.Transactioner
-	opSvc         OperationService
-	mutex         sync.Mutex
-	areJobsStared bool
-	cfg           OperationsManagerConfig
+	opType                                 model.OperationType
+	transact                               persistence.Transactioner
+	opSvc                                  OperationService
+	mutex                                  sync.Mutex
+	isRescheduleOperationsJobStarted       bool
+	isRescheduleHangedOperationsJobStarted bool
+	cfg                                    OperationsManagerConfig
 }
 
 // NewOperationsManager creates new OperationsManager
@@ -155,29 +156,12 @@ func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationI
 	return om.rescheduleOperation(ctx, operationID, HighOperationPriority)
 }
 
-// RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.
-func (om *OperationsManager) RunMaintenanceJobs(ctx context.Context) error {
-	if om.areJobsStared {
-		log.C(ctx).Info("Maintenance jobs are already started")
+// StartRescheduleOperationsJob starts reschedule operations job and blocks.
+func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) error {
+	if om.isRescheduleOperationsJobStarted {
+		log.C(ctx).Info("Reschedule operations job is already started")
 		return nil
 	}
-	log.C(ctx).Info("Maintenance jobs starting")
-
-	err := om.startRescheduleOperationsJob(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = om.startRescheduleHangedOperationsJob(ctx)
-	if err != nil {
-		return err
-	}
-	om.areJobsStared = true
-	log.C(ctx).Info("Maintenance jobs now started")
-	return nil
-}
-
-func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) error {
 	resyncJob := cronjob.CronJob{
 		Name: "RescheduleOperationsJob",
 		Fn: func(jobCtx context.Context) {
@@ -202,10 +186,16 @@ func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) e
 		},
 		SchedulePeriod: om.cfg.RescheduleOperationsJobInterval,
 	}
+	om.isRescheduleOperationsJobStarted = true
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 
-func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Context) error {
+// StartRescheduleHangedOperationsJob starts reschedule hanged operations job and blocks.
+func (om *OperationsManager) StartRescheduleHangedOperationsJob(ctx context.Context) error {
+	if om.isRescheduleHangedOperationsJobStarted {
+		log.C(ctx).Info("Reschedule hanged operations job is already started")
+		return nil
+	}
 	resyncJob := cronjob.CronJob{
 		Name: "RescheduleHangedOperationsJob",
 		Fn: func(jobCtx context.Context) {
@@ -230,6 +220,7 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 		},
 		SchedulePeriod: om.cfg.RescheduleHangedOperationsJobInterval,
 	}
+	om.isRescheduleHangedOperationsJobStarted = true
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 

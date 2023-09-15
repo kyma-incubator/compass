@@ -360,6 +360,20 @@ func main() {
 		cancel()
 	}()
 
+	go func() {
+		if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
+			cancel()
+		}
+	}()
+
+	go func() {
+		if err := operationsManager.StartRescheduleHangedOperationsJob(ctx); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to run RescheduleHangedOperationsJob. Stopping app...")
+			cancel()
+		}
+	}()
+
 	runMainSrv()
 }
 
