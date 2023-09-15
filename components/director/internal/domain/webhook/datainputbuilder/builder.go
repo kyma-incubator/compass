@@ -53,6 +53,12 @@ type tenantInputBuilder interface {
 	GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error)
 }
 
+//go:generate mockery --exported --name=certSubjectInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
+type certSubjectInputBuilder interface {
+	GetTrustDetailsForObjects(ctx context.Context, objectIDs []string) (map[string]*webhook.TrustDetails, error)
+	GetTrustDetailsForObject(ctx context.Context, objectID string) (*webhook.TrustDetails, error)
+}
+
 // DataInputBuilder is responsible to prepare and build different entity data needed for a webhook input
 //go:generate mockery --exported --name=DataInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DataInputBuilder interface {
@@ -72,12 +78,13 @@ type WebhookDataInputBuilder struct {
 	runtimeContextRepo            runtimeContextRepository
 	labelInputBuilder             labelInputBuilder
 	tenantInputBuilder            tenantInputBuilder
+	certSubjectInputBuilder       certSubjectInputBuilder
 }
 
 const globalSubaccountIDLabelKey = "global_subaccount_id"
 
 // NewWebhookDataInputBuilder creates a WebhookDataInputBuilder
-func NewWebhookDataInputBuilder(applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelInputBuilder labelInputBuilder, tenantInputBuilder tenantInputBuilder) *WebhookDataInputBuilder {
+func NewWebhookDataInputBuilder(applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelInputBuilder labelInputBuilder, tenantInputBuilder tenantInputBuilder, certSubjectInputBuilder certSubjectInputBuilder) *WebhookDataInputBuilder {
 	return &WebhookDataInputBuilder{
 		applicationRepository:         applicationRepository,
 		applicationTemplateRepository: applicationTemplateRepository,
@@ -85,6 +92,7 @@ func NewWebhookDataInputBuilder(applicationRepository applicationRepository, app
 		runtimeContextRepo:            runtimeContextRepo,
 		labelInputBuilder:             labelInputBuilder,
 		tenantInputBuilder:            tenantInputBuilder,
+		certSubjectInputBuilder:       certSubjectInputBuilder,
 	}
 }
 
@@ -125,10 +133,16 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 			return nil, nil, errors.Wrapf(err, "while building tenant with labels for application template with ID %q", appTemplate.ID)
 		}
 
+		trustDetailsForApplicationTemplate, err := b.certSubjectInputBuilder.GetTrustDetailsForObject(ctx, appTemplate.ID)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "while building trust details for application tempalate with ID %q", appTemplate.ID)
+		}
+
 		appTemplateWithLabels = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: appTemplate,
 			Labels:              applicationTemplateLabels,
 			Tenant:              tenantWithLabelsForApplicationTemplate,
+			TrustDetails:        trustDetailsForApplicationTemplate,
 		}
 	}
 	return applicationWithLabels, appTemplateWithLabels, nil
@@ -151,10 +165,16 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, 
 		return nil, errors.Wrapf(err, "while building tenants with labels for runtime with ID %q", runtimeID)
 	}
 
+	trustDetailsForRuntime, err := b.certSubjectInputBuilder.GetTrustDetailsForObject(ctx, runtimeID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while building trust details for runtime with ID %q", runtimeID)
+	}
+
 	runtimeWithLabels := &webhook.RuntimeWithLabels{
-		Runtime: runtime,
-		Labels:  runtimeLabels,
-		Tenant:  tenantWithLabelsForRuntime,
+		Runtime:      runtime,
+		Labels:       runtimeLabels,
+		Tenant:       tenantWithLabelsForRuntime,
+		TrustDetails: trustDetailsForRuntime,
 	}
 
 	return runtimeWithLabels, nil
@@ -260,12 +280,18 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for runtimes")
 	}
 
+	trustDetailsForRuntimes, err := b.certSubjectInputBuilder.GetTrustDetailsForObjects(ctx, runtimesIDs)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building trust details for runtimes with IDs %q", runtimesIDs)
+	}
+
 	runtimesMapping := make(map[string]*webhook.RuntimeWithLabels, len(runtimesLabels))
 	for _, rt := range runtimes {
 		runtimesMapping[rt.ID] = &webhook.RuntimeWithLabels{
-			Runtime: rt,
-			Labels:  runtimesLabels[rt.ID],
-			Tenant:  tenantsWithLabelsForRuntimes[rt.ID],
+			Runtime:      rt,
+			Labels:       runtimesLabels[rt.ID],
+			Tenant:       tenantsWithLabelsForRuntimes[rt.ID],
+			TrustDetails: trustDetailsForRuntimes[rt.ID],
 		}
 	}
 
@@ -348,12 +374,18 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrapf(err, "while building tenants with labels for application templates")
 	}
 
+	trustDetailsForApplicationTemplates, err := b.certSubjectInputBuilder.GetTrustDetailsForObjects(ctx, applicationsTemplateIDs)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while building trust details for application tempalates with IDs %q", applicationsTemplateIDs)
+	}
+
 	applicationTemplatesMapping := make(map[string]*webhook.ApplicationTemplateWithLabels, len(applicationTemplates))
 	for i, appTemplate := range applicationTemplates {
 		applicationTemplatesMapping[appTemplate.ID] = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: applicationTemplates[i],
 			Labels:              applicationTemplatesLabels[appTemplate.ID],
 			Tenant:              tenantsWithLabelsForApplicationTemplates[appTemplate.ID],
+			TrustDetails:        trustDetailsForApplicationTemplates[appTemplate.ID],
 		}
 	}
 

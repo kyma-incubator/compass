@@ -193,6 +193,38 @@ func TestRepository_List(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListByConsumerID(t *testing.T) {
+	consumerID := "consumer-id"
+
+	suite := testdb.RepoListTestSuite{
+		Name:       "List certificate subject mappings by consumer ID",
+		MethodName: "ListByConsumerID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping WHERE internal_consumer_id = $1`),
+				Args:     []driver.Value{consumerID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ExpectedModelEntities: []interface{}{CertSubjectMappingModel},
+		ExpectedDBEntities:    []interface{}{CertSubjectMappingEntity},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       certsubjectmapping.NewRepository,
+		MethodArgs:                []interface{}{consumerID},
+		DisableConverterErrorTest: false,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_DeleteByConsumerID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Delete certificate subject mappings for consumer id",
