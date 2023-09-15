@@ -47,7 +47,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -131,11 +131,6 @@ type securityConfig struct {
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
-}
-
-// TenantService is responsible for service-layer tenant operations
-type TenantService interface {
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 func main() {
@@ -501,7 +496,6 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, transact, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
-	configureTenantContextMiddleware(apiRouter, transact)
 	apiRouter.HandleFunc(aggregateEndpoint, handler.ScheduleAggregationForORDData).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
@@ -521,7 +515,7 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := auth_middleware.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
+	middleware := authmiddleware.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.SecurityConfig.JWKSSyncPeriod)
@@ -531,53 +525,6 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 		}
 	})
 	go periodicExecutor.Run(ctx)
-}
-
-func configureTenantContextMiddleware(apiRouter *mux.Router, transact persistence.Transactioner) {
-	tenantConverter := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConverter)
-	uidSvc := uid.NewService()
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-
-	apiRouter.Use(tenantContextHandler(transact, tenantSvc))
-}
-
-func tenantContextHandler(transact persistence.Transactioner, tenantSvc TenantService) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			tx, err := transact.Begin()
-			if err != nil {
-				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
-				return
-			}
-			defer transact.RollbackUnlessCommitted(ctx, tx)
-
-			ctx = persistence.SaveToContext(ctx, tx)
-
-			tntFromCtx, err := tenant.LoadFromContext(ctx)
-			if err != nil {
-				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
-				return
-			}
-
-			tnt, err := tenantSvc.GetTenantByExternalID(ctx, tntFromCtx)
-			if err != nil {
-				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
-				return
-			}
-
-			if err := tx.Commit(); err != nil {
-				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
-				return
-			}
-
-			ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
-
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
 }
 
 func unmarshalMappings(tenantMappings string) (map[string]ord.CredentialExchangeStrategyTenantMapping, error) {

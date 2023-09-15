@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/pkg/errors"
@@ -58,15 +57,13 @@ func (c *ORDClient) Aggregate(ctx context.Context, appID, appTemplateID string) 
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	tnt, err := tenant.LoadTenantPairFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "can not read tenant from context")
-	}
-	req.Header.Set("Tenant", tnt.ExternalID)
-
-	_, err = c.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "while executing request to ord aggregator")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("received unexpected status code %d while calling aggregate API with ApplicationID %q and ApplicationTemplateID %q", resp.StatusCode, appID, appTemplateID)
 	}
 
 	return nil
