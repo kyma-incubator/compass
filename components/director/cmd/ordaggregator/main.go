@@ -10,7 +10,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplateversion"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
