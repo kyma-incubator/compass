@@ -143,7 +143,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3300"
+      version: "PR-3303"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -187,8 +187,8 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20230907-a783eb0a"
+      dir: dev/incubator/
+      version: "PR-3303"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -196,7 +196,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3300"
+      version: "PR-3303"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1199,12 +1199,13 @@ global:
     externalServicesMock:
       skipPattern: ""
       tenantMappingStatusAPI:
-        responseDelayInSeconds: 3
+        responseDelayInSeconds: 15
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
     destination:
-      consumerSubdomain: "compass-external-services-mock-sap-mtls"
+      consumerSubdomain: "compass-external-services-mock"
+      consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
       instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
       claims:
         subaccountIDKey: "subaccountid"
@@ -1225,6 +1226,15 @@ global:
         providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
         consumerAccountIDTenantHierarchy: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
         consumerSubaccountIDTenantHierarchy: "3cfcdd62-320d-403b-b66a-4ee3cdd06947" # TestIntegrationSystemManagedSubaccount from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
+      destinationOauthSecret:
+        manage: false
+        name: provider-destination-instance-tests
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+        serviceUrlKey: uri
+        dependencyKey: dependency
       oauthSecret:
         manage: false
         name: compass-subscription-secret

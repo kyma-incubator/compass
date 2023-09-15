@@ -224,6 +224,8 @@ global:
       client:
         skipSSLValidation: true
     subscription:
+      destinationOauthSecret:
+        manage: true
       oauthSecret:
         manage: true
   destinationFetcher:
