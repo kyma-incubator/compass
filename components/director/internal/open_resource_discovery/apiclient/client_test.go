@@ -71,7 +71,6 @@ func TestORDClient_Aggregate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-
 		})
 	}
 }
