@@ -467,6 +467,172 @@ func TestOperationsManager_GetOperation(t *testing.T) {
 	}
 }
 
+func TestOperationsManager_CreateOperation(t *testing.T) {
+	// GIVEN
+	testError := errors.New("test error")
+	operationID := "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	opInput := &model.OperationInput{}
+
+	txGen := txtest.NewTransactionContextGenerator(testError)
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		OperationSvcFn func() *automock.OperationService
+		Input          *model.OperationInput
+		ExpectedOutput string
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("Create", txtest.CtxWithDBMatcher(), opInput).Return(operationID, nil).Once()
+				return operationSvc
+			},
+			Input:          opInput,
+			ExpectedOutput: operationID,
+		},
+		{
+			Name: "Error while creating operation",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("Create", txtest.CtxWithDBMatcher(), opInput).Return("", testError).Once()
+				return operationSvc
+			},
+			Input:         opInput,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Error while beginning transaction",
+			TxFn: txGen.ThatFailsOnBegin,
+			OperationSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			Input:         opInput,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Error while committing transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("Create", txtest.CtxWithDBMatcher(), opInput).Return(operationID, nil).Once()
+				return operationSvc
+			},
+			Input:         opInput,
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+			operationSvc := testCase.OperationSvcFn()
+
+			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
+
+			// WHEN
+			id, err := opManager.CreateOperation(context.TODO(), testCase.Input)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedOutput, id)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, operationSvc)
+		})
+	}
+}
+
+func TestOperationsManager_FindOperationByData(t *testing.T) {
+	// GIVEN
+	testError := errors.New("test error")
+	operation := &model.Operation{}
+	data := "{}"
+
+	txGen := txtest.NewTransactionContextGenerator(testError)
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		OperationSvcFn func() *automock.OperationService
+		Input          interface{}
+		ExpectedOutput *model.Operation
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data, model.OperationTypeOrdAggregation).Return(operation, nil).Once()
+				return operationSvc
+			},
+			Input:          data,
+			ExpectedOutput: operation,
+		},
+		{
+			Name: "Error while creating operation",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data, model.OperationTypeOrdAggregation).Return(nil, testError).Once()
+				return operationSvc
+			},
+			Input:         data,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Error while beginning transaction",
+			TxFn: txGen.ThatFailsOnBegin,
+			OperationSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			Input:         data,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Error while committing transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data, model.OperationTypeOrdAggregation).Return(operation, nil).Once()
+				return operationSvc
+			},
+			Input:         data,
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+			operationSvc := testCase.OperationSvcFn()
+
+			opManager := NewOperationsManager(transact, operationSvc, model.OperationTypeOrdAggregation, OperationsManagerConfig{})
+
+			// WHEN
+			id, err := opManager.FindOperationByData(context.TODO(), testCase.Input)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedOutput, id)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, operationSvc)
+		})
+	}
+}
+
 // TODO test for FindOperationByData
 // TODO test for CreateOperation
 
