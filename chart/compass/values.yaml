@@ -150,16 +150,16 @@ global:
       version: "PR-3310"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3298"
+      dir: prod/incubator/
+      version: "v20230913-68f5cb5f"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
       version: "PR-3310"
       name: compass-kyma-adapter
     instance_creator:
-      dir: dev/incubator/
-      version: "PR-3297"
+      dir: prod/incubator/
+      version: "v20230912-308fbb42"
       name: compass-instance-creator
     gateway:
       dir: dev/incubator/
