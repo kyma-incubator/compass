@@ -819,6 +819,17 @@ func fixOrdWebhooksForAppTemplate() []*model.Webhook {
 		},
 	}
 }
+func fixStaticOrdWebhooksForAppTemplate() []*model.Webhook {
+	return []*model.Webhook{
+		{
+			ID:         whID,
+			ObjectID:   appTemplateID,
+			ObjectType: model.ApplicationTemplateWebhookReference,
+			Type:       model.WebhookTypeOpenResourceDiscoveryStatic,
+			URL:        str.Ptr(baseURL),
+		},
+	}
+}
 func fixTenantMappingWebhooksForApplication() []*model.Webhook {
 	syncMode := model.WebhookModeSync
 	return []*model.Webhook{{

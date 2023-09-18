@@ -195,11 +195,6 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 				globalResourcesLoaded = true
 			}
 
-			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
-				return err
-			}
-
 			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
 			if err != nil {
 				return errors.Wrapf(err, "retrieving of applications for application template with id %q failed", appTemplateID)
@@ -235,7 +230,7 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 	}
 
 	for _, wh := range webhooks {
-		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+		if wh.Type == model.WebhookTypeOpenResourceDiscoveryStatic && wh.URL != nil {
 			// lazy loading of global ORD resources on first need
 			if !globalResourcesLoaded {
 				log.C(ctx).Infof("Retrieving global ORD resources")
@@ -1778,7 +1773,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 		}
 	}
 
-	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
+	if (webhook.Type == model.WebhookTypeOpenResourceDiscovery || webhook.Type == model.WebhookTypeOpenResourceDiscoveryStatic) && webhook.URL != nil {
 		documents, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)

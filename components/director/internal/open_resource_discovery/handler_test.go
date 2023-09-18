@@ -110,7 +110,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -175,7 +175,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				ApplicationTemplateID: "",
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
-			ExpectedErrorOutput: "Loading ORD webhooks of Application for ORD data aggregation failed",
+			ExpectedErrorOutput: "Getting Open Resource Discovery webhook for application failed",
 		},
 		{
 			Name:            "BadRequest - provided application template does not have ord webhook",
@@ -187,7 +187,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, apperrors.NewNotFoundError(resource.Webhook, "")).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic).Return(nil, apperrors.NewNotFoundError(resource.Webhook, "")).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -195,7 +195,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				ApplicationTemplateID: appTemplateID,
 			},
 			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: "The provided ApplicationTemplate does not have ORD webhook",
+			ExpectedErrorOutput: "The provided ApplicationTemplate does not have static ORD webhook",
 		},
 		{
 			Name:            "InternalServerError - error while checking if the provided application template has ord webhook",
@@ -207,7 +207,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic).Return(nil, testErr).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{
@@ -215,7 +215,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				ApplicationTemplateID: appTemplateID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
-			ExpectedErrorOutput: "Loading ORD webhooks of Application Template for ORD data aggregation failed",
+			ExpectedErrorOutput: "Getting static Open Resource Discovery webhook for application template failed",
 		},
 		{
 			Name:            "InternalServerError - error while checking if the provided application and application template have ord webhook",
@@ -235,7 +235,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				ApplicationTemplateID: appTemplateID,
 			},
 			ExpectedStatusCode:  http.StatusInternalServerError,
-			ExpectedErrorOutput: "Loading ORD webhooks of Application Template for ORD data aggregation failed",
+			ExpectedErrorOutput: "Getting Open Resource Discovery webhook for application template failed",
 		},
 		{
 			Name: "BadRequest - provided application and application template do not have ord webhook",
@@ -270,7 +270,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic).Return(webhook, nil).Once()
 				return whSvc
 			},
 			RequestBody: ord.AggregationResources{

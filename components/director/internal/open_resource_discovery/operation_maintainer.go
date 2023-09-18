@@ -71,7 +71,7 @@ func (oc *ORDOperationMaintainer) Maintain(ctx context.Context) error {
 }
 
 func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Context) ([]*model.OperationInput, []*model.Operation, error) {
-	ordWebhooks, err := oc.getWebhooksWithOrdType(ctx)
+	ordWebhooks, err := oc.listWebhooksByType(ctx, model.WebhookTypeOpenResourceDiscovery)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting webhooks of type %s", model.WebhookTypeOpenResourceDiscovery)
 	}
@@ -94,6 +94,12 @@ func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Co
 			desiredStateOperations = append(desiredStateOperations, buildORDOperationInput(data))
 		}
 	}
+
+	appTemplateOps, err := oc.appTemplateOperations(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while creating operations for application temapltes")
+	}
+	desiredStateOperations = append(desiredStateOperations, appTemplateOps...)
 
 	existingOperations, err := oc.opSvc.ListAllByType(ctx, model.OperationTypeOrdAggregation)
 	if err != nil {
@@ -169,13 +175,6 @@ func (oc *ORDOperationMaintainer) appTemplateWebhookToOperations(ctx context.Con
 		return operations, nil
 	}
 
-	opData := NewOrdOperationData("", webhook.ObjectID)
-	data, err := opData.GetData()
-	if err != nil {
-		return nil, err
-	}
-	operations = append(operations, buildORDOperationInput(data))
-
 	apps, err := oc.getApplicationsForAppTemplate(ctx, webhook.ObjectID)
 	if err != nil {
 		return nil, err
@@ -193,7 +192,28 @@ func (oc *ORDOperationMaintainer) appTemplateWebhookToOperations(ctx context.Con
 	return operations, nil
 }
 
-func (oc *ORDOperationMaintainer) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
+func (oc *ORDOperationMaintainer) appTemplateOperations(ctx context.Context) ([]*model.OperationInput, error) {
+	operations := make([]*model.OperationInput, 0)
+	staticORDWebhooks, err := oc.listWebhooksByType(ctx, model.WebhookTypeOpenResourceDiscoveryStatic)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, staticOrdWh := range staticORDWebhooks {
+		if staticOrdWh.ObjectType != model.ApplicationTemplateWebhookReference {
+			continue
+		}
+		opData := NewOrdOperationData("", staticOrdWh.ObjectID)
+		data, err := opData.GetData()
+		if err != nil {
+			return nil, err
+		}
+		operations = append(operations, buildORDOperationInput(data))
+	}
+	return operations, nil
+}
+
+func (oc *ORDOperationMaintainer) listWebhooksByType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	tx, err := oc.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -201,9 +221,9 @@ func (oc *ORDOperationMaintainer) getWebhooksWithOrdType(ctx context.Context) ([
 	defer oc.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := oc.webhookSvc.ListByWebhookType(ctx, model.WebhookTypeOpenResourceDiscovery)
+	ordWebhooks, err := oc.webhookSvc.ListByWebhookType(ctx, webhookType)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", webhookType)
 		return nil, err
 	}
 
