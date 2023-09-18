@@ -30,15 +30,17 @@ type AggregationResources struct {
 
 type handler struct {
 	opMgr           OperationsManager
+	appSvc          ApplicationService
 	webhookSvc      WebhookService
 	transact        persistence.Transactioner
 	onDemandChannel chan string
 }
 
 // NewORDAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewORDAggregatorHTTPHandler(opMgr OperationsManager, webhookSvc WebhookService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
+func NewORDAggregatorHTTPHandler(opMgr OperationsManager, appSvc ApplicationService, webhookSvc WebhookService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
 	return &handler{
 		opMgr:           opMgr,
+		appSvc:          appSvc,
 		webhookSvc:      webhookSvc,
 		transact:        transact,
 		onDemandChannel: onDemandChannel,
@@ -118,7 +120,23 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			}
 			log.C(ctx).Debugf("Open Resource Discovery webhook with id %q was found for Application Template with id %q", ordWebhook.ID, payload.ApplicationTemplateID)
 
-			// TODO check if the application is created from the provided apptemplate
+			app, err := h.getAppByID(ctx, payload.ApplicationID)
+			if err != nil {
+				if apperrors.IsNotFoundError(err) {
+					log.C(ctx).WithError(err).Errorf("Application with id %q does not exist", payload.ApplicationID)
+					http.Error(writer, "The provided Application does not exist", http.StatusBadRequest)
+					return
+				}
+				log.C(ctx).WithError(err).Errorf("Getting application with id %q failed", payload.ApplicationTemplateID)
+				http.Error(writer, "Getting Application failed", http.StatusInternalServerError)
+				return
+			}
+
+			if *app.ApplicationTemplateID != payload.ApplicationTemplateID {
+				log.C(ctx).WithError(err).Errorf("The provided Application with id %q is not created from the provided Application Template with id %q", payload.ApplicationID, payload.ApplicationTemplateID)
+				http.Error(writer, "The provided Application is not created from the provided Application Template", http.StatusBadRequest)
+				return
+			}
 		}
 
 		now := time.Now()
@@ -176,4 +194,19 @@ func (h *handler) getWebhookByObjectIDAndType(ctx context.Context, objectID stri
 	}
 
 	return ordWebhook, tx.Commit()
+}
+
+func (h *handler) getAppByID(ctx context.Context, appID string) (*model.Application, error) {
+	tx, err := h.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+	app, err := h.appSvc.Get(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	return app, tx.Commit()
 }

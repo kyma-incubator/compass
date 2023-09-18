@@ -310,7 +310,7 @@ func main() {
 
 	onDemandChannel := make(chan string, 100)
 
-	handler := initHandler(ctx, jwtHTTPClient, operationsManager, webhookSvc, cfg, transact, onDemandChannel)
+	handler := initHandler(ctx, jwtHTTPClient, operationsManager, appSvc, webhookSvc, cfg, transact, onDemandChannel)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -481,7 +481,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
+func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, appSvc ord.ApplicationService, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -493,7 +493,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	handler := ord.NewORDAggregatorHTTPHandler(opMgr, webhookSvc, transact, onDemandChannel)
+	handler := ord.NewORDAggregatorHTTPHandler(opMgr, appSvc, webhookSvc, transact, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	apiRouter.HandleFunc(aggregateEndpoint, handler.ScheduleAggregationForORDData).Methods(http.MethodPost)

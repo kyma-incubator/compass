@@ -28,6 +28,10 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 	webhookID := "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	operation := &model.Operation{ID: operationID}
 	webhook := &model.Webhook{ID: webhookID}
+	application := &model.Application{
+		ApplicationTemplateID: &appTemplateID,
+		BaseEntity:            &model.BaseEntity{ID: applicationID},
+	}
 
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -36,6 +40,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 		Name                string
 		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		OperationManagerFn  func() *automock.OperationsManager
+		ApplicationSvcFn    func() *automock.ApplicationService
 		WebhookSvcFn        func() *automock.WebhookService
 		RequestBody         ord.AggregationResources
 		ExpectedErrorOutput string
@@ -50,6 +55,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("RescheduleOperation", mock.Anything, operationID).Return(nil).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
@@ -61,12 +69,17 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 		},
 		{
 			Name:            "Success - operation with Application and ApplicationTemplate does not exist, create new operation",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return(operationID, nil).Once()
 				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(application, nil).Once()
+				return appSvc
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
@@ -88,6 +101,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return(operationID, nil).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
@@ -108,6 +124,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return(operationID, nil).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic).Return(webhook, nil).Once()
@@ -127,6 +146,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, testErr).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
@@ -144,6 +166,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager := &automock.OperationsManager{}
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
@@ -165,6 +190,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, "")).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), applicationID, model.ApplicationWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
@@ -178,12 +206,101 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			ExpectedErrorOutput: "Getting Open Resource Discovery webhook for application failed",
 		},
 		{
+			Name: "BadRequest - operation with Application and ApplicationTemplate - the application does not exist",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx, transact := txGen.ThatSucceeds()
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			OperationManagerFn: func() *automock.OperationsManager {
+				opManager := &automock.OperationsManager{}
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(nil, apperrors.NewNotFoundError(resource.Application, appID)).Once()
+				return appSvc
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
+				return whSvc
+			},
+			RequestBody: ord.AggregationResources{
+				ApplicationID:         applicationID,
+				ApplicationTemplateID: appTemplateID,
+			},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "The provided Application does not exist",
+		},
+		{
+			Name: "InternalServerError - operation with Application and ApplicationTemplate - error while getting application",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx, transact := txGen.ThatSucceeds()
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			OperationManagerFn: func() *automock.OperationsManager {
+				opManager := &automock.OperationsManager{}
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(nil, testErr).Once()
+				return appSvc
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
+				return whSvc
+			},
+			RequestBody: ord.AggregationResources{
+				ApplicationID:         applicationID,
+				ApplicationTemplateID: appTemplateID,
+			},
+			ExpectedStatusCode:  http.StatusInternalServerError,
+			ExpectedErrorOutput: "Getting Application failed",
+		},
+		{
+			Name:            "BadRequest - operation with Application and ApplicationTemplate - the provided app template does not match the app template of the application",
+			TransactionerFn: txGen.ThatSucceedsTwice,
+			OperationManagerFn: func() *automock.OperationsManager {
+				opManager := &automock.OperationsManager{}
+				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
+				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				invalidAppTemplateID := "invalid"
+				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(&model.Application{ApplicationTemplateID: &invalidAppTemplateID}, nil).Once()
+				return appSvc
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(webhook, nil).Once()
+				return whSvc
+			},
+			RequestBody: ord.AggregationResources{
+				ApplicationID:         applicationID,
+				ApplicationTemplateID: appTemplateID,
+			},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "he provided Application is not created from the provided Application Template",
+		},
+		{
 			Name:            "BadRequest - provided application template does not have ord webhook",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
@@ -205,6 +322,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic).Return(nil, testErr).Once()
@@ -224,6 +344,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager := &automock.OperationsManager{}
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
@@ -247,6 +370,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData(applicationID, appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("GetByIDAndWebhookTypeGlobal", txtest.CtxWithDBMatcher(), appTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscovery).Return(nil, apperrors.NewNotFoundError(resource.Webhook, webhookID)).Once()
@@ -267,6 +393,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("FindOperationByData", mock.Anything, ord.NewOrdOperationData("", appTemplateID)).Return(nil, apperrors.NewNotFoundError(resource.Operation, operationID)).Once()
 				opManager.On("CreateOperation", mock.Anything, mock.Anything).Return("", testErr).Once()
 				return opManager
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
@@ -289,6 +418,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 				opManager.On("RescheduleOperation", mock.Anything, operationID).Return(testErr).Once()
 				return opManager
 			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
@@ -304,6 +436,9 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			OperationManagerFn: func() *automock.OperationsManager {
 				return &automock.OperationsManager{}
+			},
+			ApplicationSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
@@ -321,11 +456,12 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			persist, tx := testCase.TransactionerFn()
 			operationManager := testCase.OperationManagerFn()
 			webhookSvc := testCase.WebhookSvcFn()
-			defer mock.AssertExpectationsForObjects(t, persist, tx, operationManager, webhookSvc)
+			appSvc := testCase.ApplicationSvcFn()
+			defer mock.AssertExpectationsForObjects(t, persist, tx, operationManager, appSvc, webhookSvc)
 
 			onDemandChannel := make(chan string, 2)
 
-			handler := ord.NewORDAggregatorHTTPHandler(operationManager, webhookSvc, tx, onDemandChannel)
+			handler := ord.NewORDAggregatorHTTPHandler(operationManager, appSvc, webhookSvc, tx, onDemandChannel)
 
 			requestBody, err := json.Marshal(testCase.RequestBody)
 			assert.NoError(t, err)
