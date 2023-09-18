@@ -48,10 +48,10 @@ cp yq "$HOME/bin/yq" && cp yq "/usr/local/bin/yq"
 log::info "Successfully installed yq version: $YQ_VERSION"
 
 # Install Kyma to be later used in run.sh
-KYMA_CLI_VERSION="2.5.0"
-log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
-# TODO: Kyma 2.4.3 release exists, but Kyma CLI 2.4.3 does not
 # KYMA_CLI_VERSION=$(cat ${COMPASS_SOURCE_DIR}/installation/resources/KYMA_VERSION)
+# TODO: Kyma 2.5.2 release exists, but Kyma CLI with the same version does not. That's why we're using 2.6.2
+KYMA_CLI_VERSION="2.6.0"
+log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
 curl -Lo kyma.tar.gz "https://github.com/kyma-project/cli/releases/download/${KYMA_CLI_VERSION}/kyma_Linux_x86_64.tar.gz" \
 && mkdir kyma-release && tar -C kyma-release -zxvf kyma.tar.gz && chmod +x kyma-release/kyma && mv kyma-release/kyma /usr/local/bin \
