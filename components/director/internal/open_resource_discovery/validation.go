@@ -385,7 +385,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		})),
 		validation.Field(&api.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsSAP(api.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(api.PolicyLevel, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 				})
 			}),
@@ -395,7 +395,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		),
 		validation.Field(&api.Industry,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsSAP(api.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(api.PolicyLevel, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, Industries)
 				})
 			}),
@@ -467,7 +467,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		})),
 		validation.Field(&event.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsSAP(event.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(event.PolicyLevel, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 				})
 			}),
@@ -477,7 +477,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		),
 		validation.Field(&event.Industry,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsSAP(event.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(event.PolicyLevel, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, Industries)
 				})
 			}),
@@ -952,11 +952,8 @@ func noNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
 }
 
-func validateWhenPolicyLevelIsSAP(packageOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error {
-	pkgOrdID := str.PtrStrToStr(packageOrdID)
-	policyLevel := packagePolicyLevels[pkgOrdID]
-
-	if policyLevel != PolicyLevelSap {
+func validateWhenPolicyLevelIsSAP(policyLevel *string, validationFunc func() error) error {
+	if policyLevel != nil && *policyLevel != PolicyLevelSap {
 		return nil
 	}
 

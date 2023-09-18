@@ -2,10 +2,12 @@ package ord
 
 import (
 	"encoding/json"
-	"github.com/imdario/mergo"
 	"net/url"
 	"path"
 	"regexp"
+
+	"github.com/imdario/mergo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -424,6 +426,8 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
+//   - If some resource(Package, API or Event) doesn't have provided `policyLevel` and `customPolicyLevel`, these are inherited from the document
+//   - If `direction` field of API doesn't have provided valid value, by default it is set to 'inbound'
 func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
 
@@ -509,6 +513,10 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 				api.CustomPolicyLevel = doc.CustomPolicyLevel
 			}
 
+			if api.Direction == nil {
+				api.Direction = str.Ptr(APIDirectionInbound)
+			}
+
 			referredPkg, ok := packages[*api.OrdPackageID]
 			if !ok {
 				return errors.Errorf("api with ord id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
@@ -538,6 +546,7 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 				event.PolicyLevel = doc.PolicyLevel
 				event.CustomPolicyLevel = doc.CustomPolicyLevel
 			}
+
 			referredPkg, ok := packages[*event.OrdPackageID]
 			if !ok {
 				return errors.Errorf("event with ord id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
