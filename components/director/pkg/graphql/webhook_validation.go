@@ -141,7 +141,7 @@ var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{
 // Validate missing godoc
 func (i WebhookInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
-		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle)),
+		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle)),
 		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping || i.Type == WebhookTypeFormationLifecycle, validation.In(WebhookModeSync, WebhookModeAsyncCallback)).Else(validation.NotIn(WebhookModeAsyncCallback))),
