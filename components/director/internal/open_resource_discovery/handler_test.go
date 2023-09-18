@@ -78,7 +78,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(application, nil).Once()
+				appSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), applicationID).Return(application, nil).Once()
 				return appSvc
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -220,7 +220,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(nil, apperrors.NewNotFoundError(resource.Application, appID)).Once()
+				appSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), applicationID).Return(nil, apperrors.NewNotFoundError(resource.Application, appID)).Once()
 				return appSvc
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -250,7 +250,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			},
 			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(nil, testErr).Once()
+				appSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), applicationID).Return(nil, testErr).Once()
 				return appSvc
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
@@ -276,7 +276,7 @@ func TestHandler_ScheduleAggregationForORDData(t *testing.T) {
 			ApplicationSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				invalidAppTemplateID := "invalid"
-				appSvc.On("Get", txtest.CtxWithDBMatcher(), applicationID).Return(&model.Application{ApplicationTemplateID: &invalidAppTemplateID}, nil).Once()
+				appSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), applicationID).Return(&model.Application{ApplicationTemplateID: &invalidAppTemplateID}, nil).Once()
 				return appSvc
 			},
 			WebhookSvcFn: func() *automock.WebhookService {

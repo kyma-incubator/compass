@@ -203,7 +203,7 @@ func (h *handler) getAppByID(ctx context.Context, appID string) (*model.Applicat
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
-	app, err := h.appSvc.Get(ctx, appID)
+	app, err := h.appSvc.GetGlobalByID(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
