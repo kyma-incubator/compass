@@ -2683,7 +2683,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -2694,7 +2694,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -2704,7 +2704,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -2764,7 +2764,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -2775,7 +2775,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -2785,7 +2785,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -4869,7 +4869,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -4880,7 +4880,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -4890,7 +4890,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -4950,7 +4950,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -4961,7 +4961,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -4971,7 +4971,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
