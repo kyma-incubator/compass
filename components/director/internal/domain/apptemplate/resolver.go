@@ -330,7 +330,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	for _, wh := range convertedIn.Webhooks {
-		if wh.Type == model.WebhookTypeOpenResourceDiscovery {
+		if wh.Type == model.WebhookTypeOpenResourceDiscoveryStatic {
 			if err := r.ordClient.Aggregate(ctx, "", id); err != nil {
 				log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppTemplateID %q", id)
 			}
