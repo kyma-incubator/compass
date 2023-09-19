@@ -20,6 +20,9 @@ const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
 // DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 const DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 
+// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
+const DoNotGenerateFormationAssignmentNotificationForLoopsOperator = "DoNotGenerateFormationAssignmentNotificationForLoops"
+
 // DestinationCreator contains the name of the DestinationCreator operator
 const DestinationCreator = "DestinationCreator"
 
@@ -28,10 +31,11 @@ type OperatorInput interface{}
 
 // FormationConstraintInputByOperator represents a mapping between operator names and OperatorInputs
 var FormationConstraintInputByOperator = map[string]OperatorInput{
-	IsNotAssignedToAnyFormationOfType:                    &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
-	DoesNotContainResourceOfSubtype:                      &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
-	DoNotGenerateFormationAssignmentNotificationOperator: &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
-	DestinationCreator:                                   &formationconstraint.DestinationCreatorInput{},
+	IsNotAssignedToAnyFormationOfType:                            &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
+	DoesNotContainResourceOfSubtype:                              &formationconstraint.DoesNotContainResourceOfSubtypeInput{},
+	DoNotGenerateFormationAssignmentNotificationOperator:         &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
+	DoNotGenerateFormationAssignmentNotificationForLoopsOperator: &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
+	DestinationCreator:                                           &formationconstraint.DestinationCreatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
