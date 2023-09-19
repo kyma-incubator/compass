@@ -29,7 +29,6 @@ const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.2",
    "description":"Test Document",
-	"policyLevel": "none",
    "describedSystemInstance":{
       "ProviderName":null,
       "Tenant":"",
@@ -321,7 +320,6 @@ const ordDocument = `{
          "implementationStandard":"cff:open-service-broker:v2",
          "customImplementationStandard":null,
          "customImplementationStandardDescription":null,
-		 "direction": "mixed",
          "extensible":{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
