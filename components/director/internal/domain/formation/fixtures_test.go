@@ -1410,10 +1410,7 @@ func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.Fo
 				Request:             request,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-				Request:             nil,
-				FormationAssignment: nil,
-			},
+			ReverseAssignmentReqMapping: nil,
 		},
 	}
 
