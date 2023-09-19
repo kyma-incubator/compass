@@ -124,11 +124,22 @@ istio:
 monitoring:
   alertmanager:
     alertmanagerSpec:
+      podMetadata:
+        annotations:
+          sidecar.istio.io/inject: "true"
       resources:
         limits:
           cpu: 40m
         requests:
           cpu: 5m
+    serviceMonitor:
+      scheme: https
+      # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+      tlsConfig:
+        caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+        certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+        keyFile: /etc/prometheus/secrets/istio.default/key.pem
+        insecureSkipVerify: true
   grafana:
     env:
       GF_AUTH_ANONYMOUS_ENABLED: true
@@ -144,6 +155,21 @@ monitoring:
         requests:
           cpu: 50m
           memory: 64Mi
+  prometheus:
+    prometheusSpec:
+      alertingEndpoints:
+        - apiVersion: v2
+          name: monitoring-alertmanager
+          namespace: kyma-system
+          pathPrefix: /
+          port: http-web
+          scheme: https
+          # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+          tlsConfig:
+            caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+            certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+            keyFile: /etc/prometheus/secrets/istio.default/key.pem
+            insecureSkipVerify: true
   prometheus-istio:
     server:
       resources:
@@ -151,3 +177,18 @@ monitoring:
           memory: 1Gi
   prometheusOperator:
     configReloaderMemory: 256Mi
+    podAnnotations:
+      sidecar.istio.io/inject: "true"
+  prometheus-node-exporter:
+    prometheus:
+      monitor:
+        scheme: https
+        # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+        tlsConfig:
+          caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+          certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+          keyFile: /etc/prometheus/secrets/istio.default/key.pem
+          insecureSkipVerify: true
+  kube-state-metrics:
+    podAnnotations:
+      sidecar.istio.io/inject: "true"
