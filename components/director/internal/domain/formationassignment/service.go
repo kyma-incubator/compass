@@ -3,19 +3,18 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/hashicorp/go-multierror"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
+	"k8s.io/utils/strings/slices"
 )
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
@@ -507,7 +506,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		SourceType:  model.FormationAssignmentType(objectType),
 		Target:      objectID,
 		TargetType:  model.FormationAssignmentType(objectType),
-		State:       string(model.ReadyAssignmentState),
+		State:       string(model.InitialFormationState),
 		Value:       nil,
 		Error:       nil,
 	})
@@ -624,15 +623,6 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if assignment.Source == assignment.Target {
-		assignment.State = string(model.ReadyAssignmentState)
-		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q is self-referenced. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
-		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "while updating self-referenced formation assignment for formation with ID: %q with source and target: %q", assignment.FormationID, assignment.Source)
-		}
-		return nil
-	}
-
 	extendedRequest, err := s.faNotificationService.GenerateFormationAssignmentNotificationExt(ctx, assignmentReqMappingClone, reverseAssignmentReqMappingClone, mappingPair.Operation)
 	if err != nil {
 		return errors.Wrap(err, "while creating extended formation assignment request")
@@ -699,6 +689,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	if response.Config != nil && *response.Config != "" {
 		assignment.Value = []byte(*response.Config)
 		shouldSendReverseNotification = true
+	}
+
+	if assignment.Source == assignment.Target {
+		shouldSendReverseNotification = false
 	}
 
 	if err = s.statusService.UpdateWithConstraints(ctx, assignment, mappingPair.Operation); err != nil {
@@ -943,11 +937,14 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			}
 
 			participants := request.Object.GetParticipantsIDs()
+
+			// Remove assignment.Target from participants, as target and objectID are change via the mappings
+			// This is in order to not match loops in cases where they are not applicable
+			objectIndex := slices.Index(participants, assignment.Target)
+			if objectIndex != -1 {
+				participants = append(participants[:objectIndex], participants[objectIndex+1:]...)
+			}
 			for _, id := range participants {
-				// We should not generate notifications for self
-				if assignment.Source == assignment.Target {
-					break assignment
-				}
 				if assignment.Source == id {
 					mappingObject.Request = requests[j]
 					break assignment

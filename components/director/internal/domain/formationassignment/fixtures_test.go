@@ -3,6 +3,7 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -339,6 +340,10 @@ func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMa
 	}
 }
 
+func fixAssignmentMappingPairWithAssignment(assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
+	return fixAssignmentMappingPairWithAssignmentAndRequest(assignment, nil)
+}
+
 func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
 	return &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
@@ -492,7 +497,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},
@@ -568,7 +573,7 @@ func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationA
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},
@@ -764,7 +769,7 @@ func fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(objectType model.Form
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
-			State:       string(model.ReadyAssignmentState),
+			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 			Error:       nil,
 		},
@@ -787,7 +792,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		webhook.RuntimeID = &objectID
 	}
 
-	templateInput.Mock.On("GetParticipantsIDs").Return(participants).Times(1)
+	templateInput.Mock.On("GetParticipantsIDs").Return(slices.Clone(participants)).Times(1)
 	templateInput.Mock.On("SetAssignment", assignment).Times(2)
 	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
 

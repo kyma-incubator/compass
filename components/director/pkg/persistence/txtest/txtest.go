@@ -108,6 +108,32 @@ func (g txCtxGenerator) ThatSucceedsMultipleTimesAndCommitsMultipleTimes(begins,
 	return persistTx, transact
 }
 
+// ThatSucceedsMultipleTimesAndThenFailsOnBegin missing godoc
+func (g txCtxGenerator) ThatSucceedsMultipleTimesAndThenFailsOnBegin(begins int) (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Times(begins)
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Times(begins)
+	transact.On("Begin").Return(nil, g.returnedError).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(begins)
+
+	return persistTx, transact
+}
+
+// ThatSucceedsMultipleTimesAndThenFailsOnCommit missing godoc
+func (g txCtxGenerator) ThatSucceedsMultipleTimesAndThenFailsOnCommit(begins int) (*automock.PersistenceTx, *automock.Transactioner) {
+	persistTx := &automock.PersistenceTx{}
+	persistTx.On("Commit").Return(nil).Times(begins)
+	persistTx.On("Commit").Return(g.returnedError).Once()
+
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Times(begins + 1)
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(begins + 1)
+
+	return persistTx, transact
+}
+
 // ThatDoesntExpectCommit missing godoc
 func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}

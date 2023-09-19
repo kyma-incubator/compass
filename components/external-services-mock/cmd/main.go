@@ -363,6 +363,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}", notificationHandler.FailOnceResponse).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/fail-once/{tenantId}/{applicationId}", notificationHandler.FailOnceResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/fail/{tenantId}", notificationHandler.FailResponse).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/fail/{tenantId}/{applicationId}", notificationHandler.FailResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
 	// formation assignment notifications handlers for kyma integration
 	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
@@ -374,6 +375,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async-fail/{tenantId}", notificationHandler.AsyncFail).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async-fail/{tenantId}/{applicationId}", notificationHandler.AsyncFail).Methods(http.MethodDelete)
 	// formation assignment notifications handler for the destination creation/deletion
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
