@@ -19,16 +19,25 @@ type OperationMaintainer interface {
 	Maintain(ctx context.Context) error
 }
 
+// OperationService is responsible for the service-layer Operation operations.
+//
+//go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type OperationService interface {
+	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
+	DeleteMultiple(ctx context.Context, ids []string) error
+	ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
+}
+
 // ORDOperationMaintainer consists of various resource services responsible for operations creation.
 type ORDOperationMaintainer struct {
 	transact   persistence.Transactioner
-	opSvc      operationsmanager.OperationService
+	opSvc      OperationService
 	webhookSvc WebhookService
 	appSvc     ApplicationService
 }
 
 // NewOperationMaintainer creates OperationMaintainer based on kind
-func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc operationsmanager.OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationMaintainer {
+func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationMaintainer {
 	if kind == model.OperationTypeOrdAggregation {
 		return &ORDOperationMaintainer{
 			transact:   transact,
@@ -175,7 +184,7 @@ func (oc *ORDOperationMaintainer) appTemplateWebhookToOperations(ctx context.Con
 		return operations, nil
 	}
 
-	apps, err := oc.getApplicationsForAppTemplate(ctx, webhook.ObjectID)
+	apps, err := oc.appSvc.ListAllByApplicationTemplateID(ctx, webhook.ObjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -214,44 +223,13 @@ func (oc *ORDOperationMaintainer) appTemplateOperations(ctx context.Context) ([]
 }
 
 func (oc *ORDOperationMaintainer) listWebhooksByType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
-	tx, err := oc.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer oc.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
 	ordWebhooks, err := oc.webhookSvc.ListByWebhookType(ctx, webhookType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", webhookType)
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	return ordWebhooks, nil
-}
-
-func (oc *ORDOperationMaintainer) getApplicationsForAppTemplate(ctx context.Context, appTemplateID string) ([]*model.Application, error) {
-	tx, err := oc.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer oc.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-	apps, err := oc.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return apps, err
 }
 
 func buildORDOperationInput(data string) *model.OperationInput {
