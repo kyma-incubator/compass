@@ -1116,7 +1116,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		}
 
 		var reverseReqMapping *formationassignment.FormationAssignmentRequestMapping
-		if reverseFA != nil || notificationForFA != nil {
+		if reverseFA != nil || notificationForReverseFA != nil {
 			reverseReqMapping = &formationassignment.FormationAssignmentRequestMapping{
 				Request:             notificationForReverseFA,
 				FormationAssignment: reverseFA,
