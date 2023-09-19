@@ -52,7 +52,11 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 		}
 	case types.OperationUnassign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
-			removeConsumedAPI(&consumedAPIs, consumedAPI)
+			removeConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
+				Name:    consumedAPI,
+				APIName: consumedAPI,
+				AppID:   data.ProviderApplicationID,
+			})
 		}
 	}
 
@@ -113,18 +117,19 @@ func filterByAppTenantID(applications []types.Application, clientID, appTenantID
 
 func addConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) {
 	for _, api := range *consumedAPIs {
-		if api.APIName == consumedAPI.APIName {
+		if api.APIName == consumedAPI.APIName && api.AppID == consumedAPI.AppID {
 			return
 		}
 	}
 	*consumedAPIs = append(*consumedAPIs, consumedAPI)
 }
 
-func removeConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, apiName string) {
+func removeConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) {
 	found := false
 	i := -1
 	for i = range *consumedAPIs {
-		if (*consumedAPIs)[i].APIName == apiName {
+		existingAPI := (*consumedAPIs)[i]
+		if existingAPI.APIName == consumedAPI.APIName && existingAPI.AppID == consumedAPI.AppID {
 			found = true
 			break
 		}
