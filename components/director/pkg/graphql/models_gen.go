@@ -2186,12 +2186,13 @@ func (e WebhookMode) MarshalGQL(w io.Writer) {
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged     WebhookType = "CONFIGURATION_CHANGED"
-	WebhookTypeApplicationTenantMapping WebhookType = "APPLICATION_TENANT_MAPPING"
-	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
-	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
-	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	WebhookTypeFormationLifecycle       WebhookType = "FORMATION_LIFECYCLE"
+	WebhookTypeConfigurationChanged        WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeApplicationTenantMapping    WebhookType = "APPLICATION_TENANT_MAPPING"
+	WebhookTypeRegisterApplication         WebhookType = "REGISTER_APPLICATION"
+	WebhookTypeUnregisterApplication       WebhookType = "UNREGISTER_APPLICATION"
+	WebhookTypeOpenResourceDiscovery       WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
+	WebhookTypeFormationLifecycle          WebhookType = "FORMATION_LIFECYCLE"
 )
 
 var AllWebhookType = []WebhookType{
@@ -2200,12 +2201,13 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
+	WebhookTypeOpenResourceDiscoveryStatic,
 	WebhookTypeFormationLifecycle,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle:
 		return true
 	}
 	return false

@@ -444,3 +444,13 @@ func assertConstraints(t *testing.T, expected, actual []*graphql.FormationConstr
 		assertConstraint(t, constraint, constraintToName[constraint.Name])
 	}
 }
+
+func findConstraintByName(t *testing.T, name string, actualFormationConstraints []*graphql.FormationConstraint) *graphql.FormationConstraint {
+	for _, constraint := range actualFormationConstraints {
+		if constraint.Name == name {
+			return constraint
+		}
+	}
+	require.Failf(t, "Could not find constraint with name %q", name)
+	return nil
+}
