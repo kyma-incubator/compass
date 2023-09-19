@@ -291,9 +291,6 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		log.C(ctx).Infof("The number of other application(s) in formation %q is/are: %d. Notification(s) will be sent about them to application with ID: %q that is being %q.", formation.Name, appsInFormationCountExcludingAppCurrentlyAssigned, appID, operation)
 
 		for _, sourceApp := range applicationsInFormationMapping {
-			if sourceApp.ID == appID {
-				continue // Do not notify about itself
-			}
 			var appTemplate *webhookdir.ApplicationTemplateWithLabels
 			if sourceApp.ApplicationTemplateID != nil {
 				appTemplate = appTemplatesMapping[*sourceApp.ApplicationTemplateID]
@@ -328,8 +325,6 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 				requests = append(requests, req)
 			}
 		}
-
-		delete(listeningAppsByID, appID)
 	}
 
 	listeningApplicationsInFormationIds := make([]string, 0, len(listeningAppsByID))

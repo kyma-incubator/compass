@@ -175,7 +175,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3310"
+      version: "PR-3284"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -188,7 +188,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3310"
+      version: "PR-3284"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
