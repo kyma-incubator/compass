@@ -62,7 +62,7 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-# As of Kyma 2.6.2 we need to specify which namespaces should enable istio injection
+# As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
 RELEASE_NS=compass-system
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
