@@ -93,6 +93,7 @@ RELEASE_NAME=ory-stack
 SECRET_NAME=ory-hydra-credentials
 
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
+kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
 
 LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.postgresql.enabled" ${OVERRIDE_TEMP_ORY})
 
