@@ -344,7 +344,6 @@ func sanitizeResources(doc *ord.Document) {
 	doc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.APIResources[1].Labels = json.RawMessage(mergedLabels)
-	doc.APIResources[1].Direction = str.Ptr(ord.APIDirectionInbound)
 
 	doc.EventResources[0].PolicyLevel = str.Ptr(policyLevel)
 	doc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)

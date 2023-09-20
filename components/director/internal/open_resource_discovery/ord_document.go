@@ -7,7 +7,6 @@ import (
 	"regexp"
 
 	"github.com/imdario/mergo"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -427,7 +426,6 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
 //   - If some resource(Package, API or Event) doesn't have provided `policyLevel` and `customPolicyLevel`, these are inherited from the document
-//   - If `direction` field of API doesn't have provided valid value, by default it is set to 'inbound'
 func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
 
@@ -511,10 +509,6 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			if api.PolicyLevel == nil {
 				api.PolicyLevel = doc.PolicyLevel
 				api.CustomPolicyLevel = doc.CustomPolicyLevel
-			}
-
-			if api.Direction == nil {
-				api.Direction = str.Ptr(APIDirectionInbound)
 			}
 
 			referredPkg, ok := packages[*api.OrdPackageID]

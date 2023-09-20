@@ -13,7 +13,7 @@ CREATE TYPE api_direction_format AS ENUM (
 
 -- Alter tables
 ALTER TABLE api_definitions
-    ADD COLUMN direction api_direction_format default 'inbound';
+    ADD COLUMN direction api_direction_format;
 
 ALTER TABLE event_api_definitions
     ADD COLUMN implementation_standard                        VARCHAR(256),
