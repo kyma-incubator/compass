@@ -1060,16 +1060,21 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 		}
 
+		var reverseReqMapping *formationassignment.FormationAssignmentRequestMapping
+		if reverseFA != nil || notificationForReverseFA != nil {
+			reverseReqMapping = &formationassignment.FormationAssignmentRequestMapping{
+				Request:             notificationForReverseFA,
+				FormationAssignment: reverseFA,
+			}
+		}
+
 		assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 				AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
 					Request:             notificationForFA,
 					FormationAssignment: fa,
 				},
-				ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-					Request:             notificationForReverseFA,
-					FormationAssignment: reverseFA,
-				},
+				ReverseAssignmentReqMapping: reverseReqMapping,
 			},
 		}
 		switch fa.State {
