@@ -95,6 +95,11 @@ const ordDocument = `{
 		  "ordId": "sap:vendor:SAP:",
 		  "title": "SAP SE",
 		  "partners": []
+		},
+		{
+		  "ordId": "customer:vendor:SAPCustomer:",
+		  "title": "SAP Customer",
+		  "partners": []
 		}
    ]
 }`
