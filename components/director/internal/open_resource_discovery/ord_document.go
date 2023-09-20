@@ -311,7 +311,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			if err := validatePackageInputWithSuppressedErrors(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating package with ord id %q", pkg.OrdID))
 			}
-			if err := validatePackageInput(pkg); err != nil {
+			if err := validatePackageInput(pkg, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 				invalidPackagesIndices = append(invalidPackagesIndices, i)
 				resourceIDs.PackageIDs[pkg.OrdID] = false
@@ -351,7 +351,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			if err := validateAPIInputWithSuppressedErrors(api, resourcesFromDB.APIs, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating api with ord id %q", stringPtrToString(api.OrdID)))
 			}
-			if err := validateAPIInput(api, resourceIDs.PackagePolicyLevels); err != nil {
+			if err := validateAPIInput(api, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 				invalidApisIndices = append(invalidApisIndices, i)
 				continue
@@ -368,7 +368,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 			if err := validateEventInputWithSuppressedErrors(event, resourcesFromDB.Events, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating event with ord id %q", stringPtrToString(event.OrdID)))
 			}
-			if err := validateEventInput(event, resourceIDs.PackagePolicyLevels); err != nil {
+			if err := validateEventInput(event, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventsIndices = append(invalidEventsIndices, i)
 				continue
