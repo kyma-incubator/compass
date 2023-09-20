@@ -82,6 +82,12 @@ const ordDocument = `{
       "vendor": "sap:vendor:SAP:",
       "parent": "sap:product:SAPS4HANA:"
     },
+	{
+		"ordId": "sap:product:SAPSuccessFactors:",
+		"title": "SAP SuccessFactors",
+		"shortDescription": "SAP SuccessFactors is a world-leading provider of cloud human experience management (HXM).",
+		"vendor": "sap:vendor:SAP:"
+	},
     {
       "ordId": "sap:product:SAPTransactionalBankingforSAPS4HANA:",
       "title": "SAP Transactional Banking for SAP S/4HANA",
