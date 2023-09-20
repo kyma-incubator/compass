@@ -33,7 +33,9 @@ const ordDocument = `{
       "title": "SAP Customer Experience",
       "shortDescription": "Bring together customer data, machine learning technology, and microservices to power real-time customer engagements across sales, service, marketing, and commerce.",
       "vendor": "sap:vendor:SAP:",
-      "correlationIds": "sap.id:OneProductTaxonomy:00416af6-ed22-48e1-a2b7-d4baa39a226a"
+      "correlationIds": [
+		"sap.id:OneProductTaxonomy:00416af6-ed22-48e1-a2b7-d4baa39a226a"
+      ]
     },
     {
       "ordId": "sap:product:SAPServiceCloudV2:",
