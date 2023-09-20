@@ -1012,9 +1012,9 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	if f.Request != nil {
 		request = f.Request.Clone()
 	}
-	return &FormationAssignmentRequestMapping{
-		Request: request,
-		FormationAssignment: &model.FormationAssignment{
+	var formationAssignment *model.FormationAssignment
+	if f.FormationAssignment != nil {
+		formationAssignment = &model.FormationAssignment{
 			ID:          f.FormationAssignment.ID,
 			FormationID: f.FormationAssignment.FormationID,
 			TenantID:    f.FormationAssignment.TenantID,
@@ -1025,7 +1025,12 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 			State:       f.FormationAssignment.State,
 			Value:       f.FormationAssignment.Value,
 			Error:       f.FormationAssignment.Error,
-		},
+		}
+	}
+
+	return &FormationAssignmentRequestMapping{
+		Request:             request,
+		FormationAssignment: formationAssignment,
 	}
 }
 

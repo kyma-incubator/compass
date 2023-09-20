@@ -50,6 +50,15 @@ var _ = Describe("Adding consumed API", func() {
 			Expect(len(consumedAPIs)).To(Equal(2))
 		})
 	})
+	When("It exist in the current consumed APIs but with different AppID", func() {
+		It("Should add it", func() {
+			consumedAPIs := []types.ApplicationConsumedAPI{testConsumedAPI}
+			newConsumedAPI := testConsumedAPI
+			newConsumedAPI.AppID = "newappid"
+			addConsumedAPI(&consumedAPIs, newConsumedAPI)
+			Expect(len(consumedAPIs)).To(Equal(2))
+		})
+	})
 	When("It already exists in the current consumed APIs", func() {
 		It("Shouldn't add it", func() {
 			consumedAPIs := []types.ApplicationConsumedAPI{testConsumedAPI}
@@ -63,14 +72,28 @@ var _ = Describe("Removing consumed API", func() {
 	When("It doesn't exist in the current consumed APIs", func() {
 		It("Shouldn't do anything", func() {
 			consumedAPIs := []types.ApplicationConsumedAPI{testConsumedAPI}
-			removeConsumedAPI(&consumedAPIs, "non-existent-api-name")
+			newConsumedAPI := types.ApplicationConsumedAPI{
+				Name:    "non-existent-api-name",
+				APIName: "apiname2",
+				AppID:   "appId2",
+			}
+			removeConsumedAPI(&consumedAPIs, newConsumedAPI)
+			Expect(len(consumedAPIs)).To(Equal(1))
+		})
+	})
+	When("It exist in the current consumed APIs but with different appID", func() {
+		It("Shouldn't do anything", func() {
+			consumedAPIs := []types.ApplicationConsumedAPI{testConsumedAPI}
+			newConsumedAPI := testConsumedAPI
+			newConsumedAPI.AppID = "newappid"
+			removeConsumedAPI(&consumedAPIs, newConsumedAPI)
 			Expect(len(consumedAPIs)).To(Equal(1))
 		})
 	})
 	When("It already exists in the current consumed APIs", func() {
 		It("Should remove it", func() {
 			consumedAPIs := []types.ApplicationConsumedAPI{testConsumedAPI}
-			removeConsumedAPI(&consumedAPIs, "apiname1")
+			removeConsumedAPI(&consumedAPIs, testConsumedAPI)
 			Expect(len(consumedAPIs)).To(Equal(0))
 		})
 	})
