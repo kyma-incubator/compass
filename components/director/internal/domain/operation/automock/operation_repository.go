@@ -30,6 +30,20 @@ func (_m *OperationRepository) Create(ctx context.Context, _a1 *model.Operation)
 	return r0
 }
 
+// DeleteMultiple provides a mock function with given fields: ctx, ids
+func (_m *OperationRepository) DeleteMultiple(ctx context.Context, ids []string) error {
+	ret := _m.Called(ctx, ids)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) error); ok {
+		r0 = rf(ctx, ids)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: ctx, id
 func (_m *OperationRepository) Get(ctx context.Context, id string) (*model.Operation, error) {
 	ret := _m.Called(ctx, id)
@@ -46,6 +60,52 @@ func (_m *OperationRepository) Get(ctx context.Context, id string) (*model.Opera
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByDataAndType provides a mock function with given fields: ctx, data, opType
+func (_m *OperationRepository) GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error) {
+	ret := _m.Called(ctx, data, opType)
+
+	var r0 *model.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}, model.OperationType) *model.Operation); ok {
+		r0 = rf(ctx, data, opType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, interface{}, model.OperationType) error); ok {
+		r1 = rf(ctx, data, opType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListAllByType provides a mock function with given fields: ctx, opType
+func (_m *OperationRepository) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
+	ret := _m.Called(ctx, opType)
+
+	var r0 []*model.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) []*model.Operation); ok {
+		r0 = rf(ctx, opType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.OperationType) error); ok {
+		r1 = rf(ctx, opType)
 	} else {
 		r1 = ret.Error(1)
 	}

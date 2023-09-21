@@ -10,7 +10,7 @@ import (
 type OperationsManagerConfig struct {
 	// ElectionConfig ia s congiguratin for leader election
 	ElectionConfig cronjob.ElectionConfig
-	// PriorityQueueLimit is the number of operations returned from priority queue. Should be larger (+1) than the number of pods multiplied by number of parallel processors per pod.
+	// PriorityQueueLimit is the number of operations returned from priority queue. Should be larger (+1) than the number of pods.
 	PriorityQueueLimit int `envconfig:"APP_OPERATIONS_MANAGER_PRIORITY_QUEUE_LIMIT,default=10"`
 	// RescheduleOperationsJobInterval how frequently the reschedule job for (refresh data) will be executed
 	RescheduleOperationsJobInterval time.Duration `envconfig:"APP_OPERATIONS_MANAGER_RESCHEDULE_JOB_INTERVAL,default=24h"`
