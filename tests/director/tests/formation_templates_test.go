@@ -59,7 +59,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 	require.NotEmpty(t, output.Name)
 
-	saveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template")
+	SaveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template")
 
 	t.Logf("Check if formation template with name %q was created", formationTemplateName)
 
@@ -143,7 +143,7 @@ func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 	require.NotEmpty(t, output.Name)
 
-	saveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template with reset")
+	SaveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template with reset")
 
 	t.Logf("Check if formation template with name %q was created", formationTemplateName)
 
@@ -159,7 +159,7 @@ func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
 	expectedErrorMsg := "graphql: The operation is not allowed [reason=formation template \"create-formation-template-name\" does not support resetting]"
 	t.Logf("Resynchronize formation %q with reset should fail", formation.Name)
 	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, reset)
-	saveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications with reset")
+	SaveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications with reset")
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
 	require.NotNil(t, err)
 	require.Equal(t, err.Error(), expectedErrorMsg)
@@ -204,7 +204,7 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 	require.NotEmpty(t, output.Name)
 	assertions.AssertFormationTemplate(t, &formationTemplateInput, &output)
 
-	saveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template with webhooks")
+	SaveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template with webhooks")
 
 	t.Logf("Check if formation template with name %q was created", formationTemplateName)
 
@@ -236,7 +236,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, deleteFormationTemplateRequest.Query(), "delete formation template")
+	SaveExample(t, deleteFormationTemplateRequest.Query(), "delete formation template")
 
 	t.Logf("Check if formation template with name: %q and ID: %q was deleted", formationTemplateName, formationTemplateReq.ID)
 
@@ -246,7 +246,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getFormationTemplateRequest, &formationTemplateOutput)
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
-	saveExample(t, getFormationTemplateRequest.Query(), "query formation template")
+	SaveExample(t, getFormationTemplateRequest.Query(), "query formation template")
 }
 
 func TestUpdateFormationTemplate(t *testing.T) {
@@ -275,7 +275,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, updateFormationTemplateRequest.Query(), "update formation template")
+	SaveExample(t, updateFormationTemplateRequest.Query(), "update formation template")
 
 	t.Logf("Check if formation template with ID: %q and old name: %q was successully updated to: %q", formationTemplateReq.ID, createdFormationTemplateName, updatedFormationTemplateInput.Name)
 	formationTemplateID := output.ID
@@ -362,7 +362,7 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 
 	require.NoError(t, err)
 	addReq := fixtures.FixAddWebhookToFormationTemplateRequest(output.ID, webhookInStr)
-	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add formation template webhook")
+	SaveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add formation template webhook")
 
 	actualWebhook := graphql.Webhook{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
@@ -404,7 +404,7 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 	t.Run("Delete formation template webhook", func(t *testing.T) {
 		//GIVEN
 		deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-		saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
+		SaveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
 
 		//WHEN
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
@@ -439,7 +439,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, queryFormationTemplateRequest.Query(), "query formation template")
+	SaveExample(t, queryFormationTemplateRequest.Query(), "query formation template")
 
 	t.Logf("Check if formation template with name %q and ID %q was received", formationTemplateName, createdFormationRequest.ID)
 
@@ -484,7 +484,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, currentFormationTemplatePage.TotalCount+2, output.TotalCount)
 
-	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
+	SaveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
 
 	t.Log("Check if formation templates are in received slice")
 
@@ -504,7 +504,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, output.TotalCount)
 
-	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates by name")
+	SaveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates by name")
 
 	t.Log("Check if formation templates are in received slice")
 
@@ -643,7 +643,7 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	}
 	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(webhookInput)
 	addReq := fixtures.FixAddWebhookToFormationTemplateRequest(scopedFormationTemplate.ID, webhookInStr)
-	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add formation template webhook")
+	SaveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add formation template webhook")
 	t.Run("Add formation template webhook with other tenant should result in unauthorized", func(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		customTenant := tenant.TestTenants.GetIDByName(t, tenant.TestConsumerSubaccount)

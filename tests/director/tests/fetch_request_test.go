@@ -160,5 +160,5 @@ func TestRefetchAPISpec(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, spec, refetchedSpec.Data)
 
-	saveExample(t, req.Query(), "refetch api spec")
+	SaveExample(t, req.Query(), "refetch api spec")
 }

@@ -61,7 +61,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
+	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
 
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
@@ -269,7 +269,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	require.NoError(t, err)
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
+	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
 
 	// WHEN
 	actualApp := graphql.ApplicationExt{}
@@ -315,7 +315,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
+	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
@@ -343,7 +343,7 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
+	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
@@ -505,7 +505,7 @@ func TestUpdateApplication(t *testing.T) {
 		assert.Equal(t, expectedApp.BaseURL, updatedApp.BaseURL)
 		assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
 
-		saveExample(t, request.Query(), "update application")
+		SaveExample(t, request.Query(), "update application")
 	})
 
 	t.Run("Create webhook when updating application with baseURL", func(t *testing.T) {
@@ -718,7 +718,7 @@ func TestDeleteApplication(t *testing.T) {
 
 		// WHEN
 		delReq := fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-		saveExample(t, delReq.Query(), "unregister application")
+		SaveExample(t, delReq.Query(), "unregister application")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, &actualApp)
 
 		//THEN
@@ -815,7 +815,7 @@ func TestUnpairApplication(t *testing.T) {
 
 		// WHEN
 		unpairRequest := fixtures.FixUnpairApplicationRequest(actualApp.ID)
-		saveExample(t, unpairRequest.Query(), "unpair application")
+		SaveExample(t, unpairRequest.Query(), "unpair application")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unpairRequest, &actualApp)
 
 		//THEN
@@ -918,7 +918,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		createdLabel := &graphql.Label{}
 
 		addReq := fixtures.FixSetApplicationLabelRequest(actualApp.ID, expectedLabel.Key, []string{"aaa", "bbb"})
-		saveExample(t, addReq.Query(), "set application label")
+		SaveExample(t, addReq.Query(), "set application label")
 
 		err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &createdLabel)
 		require.NoError(t, err)
@@ -931,7 +931,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// delete label value
 		deletedLabel := graphql.Label{}
 		delReq := fixtures.FixDeleteApplicationLabelRequest(actualApp.ID, expectedLabel.Key)
-		saveExample(t, delReq.Query(), "delete application label")
+		SaveExample(t, delReq.Query(), "delete application label")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
@@ -953,7 +953,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		require.NoError(t, err)
 		addReq := fixtures.FixAddWebhookToApplicationRequest(actualApp.ID, webhookInStr)
-		saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application webhook")
+		SaveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application webhook")
 
 		actualWebhook := graphql.Webhook{}
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
@@ -976,7 +976,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		require.NoError(t, err)
 		updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
+		SaveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.NotNil(t, actualWebhook.URL)
@@ -986,7 +986,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//GIVEN
 		deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-		saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
+		SaveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
 
 		//WHEN
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
@@ -1031,7 +1031,7 @@ func TestQueryApplications(t *testing.T) {
 	// WHEN
 	queryReq := fixtures.FixGetApplicationsRequestWithPagination()
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &actualAppPage)
-	saveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
+	SaveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
 	//THEN
 	require.NoError(t, err)
@@ -1121,7 +1121,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 		// WHEN
 		queryAppReq := fixtures.FixGetApplicationRequest(appID)
 		err = testctx.Tc.RunOperation(context.Background(), certSecuredGraphQLClient, queryAppReq, &actualApp)
-		saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+		SaveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
 
 		//THE
 		require.NoError(t, err)
@@ -1354,7 +1354,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 		err := testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
-		saveExample(t, request.Query(), "query applications for runtime")
+		SaveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
@@ -1391,7 +1391,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		applicationPage := graphql.ApplicationPage{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
-		saveExample(t, request.Query(), "query applications for runtime")
+		SaveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
@@ -1413,7 +1413,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		applicationPage := graphql.ApplicationPage{}
 
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
-		saveExample(t, request.Query(), "query applications for runtime")
+		SaveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
@@ -1808,7 +1808,7 @@ func TestMergeApplications(t *testing.T) {
 	t.Logf("Should be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
-	saveExample(t, mergeRequest.Query(), "merge applications")
+	SaveExample(t, mergeRequest.Query(), "merge applications")
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, mergeRequest, &destApp)
 
 	// THEN
@@ -1980,7 +1980,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	t.Logf("Should not be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
-	saveExample(t, mergeRequest.Query(), "merge applications with self register distinguish label key")
+	SaveExample(t, mergeRequest.Query(), "merge applications with self register distinguish label key")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, mergeRequest, &destApp)
 
 	// THEN
@@ -2087,7 +2087,7 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	newApp := graphql.ApplicationExt{}
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getAppRequest, &newApp)
-	saveExampleInCustomDir(t, getAppRequest.Query(), queryApplicationCategory, "query application by local tenant id and app template id")
+	SaveExampleInCustomDir(t, getAppRequest.Query(), queryApplicationCategory, "query application by local tenant id and app template id")
 
 	//THEN
 	require.NoError(t, err)

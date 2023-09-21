@@ -33,7 +33,7 @@ func TestAPIDefinitionInApplication(t *testing.T) {
 
 	assert.Equal(t, 1, apiDefPage.TotalCount)
 	assert.Equal(t, api.ID, apiDefPage.Data[0].ID)
-	saveExample(t, queryAPIForApplication.Query(), "query api definition for application")
+	SaveExample(t, queryAPIForApplication.Query(), "query api definition for application")
 }
 
 func TestAddAPIDefinitionToApplication(t *testing.T) {
@@ -56,7 +56,7 @@ func TestAddAPIDefinitionToApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, apiDef.ID)
-	saveExample(t, apiAddRequest.Query(), "add api definition to application")
+	SaveExample(t, apiAddRequest.Query(), "add api definition to application")
 }
 
 func TestUpdateAPIDefinitionToApplication(t *testing.T) {
@@ -84,5 +84,5 @@ func TestUpdateAPIDefinitionToApplication(t *testing.T) {
 
 	assert.Equal(t, newName, updatedAPI.Name)
 	assert.NotEqual(t, addedAPI.Name, updatedAPI.Name)
-	saveExample(t, apiUpdateRequest.Query(), "update api definition to application")
+	SaveExample(t, apiUpdateRequest.Query(), "update api definition to application")
 }

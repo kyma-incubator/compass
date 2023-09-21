@@ -187,7 +187,7 @@ func TestTenantAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	addTenantAccessRequest := fixtures.FixAddTenantAccessRequest(tenantAccessInputString)
-	saveExample(t, addTenantAccessRequest.Query(), "add tenant access")
+	SaveExample(t, addTenantAccessRequest.Query(), "add tenant access")
 
 	tenantAccess := &graphql.TenantAccess{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addTenantAccessRequest, tenantAccess)
@@ -198,7 +198,7 @@ func TestTenantAccess(t *testing.T) {
 	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
 
 	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(customTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
-	saveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
+	SaveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
 
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, removeTenantAccessRequest, tenantAccess)
 	require.NoError(t, err)

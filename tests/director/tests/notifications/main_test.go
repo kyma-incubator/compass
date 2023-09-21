@@ -1,8 +1,9 @@
-package tests
+package notifications
 
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/tests/director/tests"
 	"net/http"
 	"os"
 	"testing"
@@ -21,7 +22,7 @@ import (
 )
 
 var (
-	conf                      = &DirectorConfig{}
+	conf                      = &tests.DirectorConfig{}
 	certSecuredGraphQLClient  *graphql.Client
 	directorInternalGQLClient *graphql.Client
 	cc                        certloader.Cache

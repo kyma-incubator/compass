@@ -70,5 +70,5 @@ func TestQueryTenantsPageSearch(t *testing.T) {
 
 	//THEN
 	assert.Len(t, actualTenantPage.Data, 3)
-	saveExample(t, getTenantsRequest.Query(), "query tenants")
+	SaveExample(t, getTenantsRequest.Query(), "query tenants")
 }

@@ -33,7 +33,7 @@ func TestEventDefinitionInApplication(t *testing.T) {
 
 	assert.Equal(t, 1, eventDefPage.TotalCount)
 	assert.Equal(t, event.ID, eventDefPage.Data[0].ID)
-	saveExample(t, queryEventForApplication.Query(), "query event definition for application")
+	SaveExample(t, queryEventForApplication.Query(), "query event definition for application")
 }
 
 func TestAddEventDefinitionToApplication(t *testing.T) {
@@ -56,7 +56,7 @@ func TestAddEventDefinitionToApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, eventDef.ID)
-	saveExample(t, eventAddRequest.Query(), "add event definition to application")
+	SaveExample(t, eventAddRequest.Query(), "add event definition to application")
 }
 
 func TestUpdateEventDefinitionToApplication(t *testing.T) {
@@ -84,5 +84,5 @@ func TestUpdateEventDefinitionToApplication(t *testing.T) {
 
 	assert.Equal(t, newName, updatedEvent.Name)
 	assert.NotEqual(t, addedEvent.Name, updatedEvent.Name)
-	saveExample(t, eventUpdateRequest.Query(), "update event definition to application")
+	SaveExample(t, eventUpdateRequest.Query(), "update event definition to application")
 }

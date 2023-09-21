@@ -148,7 +148,7 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateLabelDefinitionRequest(inputString)
-	saveExample(t, request.Query(), "update-label-definition")
+	SaveExample(t, request.Query(), "update-label-definition")
 
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)

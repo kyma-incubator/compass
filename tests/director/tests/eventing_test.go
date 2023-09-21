@@ -156,7 +156,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	// THEN
 	defaultAppNameNormalizer := &normalizer.DefaultNormalizator{}
 	normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
-	saveExampleInCustomDir(t, request.Query(), eventingCategory, "set default eventing for application")
+	SaveExampleInCustomDir(t, request.Query(), eventingCategory, "set default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, normalizedAppName), actualEventingCfg.DefaultURL)
 
@@ -249,7 +249,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualEventingCfg)
 
 	// THEN
-	saveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
+	SaveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
 

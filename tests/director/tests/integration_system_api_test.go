@@ -38,7 +38,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 
 	//THEN
 	require.NotEmpty(t, output.Name)
-	saveExample(t, registerIntegrationSystemRequest.Query(), "register integration system")
+	SaveExample(t, registerIntegrationSystemRequest.Query(), "register integration system")
 
 	t.Log("Check if Integration System was registered")
 
@@ -49,7 +49,7 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 
 	require.NotEmpty(t, intSysOutput)
 	assertions.AssertIntegrationSystem(t, intSysInput, intSysOutput)
-	saveExample(t, getIntegrationSystemRequest.Query(), "query integration system")
+	SaveExample(t, getIntegrationSystemRequest.Query(), "query integration system")
 }
 
 func TestUpdateIntegrationSystem(t *testing.T) {
@@ -81,7 +81,7 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration System was updated")
 	assertions.AssertIntegrationSystem(t, intSysInput, updateOutput)
-	saveExample(t, updateIntegrationSystemRequest.Query(), "update integration system")
+	SaveExample(t, updateIntegrationSystemRequest.Query(), "update integration system")
 }
 
 func TestUnregisterIntegrationSystem(t *testing.T) {
@@ -112,7 +112,7 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 	out := fixtures.GetIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSys.ID)
 
 	require.Empty(t, out)
-	saveExample(t, unregisterIntegrationSystemRequest.Query(), "unregister integration system")
+	SaveExample(t, unregisterIntegrationSystemRequest.Query(), "unregister integration system")
 }
 
 func TestQueryIntegrationSystem(t *testing.T) {
@@ -177,5 +177,5 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	//THEN
 	t.Log("Check if Integration Systems were received")
 	assertions.AssertIntegrationSystemNames(t, []string{name1, name2}, output)
-	saveExample(t, getIntegrationSystemsRequest.Query(), "query integration systems")
+	SaveExample(t, getIntegrationSystemsRequest.Query(), "query integration systems")
 }

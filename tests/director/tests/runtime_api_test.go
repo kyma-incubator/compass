@@ -45,7 +45,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	saveExampleInCustomDir(t, registerReq.Query(), RegisterRuntimeCategory, "register runtime")
+	SaveExampleInCustomDir(t, registerReq.Query(), RegisterRuntimeCategory, "register runtime")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
 
@@ -102,7 +102,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	runtimeUpdateInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(givenUpdateInput)
 	require.NoError(t, err)
 	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(actualRuntime.ID, runtimeUpdateInGQL)
-	saveExample(t, updateRuntimeReq.Query(), "update runtime")
+	SaveExample(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	actualRuntime = graphql.RuntimeExt{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRuntimeReq, &actualRuntime)
@@ -118,7 +118,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// WHEN
 	delReq := fixtures.FixUnregisterRuntimeRequest(actualRuntime.ID)
-	saveExample(t, delReq.Query(), "unregister runtime")
+	SaveExample(t, delReq.Query(), "unregister runtime")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, nil)
 
 	//THEN
@@ -146,7 +146,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
-	saveExampleInCustomDir(t, request.Query(), RegisterRuntimeCategory, "register Runtime with webhooks")
+	SaveExampleInCustomDir(t, request.Query(), RegisterRuntimeCategory, "register Runtime with webhooks")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualRuntime)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
 
@@ -181,7 +181,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	require.NoError(t, err)
 	addReq := fixtures.FixAddWebhookToRuntimeRequest(actualRuntime.ID, webhookInStr)
-	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add runtime webhook")
+	SaveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add runtime webhook")
 
 	actualWebhook := graphql.Webhook{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
@@ -203,7 +203,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	require.NoError(t, err)
 	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-	saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
+	SaveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
@@ -213,7 +213,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	//GIVEN
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-	saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
+	SaveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
 
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
@@ -324,7 +324,7 @@ func TestQueryRuntimes(t *testing.T) {
 	// WHEN
 	queryReq := fixtures.FixGetRuntimesRequestWithPagination()
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &actualPage)
-	saveExampleInCustomDir(t, queryReq.Query(), QueryRuntimesCategory, "query runtimes")
+	SaveExampleInCustomDir(t, queryReq.Query(), QueryRuntimesCategory, "query runtimes")
 
 	//THEN
 	require.NoError(t, err)
@@ -366,7 +366,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	queriedRuntime := graphql.Runtime{}
 	queryReq := fixtures.FixGetRuntimeRequest(createdRuntime.ID)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &queriedRuntime)
-	saveExample(t, queryReq.Query(), "query runtime")
+	SaveExample(t, queryReq.Query(), "query runtime")
 
 	//THEN
 	require.NoError(t, err)
@@ -428,7 +428,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	lastRuntimePage := graphql.RuntimePage{}
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)
-	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with pagination")
+	SaveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with pagination")
 
 	//THEN
 	assert.False(t, lastRuntimePage.PageInfo.HasNextPage)

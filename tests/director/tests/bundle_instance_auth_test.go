@@ -59,7 +59,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	require.Nil(t, output.RuntimeContextID)
 	assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
-	saveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
+	SaveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
 
 	// Fetch Application with bundles
 	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
@@ -449,7 +449,7 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 
-	saveExample(t, bndlInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
+	SaveExample(t, bndlInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
 }
 
 func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
@@ -568,7 +568,7 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, output.Status.Condition)
 	assertions.AssertAuth(t, authInput, output.Auth)
 
-	saveExample(t, setBundleInstanceAuthReq.Query(), "set bundle instance auth")
+	SaveExample(t, setBundleInstanceAuthReq.Query(), "set bundle instance auth")
 }
 
 func TestSetBundleInstanceAuthWithCertificateOAuthCredentials(t *testing.T) {
@@ -629,7 +629,7 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 
-	saveExample(t, deleteBundleInstanceAuthReq.Query(), "delete bundle instance auth")
+	SaveExample(t, deleteBundleInstanceAuthReq.Query(), "delete bundle instance auth")
 }
 
 func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
@@ -673,7 +673,7 @@ func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, authInput.Credential.Basic, instanceAuth.Auth.Credential.(*graphql.BasicCredentialData))
 
-	saveExample(t, createBundleInstanceAuthReq.Query(), "create bundle instance auth")
+	SaveExample(t, createBundleInstanceAuthReq.Query(), "create bundle instance auth")
 
 	// Update the bundle instance auth
 	updatedAuthInput := fixtures.FixOauthAuth(t)
@@ -696,5 +696,5 @@ func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, updatedAuthInput.Credential.Oauth, updatedInstanceAuth.Auth.Credential.(*graphql.OAuthCredentialData))
 
-	saveExample(t, updateBundleInstanceAuthReq.Query(), "update bundle instance auth")
+	SaveExample(t, updateBundleInstanceAuthReq.Query(), "update bundle instance auth")
 }

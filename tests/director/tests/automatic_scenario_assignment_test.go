@@ -68,9 +68,9 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	require.NoError(t, err)
 
 	// THEN
-	saveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
-	saveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
-	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
+	SaveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
+	SaveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
+	SaveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
 
 	assertions.AssertAutomaticScenarioAssignments(t,
 		map[string]*graphql.Label{testScenarioA: &testSelectorA, testScenarioB: &testSelectorA},
