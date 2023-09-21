@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -44,7 +45,7 @@ func TestCreateLabel(t *testing.T) {
 	require.NotEmpty(t, label.Value)
 	require.Equal(t, labelKey, label.Key)
 	require.Equal(t, labelValue, label.Value)
-	SaveExample(t, setLabelRequest.Query(), "set application label")
+	example.SaveExample(t, setLabelRequest.Query(), "set application label")
 
 	t.Log("Update label value on application")
 	newLabelValue := "new-val"
@@ -252,7 +253,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	assert.Equal(t, applicationPage.TotalCount, 1)
 	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
-	SaveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
+	example.SaveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
 }
 
 func TestSearchRuntimesByLabels(t *testing.T) {
@@ -265,13 +266,13 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
 
-	inputFirst := fixRuntimeInput("first")
+	inputFirst := fixtures.FixRuntimeRegisterInputWithoutLabels("first")
 	var firstRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
 	firstRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
 
 	//Create second runtime
-	inputSecond := fixRuntimeInput("second")
+	inputSecond := fixtures.FixRuntimeRegisterInputWithoutLabels("second")
 	var secondRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
 	secondRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
@@ -336,7 +337,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	assert.Equal(t, runtimePage.TotalCount, 1)
 	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyBar], labelValueBar)
-	SaveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with label filter")
+	example.SaveExampleInCustomDir(t, runtimesRequest.Query(), example.QueryRuntimesCategory, "query runtimes with label filter")
 }
 
 func TestListLabelDefinitions(t *testing.T) {
@@ -365,7 +366,7 @@ func TestListLabelDefinitions(t *testing.T) {
 	require.NoError(t, err)
 
 	createRequest := fixtures.FixCreateLabelDefinitionRequest(in)
-	SaveExample(t, createRequest.Query(), "create label definition")
+	example.SaveExample(t, createRequest.Query(), "create label definition")
 
 	output := graphql.LabelDefinition{}
 	if err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output); err != nil {
@@ -379,7 +380,7 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
-	SaveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definitions")
+	example.SaveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definitions")
 
 	//THEN
 	require.NoError(t, err)

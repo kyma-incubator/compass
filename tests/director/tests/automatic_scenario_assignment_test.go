@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -68,9 +69,9 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	require.NoError(t, err)
 
 	// THEN
-	SaveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
-	SaveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
-	SaveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
+	example.SaveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
+	example.SaveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
+	example.SaveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
 
 	assertions.AssertAutomaticScenarioAssignments(t,
 		map[string]*graphql.Label{testScenarioA: &testSelectorA, testScenarioB: &testSelectorA},
@@ -100,15 +101,15 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 
 	var rtm0 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm0)
-	rtm0 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime0"), conf.GatewayOauth)
+	rtm0 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixtures.FixRuntimeRegisterInputWithoutLabels("runtime0"), conf.GatewayOauth)
 
 	var rtm1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm1)
-	rtm1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime1"), conf.GatewayOauth)
+	rtm1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixtures.FixRuntimeRegisterInputWithoutLabels("runtime1"), conf.GatewayOauth)
 
 	var rtm2 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rtm2)
-	rtm2 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, fixRuntimeInput("runtime2"), conf.GatewayOauth)
+	rtm2 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, fixtures.FixRuntimeRegisterInputWithoutLabels("runtime2"), conf.GatewayOauth)
 
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
 		//GIVEN
@@ -180,7 +181,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
-	rtm = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, fixRuntimeInput("test-name"), conf.GatewayOauth)
+	rtm = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, fixtures.FixRuntimeRegisterInputWithoutLabels("test-name"), conf.GatewayOauth)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
 		rtmWithScenarios := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantID, rtm.ID)

@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -59,7 +60,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	require.Nil(t, output.RuntimeContextID)
 	assertions.AssertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
-	SaveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
+	example.SaveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
 
 	// Fetch Application with bundles
 	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
@@ -89,7 +90,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("runtime-test")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-test")
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -201,7 +202,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("runtime-test")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-test")
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -449,7 +450,7 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 
-	SaveExample(t, bndlInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
+	example.SaveExample(t, bndlInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
 }
 
 func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
@@ -457,7 +458,7 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("runtime-test")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-test")
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -568,7 +569,7 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, output.Status.Condition)
 	assertions.AssertAuth(t, authInput, output.Auth)
 
-	SaveExample(t, setBundleInstanceAuthReq.Query(), "set bundle instance auth")
+	example.SaveExample(t, setBundleInstanceAuthReq.Query(), "set bundle instance auth")
 }
 
 func TestSetBundleInstanceAuthWithCertificateOAuthCredentials(t *testing.T) {
@@ -629,7 +630,7 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 
-	SaveExample(t, deleteBundleInstanceAuthReq.Query(), "delete bundle instance auth")
+	example.SaveExample(t, deleteBundleInstanceAuthReq.Query(), "delete bundle instance auth")
 }
 
 func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
@@ -648,7 +649,7 @@ func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
 	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	t.Logf("Registering runtime with name %q in tenant %q...", rtmName, tenantId)
-	rtmIn := fixRuntimeInput(rtmName)
+	rtmIn := fixtures.FixRuntimeRegisterInputWithoutLabels(rtmName)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &rtmIn)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
@@ -673,7 +674,7 @@ func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, authInput.Credential.Basic, instanceAuth.Auth.Credential.(*graphql.BasicCredentialData))
 
-	SaveExample(t, createBundleInstanceAuthReq.Query(), "create bundle instance auth")
+	example.SaveExample(t, createBundleInstanceAuthReq.Query(), "create bundle instance auth")
 
 	// Update the bundle instance auth
 	updatedAuthInput := fixtures.FixOauthAuth(t)
@@ -696,5 +697,5 @@ func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, updatedAuthInput.Credential.Oauth, updatedInstanceAuth.Auth.Credential.(*graphql.OAuthCredentialData))
 
-	SaveExample(t, updateBundleInstanceAuthReq.Query(), "update bundle instance auth")
+	example.SaveExample(t, updateBundleInstanceAuthReq.Query(), "update bundle instance auth")
 }

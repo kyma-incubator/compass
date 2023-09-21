@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,5 +71,5 @@ func TestQueryTenantsPageSearch(t *testing.T) {
 
 	//THEN
 	assert.Len(t, actualTenantPage.Data, 3)
-	SaveExample(t, getTenantsRequest.Query(), "query tenants")
+	example.SaveExample(t, getTenantsRequest.Query(), "query tenants")
 }

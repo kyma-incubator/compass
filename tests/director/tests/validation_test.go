@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"strings"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
+	runtimeIn := fixtures.FixRuntimeRegisterInputWithoutLabels("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -43,7 +44,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := fixRuntimeInput("my runtime")
+	runtimeIn := fixtures.FixRuntimeRegisterInputWithoutLabels("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -63,14 +64,14 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := fixRuntimeUpdateInput("012345Myaccount_Runtime")
+	runtimeIn := fixtures.FixRuntimeUpdateInputWithoutLabels("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -89,14 +90,14 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := fixRuntimeUpdateInput("my runtime")
+	runtimeIn := fixtures.FixRuntimeUpdateInputWithoutLabels("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -148,7 +149,7 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateLabelDefinitionRequest(inputString)
-	SaveExample(t, request.Query(), "update-label-definition")
+	example.SaveExample(t, request.Query(), "update-label-definition")
 
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)
@@ -188,7 +189,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -160,5 +161,5 @@ func TestRefetchAPISpec(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, spec, refetchedSpec.Data)
 
-	SaveExample(t, req.Query(), "refetch api spec")
+	example.SaveExample(t, req.Query(), "refetch api spec")
 }

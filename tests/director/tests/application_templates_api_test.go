@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -482,7 +483,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	t.Log("Check if application template was updated")
 	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
 
-	SaveExample(t, updateAppTemplateRequest.Query(), "update application template")
+	example.SaveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
 func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing.T) {
@@ -842,7 +843,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	out := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate.ID)
 
 	require.Empty(t, out)
-	SaveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
+	example.SaveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
 }
 
 func TestDeleteApplicationTemplateWithCertSubjMapping(t *testing.T) {
@@ -1051,7 +1052,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 		}
 	}
 	assert.Equal(t, 2, found)
-	SaveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
+	example.SaveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
 }
 
 func TestRegisterApplicationFromTemplate(t *testing.T) {
@@ -1104,7 +1105,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
-	SaveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
@@ -1171,7 +1172,7 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	require.Equal(t, appTemplateTwo.ID, *outputApp.Application.ApplicationTemplateID)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test app-display-name", *outputApp.Application.Description)
-	SaveExample(t, createAppFromTmplRequest.Query(), "register application from template using template name and id")
+	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template using template name and id")
 }
 
 func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
@@ -1217,7 +1218,7 @@ func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "appName", outputApp.Application.Name)
 	require.Equal(t, "test appDisplayName", *outputApp.Application.Description)
-	SaveExample(t, createAppFromTmplRequest.Query(), "register application from template with placeholder payload")
+	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template with placeholder payload")
 }
 
 func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
@@ -1315,7 +1316,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 	require.NoError(t, err)
 	addReq := fixtures.FixAddWebhookToTemplateRequest(appTemplate.ID, webhookInStr)
-	SaveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application template webhook")
+	example.SaveExampleInCustomDir(t, addReq.Query(), example.AddWebhookCategory, "add application template webhook")
 
 	actualWebhook := graphql.Webhook{}
 	t.Run("fails when tenant is present", func(t *testing.T) {

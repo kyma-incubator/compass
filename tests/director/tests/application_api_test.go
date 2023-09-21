@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"strings"
 	"testing"
 
@@ -29,12 +30,10 @@ const (
 	registerApplicationCategory = "register application"
 	queryApplicationsCategory   = "query applications"
 	queryApplicationCategory    = "query application"
-	deleteWebhookCategory       = "delete webhook"
-	addWebhookCategory          = "add webhook"
-	updateWebhookCategory       = "update webhook"
 	managedLabel                = "managed"
 	sccLabel                    = "scc"
 	testScenario                = "test-scenario"
+	IsNormalizedLabel           = "isNormalized"
 )
 
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
@@ -61,7 +60,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
+	example.SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
 
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
@@ -269,7 +268,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	require.NoError(t, err)
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
+	example.SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
 
 	// WHEN
 	actualApp := graphql.ApplicationExt{}
@@ -315,7 +314,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
+	example.SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
@@ -343,7 +342,7 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
+	example.SaveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
@@ -401,7 +400,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		})
 
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
-		runtimeInput := fixRuntimeInput("test-runtime")
+		runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("test-runtime")
 		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
 		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
@@ -505,7 +504,7 @@ func TestUpdateApplication(t *testing.T) {
 		assert.Equal(t, expectedApp.BaseURL, updatedApp.BaseURL)
 		assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
 
-		SaveExample(t, request.Query(), "update application")
+		example.SaveExample(t, request.Query(), "update application")
 	})
 
 	t.Run("Create webhook when updating application with baseURL", func(t *testing.T) {
@@ -718,7 +717,7 @@ func TestDeleteApplication(t *testing.T) {
 
 		// WHEN
 		delReq := fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-		SaveExample(t, delReq.Query(), "unregister application")
+		example.SaveExample(t, delReq.Query(), "unregister application")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, &actualApp)
 
 		//THEN
@@ -765,7 +764,7 @@ func TestDeleteApplication(t *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		runtimeInput := fixRuntimeInput("one-runtime")
+		runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("one-runtime")
 		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
 
 		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -815,7 +814,7 @@ func TestUnpairApplication(t *testing.T) {
 
 		// WHEN
 		unpairRequest := fixtures.FixUnpairApplicationRequest(actualApp.ID)
-		SaveExample(t, unpairRequest.Query(), "unpair application")
+		example.SaveExample(t, unpairRequest.Query(), "unpair application")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unpairRequest, &actualApp)
 
 		//THEN
@@ -858,7 +857,7 @@ func TestUnpairApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		runtimeInput := fixRuntimeInput("one-runtime")
+		runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("one-runtime")
 
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
@@ -918,7 +917,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		createdLabel := &graphql.Label{}
 
 		addReq := fixtures.FixSetApplicationLabelRequest(actualApp.ID, expectedLabel.Key, []string{"aaa", "bbb"})
-		SaveExample(t, addReq.Query(), "set application label")
+		example.SaveExample(t, addReq.Query(), "set application label")
 
 		err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &createdLabel)
 		require.NoError(t, err)
@@ -931,7 +930,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// delete label value
 		deletedLabel := graphql.Label{}
 		delReq := fixtures.FixDeleteApplicationLabelRequest(actualApp.ID, expectedLabel.Key)
-		SaveExample(t, delReq.Query(), "delete application label")
+		example.SaveExample(t, delReq.Query(), "delete application label")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
@@ -953,7 +952,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		require.NoError(t, err)
 		addReq := fixtures.FixAddWebhookToApplicationRequest(actualApp.ID, webhookInStr)
-		SaveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application webhook")
+		example.SaveExampleInCustomDir(t, addReq.Query(), example.AddWebhookCategory, "add application webhook")
 
 		actualWebhook := graphql.Webhook{}
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
@@ -976,7 +975,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		require.NoError(t, err)
 		updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-		SaveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
+		example.SaveExampleInCustomDir(t, updateReq.Query(), example.UpdateWebhookCategory, "update webhook")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.NotNil(t, actualWebhook.URL)
@@ -986,7 +985,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//GIVEN
 		deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-		SaveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
+		example.SaveExampleInCustomDir(t, deleteReq.Query(), example.DeleteWebhookCategory, "delete webhook")
 
 		//WHEN
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
@@ -1031,7 +1030,7 @@ func TestQueryApplications(t *testing.T) {
 	// WHEN
 	queryReq := fixtures.FixGetApplicationsRequestWithPagination()
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &actualAppPage)
-	SaveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
+	example.SaveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
 	//THEN
 	require.NoError(t, err)
@@ -1121,7 +1120,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 		// WHEN
 		queryAppReq := fixtures.FixGetApplicationRequest(appID)
 		err = testctx.Tc.RunOperation(context.Background(), certSecuredGraphQLClient, queryAppReq, &actualApp)
-		SaveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+		example.SaveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
 
 		//THE
 		require.NoError(t, err)
@@ -1130,7 +1129,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	ctx := context.Background()
 
-	input := fixRuntimeInput("runtime-test")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-test")
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -1223,7 +1222,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
+	runtimeInputWithoutNormalization := fixtures.FixRuntimeRegisterInputWithoutLabels("unnormalized-runtime")
 	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
 	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
 	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -1354,7 +1353,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 		err := testctx.Tc.NewOperation(ctx).WithTenant(tenantID).Run(request, oauthGraphQLClient, &applicationPage)
-		SaveExample(t, request.Query(), "query applications for runtime")
+		example.SaveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
@@ -1375,7 +1374,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
 		//create runtime without normalization
-		unlabeledRuntimeInput := fixRuntimeInput("unlabeled-runtime")
+		unlabeledRuntimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("unlabeled-runtime")
 		unlabeledRuntimeInput.Labels[ScenariosLabel] = scenarios
 		unlabeledRuntimeInput.Labels[IsNormalizedLabel] = "false"
 		var unlabeledRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -1391,7 +1390,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		applicationPage := graphql.ApplicationPage{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
-		SaveExample(t, request.Query(), "query applications for runtime")
+		example.SaveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
@@ -1401,7 +1400,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime without normalization
-		runtimeInputWithNormalization := fixRuntimeInput("normalized-runtime")
+		runtimeInputWithNormalization := fixtures.FixRuntimeRegisterInputWithoutLabels("normalized-runtime")
 		runtimeInputWithNormalization.Labels[ScenariosLabel] = scenarios
 		runtimeInputWithNormalization.Labels[IsNormalizedLabel] = "true"
 
@@ -1413,7 +1412,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		applicationPage := graphql.ApplicationPage{}
 
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
-		SaveExample(t, request.Query(), "query applications for runtime")
+		example.SaveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
 		require.NoError(t, err)
@@ -1504,7 +1503,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeWithoutNormalizationInput := fixRuntimeInput("unnormalized-runtime")
+	runtimeWithoutNormalizationInput := fixtures.FixRuntimeRegisterInputWithoutLabels("unnormalized-runtime")
 	runtimeWithoutNormalizationInput.Labels[ScenariosLabel] = scenarios
 	runtimeWithoutNormalizationInput.Labels[IsNormalizedLabel] = "false"
 	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -1526,7 +1525,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime with normalization
-		runtimeWithNormalizationInput := fixRuntimeInput("normalized-runtime")
+		runtimeWithNormalizationInput := fixtures.FixRuntimeRegisterInputWithoutLabels("normalized-runtime")
 		runtimeWithNormalizationInput.Labels[ScenariosLabel] = scenarios
 		runtimeWithNormalizationInput.Labels[IsNormalizedLabel] = "true"
 		var runtimeWithNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -1630,7 +1629,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, actualApp.ID, scenarios)
 	require.NoError(t, err)
 
-	inRuntime := fixRuntimeInput("test-runtime")
+	inRuntime := fixtures.FixRuntimeRegisterInputWithoutLabels("test-runtime")
 	inRuntime.Labels[ScenariosLabel] = scenarios
 	inRuntime.Description = nil
 
@@ -1808,7 +1807,7 @@ func TestMergeApplications(t *testing.T) {
 	t.Logf("Should be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
-	SaveExample(t, mergeRequest.Query(), "merge applications")
+	example.SaveExample(t, mergeRequest.Query(), "merge applications")
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, mergeRequest, &destApp)
 
 	// THEN
@@ -1980,7 +1979,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	t.Logf("Should not be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
-	SaveExample(t, mergeRequest.Query(), "merge applications with self register distinguish label key")
+	example.SaveExample(t, mergeRequest.Query(), "merge applications with self register distinguish label key")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, mergeRequest, &destApp)
 
 	// THEN
@@ -2087,7 +2086,7 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	newApp := graphql.ApplicationExt{}
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getAppRequest, &newApp)
-	SaveExampleInCustomDir(t, getAppRequest.Query(), queryApplicationCategory, "query application by local tenant id and app template id")
+	example.SaveExampleInCustomDir(t, getAppRequest.Query(), queryApplicationCategory, "query application by local tenant id and app template id")
 
 	//THEN
 	require.NoError(t, err)

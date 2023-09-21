@@ -6,7 +6,7 @@ import (
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/director/tests"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -926,7 +926,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		t.Logf("Resynchronize formation %q should retry and succeed", formation.Name)
 		resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
-		tests.SaveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications")
+		example.SaveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &formation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, formation.Name)
@@ -1083,7 +1083,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		t.Logf("Resynchronize formation %q without reset should not do anything", formation.Name)
 		resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
-		tests.SaveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications")
+		example.SaveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &formation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, formation.Name)

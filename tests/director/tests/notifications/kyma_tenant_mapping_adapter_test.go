@@ -134,7 +134,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	// Create Kyma runtime which should have webhook added to it pointing to the Kyma Adapter
 	runtimeName := "runtime-test"
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
-	runtimeRegInput := fixtures.FixRuntimeUpdateInputWithoutLabels(runtimeName)
+	runtimeRegInput := fixtures.FixRuntimeRegisterInputWithoutLabels(runtimeName)
 	runtimeRegInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountID
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration

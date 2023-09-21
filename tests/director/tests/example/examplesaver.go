@@ -1,4 +1,4 @@
-package tests
+package example
 
 import (
 	"fmt"
@@ -10,6 +10,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	QueryRuntimesCategory   = "query runtimes"
+	RegisterRuntimeCategory = "register runtime"
+	AddWebhookCategory      = "add webhook"
+	UpdateWebhookCategory   = "update webhook"
+	DeleteWebhookCategory   = "delete webhook"
 )
 
 func SaveExample(t *testing.T, query string, exampleName string) {

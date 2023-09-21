@@ -1,4 +1,4 @@
-package tests
+package runtime
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"net/http"
 	"testing"
 	"time"
@@ -33,7 +34,7 @@ func TestAddRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixRuntimeInput("addRuntimeContext")
+	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -57,7 +58,7 @@ func TestAddRuntimeContext(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 	assertions.AssertRuntimeContext(t, &rtmCtxInput, &output)
 
-	SaveExample(t, addRtmCtxRequest.Query(), "register runtime context")
+	example.SaveExample(t, addRtmCtxRequest.Query(), "register runtime context")
 
 	rtmCtxRequest := fixtures.FixRuntimeContextRequest(runtime.ID, output.ID)
 	runtimeFromAPI := graphql.RuntimeExt{}
@@ -66,7 +67,7 @@ func TestAddRuntimeContext(t *testing.T) {
 	require.NoError(t, err)
 
 	assertions.AssertRuntimeContext(t, &rtmCtxInput, &runtimeFromAPI.RuntimeContext)
-	SaveExample(t, rtmCtxRequest.Query(), "query runtimeContext")
+	example.SaveExample(t, rtmCtxRequest.Query(), "query runtimeContext")
 }
 
 func TestQueryRuntimeContexts(t *testing.T) {
@@ -74,7 +75,7 @@ func TestQueryRuntimeContexts(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixRuntimeInput("addRuntimeContext")
+	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -95,7 +96,7 @@ func TestQueryRuntimeContexts(t *testing.T) {
 	require.Equal(t, 2, len(runtimeGql.RuntimeContexts.Data))
 	require.ElementsMatch(t, []*graphql.RuntimeContextExt{&rtmCtx1, &rtmCtx2}, runtimeGql.RuntimeContexts.Data)
 
-	SaveExample(t, rtmCtxsRequest.Query(), "query runtime contexts")
+	example.SaveExample(t, rtmCtxsRequest.Query(), "query runtime contexts")
 }
 
 func TestUpdateRuntimeContext(t *testing.T) {
@@ -103,7 +104,7 @@ func TestUpdateRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixRuntimeInput("addRuntimeContext")
+	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -129,7 +130,7 @@ func TestUpdateRuntimeContext(t *testing.T) {
 	require.NotEmpty(t, runtimeContext.ID)
 
 	assertions.AssertRuntimeContext(t, &rtmCtxUpdateInput, &runtimeContext)
-	SaveExample(t, updateRtmCtxReq.Query(), "update runtime context")
+	example.SaveExample(t, updateRtmCtxReq.Query(), "update runtime context")
 }
 
 func TestDeleteRuntimeContext(t *testing.T) {
@@ -137,7 +138,7 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixRuntimeInput("addRuntimeContext")
+	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -159,7 +160,7 @@ func TestDeleteRuntimeContext(t *testing.T) {
 	require.Equal(t, "deleteRuntimeContext", rtmCtxGql.Key)
 	require.Equal(t, "deleteRuntimeContext", rtmCtxGql.Value)
 
-	SaveExample(t, rtmCtxDeleteReq.Query(), "delete runtime context")
+	example.SaveExample(t, rtmCtxDeleteReq.Query(), "delete runtime context")
 }
 
 func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
@@ -357,7 +358,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			subscription.CreateRuntimeSubscription(t, conf.SubscriptionConfig, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, testCase.SubscribedToProviderAppName, true, testCase.FirstSubscriptionFlow)
 
 			t.Log("Assert the runtime context has subscriptions label")
-			assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, 1)
+			assertRuntimeContextFromSubscription(t, ctx, subscriptionConsumerSubaccountID, providerRuntime.ID, 1)
 
 			t.Logf("Creating a second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
@@ -366,12 +367,12 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 			t.Logf("Successfully created second subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
 			t.Log("Assert runtime context subscriptions label has new value added")
-			assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, 2)
+			assertRuntimeContextFromSubscription(t, ctx, subscriptionConsumerSubaccountID, providerRuntime.ID, 2)
 
 			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.FirstSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 			t.Log("Assert runtime context subscriptions label has one value less")
-			assertRuntimeContextFromSubscription(t, subscriptionConsumerSubaccountID, providerRuntime.ID, 1)
+			assertRuntimeContextFromSubscription(t, ctx, subscriptionConsumerSubaccountID, providerRuntime.ID, 1)
 
 			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, testCase.SecondSubscriptionFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
@@ -386,7 +387,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 	}
 }
 
-func assertRuntimeContextFromSubscription(t *testing.T, tenantID, runtimeID string, expectedSubscriptionsCount int) {
+func assertRuntimeContextFromSubscription(t *testing.T, ctx context.Context, tenantID, runtimeID string, expectedSubscriptionsCount int) {
 	consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeID)
 	require.Len(t, consumerSubaccountRuntime.RuntimeContexts.Data, 1)
 	subscriptionsLabelInterface, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[conf.SubscriptionConfig.SubscriptionsLabelKey].([]interface{})

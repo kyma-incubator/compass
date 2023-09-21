@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"net/http"
 	"testing"
 	"time"
@@ -33,6 +34,7 @@ import (
 )
 
 const (
+	ScenariosLabel            = "scenarios"
 	assignFormationCategory   = "assign formation"
 	unassignFormationCategory = "unassign formation"
 	resourceSubtypeANY        = "ANY"
@@ -53,19 +55,19 @@ func TestGetFormation(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, testScenario, formation.Name)
 
-	SaveExample(t, createReq.Query(), "create formation")
+	example.SaveExample(t, createReq.Query(), "create formation")
 
 	t.Logf("Should get formation with name: %q by ID: %q", testScenario, formation.ID)
 	var gotFormation graphql.Formation
 	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
-	SaveExample(t, getFormationReq.Query(), "query formation")
+	example.SaveExample(t, getFormationReq.Query(), "query formation")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
 
 	t.Logf("Should get formation by name: %q", formation.Name)
 	getFormationByNameReq := fixtures.FixGetFormationByNameRequest(formation.Name)
-	SaveExample(t, getFormationByNameReq.Query(), "query formation by name")
+	example.SaveExample(t, getFormationByNameReq.Query(), "query formation by name")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationByNameReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
@@ -93,7 +95,7 @@ func TestListFormations(t *testing.T) {
 	expectedFormations := 0
 	t.Logf("List should return %d formations", expectedFormations)
 	listFormationsReq := fixtures.FixListFormationsRequestWithPageSize(first)
-	SaveExample(t, listFormationsReq.Query(), "query formations")
+	example.SaveExample(t, listFormationsReq.Query(), "query formations")
 	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq)
 	require.Equal(t, expectedFormations, formationPage1.TotalCount)
 	require.Empty(t, formationPage1.Data)
@@ -147,7 +149,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
-	SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign application to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign application to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
@@ -181,12 +183,12 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
-	SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign application from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign application from formation")
 
 	t.Log("Should be able to delete formation after application is unassigned")
 	fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation)
 
-	SaveExample(t, deleteRequest.Query(), "delete formation")
+	example.SaveExample(t, deleteRequest.Query(), "delete formation")
 }
 
 func TestApplicationOnlyFormationFlow(t *testing.T) {
@@ -221,7 +223,7 @@ func TestApplicationOnlyFormationFlow(t *testing.T) {
 
 	t.Logf("Create runtime")
 	rtmName := "rt"
-	rtmInput := fixRuntimeInput(rtmName)
+	rtmInput := fixtures.FixRuntimeRegisterInputWithoutLabels(rtmName)
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &runtime)
@@ -265,7 +267,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
-	rtmInput := fixRuntimeInput(rtmName)
+	rtmInput := fixtures.FixRuntimeRegisterInputWithoutLabels(rtmName)
 	rtmInput.Description = &rtmDesc
 	rtmInput.Labels[conf.GlobalSubaccountIDLabelKey] = subaccountID
 
@@ -296,7 +298,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
-	SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
@@ -324,7 +326,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
-	SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime from formation")
 
 	t.Log("Check that the formation label value is unassigned")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation})
@@ -435,7 +437,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
-	SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime context to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime context to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
@@ -471,7 +473,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
-	SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime context from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime context from formation")
 
 	t.Log("Check that the formation label value is unassigned")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2})
@@ -521,7 +523,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, firstFormation, assignFormation.Name)
 
-	SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign tenant to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign tenant to formation")
 
 	t.Log("Should match expected ASA")
 	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
@@ -535,7 +537,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, firstFormation, unassignFormation.Name)
 
-	SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign tenant from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign tenant from formation")
 
 	t.Log("Should match expected ASA")
 	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)

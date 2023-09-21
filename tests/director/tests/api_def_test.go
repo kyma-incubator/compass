@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -33,7 +34,7 @@ func TestAPIDefinitionInApplication(t *testing.T) {
 
 	assert.Equal(t, 1, apiDefPage.TotalCount)
 	assert.Equal(t, api.ID, apiDefPage.Data[0].ID)
-	SaveExample(t, queryAPIForApplication.Query(), "query api definition for application")
+	example.SaveExample(t, queryAPIForApplication.Query(), "query api definition for application")
 }
 
 func TestAddAPIDefinitionToApplication(t *testing.T) {
@@ -56,7 +57,7 @@ func TestAddAPIDefinitionToApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, apiDef.ID)
-	SaveExample(t, apiAddRequest.Query(), "add api definition to application")
+	example.SaveExample(t, apiAddRequest.Query(), "add api definition to application")
 }
 
 func TestUpdateAPIDefinitionToApplication(t *testing.T) {
@@ -84,5 +85,5 @@ func TestUpdateAPIDefinitionToApplication(t *testing.T) {
 
 	assert.Equal(t, newName, updatedAPI.Name)
 	assert.NotEqual(t, addedAPI.Name, updatedAPI.Name)
-	SaveExample(t, apiUpdateRequest.Query(), "update api definition to application")
+	example.SaveExample(t, apiUpdateRequest.Query(), "update api definition to application")
 }
