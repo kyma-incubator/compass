@@ -356,6 +356,15 @@ func (s *service) GetBySystemNumber(ctx context.Context, systemNumber string) (*
 	return app, nil
 }
 
+// GetGlobalByID returns an application by id
+func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
+	application, err := s.appRepo.GetGlobalByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
+	}
+	return application, nil
+}
+
 // Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)

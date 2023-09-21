@@ -313,6 +313,66 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetByIDAndWebhookTypeGlobal(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	url := "bar"
+
+	webhookModel := fixApplicationModelWebhookWithProxy("1", id, url, time.Time{})
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.WebhookRepository
+		ExpectedWebhook    *model.Webhook
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookTypeGlobal", ctx, id, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(webhookModel, nil).Once()
+				return repo
+			},
+			ExpectedWebhook:    webhookModel,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when webhook retrieval failed",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookTypeGlobal", ctx, id, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedWebhook:    webhookModel,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := webhook.NewService(repo, nil, nil, nil, nil, "")
+
+			// WHEN
+			actual, err := svc.GetByIDAndWebhookTypeGlobal(ctx, id, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedWebhook, actual)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
 func TestService_ListForApplication(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

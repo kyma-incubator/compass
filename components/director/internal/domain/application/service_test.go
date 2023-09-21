@@ -3627,6 +3627,75 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetGlobalByID(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("test error")
+
+	id := "foo"
+
+	desc := "Lorem ipsum"
+
+	applicationModel := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		BaseEntity:  &model.BaseEntity{ID: "foo"},
+	}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                string
+		RepositoryFn        func() *automock.ApplicationRepository
+		InputID             string
+		ExpectedApplication *model.Application
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetGlobalByID", ctx, id).Return(applicationModel, nil).Once()
+				return repo
+			},
+			InputID:             id,
+			ExpectedApplication: applicationModel,
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetGlobalByID", ctx, id).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:             id,
+			ExpectedApplication: applicationModel,
+			ExpectedErrMessage:  testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			app, err := svc.GetGlobalByID(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedApplication, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_GetSystem(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("test error")

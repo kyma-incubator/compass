@@ -47,24 +47,29 @@ const ModeParam = "mode"
 // WebhookFetcherFunc defines a function which fetches the webhooks for a specific resource ID
 type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.Webhook, error)
 
+// ORDOperationSchedulerFunc defines a function which schedules ord operations the webhooks for a specific resource ID
+type ORDOperationSchedulerFunc func(ctx context.Context, appID, appTemplateID string) error
+
 type directive struct {
-	transact            persistence.Transactioner
-	webhookFetcherFunc  WebhookFetcherFunc
-	resourceFetcherFunc ResourceFetcherFunc
-	resourceUpdaterFunc ResourceUpdaterFunc
-	tenantLoaderFunc    TenantLoaderFunc
-	scheduler           Scheduler
+	transact                  persistence.Transactioner
+	webhookFetcherFunc        WebhookFetcherFunc
+	resourceFetcherFunc       ResourceFetcherFunc
+	resourceUpdaterFunc       ResourceUpdaterFunc
+	tenantLoaderFunc          TenantLoaderFunc
+	ordOperationSchedulerFunc ORDOperationSchedulerFunc
+	scheduler                 Scheduler
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, resourceUpdaterFunc ResourceUpdaterFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, resourceFetcherFunc ResourceFetcherFunc, resourceUpdaterFunc ResourceUpdaterFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler, ordOpSchedulerFunc ORDOperationSchedulerFunc) *directive {
 	return &directive{
-		transact:            transact,
-		webhookFetcherFunc:  webhookFetcherFunc,
-		resourceFetcherFunc: resourceFetcherFunc,
-		resourceUpdaterFunc: resourceUpdaterFunc,
-		tenantLoaderFunc:    tenantLoaderFunc,
-		scheduler:           scheduler,
+		transact:                  transact,
+		webhookFetcherFunc:        webhookFetcherFunc,
+		resourceFetcherFunc:       resourceFetcherFunc,
+		resourceUpdaterFunc:       resourceUpdaterFunc,
+		tenantLoaderFunc:          tenantLoaderFunc,
+		scheduler:                 scheduler,
+		ordOperationSchedulerFunc: ordOpSchedulerFunc,
 	}
 }
 
@@ -92,7 +97,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	if *mode == graphql.OperationModeSync {
-		return executeSyncOperation(ctx, next, tx)
+		return d.executeSyncOperation(ctx, next, tx, operationType)
 	}
 
 	operation := &Operation{
@@ -170,6 +175,14 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Unable to finalize database operation")
 	}
 	committed = true
+
+	if operationType == graphql.OperationTypeCreate || operationType == graphql.OperationTypeUpdate {
+		appID := entity.GetID()
+
+		if err := d.ordOperationSchedulerFunc(ctx, appID, ""); err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API: %v", err)
+		}
+	}
 
 	return resp, nil
 }
@@ -294,7 +307,7 @@ func getOperationMode(resCtx *gqlgen.FieldContext) (*graphql.OperationMode, erro
 	return &mode, nil
 }
 
-func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persistence.PersistenceTx) (interface{}, error) {
+func (d *directive) executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persistence.PersistenceTx, operationType graphql.OperationType) (interface{}, error) {
 	resp, err := next(ctx)
 	if err != nil {
 		return nil, err
@@ -304,6 +317,18 @@ func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persiste
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to finalize database operation")
+	}
+
+	entity, ok := resp.(graphql.Entity)
+	if !ok {
+		log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", err)
+		return nil, apperrors.NewInternalError("Failed to process operation")
+	}
+	if operationType == graphql.OperationTypeCreate || operationType == graphql.OperationTypeUpdate {
+		appID := entity.GetID()
+		if err := d.ordOperationSchedulerFunc(ctx, appID, ""); err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API: %v", err)
+		}
 	}
 
 	return resp, nil
