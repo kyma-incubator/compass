@@ -1,4 +1,4 @@
-package tests
+package formation
 
 import (
 	"bytes"
@@ -39,6 +39,7 @@ const (
 	unassignFormationCategory = "unassign formation"
 	resourceSubtypeANY        = "ANY"
 	exceptionSystemType       = "exception-type"
+	testScenario              = "testScenario"
 	reset                     = true
 	dontReset                 = false
 )

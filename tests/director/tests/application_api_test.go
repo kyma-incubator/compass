@@ -32,6 +32,7 @@ const (
 	queryApplicationCategory    = "query application"
 	managedLabel                = "managed"
 	sccLabel                    = "scc"
+	ScenariosLabel              = "scenarios"
 	testScenario                = "test-scenario"
 	IsNormalizedLabel           = "isNormalized"
 )
