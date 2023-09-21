@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -14,29 +13,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type operationPriority int
-
 var now = time.Now
-
-const (
-	// LowOperationPriority represents low priority for operations
-	LowOperationPriority operationPriority = 1
-	// HighOperationPriority represents high priority for operations
-	HighOperationPriority operationPriority = 100
-)
 
 // OperationsManager provides methods for operations management
 type OperationsManager struct {
-	opType        model.OperationType
-	transact      persistence.Transactioner
-	opSvc         operationsmanager.OperationService
-	mutex         sync.Mutex
-	areJobsStared bool
-	cfg           OperationsManagerConfig
+	opType                                 model.OperationType
+	transact                               persistence.Transactioner
+	opSvc                                  OperationService
+	mutex                                  sync.Mutex
+	isRescheduleOperationsJobStarted       bool
+	isRescheduleHangedOperationsJobStarted bool
+	cfg                                    OperationsManagerConfig
 }
 
 // NewOperationsManager creates new OperationsManager
-func NewOperationsManager(transact persistence.Transactioner, opSvc operationsmanager.OperationService, opType model.OperationType, cfg OperationsManagerConfig) *OperationsManager {
+func NewOperationsManager(transact persistence.Transactioner, opSvc OperationService, opType model.OperationType, cfg OperationsManagerConfig) *OperationsManager {
 	return &OperationsManager{
 		transact: transact,
 		opSvc:    opSvc,
@@ -80,6 +71,55 @@ func (om *OperationsManager) GetOperation(ctx context.Context) (*model.Operation
 	return nil, apperrors.NewNoScheduledOperationsError()
 }
 
+// CreateOperation creates one operation
+func (om *OperationsManager) CreateOperation(ctx context.Context, in *model.OperationInput) (string, error) {
+	om.mutex.Lock()
+	defer om.mutex.Unlock()
+
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	operationID, err := om.opSvc.Create(ctx, in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating operation %v ", in)
+	}
+
+	return operationID, tx.Commit()
+}
+
+// FindOperationByData retrieves one one operation by it's data
+func (om *OperationsManager) FindOperationByData(ctx context.Context, data interface{}) (*model.Operation, error) {
+	om.mutex.Lock()
+	defer om.mutex.Unlock()
+
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	operation, err := om.opSvc.GetByDataAndType(ctx, data, om.opType)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, err
+		} else {
+			return nil, errors.Wrapf(err, "while fetching operation with data %v and type %v ", data, om.opType)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return operation, nil
+}
+
 // MarkOperationCompleted marks the operation with the given ID as completed
 func (om *OperationsManager) MarkOperationCompleted(ctx context.Context, id string) error {
 	tx, err := om.transact.Begin()
@@ -116,29 +156,12 @@ func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationI
 	return om.rescheduleOperation(ctx, operationID, HighOperationPriority)
 }
 
-// RunMaintenanceJobs runs the maintenance jobs. Should be mandatory during startup of corresponding module.
-func (om *OperationsManager) RunMaintenanceJobs(ctx context.Context) error {
-	if om.areJobsStared {
-		log.C(ctx).Info("Maintenance jobs are already started")
+// StartRescheduleOperationsJob starts reschedule operations job and blocks.
+func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) error {
+	if om.isRescheduleOperationsJobStarted {
+		log.C(ctx).Info("Reschedule operations job is already started")
 		return nil
 	}
-	log.C(ctx).Info("Maintenance jobs starting")
-
-	err := om.startRescheduleOperationsJob(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = om.startRescheduleHangedOperationsJob(ctx)
-	if err != nil {
-		return err
-	}
-	om.areJobsStared = true
-	log.C(ctx).Info("Maintenance jobs now started")
-	return nil
-}
-
-func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) error {
 	resyncJob := cronjob.CronJob{
 		Name: "RescheduleOperationsJob",
 		Fn: func(jobCtx context.Context) {
@@ -163,10 +186,16 @@ func (om *OperationsManager) startRescheduleOperationsJob(ctx context.Context) e
 		},
 		SchedulePeriod: om.cfg.RescheduleOperationsJobInterval,
 	}
+	om.isRescheduleOperationsJobStarted = true
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 
-func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Context) error {
+// StartRescheduleHangedOperationsJob starts reschedule hanged operations job and blocks.
+func (om *OperationsManager) StartRescheduleHangedOperationsJob(ctx context.Context) error {
+	if om.isRescheduleHangedOperationsJobStarted {
+		log.C(ctx).Info("Reschedule hanged operations job is already started")
+		return nil
+	}
 	resyncJob := cronjob.CronJob{
 		Name: "RescheduleHangedOperationsJob",
 		Fn: func(jobCtx context.Context) {
@@ -191,10 +220,11 @@ func (om *OperationsManager) startRescheduleHangedOperationsJob(ctx context.Cont
 		},
 		SchedulePeriod: om.cfg.RescheduleHangedOperationsJobInterval,
 	}
+	om.isRescheduleHangedOperationsJobStarted = true
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 
-func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority operationPriority) error {
+func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority OperationPriority) error {
 	tx, err := om.transact.Begin()
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	"net/http"
 	"net/url"
 
@@ -132,6 +133,7 @@ func NewRootResolver(
 	callbackURL string,
 	appTemplateProductLabel string,
 	destinationCreatorConfig *destinationcreator.Config,
+	ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig,
 ) (*RootResolver, error) {
 	timeService := time.NewService()
 
@@ -262,7 +264,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:   appNameNormalizer,
 		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, tenantBusinessTypeSvc, tenantBusinessTypeConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
-		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel),
+		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
 		api:                 api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -282,7 +284,7 @@ func NewRootResolver(
 		mpBundle:            bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc, appSvc),
 		bundleInstanceAuth:  bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
-		subscription:        subscription.NewResolver(transact, subscriptionSvc),
+		subscription:        subscription.NewResolver(transact, subscriptionSvc, ordAggregatorClientConfig),
 		formationTemplate:   formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter, formationConstraintSvc, formationConstraintConverter),
 		formationConstraint: formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
 		constraintReference: formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),

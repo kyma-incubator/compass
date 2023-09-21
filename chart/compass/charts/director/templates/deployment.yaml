@@ -317,6 +317,10 @@ spec:
               value: {{ .Values.global.kymaAdapter.tenantMapping.mode | quote }}
             - name: APP_KYMA_ADAPTER_TENANT_MAPPING_TYPE
               value: {{ .Values.global.kymaAdapter.tenantMapping.type | quote }}
+            - name: APP_ORD_AGGREGATOR_AGGREGATE_API
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordAggregator.prefix }}{{ .Values.global.ordAggregator.aggregateEndpoint }}"
+            - name: APP_ORD_AGGREGATOR_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
