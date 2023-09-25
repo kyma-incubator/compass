@@ -48,6 +48,7 @@ type Entity struct {
 	SupportedUseCases                       sql.NullString `db:"supported_use_cases"`
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
 	CorrelationIDs                          sql.NullString `db:"correlation_ids"`
+	Direction                               sql.NullString `db:"direction"`
 
 	*repo.BaseEntity
 	version.Version

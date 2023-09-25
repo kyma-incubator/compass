@@ -27,7 +27,7 @@ type Package struct {
 	Tags                         json.RawMessage
 	Countries                    json.RawMessage
 	Labels                       json.RawMessage
-	PolicyLevel                  string
+	PolicyLevel                  *string
 	CustomPolicyLevel            *string
 	PartOfProducts               json.RawMessage
 	LineOfBusiness               json.RawMessage
@@ -51,7 +51,7 @@ type PackageInput struct {
 	Tags                json.RawMessage `json:"tags"`
 	Countries           json.RawMessage `json:"countries"`
 	Labels              json.RawMessage `json:"labels"`
-	PolicyLevel         string          `json:"policyLevel"`
+	PolicyLevel         *string         `json:"policyLevel"`
 	CustomPolicyLevel   *string         `json:"customPolicyLevel"`
 	PartOfProducts      json.RawMessage `json:"partOfProducts"`
 	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
