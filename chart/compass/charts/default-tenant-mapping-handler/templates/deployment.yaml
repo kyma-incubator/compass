@@ -74,8 +74,20 @@ spec:
               value: {{ .Values.global.defaultTenantMappingHandler.tenantInfo.requestTimeout }}
             - name: APP_TENANT_INFO_INSECURE_SKIP_VERIFY
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_EXT_SVC_CLIENT_CERT_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+            - name: APP_EXT_SVC_CLIENT_KEY_KEY
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

@@ -3,6 +3,8 @@ package config
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
@@ -24,6 +26,10 @@ type Config struct {
 	ClientTimeout             time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
 	AuthorizationHeaderKey    string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-	Log                       log.Config
-	TenantInfo                TenantInfo
+
+	CertLoaderConfig             certloader.Config
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+
+	Log        log.Config
+	TenantInfo TenantInfo
 }

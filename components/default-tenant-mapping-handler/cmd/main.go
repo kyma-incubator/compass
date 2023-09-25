@@ -6,6 +6,9 @@ import (
 	"os"
 	"time"
 
+	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/claims"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/config"
@@ -39,10 +42,10 @@ func main() {
 
 	cfg := config.Config{}
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
-	exitOnError(err, "Error while loading app config")
+	exitOnError(err, "error while loading app config")
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
-	exitOnError(err, "Failed to configure Logger")
+	exitOnError(err, "failed to configure Logger")
 
 	fetchJWKSClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -54,7 +57,7 @@ func main() {
 	tokenValidationMiddleware := authmiddleware.New(fetchJWKSClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, "", &claims.Validator{})
 
 	tenantValidationMiddleware, err := tenant.NewMiddleware(ctx, cfg.TenantInfo)
-	exitOnError(err, "Error while preparing tenant validation middleware")
+	exitOnError(err, "error while preparing tenant validation middleware")
 
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
@@ -63,7 +66,12 @@ func main() {
 	defaultTMHandler.Use(tokenValidationMiddleware.Handler())
 	defaultTMHandler.Use(tenantValidationMiddleware.Handler())
 
-	h := handler.NewHandler()
+	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	exitOnError(err, "failed to initialize certificate loader")
+
+	mtlsHTTPClient := httputildirector.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
+
+	h := handler.NewHandler(mtlsHTTPClient)
 
 	defaultTMHandler.HandleFunc(cfg.APITenantMappingsEndpoint, h.HandlerFunc).Methods(http.MethodPatch)
 	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHTTPHandler())
@@ -88,7 +96,7 @@ func exitOnError(err error, context string) {
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "error while configuring tenant mapping handler")
 
 	srv := &http.Server{
 		Addr:              address,
