@@ -99,6 +99,12 @@ func (s TenantMappingsService) updateIASAppsConsumedAPIs(ctx context.Context,
 		return errors.Newf("Failed to get IAS applications during %s operation: %w", triggerOperation, err)
 	}
 
+	// could only be in the Unassign case
+	if len(iasApps) < tenantMappingsCount {
+		log.Warn().Msgf("Not all IAS applications are still present, skipping consumed APIs update")
+		return nil
+	}
+
 	for idx, iasApp := range iasApps {
 		tenantMapping := tenantMappings[idx]
 		uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
@@ -106,13 +112,10 @@ func (s TenantMappingsService) updateIASAppsConsumedAPIs(ctx context.Context,
 			uclAppID, tenantMapping.FormationID)
 
 		updateData := ias.UpdateData{
-			Operation:           triggerOperation,
-			TenantMapping:       tenantMapping,
-			ConsumerApplication: iasApp,
-		}
-
-		if triggerOperation == types.OperationAssign {
-			updateData.ProviderApplicationID = iasApps[abs(idx-1)].ID
+			Operation:             triggerOperation,
+			TenantMapping:         tenantMapping,
+			ConsumerApplication:   iasApp,
+			ProviderApplicationID: iasApps[abs(idx-1)].ID,
 		}
 
 		if err := s.IASService.UpdateApplicationConsumedAPIs(ctx, updateData); err != nil {

@@ -1,24 +1,24 @@
-package operationsmanager_test
+package ord_test
 
 import (
 	"context"
-	"testing"
-
+	"encoding/json"
+	"errors"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
-	"github.com/kyma-incubator/compass/components/director/internal/operations_manager/automock"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-func TestORDOperationCreator_Create(t *testing.T) {
+func TestOperationMaintainer_Maintain(t *testing.T) {
 	// GIVEN
-	testErr := errors.New("Test error")
+	testErr := errors.New("test error")
 	ctx := context.TODO()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -40,6 +40,22 @@ func TestORDOperationCreator_Create(t *testing.T) {
 			Auth:       nil,
 		},
 	}
+	staticWebhooks := []*model.Webhook{
+		{
+			ID:         "wh-static-id-1",
+			ObjectID:   "app-template-id",
+			ObjectType: model.ApplicationTemplateWebhookReference,
+			Type:       model.WebhookTypeOpenResourceDiscoveryStatic,
+			URL:        str.Ptr("https://test-static.com"),
+			Auth:       nil,
+		},
+	}
+	operation := &model.Operation{
+		ID:     "op-id",
+		OpType: "",
+		Status: "",
+		Data:   json.RawMessage("{}"),
+	}
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -51,16 +67,33 @@ func TestORDOperationCreator_Create(t *testing.T) {
 		{
 			Name: "Success",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
+				return txGen.ThatSucceeds()
 			},
 			OpSvcFn: func() *automock.OperationService {
 				svc := &automock.OperationService{}
-				svc.On("CreateMultiple", txtest.CtxWithDBMatcher(), mock.AnythingOfType("[]*model.OperationInput")).Return(nil).Once()
+				svc.On("ListAllByType", txtest.CtxWithDBMatcher(), model.OperationTypeOrdAggregation).Return([]*model.Operation{operation}, nil).Once()
+				svc.On("CreateMultiple", txtest.CtxWithDBMatcher(), mock.AnythingOfType("[]*model.OperationInput")).Run(func(args mock.Arguments) {
+					arg := args.Get(1)
+					res, ok := arg.([]*model.OperationInput)
+					if !ok {
+						return
+					}
+					assert.Equal(t, 3, len(res))
+				}).Return(nil).Once()
+				svc.On("DeleteMultiple", txtest.CtxWithDBMatcher(), mock.Anything).Run(func(args mock.Arguments) {
+					arg := args.Get(1)
+					res, ok := arg.([]string)
+					if !ok {
+						return
+					}
+					assert.Equal(t, 1, len(res))
+				}).Return(nil).Once()
 				return svc
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				svc := &automock.WebhookService{}
 				svc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(webhooks, nil).Once()
+				svc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscoveryStatic).Return(staticWebhooks, nil).Once()
 				return svc
 			},
 			AppSvcFn: func() *automock.ApplicationService {
@@ -77,7 +110,23 @@ func TestORDOperationCreator_Create(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error while getting webhooks with ord type",
+			Name: "Error while beginning transaction",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatFailsOnBegin()
+			},
+			OpSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Error while listing webhooks by type",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatDoesntExpectCommit()
 			},
@@ -95,72 +144,9 @@ func TestORDOperationCreator_Create(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Error while beginning transaction on getting webhooks with ord type",
+			Name: "Error while listing all application from app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatFailsOnBegin()
-			},
-			OpSvcFn: func() *automock.OperationService {
-				return &automock.OperationService{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			AppSvcFn: func() *automock.ApplicationService {
-				return &automock.ApplicationService{}
-			},
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error while committing transaction on getting webhooks with ord type",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatFailsOnCommit()
-			},
-			OpSvcFn: func() *automock.OperationService {
-				return &automock.OperationService{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(webhooks, nil).Once()
-				return svc
-			},
-			AppSvcFn: func() *automock.ApplicationService {
-				return &automock.ApplicationService{}
-			},
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error while creating multiple operations",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
-			},
-			OpSvcFn: func() *automock.OperationService {
-				svc := &automock.OperationService{}
-				svc.On("CreateMultiple", txtest.CtxWithDBMatcher(), mock.AnythingOfType("[]*model.OperationInput")).Return(testErr).Once()
-				return svc
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(webhooks, nil).Once()
-				return svc
-			},
-			AppSvcFn: func() *automock.ApplicationService {
-				apps := []*model.Application{
-					{
-						BaseEntity: &model.BaseEntity{
-							ID: "app-id",
-						},
-					},
-				}
-				svc := &automock.ApplicationService{}
-				svc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), "app-template-id").Return(apps, nil).Once()
-				return svc
-			},
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error while listing applications by app template id",
-			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatDoesntExpectCommit()
 			},
 			OpSvcFn: func() *automock.OperationService {
 				return &automock.OperationService{}
@@ -187,10 +173,10 @@ func TestORDOperationCreator_Create(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			appSvc := testCase.AppSvcFn()
 
-			opCreator := operationsmanager.NewOperationCreator(operationsmanager.OrdCreatorType, tx, opSvc, webhookSvc, appSvc)
+			opMaintainer := ord.NewOperationMaintainer(model.OperationTypeOrdAggregation, tx, opSvc, webhookSvc, appSvc)
 
 			// WHEN
-			err := opCreator.Create(ctx)
+			err := opMaintainer.Maintain(ctx)
 
 			// THEN
 			if testCase.ExpectedErr != nil {
