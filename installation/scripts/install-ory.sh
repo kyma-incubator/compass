@@ -92,6 +92,7 @@ RELEASE_NS=ory
 RELEASE_NAME=ory-stack
 SECRET_NAME=ory-hydra-credentials
 
+# As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
 
