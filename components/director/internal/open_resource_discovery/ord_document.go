@@ -70,6 +70,9 @@ type Document struct {
 
 	Perspective DocumentPerspective `json:"-"`
 
+	PolicyLevel       *string `json:"policyLevel"`
+	CustomPolicyLevel *string `json:"customPolicyLevel"`
+
 	Packages           []*model.PackageInput         `json:"packages"`
 	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
 	Products           []*model.ProductInput         `json:"products"`
@@ -180,7 +183,9 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 				continue
 			}
 			resourceIDs.PackageIDs[pkg.OrdID] = true
-			resourceIDs.PackagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
+			if pkg.PolicyLevel != nil {
+				resourceIDs.PackagePolicyLevels[pkg.OrdID] = *pkg.PolicyLevel
+			}
 		}
 	}
 
@@ -302,7 +307,10 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, pkg := range doc.Packages {
-			if err := validatePackageInput(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
+			if err := validatePackageInputWithSuppressedErrors(pkg, resourcesFromDB.Packages, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating package with ord id %q", pkg.OrdID))
+			}
+			if err := validatePackageInput(pkg, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 				invalidPackagesIndices = append(invalidPackagesIndices, i)
 				resourceIDs.PackageIDs[pkg.OrdID] = false
@@ -310,7 +318,10 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, bndl := range doc.ConsumptionBundles {
-			if err := validateBundleInput(bndl, resourcesFromDB.Bundles, resourceHashes, credentialExchangeStrategyTenantMappings); err != nil {
+			if err := validateBundleInputWithSuppressedErrors(bndl, resourcesFromDB.Bundles, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
+			}
+			if err := validateBundleInput(bndl, credentialExchangeStrategyTenantMappings); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 				invalidBundlesIndices = append(invalidBundlesIndices, i)
 				continue
@@ -336,7 +347,10 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, api := range doc.APIResources {
-			if err := validateAPIInput(api, resourceIDs.PackagePolicyLevels, resourcesFromDB.APIs, resourceHashes); err != nil {
+			if err := validateAPIInputWithSuppressedErrors(api, resourcesFromDB.APIs, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating api with ord id %q", stringPtrToString(api.OrdID)))
+			}
+			if err := validateAPIInput(api, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 				invalidApisIndices = append(invalidApisIndices, i)
 				continue
@@ -350,7 +364,10 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 		}
 
 		for i, event := range doc.EventResources {
-			if err := validateEventInput(event, resourceIDs.PackagePolicyLevels, resourcesFromDB.Events, resourceHashes); err != nil {
+			if err := validateEventInputWithSuppressedErrors(event, resourcesFromDB.Events, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "suppressed errors validating event with ord id %q", stringPtrToString(event.OrdID)))
+			}
+			if err := validateEventInput(event, doc.PolicyLevel); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventsIndices = append(invalidEventsIndices, i)
 				continue
@@ -408,6 +425,7 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 //   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
 //   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
 //   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
+//   - If some resource(Package, API or Event) doesn't have provided `policyLevel` and `customPolicyLevel`, these are inherited from the document
 func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error {
 	var err error
 
@@ -479,11 +497,20 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			packages[pkg.OrdID] = pkg
+			if pkg.PolicyLevel == nil {
+				pkg.PolicyLevel = doc.PolicyLevel
+				pkg.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
 		}
 	}
 
 	for _, doc := range docs {
 		for _, api := range doc.APIResources {
+			if api.PolicyLevel == nil {
+				api.PolicyLevel = doc.PolicyLevel
+				api.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
+
 			referredPkg, ok := packages[*api.OrdPackageID]
 			if !ok {
 				return errors.Errorf("api with ord id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
@@ -509,6 +536,11 @@ func (docs Documents) Sanitize(webhookBaseURL, webhookBaseProxyURL string) error
 			assignDefaultEntryPointIfNeeded(api.PartOfConsumptionBundles, api.TargetURLs)
 		}
 		for _, event := range doc.EventResources {
+			if event.PolicyLevel == nil {
+				event.PolicyLevel = doc.PolicyLevel
+				event.CustomPolicyLevel = doc.CustomPolicyLevel
+			}
+
 			referredPkg, ok := packages[*event.OrdPackageID]
 			if !ok {
 				return errors.Errorf("event with ord id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
