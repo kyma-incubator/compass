@@ -7,10 +7,10 @@ DROP VIEW IF EXISTS tenants_events;
 
 -- Alter tables
 ALTER TABLE api_definitions
-    DROP COLUMN direction;
+DROP COLUMN direction;
 
 ALTER TABLE event_api_definitions
-    DROP COLUMN implementation_standard,
+DROP COLUMN implementation_standard,
     DROP COLUMN custom_implementation_standard,
     DROP COLUMN custom_implementation_standard_description;
 
