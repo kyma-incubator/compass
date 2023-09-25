@@ -162,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.6.2"
+  KYMA_CLI_VERSION="2.7.0"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)
