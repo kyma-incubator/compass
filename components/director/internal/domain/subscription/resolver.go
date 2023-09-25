@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/tidwall/gjson"
 
@@ -32,7 +33,7 @@ type DependentServiceInstancesInfo struct {
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, error)
+	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, string, string, error)
 	UnsubscribeTenantFromApplication(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
@@ -41,13 +42,15 @@ type SubscriptionService interface {
 type Resolver struct {
 	transact        persistence.Transactioner
 	subscriptionSvc SubscriptionService
+	ordClient       *apiclient.ORDClient
 }
 
 // NewResolver returns a new object responsible for resolver-layer Subscription operations.
-func NewResolver(transact persistence.Transactioner, subscriptionSvc SubscriptionService) *Resolver {
+func NewResolver(transact persistence.Transactioner, subscriptionSvc SubscriptionService, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
 		transact:        transact,
 		subscriptionSvc: subscriptionSvc,
+		ordClient:       apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -67,6 +70,9 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	}
 	var success bool
 
+	appID := ""
+	appTemplateID := ""
+	var flowType resource.Type
 	for _, instance := range dependentSvcInstancesInfo.Instances {
 		log.C(ctx).Infof("Subscription flow for subscribe will be entered. Changing provider ID from %q to %q, provider subaccount id from %q to %q and subscription app name from %q to %q", providerID, instance.AppID, providerSubaccountID, instance.ProviderSubaccountID, subscriptionAppName, instance.AppName)
 
@@ -90,7 +96,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 			return false, errors.New("Subscription ID should not be empty")
 		}
 
-		flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
+		flowType, err = r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
 		if err != nil {
 			return false, errors.Wrap(err, "while determining subscription flow")
 		}
@@ -98,7 +104,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		switch flowType {
 		case resource.ApplicationTemplate:
 			log.C(ctx).Infof("Entering application subscription flow")
-			success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID, subscriptionPayload)
+			success, appID, appTemplateID, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID, subscriptionPayload)
 			if err != nil {
 				return false, err
 			}
@@ -115,6 +121,15 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	if err = tx.Commit(); err != nil {
 		return false, err
+	}
+
+	if flowType == resource.ApplicationTemplate && appID != "" && appTemplateID != "" {
+		if err := r.ordClient.Aggregate(ctx, appID, appTemplateID); err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q and AppTemplateID %q", appID, appTemplateID)
+		}
+		if err := r.ordClient.Aggregate(ctx, appID, ""); err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q", appID)
+		}
 	}
 
 	return success, nil

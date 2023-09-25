@@ -73,7 +73,7 @@ func TestHandleOperation(t *testing.T) {
 		}
 		ctx = gqlgen.WithFieldContext(ctx, rCtx)
 
-		directive := operation.NewDirective(nil, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
@@ -97,7 +97,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, &whTypeApplicationRegister, &resourceIDField)
@@ -122,7 +122,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -150,7 +150,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -177,8 +177,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
-
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, mockedORDOperationSchedulerFunc)
 
 		dummyResolver := &dummyResolver{}
 
@@ -210,7 +209,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -245,7 +244,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -282,7 +281,7 @@ func TestHandleOperation(t *testing.T) {
 
 		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 			return nil, mockedError()
-		}, nil, nil, nil, nil)
+		}, nil, nil, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -319,7 +318,7 @@ func TestHandleOperation(t *testing.T) {
 
 		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, func(_ context.Context) (string, error) {
 			return "", mockedError()
-		}, nil)
+		}, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -354,7 +353,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -389,7 +388,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -426,7 +425,7 @@ func TestHandleOperation(t *testing.T) {
 
 		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 			return nil, mockedError()
-		}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
+		}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -464,7 +463,7 @@ func TestHandleOperation(t *testing.T) {
 				{ID: webhookID2, Type: model.WebhookTypeRegisterApplication},
 				{ID: webhookID3, Type: model.WebhookTypeRegisterApplication},
 			}, nil
-		}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
+		}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -500,7 +499,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return("", mockedError())
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -541,7 +540,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(testID, nil)
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -581,7 +580,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 		dummyResolver := &dummyResolver{}
 		scheduler := &operation.DisabledScheduler{}
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, scheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, scheduler, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, nil, nil)
@@ -624,7 +623,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler := &automock.Scheduler{}
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, errorWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, errorWebhooksResponse, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, &whTypeApplicationRegister, nil)
@@ -690,7 +689,7 @@ func TestHandleOperation(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 					return testCase.Webhooks, nil
-				}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler)
+				}, nil, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, mockedScheduler, mockedORDOperationSchedulerFunc)
 
 				dummyResolver := &dummyResolver{}
 
@@ -754,7 +753,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedResourceUpdaterFuncWithError, mockedTenantLoaderFunc, nil)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, nil, mockedResourceUpdaterFuncWithError, mockedTenantLoaderFunc, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -804,7 +803,7 @@ func TestHandleOperation(t *testing.T) {
 			require.Nil(t, errorMsg)
 			require.Equal(t, model.ApplicationStatusConditionCreating, appStatusCondition)
 			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler)
+		}, mockedTenantLoaderFunc, mockedScheduler, mockedORDOperationSchedulerFunc)
 
 		dummyResolver := &dummyResolver{}
 
@@ -880,7 +879,7 @@ func TestHandleOperation(t *testing.T) {
 			require.Nil(t, errorMsg)
 			require.Equal(t, model.ApplicationStatusConditionCreating, appStatusCondition)
 			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler)
+		}, mockedTenantLoaderFunc, mockedScheduler, mockedORDOperationSchedulerFunc)
 
 		dummyResolver := &dummyResolver{}
 
@@ -953,7 +952,7 @@ func TestHandleOperation(t *testing.T) {
 			require.Nil(t, errorMsg)
 			require.Equal(t, model.ApplicationStatusConditionUpdating, appStatusCondition)
 			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler)
+		}, mockedTenantLoaderFunc, mockedScheduler, mockedORDOperationSchedulerFunc)
 
 		dummyResolver := &dummyResolver{}
 
@@ -1029,7 +1028,7 @@ func TestHandleOperation(t *testing.T) {
 			require.Nil(t, errorMsg)
 			require.Equal(t, model.ApplicationStatusConditionDeleting, appStatusCondition)
 			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler)
+		}, mockedTenantLoaderFunc, mockedScheduler, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -1105,7 +1104,7 @@ func TestHandleOperation(t *testing.T) {
 			require.Nil(t, errorMsg)
 			require.Equal(t, model.ApplicationStatusConditionDeleting, appStatusCondition)
 			return nil
-		}, mockedTenantLoaderFunc, mockedScheduler)
+		}, mockedTenantLoaderFunc, mockedScheduler, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -1166,7 +1165,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedResourceFetcherFunc, mockedEmptyResourceUpdaterFunc, mockedTenantLoaderFunc, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -1351,7 +1350,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 
 			directive := operation.NewDirective(mockedTransactioner, func(ctx context.Context, resourceID string) ([]*model.Webhook, error) {
 				return nil, nil
-			}, test.resourceFetcherFunc, mockedEmptyResourceUpdaterFunc, test.tenantLoaderFunc, test.scheduler)
+			}, test.resourceFetcherFunc, mockedEmptyResourceUpdaterFunc, test.tenantLoaderFunc, test.scheduler, nil)
 
 			// WHEN
 			res, err := directive.HandleOperation(ctx, nil, test.resolverFunc, graphql.OperationTypeDelete, nil, &resourceIDField)
@@ -1380,7 +1379,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeDelete, &whTypeApplicationUnregister, nil)
@@ -1447,6 +1446,10 @@ func mockedResourceUpdaterFuncWithError(context.Context, string, bool, *string, 
 }
 
 func mockedEmptyResourceUpdaterFunc(context.Context, string, bool, *string, model.ApplicationStatusCondition) error {
+	return nil
+}
+
+func mockedORDOperationSchedulerFunc(_ context.Context, _, _ string) error {
 	return nil
 }
 

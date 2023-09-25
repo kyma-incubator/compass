@@ -15,6 +15,7 @@ import (
 //
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
+	GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error)
@@ -29,6 +30,7 @@ type WebhookService interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 }

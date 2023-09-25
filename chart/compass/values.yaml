@@ -196,7 +196,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3284"
+      version: "PR-3273"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -947,10 +947,8 @@ global:
   ordAggregator:
     port: 3000
     prefix: /ord-aggregator
+    aggregateEndpoint: /aggregate
     name: ord-aggregator
-    job:
-      schedulePeriod: 60m
-      isSchedulable: true
     lease:
       lockname: aggregatorlease
     authentication:
@@ -965,14 +963,17 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
-    maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
-    ordWebhookPartialProcessURL: ""
-    ordWebhookPartialProcessMaxDays: 0
-    ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
     tenantMappingConfiguration: '{}'
+    parallelOpertionProcessors: 5
+    priorityQueueLimit: 10
+    rescheduleJobInterval: 24h
+    reschedulePeriod: 168h
+    rescheduleHangJobInterval: 1h
+    rescheduleHangedPeriod: 1h
+    maintainOperationsJobInterval: 60m
   systemFetcher:
     enabled: false
     name: "system-fetcher"
