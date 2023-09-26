@@ -969,7 +969,7 @@ global:
     maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
     tenantMappingConfiguration: '{}'
-    parallelOperationProcessors: 5
+    parallelOperationProcessors: 10
     priorityQueueLimit: 10
     rescheduleJobInterval: 24h
     reschedulePeriod: 168h
