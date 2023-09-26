@@ -453,7 +453,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	appCreateInput := fixtures.FixSampleApplicationJSONInputWithWebhooks("placeholder")
-	invalidInput := fixAppTemplateInputWithDefaultDistinguishLabel("")
+	invalidInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel("", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
 	invalidInput.ApplicationInput = &appCreateInput
 	invalidInput.AccessLevel = graphql.ApplicationTemplateAccessLevelGlobal
@@ -476,8 +476,8 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	appTemplateName := createAppTemplateName("validation-test-app-tpl")
-	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateName := fixtures.CreateAppTemplateName("validation-test-app-tpl")
+	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTpl)
@@ -511,8 +511,8 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	appTemplateName := createAppTemplateName("validation-app")
-	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateName := fixtures.CreateAppTemplateName("validation-app")
+	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, tmpl)

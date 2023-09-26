@@ -20,6 +20,9 @@ errcheck-local:
 e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director
 
+e2e-test-application:
+	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-application
+
 e2e-test-notification:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-notifications
 

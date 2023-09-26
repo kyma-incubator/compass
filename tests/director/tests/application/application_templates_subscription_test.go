@@ -1,4 +1,4 @@
-package tests
+package application
 
 import (
 	"bytes"
@@ -76,8 +76,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		// GIVEN
 
 		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription")
+		appTemplateInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
@@ -389,7 +389,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		ctx := context.Background()
 
 		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription-with-optional-placeholders")
+		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription-with-optional-placeholders")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
@@ -479,7 +479,7 @@ func TestSubscriptionApplicationTemplateFlowWithIndirectDependency(baseT *testin
 		// GIVEN
 
 		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription")
+		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDistinguishLabel(appTemplateName, conf.SelfRegisterDirectDependencyDistinguishLabelValue)
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))

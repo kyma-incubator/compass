@@ -18,6 +18,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+const (
+	ScenariosLabel = "scenarios"
+	testScenario   = "test-scenario"
+)
+
 func TestCreateLabel(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -112,7 +117,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
@@ -254,7 +259,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	assert.Equal(t, applicationPage.TotalCount, 1)
 	assert.Contains(t, applicationPage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, applicationPage.Data[0].Labels[labelKeyBar], labelValueBar)
-	example.SaveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
+	example.SaveExampleInCustomDir(t, applicationRequest.Query(), example.QueryApplicationsCategory, "query applications with label filter")
 }
 
 func TestSearchRuntimesByLabels(t *testing.T) {
@@ -408,7 +413,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 		Name: name,
 		Labels: graphql.Labels{
 			ScenariosLabel:               scenarios,
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 	}
 

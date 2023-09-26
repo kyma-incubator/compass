@@ -8,6 +8,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 )
 
+func CreateAppTemplateName(name string) string {
+	return fmt.Sprintf("SAP %s", name)
+}
+
 func FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) graphql.ApplicationTemplateInput {
 	webhookInput := &graphql.WebhookInput{
 		Type: webhookType,
@@ -20,6 +24,13 @@ func FixApplicationTemplateWithWebhookNotifications(applicationType, localTenant
 		OutputTemplate: &outputTemplate,
 	}
 	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, webhookInput)
+}
+
+func FixAppTemplateInputWithDefaultDistinguishLabel(name, selfRegDistinguishLabelKey, selfRegDistinguishLabelValue string) graphql.ApplicationTemplateInput {
+	input := FixApplicationTemplate(name)
+	input.Labels[selfRegDistinguishLabelKey] = selfRegDistinguishLabelValue
+
+	return input
 }
 
 func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string) graphql.ApplicationTemplateInput {

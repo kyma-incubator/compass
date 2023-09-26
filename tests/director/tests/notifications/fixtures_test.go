@@ -737,7 +737,3 @@ func findConstraintByName(t *testing.T, name string, actualFormationConstraints 
 	require.Failf(t, "Could not find constraint with name %q", name)
 	return nil
 }
-
-func createAppTemplateName(name string) string {
-	return fmt.Sprintf("SAP %s", name)
-}

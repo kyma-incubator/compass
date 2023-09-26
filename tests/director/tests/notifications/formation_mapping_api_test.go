@@ -333,7 +333,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
 		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
+		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription-async")
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
 		appTemplateInput.Placeholders[0].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		appTemplateInput.Placeholders[1].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))

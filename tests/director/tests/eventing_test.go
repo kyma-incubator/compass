@@ -22,6 +22,8 @@ import (
 
 const runtimeEventURLFormat = "https://%s"
 const appEventURLFormat = "https://%s/%s/v1/events"
+const eventingCategory = "eventing"
+const IsNormalizedLabel = "isNormalized"
 
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
@@ -35,7 +37,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	runtime2EventingURL := "https://eventing.runtime2.local"
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -110,7 +112,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -203,7 +205,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, "", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)

@@ -1,4 +1,4 @@
-package tests
+package application
 
 import (
 	"context"
@@ -27,9 +27,7 @@ import (
 )
 
 const (
-	eventingCategory            = "eventing"
 	registerApplicationCategory = "register application"
-	queryApplicationsCategory   = "query applications"
 	queryApplicationCategory    = "query application"
 	managedLabel                = "managed"
 	sccLabel                    = "scc"
@@ -53,7 +51,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		Labels: graphql.Labels{
 			"group":                      []interface{}{"production", "experimental"},
 			ScenariosLabel:               []interface{}{testScenario},
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -261,7 +259,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		Labels: graphql.Labels{
 			"group":                      []interface{}{"production", "experimental"},
 			ScenariosLabel:               []interface{}{testScenario},
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 		StatusCondition: &statusCond,
 	}
@@ -306,7 +304,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 		},
 		Labels: graphql.Labels{
 			ScenariosLabel:               []interface{}{testScenario},
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -333,7 +331,7 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	in := fixtures.FixApplicationRegisterInputWithBundles(t)
 	in.Labels = graphql.Labels{
 		"scenarios":                  []interface{}{testScenario},
-		conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+		conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 	}
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
@@ -376,7 +374,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 	t.Run("Register Application with Packages should succeed", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
-		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
+		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName, conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"))
 		err := testctx.Tc.NewOperation(ctx).Run(request, certSecuredGraphQLClient, &actualApp)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp.Application})
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, actualApp.ID, tenant.TestTenants.GetDefaultTenantID())
@@ -734,7 +732,7 @@ func TestDeleteApplication(t *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -773,7 +771,7 @@ func TestDeleteApplication(t *testing.T) {
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -831,7 +829,7 @@ func TestUnpairApplication(t *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -870,7 +868,7 @@ func TestUnpairApplication(t *testing.T) {
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, fixtures.CreateAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -1032,7 +1030,7 @@ func TestQueryApplications(t *testing.T) {
 	// WHEN
 	queryReq := fixtures.FixGetApplicationsRequestWithPagination()
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &actualAppPage)
-	example.SaveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
+	example.SaveExampleInCustomDir(t, queryReq.Query(), example.QueryApplicationsCategory, "query applications")
 
 	//THEN
 	require.NoError(t, err)
@@ -1096,7 +1094,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 		Name:         "app",
 		ProviderName: ptr.String("compass"),
 		Labels: graphql.Labels{
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -1293,7 +1291,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	var expectedBundles []*graphql.Bundle
 	for i, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios, conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer")}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -1479,7 +1477,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	for i, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer")}
 		if testApp.Hidden {
 			(applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
 		}
@@ -1617,7 +1615,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
 			ScenariosLabel:               scenarios,
-			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+			conf.ApplicationTypeLabelKey: fixtures.CreateAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -1665,7 +1663,7 @@ func TestMergeApplications(t *testing.T) {
 	displayNameJSONPath := "$.display-name-json-path"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
-	expectedProductType := createAppTemplateName("MergeTemplate")
+	expectedProductType := fixtures.CreateAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 	formationTemplateName := "merge-applications-template"
 
@@ -1844,13 +1842,13 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
-	expectedProductType := createAppTemplateName("MergeTemplate")
+	expectedProductType := fixtures.CreateAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 	formationTemplateName := "merge-applications-template"
 	nameJSONPath := "$.name-json-path"
 	displayNameJSONPath := "$.display-name-json-path"
 
-	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType)
+	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
 	appTmplInput.ApplicationInput.BaseURL = baseURL
 	appTmplInput.ApplicationInput.ProviderName = nil
@@ -2040,8 +2038,8 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	appTemplateID := "app-template-id-1234"
 	placeholdersPayload := fmt.Sprintf(`{\"name\": \"%s\", \"displayName\":\"appDisplayName\", \"localTenantId\":\"%s\"}`, appName, localTenantID)
 
-	appTemplateName := createAppTemplateName("template")
-	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateName := fixtures.CreateAppTemplateName("template")
+	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
 			Name:        "name",

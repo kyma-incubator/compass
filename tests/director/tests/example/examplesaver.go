@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	QueryRuntimesCategory   = "query runtimes"
-	RegisterRuntimeCategory = "register runtime"
-	AddWebhookCategory      = "add webhook"
-	UpdateWebhookCategory   = "update webhook"
-	DeleteWebhookCategory   = "delete webhook"
+	QueryRuntimesCategory     = "query runtimes"
+	RegisterRuntimeCategory   = "register runtime"
+	AddWebhookCategory        = "add webhook"
+	UpdateWebhookCategory     = "update webhook"
+	DeleteWebhookCategory     = "delete webhook"
+	QueryApplicationsCategory = "query applications"
 )
 
 func SaveExample(t *testing.T, query string, exampleName string) {

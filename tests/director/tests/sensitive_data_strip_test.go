@@ -28,7 +28,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	t.Log("Creating application template")
-	appTemplateName := createAppTemplateName("app-template-test")
+	appTemplateName := fixtures.CreateAppTemplateName("app-template-test")
 	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
