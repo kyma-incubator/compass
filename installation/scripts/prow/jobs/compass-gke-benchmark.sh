@@ -214,6 +214,15 @@ function installCompassOld() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
+  # Added with Kyma 2.6.3 upgrade can be removed after it reaches main
+  kubectl create ns compass-sytem --dry-run=client -o yaml | kubectl apply -f -
+  kubectl label ns compass-sytem istio-injection=enabled --overwrite
+
+  kubectl create ns ory-stack --dry-run=client -o yaml | kubectl apply -f -
+  kubectl label ns ory-stack istio-injection=enabled --overwrite
+
+  # -------------------------------------------------------------------
+
   echo "Installing Ory"
   installOry
 
