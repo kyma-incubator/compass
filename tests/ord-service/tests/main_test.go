@@ -71,7 +71,7 @@ type config struct {
 	SaaSAppNameLabelKey                 string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	DestinationAPIConfig                clients.DestinationServiceAPIConfig
 	DestinationsConfig                  cfg.DestinationsConfig
-	DestinationConsumerSubdomain        string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	DestinationConsumerSubdomainMtls    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	ExternalClientCertSecretName        string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 

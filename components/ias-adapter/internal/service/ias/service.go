@@ -52,7 +52,11 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 		}
 	case types.OperationUnassign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
-			removeConsumedAPI(&consumedAPIs, consumedAPI)
+			removeConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
+				Name:    consumedAPI,
+				APIName: consumedAPI,
+				AppID:   data.ProviderApplicationID,
+			})
 		}
 	}
 
@@ -94,7 +98,7 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	}
 
 	if len(applications.Applications) == 0 {
-		return types.Application{}, errors.Newf("no applications found with clientID '%s'", clientID)
+		return types.Application{}, errors.Newf("no applications found with clientID '%s': %w", clientID, errors.IASApplicationNotFound)
 	}
 
 	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
@@ -108,23 +112,24 @@ func filterByAppTenantID(applications []types.Application, clientID, appTenantID
 		}
 	}
 	return types.Application{}, errors.Newf(
-		"application with clientID '%s' and appTenantID '%s' not found", clientID, appTenantID)
+		"application with clientID '%s' and appTenantID '%s' not found: %w", clientID, appTenantID, errors.IASApplicationNotFound)
 }
 
 func addConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) {
 	for _, api := range *consumedAPIs {
-		if api.APIName == consumedAPI.APIName {
+		if api.APIName == consumedAPI.APIName && api.AppID == consumedAPI.AppID {
 			return
 		}
 	}
 	*consumedAPIs = append(*consumedAPIs, consumedAPI)
 }
 
-func removeConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, apiName string) {
+func removeConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) {
 	found := false
 	i := -1
 	for i = range *consumedAPIs {
-		if (*consumedAPIs)[i].APIName == apiName {
+		existingAPI := (*consumedAPIs)[i]
+		if existingAPI.APIName == consumedAPI.APIName && existingAPI.AppID == consumedAPI.AppID {
 			found = true
 			break
 		}

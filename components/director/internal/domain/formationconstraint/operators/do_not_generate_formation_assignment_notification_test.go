@@ -1,6 +1,7 @@
 package operators_test
 
 import (
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
@@ -8,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -155,15 +155,25 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
 		},
+		{
+			Name:             "Error when input is with wrong type",
+			Input:            inputTenantResourceType,
+			ExpectedResult:   false,
+			ExpectedErrorMsg: "Incompatible input for operator",
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			labelSvc := testCase.LabelSvc()
-			var runtimeContextRepo *automock.RuntimeContextRepo
+			labelSvc := unusedLabelService()
+			if testCase.LabelSvc != nil {
+				labelSvc = testCase.LabelSvc()
+			}
+			runtimeContextRepo := unusedRuntimeContextRepo()
 			if testCase.RuntimeContextRepo != nil {
 				runtimeContextRepo = testCase.RuntimeContextRepo()
 			}
-			var formationTemplateRepo *automock.FormationTemplateRepo
+
+			formationTemplateRepo := unusedFormationTemplateRepo()
 			if testCase.FormationTemplateRepo != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepo()
 			}
@@ -179,13 +189,7 @@ func TestConstraintOperators_DoNotGenerateFormationAssignmentNotification(t *tes
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, labelSvc)
-			if runtimeContextRepo != nil {
-				runtimeContextRepo.AssertExpectations(t)
-			}
-			if formationTemplateRepo != nil {
-				formationTemplateRepo.AssertExpectations(t)
-			}
+			mock.AssertExpectationsForObjects(t, formationTemplateRepo, runtimeContextRepo, labelSvc)
 		})
 	}
 }

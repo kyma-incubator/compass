@@ -27,6 +27,7 @@ const (
 	invalidPolicyLevel            = "invalidPolicyLevel"
 	invalidVendor                 = "wrongVendor!"
 	invalidType                   = "invalidType"
+	custom                        = "custom"
 	invalidCustomType             = "wrongCustomType"
 	invalidMediaType              = "invalid/type"
 	invalidBundleOrdID            = "ns:wrongConsumptionBundle:v1"
@@ -799,6 +800,16 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 		ExpectedToBeValid bool
 	}{
 		{
+			Name: "Valid `OpenResourceDiscovery` field with value 1.x",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = "1.3"
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
 			Name: "Missing `OpenResourceDiscovery` field for Document",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -824,6 +835,41 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `policyLevel` field value is valid for Document",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `policyLevel` field value for Document",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(invalidPolicyLevel)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`policyLevel` field for Document is not of type `custom` when `customPolicyLevel` is set",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.CustomPolicyLevel = str.Ptr("myCustomPolicyLevel")
+				doc.PolicyLevel = str.Ptr(policyLevel)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customPolicyLevel` field value for Document when `policyLevel` is set to `custom`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.CustomPolicyLevel = str.Ptr("invalid-value")
+				doc.PolicyLevel = str.Ptr(custom)
+
+				return []*ord.Document{doc}
+			},
 		},
 	}
 
@@ -1015,20 +1061,20 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				resourceHashes = fixResourceHashes()
 			},
 			ExpectedToBeValid: true,
-		},
-		{
-			Name: "Missing `policyLevel` field for Package",
+		}, {
+			Name: "Missing `policyLevel` field value is valid for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ""
+				doc.Packages[0].PolicyLevel = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `policyLevel` field for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = invalidPolicyLevel
+				doc.Packages[0].PolicyLevel = str.Ptr(invalidPolicyLevel)
 
 				return []*ord.Document{doc}
 			},
@@ -1037,7 +1083,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].CustomPolicyLevel = str.Ptr("myCustomPolicyLevel")
-				doc.Packages[0].PolicyLevel = policyLevel
+				doc.Packages[0].PolicyLevel = str.Ptr(policyLevel)
 
 				return []*ord.Document{doc}
 			},
@@ -1046,7 +1092,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].CustomPolicyLevel = str.Ptr("invalid-value")
-				doc.Packages[0].PolicyLevel = "custom"
+				doc.Packages[0].PolicyLevel = str.Ptr(custom)
 
 				return []*ord.Document{doc}
 			},
@@ -1226,7 +1272,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `vendor` field for Package when `policyLevel` is sap-partner",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.SapVendor)
 
 				return []*ord.Document{doc}
@@ -1235,7 +1281,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Invalid `vendor` field for Package when `policyLevel` is sap",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -1482,7 +1528,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -1492,7 +1538,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -1503,7 +1549,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -1513,7 +1559,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -1563,7 +1609,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -1573,7 +1619,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -1584,7 +1630,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -1594,7 +1640,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -2627,7 +2673,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -2637,7 +2683,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -2648,7 +2694,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -2658,7 +2704,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -2708,7 +2754,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -2718,7 +2764,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -2729,7 +2775,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -2739,7 +2785,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -2757,7 +2803,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ResourceDefinitions = nil
 				doc.APIResources[0].Visibility = str.Ptr(ord.APIVisibilityPrivate)
-				doc.Packages[0].PolicyLevel = policyLevel
+				doc.APIResources[0].PolicyLevel = str.Ptr(policyLevel)
 
 				return []*ord.Document{doc}
 			},
@@ -2790,7 +2836,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `customType` value when field `type` has value `custom`for `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].Type = custom
 				doc.APIResources[0].ResourceDefinitions[0].CustomType = invalidCustomType
 
 				return []*ord.Document{doc}
@@ -2936,7 +2982,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = custom
 				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = invalidCustomType
 
 				return []*ord.Document{doc}
@@ -2954,7 +3000,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `customType` value when field `type` has value `custom` for `accessStrategies` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].Type = custom
 				doc.APIResources[0].ResourceDefinitions[0].CustomType = invalidCustomType
 
 				return []*ord.Document{doc}
@@ -2972,7 +3018,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid field `customDescription` with exceeding length when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = custom
 				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = invalidDescriptionFieldWithExceedingMaxLength
 
 				return []*ord.Document{doc}
@@ -3436,7 +3482,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Invalid `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].ImplementationStandard = str.Ptr(custom)
 				doc.APIResources[0].CustomImplementationStandard = str.Ptr(invalidType)
 
 				return []*ord.Document{doc}
@@ -3445,7 +3491,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `customImplementationStandard` field when `implementationStandard` field is set to `custom` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].ImplementationStandard = str.Ptr(custom)
 				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
 
 				return []*ord.Document{doc}
@@ -3468,18 +3514,10 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is not `custom` for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].CustomImplementationStandardDescription = str.Ptr("description")
-
-				return []*ord.Document{doc}
-			},
-		}, {
 			Name: "Missing `customImplementationStandardDescription` field when `implementationStandard` field is set to `custom` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ImplementationStandard = str.Ptr("custom")
+				doc.APIResources[0].ImplementationStandard = str.Ptr(custom)
 				doc.APIResources[0].CustomImplementationStandard = str.Ptr("sap.s4:ATTACHMENT_SRV:v1")
 
 				return []*ord.Document{doc}
@@ -3546,7 +3584,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -3555,7 +3593,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -3652,7 +3690,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
@@ -3669,7 +3707,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
@@ -3687,7 +3725,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `WSDL V1` and `WSDL V2` definitions when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapOutbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeWsdlV1
@@ -3704,7 +3742,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `SAP RFC Metadata` definitions when APIResources has policyLevel `sap` and apiProtocol is `sap-rfc`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationXML
@@ -3716,7 +3754,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Valid `SAP RFC Metadata` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRfcMetadata
@@ -3729,7 +3767,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -3744,7 +3782,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-inbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapInbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapInbound
@@ -3760,7 +3798,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapOutbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapOutbound
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -3775,7 +3813,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `WSDL V1` or `WSDL V2` definition when APIResources has policyLevel `sap-partner` and apiProtocol is `soap-outbound`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.APIResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSoapOutbound
 				*doc.APIResources[1].APIProtocol = ord.APIProtocolSoapOutbound
@@ -3791,7 +3829,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v2`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
@@ -3804,7 +3842,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v2`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV2
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -3818,7 +3856,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap` and apiProtocol is `odata-v4`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatApplicationJSON
@@ -3831,7 +3869,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` and `EDMX` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `odata-v4`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolODataV4
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPIV2
@@ -3845,7 +3883,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap` and apiProtocol is `rest`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
@@ -3858,7 +3896,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `OpenAPI` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `rest`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolRest
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
@@ -3872,7 +3910,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `SAP RFC` definitions when APIResources has policyLevel `sap` and apiProtocol is `sap-rfc-metadata-v1`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
@@ -3885,7 +3923,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `SAP RFC` definitions when APIResources has policyLevel `sap-partner` and apiProtocol is `sap-rfc-metadata-v1`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSapRfc
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
@@ -3899,7 +3937,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Missing `implementationStandard`  when APIResources has apiProtocol `websocket`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
 				doc.APIResources[0].ImplementationStandard = nil
@@ -3911,7 +3949,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Wrong `type` when APIResources has apiProtocol `websocket`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
 				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
@@ -3923,7 +3961,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Correct `type` when APIResources has apiProtocol `websocket`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
 				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
@@ -3936,7 +3974,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Wrong `type` in one of the ResourceDefinitions when APIResources has apiProtocol `websocket`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
 				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
@@ -3948,7 +3986,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Correct `type` when APIResources has apiProtocol `sap-sql-api-v1`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
@@ -3962,13 +4000,21 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Wrong `type` when APIResources has apiProtocol `sap-sql-api-v1`",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
 				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCsdl
 				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
 				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid type of `direction` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Direction = str.Ptr(invalidType)
+
 				return []*ord.Document{doc}
 			},
 		},
@@ -4473,7 +4519,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions = nil
 				doc.EventResources[0].Visibility = str.Ptr(ord.APIVisibilityPrivate)
-				doc.Packages[0].PolicyLevel = policyLevel
+				doc.Packages[0].PolicyLevel = str.Ptr(policyLevel)
 
 				return []*ord.Document{doc}
 			},
@@ -4515,7 +4561,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid `customType` value when field `type` has value `custom`for `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].ResourceDefinitions[0].Type = "custom"
+				doc.EventResources[0].ResourceDefinitions[0].Type = custom
 				doc.EventResources[0].ResourceDefinitions[0].CustomType = invalidCustomType
 
 				return []*ord.Document{doc}
@@ -4589,7 +4635,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = custom
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = invalidCustomType
 
 				return []*ord.Document{doc}
@@ -4616,7 +4662,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Invalid field `customDescription` with exceeding length when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = custom
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = invalidDescriptionFieldWithExceedingMaxLength
 
 				return []*ord.Document{doc}
@@ -4813,7 +4859,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -4823,7 +4869,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -4834,7 +4880,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -4844,7 +4890,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -4894,7 +4940,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -4904,18 +4950,28 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name:              "Valid `industry` field when `policyLevel` is `custom`",
+			Name:              "Valid `industry` field when `policyLevel` is `custom` when `policyLevel` is inherited from Document",
 			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `custom` when `policyLevel` is defined in Event",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.EventResources[0].PolicyLevel = str.Ptr(ord.PolicyLevelCustom)
 
 				return []*ord.Document{doc}
 			},
@@ -4925,7 +4981,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelNone)
 
 				return []*ord.Document{doc}
 			},
@@ -5033,7 +5089,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSap
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSap)
 
 				return []*ord.Document{doc}
 			},
@@ -5043,7 +5099,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
-				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].PolicyLevel = str.Ptr(ord.PolicyLevelSapPartner)
 				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
 
 				return []*ord.Document{doc}
@@ -5144,6 +5200,71 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "automatic", invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `implementationStandard` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ImplementationStandard = str.Ptr(invalidType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandard` field is valid but `implementationStandard` field is missing for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ImplementationStandard = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandard` field is valid but `implementationStandard` field is not set to `custom` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ImplementationStandard = str.Ptr(invalidType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customImplementationStandard` field when `implementationStandard` field is set to `custom` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ImplementationStandard = str.Ptr(custom)
+				doc.EventResources[0].CustomImplementationStandard = str.Ptr(invalidType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `customImplementationStandard` field when `implementationStandard` field is set to `custom` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CustomImplementationStandard = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is missing for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ImplementationStandard = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `customImplementationStandardDescription` is set but `implementationStandard` field is not `custom` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ImplementationStandard = str.Ptr(invalidType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `customImplementationStandardDescription` field when `implementationStandard` field is set to `custom` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].CustomImplementationStandardDescription = nil
 
 				return []*ord.Document{doc}
 			},

@@ -20,13 +20,13 @@ var (
 
 	subject            = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
 	subjectTwo         = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=3c0fe289-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
-	sortedSubject      = "CN=E2E-test-compass, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, OU=E2E-Org-Unit, OU=TestRegion, O=E2E-Org, L=E2E-test, C=DE"
+	sortedSubject      = sortSubject(subject)
 	consumerType       = "Integration System"                   // should be a valid consumer type
 	internalConsumerID = "e01a1918-5ee9-40c4-8ec7-e407264d43d2" // randomly chosen
 	tenantAccessLevels = []string{"account", "global"}          // should be a valid tenant access level
 
 	updatedSubject            = "C=DE, L=E2E-test-updated, O=E2E-Org, OU=TestRegion-updated, OU=E2E-Org-Unit-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, CN=E2E-test-cmp-updated"
-	sortedUpdatedSubject      = "CN=E2E-test-cmp-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, OU=E2E-Org-Unit-updated, OU=TestRegion-updated, O=E2E-Org, L=E2E-test-updated, C=DE"
+	sortedUpdatedSubject      = sortSubject(updatedSubject)
 	updatedConsumerType       = "Runtime"                              // should be a valid consumer type
 	updatedInternalConsumerID = "d5644469-7605-48a7-9f18-f5dee8805904" // randomly chosen
 	updatedTntAccessLevels    = []string{"customer"}                   // should be a valid tenant access level

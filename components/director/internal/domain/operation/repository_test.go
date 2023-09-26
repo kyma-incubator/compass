@@ -16,6 +16,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPgRepository_ListAllByType(t *testing.T) {
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List operations by Type",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE op_type = $1`),
+				Args:  []driver.Value{model.OperationTypeOrdAggregation},
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+				IsSelect: true,
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       operation.NewRepository,
+		ExpectedModelEntities:     []interface{}{operationModel},
+		ExpectedDBEntities:        []interface{}{operationEntity},
+		MethodName:                "ListAllByType",
+		MethodArgs:                []interface{}{model.OperationTypeOrdAggregation},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_Create(t *testing.T) {
 	var nilOperationModel *model.Operation
 	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
@@ -108,6 +141,38 @@ func TestPgRepository_Get(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetByDataAndType(t *testing.T) {
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Operation by Data and Type",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE data @> $1 AND op_type = $2`),
+				Args:  []driver.Value{fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation},
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+				IsSelect: true,
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       operation.NewRepository,
+		ExpectedModelEntity:       operationModel,
+		ExpectedDBEntity:          operationEntity,
+		MethodArgs:                []interface{}{fixOperationData(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation},
+		DisableConverterErrorTest: true,
+		MethodName:                "GetByDataAndType",
+	}
+
+	suite.Run(t)
+}
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Delete Operation",

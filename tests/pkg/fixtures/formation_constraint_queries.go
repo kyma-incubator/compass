@@ -39,3 +39,14 @@ func ListFormationConstraintsForFormationTemplate(t require.TestingT, ctx contex
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &actualFormationConstraints))
 	return actualFormationConstraints
 }
+
+func UpdateFormationConstraint(t require.TestingT, ctx context.Context, constraintID string, updateInput graphql.FormationConstraintUpdateInput, gqlClient *gcli.Client) *graphql.FormationConstraint {
+	formationConstraintGQL, err := testctx.Tc.Graphqlizer.FormationConstraintUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+
+	updateRequest := FixUpdateFormationConstraintRequest(constraintID, formationConstraintGQL)
+
+	var actualFormationConstraint *graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, updateRequest, &actualFormationConstraint))
+	return actualFormationConstraint
+}

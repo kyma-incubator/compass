@@ -351,6 +351,7 @@ export APP_DESTINATION_CREATOR_CERTIFICATE_COMMON_NAME_KEY="commonName"
 export APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY="certificateChain"
 export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH="/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
 export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER="instanceId"
+export APP_ORD_AGGREGATOR_AGGREGATE_API="https://compass-gateway-internal.local.kyma.dev/ord-aggregator/aggregate"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig

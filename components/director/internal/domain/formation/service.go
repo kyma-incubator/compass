@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -546,7 +545,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if terr != nil {
 			return nil, terr
 		}
-
 		if terr = tx.Commit(); terr != nil {
 			return nil, terr
 		}
@@ -759,24 +757,10 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 }
 
 func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
-	switch objectType {
-	case graphql.FormationObjectTypeApplication:
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return err
-		}
-	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
-			return err
-		} else if isFormationComingFromASA {
-			return apperrors.NewCannotUnassignObjectComingFromASAError(objectID)
-		}
-
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return err
-		}
-
-	default:
-		return nil
+	if objectType == graphql.FormationObjectTypeApplication ||
+		objectType == graphql.FormationObjectTypeRuntime ||
+		objectType == graphql.FormationObjectTypeRuntimeContext {
+		return s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation)
 	}
 	return nil
 }
@@ -840,10 +824,22 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	log.C(ctx).Infof("Unassigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 
+	if !isObjectTypeAllowed(objectType) {
+		return nil, fmt.Errorf("unknown formation type %s", objectType)
+	}
+
 	formationName := formation.Name
 	ft, err := s.getFormationWithTemplate(ctx, formationName, tnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
+	}
+
+	formationFromDB := ft.formation
+
+	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+		return nil, err
+	} else if isFormationComingFromASA {
+		return formationFromDB, nil
 	}
 
 	joinPointDetails, err := s.prepareDetailsForUnassign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
@@ -854,157 +850,8 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
-	formationFromDB := ft.formation
 
-	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "while unassigning from formation")
-	}
-	if apperrors.IsCannotUnassignObjectComingFromASAError(err) || apperrors.IsNotFoundError(err) {
-		// No need to enforce post-constraints as nothing is done
-		return formationFromDB, nil
-	}
-
-	switch objectType {
-	case graphql.FormationObjectTypeApplication:
-		// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
-		// there are no notifications sent for them, and we have created formation assignments for them.
-		// We should clean those up because on an earlier step we have removed it from the LabelDefinition,
-		// and it would result in leftover formation assignments that could cause problems on future assigns
-		// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
-		if formationFromDB.State != model.ReadyFormationState {
-			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
-			err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
-			if err != nil {
-				return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
-			}
-			return ft.formation, nil
-		}
-
-		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
-		}
-
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-		}
-
-		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
-		if err != nil {
-			return nil, err
-		}
-
-		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, formationAssignmentsForObject)
-		if err != nil {
-			return nil, err
-		}
-
-		tx, err := s.transact.Begin()
-		if err != nil {
-			return nil, err
-		}
-		transactionCtx := persistence.SaveToContext(ctx, tx)
-		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
-
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); err != nil {
-			commitErr := tx.Commit()
-			if commitErr != nil {
-				return nil, errors.Wrapf(err, "while committing transaction with error")
-			}
-			return nil, err
-		}
-
-		// It is important to do the list in the inner transaction
-		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return nil, errors.Wrapf(err, "while committing transaction")
-		}
-
-		if len(pendingAsyncAssignments) > 0 {
-			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formationName)
-			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is important to do the re-assign in the outer transaction.
-			if err != nil {
-				return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
-			}
-		}
-
-	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
-		// there are no notifications sent for them, and we have created formation assignments for them.
-		// We should clean those up because on an earlier step we have removed it from the LabelDefinition,
-		// and it would result in leftover formation assignments that could cause problems on future assigns
-		// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
-		if formationFromDB.State != model.ReadyFormationState {
-			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
-			err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
-			if err != nil {
-				return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
-			}
-			return ft.formation, nil
-		}
-		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
-		}
-
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-		}
-
-		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
-		if err != nil {
-			return nil, err
-		}
-
-		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, formationAssignmentsForObject)
-		if err != nil {
-			return nil, err
-		}
-
-		tx, err := s.transact.Begin()
-		if err != nil {
-			return nil, err
-		}
-
-		transactionCtx := persistence.SaveToContext(ctx, tx)
-		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
-
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); err != nil {
-			commitErr := tx.Commit()
-			if commitErr != nil {
-				return nil, errors.Wrapf(err, "while committing transaction with error")
-			}
-			return nil, err
-		}
-
-		// It is important to do the list in the inner transaction
-		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return nil, errors.Wrapf(err, "while committing transaction")
-		}
-
-		if len(pendingAsyncAssignments) > 0 {
-			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is importnat to do the re-assign in the outer transaction.
-			if err != nil {
-				return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
-			}
-		}
-
-	case graphql.FormationObjectTypeTenant:
+	if objectType == graphql.FormationObjectTypeTenant {
 		asa, err := s.asaService.GetForScenarioName(ctx, formationName)
 		if err != nil {
 			return nil, err
@@ -1013,8 +860,102 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-	default:
-		return nil, fmt.Errorf("unknown formation type %s", objectType)
+		if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+			return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
+		}
+
+		return formationFromDB, nil
+	}
+
+	// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
+	// there are no notifications sent for them, and we have created formation assignments for them.
+	// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
+	if formationFromDB.State != model.ReadyFormationState {
+		log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+		err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+		err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while unassigning from formation")
+		}
+		return ft.formation, nil
+	}
+
+	// It is important that all operations regarding formation assignments should be in the inner transaction
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	transactionCtx := persistence.SaveToContext(ctx, tx)
+	defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+	requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(transactionCtx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			commitErr := tx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+			return formationFromDB, nil
+		}
+		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
+	}
+
+	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	}
+
+	rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, formationAssignmentsForObject)
+	if err != nil {
+		return nil, err
+	}
+
+	applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, formationAssignmentsForObject)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); err != nil {
+		commitErr := tx.Commit()
+		if commitErr != nil {
+			return nil, errors.Wrapf(err, "while committing transaction with error")
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrapf(err, "while committing transaction")
+	}
+
+	// It is important that we have committed the previous transaction before formation assignments are listed
+	// They could be deleted by either it or another operation altogether (e.g. async API status report)
+	scenarioTx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
+	defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
+
+	pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationFromDB.ID, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	}
+
+	if len(pendingAsyncAssignments) == 0 {
+		log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationFromDB.ID, objectType, objectID, formationFromDB.ID)
+		err = s.unassign(scenarioTransactionCtx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while unassigning from formation")
+		}
+	}
+
+	err = scenarioTx.Commit()
+	if err != nil {
+		return nil, errors.Wrapf(err, "while committing transaction")
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
@@ -1036,53 +977,57 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
 	}
+
+	if formation.State != model.ReadyFormationState {
+		previousState := formation.State
+		formation, isDeleted, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation, previousState)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formationID)
+		}
+		if isDeleted {
+			return formation, nil
+		}
+		if formation.State != model.ReadyFormationState {
+			return formation, nil
+		}
+	}
+
+	return s.resynchronizeFormationAssignmentNotifications(ctx, tenantID, formation, shouldReset)
+}
+
+func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
+	faResyncTx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	faResyncTransactionCtx := persistence.SaveToContext(ctx, faResyncTx)
+
+	defer s.transact.RollbackUnlessCommitted(faResyncTransactionCtx, faResyncTx)
+	formationID := formation.ID
+
 	if shouldReset {
-		formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+		formationTemplate, err := s.formationTemplateRepository.Get(faResyncTransactionCtx, formation.FormationTemplateID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
 		}
 		if !formationTemplate.SupportsReset {
 			return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("formation template %q does not support resetting", formationTemplate.Name))
 		}
-		assignmentsForFormation, err := s.formationAssignmentService.GetAssignmentsForFormation(ctx, tenantID, formationID)
+		assignmentsForFormation, err := s.formationAssignmentService.GetAssignmentsForFormation(faResyncTransactionCtx, tenantID, formationID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting formation assignments for formation with ID %q", formationID)
 		}
 		for _, assignment := range assignmentsForFormation {
 			assignment.State = string(model.InitialAssignmentState)
 			formationassignment.ResetAssignmentConfigAndError(assignment) // reset the assignments
-			err = s.formationAssignmentService.Update(ctx, assignment.ID, assignment)
+			err = s.formationAssignmentService.Update(faResyncTransactionCtx, assignment.ID, assignment)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	if formation.State != model.ReadyFormationState {
-		previousState := formation.State
-		updatedFormation, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formationID)
-		}
-		if previousState == model.DeleteErrorFormationState && updatedFormation.State == model.ReadyFormationState {
-			return updatedFormation, nil
-		}
-		formation, err = s.formationRepository.Get(ctx, formationID, tenantID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
-		}
-		if updatedFormation.State != model.ReadyFormationState {
-			return updatedFormation, nil
-		}
-	}
-
-	return s.resynchronizeFormationAssignmentNotifications(ctx, tenantID, formation)
-}
-
-func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {
-	formationID := formation.ID
-
-	resyncableFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
+	resyncableFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(faResyncTransactionCtx, tenantID, formationID,
 		[]string{string(model.InitialAssignmentState),
 			string(model.DeletingAssignmentState),
 			string(model.CreateErrorAssignmentState),
@@ -1099,19 +1044,27 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			operation = model.UnassignFormation
 		}
 		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
-		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa, operation)
+		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(faResyncTransactionCtx, fa, operation)
 		if err != nil {
 			return nil, err
 		}
 
-		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(faResyncTransactionCtx, fa.FormationID, fa.Source, fa.Target)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return nil, err
 		}
 		if reverseFA != nil {
-			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, operation)
+			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(faResyncTransactionCtx, reverseFA, operation)
 			if err != nil && !apperrors.IsNotFoundError(err) {
 				return nil, err
+			}
+		}
+
+		var reverseReqMapping *formationassignment.FormationAssignmentRequestMapping
+		if reverseFA != nil || notificationForReverseFA != nil {
+			reverseReqMapping = &formationassignment.FormationAssignmentRequestMapping{
+				Request:             notificationForReverseFA,
+				FormationAssignment: reverseFA,
 			}
 		}
 
@@ -1121,27 +1074,29 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					Request:             notificationForFA,
 					FormationAssignment: fa,
 				},
-				ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-					Request:             notificationForReverseFA,
-					FormationAssignment: reverseFA,
-				},
+				ReverseAssignmentReqMapping: reverseReqMapping,
 			},
 		}
 		switch fa.State {
 		case string(model.InitialAssignmentState), string(model.CreateErrorAssignmentState):
 			assignmentPair.Operation = model.AssignFormation
-			if _, err = s.formationAssignmentService.ProcessFormationAssignmentPair(ctx, &assignmentPair); err != nil {
+			if _, err = s.formationAssignmentService.ProcessFormationAssignmentPair(faResyncTransactionCtx, &assignmentPair); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		case string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState):
 			assignmentPair.Operation = model.UnassignFormation
-			if _, err = s.formationAssignmentService.CleanupFormationAssignment(ctx, &assignmentPair); err != nil {
+			if _, err = s.formationAssignmentService.CleanupFormationAssignment(faResyncTransactionCtx, &assignmentPair); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		}
 		if fa.State == string(model.DeleteErrorAssignmentState) {
 			failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, fa)
 		}
+	}
+
+	err = faResyncTx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	if len(failedDeleteErrorFormationAssignments) > 0 {
@@ -1151,58 +1106,98 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			objectIDToTypeMap[assignment.Target] = formationAssignmentTypeToFormationObjectType(assignment.TargetType)
 		}
 
+		scenarioTx, err := s.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		scenarioTransactionCtx := persistence.SaveToContext(ctx, scenarioTx)
+
+		defer s.transact.RollbackUnlessCommitted(scenarioTransactionCtx, scenarioTx)
 		for objectID, objectType := range objectIDToTypeMap {
-			leftAssignmentsInFormation, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
+			leftAssignmentsInFormation, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(scenarioTransactionCtx, formationID, objectID)
 			if err != nil {
 				return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 			}
 
 			if len(leftAssignmentsInFormation) == 0 {
 				log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
-				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
-				if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
+				err = s.unassign(scenarioTransactionCtx, tenantID, objectID, objectType, formation)
+				if err != nil && !apperrors.IsNotFoundError(err) {
 					return nil, errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
 				}
 			}
+		}
+
+		err = scenarioTx.Commit()
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return formation, errs.ErrorOrNil()
 }
 
-func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {
-	fTmpl, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation, previousState model.FormationState) (*model.Formation, bool, error) {
+	formationResyncTx, err := s.transact.Begin()
 	if err != nil {
-		return nil, errors.Wrapf(err, "An error occurred while getting formation template with ID: %q", formation.FormationTemplateID)
+		return nil, false, err
+	}
+	formationResyncTransactionCtx := persistence.SaveToContext(ctx, formationResyncTx)
+
+	defer s.transact.RollbackUnlessCommitted(formationResyncTransactionCtx, formationResyncTx)
+
+	fTmpl, err := s.formationTemplateRepository.Get(formationResyncTransactionCtx, formation.FormationTemplateID)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "An error occurred while getting formation template with ID: %q", formation.FormationTemplateID)
 	}
 	formationTemplateID := fTmpl.ID
 	formationTemplateName := fTmpl.Name
+	formationID := formation.ID
 
-	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
+	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(formationResyncTransactionCtx, formationTemplateID, model.FormationTemplateWebhookReference)
 	if err != nil {
-		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
+		return nil, false, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 	operation := determineFormationOperationFromState(formation.State)
 	errorState := determineFormationErrorStateFromOperation(operation)
 
-	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, operation)
+	formationReqs, err := s.notificationsService.GenerateFormationNotifications(formationResyncTransactionCtx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, operation)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
+		return nil, false, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formationID, formation.Name)
 	}
 
 	for _, formationReq := range formationReqs {
-		if err = s.processFormationNotifications(ctx, formation, formationReq, errorState); err != nil {
-			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formation.ID, formation.Name)
+		if err = s.processFormationNotifications(formationResyncTransactionCtx, formation, formationReq, errorState); err != nil {
+			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formation.Name)
 			log.C(ctx).Error(processErr)
-			return nil, processErr
+			return nil, false, processErr
 		}
 		if errorState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState && formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeSync {
-			if err = s.DeleteFormationEntityAndScenarios(ctx, tenantID, formation.Name); err != nil {
-				return nil, errors.Wrapf(err, "while deleting formation with name %s", formation.Name)
+			if err = s.DeleteFormationEntityAndScenarios(formationResyncTransactionCtx, tenantID, formation.Name); err != nil {
+				return nil, false, errors.Wrapf(err, "while deleting formation with name %s", formation.Name)
 			}
 		}
 	}
-	return formation, nil
+
+	if previousState == model.DeleteErrorFormationState && formation.State == model.ReadyFormationState {
+		err = formationResyncTx.Commit()
+		if err != nil {
+			return nil, false, err
+		}
+		return formation, true, nil
+	}
+
+	formation, err = s.formationRepository.Get(formationResyncTransactionCtx, formationID, tenantID)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+	}
+
+	err = formationResyncTx.Commit()
+	if err != nil {
+		return nil, false, err
+	}
+
+	return formation, false, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
@@ -1744,6 +1739,15 @@ func determineFormationErrorStateFromOperation(operation model.FormationOperatio
 		return model.DeleteErrorFormationState
 	default:
 		return ""
+	}
+}
+
+func isObjectTypeAllowed(objectType graphql.FormationObjectType) bool {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext, graphql.FormationObjectTypeTenant:
+		return true
+	default:
+		return false
 	}
 }
 

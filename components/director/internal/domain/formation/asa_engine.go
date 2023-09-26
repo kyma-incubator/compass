@@ -169,6 +169,9 @@ func (s *ASAEngine) isASAMatchingRuntimeContext(ctx context.Context, asa *model.
 
 // IsFormationComingFromASA checks whether the formation comes from ASA
 func (s *ASAEngine) IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error) {
+	if objectType != graphql.FormationObjectTypeRuntime && objectType != graphql.FormationObjectTypeRuntimeContext {
+		return false, nil
+	}
 	formationsFromASA, err := s.GetScenariosFromMatchingASAs(ctx, objectID, objectType)
 	if err != nil {
 		return false, errors.Wrapf(err, "while getting formations from ASAs for %s with id: %q", objectType, objectID)

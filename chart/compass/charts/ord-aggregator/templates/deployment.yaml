@@ -109,7 +109,7 @@ spec:
             - name: APP_HTTP_RETRY_DELAY
               value: "{{ .Values.global.ordAggregator.http.retry.delay }}"
             - name: APP_LOG_FORMAT
-              value: {{ .Values.global.log.format | quote }}
+              value: {{ .Values.global.log.formatJson | quote }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint}}
@@ -136,26 +136,28 @@ spec:
               value: {{ .Values.global.ordAggregator.lease.lockname | quote }}
             - name: APP_ELECTION_LEASE_LOCK_NAMESPACE
               value: {{ .Release.Namespace }}
-            - name: APP_MAX_PARALLEL_WEBHOOK_PROCESSORS
-              value: "{{ .Values.global.ordAggregator.maxParallelWebhookProcessors }}"
+            - name: APP_OPERATIONS_MANAGER_PRIORITY_QUEUE_LIMIT
+              value: "{{ .Values.global.ordAggregator.priorityQueueLimit }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_JOB_INTERVAL
+              value: "{{ .Values.global.ordAggregator.rescheduleJobInterval }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_PERIOD
+              value: "{{ .Values.global.ordAggregator.reschedulePeriod }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_JOB_INTERVAL
+              value: "{{ .Values.global.ordAggregator.rescheduleHangJobInterval }}"
+            - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_PERIOD
+              value: "{{ .Values.global.ordAggregator.rescheduleHangedPeriod }}"
+            - name: APP_MAINTAIN_OPERATIONS_JOB_INTERVAL
+              value: "{{ .Values.global.ordAggregator.maintainOperationsJobInterval }}"
+            - name: APP_PARALLEL_OPERATION_PROCESSORS
+              value: "{{ .Values.global.ordAggregator.parallelOpertionProcessors }}"
             - name: APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION
               value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
             - name: APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS
               value: "{{ .Values.global.ordAggregator.maxParallelSpecificationProcessors }}"
-            - name: APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL
-              value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessURL }}"
-            - name: APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
-              value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessMaxDays }}"
-            - name: APP_ORD_WEBHOOK_PARTIAL_PROCESSING
-              value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessing }}"
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_ORD_WEBHOOK_MAPPINGS
               value: {{ .Values.global.director.ordWebhookMappings | quote }}
-            - name: APP_ORD_AGGREGATOR_JOB_SCHEDULE_PERIOD
-              value: {{ .Values.global.ordAggregator.job.schedulePeriod | quote }}
-            - name: APP_ORD_AGGREGATOR_JOB_IS_SCHEDULABLE
-              value: {{ .Values.global.ordAggregator.job.isSchedulable | quote }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT_MAPPING_CONFIG_PATH
