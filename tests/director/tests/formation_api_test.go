@@ -3321,7 +3321,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			}
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 0)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		})
@@ -3489,7 +3489,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			}
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 0)
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
 		})
 		t.Run("Resynchronize should correctly send notifications for multiple participants", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
