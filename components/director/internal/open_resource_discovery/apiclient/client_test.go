@@ -2,13 +2,14 @@ package apiclient_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 const (

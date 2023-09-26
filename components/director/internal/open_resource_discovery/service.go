@@ -330,23 +330,6 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	// vendorsInput := make([]*model.VendorInput, 0)
-	// productsInput := make([]*model.ProductInput, 0)
-	// packagesInput := make([]*model.PackageInput, 0)
-	// bundlesInput := make([]*model.BundleCreateInput, 0)
-	// apisInput := make([]*model.APIDefinitionInput, 0)
-	// eventsInput := make([]*model.EventDefinitionInput, 0)
-	// tombstonesInput := make([]*model.TombstoneInput, 0)
-	// for _, doc := range documents {
-	// 	vendorsInput = append(vendorsInput, doc.Vendors...)
-	// 	productsInput = append(productsInput, doc.Products...)
-	// 	packagesInput = append(packagesInput, doc.Packages...)
-	// 	bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
-	// 	apisInput = append(apisInput, doc.APIResources...)
-	// 	eventsInput = append(eventsInput, doc.EventResources...)
-	// 	tombstonesInput = append(tombstonesInput, doc.Tombstones...)
-	// }
-
 	ordLocalID := s.getUniqueLocalTenantID(documents)
 	if ordLocalID != "" && resource.LocalTenantID == nil {
 		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {

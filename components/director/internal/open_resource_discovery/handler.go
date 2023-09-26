@@ -3,9 +3,10 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"

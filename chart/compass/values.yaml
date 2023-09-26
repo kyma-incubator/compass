@@ -142,8 +142,8 @@ global:
       version: "v20230918-de877e42"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20230925-d2a6ce68"
+      dir: dev/incubator/
+      version: "PR-3327"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -949,6 +949,8 @@ global:
     prefix: /ord-aggregator
     aggregateEndpoint: /aggregate
     name: ord-aggregator
+    client:
+      timeout: "30s"
     lease:
       lockname: aggregatorlease
     authentication:
@@ -967,13 +969,14 @@ global:
     maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
     tenantMappingConfiguration: '{}'
-    parallelOpertionProcessors: 5
+    parallelOperationProcessors: 10
     priorityQueueLimit: 10
     rescheduleJobInterval: 24h
     reschedulePeriod: 168h
-    rescheduleHangJobInterval: 1h
+    rescheduleHangedJobInterval: 1h
     rescheduleHangedPeriod: 1h
     maintainOperationsJobInterval: 60m
+    operationProcessorsQuietPeriod: 5s
   systemFetcher:
     enabled: false
     name: "system-fetcher"

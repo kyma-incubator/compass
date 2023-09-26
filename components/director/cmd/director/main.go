@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 

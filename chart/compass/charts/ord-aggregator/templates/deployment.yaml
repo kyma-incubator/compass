@@ -143,13 +143,15 @@ spec:
             - name: APP_OPERATIONS_MANAGER_RESCHEDULE_PERIOD
               value: "{{ .Values.global.ordAggregator.reschedulePeriod }}"
             - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_JOB_INTERVAL
-              value: "{{ .Values.global.ordAggregator.rescheduleHangJobInterval }}"
+              value: "{{ .Values.global.ordAggregator.rescheduleHangedJobInterval }}"
             - name: APP_OPERATIONS_MANAGER_RESCHEDULE_HANGED_PERIOD
               value: "{{ .Values.global.ordAggregator.rescheduleHangedPeriod }}"
             - name: APP_MAINTAIN_OPERATIONS_JOB_INTERVAL
               value: "{{ .Values.global.ordAggregator.maintainOperationsJobInterval }}"
+            - name: APP_OPERATION_PROCESSORS_QUIET_PERIOD
+              value: "{{ .Values.global.ordAggregator.operationProcessorsQuietPeriod }}"
             - name: APP_PARALLEL_OPERATION_PROCESSORS
-              value: "{{ .Values.global.ordAggregator.parallelOpertionProcessors }}"
+              value: "{{ .Values.global.ordAggregator.parallelOperationProcessors }}"
             - name: APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION
               value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
             - name: APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS
