@@ -3,8 +3,9 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 

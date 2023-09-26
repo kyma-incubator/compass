@@ -2,8 +2,9 @@ package formation
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"

@@ -6,6 +6,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+	"time"
+
 	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -23,10 +28,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"net/http"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {

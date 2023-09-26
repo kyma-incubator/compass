@@ -3,8 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	json2 "github.com/kyma-incubator/compass/tests/pkg/json"

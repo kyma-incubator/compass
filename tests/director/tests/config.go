@@ -1,13 +1,14 @@
 package tests
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorcfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"time"
 )
 
 type DirectorConfig struct {

@@ -3,6 +3,12 @@ package notifications
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -17,11 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"net/http"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {

@@ -6,6 +6,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -19,9 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {

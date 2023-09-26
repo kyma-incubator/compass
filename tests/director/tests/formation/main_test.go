@@ -3,11 +3,12 @@ package formation
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/tests/director/tests"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/director/tests"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 

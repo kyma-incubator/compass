@@ -2,9 +2,10 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
