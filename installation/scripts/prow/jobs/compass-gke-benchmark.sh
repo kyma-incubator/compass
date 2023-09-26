@@ -218,8 +218,8 @@ function installCompassOld() {
   kubectl create ns compass-sytem --dry-run=client -o yaml | kubectl apply -f -
   kubectl label ns compass-sytem istio-injection=enabled --overwrite
 
-  kubectl create ns ory-stack --dry-run=client -o yaml | kubectl apply -f -
-  kubectl label ns ory-stack istio-injection=enabled --overwrite
+  kubectl create ns ory --dry-run=client -o yaml | kubectl apply -f -
+  kubectl label ns ory istio-injection=enabled --overwrite
 
   # -------------------------------------------------------------------
 
