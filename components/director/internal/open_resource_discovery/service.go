@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/imdario/mergo"
@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -45,11 +44,7 @@ const (
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
-	maxParallelWebhookProcessors       int
 	maxParallelSpecificationProcessors int
-	ordWebhookPartialProcessMaxDays    int
-	ordWebhookPartialProcessURL        string
-	ordWebhookPartialProcessing        bool
 
 	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
 }
@@ -79,20 +74,17 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
+func NewServiceConfig(maxParallelSpecificationProcessors int, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) ServiceConfig {
 	return ServiceConfig{
-		maxParallelWebhookProcessors:             maxParallelWebhookProcessors,
 		maxParallelSpecificationProcessors:       maxParallelSpecificationProcessors,
-		ordWebhookPartialProcessMaxDays:          ordWebhookPartialProcessMaxDays,
-		ordWebhookPartialProcessURL:              ordWebhookPartialProcessURL,
-		ordWebhookPartialProcessing:              ordWebhookPartialProcessing,
 		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
 	}
 }
 
 // Service consists of various resource services responsible for service-layer ORD operations.
 type Service struct {
-	config ServiceConfig
+	config     ServiceConfig
+	metricsCfg MetricsConfig
 
 	transact persistence.Transactioner
 
@@ -112,6 +104,7 @@ type Service struct {
 	appTemplateVersionSvc ApplicationTemplateVersionService
 	appTemplateSvc        ApplicationTemplateService
 	labelSvc              LabelService
+	opSvc                 operationsmanager.OperationService
 
 	ordWebhookMapping []application.ORDWebhookMapping
 
@@ -122,9 +115,10 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
+		metricsCfg:            metricsCfg,
 		transact:              transact,
 		appSvc:                appSvc,
 		webhookSvc:            webhookSvc,
@@ -146,92 +140,35 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		appTemplateSvc:        appTemplateSvc,
 		labelSvc:              labelService,
 		ordWebhookMapping:     ordWebhookMapping,
+		opSvc:                 opSvc,
 	}
 }
 
-// SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
-func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error {
-	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
+// ProcessApplication performs resync of ORD information provided via ORD documents for an applications
+func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
+	ctx, err := s.saveLowestOwnerForAppToContextInTx(ctx, appID)
 	if err != nil {
 		return err
 	}
 
-	queue := make(chan *model.Webhook)
-	var webhookErrors = int32(0)
-
-	workers := s.config.maxParallelWebhookProcessors
-	wg := &sync.WaitGroup{}
-	wg.Add(workers)
-
-	log.C(ctx).Infof("Starting %d parallel webhook processor workers...", workers)
-	for i := 0; i < workers; i++ {
-		go func() {
-			defer wg.Done()
-
-			for webhook := range queue {
-				entry := log.C(ctx)
-				entry = entry.WithField(log.FieldRequestID, uuid.New().String())
-				ctx = log.ContextWithLogger(ctx, entry)
-
-				if err := s.processWebhook(ctx, cfg, webhook, globalResourcesOrdIDs); err != nil {
-					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
-					atomic.AddInt32(&webhookErrors, 1)
-				}
-			}
-		}()
-	}
-
-	if s.config.ordWebhookPartialProcessing {
-		log.C(ctx).Infof("Partial ord webhook processing is enabled for URL [%s] and max days [%d]", s.config.ordWebhookPartialProcessURL, s.config.ordWebhookPartialProcessMaxDays)
-	}
-	date := time.Now().AddDate(0, 0, -1*s.config.ordWebhookPartialProcessMaxDays)
-	for _, webhook := range ordWebhooks {
-		webhookURL := str.PtrStrToStr(webhook.URL)
-		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL) {
-			if webhook.CreatedAt == nil || webhook.CreatedAt.After(date) {
-				queue <- webhook
-			}
-		} else {
-			queue <- webhook
-		}
-	}
-	close(queue)
-	wg.Wait()
-
-	if webhookErrors != 0 {
-		log.C(ctx).Errorf("failed to process %d webhooks", webhookErrors)
-	}
-
-	return nil
-}
-
-// ProcessApplications performs resync of ORD information provided via ORD documents for list of applications
-func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error {
-	if len(appIDs) == 0 {
-		return nil
-	}
-
-	log.C(ctx).Infof("Retrieving global ORD resources")
-	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	for _, appID := range appIDs {
-		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
-			return errors.Wrapf(err, "processing of ORD data for application with id %q failed", appID)
-		}
-	}
-	return nil
-}
-
-func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appID string) error {
 	webhooks, err := s.getWebhooksForApplication(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving of webhooks for application with id %q failed", appID)
 	}
 
+	var globalResourcesOrdIDs map[string]bool
+	globalResourcesLoaded := false
+
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			// lazy loading of global ORD resources on first need
+			if !globalResourcesLoaded {
+				log.C(ctx).Infof("Retrieving global ORD resources")
+				globalResourcesOrdIDs = s.retrieveGlobalResources(ctx)
+				globalResourcesLoaded = true
+			}
 			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
-			if err = s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
+			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
@@ -239,34 +176,23 @@ func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, glo
 	return nil
 }
 
-// ProcessApplicationTemplates performs resync of ORD information provided via ORD documents for list of application templates
-func (s *Service) ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error {
-	if len(appTemplateIDs) == 0 {
-		return nil
-	}
+// ProcessAppInAppTemplateContext performs resync of ORD information provided via ORD documents for an applications in context of application template
+func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplateID, appID string) error {
+	var globalResourcesOrdIDs map[string]bool
+	globalResourcesLoaded := false
 
-	log.C(ctx).Infof("Retrieving global ORD resources")
-	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	for _, appTemplateID := range appTemplateIDs {
-		if err := s.processApplicationTemplate(ctx, cfg, globalResourcesOrdIDs, appTemplateID); err != nil {
-			return errors.Wrapf(err, "processing of ORD data for application template with id %q failed", appTemplateID)
-		}
-	}
-	return nil
-}
-
-func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appTemplateID string) error {
 	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
 	if err != nil {
-		return errors.Wrapf(err, "retrieving of webhooks for application template with id %q failed", appTemplateID)
+		return errors.Wrapf(err, "while retrieving all webhooks for application template with id %q", appTemplateID)
 	}
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-
-			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, cfg, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
-				return err
+			// lazy loading of global ORD resources on first need
+			if !globalResourcesLoaded {
+				log.C(ctx).Infof("Retrieving global ORD resources")
+				globalResourcesOrdIDs = s.retrieveGlobalResources(ctx)
+				globalResourcesLoaded = true
 			}
 
 			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
@@ -274,41 +200,50 @@ func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsCon
 				return errors.Wrapf(err, "retrieving of applications for application template with id %q failed", appTemplateID)
 			}
 
+			found := false
 			for _, app := range apps {
-				if err = s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
-					return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", app.ID)
+				if app.ID == appID {
+					found = true
+					break
 				}
+			}
+			if !found {
+				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
+			}
+
+			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
+				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
 			}
 		}
 	}
 	return nil
 }
 
-func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
-		appTemplateID := webhook.ObjectID
+// ProcessApplicationTemplate performs resync of static ORD information for an application template
+func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID string) error {
+	var globalResourcesOrdIDs map[string]bool
+	globalResourcesLoaded := false
 
-		if err := s.processApplicationTemplateWebhook(ctx, cfg, webhook, appTemplateID, globalResourcesOrdIDs); err != nil {
-			return err
-		}
+	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving of webhooks for application template with id %q failed", appTemplateID)
+	}
 
-		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
-		if err != nil {
-			return err
-		}
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscoveryStatic && wh.URL != nil {
+			// lazy loading of global ORD resources on first need
+			if !globalResourcesLoaded {
+				log.C(ctx).Infof("Retrieving global ORD resources")
+				globalResourcesOrdIDs = s.retrieveGlobalResources(ctx)
+				globalResourcesLoaded = true
+			}
 
-		for _, app := range apps {
-			if err = s.processApplicationWebhook(ctx, cfg, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
+			if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
-	} else if webhook.ObjectType == model.ApplicationWebhookReference {
-		appID := webhook.ObjectID
-		if err := s.processApplicationWebhook(ctx, cfg, webhook, appID, globalResourcesOrdIDs); err != nil {
-			return err
-		}
 	}
-
 	return nil
 }
 
@@ -336,7 +271,7 @@ func (s *Service) getWebhooksForApplicationTemplate(ctx context.Context, appTemp
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListForApplicationTemplate(ctx, appTemplateID)
+	webhooks, err := s.webhookSvc.ListForApplicationTemplate(ctx, appTemplateID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application template with id %s", appTemplateID)
 		return nil, err
@@ -346,7 +281,7 @@ func (s *Service) getWebhooksForApplicationTemplate(ctx context.Context, appTemp
 		return nil, err
 	}
 
-	return ordWebhooks, nil
+	return webhooks, nil
 }
 
 func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) ([]*model.Webhook, error) {
@@ -357,7 +292,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListForApplication(ctx, appID)
+	webhooks, err := s.webhookSvc.ListForApplication(ctx, appID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application with id %s", appID)
 		return nil, err
@@ -367,7 +302,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 		return nil, err
 	}
 
-	return ordWebhooks, nil
+	return webhooks, nil
 }
 
 func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
@@ -395,22 +330,22 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
-	vendorsInput := make([]*model.VendorInput, 0)
-	productsInput := make([]*model.ProductInput, 0)
-	packagesInput := make([]*model.PackageInput, 0)
-	bundlesInput := make([]*model.BundleCreateInput, 0)
-	apisInput := make([]*model.APIDefinitionInput, 0)
-	eventsInput := make([]*model.EventDefinitionInput, 0)
-	tombstonesInput := make([]*model.TombstoneInput, 0)
-	for _, doc := range documents {
-		vendorsInput = append(vendorsInput, doc.Vendors...)
-		productsInput = append(productsInput, doc.Products...)
-		packagesInput = append(packagesInput, doc.Packages...)
-		bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
-		apisInput = append(apisInput, doc.APIResources...)
-		eventsInput = append(eventsInput, doc.EventResources...)
-		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
-	}
+	// vendorsInput := make([]*model.VendorInput, 0)
+	// productsInput := make([]*model.ProductInput, 0)
+	// packagesInput := make([]*model.PackageInput, 0)
+	// bundlesInput := make([]*model.BundleCreateInput, 0)
+	// apisInput := make([]*model.APIDefinitionInput, 0)
+	// eventsInput := make([]*model.EventDefinitionInput, 0)
+	// tombstonesInput := make([]*model.TombstoneInput, 0)
+	// for _, doc := range documents {
+	// 	vendorsInput = append(vendorsInput, doc.Vendors...)
+	// 	productsInput = append(productsInput, doc.Products...)
+	// 	packagesInput = append(packagesInput, doc.Packages...)
+	// 	bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
+	// 	apisInput = append(apisInput, doc.APIResources...)
+	// 	eventsInput = append(eventsInput, doc.EventResources...)
+	// 	tombstonesInput = append(tombstonesInput, doc.Tombstones...)
+	// }
 
 	ordLocalID := s.getUniqueLocalTenantID(documents)
 	if ordLocalID != "" && resource.LocalTenantID == nil {
@@ -768,9 +703,10 @@ func (s *Service) listVendorsInTx(ctx context.Context, resourceType directorreso
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var vendorsFromDB []*model.Vendor
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		vendorsFromDB, err = s.vendorSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -836,9 +772,10 @@ func (s *Service) listProductsInTx(ctx context.Context, resourceType directorres
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var productsFromDB []*model.Product
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		productsFromDB, err = s.productSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		productsFromDB, err = s.productSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -891,9 +828,10 @@ func (s *Service) listPackagesInTx(ctx context.Context, resourceType directorres
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var packagesFromDB []*model.Package
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -979,9 +917,10 @@ func (s *Service) listBundlesInTx(ctx context.Context, resourceType directorreso
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var bundlesFromDB []*model.Bundle
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
 	}
 	if err != nil {
@@ -1171,9 +1110,10 @@ func (s *Service) listAPIsInTx(ctx context.Context, resourceType directorresourc
 
 	var apisFromDB []*model.APIDefinition
 
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1236,9 +1176,10 @@ func (s *Service) listEventsInTx(ctx context.Context, resourceType directorresou
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var eventsFromDB []*model.EventDefinition
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1291,9 +1232,10 @@ func (s *Service) listTombstonesInTx(ctx context.Context, resourceType directorr
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var tombstonesFromDB []*model.Tombstone
-	if resourceType == directorresource.Application {
+	switch resourceType {
+	case directorresource.Application:
 		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, resourceID)
-	} else if resourceType == directorresource.ApplicationTemplateVersion {
+	case directorresource.ApplicationTemplateVersion:
 		tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	}
 	if err != nil {
@@ -1768,7 +1710,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	}, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var (
 		documents      Documents
 		webhookBaseURL string
@@ -1776,10 +1718,10 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	)
 
 	metricsCfg := metrics.PusherConfig{
-		Enabled:    len(cfg.PushEndpoint) > 0,
-		Endpoint:   cfg.PushEndpoint,
-		MetricName: strings.ReplaceAll(strings.ToLower(cfg.JobName), "-", "_") + "_job_sync_failure_number",
-		Timeout:    cfg.ClientTimeout,
+		Enabled:    len(s.metricsCfg.PushEndpoint) > 0,
+		Endpoint:   s.metricsCfg.PushEndpoint,
+		MetricName: strings.ReplaceAll(strings.ToLower(s.metricsCfg.JobName), "-", "_") + "_job_sync_failure_number",
+		Timeout:    s.metricsCfg.ClientTimeout,
 		Subsystem:  metrics.OrdAggregatorSubsystem,
 		Labels:     []string{metrics.ErrorMetricLabel, metrics.ResourceIDMetricLabel, metrics.ResourceTypeMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
@@ -1831,7 +1773,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		}
 	}
 
-	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
+	if (webhook.Type == model.WebhookTypeOpenResourceDiscovery || webhook.Type == model.WebhookTypeOpenResourceDiscoveryStatic) && webhook.URL != nil {
 		documents, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
@@ -1876,27 +1818,6 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
 	return nil
-}
-
-func (s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListByWebhookType(ctx, model.WebhookTypeOpenResourceDiscovery)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return ordWebhooks, nil
 }
 
 func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplateID string) ([]*model.Application, error) {
@@ -1958,7 +1879,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 	return ctx, nil
 }
 
-func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -1995,14 +1916,14 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 		Name:          app.Name,
 		LocalTenantID: app.LocalTenantID,
 	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
 		return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
 	}
 
 	return nil
 }
 
-func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -2027,7 +1948,7 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, cfg Met
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
 		return err
 	}
 
@@ -2281,4 +2202,20 @@ func isWebhookDataEqual(tenantMappingRelatedWebhooksFromDB, enrichedWhModels []*
 	}
 
 	return false, nil
+}
+
+func (s *Service) saveLowestOwnerForAppToContextInTx(ctx context.Context, appID string) (context.Context, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ctx, err = s.saveLowestOwnerForAppToContext(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ctx, tx.Commit()
 }

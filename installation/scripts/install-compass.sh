@@ -86,6 +86,9 @@ helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml
 trap "cleanup_trap" RETURN EXIT INT TERM
 echo "Compass installation finished successfully"
 
+STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
+echo "Compass installation status ${STATUS}"
+
 if [[ ${SQL_HELM_BACKEND} ]]; then
     pkill kubectl
 fi

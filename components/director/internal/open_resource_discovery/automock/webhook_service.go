@@ -74,6 +74,29 @@ func (_m *WebhookService) EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.
 	return r0, r1
 }
 
+// GetByIDAndWebhookTypeGlobal provides a mock function with given fields: ctx, objectID, objectType, webhookType
+func (_m *WebhookService) GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+	ret := _m.Called(ctx, objectID, objectType, webhookType)
+
+	var r0 *model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType, model.WebhookType) *model.Webhook); ok {
+		r0 = rf(ctx, objectID, objectType, webhookType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Webhook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookReferenceObjectType, model.WebhookType) error); ok {
+		r1 = rf(ctx, objectID, objectType, webhookType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByWebhookType provides a mock function with given fields: ctx, webhookType
 func (_m *WebhookService) ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, webhookType)

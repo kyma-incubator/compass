@@ -163,6 +163,27 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 	}
 }
 
+func fixModelAppTemplateInputWithOrdWebhook(name string, appInputString string) *model.ApplicationTemplateInput {
+	desc := testDescription
+
+	return &model.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInputJSON: appInputString,
+		Placeholders:         fixModelPlaceholders(),
+		Labels:               map[string]interface{}{"test": "test"},
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+		Webhooks: []*model.WebhookInput{
+			{
+				ID:   testID,
+				Type: model.WebhookTypeOpenResourceDiscovery,
+				URL:  str.Ptr("foourl"),
+			},
+		},
+	}
+}
+
 func fixModelAppTemplateWithIDInput(name, appInputString string, id *string) *model.ApplicationTemplateInput {
 	model := fixModelAppTemplateInput(name, appInputString)
 	model.ID = id
