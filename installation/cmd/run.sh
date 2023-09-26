@@ -285,8 +285,6 @@ kubectl get services -n kyma-system monitoring-kube-state-metrics -o yaml | sed 
 
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
 bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
-STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
-echo "Compass installation status ${STATUS}"
 
 prometheusMTLSPatch
 
