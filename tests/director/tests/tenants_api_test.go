@@ -79,16 +79,16 @@ func TestQueryRootTenant(t *testing.T) {
 	testProvider := "e2e-test-provider"
 	testLicenseType := "LICENSETYPE"
 
-	customerExternalTenantID := "customer-id"
+	customerExternalTenant := "customer-external-tenant"
 	customerName := "customer-name"
 	customerSubdomain := "customer-subdomain"
 
-	accountExternalTenantID := "account-id"
+	accountExternalTenant := "account-external-tenant"
 	accountName := "account-name"
 	accountSubdomain := "account-subdomain"
 
-	subaccountNames := []string{"subaccount-name-1", "subaccount-name-2"}
-	subaccountExternalTenants := []string{"subaccount-id-1", "subaccount-id-2"}
+	subaccountNames := []string{"subaccount-name", "subaccount-name-2"}
+	subaccountExternalTenants := []string{"subaccount-external-tenant", "subaccount-external-tenant-2"}
 	subaccountRegion := "test"
 	subaccountSubdomain := "sub1"
 
@@ -97,7 +97,7 @@ func TestQueryRootTenant(t *testing.T) {
 	tenants := []graphql.BusinessTenantMappingInput{
 		{
 			Name:           customerName,
-			ExternalTenant: customerExternalTenantID,
+			ExternalTenant: customerExternalTenant,
 			Parent:         nil,
 			Subdomain:      &customerSubdomain,
 			Region:         &region,
@@ -107,8 +107,8 @@ func TestQueryRootTenant(t *testing.T) {
 		},
 		{
 			Name:           accountName,
-			ExternalTenant: accountExternalTenantID,
-			Parent:         &customerExternalTenantID,
+			ExternalTenant: accountExternalTenant,
+			Parent:         &customerExternalTenant,
 			Subdomain:      &accountSubdomain,
 			Region:         &region,
 			Type:           string(tenant.Account),
@@ -118,7 +118,7 @@ func TestQueryRootTenant(t *testing.T) {
 		{
 			Name:           subaccountNames[0],
 			ExternalTenant: subaccountExternalTenants[0],
-			Parent:         &accountExternalTenantID,
+			Parent:         &accountExternalTenant,
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -128,7 +128,7 @@ func TestQueryRootTenant(t *testing.T) {
 		{
 			Name:           subaccountNames[1],
 			ExternalTenant: subaccountExternalTenants[1],
-			Parent:         &accountExternalTenantID,
+			Parent:         &accountExternalTenant,
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
@@ -151,7 +151,8 @@ func TestQueryRootTenant(t *testing.T) {
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantIDForSubaccount1)
 	require.NoError(t, err)
-	require.Equal(t, customerExternalTenantID, actualRootTenantIDForSubaccount1)
+	require.Equal(t, customerExternalTenant, actualRootTenantIDForSubaccount1)
+	saveExample(t, getRootTenant.Query(), "get root tenant")
 
 	// assert the top parent for subaccount 2
 	var actualRootTenantIDForSubaccount2 string
@@ -160,23 +161,23 @@ func TestQueryRootTenant(t *testing.T) {
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantIDForSubaccount2)
 	require.NoError(t, err)
-	require.Equal(t, customerExternalTenantID, actualRootTenantIDForSubaccount2)
+	require.Equal(t, customerExternalTenant, actualRootTenantIDForSubaccount2)
 
 	// assert the top parent for account
 	var actualRootTenantIDForAccount string
-	getRootTenant = fixtures.FixRootTenantRequest(accountExternalTenantID)
-	t.Logf("Query root tenant for external tenant: %q", accountExternalTenantID)
+	getRootTenant = fixtures.FixRootTenantRequest(accountExternalTenant)
+	t.Logf("Query root tenant for external tenant: %q", accountExternalTenant)
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantIDForAccount)
 	require.NoError(t, err)
-	require.Equal(t, customerExternalTenantID, actualRootTenantIDForAccount)
+	require.Equal(t, customerExternalTenant, actualRootTenantIDForAccount)
 
 	// assert the top parent for customer
 	var actualRootTenantIDForCustomer string
-	getRootTenant = fixtures.FixRootTenantRequest(accountExternalTenantID)
-	t.Logf("Query root tenant for external tenant: %q", customerExternalTenantID)
+	getRootTenant = fixtures.FixRootTenantRequest(accountExternalTenant)
+	t.Logf("Query root tenant for external tenant: %q", customerExternalTenant)
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantIDForCustomer)
 	require.NoError(t, err)
-	require.Equal(t, customerExternalTenantID, actualRootTenantIDForCustomer)
+	require.Equal(t, customerExternalTenant, actualRootTenantIDForCustomer)
 }
