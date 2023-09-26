@@ -187,10 +187,16 @@ kubectl get cts ${suiteName} -oyaml
 echo "Pod execution time details:"
 podInfo=$(kubectl get cts ${suiteName} -o=go-template --template='{{range .status.results}}{{range .executions }}{{printf "%s %s %s\n" .id .startTime .completionTime }}{{end}}{{end}}')
 
+if [ "$(uname)" == "Darwin" ]; then
+  extra_flags="-j -f %Y-%m-%dT%H:%M:%SZ"
+else
+  extra_flags="-d"
+fi
+
 while read -r podName startTime endTime;
 do
-  startTimeTimestamp=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$startTime" +%s)
-  endTimeTimestamp=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$endTime" +%s)
+  startTimeTimestamp=$(date $extra_flags "$startTime" +%s)
+  endTimeTimestamp=$(date $extra_flags "$endTime" +%s)
   duration=$((endTimeTimestamp - startTimeTimestamp))
 
   min=$((duration/60))
