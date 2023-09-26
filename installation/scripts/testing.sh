@@ -190,7 +190,7 @@ podInfo=$(kubectl get cts ${suiteName} -o=go-template --template='{{range .statu
 if [ "$(uname)" == "Darwin" ]; then
   extra_flags="-j -f %Y-%m-%dT%H:%M:%SZ"
 else
-  extra_flags="-d -D %Y-%m-%dT%H:%M:%SZ"
+  extra_flags="-D %Y-%m-%dT%H:%M:%SZ -d"
 fi
 
 while read -r podName startTime endTime;
