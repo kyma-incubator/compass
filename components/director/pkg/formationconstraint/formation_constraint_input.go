@@ -46,3 +46,15 @@ type DestinationCreatorInput struct {
 	Location                               JoinPointLocation        `json:"join_point_location"`
 	SkipSubaccountValidation               bool                     `json:"skip_subaccount_validation"`
 }
+
+// ConfigMutatorInput input for ConfigMutator operator
+type ConfigMutatorInput struct {
+	State                                  string                   `json:"state"`
+	Configuration                          string                   `json:"configuration"`
+	Operation                              model.FormationOperation `json:"operation"`
+	ResourceType                           model.ResourceType       `json:"resource_type"`
+	ResourceSubtype                        string                   `json:"resource_subtype"`
+	JoinPointDetailsFAMemoryAddress        uintptr                  `json:"details_formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
+	JoinPointDetailsReverseFAMemoryAddress uintptr                  `json:"details_reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
+	Location                               JoinPointLocation        `json:"join_point_location"`
+}
