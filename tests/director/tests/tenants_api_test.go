@@ -4,11 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/director/tests/example"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/stretchr/testify/assert"
-	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -156,7 +154,7 @@ func TestQueryRootTenant(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantIDForSubaccount1)
 	require.NoError(t, err)
 	require.Equal(t, customerExternalTenant, actualRootTenantIDForSubaccount1)
-	saveExample(t, getRootTenant.Query(), "get root tenant")
+	example.SaveExample(t, getRootTenant.Query(), "get root tenant")
 
 	// assert the top parent for subaccount 2
 	var actualRootTenantIDForSubaccount2 string
