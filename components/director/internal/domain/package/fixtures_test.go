@@ -62,7 +62,7 @@ func fixEntityPackageWithTitle(title string) *ordpackage.Entity {
 		Tags:                repo.NewValidNullableString("[]"),
 		Countries:           repo.NewValidNullableString("[]"),
 		Labels:              repo.NewValidNullableString("{}"),
-		PolicyLevel:         "test",
+		PolicyLevel:         sql.NullString{String: "test", Valid: true},
 		CustomPolicyLevel:   sql.NullString{},
 		PartOfProducts:      repo.NewValidNullableString("[\"test\"]"),
 		LineOfBusiness:      repo.NewValidNullableString("[]"),
@@ -99,6 +99,7 @@ func fixPackageModelWithTitle(title string) *model.Package {
 	vendorID := "vendorID"
 	licenceType := "test"
 	supportInfo := "support-info"
+	policyLevel := "test"
 	return &model.Package{
 		ID:                  packageID,
 		OrdID:               ordID,
@@ -114,7 +115,7 @@ func fixPackageModelWithTitle(title string) *model.Package {
 		Tags:                json.RawMessage("[]"),
 		Countries:           json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
-		PolicyLevel:         "test",
+		PolicyLevel:         &policyLevel,
 		CustomPolicyLevel:   nil,
 		PartOfProducts:      json.RawMessage("[\"test\"]"),
 		LineOfBusiness:      json.RawMessage("[]"),
@@ -128,6 +129,7 @@ func fixPackageModelInput() *model.PackageInput {
 	vendorID := "vendorID"
 	licenceType := "test"
 	supportInfo := "support-info"
+	policyLevel := "test"
 	return &model.PackageInput{
 		OrdID:               ordID,
 		Vendor:              &vendorID,
@@ -142,7 +144,7 @@ func fixPackageModelInput() *model.PackageInput {
 		Tags:                json.RawMessage("[]"),
 		Countries:           json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
-		PolicyLevel:         "test",
+		PolicyLevel:         &policyLevel,
 		CustomPolicyLevel:   nil,
 		PartOfProducts:      json.RawMessage("[\"test\"]"),
 		LineOfBusiness:      json.RawMessage("[]"),

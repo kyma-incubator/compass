@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,6 +47,7 @@ const (
 var (
 	TenantIDParam      = "tenantId"
 	ApplicationIDParam = "applicationId"
+	ExtraDelayParam    = "delay"
 	formationIDParam   = "uclFormationId"
 	respErrorMsg       = "An unexpected error occurred while processing the request"
 )
@@ -641,6 +643,15 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		err := errors.Errorf("missing %s path parameter in the url", TenantIDParam)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
+	}
+	if delayStr, ok := routeVars[ExtraDelayParam]; ok {
+		delay, err := strconv.Atoi(delayStr)
+		if err != nil {
+			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+			return
+		}
+		log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds", delay, delay)
+		time.Sleep(time.Duration(delay) * time.Second)
 	}
 	if _, ok := h.Mappings[id]; !ok {
 		h.Mappings[id] = make([]Response, 0, 1)
