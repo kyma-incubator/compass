@@ -201,7 +201,11 @@ do
 
   min=$((duration/60))
   sec=$((duration%60))
-  echo "$podName:  duration $min:$sec"
+  minString=""
+  if ((min > 0)); then
+    minString="${min}m"
+  fi
+  echo "$podName execution time: ${minString}${sec}s"
 done <<< "$podInfo"
 
 if [[ ! "${BENCHMARK}" == "true" ]]
