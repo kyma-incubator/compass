@@ -1,4 +1,4 @@
-package tests
+package notifications
 
 import (
 	"context"
@@ -10,6 +10,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-slack-connectors/beb8e5b6d8f3a644b8380e667a9376bc353e54dd/github-connector/internal/registration/configs/githubopenAPI.json"
 )
 
 func TestKymaTenantMappingAdapter(t *testing.T) {
@@ -130,7 +134,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	// Create Kyma runtime which should have webhook added to it pointing to the Kyma Adapter
 	runtimeName := "runtime-test"
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
-	runtimeRegInput := fixRuntimeInput(runtimeName)
+	runtimeRegInput := fixtures.FixRuntimeRegisterInputWithoutLabels(runtimeName)
 	runtimeRegInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountID
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -194,7 +198,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	// Reset and resync
 	t.Logf("Resynchronize formation %q with reset", formationName)
-	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, reset)
+	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, true)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
 	require.NoError(t, err)
 

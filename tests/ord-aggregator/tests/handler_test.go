@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -33,7 +34,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -538,7 +538,7 @@ func TestORDAggregator(stdT *testing.T) {
 		productsMap[firstProductTitle] = firstProductShortDescription
 		productsMap[secondProductTitle] = secondProductShortDescription
 
-		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
+		appTemplateName := fixtures.CreateAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInputWitSelfRegLabel(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		placeholderName := "name"
 		placeholderDisplayName := "display-name"
@@ -1197,10 +1197,6 @@ func mergeMaps(first, second map[string]string) map[string]string {
 		first[k] = v
 	}
 	return first
-}
-
-func createAppTemplateName(name string) string {
-	return fmt.Sprintf("SAP %s", name)
 }
 
 func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemplateInput {
