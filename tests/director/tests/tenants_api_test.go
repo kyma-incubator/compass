@@ -174,7 +174,7 @@ func TestQueryRootTenant(t *testing.T) {
 
 	// assert the top parent for customer
 	var actualRootTenantIDForCustomer string
-	getRootTenant = fixtures.FixRootTenantRequest(accountExternalTenant)
+	getRootTenant = fixtures.FixRootTenantRequest(customerExternalTenant)
 	t.Logf("Query root tenant for external tenant: %q", customerExternalTenant)
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantIDForCustomer)
