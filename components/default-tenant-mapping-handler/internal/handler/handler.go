@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	readyState                 string = "READY"
-	locationHeader             string = "Location"
-	contentTypeHeaderKey              = "Content-Type"
-	contentTypeApplicationJSON        = "application/json;charset=UTF-8"
+	readyState                 = "READY"
+	locationHeader             = "Location"
+	contentTypeHeaderKey       = "Content-Type"
+	contentTypeApplicationJSON = "application/json;charset=UTF-8"
 )
 
 //go:generate mockery --exported --name=mtlsHTTPClient --output=automock --outpkg=automock --case=underscore --disable-version-string
