@@ -11,20 +11,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
-// IsNotAssignedToAnyFormationOfType contains the name of the IsNotAssignedToAnyFormationOfType operator
-const IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
-
-// DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
-const DoesNotContainResourceOfSubtype = "DoesNotContainResourceOfSubtype"
-
-// DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
-const DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
-
-// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
-const DoNotGenerateFormationAssignmentNotificationForLoopsOperator = "DoNotGenerateFormationAssignmentNotificationForLoops"
-
-// DestinationCreator contains the name of the DestinationCreator operator
-const DestinationCreator = "DestinationCreator"
+const (
+	// IsNotAssignedToAnyFormationOfType contains the name of the IsNotAssignedToAnyFormationOfType operator
+	IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
+	// DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
+	DoesNotContainResourceOfSubtype                      = "DoesNotContainResourceOfSubtype"
+	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
+	// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
+	DoNotGenerateFormationAssignmentNotificationForLoopsOperator = "DoNotGenerateFormationAssignmentNotificationForLoops"
+	// DestinationCreator contains the name of the DestinationCreator operator
+	DestinationCreator = "DestinationCreator"
+	// RedirectNotificationOperator contains the name of the RedirectNotificationOperator
+	RedirectNotificationOperator = "RedirectNotification"
+)
 
 // OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
@@ -36,6 +35,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	DoNotGenerateFormationAssignmentNotificationOperator:         &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
 	DoNotGenerateFormationAssignmentNotificationForLoopsOperator: &formationconstraint.DoNotGenerateFormationAssignmentNotificationInput{},
 	DestinationCreator:                                           &formationconstraint.DestinationCreatorInput{},
+	RedirectNotificationOperator:                                 &formationconstraint.RedirectNotificationInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails

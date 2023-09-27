@@ -46,3 +46,13 @@ type DestinationCreatorInput struct {
 	Location                               JoinPointLocation        `json:"join_point_location"`
 	SkipSubaccountValidation               bool                     `json:"skip_subaccount_validation"`
 }
+
+type RedirectNotificationInput struct {
+	Condition            bool                     `json:"condition"`
+	URL                  string                   `json:"url"`
+	WebhookMemoryAddress uintptr                  `json:"webhook_memory_address"` // contains the memory address of the join point details' webhook in form of an integer
+	Operation            model.FormationOperation `json:"operation"`
+	ResourceType         model.ResourceType       `json:"resource_type"`
+	ResourceSubtype      string                   `json:"resource_subtype"`
+	Location             JoinPointLocation        `json:"join_point_location"`
+}

@@ -46,7 +46,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", di.ResourceType, di.ResourceSubtype, di.Location.ConstraintType, di.Location.OperationName, di.Operation)
 
-	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsFAMemoryAddress)
+	formationAssignment, err := RetrieveEntityPointerFromMemoryAddress[*model.FormationAssignment](ctx, &model.FormationAssignment{}, di.JoinPointDetailsFAMemoryAddress)
 	if err != nil {
 		return false, err
 	}
@@ -129,7 +129,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 		return true, nil
 	}
 
-	reverseFormationAssignment, err := RetrieveFormationAssignmentPointer(ctx, di.JoinPointDetailsReverseFAMemoryAddress)
+	reverseFormationAssignment, err := RetrieveEntityPointerFromMemoryAddress[*model.FormationAssignment](ctx, &model.FormationAssignment{}, di.JoinPointDetailsReverseFAMemoryAddress)
 	if err != nil {
 		return false, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"

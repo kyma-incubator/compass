@@ -144,6 +144,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 			DoNotGenerateFormationAssignmentNotificationOperator:         NewDoNotGenerateFormationAssignmentNotificationInput,
 			DoNotGenerateFormationAssignmentNotificationForLoopsOperator: NewDoNotGenerateFormationAssignmentNotificationForLoopsInput,
 			DestinationCreatorOperator:                                   NewDestinationCreatorInput,
+			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
@@ -154,6 +155,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		DoNotGenerateFormationAssignmentNotificationOperator:         c.DoNotGenerateFormationAssignmentNotification,
 		DoNotGenerateFormationAssignmentNotificationForLoopsOperator: c.DoNotGenerateFormationAssignmentNotificationForLoops,
 		DestinationCreatorOperator:                                   c.DestinationCreator,
+		RedirectNotificationOperator:                                 c.RedirectNotification,
 	}
 	return c
 }

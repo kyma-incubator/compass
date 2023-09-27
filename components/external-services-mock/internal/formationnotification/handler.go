@@ -178,6 +178,7 @@ type Response struct {
 	Operation     Operation
 	ApplicationID *string
 	RequestBody   json.RawMessage
+	RequestPath   string
 }
 
 // NewHandler creates a new Handler
@@ -273,10 +274,36 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 			return
 		}
 
-		response := FormationAssignmentResponseBodyWithState{
-			State: ReadyAssignmentState,
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, "{\"state\": \"READY\"}")
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// RespondWithIncompleteAndRedirectDetails handles synchronous formation assignment notification requests for Assign operation
+// that returns a random configuration later which will be used to redirect the notification based on some property of it.
+func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(bodyBytes []byte) {
+		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
+			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"redirectProperties\":[{\"redirectPropertyName\":\"redirectName\",\"redirectPropertyID\":\"redirectID\"}]}}"
+			log.C(ctx).Infof("Responding with CONFIG_PENDING state and custom redirect configuration")
+			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
+			return
 		}
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, "{\"state\": \"READY\"}")
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// RedirectNotificationHandler handle the requests in case of a redirect operator is invoked
+// and return only READY state with no configuration
+func (h *Handler) RedirectNotificationHandler(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, "{\"state\": \"READY\"}")
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -294,10 +321,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		response := FormationAssignmentResponseBodyWithState{
-			State: ReadyAssignmentState,
-		}
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, "{\"state\": \"READY\"}")
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -408,6 +432,7 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 		mappings = append(h.Mappings[id], Response{
 			Operation:   Assign,
 			RequestBody: bodyBytes,
+			RequestPath: r.URL.Path,
 		})
 	}
 
@@ -670,6 +695,7 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	response := Response{
 		Operation:   operation,
 		RequestBody: bodyBytes,
+		RequestPath: r.URL.Path,
 	}
 	if r.Method == http.MethodDelete {
 		applicationId, ok := routeVars[ApplicationIDParam]

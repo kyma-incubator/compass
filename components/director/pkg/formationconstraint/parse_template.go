@@ -3,6 +3,7 @@ package formationconstraint
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 	"text/template"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -16,6 +17,9 @@ var templateFuncMap = template.FuncMap{
 		}
 
 		return config
+	},
+	"contains": func(faConfig json.RawMessage, str string) bool {
+		return strings.Contains(string(faConfig), str)
 	},
 }
 
