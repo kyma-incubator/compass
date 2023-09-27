@@ -647,9 +647,10 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 	if delayStr, ok := routeVars[ExtraDelayParam]; ok {
 		delay, err := strconv.Atoi(delayStr)
 		if err != nil {
-			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 			return
 		}
+		log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds", delay, delay)
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
 	if _, ok := h.Mappings[id]; !ok {
