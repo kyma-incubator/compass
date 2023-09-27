@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -25,7 +27,7 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
+	runtimeIn := fixtures.FixRuntimeRegisterInputWithoutLabels("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -43,7 +45,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := fixRuntimeInput("my runtime")
+	runtimeIn := fixtures.FixRuntimeRegisterInputWithoutLabels("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -63,14 +65,14 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := fixRuntimeUpdateInput("012345Myaccount_Runtime")
+	runtimeIn := fixtures.FixRuntimeUpdateInputWithoutLabels("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -89,14 +91,14 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := fixRuntimeUpdateInput("my runtime")
+	runtimeIn := fixtures.FixRuntimeUpdateInputWithoutLabels("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -148,7 +150,7 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateLabelDefinitionRequest(inputString)
-	saveExample(t, request.Query(), "update-label-definition")
+	example.SaveExample(t, request.Query(), "update-label-definition")
 
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)
@@ -188,7 +190,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
@@ -451,7 +453,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	appCreateInput := fixtures.FixSampleApplicationJSONInputWithWebhooks("placeholder")
-	invalidInput := fixAppTemplateInputWithDefaultDistinguishLabel("")
+	invalidInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel("", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
 	invalidInput.ApplicationInput = &appCreateInput
 	invalidInput.AccessLevel = graphql.ApplicationTemplateAccessLevelGlobal
@@ -474,8 +476,8 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	appTemplateName := createAppTemplateName("validation-test-app-tpl")
-	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateName := fixtures.CreateAppTemplateName("validation-test-app-tpl")
+	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTpl)
@@ -509,8 +511,8 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	appTemplateName := createAppTemplateName("validation-app")
-	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateName := fixtures.CreateAppTemplateName("validation-app")
+	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, tmpl)

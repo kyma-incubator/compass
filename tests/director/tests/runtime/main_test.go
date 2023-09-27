@@ -1,4 +1,4 @@
-package tests
+package runtime
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/director/tests"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
@@ -21,7 +23,7 @@ import (
 )
 
 var (
-	conf                      = &DirectorConfig{}
+	conf                      = &tests.DirectorConfig{}
 	certSecuredGraphQLClient  *graphql.Client
 	directorInternalGQLClient *graphql.Client
 	cc                        certloader.Cache
