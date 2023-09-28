@@ -202,7 +202,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 		OutputTemplate: &outputTemplate,
 		HeaderTemplate: &headerTemplate,
 	}
-	t.Log("Update the application webhook to point to oauth credentials external services mock endpoint")
+	t.Log("Update the application webhook to point to basic credentials external services mock endpoint")
 	updatedWebhook := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tenantId, applicationWebhook.ID, updatedApplicationWebhookInput)
 	require.Equal(t, updatedWebhook.ID, applicationWebhook.ID)
 
