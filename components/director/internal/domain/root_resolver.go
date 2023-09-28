@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/destination"
@@ -603,6 +604,11 @@ func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*grap
 // Tenants fetches tenants by page and search term
 func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.PageCursor, searchTerm *string) (*graphql.TenantPage, error) {
 	return r.tenant.Tenants(ctx, first, after, searchTerm)
+}
+
+// RootTenant fetches the top parent external ID for a given tenant
+func (r *queryResolver) RootTenant(ctx context.Context, tenantID string) (string, error) {
+	return r.tenant.RootTenant(ctx, tenantID)
 }
 
 // AutomaticScenarioAssignmentForScenario missing godoc

@@ -23,6 +23,7 @@ graphql:
     tenants: ["tenant:read"]
     tenantByInternalID: ["ory_internal"]
     tenantByLowestOwnerForResource: ["ory_internal"]
+    rootTenant: ["tenant:read"]
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]

@@ -1,4 +1,4 @@
-package tests
+package notifications
 
 import (
 	"bytes"
@@ -181,7 +181,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
-		createRuntimeSubscription(t, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, conf.SubscriptionConfig.StandardFlow)
+		subscription.CreateRuntimeSubscription(t, conf.SubscriptionConfig, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, conf.SubscriptionConfig.StandardFlow)
 
 		rtmRequest := fixtures.FixGetRuntimeContextsRequest(providerRuntime.ID)
 		rtm := graphql.RuntimeExt{}
@@ -333,7 +333,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
 		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
+		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription-async")
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
 		appTemplateInput.Placeholders[0].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		appTemplateInput.Placeholders[1].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
@@ -376,7 +376,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
-		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
+		subscription.CreateSubscription(t, conf.SubscriptionConfig, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
 
 		actualAppPage := graphql.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -537,25 +537,6 @@ func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTT
 	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
-	response, err := certSecuredHTTPClient.Do(request)
-	require.NoError(t, err)
-	require.Equal(t, expectedStatusCode, response.StatusCode)
-}
-
-func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
-	reqBody := FormationAssignmentRequestBody{
-		State:         "READY",
-		Configuration: json.RawMessage(testConfig),
-	}
-	marshalBody, err := json.Marshal(reqBody)
-	require.NoError(t, err)
-
-	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID)
-	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
-	require.NoError(t, err)
-	request.Header.Add("Content-Type", "application/json")
-	// The Tenant header is needed in case we are simulating an application reporting status for its own formation assignment.
-	request.Header.Add("Tenant", tnt)
 	response, err := certSecuredHTTPClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)

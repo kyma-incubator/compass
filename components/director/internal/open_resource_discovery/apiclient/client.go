@@ -5,10 +5,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"net/http"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 // ORDClient handles the communication with ord aggregator API

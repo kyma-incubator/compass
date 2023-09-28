@@ -184,6 +184,30 @@ cleanupExitCode=$?
 echo "ClusterTestSuite details:"
 kubectl get cts ${suiteName} -oyaml
 
+echo "Pod execution time details:"
+podInfo=$(kubectl get cts ${suiteName} -o=go-template --template='{{range .status.results}}{{range .executions }}{{printf "%s %s %s\n" .id .startTime .completionTime }}{{end}}{{end}}')
+
+if [ "$(uname)" == "Darwin" ]; then
+  extra_flags="-j -f %Y-%m-%dT%H:%M:%SZ"
+else
+  extra_flags="-D %Y-%m-%dT%H:%M:%SZ -d"
+fi
+
+while read -r podName startTime endTime;
+do
+  startTimeTimestamp=$(date $extra_flags "$startTime" +%s)
+  endTimeTimestamp=$(date $extra_flags "$endTime" +%s)
+  duration=$((endTimeTimestamp - startTimeTimestamp))
+
+  min=$((duration/60))
+  sec=$((duration%60))
+  minString=""
+  if ((min > 0)); then
+    minString="${min}m"
+  fi
+  echo "$podName execution time: ${minString}${sec}s"
+done <<< "$podInfo"
+
 if [[ ! "${BENCHMARK}" == "true" ]]
 then
   kubectl delete cts ${suiteName}

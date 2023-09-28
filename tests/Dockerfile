@@ -9,6 +9,10 @@ ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapter.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connector/tests -o connector.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/tests -o director.test && \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/tests/application -o director-application.test && \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/tests/notifications -o director-notifications.test && \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/tests/runtime -o director-runtime.test && \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/tests/formation -o director-formation.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./ns-adapter/tests -o ns-adapter.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./external-services-mock/tests -o external-services-mock.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./gateway/tests -o gateway.test && \
@@ -31,6 +35,10 @@ LABEL source=git@github.com:kyma-incubator/compass.git
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connectivity-adapter.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connector.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director-application.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director-runtime.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director-formation.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director-notifications.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ns-adapter.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/external-services-mock.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/gateway.test .

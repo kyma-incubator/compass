@@ -20,6 +20,18 @@ errcheck-local:
 e2e-test:
 	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director
 
+e2e-test-application:
+	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-application
+
+e2e-test-notification:
+	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-notifications
+
+e2e-test-runtime:
+	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-runtime
+
+e2e-test-formation:
+	@$(INSTALLATION_SCRIPTS_DIR)/testing.sh director-formation
+
 e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
