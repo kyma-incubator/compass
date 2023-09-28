@@ -1246,7 +1246,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	appNamespace := "compass.test"
 	localTenantID := "local-tenant-id"
 
-	applicationType1 := "app-type-1"
+	applicationType1 := "e2e-tests-app-type-1"
 	t.Logf("Create application template for type: %q", applicationType1)
 	appTemplateInput := fixtures.FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
@@ -1276,7 +1276,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
 
 	localTenantID2 := "local-tenant-id2"
-	applicationType2 := "app-type-2"
+	applicationType2 := "e2e-tests-app-type-2"
 	t.Logf("Create application template for type %q", applicationType2)
 	appTemplateInput = fixtures.FixApplicationTemplateWithCompositeLabelWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
 	appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
@@ -1481,11 +1481,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 	t.Run("Asynchronous App to App Formation Assignment Notifications using the Default Tenant Mapping Handler", func(t *testing.T) {
 		webhookType := graphql.WebhookTypeApplicationTenantMapping
 		webhookMode := graphql.WebhookModeAsyncCallback
-		urlTemplateAsync := "{\\\"path\\\":\\\"" + conf.DefaultTenantMappingHandlerURL + "/v1/tenantMappings/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+		urlTemplateAsync := "{\\\"path\\\":\\\"" + conf.DirectorExternalCertURL + "/default-tenant-mapping-handler/v1/tenantMappings/{{.TargetApplication.ID}}\\\",\\\"method\\\":\\\"PATCH\\\"}"
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
-		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+		outputTemplate := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
+		headerTemplate := "{\\\"Content-Type\\\": [\\\"application/json\\\"], \\\"Location\\\":[\\\"" + conf.DirectorExternalCertURL + "/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status\\\"]}"
 
 		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateAsync, inputTemplate, outputTemplate)
+		applicationWebhookInput.HeaderTemplate = &headerTemplate
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
@@ -1533,13 +1535,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		//body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		//assertNotificationsCountForTenant(t, body, app1.ID, 1)
-
-		//notificationsForApp1 := gjson.GetBytes(body, app1.ID)
-		//assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-		//assertFormationAssignmentsNotificationWithItemsStructure(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
-
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		var unassignFormation graphql.Formation
@@ -1552,20 +1547,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
-
-		//body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		//assertNotificationsCountForTenant(t, body, app1.ID, 2)
-
-		/*notificationsForApp1 = gjson.GetBytes(body, app1.ID)
-		unassignNotificationFound := false
-		for _, notification := range notificationsForApp1.Array() {
-			op := notification.Get("Operation").String()
-			if op == unassignOperation {
-				unassignNotificationFound = true
-				assertFormationAssignmentsNotificationWithItemsStructure(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
-			}
-		}
-		require.True(t, unassignNotificationFound, "notification for unassign app2 not found")*/
 
 		t.Logf("Assign application 1 to formation %s again", formationName)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, graphql.FormationObjectTypeApplication, tnt)
@@ -1588,20 +1569,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		/*body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, app1.ID, 3)
-
-		notificationsForApp1 = gjson.GetBytes(body, app1.ID)
-		assignNotificationsFound := 0
-		for _, notification := range notificationsForApp1.Array() {
-			op := notification.Get("Operation").String()
-			if op == assignOperation {
-				assignNotificationsFound++
-				assertFormationAssignmentsNotificationWithItemsStructure(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
-			}
-		}
-		require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")*/
-
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
@@ -1613,20 +1580,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		}
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 1, expectedAssignments, 2)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
-
-		/*body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, app1.ID, 4)
-
-		notificationsForApp1 = gjson.GetBytes(body, app1.ID)
-		unassignNotificationsFound := 0
-		for _, notification := range notificationsForApp1.Array() {
-			op := notification.Get("Operation").String()
-			if op == unassignOperation {
-				unassignNotificationsFound++
-				assertFormationAssignmentsNotificationWithItemsStructure(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
-			}
-		}
-		require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")*/
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)

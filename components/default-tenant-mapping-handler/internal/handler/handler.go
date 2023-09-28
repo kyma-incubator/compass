@@ -39,7 +39,7 @@ func NewHandler(mtlsHTTPClient mtlsHTTPClient) *DefaultTenantMappingHandler {
 func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	log.C(ctx).Info("The Default Tenant Mapping Handler was hit...")
+	log.C(ctx).Info("Default Tenant Mapping Handler was hit...")
 
 	uclStatusAPIUrl := r.Header.Get(locationHeader)
 
@@ -48,7 +48,7 @@ func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *ht
 
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
-	log.C(ctx).Info("The Default Tenant Mapping Handler reports status to the UCL status API...")
+	log.C(ctx).Info("Default Tenant Mapping Handler reports status to the UCL status API...")
 	go tmh.callUCLStatusAPI(uclStatusAPIUrl, correlationID)
 }
 
@@ -65,6 +65,11 @@ func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlati
 	reqBodyBytes, err := json.Marshal(SuccessResponse{State: readyState})
 	if err != nil {
 		log.C(ctx).WithError(err).Error("error while marshalling request body")
+		return
+	}
+
+	if statusAPIURL == "" {
+		log.C(ctx).WithError(err).Error("status API URL is empty...")
 		return
 	}
 
