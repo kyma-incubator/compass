@@ -44,6 +44,19 @@ sandbox-test:
 run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director.test -test.run $(testName) -test.v
 
+
+run-application:
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-application.test -test.run $(testName) -test.v
+
+run-formation:
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-formation.test -test.run $(testName) -test.v
+
+run-runtime:
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-formation.test -test.run $(testName) -test.v
+
+run-notification:
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-notifications.test -test.run $(testName) -test.v
+
 bench-run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director.bench -test.bench $(testName) -test.v
 
@@ -51,6 +64,23 @@ sandbox-deploy-test:
 	env GOOS=linux GOARCH=amd64 go test -c ./tests -o director.test
 	kubectl cp ./director.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
 	rm ./director.test
+
+# This depends on the generic config, when we split the configuration these commands should be removed
+sandbox-deploy-test-all:
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o director.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests/notifications -o director-notifications.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests/application -o director-application.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests/formation -o director-formation.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests/runtime -o director-runtime.test
+	kubectl cp ./director.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
+	kubectl cp ./director-notifications.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
+	kubectl cp ./director-application.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
+	kubectl cp ./director-formation.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
+	kubectl cp ./director-runtime.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
+	rm ./director-application.test
+	rm ./director-notifications.test
+	rm ./director-runtime.test
+	rm ./director-formation.test
 
 sandbox-deploy-bench-test:
 	env GOOS=linux GOARCH=amd64 go test -c ./bench -o director.bench
