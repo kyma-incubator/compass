@@ -135,6 +135,8 @@ if [[ ! ${SKIP_JWKS_ROTATION} ]]; then
   kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
 fi
 
+kubectl label --overwrite ns ory pod-security.kubernetes.io/enforce=baseline
+
 RESULT=0
 PIDS=""
 

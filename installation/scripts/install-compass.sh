@@ -89,6 +89,8 @@ echo "Compass installation finished successfully"
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
 
+kubectl label --overwrite ns compass-system pod-security.kubernetes.io/enforce=baseline
+
 if [[ ${SQL_HELM_BACKEND} ]]; then
     pkill kubectl
 fi
