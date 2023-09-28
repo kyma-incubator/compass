@@ -16,6 +16,7 @@ const (
 	IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
 	// DoesNotContainResourceOfSubtype contains the name of the DoesNotContainResourceOfSubtype operator
 	DoesNotContainResourceOfSubtype                      = "DoesNotContainResourceOfSubtype"
+	// DoNotGenerateFormationAssignmentNotificationOperator represents the DoNotGenerateFormationAssignmentNotification operator
 	DoNotGenerateFormationAssignmentNotificationOperator = "DoNotGenerateFormationAssignmentNotification"
 	// DoNotGenerateFormationAssignmentNotificationForLoopsOperator represents the DoNotGenerateFormationAssignmentNotificationForLoops operator
 	DoNotGenerateFormationAssignmentNotificationForLoopsOperator = "DoNotGenerateFormationAssignmentNotificationForLoops"

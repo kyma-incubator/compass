@@ -47,6 +47,7 @@ type DestinationCreatorInput struct {
 	SkipSubaccountValidation               bool                     `json:"skip_subaccount_validation"`
 }
 
+// RedirectNotificationInput is an input for RedirectNotification operator
 type RedirectNotificationInput struct {
 	Condition            bool                     `json:"condition"`
 	URL                  string                   `json:"url"`

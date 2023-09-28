@@ -23,6 +23,7 @@ func NewRedirectNotificationInput() OperatorInput {
 	return &formationconstraint.RedirectNotificationInput{}
 }
 
+// RedirectNotification is an operator that based on different condition could redirect the formation assignment notification
 func (e *ConstraintEngine) RedirectNotification(ctx context.Context, input OperatorInput) (bool, error) {
 	log.C(ctx).Infof("Starting executing operator: %s", RedirectNotificationOperator)
 
