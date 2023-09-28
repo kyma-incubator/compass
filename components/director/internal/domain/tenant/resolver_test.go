@@ -1548,3 +1548,77 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 		})
 	}
 }
+
+func TestResolver_RootTenant(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	externalTenant := "external-tenant"
+	expectedExternalTenantRootParent := "root-parent"
+
+	testCases := []struct {
+		Name          string
+		TxFn          func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn   func() *automock.BusinessTenantMappingService
+		ExpectedError error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetCustomerIDParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedExternalTenantRootParent, nil).Once()
+				return TenantSvc
+			},
+		},
+		{
+			Name:          "That returns error when can not start transaction",
+			TxFn:          txGen.ThatFailsOnBegin,
+			TenantSvcFn:   unusedTenantService,
+			ExpectedError: testError,
+		},
+		{
+			Name: "That returns error when can not get parent by external tenant",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetCustomerIDParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return("", testError).Once()
+				return TenantSvc
+			},
+			ExpectedError: testError,
+		},
+		{
+			Name: "That returns error when cannot commit",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetCustomerIDParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedExternalTenantRootParent, nil).Once()
+				return TenantSvc
+			},
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, nil, nil)
+
+			// WHEN
+			result, err := resolver.RootTenant(ctx, externalTenant)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, expectedExternalTenantRootParent, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc)
+		})
+	}
+}

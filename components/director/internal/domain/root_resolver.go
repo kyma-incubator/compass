@@ -606,6 +606,11 @@ func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.
 	return r.tenant.Tenants(ctx, first, after, searchTerm)
 }
 
+// RootTenant fetches the top parent external ID for a given tenant
+func (r *queryResolver) RootTenant(ctx context.Context, tenantID string) (string, error) {
+	return r.tenant.RootTenant(ctx, tenantID)
+}
+
 // AutomaticScenarioAssignmentForScenario missing godoc
 func (r *queryResolver) AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
 	return r.scenarioAssignment.GetAutomaticScenarioAssignmentForScenarioName(ctx, scenarioName)

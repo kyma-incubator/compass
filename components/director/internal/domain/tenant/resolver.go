@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -35,6 +34,7 @@ type BusinessTenantMappingService interface {
 	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
+	GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -189,6 +189,29 @@ func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceS
 	}
 
 	return tenantID, nil
+}
+
+// RootTenant fetches the top parent external ID for a given tenant
+func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (string, error) {
+	log.C(ctx).Infof("Getting the top parent ID for a external tenant: %q", externalTenant)
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	result, err := r.srv.GetCustomerIDParentRecursivelyByExternalTenant(ctx, externalTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
+
+	return result, nil
 }
 
 // Labels transactionally retrieves all existing labels of the given tenant if it exists.
