@@ -1544,6 +1544,112 @@ func TestPgRepository_GetCustomerIDParentRecursively(t *testing.T) {
 	})
 }
 
+func TestPgRepository_GetCustomerIDParentRecursivelyByExternalTenant(t *testing.T) {
+	dbQuery := `WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.parent, t1.external_tenant, t1.type
+                    FROM business_tenant_mappings t1
+                    WHERE external_tenant = $1
+                    UNION ALL
+                    SELECT t2.id, t2.parent, t2.external_tenant, t2.type
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on p.parent = t2.id)
+			SELECT external_tenant, type FROM parents WHERE parent is null`
+
+	t.Run("Success when parent and type are returned", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"external_tenant", "type"}).AddRow(testParentID, tenantEntity.TypeToStr(tenantEntity.Customer))
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testID).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		customerID, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testID)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, customerID, testParentID)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when executing db query", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testID).WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		customerID, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testID)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		require.Empty(t, customerID)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error if missing persistence context", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		tenantMappingRepo := tenant.NewRepository(nil)
+		// WHEN
+		_, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testID)
+		// THEN
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
+	})
+
+	t.Run("Return empty string when returned type is not customer", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"external_tenant", "type"}).AddRow(testParentID, tenantEntity.TypeToStr(tenantEntity.Account))
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testID).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		customerID, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testID)
+
+		// THEN
+		require.NoError(t, err)
+		require.Empty(t, customerID)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when empty parent is returned", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"external_tenant", "type"}).AddRow("", tenantEntity.TypeToStr(tenantEntity.Customer))
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testID).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		customerID, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testID)
+
+		// THEN
+		expectedError := fmt.Sprintf("external parent customer ID for internal tenant ID: %s can not be empty", testID)
+		require.Error(t, err)
+		require.EqualError(t, err, expectedError)
+		require.Empty(t, customerID)
+		dbMock.AssertExpectations(t)
+	})
+}
+
 const selectTenantsQuery = `(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`
 
 func mockDBSuccess(t *testing.T, runtimeID string) (*sqlx.DB, testdb.DBMock) {
