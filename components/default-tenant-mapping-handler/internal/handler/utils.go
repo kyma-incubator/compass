@@ -2,8 +2,9 @@ package handler
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // SuccessResponse structure used for JSON encoded success response
