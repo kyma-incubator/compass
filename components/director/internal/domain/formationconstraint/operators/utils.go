@@ -11,24 +11,38 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type entities interface {
-	*model.FormationAssignment | *model.Webhook
-}
-
-// RetrieveEntityPointerFromMemoryAddress converts the provided memory address, in the form of an integer, to a provided entity type pointer structure.
-// It's important the provided memory address to stores information about entity that matches the provided entity type, otherwise the result could be very abnormal
-func RetrieveEntityPointerFromMemoryAddress[entity entities](ctx context.Context, e entity, memoryAddress uintptr) (entity, error) {
-	if memoryAddress == 0 { // the default value of uintptr is 0
-		return nil, errors.New("The memory address cannot be 0")
+// RetrieveFormationAssignmentPointer converts the provided memory address in form of an integer back to the model.FormationAssignment pointer structure
+// It's important the provided memory address to stores information about model.FormationAssignment entity, otherwise the result could be very abnormal
+func RetrieveFormationAssignmentPointer(ctx context.Context, joinPointDetailsAssignmentMemoryAddress uintptr) (*model.FormationAssignment, error) {
+	if joinPointDetailsAssignmentMemoryAddress == 0 { // the default value of uintptr is 0
+		return nil, errors.New("The join point details' assignment memory address cannot be 0")
 	}
 
 	defer func() {
 		if err := recover(); err != nil {
-			log.C(ctx).WithField(logrus.ErrorKey, err).Panicf("A panic occurred while converting memory address: %d", memoryAddress)
+			log.C(ctx).WithField(logrus.ErrorKey, err).Panicf("A panic occurred while converting join point details' assignment address: %d to type: %T", joinPointDetailsAssignmentMemoryAddress, &model.FormationAssignment{})
 			debug.PrintStack()
 		}
 	}()
-	entityPointer := (e)(unsafe.Pointer(memoryAddress))
+	joinPointAssignmentPointer := (*model.FormationAssignment)(unsafe.Pointer(joinPointDetailsAssignmentMemoryAddress))
 
-	return entityPointer, nil
+	return joinPointAssignmentPointer, nil
+}
+
+// RetrieveWebhookPointerFromMemoryAddress converts the provided uninterpreted memory address in form of an integer back to the model.Webhook pointer structure
+// It's important the provided memory address to stores information about model.Webhook entity, otherwise the result could be very abnormal
+func RetrieveWebhookPointerFromMemoryAddress(ctx context.Context, webhookMemoryAddress uintptr) (*model.Webhook, error) {
+	if webhookMemoryAddress == 0 { // the default value of uintptr is 0
+		return nil, errors.New("The webhook memory address cannot be 0")
+	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.C(ctx).WithField(logrus.ErrorKey, err).Panicf("A panic occurred while converting join point details' assignment address: %d to type: %T", webhookMemoryAddress, &model.Webhook{})
+			debug.PrintStack()
+		}
+	}()
+	joinPointAssignmentPointer := (*model.Webhook)(unsafe.Pointer(webhookMemoryAddress))
+
+	return joinPointAssignmentPointer, nil
 }

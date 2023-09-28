@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"runtime/debug"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -41,7 +40,7 @@ func (e *ConstraintEngine) RedirectNotification(ctx context.Context, input Opera
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", ri.ResourceType, ri.ResourceSubtype, ri.Location.ConstraintType, ri.Location.OperationName, ri.Operation)
 
-	w, err := RetrieveEntityPointerFromMemoryAddress[*model.Webhook](ctx, &model.Webhook{}, ri.WebhookMemoryAddress)
+	w, err := RetrieveWebhookPointerFromMemoryAddress(ctx, ri.WebhookMemoryAddress)
 	if err != nil {
 		return false, err
 	}

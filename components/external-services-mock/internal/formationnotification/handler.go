@@ -448,6 +448,7 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 			Operation:     Unassign,
 			ApplicationID: &applicationId,
 			RequestBody:   bodyBytes,
+			RequestPath: r.URL.Path,
 		})
 	}
 
