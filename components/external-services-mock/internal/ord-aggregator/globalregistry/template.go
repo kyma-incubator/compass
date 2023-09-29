@@ -31,30 +31,26 @@ const ordDocument = `{
     {
       "ordId": "sap:product:SAPCustomerExperience:",
       "title": "SAP Customer Experience",
-      "description": "Bring together customer data, machine learning technology, and microservices to power real-time customer engagements across sales, service, marketing, and commerce.",
-      "shortDescription": "Optimize customer interactions in many aspects in real time.",
+      "shortDescription": "Bring together customer data, machine learning technology, and microservices to power real-time customer engagements across sales, service, marketing, and commerce.",
       "vendor": "sap:vendor:SAP:"
     },
     {
       "ordId": "sap:product:SAPServiceCloudV2:",
       "title": "SAP Service Cloud Version 2",
-      "description": "Enables you to run service processes efficiently with service agents having customer information at their fingertips.",
-	  "shortDescription": "Boosts efficiency with immediate customer data access for agents.",
+      "shortDescription": "Enables you to run service processes efficiently with service agents having customer information at their fingertips.",
       "vendor": "sap:vendor:SAP:",
       "parent": "sap:product:SAPCustomerExperience:"
     },
     {
       "ordId": "sap:product:SAPGraph:",
       "title": "SAP Graph",
-      "description": "SAP Graph is the easy-to-use API for the data of the Intelligent Enterprise from SAP.\nIt provides an intuitive programming model that you can use to easily build new extensions and applications using SAP data.",
-      "shortDescription": "SAP Graph: Streamlined API for Intelligent Enterprise data, enabling intuitive extension and app development with SAP data.",
+      "shortDescription": "SAP Graph is the easy-to-use API for the data of the Intelligent Enterprise from SAP.\nIt provides an intuitive programming model that you can use to easily build new extensions and applications using SAP data.",
       "vendor": "sap:vendor:SAP:"
     },
     {
       "ordId": "sap:product:SAPS4HANACloud:",
       "title": "SAP S/4HANA Cloud",
-      "description": "The next generation digital core designed to help you run simple\nin a digital economy. It provides the industry-specific capabilities and cloud\nbenefits that your business needs.",
-	  "shortDescription": "Cutting-edge digital core for streamlined operations and industry-specific capabilities in the digital era.",
+      "shortDescription": "The next generation digital core designed to help you run simple\nin a digital economy. It provides the industry-specific capabilities and cloud\nbenefits that your business needs.",
       "vendor": "sap:vendor:SAP:",
       "labels": {
         "logo": [
@@ -65,8 +61,7 @@ const ordDocument = `{
     {
       "ordId": "sap:product:SAPS4HANA:",
       "title": "SAP S/4HANA",
-      "description": "A future-ready ERP system with built-in intelligent technologies,\nincluding AI, machine learning, and advanced analytics which transforms business\nprocesses with intelligent automation.",
-	  "shortDescription": "Modern ERP with integrated AI, ML, and analytics for intelligent business process automation.",
+      "shortDescription": "A future-ready ERP system with built-in intelligent technologies,\nincluding AI, machine learning, and advanced analytics which transforms business\nprocesses with intelligent automation.",
       "vendor": "sap:vendor:SAP:",
       "labels": {
         "logo": [
@@ -77,30 +72,26 @@ const ordDocument = `{
     {
       "ordId": "sap:product:SAPCloudPlatform:",
       "title": "SAP Business Technology Platform",
-      "description": "Accelerate business outcomes with integration, data to value, and extensibility.",
-      "shortDescription": "Optimize business impact with integration and data value.",
+      "shortDescription": "Accelerate business outcomes with integration, data to value, and extensibility.",
       "vendor": "sap:vendor:SAP:"
     },
     {
       "ordId": "sap:product:SAPS4HANAUtilities:",
       "title": "SAP S/4HANA Utilities",
-      "description": "Provides an intelligent and integrated ERP system for utilities that runs on our in-memory database, SAP HANA.",
-      "shortDescription": "Offers smart, integrated ERP for various sectors on SAP HANA in-memory database.",
+      "shortDescription": "Provides an intelligent and integrated ERP system for utilities that runs on our in-memory database, SAP HANA.",
       "vendor": "sap:vendor:SAP:",
       "parent": "sap:product:SAPS4HANA:"
     },
 	{
-	  "ordId": "sap:product:SAPSuccessFactors:",
-	  "title": "SAP SuccessFactors",
-	  "description": "SAP SuccessFactors is a world-leading provider of cloud human experience management (HXM).",
-	  "shortDescription": "SAP SuccessFactors: Leading in cloud-based Human Experience Management (HXM).",
-	  "vendor": "sap:vendor:SAP:"
+		"ordId": "sap:product:SAPSuccessFactors:",
+		"title": "SAP SuccessFactors",
+		"shortDescription": "SAP SuccessFactors is a world-leading provider of cloud human experience management (HXM).",
+		"vendor": "sap:vendor:SAP:"
 	},
     {
       "ordId": "sap:product:SAPTransactionalBankingforSAPS4HANA:",
       "title": "SAP Transactional Banking for SAP S/4HANA",
-      "description": "SAP Transactional Banking for SAP S/4HANA is an open core banking platform, which is based on an architecture that ensures real-time processing and continuous availability.",
-	  "shortDescription": "SAP Transactional Banking: Open core banking platform on SAP S/4HANA with real-time processing and constant availability.",
+      "shortDescription": "SAP Transactional Banking for SAP S/4HANA is an open core banking platform, which is based on an architecture that ensures real-time processing and continuous availability.",
       "vendor": "sap:vendor:SAP:",
       "parent": "sap:product:SAPS4HANA:"
     }

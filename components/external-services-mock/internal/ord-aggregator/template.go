@@ -895,8 +895,7 @@ const ordDocument = `{
    "tombstones":[
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
-         "removalDate":"2020-12-02T14:12:59Z",
-		 "description":"lorem ipsum dolor nsq sme"
+         "removalDate":"2020-12-02T14:12:59Z"
 		 {{ .additionalProperties }}
       }
    ],
