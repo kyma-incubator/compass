@@ -9,14 +9,14 @@ type Tombstone struct {
 	ApplicationID                *string
 	ApplicationTemplateVersionID *string
 	RemovalDate                  string
-	Description                  string
+	Description                  *string
 }
 
 // TombstoneInput missing godoc
 type TombstoneInput struct {
-	OrdID       string `json:"ordId"`
-	RemovalDate string `json:"removalDate"`
-	Description string `json:"description"`
+	OrdID       string  `json:"ordId"`
+	RemovalDate string  `json:"removalDate"`
+	Description *string `json:"description"`
 }
 
 // ToTombstone missing godoc

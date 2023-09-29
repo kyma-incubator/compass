@@ -14,7 +14,7 @@ type Entity struct {
 	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`
 	Title                        string         `db:"title"`
 	ShortDescription             string         `db:"short_description"`
-	Description                  string         `db:"description"`
+	Description                  sql.NullString `db:"description"`
 	Vendor                       string         `db:"vendor"`
 	Parent                       sql.NullString `db:"parent"`
 	CorrelationIDs               sql.NullString `db:"correlation_ids"`

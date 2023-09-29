@@ -13,7 +13,7 @@ type Entity struct {
 	ApplicationID                sql.NullString `db:"app_id"`
 	ApplicationTemplateVersionID sql.NullString `db:"app_template_version_id"`
 	RemovalDate                  string         `db:"removal_date"`
-	Description                  string         `db:"description"`
+	Description                  sql.NullString `db:"description"`
 }
 
 // GetID returns the entity's ID.

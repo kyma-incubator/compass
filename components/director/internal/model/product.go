@@ -14,7 +14,7 @@ type Product struct {
 	ApplicationTemplateVersionID *string
 	Title                        string
 	ShortDescription             string
-	Description                  string
+	Description                  *string
 	Vendor                       string
 	Parent                       *string
 	CorrelationIDs               json.RawMessage
@@ -28,7 +28,7 @@ type ProductInput struct {
 	OrdID               string          `json:"ordId"`
 	Title               string          `json:"title"`
 	ShortDescription    string          `json:"shortDescription"`
-	Description         string          `json:"description"`
+	Description         *string         `json:"description"`
 	Vendor              string          `json:"vendor"`
 	Parent              *string         `json:"parent"`
 	CorrelationIDs      json.RawMessage `json:"correlationIds"`
