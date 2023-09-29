@@ -564,10 +564,6 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 		return
 	}
 
-	if reset {
-		reverseFA.State = string(model.InitialAssignmentState)
-	}
-
 	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
 	reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
 	if err != nil {
