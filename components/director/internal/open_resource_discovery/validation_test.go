@@ -728,23 +728,6 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "`ApplicationNamespace` values are not valid",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(invalidNamespace)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "`ApplicationNamespace` values are valid",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(validNamespace)
-
-				return []*ord.Document{doc}
-			},
-			ExpectedToBeValid: true,
-		}, {
 			Name: "Valid missing `localTenantID` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()

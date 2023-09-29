@@ -65,8 +65,6 @@ const (
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
 	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
-	// OrdNamespaceRegex represents the valid structure of an Ord Namespace
-	OrdNamespaceRegex = "^[a-z0-9]+(?:[.][a-z0-9]+)*$"
 	// ShortDescriptionSapCorePolicyRegex represents the valid structure of a short description field due to sap core policy
 	ShortDescriptionSapCorePolicyRegex = "^[a-zA-Z0-9 _\\-.,()']+|(S/4HANA|country/region|G/L)$"
 
@@ -249,7 +247,6 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&app.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&app.ApplicationNamespace, validation.Match(regexp.MustCompile(OrdNamespaceRegex))),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
 		validation.Field(&app.OrdLabels, validation.By(validateORDLabels)),
 		validation.Field(&app.Tags, validation.By(func(value interface{}) error {
