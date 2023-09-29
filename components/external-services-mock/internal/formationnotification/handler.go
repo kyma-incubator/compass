@@ -274,7 +274,7 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 			return
 		}
 
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, "{\"state\": \"READY\"}")
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -284,6 +284,12 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 // that returns a random configuration later which will be used to redirect the notification based on some property of it.
 func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	if r.Method == http.MethodDelete {
+		log.C(ctx).Infof("Handling unassign redirect notification, returning only READY state")
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
+	}
+
 	responseFunc := func(bodyBytes []byte) {
 		if config := gjson.Get(string(bodyBytes), "receiverTenant.configuration").String(); config == "" {
 			response := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"redirectProperties\":[{\"redirectPropertyName\":\"redirectName\",\"redirectPropertyID\":\"redirectID\"}]}}"
@@ -292,10 +298,35 @@ func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWr
 			return
 		}
 
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, "{\"state\": \"READY\"}")
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.RespondWithError(ctx, w, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		return
+	}
+
+	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
+	if assignedTenantState == "" {
+		err := errors.New("The assigned tenant state in the request body cannot be empty")
+		httphelpers.RespondWithError(ctx, w, err, err.Error(), correlationID, http.StatusBadRequest)
+		return
+	}
+
+	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
+	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
+		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
+		w.WriteHeader(http.StatusAccepted)
+		return
+	}
 }
 
 // RedirectNotificationHandler handle the requests in case of a redirect operator is invoked
@@ -303,7 +334,7 @@ func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWr
 func (h *Handler) RedirectNotificationHandler(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, "{\"state\": \"READY\"}")
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -321,7 +352,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, "{\"state\": \"READY\"}")
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)

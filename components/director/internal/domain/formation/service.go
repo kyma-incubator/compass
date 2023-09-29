@@ -870,7 +870,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
 	// there are no notifications sent for them, and we have created formation assignments for them.
-	// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
+	// If we by any chance reach it from ERROR state, the formation should be empty, with no formation assignments in it, and the deletion shouldn't do anything.
 	if formationFromDB.State != model.ReadyFormationState {
 		log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
 		err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)

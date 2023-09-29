@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"net/http"
 	"net/url"
 	"strings"
@@ -164,7 +165,7 @@ func (rd *ResponseObject) ParseStatusTemplate(tmpl *string) (*ResponseStatus, er
 }
 
 func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
-	t, err := template.New("").Funcs(template.FuncMap{"Join": joinStrings}).Option("missingkey=zero").Parse(*tmpl)
+	t, err := template.New("").Funcs(templatehelper.GetFuncMap()).Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return err
 	}

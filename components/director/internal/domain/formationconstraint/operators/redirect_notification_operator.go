@@ -2,12 +2,10 @@ package operators
 
 import (
 	"context"
-	"encoding/json"
 	"runtime/debug"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -45,33 +43,19 @@ func (e *ConstraintEngine) RedirectNotification(ctx context.Context, input Opera
 		return false, err
 	}
 
-	if ri.Condition {
-		if w.URLTemplate != nil {
-			log.C(ctx).Infof("Current webhook URL template is: '%s'", *w.URLTemplate)
-			var urlData *webhook.URL
-			if err := json.Unmarshal([]byte(*w.URLTemplate), urlData); err != nil {
-				return false, errors.Wrapf(err, "while unmarhalling webhook URL template")
-			}
+	if !ri.Condition {
+		log.C(ctx).Infof("The condition for the redirect notification operator is not satisfied. Returning...")
+		return true, nil
+	}
 
-			if err := urlData.Validate(); err != nil {
-				return false, err
-			}
+	if w.URLTemplate != nil && ri.URLTemplate != "" {
+		log.C(ctx).Infof("Current webhook URL template is: '%s', changing it to: '%s'", *w.URLTemplate, ri.URLTemplate)
+		w.URLTemplate = &ri.URLTemplate
+	}
 
-			*urlData.Path = ri.URL
-			urlDataBytes, err := json.Marshal(urlData)
-			if err != nil {
-				return false, err
-			}
-
-			modifiedURL := string(urlDataBytes)
-			log.C(ctx).Infof("Changing the URL template to: '%s'", modifiedURL)
-			w.URLTemplate = &modifiedURL
-		}
-
-		if w.URL != nil {
-			log.C(ctx).Infof("Current webhook URL is: '%s'. Changing it to: '%s'", *w.URL, ri.URL)
-			w.URL = &ri.URL
-		}
+	if w.URL != nil && ri.URL != "" {
+		log.C(ctx).Infof("Current webhook URL is: '%s', changing it to: '%s'", *w.URL, ri.URL)
+		w.URL = &ri.URL
 	}
 
 	log.C(ctx).Infof("Finished executing operator: %s", RedirectNotificationOperator)
