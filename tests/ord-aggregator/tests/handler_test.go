@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 

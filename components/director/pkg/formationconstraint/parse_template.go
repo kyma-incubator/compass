@@ -3,8 +3,9 @@ package formationconstraint
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"text/template"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )

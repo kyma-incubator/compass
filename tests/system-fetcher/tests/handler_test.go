@@ -20,11 +20,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/token"

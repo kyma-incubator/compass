@@ -20,11 +20,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"net/http"
 	"net/url"
 	"strings"
 	"text/template"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 

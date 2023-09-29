@@ -2,9 +2,10 @@ package templatehelper
 
 import (
 	"encoding/json"
-	"github.com/Masterminds/sprig/v3"
 	"strings"
 	"text/template"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 func GetFuncMap() template.FuncMap {
