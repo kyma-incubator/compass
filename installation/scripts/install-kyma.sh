@@ -29,11 +29,11 @@ yq -i ".istio.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${MINIMAL_O
 if [[ $(uname -m) == 'arm64' ]]; then
   yq -i ".istio.global.images.istio_proxyv2.containerRegistryPath = \"ghcr.io\"" "${MINIMAL_OVERRIDES_TEMP}"
   yq -i ".istio.global.images.istio_proxyv2.directory = \"resf/istio\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_proxyv2.version = \"1.14.1-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.version = \"1.14.3-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
 
   yq -i ".istio.global.images.istio_pilot.containerRegistryPath = \"ghcr.io\"" "${MINIMAL_OVERRIDES_TEMP}"
   yq -i ".istio.global.images.istio_pilot.directory = \"resf/istio\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_pilot.version = \"1.14.1-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.version = \"1.14.3-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
 fi
 
 trap "rm -f ${MINIMAL_OVERRIDES_TEMP}" EXIT INT TERM
