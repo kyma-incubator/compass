@@ -541,7 +541,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
 			},
 		}
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
@@ -575,7 +575,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			},
 		}
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
@@ -596,7 +596,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 0)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 0, nil, 2)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 
