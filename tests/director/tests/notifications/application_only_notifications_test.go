@@ -1933,7 +1933,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		reverseAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app2.ID, app1.ID)
 
 		t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
-		executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+		executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -1967,7 +1967,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app2.ID, app1.ID)
-		executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
+		executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
