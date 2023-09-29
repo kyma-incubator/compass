@@ -122,7 +122,7 @@ func (b Body) GetApplicationID() string {
 
 // GetApplicationConfiguration returns the Body application configuration as Configuration struct
 func (b Body) GetApplicationConfiguration() (Configuration, error) {
-	if b.AssignedTenant.Configuration != nil && (string(b.AssignedTenant.Configuration) == "" || string(b.AssignedTenant.Configuration) == "{}" || string(b.AssignedTenant.Configuration) == "\"\"" || string(b.AssignedTenant.Configuration) == "null") {
+	if b.AssignedTenant.Configuration == nil || string(b.AssignedTenant.Configuration) == "" || string(b.AssignedTenant.Configuration) == "{}" || string(b.AssignedTenant.Configuration) == "\"\"" || string(b.AssignedTenant.Configuration) == "null" {
 		return Configuration{}, nil
 	}
 
