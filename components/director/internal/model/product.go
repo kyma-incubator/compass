@@ -14,6 +14,7 @@ type Product struct {
 	ApplicationTemplateVersionID *string
 	Title                        string
 	ShortDescription             string
+	Description                  string
 	Vendor                       string
 	Parent                       *string
 	CorrelationIDs               json.RawMessage
@@ -27,6 +28,7 @@ type ProductInput struct {
 	OrdID               string          `json:"ordId"`
 	Title               string          `json:"title"`
 	ShortDescription    string          `json:"shortDescription"`
+	Description         string          `json:"description"`
 	Vendor              string          `json:"vendor"`
 	Parent              *string         `json:"parent"`
 	CorrelationIDs      json.RawMessage `json:"correlationIds"`
@@ -46,6 +48,7 @@ func (i *ProductInput) ToProduct(id string, resourceType resource.Type, resource
 		OrdID:               i.OrdID,
 		Title:               i.Title,
 		ShortDescription:    i.ShortDescription,
+		Description:         i.Description,
 		Vendor:              i.Vendor,
 		Parent:              i.Parent,
 		CorrelationIDs:      i.CorrelationIDs,

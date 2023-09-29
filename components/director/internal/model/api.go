@@ -53,7 +53,6 @@ type APIDefinition struct {
 	Version                                 *Version
 	Extensible                              json.RawMessage
 	ResourceHash                            *string
-	Hierarchy                               json.RawMessage
 	SupportedUseCases                       json.RawMessage
 	DocumentationLabels                     json.RawMessage
 	CorrelationIDs                          json.RawMessage
@@ -102,7 +101,6 @@ type APIDefinitionInput struct {
 	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
-	Hierarchy                               json.RawMessage               `json:"hierarchy"`
 	SupportedUseCases                       json.RawMessage               `json:"supported_use_cases"`
 	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 	CorrelationIDs                          json.RawMessage               `json:"correlationIds,omitempty"`
@@ -217,7 +215,6 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, resourceType resource.Ty
 		Industry:            a.Industry,
 		Extensible:          a.Extensible,
 		Version:             a.VersionInput.ToVersion(),
-		Hierarchy:           a.Hierarchy,
 		SupportedUseCases:   a.SupportedUseCases,
 		DocumentationLabels: a.DocumentationLabels,
 		CorrelationIDs:      a.CorrelationIDs,
