@@ -154,8 +154,8 @@ global:
       version: "PR-3330"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3336"
       name: compass-kyma-adapter
     instance_creator:
       dir: prod/incubator/
@@ -196,7 +196,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3324"
+      version: "PR-3336"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
