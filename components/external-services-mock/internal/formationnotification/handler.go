@@ -914,6 +914,22 @@ func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
 	h.asyncFormationResponse(ctx, writer, r, operation, "", NoopFormationResponseFn)
 }
 
+func (h *Handler) KymaEmptyCredentials(writer http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPatch {
+		response := struct {
+			State         string `json:"state"`
+			Configuration string `json:"configuration"`
+		}{
+			State:         string(ReadyAssignmentState),
+			Configuration: "",
+		}
+
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	} else if r.Method == http.MethodDelete {
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
 func (h *Handler) KymaBasicCredentials(writer http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPatch {
 		username := "user"

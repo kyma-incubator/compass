@@ -52,7 +52,7 @@ run-formation:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-formation.test -test.run $(testName) -test.v
 
 run-runtime:
-	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-formation.test -test.run $(testName) -test.v
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-runtime.test -test.run $(testName) -test.v
 
 run-notification:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director-notifications.test -test.run $(testName) -test.v
