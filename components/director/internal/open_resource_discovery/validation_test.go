@@ -118,6 +118,19 @@ var (
         }
       ]`
 
+	invalidPackageLinksDueToDuplicateTitles = `[
+        {
+		  "title": "link title",
+          "type": "payment",
+          "url": "https://example.com/en/legal/terms-of-use.html"
+        },
+        {
+		  "title": "link title",
+          "type": "client-registration",
+          "url": "https://example2.com/en/legal/terms-of-use.html"
+        }
+      ]`
+
 	invalidLinkDueToMissingTitle = `[
         {
           "url": "https://example2.com/en/legal/terms-of-use.html",
@@ -1249,6 +1262,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `Links` field due to duplicate titles for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage(invalidPackageLinksDueToDuplicateTitles)
 
 				return []*ord.Document{doc}
 			},
@@ -4010,6 +4031,19 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Missing `Graphql-sdl` definitions when APIResources has policyLevel `sap-core` and apiProtocol is `graphql`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolGraphql
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid type of `direction` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5339,7 +5373,8 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				doc.Products = append(doc.Products, &model.ProductInput{
 					OrdID:            "sap:product:test:",
 					Title:            "title",
-					ShortDescription: "Description",
+					ShortDescription: "short desc",
+					Description:      "long desc",
 					Vendor:           ord.SapVendor,
 					Parent:           nil,
 					CorrelationIDs:   nil,

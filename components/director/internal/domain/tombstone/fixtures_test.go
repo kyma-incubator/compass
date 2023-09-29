@@ -34,6 +34,7 @@ func fixEntityTombstoneWithID(id string) *tombstone.Entity {
 		ID:          id,
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
+		Description: "desc",
 	}
 }
 
@@ -62,6 +63,7 @@ func fixTombstoneModelWithID(id string) *model.Tombstone {
 		ID:          id,
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
+		Description: "desc",
 	}
 }
 
@@ -81,11 +83,12 @@ func fixTombstoneModelInput() *model.TombstoneInput {
 	return &model.TombstoneInput{
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
+		Description: "desc",
 	}
 }
 
 func fixTombstoneColumns() []string {
-	return []string{"ord_id", "app_id", "app_template_version_id", "removal_date", "id"}
+	return []string{"ord_id", "app_id", "app_template_version_id", "removal_date", "id", "description"}
 }
 
 func fixTombstoneRowForApp() []driver.Value {
@@ -97,13 +100,13 @@ func fixTombstoneRowForAppTemplateVersion() []driver.Value {
 }
 
 func fixTombstoneRowWithIDForApp(id string) []driver.Value {
-	return []driver.Value{ordID, appID, repo.NewValidNullableString(""), "removalDate", id}
+	return []driver.Value{ordID, appID, repo.NewValidNullableString(""), "removalDate", id, "desc"}
 }
 
 func fixTombstoneRowWithIDForAppTemplateVersion(id string) []driver.Value {
-	return []driver.Value{ordID, repo.NewValidNullableString(""), appTemplateVersionID, "removalDate", id}
+	return []driver.Value{ordID, repo.NewValidNullableString(""), appTemplateVersionID, "removalDate", id, "desc"}
 }
 
 func fixTombstoneUpdateArgs() []driver.Value {
-	return []driver.Value{"removalDate"}
+	return []driver.Value{"removalDate", "desc"}
 }
