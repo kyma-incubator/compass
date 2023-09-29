@@ -35,6 +35,8 @@ Each Compass component has its own test directory. It contains a local Makefile 
 - `sandbox-deploy-bench-test` - Creates new binary for the benchmark tests and pushes it into the cluster.
 - `sandbox-test-clean` - Deletes the cluster-test-suite and test-definition created by `sandbox-test`.
 
+> Note: The director component has several test subdirectories, each with its own local Makefile. 
+
 ### Execution steps for sandbox tests
 The sandbox tests enable the run of a single E2E test case of a given Compass component. In case of an error, you can modify the failed test and rerun it again, without building a new image and waiting for the whole test suite to finish. This facilitates the iteration and testing of different scenarios. You can find a brief description for each command in the [Local Makefile](#local-makefile) section.
 
