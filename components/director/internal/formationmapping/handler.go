@@ -169,6 +169,18 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
+		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, model.InitialAssignmentState)
+		fa.State = string(reqBody.State)
+		if err = h.faService.Update(ctx, fa.ID, fa); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		log.C(ctx).Infof("Resetting reverse formation assignment with ID: %s to state: %s", reverseFA.ID, model.InitialAssignmentState)
+		reverseFA.State = string(model.InitialAssignmentState)
+		if err = h.faService.Update(ctx, reverseFA.ID, reverseFA); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
 	}
 
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
@@ -535,11 +547,6 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if reset {
-		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, model.InitialAssignmentState)
-		fa.State = string(model.InitialAssignmentState)
-	}
-
 	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa, model.AssignFormation)
 	if err != nil {
@@ -558,7 +565,6 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	}
 
 	if reset {
-		log.C(ctx).Infof("Resetting reverse formation assignment with ID: %s to state: %s", reverseFA.ID, model.InitialAssignmentState)
 		reverseFA.State = string(model.InitialAssignmentState)
 	}
 
