@@ -412,7 +412,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				OrdID:               productORDID,
 				Title:               "PRODUCT TITLE",
 				ShortDescription:    "short desc",
-				Description:         "long desc",
+				Description:         str.Ptr("long desc"),
 				Vendor:              vendorORDID,
 				Parent:              str.Ptr(product2ORDID),
 				CorrelationIDs:      json.RawMessage(correlationIDs),
@@ -654,7 +654,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			{
 				OrdID:       api2ORDID,
 				RemovalDate: "2020-12-02T14:12:59Z",
-				Description: "long description",
+				Description: str.Ptr("long description"),
 			},
 		},
 		Vendors: []*model.VendorInput{
@@ -905,7 +905,7 @@ func fixGlobalProducts() []*model.Product {
 			OrdID:            globalProductORDID,
 			Title:            "SAP Business Technology Platform",
 			ShortDescription: "Enhance business results",
-			Description:      "Accelerate business outcomes with integration, data to value, and extensibility.",
+			Description:      str.Ptr("Accelerate business outcomes with integration, data to value, and extensibility."),
 			Vendor:           vendorORDID,
 		},
 	}
@@ -1380,7 +1380,7 @@ func fixGlobalRegistryORDDocument() *ord.Document {
 				OrdID:            globalProductORDID,
 				Title:            "SAP Business Technology Platform",
 				ShortDescription: "Enhance business results.",
-				Description:      "Accelerate business outcomes with integration, data to value, and extensibility.",
+				Description:      str.Ptr("Accelerate business outcomes with integration, data to value, and extensibility."),
 				Vendor:           vendorORDID,
 			},
 		},

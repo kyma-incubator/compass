@@ -5374,7 +5374,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 					OrdID:            "sap:product:test:",
 					Title:            "title",
 					ShortDescription: "short desc",
-					Description:      "long desc",
+					Description:      str.Ptr("long desc"),
 					Vendor:           ord.SapVendor,
 					Parent:           nil,
 					CorrelationIDs:   nil,

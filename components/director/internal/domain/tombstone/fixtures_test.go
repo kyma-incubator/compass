@@ -2,6 +2,7 @@ package tombstone_test
 
 import (
 	"database/sql/driver"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -34,7 +35,7 @@ func fixEntityTombstoneWithID(id string) *tombstone.Entity {
 		ID:          id,
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
-		Description: "desc",
+		Description: repo.NewValidNullableString("desc"),
 	}
 }
 
@@ -63,7 +64,7 @@ func fixTombstoneModelWithID(id string) *model.Tombstone {
 		ID:          id,
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
-		Description: "desc",
+		Description: str.Ptr("desc"),
 	}
 }
 
@@ -83,7 +84,7 @@ func fixTombstoneModelInput() *model.TombstoneInput {
 	return &model.TombstoneInput{
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
-		Description: "desc",
+		Description: str.Ptr("desc"),
 	}
 }
 
