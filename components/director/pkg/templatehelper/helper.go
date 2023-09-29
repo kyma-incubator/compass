@@ -8,6 +8,8 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
+// GetFuncMap returns a template function map with provided build-in functions
+// and on top of them our additional custom functions
 func GetFuncMap() template.FuncMap {
 	fm := sprig.TxtFuncMap()
 	fm["toString"] = toString
