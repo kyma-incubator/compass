@@ -368,6 +368,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/fail/{tenantId}/{applicationId}", notificationHandler.FailResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
 	// formation assignment notifications handlers for kyma integration
+	router.HandleFunc("/v1/tenants/emptyCredentials", notificationHandler.KymaEmptyCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	// formation assignment notifications async handlers
