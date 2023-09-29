@@ -304,31 +304,6 @@ func (h *Handler) RespondWithIncompleteAndRedirectDetails(writer http.ResponseWr
 	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
-func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, w, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
-		return
-	}
-
-	assignedTenantState := gjson.GetBytes(bodyBytes, "assignedTenant.state").String()
-	if assignedTenantState == "" {
-		err := errors.New("The assigned tenant state in the request body cannot be empty")
-		httphelpers.RespondWithError(ctx, w, err, err.Error(), correlationID, http.StatusBadRequest)
-		return
-	}
-
-	assignedTenantConfig := gjson.GetBytes(bodyBytes, "assignedTenant.configuration").String()
-	if assignedTenantState == string(InitialAssignmentState) && assignedTenantConfig == "" || assignedTenantConfig == "\"\"" {
-		log.C(ctx).Infof("Initial notification request is received with empty config in the assigned tenant. Returning 202 Accepted with noop response func")
-		w.WriteHeader(http.StatusAccepted)
-		return
-	}
-}
-
 // RedirectNotificationHandler handle the requests in case of a redirect operator is invoked
 // and return only READY state with no configuration
 func (h *Handler) RedirectNotificationHandler(writer http.ResponseWriter, r *http.Request) {
