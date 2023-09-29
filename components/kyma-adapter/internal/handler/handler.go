@@ -76,7 +76,13 @@ func (a AdapterHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	operation := reqBody.Context.Operation
 	log.C(ctx).Infof("The request operation is %q", operation)
 
-	if operation == assignOperation && reqBody.GetApplicationConfiguration() == (tenantmapping.Configuration{}) { // config is missing
+	configuration, err := reqBody.GetApplicationConfiguration()
+	if err != nil {
+		respondWithError(ctx, w, http.StatusBadRequest, "", errors.Wrapf(err, "while getting application configuration"))
+		return
+	}
+
+	if operation == assignOperation && configuration == (tenantmapping.Configuration{}) { // config is missing
 		respondWithSuccess(ctx, w, configPendingState, fmt.Sprintf("Configuration is missing. Responding with %q state...", configPendingState))
 		return
 	}
@@ -113,7 +119,7 @@ out:
 		return
 	}
 
-	creds := credentials.NewCredentials(reqBody)
+	creds := credentials.NewCredentials(configuration)
 	modifyFunc := a.determineAuthModifyFunc(instanceAuthExist, operation)
 	for _, bundle := range bundles {
 		input := buildInstanceAuthInput(instanceAuthExist, operation, bundle, rtmID, creds)

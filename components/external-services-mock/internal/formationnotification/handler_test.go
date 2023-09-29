@@ -834,6 +834,45 @@ func TestHandler_FailOnceFormation(t *testing.T) {
 	}
 }
 
+func TestKymaBasicEmptyCredentials(t *testing.T) {
+	t.Run("When method is PATCH", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPatch, url, nil)
+		require.NoError(t, err)
+
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaEmptyCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+		expectedBody := []byte("{\"state\":\"READY\",\"configuration\":\"\"}\n")
+		require.Equal(t, expectedBody, body)
+	})
+	t.Run("When method is DELETE", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		require.NoError(t, err)
+
+		h := formationnotification.NewHandler(formationnotification.Configuration{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.KymaEmptyCredentials(r, req)
+		resp := r.Result()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	})
+}
+
 func TestKymaBasicCredentials(t *testing.T) {
 	t.Run("When method is PATCH", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
