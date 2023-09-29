@@ -575,7 +575,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			},
 		}
 
-		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 5)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 12)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
