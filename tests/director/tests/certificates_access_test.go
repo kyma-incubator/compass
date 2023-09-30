@@ -91,7 +91,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			}
 
 			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", tenantID))
-			rtmInput := fixRuntimeInput(fmt.Sprintf("runtime-%s", test.resourceSuffix))
+			rtmInput := fixtures.FixRuntimeRegisterInputWithoutLabels(fmt.Sprintf("runtime-%s", test.resourceSuffix))
 			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, tenantID, &rtmInput)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rt)
 			if test.expectErr {
@@ -105,8 +105,8 @@ func TestIntegrationSystemAccess(t *testing.T) {
 				t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", tenantID))
 
 				name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
-				appTemplateName := createAppTemplateName(name)
-				appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+				appTemplateName := fixtures.CreateAppTemplateName(name)
+				appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 				at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantID, appTmplInput)
 				defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, at)
 				if test.expectErr {
