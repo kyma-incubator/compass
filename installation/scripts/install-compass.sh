@@ -66,6 +66,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 RELEASE_NS=compass-system
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+kubectl label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
 
 if [[ ${SQL_HELM_BACKEND} ]]; then
     echo -e "${GREEN}Helm SQL storage backend will be used${NC}"
@@ -93,8 +94,6 @@ echo "Compass installation finished successfully"
 
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
-
-kubectl label --overwrite ns compass-system pod-security.kubernetes.io/enforce=baseline
 
 if [[ ${SQL_HELM_BACKEND} ]]; then
     pkill kubectl
