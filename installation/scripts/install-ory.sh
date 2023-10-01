@@ -95,6 +95,7 @@ SECRET_NAME=ory-hydra-credentials
 # As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+kubectl label --overwrite ns ory pod-security.kubernetes.io/enforce=baseline
 
 LOCAL_PERSISTENCE=$(yq ".global.ory.hydra.persistence.postgresql.enabled" ${OVERRIDE_TEMP_ORY})
 
@@ -136,8 +137,6 @@ if [[ ! ${SKIP_JWKS_ROTATION} ]]; then
   done
   kubectl patch cronjob -n $RELEASE_NS $CRONJOB -p '{"spec":{"schedule": "0 0 1 * *"}}'
 fi
-
-kubectl label --overwrite ns ory pod-security.kubernetes.io/enforce=baseline
 
 RESULT=0
 PIDS=""
