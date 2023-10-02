@@ -165,7 +165,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			http.Error(writer, "Creating Operation for ORD data aggregation failed", http.StatusInternalServerError)
 			return
 		}
-		log.C(ctx).Infof("Successully created operation with ApplicationID %q and ApplicationTemplateID %q", payload.ApplicationID, payload.ApplicationTemplateID)
+		log.C(ctx).Infof("Successfully created operation with ApplicationID %q and ApplicationTemplateID %q", payload.ApplicationID, payload.ApplicationTemplateID)
 
 		// Notify OperationProcessors for new operation
 		h.onDemandChannel <- opID
