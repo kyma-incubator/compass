@@ -3,9 +3,10 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
@@ -65,6 +66,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		return
 	}
 
+	log.C(ctx).Infof("Rescheduling ord data aggregation for application with id %q and application template with id %q", payload.ApplicationID, payload.ApplicationTemplateID)
 	operation, err := h.opMgr.FindOperationByData(ctx, NewOrdOperationData(payload.ApplicationID, payload.ApplicationTemplateID))
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
@@ -73,6 +75,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			return
 		}
 
+		log.C(ctx).Infof("Operation with ApplicationID %q and ApplicationTemplateID %q does not exist. Trying to create...", payload.ApplicationID, payload.ApplicationTemplateID)
 		// Check if the provided application template has static Open Resource Discovery webhook
 		if payload.ApplicationID == "" && payload.ApplicationTemplateID != "" {
 			staticORDWebhook, err := h.getWebhookByObjectIDAndType(ctx, payload.ApplicationTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeOpenResourceDiscoveryStatic)
@@ -162,6 +165,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 			http.Error(writer, "Creating Operation for ORD data aggregation failed", http.StatusInternalServerError)
 			return
 		}
+		log.C(ctx).Infof("Successfully created operation with ApplicationID %q and ApplicationTemplateID %q", payload.ApplicationID, payload.ApplicationTemplateID)
 
 		// Notify OperationProcessors for new operation
 		h.onDemandChannel <- opID
