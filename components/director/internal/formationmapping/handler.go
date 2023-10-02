@@ -169,7 +169,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
-		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, model.InitialAssignmentState)
+		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, reqBody.State)
 		fa.State = string(reqBody.State)
 		if err = h.faService.Update(ctx, fa.ID, fa); err != nil {
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -553,10 +553,6 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 		return
 	}
-	if notificationReq == nil {
-		log.C(ctx).Info("No formation assignment notification is generated. Returning...")
-		return
-	}
 
 	reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
 	if err != nil {
@@ -568,6 +564,11 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA, model.AssignFormation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+		return
+	}
+
+	if notificationReq == nil && reverseNotificationReq == nil {
+		log.C(ctx).Info("No formation assignment notification is generated. Returning...")
 		return
 	}
 

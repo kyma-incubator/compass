@@ -2071,6 +2071,76 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp2, assignOperation, formation.ID, app2.ID, "", appRegion, "", tnt, tntParentCustomer)
 			require.NoError(t, err)
 		})
+		t.Run("App to App reset with one webhook", func(t *testing.T) {
+			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
+			syncWebhookMode := graphql.WebhookModeSync
+			urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/no-configuration/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+			outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate)
+
+			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
+			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
+
+			assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, tnt, 4)
+			formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, app1.ID, app2.ID)
+
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "READY", *fixtures.StatusAPIResetConfigJSON, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+			body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			notificationsForApp1Tenant := gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 := notificationsForApp1Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *fixtures.StatusAPIResetConfigJSON, tnt, tntParentCustomer)
+
+			assertNotificationsCountForTenant(t, body, app2.ID, 0)
+
+			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
+			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", *fixtures.StatusAPIResetConfigJSON, tnt, formation.ID, formationAssignmentID, http.StatusOK)
+
+			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+				app1.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+				},
+				app2.ID: {
+					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				},
+			}
+			assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments, 2)
+			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+
+			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			assertNotificationsCountForTenant(t, body, app1.ID, 1)
+			notificationsForApp1Tenant = gjson.GetBytes(body, app1.ID)
+			assignNotificationForApp1 = notificationsForApp1Tenant.Array()[0]
+			err = verifyFormationNotificationForApplicationWithItemsStructure(assignNotificationForApp1, assignOperation, formation.ID, app1.ID, "", appRegion, *fixtures.StatusAPIResetConfigJSON, tnt, tntParentCustomer)
+
+			assertNotificationsCountForTenant(t, body, app2.ID, 0)
+
+		})
 
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
