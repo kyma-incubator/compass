@@ -28,7 +28,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	t.Log("Creating application template")
-	appTemplateName := createAppTemplateName("app-template-test")
+	appTemplateName := fixtures.CreateAppTemplateName("app-template-test")
 	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
@@ -37,7 +37,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
-	runtimeRegInput := fixRuntimeInput(runtimeName)
+	runtimeRegInput := fixtures.FixRuntimeRegisterInputWithoutLabels(runtimeName)
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
@@ -13,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestOperationMaintainer_Maintain(t *testing.T) {

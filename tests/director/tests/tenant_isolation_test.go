@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -91,7 +93,7 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	accountTenant := tenant.TestTenants.GetDefaultTenantID()
 
 	// Register runtime in customer's tenant
-	input := fixRuntimeInput("customerRuntime")
+	input := fixtures.FixRuntimeRegisterInputWithoutLabels("customerRuntime")
 
 	var customerRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, &customerRuntime)
@@ -107,7 +109,7 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	require.Len(t, accountRuntimes.Data, 0)
 
 	// Register runtime in account's tenant
-	accountRuntimeInput := fixRuntimeInput("accountRuntime")
+	accountRuntimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("accountRuntime")
 	var accountRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntime)
 	accountRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
@@ -122,12 +124,12 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	assertions.AssertRuntimePageContainOnlyIDs(t, customerRuntimes, customerRuntime.ID, accountRuntime.ID)
 
 	// Assert customer can update his own runtime
-	customerRuntimeUpdateInput := fixRuntimeUpdateInput("customerRuntimeUpdated")
+	customerRuntimeUpdateInput := fixtures.FixRuntimeUpdateInputWithoutLabels("customerRuntimeUpdated")
 	customerRuntime, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's runtime
-	accountRuntimeUpdateInput := fixRuntimeUpdateInput("accountRuntimeUpdated")
+	accountRuntimeUpdateInput := fixtures.FixRuntimeUpdateInputWithoutLabels("accountRuntimeUpdated")
 	accountRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID, accountRuntimeUpdateInput)
 	require.NoError(t, err)
 
@@ -187,7 +189,7 @@ func TestTenantAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	addTenantAccessRequest := fixtures.FixAddTenantAccessRequest(tenantAccessInputString)
-	saveExample(t, addTenantAccessRequest.Query(), "add tenant access")
+	example.SaveExample(t, addTenantAccessRequest.Query(), "add tenant access")
 
 	tenantAccess := &graphql.TenantAccess{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addTenantAccessRequest, tenantAccess)
@@ -198,7 +200,7 @@ func TestTenantAccess(t *testing.T) {
 	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
 
 	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(customTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
-	saveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
+	example.SaveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
 
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, removeTenantAccessRequest, tenantAccess)
 	require.NoError(t, err)

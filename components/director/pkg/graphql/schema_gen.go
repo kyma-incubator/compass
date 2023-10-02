@@ -629,6 +629,7 @@ type ComplexityRoot struct {
 		IntegrationSystems                         func(childComplexity int, first *int, after *PageCursor) int
 		LabelDefinition                            func(childComplexity int, key string) int
 		LabelDefinitions                           func(childComplexity int) int
+		RootTenant                                 func(childComplexity int, externalTenant string) int
 		Runtime                                    func(childComplexity int, id string) int
 		RuntimeByTokenIssuer                       func(childComplexity int, issuer string) int
 		Runtimes                                   func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
@@ -935,6 +936,7 @@ type QueryResolver interface {
 	TenantByExternalID(ctx context.Context, id string) (*Tenant, error)
 	TenantByInternalID(ctx context.Context, id string) (*Tenant, error)
 	TenantByLowestOwnerForResource(ctx context.Context, id string, resource string) (string, error)
+	RootTenant(ctx context.Context, externalTenant string) (string, error)
 	AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignments(ctx context.Context, first *int, after *PageCursor) (*AutomaticScenarioAssignmentPage, error)
@@ -4449,6 +4451,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.LabelDefinitions(childComplexity), true
 
+	case "Query.rootTenant":
+		if e.complexity.Query.RootTenant == nil {
+			break
+		}
+
+		args, err := ec.field_Query_rootTenant_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RootTenant(childComplexity, args["externalTenant"].(string)), true
+
 	case "Query.runtime":
 		if e.complexity.Query.Runtime == nil {
 			break
@@ -6803,6 +6817,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
+	rootTenant(externalTenant: String!): String! @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -10427,6 +10442,20 @@ func (ec *executionContext) field_Query_labelDefinition_args(ctx context.Context
 		}
 	}
 	args["key"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_rootTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["externalTenant"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["externalTenant"] = arg0
 	return args, nil
 }
 
@@ -27666,6 +27695,71 @@ func (ec *executionContext) _Query_tenantByLowestOwnerForResource(ctx context.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_rootTenant_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().RootTenant(rctx, args["externalTenant"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.rootTenant")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -37796,6 +37890,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_tenantByLowestOwnerForResource(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "rootTenant":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rootTenant(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

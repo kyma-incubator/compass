@@ -55,7 +55,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 	}
 }
 
-// ListAll missing godoc
+// ListAllByType lists all operations with given type
 func (r *pgRepository) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
 	var entities EntityCollection
 

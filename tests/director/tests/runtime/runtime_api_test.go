@@ -1,9 +1,11 @@
-package tests
+package runtime
 
 import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
@@ -23,10 +25,9 @@ import (
 )
 
 const (
-	ScenariosLabel          = "scenarios"
-	IsNormalizedLabel       = "isNormalized"
-	QueryRuntimesCategory   = "query runtimes"
-	RegisterRuntimeCategory = "register runtime"
+	ScenariosLabel    = "scenarios"
+	IsNormalizedLabel = "isNormalized"
+	testScenario      = "test-scenario"
 )
 
 func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
@@ -35,7 +36,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	givenInput := fixRuntimeInput("runtime-create-update-delete")
+	givenInput := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-create-update-delete")
 	givenInput.Description = ptr.String("runtime-1-description")
 	givenInput.Labels["ggg"] = []interface{}{"hhh"}
 
@@ -45,7 +46,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	saveExampleInCustomDir(t, registerReq.Query(), RegisterRuntimeCategory, "register runtime")
+	example.SaveExampleInCustomDir(t, registerReq.Query(), example.RegisterRuntimeCategory, "register runtime")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
 
@@ -102,7 +103,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	runtimeUpdateInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(givenUpdateInput)
 	require.NoError(t, err)
 	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(actualRuntime.ID, runtimeUpdateInGQL)
-	saveExample(t, updateRuntimeReq.Query(), "update runtime")
+	example.SaveExample(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	actualRuntime = graphql.RuntimeExt{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRuntimeReq, &actualRuntime)
@@ -118,7 +119,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// WHEN
 	delReq := fixtures.FixUnregisterRuntimeRequest(actualRuntime.ID)
-	saveExample(t, delReq.Query(), "unregister runtime")
+	example.SaveExample(t, delReq.Query(), "unregister runtime")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, nil)
 
 	//THEN
@@ -130,7 +131,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 	ctx := context.Background()
 	url := "http://mywordpress.com/webhooks1"
 
-	in := fixRuntimeInput("runtime-with-webhooks")
+	in := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-with-webhooks")
 	in.Description = ptr.String("runtime-1-description")
 	in.Webhooks = []*graphql.WebhookInput{
 		{
@@ -146,7 +147,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 
 	// WHEN
 	request := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
-	saveExampleInCustomDir(t, request.Query(), RegisterRuntimeCategory, "register Runtime with webhooks")
+	example.SaveExampleInCustomDir(t, request.Query(), example.RegisterRuntimeCategory, "register Runtime with webhooks")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualRuntime)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
 
@@ -159,7 +160,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 func TestModifyRuntimeWebhooks(t *testing.T) {
 	ctx := context.Background()
 	placeholder := "runtime"
-	in := fixRuntimeInput(placeholder)
+	in := fixtures.FixRuntimeRegisterInputWithoutLabels(placeholder)
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(in)
 	require.NoError(t, err)
@@ -181,7 +182,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	require.NoError(t, err)
 	addReq := fixtures.FixAddWebhookToRuntimeRequest(actualRuntime.ID, webhookInStr)
-	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add runtime webhook")
+	example.SaveExampleInCustomDir(t, addReq.Query(), example.AddWebhookCategory, "add runtime webhook")
 
 	actualWebhook := graphql.Webhook{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
@@ -203,7 +204,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	require.NoError(t, err)
 	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-	saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
+	example.SaveExampleInCustomDir(t, updateReq.Query(), example.UpdateWebhookCategory, "update webhook")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
@@ -213,7 +214,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	//GIVEN
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-	saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
+	example.SaveExampleInCustomDir(t, deleteReq.Query(), example.DeleteWebhookCategory, "delete webhook")
 
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
@@ -230,7 +231,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
-	givenInput := fixRuntimeInput("runtime-with-scenario-assignments")
+	givenInput := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-with-scenario-assignments")
 	givenInput.Description = ptr.String("runtime-1-description")
 	givenInput.Labels[conf.GlobalSubaccountIDLabelKey] = []interface{}{subaccount}
 
@@ -301,7 +302,7 @@ func TestQueryRuntimes(t *testing.T) {
 	}
 
 	for _, rtm := range inputRuntimes {
-		givenInput := fixRuntimeInput(rtm.Name)
+		givenInput := fixtures.FixRuntimeRegisterInputWithoutLabels(rtm.Name)
 		givenInput.Description = rtm.Description
 
 		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
@@ -324,7 +325,7 @@ func TestQueryRuntimes(t *testing.T) {
 	// WHEN
 	queryReq := fixtures.FixGetRuntimesRequestWithPagination()
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &actualPage)
-	saveExampleInCustomDir(t, queryReq.Query(), QueryRuntimesCategory, "query runtimes")
+	example.SaveExampleInCustomDir(t, queryReq.Query(), example.QueryRuntimesCategory, "query runtimes")
 
 	//THEN
 	require.NoError(t, err)
@@ -351,7 +352,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	givenInput := fixRuntimeInput("runtime-specific-runtime")
+	givenInput := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-specific-runtime")
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 	require.NoError(t, err)
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
@@ -366,7 +367,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	queriedRuntime := graphql.Runtime{}
 	queryReq := fixtures.FixGetRuntimeRequest(createdRuntime.ID)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &queriedRuntime)
-	saveExample(t, queryReq.Query(), "query runtime")
+	example.SaveExample(t, queryReq.Query(), "query runtime")
 
 	//THEN
 	require.NoError(t, err)
@@ -384,7 +385,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	runtimes := make(map[string]*graphql.Runtime)
 	runtimesAmount := 10
 	for i := 0; i < runtimesAmount; i++ {
-		runtimeInput := fixRuntimeInput(fmt.Sprintf("runtime-%d", i))
+		runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels(fmt.Sprintf("runtime-%d", i))
 		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
 		require.NoError(t, err)
 
@@ -428,7 +429,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	lastRuntimePage := graphql.RuntimePage{}
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)
-	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with pagination")
+	example.SaveExampleInCustomDir(t, runtimesRequest.Query(), example.QueryRuntimesCategory, "query runtimes with pagination")
 
 	//THEN
 	assert.False(t, lastRuntimePage.PageInfo.HasNextPage)
@@ -449,7 +450,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	name := "test-create-runtime-without-labels"
-	runtimeInput := fixRuntimeInput(name)
+	runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels(name)
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -489,7 +490,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	name := "test-create-runtime-without-labels"
-	runtimeInput := fixRuntimeInput(name)
+	runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels(name)
 	runtimeInput.Labels[IsNormalizedLabel] = "false"
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
@@ -636,7 +637,7 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 		}
 
 		for _, rtm := range inputRuntimes {
-			givenInput := fixRuntimeInput(rtm.Name)
+			givenInput := fixtures.FixRuntimeRegisterInputWithoutLabels(rtm.Name)
 			givenInput.Description = rtm.Description
 			runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 			require.NoError(t, err)
@@ -688,7 +689,7 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		runtimeInput := fixRuntimeInput("runtime-specific-runtime")
+		runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-specific-runtime")
 		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
 		require.NoError(t, err)
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
@@ -718,7 +719,7 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 	runtimeNameCert := "runtime-with-cert-creds"
 
 	t.Run(fmt.Sprintf("Validate %q, %q labels and application namespace - they are added when runtime is registered with integration system credentials", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey), func(t *testing.T) {
-		runtimeInput := fixRuntimeInput(runtimeName)
+		runtimeInput := fixtures.FixRuntimeRegisterInputWithoutLabels(runtimeName)
 		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount) // randomly selected subaccount the parent of which is the default tenant used below
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
 		intSysName := "runtime-integration-system"
@@ -769,7 +770,7 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		rtInput := fixRuntimeInput(runtimeNameCert)
+		rtInput := fixtures.FixRuntimeRegisterInputWithoutLabels(runtimeNameCert)
 		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(rtInput)
 		require.NoError(t, err)
 		actualRuntime := graphql.RuntimeExt{}
@@ -917,13 +918,6 @@ func TestRuntimeTypeImmutability(t *testing.T) {
 	// check immutable labels are not added during update operation
 	require.NotContains(t, updatedRuntime.Labels, conf.RuntimeTypeLabelKey)
 	require.NotContains(t, updatedRuntime.Labels, conf.SaaSAppNameLabelKey)
-}
-
-func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
-	input := fixtures.FixRuntimeRegisterInput(name)
-	delete(input.Labels, "placeholder")
-
-	return input
 }
 
 func fixRuntimeWithSelfRegLabelsInput(name string) graphql.RuntimeRegisterInput {

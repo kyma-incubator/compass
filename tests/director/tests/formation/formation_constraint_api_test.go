@@ -1,8 +1,10 @@
-package tests
+package formation
 
 import (
 	"context"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/tests/example"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -35,7 +37,7 @@ func TestCreateFormationConstraint(t *testing.T) {
 	formationConstraintInputGQLString, err := testctx.Tc.Graphqlizer.FormationConstraintInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := fixtures.FixCreateFormationConstraintRequest(formationConstraintInputGQLString)
-	saveExample(t, createRequest.Query(), "create formation constraint")
+	example.SaveExample(t, createRequest.Query(), "create formation constraint")
 
 	formationConstraint := graphql.FormationConstraint{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &formationConstraint))
@@ -79,7 +81,7 @@ func TestDeleteFormationConstraint(t *testing.T) {
 	// WHEN
 	t.Logf("Delete formation constraint with name: %s", in.Name)
 	deleteRequest := fixtures.FixDeleteFormationConstraintRequest(constraint.ID)
-	saveExample(t, deleteRequest.Query(), "delete formation constraint")
+	example.SaveExample(t, deleteRequest.Query(), "delete formation constraint")
 
 	formationConstraint := graphql.FormationConstraint{}
 	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteRequest, &formationConstraint)
@@ -108,7 +110,7 @@ func TestFormationConstraint(t *testing.T) {
 	require.NotEmpty(t, constraint.ID)
 
 	queryRequest := fixtures.FixQueryFormationConstraintRequest(constraint.ID)
-	saveExample(t, queryRequest.Query(), "query formation constraint")
+	example.SaveExample(t, queryRequest.Query(), "query formation constraint")
 
 	var actualFormationConstraint *graphql.FormationConstraint
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraint))
@@ -159,7 +161,7 @@ func TestUpdateFormationConstraint(t *testing.T) {
 	require.NoError(t, err)
 
 	updateRequest := fixtures.FixUpdateFormationConstraintRequest(constraint.ID, formationConstraintGQL)
-	saveExample(t, updateRequest.Query(), "update formation constraint")
+	example.SaveExample(t, updateRequest.Query(), "update formation constraint")
 
 	var actualFormationConstraint *graphql.FormationConstraint
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRequest, &actualFormationConstraint))
@@ -218,7 +220,7 @@ func TestListFormationConstraints(t *testing.T) {
 	require.NotEmpty(t, constraintSecond.ID)
 
 	queryRequest := fixtures.FixQueryFormationConstraintsRequest()
-	saveExample(t, queryRequest.Query(), "list formation constraints")
+	example.SaveExample(t, queryRequest.Query(), "list formation constraints")
 
 	var actualFormationConstraints []*graphql.FormationConstraint
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
@@ -307,7 +309,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", formationTemplate.Name, formationTemplate.ID)
 	ftOutput := graphql.FormationTemplateExt{}
 	queryReq := fixtures.FixQueryFormationTemplateWithConstraintsRequest(formationTemplate.ID)
-	saveExample(t, queryReq.Query(), "query formation template with constraints")
+	example.SaveExample(t, queryReq.Query(), "query formation template with constraints")
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryReq, &ftOutput))
 	require.NotEmpty(t, ftOutput.ID)
 	require.ElementsMatch(t, ftOutput.FormationConstraints, globalFormationConstraints) // only global constraints and no attached ones
@@ -385,7 +387,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	require.ElementsMatch(t, secondFormationTemplateOutput.FormationConstraints, append(globalFormationConstraints, *constraintForOtherTemplate))
 
 	queryRequest = fixtures.FixQueryFormationConstraintsForFormationTemplateRequest(formationTemplate.ID)
-	saveExample(t, queryRequest.Query(), "list formation constraints for formation template")
+	example.SaveExample(t, queryRequest.Query(), "list formation constraints for formation template")
 
 	var actualFormationConstraints []*graphql.FormationConstraint
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
@@ -443,14 +445,4 @@ func assertConstraints(t *testing.T, expected, actual []*graphql.FormationConstr
 	for _, constraint := range expected {
 		assertConstraint(t, constraint, constraintToName[constraint.Name])
 	}
-}
-
-func findConstraintByName(t *testing.T, name string, actualFormationConstraints []*graphql.FormationConstraint) *graphql.FormationConstraint {
-	for _, constraint := range actualFormationConstraints {
-		if constraint.Name == name {
-			return constraint
-		}
-	}
-	require.Failf(t, "Could not find constraint with name %q", name)
-	return nil
 }

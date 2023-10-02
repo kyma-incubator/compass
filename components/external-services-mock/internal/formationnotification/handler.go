@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,6 +47,7 @@ const (
 var (
 	TenantIDParam      = "tenantId"
 	ApplicationIDParam = "applicationId"
+	ExtraDelayParam    = "delay"
 	formationIDParam   = "uclFormationId"
 	respErrorMsg       = "An unexpected error occurred while processing the request"
 )
@@ -642,6 +644,15 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
+	if delayStr, ok := routeVars[ExtraDelayParam]; ok {
+		delay, err := strconv.Atoi(delayStr)
+		if err != nil {
+			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+			return
+		}
+		log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds", delay, delay)
+		time.Sleep(time.Duration(delay) * time.Second)
+	}
 	if _, ok := h.Mappings[id]; !ok {
 		h.Mappings[id] = make([]Response, 0, 1)
 	}
@@ -901,6 +912,22 @@ func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
 		operation = DeleteFormation
 	}
 	h.asyncFormationResponse(ctx, writer, r, operation, "", NoopFormationResponseFn)
+}
+
+func (h *Handler) KymaEmptyCredentials(writer http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPatch {
+		response := struct {
+			State         string `json:"state"`
+			Configuration string `json:"configuration"`
+		}{
+			State:         string(ReadyAssignmentState),
+			Configuration: "",
+		}
+
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+	} else if r.Method == http.MethodDelete {
+		writer.WriteHeader(http.StatusOK)
+	}
 }
 
 func (h *Handler) KymaBasicCredentials(writer http.ResponseWriter, r *http.Request) {
