@@ -189,8 +189,7 @@ func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) e
 		SchedulePeriod: om.cfg.RescheduleOperationsJobInterval,
 	}
 	om.isRescheduleOperationsJobStarted = true
-	om.cfg.ElectionConfig.LeaseLockName = "reschedule-ops-" + om.cfg.ElectionConfig.LeaseLockName
-	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
+	return cronjob.RunCronJob(ctx, om.cfg.RescheduleOpsElectionConfig, resyncJob)
 }
 
 // StartRescheduleHangedOperationsJob starts reschedule hanged operations job and blocks.
@@ -224,7 +223,7 @@ func (om *OperationsManager) StartRescheduleHangedOperationsJob(ctx context.Cont
 		SchedulePeriod: om.cfg.RescheduleHangedOperationsJobInterval,
 	}
 	om.isRescheduleHangedOperationsJobStarted = true
-	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
+	return cronjob.RunCronJob(ctx, om.cfg.RescheduleHangedOpsElectionConfig, resyncJob)
 }
 
 func (om *OperationsManager) rescheduleOperation(ctx context.Context, operationID string, priority OperationPriority) error {
