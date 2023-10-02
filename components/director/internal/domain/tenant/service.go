@@ -42,7 +42,7 @@ type TenantMappingRepository interface {
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
-	GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error)
+	GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
@@ -197,7 +197,7 @@ func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID s
 }
 
 // GetCustomerIDParentRecursivelyByExternalTenant gets the top parent external ID (customer_id) for a given external tenant
-func (s *service) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error) {
+func (s *service) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, externalTenant)
 }
 

@@ -59,14 +59,16 @@ func (_m *BusinessTenantMappingService) DeleteTenantAccessForResourceRecursively
 }
 
 // GetCustomerIDParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *BusinessTenantMappingService) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error) {
+func (_m *BusinessTenantMappingService) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, externalTenant)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+	var r0 *model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
 	}
 
 	var r1 error

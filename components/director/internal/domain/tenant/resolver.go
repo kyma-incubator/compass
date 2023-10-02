@@ -34,7 +34,7 @@ type BusinessTenantMappingService interface {
 	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
-	GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error)
+	GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -192,11 +192,11 @@ func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceS
 }
 
 // RootTenant fetches the top parent external ID for a given tenant
-func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (string, error) {
+func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*graphql.Tenant, error) {
 	log.C(ctx).Infof("Getting the top parent ID for a external tenant: %q", externalTenant)
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
@@ -204,14 +204,14 @@ func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (strin
 
 	result, err := r.srv.GetCustomerIDParentRecursivelyByExternalTenant(ctx, externalTenant)
 	if err != nil {
-		return "", errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
+		return nil, errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return result, nil
+	return r.conv.ToGraphQL(result), nil
 }
 
 // Labels transactionally retrieves all existing labels of the given tenant if it exists.
