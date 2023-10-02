@@ -4074,6 +4074,636 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	}
 }
 
+func TestDocument_ValidateCapability(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*ord.Document
+		ExpectedToBeValid bool
+		AfterTest         func()
+	}{
+		{
+			Name: "Missing `partOfPackage` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].OrdPackageID = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `partOfPackage` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].OrdPackageID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Name = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `description` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Description = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding max length for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `ordID` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].OrdID = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordID` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].OrdID = str.Ptr(invalidOrdID)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `type` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Type = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Type = invalidType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Field `type` value is not `custom` when field `customType` is provided for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CustomType = str.Ptr("test type")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customType` value when field `type` has value `custom` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Type = custom
+				doc.Capabilities[0].CustomType = str.Ptr(invalidCustomType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localTenantID` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localTenantID` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localTenantID` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].LocalTenantID = str.Ptr("")
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `shortDescription` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].ShortDescription = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `shortDescription` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `shortDescription` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].ShortDescription = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "New lines in `shortDescription` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].ShortDescription = str.Ptr(`newLine\n`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid value for `tags` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field in `links` for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage(invalidLinkDueToMissingTitle)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `url` field in `links` for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage(invalidLinkDueToMissingURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field in `links` for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage(invalidLinkDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length in `links` for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field in `links` for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it is invalid JSON for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `links` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `links` field when it is an empty JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Links = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing `releaseStatus` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].ReleaseStatus = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `releaseStatus` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].ReleaseStatus = str.Ptr("wrongValue")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `labels` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Labels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `labels` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Labels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `labels` field when it contains non string value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `labels` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `visibility` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Visibility = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `capabilityDefinitions` field for Capability when `visibility` is public or internal",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid missing `capabilityDefinitions` field for Capability when `visibility` is private",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions = nil
+				doc.Capabilities[0].Visibility = str.Ptr(ord.CapabilityVisibilityPrivate)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Missing field `type` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].Type = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `type` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].Type = invalidType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Field `type` value is not `custom` when field `customType` is provided for `resourceDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].CustomType = "test:test:v1"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customType` value when field `type` has value `custom`for `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].Type = custom
+				doc.Capabilities[0].CapabilityDefinitions[0].CustomType = invalidCustomType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `mediaType` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].MediaType = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].MediaType = invalidMediaType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `mediaType` when field `type` has value `sap.mdo:mdi-capability-definition:v1` for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].Type = "sap.mdo:mdi-capability-definition:v12"
+				doc.Capabilities[0].CapabilityDefinitions[0].MediaType = "application/xml"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `url` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].URL = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `url` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].URL = invalidURL
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `accessStrategies` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].AccessStrategy = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing field `type` for `accessStrategies` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].AccessStrategy[0].Type = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `type` for `accessStrategies` of `capabilityDefinitions` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].AccessStrategy[0].Type = invalidType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `documentationLabels` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `documentationLabels` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `documentationLabels` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `documentationLabels` field when it contains non string value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, // +++ TODO: validation tests for correlation IDs
+		{
+			Name: "Invalid value for `correlationIDs` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CorrelationIDs = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		},
+		//++
+		//////
+		{
+			Name: "Missing `version` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].VersionInput.Value = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `version` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].VersionInput.Value = invalidVersion
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's URL has changed for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].URL = "http://newurl.com/odata/$metadata"
+
+				newHash, err := ord.HashObject(doc.Capabilities[0])
+				require.NoError(t, err)
+
+				resourceHashes[capability1ORDID] = newHash
+
+				return []*ord.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's MediaType has changed for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].MediaType = model.SpecFormatTextYAML
+
+				newHash, err := ord.HashObject(doc.Capabilities[0])
+				require.NoError(t, err)
+
+				resourceHashes[capability1ORDID] = newHash
+
+				return []*ord.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		}, {
+			Name: "Not incremented `version` field when resource definition's CustomType has changed for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].Type = model.CapabilitySpecTypeCustom
+				doc.Capabilities[0].CapabilityDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+
+				newHash, err := ord.HashObject(doc.Capabilities[0])
+				require.NoError(t, err)
+
+				resourceHashes[capability1ORDID] = newHash
+
+				return []*ord.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+		}, {
+			Name: "Valid incremented `version` field when resource definition has changed for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].CapabilityDefinitions[0].Type = model.CapabilitySpecTypeCustom
+				doc.Capabilities[0].CapabilityDefinitions[0].CustomType = "sap:custom-definition-format:v1"
+				doc.Capabilities[0].VersionInput.Value = "2.1.4"
+
+				newHash, err := ord.HashObject(doc.Capabilities[0])
+				require.NoError(t, err)
+
+				resourceHashes[capability1ORDID] = newHash
+
+				return []*ord.Document{doc}
+			},
+			AfterTest: func() {
+				resourceHashes = fixResourceHashes()
+			},
+			ExpectedToBeValid: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := ord.Documents{test.DocumentProvider()[0]}
+			resourcesFromDB := ord.ResourcesFromDB{
+				APIs:         apisFromDB,
+				Events:       eventsFromDB,
+				Capabilities: capabilitiesFromDB,
+				Packages:     pkgsFromDB,
+				Bundles:      bndlsFromDB,
+			}
+
+			err := docs.Validate(baseURL, resourcesFromDB, resourceHashes, nil, credentialExchangeStrategyTenantMappings)
+
+			if test.AfterTest != nil {
+				test.AfterTest()
+			}
+
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+
+			fmt.Println(err)
+		})
+	}
+}
+
 func TestDocuments_ValidateEvent(t *testing.T) {
 	var tests = []struct {
 		Name              string

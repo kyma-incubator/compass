@@ -49,6 +49,8 @@ const (
 	APIOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// EventOrdIDRegex represents the valid structure of the ordID of the Event
 	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// CapabilityOrdIDRegex represents the valid structure of the ordID of the Capability
+	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 	// CorrelationIDsRegex represents the valid structure of the field
 	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
@@ -67,6 +69,8 @@ const (
 	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
 	// OrdNamespaceRegex represents the valid structure of a Ord Namespace
 	OrdNamespaceRegex = "^[a-z0-9]+(?:[.][a-z0-9]+)*$"
+	// CapabilityCustomTypeRegex represents the valid structure of a Capability custom type
+	CapabilityCustomTypeRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -83,8 +87,11 @@ const (
 )
 
 const (
-	custom string = "custom"
-	none   string = "none"
+	custom   string = "custom"
+	none     string = "none"
+	public   string = "public"
+	private  string = "private"
+	internal string = "internal"
 
 	// PolicyLevelSap is one of the available policy options
 	PolicyLevelSap string = "sap:core:v1"
@@ -120,11 +127,18 @@ const (
 	APIProtocolSAPSQLAPIV1 string = "sap-sql-api-v1"
 
 	// APIVisibilityPublic is one of the available api visibility options
-	APIVisibilityPublic string = "public"
+	APIVisibilityPublic = public
 	// APIVisibilityPrivate is one of the available api visibility options
-	APIVisibilityPrivate string = "private"
+	APIVisibilityPrivate = private
 	// APIVisibilityInternal is one of the available api visibility options
-	APIVisibilityInternal string = "internal"
+	APIVisibilityInternal = internal
+
+	// CapabilityVisibilityPublic is one of the available Capability visibility options
+	CapabilityVisibilityPublic = public
+	// CapabilityVisibilityPrivate is one of the available Capability visibility options
+	CapabilityVisibilityPrivate = private
+	// CapabilityVisibilityInternal is one of the available Capability visibility options
+	CapabilityVisibilityInternal = internal
 
 	// APIImplementationStandardDocumentAPI is one of the available api implementation standard options
 	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
@@ -153,6 +167,13 @@ const (
 	SapVendor = "sap:vendor:SAP:"
 	// PartnerVendor is a valid partner Vendor ordID
 	PartnerVendor = "partner:vendor:SAP:"
+
+	// CapabilityTypeCustom s
+	CapabilityTypeCustom string = custom
+	// CapabilityTypeMDICapabilityDefinitionV1 is the MDI Capability V1 Specification
+	CapabilityTypeMDICapabilityDefinitionV1 string = "sap.mdo:mdi-capability:v1"
+	// CapabilitySpecTypeMDICapabilityDefinitionV1 is the MDI Capability Definition V1 Specification
+	CapabilitySpecTypeMDICapabilityDefinitionV1 string = "sap.mdo:mdi-capability-definition:v1"
 )
 
 var (
@@ -524,6 +545,42 @@ func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, e
 		})))
 }
 
+func validateCapabilityInput(capability *model.CapabilityInput) error {
+	return validation.ValidateStruct(capability,
+		validation.Field(&capability.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+		validation.Field(&capability.Name, validation.Required),
+		validation.Field(&capability.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+		validation.Field(&capability.OrdID, validation.Required, validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
+		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityDefinitionV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
+		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
+		validation.Field(&capability.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&capability.ShortDescription, shortDescriptionRules...),
+		validation.Field(&capability.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&capability.Links, validation.By(validateORDLinks)),
+		validation.Field(&capability.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+		validation.Field(&capability.Labels, validation.By(validateORDLabels)),
+		validation.Field(&capability.Visibility, validation.Required, validation.In(CapabilityVisibilityPublic, CapabilityVisibilityInternal, CapabilityVisibilityPrivate)),
+		validation.Field(&capability.CapabilityDefinitions, validation.By(func(value interface{}) error {
+			return validateCapabilityDefinitions(value, *capability)
+		})),
+		validation.Field(&capability.DocumentationLabels, validation.By(validateDocumentationLabels)),
+		validation.Field(&capability.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&capability.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
+	)
+}
+
+// fields with validation errors will lead to persisting of the Capability resource
+func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInput, capabilitiesFromDB map[string]*model.Capability, capabilityHashes map[string]uint64) error {
+	return validation.ValidateStruct(capability,
+		validation.Field(&capability.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateCapabilityVersionInput(value, *capability, capabilitiesFromDB, capabilityHashes)
+		})))
+}
+
 func validateProductInput(product *model.ProductInput) error {
 	productOrdIDNamespace := strings.Split(product.OrdID, ":")[0]
 
@@ -806,6 +863,23 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	return nil
 }
 
+func validateCapabilityDefinitions(value interface{}, capability model.CapabilityInput) error {
+	if value == nil {
+		return nil
+	}
+
+	capabilityVisibility := str.PtrStrToStr(capability.Visibility)
+
+	capabilityDefinitions := capability.CapabilityDefinitions
+
+	isCapabilityDefinitionMandatory := capabilityVisibility != CapabilityVisibilityPrivate
+	if len(capabilityDefinitions) == 0 && isCapabilityDefinitionMandatory {
+		return errors.New("when capability resource visibility is public or internal, capability definitions must be provided")
+	}
+
+	return nil
+}
+
 func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgsFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	if value == nil {
 		return nil
@@ -893,6 +967,26 @@ func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitio
 	return checkHashEquality(apiFromDB.Version.Value, api.VersionInput.Value, hashDB, hashDoc)
 }
 
+func validateCapabilityVersionInput(value interface{}, capability model.CapabilityInput, capabilitiesFromDB map[string]*model.Capability, capabilityHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(capabilitiesFromDB) == 0 {
+		return nil
+	}
+
+	capabilityFromDB, ok := capabilitiesFromDB[str.PtrStrToStr(capability.OrdID)]
+	if !ok || isResourceHashMissing(capabilityFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(capabilityFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(capabilityHashes[str.PtrStrToStr(capability.OrdID)], 10)
+
+	return checkHashEquality(capabilityFromDB.Version.Value, capability.VersionInput.Value, hashDB, hashDoc)
+}
+
 func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
 	bytes, err := json.Marshal(api)
 	if err != nil {
@@ -919,6 +1013,20 @@ func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDef
 	}
 
 	return normalizedEventDefinition, nil
+}
+
+func normalizeCapability(capability *model.CapabilityInput) (model.CapabilityInput, error) {
+	bytes, err := json.Marshal(capability)
+	if err != nil {
+		return model.CapabilityInput{}, errors.Wrapf(err, "error while marshalling capability with ID %s", str.PtrStrToStr(capability.OrdID))
+	}
+
+	var normalizedCapability model.CapabilityInput
+	if err := json.Unmarshal(bytes, &normalizedCapability); err != nil {
+		return model.CapabilityInput{}, errors.Wrapf(err, "error while unmarshalling capability with ID %s", str.PtrStrToStr(capability.OrdID))
+	}
+
+	return normalizedCapability, nil
 }
 
 func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {

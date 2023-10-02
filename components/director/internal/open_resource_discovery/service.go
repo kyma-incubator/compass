@@ -94,6 +94,7 @@ type Service struct {
 	bundleReferenceSvc    BundleReferenceService
 	apiSvc                APIService
 	eventSvc              EventService
+	capabilitySvc         CapabilityService
 	specSvc               SpecService
 	fetchReqSvc           FetchRequestService
 	packageSvc            PackageService
@@ -115,7 +116,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, capabilitySvc CapabilityService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
@@ -126,6 +127,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		bundleReferenceSvc:    bundleReferenceSvc,
 		apiSvc:                apiSvc,
 		eventSvc:              eventSvc,
+		capabilitySvc:         capabilitySvc,
 		specSvc:               specSvc,
 		fetchReqSvc:           fetchReqSvc,
 		packageSvc:            packageSvc,
@@ -410,13 +412,18 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
+		capabilitiesFromDB, eventFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
+		if err != nil {
+			return err
+		}
+
 		tombstonesFromDB, err := s.processTombstones(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
 			return err
 		}
 
 		fetchRequests := append(apiFetchRequests, eventFetchRequests...)
-		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
+		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, capabilitiesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
 		}
@@ -517,8 +524,11 @@ func (s *Service) processFetchRequestResults(ctx context.Context, resourceType d
 
 func (s *Service) processFetchRequestResult(ctx context.Context, result *fetchRequestResult) error {
 	specReferenceType := model.APISpecReference
-	if result.fetchRequest.ObjectType == model.EventSpecFetchRequestReference {
+	switch result.fetchRequest.ObjectType {
+	case model.EventSpecFetchRequestReference:
 		specReferenceType = model.EventSpecReference
+	case model.CapabilitySpecFetchRequestReference:
+		specReferenceType = model.CapabilitySpecReference
 	}
 
 	if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
@@ -556,7 +566,7 @@ func (s *Service) processFetchRequestResultGlobal(ctx context.Context, result *f
 	return s.fetchReqSvc.UpdateGlobal(ctx, result.fetchRequest)
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType directorresource.Type, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, capabilitiesFromDB []*model.Capability, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -585,6 +595,13 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, resourceType di
 			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.eventSvc.Delete(ctx, resourceType, eventsFromDB[i].ID); err != nil {
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(capabilitiesFromDB), func(i int) bool {
+			return equalStrings(capabilitiesFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.capabilitySvc.Delete(ctx, resourceType, capabilitiesFromDB[i].ID); err != nil {
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
@@ -1204,6 +1221,78 @@ func (s *Service) resyncEventInTx(ctx context.Context, resourceType directorreso
 	return fetchRequests, tx.Commit()
 }
 
+func (s *Service) processCapabilities(ctx context.Context, resourceType directorresource.Type, resourceID string, packagesFromDB []*model.Package, capabilities []*model.CapabilityInput, resourceHashes map[string]uint64) ([]*model.Capability, []*ordFetchRequest, error) {
+	capabilitiesFromDB, err := s.listCapabilitiesInTx(ctx, resourceType, resourceID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fetchRequests := make([]*ordFetchRequest, 0)
+	for _, capability := range capabilities {
+		capabilityHash := resourceHashes[str.PtrStrToStr(capability.OrdID)]
+		capabilityFetchRequests, err := s.resyncCapabilitiesInTx(ctx, resourceType, resourceID, capabilitiesFromDB, packagesFromDB, capability, capabilityHash)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for i := range capabilityFetchRequests {
+			fetchRequests = append(fetchRequests, &ordFetchRequest{
+				FetchRequest:   capabilityFetchRequests[i],
+				refObjectOrdID: *capability.OrdID,
+			})
+		}
+	}
+
+	capabilitiesFromDB, err = s.listCapabilitiesInTx(ctx, resourceType, resourceID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return capabilitiesFromDB, fetchRequests, nil
+}
+
+func (s *Service) listCapabilitiesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Capability, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	var capabilitiesFromDB []*model.Capability
+
+	switch resourceType {
+	case directorresource.Application:
+		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
+	case directorresource.ApplicationTemplateVersion:
+		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing capabilities for %s with id %q", resourceType, resourceID)
+	}
+
+	return capabilitiesFromDB, nil
+}
+
+func (s *Service) resyncCapabilitiesInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, capabilitiesFromDB []*model.Capability, packagesFromDB []*model.Package, capability *model.CapabilityInput, capabilityHash uint64) ([]*model.FetchRequest, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	fetchRequests, err := s.resyncCapability(ctx, resourceType, resourceID, capabilitiesFromDB, packagesFromDB, *capability, capabilityHash)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while resyncing capability with ORD ID %q", *capability.OrdID)
+	}
+	return fetchRequests, tx.Commit()
+}
+
 func (s *Service) processTombstones(ctx context.Context, resourceType directorresource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
 	tombstonesFromDB, err := s.listTombstonesInTx(ctx, resourceType, resourceID)
 	if err != nil {
@@ -1466,6 +1555,58 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	return fetchRequests, nil
 }
 
+func (s *Service) resyncCapability(ctx context.Context, resourceType directorresource.Type, resourceID string, capabilitiesFromDB []*model.Capability, packagesFromDB []*model.Package, capability model.CapabilityInput, capabilityHash uint64) ([]*model.FetchRequest, error) {
+	ctx = addFieldToLogger(ctx, "capability_ord_id", *capability.OrdID)
+	i, isCapabilityFound := searchInSlice(len(capabilitiesFromDB), func(i int) bool {
+		return equalStrings(capabilitiesFromDB[i].OrdID, capability.OrdID)
+	})
+
+	var packageID *string
+	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+		return equalStrings(&packagesFromDB[i].OrdID, capability.OrdPackageID)
+	}); found {
+		packageID = &packagesFromDB[i].ID
+	}
+
+	specs := make([]*model.SpecInput, 0, len(capability.CapabilityDefinitions))
+	for _, resourceDef := range capability.CapabilityDefinitions {
+		specs = append(specs, resourceDef.ToSpec())
+	}
+
+	if !isCapabilityFound {
+		capabilityID, err := s.capabilitySvc.Create(ctx, resourceType, resourceID, packageID, capability, specs, capabilityHash)
+		if err != nil {
+			return nil, err
+		}
+
+		fetchRequests, err := s.createSpecs(ctx, model.CapabilitySpecReference, capabilityID, specs, resourceType)
+		if err != nil {
+			return nil, err
+		}
+
+		return fetchRequests, nil
+	}
+
+	err := s.capabilitySvc.Update(ctx, resourceType, capabilitiesFromDB[i].ID, capability, capabilityHash)
+	if err != nil {
+		return nil, err
+	}
+
+	var fetchRequests []*model.FetchRequest
+	if capability.VersionInput.Value != capabilitiesFromDB[i].Version.Value {
+		fetchRequests, err = s.resyncSpecs(ctx, model.CapabilitySpecReference, capabilitiesFromDB[i].ID, specs, resourceType)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fetchRequests, err = s.refetchFailedSpecs(ctx, resourceType, model.CapabilitySpecReference, capabilitiesFromDB[i].ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return fetchRequests, nil
+}
+
 func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
 	fetchRequests := make([]*model.FetchRequest, 0)
 	for _, spec := range specs {
@@ -1556,6 +1697,31 @@ func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorre
 	}
 
 	return apiDataFromDB, nil
+}
+
+func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Capability, error) {
+	var (
+		capabilitiesFromDB []*model.Capability
+		err                error
+	)
+
+	if resourceType == directorresource.ApplicationTemplateVersion {
+		//capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+	} else {
+		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	capabilitiesDataFromDB := make(map[string]*model.Capability, len(capabilitiesFromDB))
+
+	for _, capability := range capabilitiesFromDB {
+		capabilityOrdID := str.PtrStrToStr(capability.OrdID)
+		capabilitiesDataFromDB[capabilityOrdID] = capability
+	}
+
+	return capabilitiesDataFromDB, nil
 }
 
 func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
@@ -1666,6 +1832,7 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 	eventDataFromDB := make(map[string]*model.EventDefinition)
 	packageDataFromDB := make(map[string]*model.Package)
 	bundleDataFromDB := make(map[string]*model.Bundle)
+	capabilitiesDataFromDB := make(map[string]*model.Capability)
 
 	for resourceID, resourceType := range resourceIDs {
 		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
@@ -1688,6 +1855,11 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for %s with id %s", resourceType, resourceID)
 		}
 
+		capabilityData, err := s.fetchCapabilitiesFromDB(ctx, resourceType, resourceID)
+		if err != nil {
+			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching capabilities for %s with id %s", resourceType, resourceID)
+		}
+
 		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
 			return ResourcesFromDB{}, err
 		}
@@ -1700,13 +1872,17 @@ func (s *Service) fetchResources(ctx context.Context, resource Resource, documen
 		if err = mergo.Merge(&bundleDataFromDB, bundleData); err != nil {
 			return ResourcesFromDB{}, err
 		}
+		if err = mergo.Merge(&capabilitiesDataFromDB, capabilityData); err != nil {
+			return ResourcesFromDB{}, err
+		}
 	}
 
 	return ResourcesFromDB{
-		APIs:     apiDataFromDB,
-		Events:   eventDataFromDB,
-		Packages: packageDataFromDB,
-		Bundles:  bundleDataFromDB,
+		APIs:         apiDataFromDB,
+		Events:       eventDataFromDB,
+		Packages:     packageDataFromDB,
+		Bundles:      bundleDataFromDB,
+		Capabilities: capabilitiesDataFromDB,
 	}, tx.Commit()
 }
 
@@ -2037,6 +2213,20 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 			}
 
 			resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash
+		}
+
+		for _, capabilityInput := range doc.Capabilities {
+			normalizedCapabilities, err := normalizeCapability(capabilityInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedCapabilities)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing capabiltiy with ORD ID: %s", str.PtrStrToStr(normalizedCapabilities.OrdID))
+			}
+
+			resourceHashes[str.PtrStrToStr(capabilityInput.OrdID)] = hash
 		}
 
 		for _, packageInput := range doc.Packages {

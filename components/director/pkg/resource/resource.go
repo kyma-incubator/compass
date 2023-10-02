@@ -52,12 +52,16 @@ const (
 	APISpecFetchRequest Type = "apiSpecFetchRequest"
 	// EventSpecFetchRequest type represents Event specification fetch request resource.
 	EventSpecFetchRequest Type = "eventSpecFetchRequest"
+	// CapabilitySpecFetchRequest type represents Capability specification fetch request resource.
+	CapabilitySpecFetchRequest Type = "capabilitySpecFetchRequest"
 	// Specification type represents generic specification resource. This resource does not assume the referenced resource type of the Spec.
 	Specification Type = "specification"
 	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
 	// EventSpecification type represents Event specification resource.
 	EventSpecification Type = "eventSpecification"
+	// CapabilitySpecification type represents Capability specification resource.
+	CapabilitySpecification Type = "capabilitySpecification"
 	// Document type represents document resource.
 	Document Type = "document"
 	// BundleInstanceAuth type represents bundle instance auth resource.
@@ -66,6 +70,8 @@ const (
 	API Type = "api"
 	// EventDefinition type represents event resource.
 	EventDefinition Type = "eventDefinition"
+	// Capability type represents capability resource.
+	Capability Type = "capability"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource

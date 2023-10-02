@@ -39,6 +39,7 @@ const (
 	api2ORDID              = "ns:apiResource:API_ID2:v1"
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
+	capability1ORDID       = "sap.foo.bar:capability:fieldExtensibility:v1"
 
 	whID             = "testWh"
 	tenantID         = "testTenant"
@@ -234,6 +235,10 @@ var (
 		event2ORDID: fixEventsWithHash()[1],
 	}
 
+	capabilitiesFromDB = map[string]*model.Capability{
+		capability1ORDID: fixCapabilitiesWithHash()[0],
+	}
+
 	pkgsFromDB = map[string]*model.Package{
 		packageORDID: fixPackagesWithHash()[0],
 	}
@@ -242,11 +247,12 @@ var (
 		bundleORDID: fixBundlesWithHash()[0],
 	}
 
-	hashAPI1, _    = ord.HashObject(fixORDDocument().APIResources[0])
-	hashAPI2, _    = ord.HashObject(fixORDDocument().APIResources[1])
-	hashEvent1, _  = ord.HashObject(fixORDDocument().EventResources[0])
-	hashEvent2, _  = ord.HashObject(fixORDDocument().EventResources[1])
-	hashPackage, _ = ord.HashObject(fixORDDocument().Packages[0])
+	hashAPI1, _       = ord.HashObject(fixORDDocument().APIResources[0])
+	hashAPI2, _       = ord.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _     = ord.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _     = ord.HashObject(fixORDDocument().EventResources[1])
+	hashCapability, _ = ord.HashObject(fixORDDocument().Capabilities[0])
+	hashPackage, _    = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
 
@@ -262,11 +268,12 @@ var (
 
 func fixResourceHashes() map[string]uint64 {
 	return map[string]uint64{
-		api1ORDID:    hashAPI1,
-		api2ORDID:    hashAPI2,
-		event1ORDID:  hashEvent1,
-		event2ORDID:  hashEvent2,
-		packageORDID: hashPackage,
+		api1ORDID:        hashAPI1,
+		api2ORDID:        hashAPI2,
+		event1ORDID:      hashEvent1,
+		event2ORDID:      hashEvent2,
+		capability1ORDID: hashCapability,
+		packageORDID:     hashPackage,
 	}
 }
 
@@ -657,6 +664,40 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				},
 			},
 		},
+		Capabilities: []*model.CapabilityInput{
+			{
+				OrdID:               str.Ptr(capability1ORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
+				OrdPackageID:        str.Ptr(packageORDID),
+				Name:                "Capability Title",
+				Description:         str.Ptr("CapabilityDescription"),
+				Type:                "sap.mdo:mdi-capability:v1",
+				CustomType:          nil,
+				ShortDescription:    str.Ptr("Capability short description"),
+				SystemInstanceAware: &boolPtr,
+				Tags:                json.RawMessage(`["capabilityTestTag"]`),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				ReleaseStatus:       str.Ptr("active"),
+				Labels:              json.RawMessage(labels),
+				Visibility:          str.Ptr("public"),
+				CapabilityDefinitions: []*model.CapabilityDefinition{
+					{
+						Type:      "sap.mdo:mdi-capability-definition:v1",
+						MediaType: "application/json",
+						URL:       "http://localhost:8080/Capability.json",
+						AccessStrategy: []accessstrategy.AccessStrategy{
+							{
+								Type: "open",
+							},
+						},
+					},
+				},
+				DocumentationLabels: json.RawMessage(documentLabels),
+				VersionInput: &model.VersionInput{
+					Value: "2.1.2",
+				},
+			},
+		},
 		Tombstones: []*model.TombstoneInput{
 			{
 				OrdID:       api2ORDID,
@@ -1025,6 +1066,19 @@ func fixEventsWithHash() []*model.EventDefinition {
 	return events
 }
 
+func fixCapabilitiesWithHash() []*model.Capability {
+	capabilities := fixCapabilities()
+
+	for idx, capability := range capabilities {
+		ordID := str.PtrStrToStr(capability.OrdID)
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[ordID], 10))
+		capability.ResourceHash = hash
+		capability.Version.Value = fixORDDocument().Capabilities[idx].VersionInput.Value
+	}
+
+	return capabilities
+}
+
 func fixPackagesWithHash() []*model.Package {
 	pkgs := fixPackages()
 
@@ -1221,6 +1275,36 @@ func fixEventsNoVersionBump() []*model.EventDefinition {
 		event.Version.Value = doc.EventResources[i].VersionInput.Value
 	}
 	return events
+}
+
+func fixCapabilities() []*model.Capability {
+	return []*model.Capability{
+		{
+			ApplicationID:       &appID,
+			PackageID:           str.Ptr(packageORDID),
+			Name:                "Capability Title",
+			Description:         str.Ptr("Capability Description"),
+			OrdID:               str.Ptr(capability1ORDID),
+			Type:                "sap.mdo:mdi-capability:v1",
+			CustomType:          nil,
+			LocalTenantID:       nil,
+			ShortDescription:    str.Ptr("Capability short description"),
+			SystemInstanceAware: nil,
+			Tags:                json.RawMessage(`["testTag","capabilityTestTag"]`),
+			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			ReleaseStatus:       str.Ptr("active"),
+			Labels:              json.RawMessage(mergedLabels),
+			Visibility:          str.Ptr("public"),
+			Version: &model.Version{
+				Value: "2.1.2",
+			},
+			DocumentationLabels: json.RawMessage(documentLabels),
+			BaseEntity: &model.BaseEntity{
+				ID:    capability1ORDID,
+				Ready: true,
+			},
+		},
+	}
 }
 
 func fixAPI1SpecInputs(url string) []*model.SpecInput {
