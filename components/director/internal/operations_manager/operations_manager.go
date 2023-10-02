@@ -28,6 +28,8 @@ type OperationsManager struct {
 
 // NewOperationsManager creates new OperationsManager
 func NewOperationsManager(transact persistence.Transactioner, opSvc OperationService, opType model.OperationType, cfg OperationsManagerConfig) *OperationsManager {
+	cfg.RescheduleOpsElectionConfig.LeaseLockName = "reschedule-ops-" + cfg.RescheduleOpsElectionConfig.LeaseLockName
+	cfg.RescheduleHangedOpsElectionConfig.LeaseLockName = "reschedule-hanged-ops" + cfg.RescheduleHangedOpsElectionConfig.LeaseLockName
 	return &OperationsManager{
 		transact: transact,
 		opSvc:    opSvc,
@@ -187,6 +189,7 @@ func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) e
 		SchedulePeriod: om.cfg.RescheduleOperationsJobInterval,
 	}
 	om.isRescheduleOperationsJobStarted = true
+	om.cfg.ElectionConfig.LeaseLockName = "reschedule-ops-" + om.cfg.ElectionConfig.LeaseLockName
 	return cronjob.RunCronJob(ctx, om.cfg.ElectionConfig, resyncJob)
 }
 
