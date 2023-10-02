@@ -55,6 +55,7 @@ type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
 }
 
+// ORDDocumentsClient defines ORD documents client
 type ORDDocumentsClient struct {
 	config ClientConfig
 	*http.Client
