@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"strconv"
 	"strings"
 	"sync"
@@ -98,7 +99,8 @@ type Service struct {
 	fetchReqSvc           FetchRequestService
 	packageSvc            PackageService
 	productSvc            ProductService
-	vendorSvc             VendorService
+	vendorProcessor       processors.VendorProcessor
+	vendorSvc             processors.VendorService
 	tombstoneSvc          TombstoneService
 	tenantSvc             TenantService
 	appTemplateVersionSvc ApplicationTemplateVersionService
@@ -115,7 +117,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc processors.VendorService, vendorProcessor processors.VendorProcessor, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
@@ -131,6 +133,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		packageSvc:            packageSvc,
 		productSvc:            productSvc,
 		vendorSvc:             vendorSvc,
+		vendorProcessor:       vendorProcessor,
 		tombstoneSvc:          tombstoneSvc,
 		tenantSvc:             tenantSvc,
 		globalRegistrySvc:     globalRegistrySvc,
@@ -363,7 +366,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			}
 		}
 
-		vendorsFromDB, err := s.processVendors(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
+		vendorsFromDB, err := s.vendorProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
 		if err != nil {
 			return err
 		}
@@ -656,61 +659,6 @@ func (s *Service) getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx
 	}
 
 	return systemVersion, tx.Commit()
-}
-
-func (s *Service) processVendors(ctx context.Context, resourceType directorresource.Type, resourceID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
-	vendorsFromDB, err := s.listVendorsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, vendor := range vendors {
-		if err := s.resyncVendorInTx(ctx, resourceType, resourceID, vendorsFromDB, vendor); err != nil {
-			return nil, err
-		}
-	}
-
-	vendorsFromDB, err = s.listVendorsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-	return vendorsFromDB, nil
-}
-
-func (s *Service) listVendorsInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Vendor, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var vendorsFromDB []*model.Vendor
-	switch resourceType {
-	case directorresource.Application:
-		vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		vendorsFromDB, err = s.vendorSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing vendors for %s with id %q", resourceType, resourceID)
-	}
-
-	return vendorsFromDB, tx.Commit()
-}
-
-func (s *Service) resyncVendorInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, vendorsFromDB []*model.Vendor, vendor *model.VendorInput) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := s.resyncVendor(ctx, resourceType, resourceID, vendorsFromDB, *vendor); err != nil {
-		return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
-	}
-	return tx.Commit()
 }
 
 func (s *Service) resyncApplicationTemplateVersionInTx(ctx context.Context, appTemplateID string, appTemplateVersionsFromDB []*model.ApplicationTemplateVersion, appTemplateVersion *model.ApplicationTemplateVersionInput) error {
@@ -1275,18 +1223,6 @@ func (s *Service) resyncProduct(ctx context.Context, resourceType directorresour
 	}
 
 	_, err := s.productSvc.Create(ctx, resourceType, resourceID, product)
-	return err
-}
-
-func (s *Service) resyncVendor(ctx context.Context, resourceType directorresource.Type, resourceID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error {
-	ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
-	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
-		return vendorsFromDB[i].OrdID == vendor.OrdID
-	}); found {
-		return s.vendorSvc.Update(ctx, resourceType, vendorsFromDB[i].ID, vendor)
-	}
-
-	_, err := s.vendorSvc.Create(ctx, resourceType, resourceID, vendor)
 	return err
 }
 

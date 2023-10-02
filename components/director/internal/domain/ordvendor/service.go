@@ -2,6 +2,7 @@ package ordvendor
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -45,6 +46,17 @@ func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 	return &service{
 		vendorRepo: vendorRepo,
 		uidService: uidService,
+	}
+}
+
+// NewDefaultService creates a new instance of Vendor Service with default vendor repo and uid service.
+func NewDefaultService() *service {
+	vendorConverter := NewConverter()
+	vendorRepo := NewRepository(vendorConverter)
+	uidSvc := uid.NewService()
+	return &service{
+		vendorRepo: vendorRepo,
+		uidService: uidSvc,
 	}
 }
 

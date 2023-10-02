@@ -132,17 +132,6 @@ type GlobalProductService interface {
 	ListGlobal(ctx context.Context) ([]*model.Product, error)
 }
 
-// VendorService is responsible for the service-layer Vendor operations.
-//
-//go:generate mockery --name=VendorService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type VendorService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.VendorInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.VendorInput) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Vendor, error)
-}
-
 // GlobalVendorService is responsible for the service-layer operations for Global Vendors (with NULL app_id) without tenant isolation.
 //
 //go:generate mockery --name=GlobalVendorService --output=automock --outpkg=automock --case=underscore --disable-version-string
