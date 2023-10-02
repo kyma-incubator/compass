@@ -282,32 +282,32 @@ func TestService_Processing(t *testing.T) {
 		return vendorSvc
 	}
 
-	successfulProductUpdateForApplication := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
+	successfulProductUpdateForApplication := func() *automockproc.ProductService {
+		productSvc := &automockproc.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, productID, *sanitizedDoc.Products[0]).Return(nil).Once()
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
 
-	successfulProductUpdateForStaticDoc := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
+	successfulProductUpdateForStaticDoc := func() *automockproc.ProductService {
+		productSvc := &automockproc.ProductService{}
 		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
 		productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, productID, *sanitizedStaticDoc.Products[0]).Return(nil).Once()
 		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
 
-	successfulProductCreate := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
+	successfulProductCreate := func() *automockproc.ProductService {
+		productSvc := &automockproc.ProductService{}
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", nil).Once()
 		productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 		return productSvc
 	}
 
-	successfulProductCreateForStaticDoc := func() *automock.ProductService {
-		productSvc := &automock.ProductService{}
+	successfulProductCreateForStaticDoc := func() *automockproc.ProductService {
+		productSvc := &automockproc.ProductService{}
 		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil).Once()
 		productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, appTemplateVersionID, *sanitizedStaticDoc.Products[0]).Return("", nil).Once()
 		productSvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(fixProducts(), nil).Once()
@@ -925,7 +925,7 @@ func TestService_Processing(t *testing.T) {
 		specSvcFn               func() *automock.SpecService
 		fetchReqFn              func() *automock.FetchRequestService
 		packageSvcFn            func() *automock.PackageService
-		productSvcFn            func() *automock.ProductService
+		productSvcFn            func() *automockproc.ProductService
 		vendorSvcFn             func() *automockproc.VendorService
 		tombstoneSvcFn          func() *automock.TombstoneService
 		tenantSvcFn             func() *automock.TenantService
@@ -2031,8 +2031,8 @@ func TestService_Processing(t *testing.T) {
 			specSvcFn:     successfulSpecCreateAndUpdate,
 			fetchReqFn:    successfulFetchRequestFetchAndUpdate,
 			packageSvcFn:  successfulPackageCreate,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
 				return productSvc
 			},
@@ -2083,8 +2083,8 @@ func TestService_Processing(t *testing.T) {
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				return packagesSvc
 			},
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				return productSvc
 			},
 			vendorSvcFn: func() *automockproc.VendorService {
@@ -2254,8 +2254,8 @@ func TestService_Processing(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return productSvc
 			},
@@ -2286,8 +2286,8 @@ func TestService_Processing(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 				productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, productID, *sanitizedDoc.Products[0]).Return(nil).Once()
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -2321,8 +2321,8 @@ func TestService_Processing(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
 				productSvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, productID, *sanitizedDoc.Products[0]).Return(testErr).Once()
 				return productSvc
@@ -2354,8 +2354,8 @@ func TestService_Processing(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdateForApplication,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", testErr).Once()
 				return productSvc
@@ -4451,8 +4451,8 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreate,
 			packageSvcFn: successfulPackageCreate,
-			productSvcFn: func() *automock.ProductService {
-				productSvc := &automock.ProductService{}
+			productSvcFn: func() *automockproc.ProductService {
+				productSvc := &automockproc.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				productSvc.On("Create", txtest.CtxWithDBMatcher(), resource.Application, appID, *sanitizedDoc.Products[0]).Return("", nil).Once()
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
@@ -4900,10 +4900,11 @@ func TestService_Processing(t *testing.T) {
 			if test.packageSvcFn != nil {
 				packageSvc = test.packageSvcFn()
 			}
-			productSvc := &automock.ProductService{}
+			productSvc := &automockproc.ProductService{}
 			if test.productSvcFn != nil {
 				productSvc = test.productSvcFn()
 			}
+			productProcessor := processors.NewProductProcessor(tx, productSvc)
 			vendorSvc := &automockproc.VendorService{}
 			if test.vendorSvcFn != nil {
 				vendorSvc = test.vendorSvcFn()
@@ -4949,7 +4950,7 @@ func TestService_Processing(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings, nil)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, *productProcessor, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMappings, nil)
 
 			var err error
 			switch test.processFnName {
@@ -5160,7 +5161,8 @@ func TestService_ProcessApplication(t *testing.T) {
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
 			packageSvc := &automock.PackageService{}
-			productSvc := &automock.ProductService{}
+			productSvc := &automockproc.ProductService{}
+			productProcessor := processors.NewProductProcessor(tx, productSvc)
 			vendorSvc := &automockproc.VendorService{}
 			vendorProcessor := processors.NewVendorProcessor(tx, vendorSvc)
 			tombstoneSvc := &automock.TombstoneService{}
@@ -5170,7 +5172,7 @@ func TestService_ProcessApplication(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, *productProcessor, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
 			err := svc.ProcessApplication(context.TODO(), test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -5280,7 +5282,8 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
 			packageSvc := &automock.PackageService{}
-			productSvc := &automock.ProductService{}
+			productSvc := &automockproc.ProductService{}
+			productProcessor := processors.NewProductProcessor(tx, productSvc)
 			vendorSvc := &automockproc.VendorService{}
 			vendorProcessor := processors.NewVendorProcessor(tx, vendorSvc)
 			tombstoneSvc := &automock.TombstoneService{}
@@ -5324,7 +5327,7 @@ func TestService_ProcessApplicationTemplate(t *testing.T) {
 			metricsCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
+			svc := ord.NewAggregatorService(ordCfg, metricsCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, *productProcessor, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
 			err := svc.ProcessApplicationTemplate(context.TODO(), test.appTemplateID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -5555,7 +5558,8 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 			specSvc := &automock.SpecService{}
 			fetchReqSvc := &automock.FetchRequestService{}
 			packageSvc := &automock.PackageService{}
-			productSvc := &automock.ProductService{}
+			productSvc := &automockproc.ProductService{}
+			productProcessor := processors.NewProductProcessor(tx, productSvc)
 			vendorSvc := &automockproc.VendorService{}
 			vendorProcessor := processors.NewVendorProcessor(tx, vendorSvc)
 			tombstoneSvc := &automock.TombstoneService{}
@@ -5599,7 +5603,7 @@ func TestService_ProcessAppInAppTemplateContext(t *testing.T) {
 			metrixCfg := ord.MetricsConfig{}
 
 			ordCfg := ord.NewServiceConfig(100, credentialExchangeStrategyTenantMappings)
-			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
+			svc := ord.NewAggregatorService(ordCfg, metrixCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, *productProcessor, vendorSvc, *vendorProcessor, tombstoneSvc, tenantSvc, globalRegistrySvcFn, client, whConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, []application.ORDWebhookMapping{}, nil)
 			err := svc.ProcessAppInAppTemplateContext(context.TODO(), test.appTemplateID, test.appID)
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

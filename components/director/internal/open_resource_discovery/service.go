@@ -98,7 +98,8 @@ type Service struct {
 	specSvc               SpecService
 	fetchReqSvc           FetchRequestService
 	packageSvc            PackageService
-	productSvc            ProductService
+	productProcessor      processors.ProductProcessor
+	productSvc            processors.ProductService
 	vendorProcessor       processors.VendorProcessor
 	vendorSvc             processors.VendorService
 	tombstoneSvc          TombstoneService
@@ -117,7 +118,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc processors.VendorService, vendorProcessor processors.VendorProcessor, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc processors.ProductService, productProcessor processors.ProductProcessor, vendorSvc processors.VendorService, vendorProcessor processors.VendorProcessor, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
@@ -132,6 +133,7 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		fetchReqSvc:           fetchReqSvc,
 		packageSvc:            packageSvc,
 		productSvc:            productSvc,
+		productProcessor:      productProcessor,
 		vendorSvc:             vendorSvc,
 		vendorProcessor:       vendorProcessor,
 		tombstoneSvc:          tombstoneSvc,
@@ -371,7 +373,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
-		productsFromDB, err := s.processProducts(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
+		productsFromDB, err := s.productProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
 		if err != nil {
 			return err
 		}
@@ -671,61 +673,6 @@ func (s *Service) resyncApplicationTemplateVersionInTx(ctx context.Context, appT
 
 	if err = s.resyncAppTemplateVersion(ctx, appTemplateID, appTemplateVersionsFromDB, appTemplateVersion); err != nil {
 		return errors.Wrapf(err, "error while resyncing App Template Version for App template %q", appTemplateID)
-	}
-	return tx.Commit()
-}
-
-func (s *Service) processProducts(ctx context.Context, resourceType directorresource.Type, resourceID string, products []*model.ProductInput) ([]*model.Product, error) {
-	productsFromDB, err := s.listProductsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, product := range products {
-		if err := s.resyncProductInTx(ctx, resourceType, resourceID, productsFromDB, product); err != nil {
-			return nil, err
-		}
-	}
-
-	productsFromDB, err = s.listProductsInTx(ctx, resourceType, resourceID)
-	if err != nil {
-		return nil, err
-	}
-	return productsFromDB, nil
-}
-
-func (s *Service) listProductsInTx(ctx context.Context, resourceType directorresource.Type, resourceID string) ([]*model.Product, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var productsFromDB []*model.Product
-	switch resourceType {
-	case directorresource.Application:
-		productsFromDB, err = s.productSvc.ListByApplicationID(ctx, resourceID)
-	case directorresource.ApplicationTemplateVersion:
-		productsFromDB, err = s.productSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing products for %s with id %q", resourceType, resourceID)
-	}
-
-	return productsFromDB, tx.Commit()
-}
-
-func (s *Service) resyncProductInTx(ctx context.Context, resourceType directorresource.Type, resourceID string, productsFromDB []*model.Product, product *model.ProductInput) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := s.resyncProduct(ctx, resourceType, resourceID, productsFromDB, *product); err != nil {
-		return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
 	}
 	return tx.Commit()
 }
@@ -1211,18 +1158,6 @@ func (s *Service) resyncBundle(ctx context.Context, resourceType directorresourc
 	}
 
 	_, err := s.bundleSvc.CreateBundle(ctx, resourceType, resourceID, bndl, bndlHash)
-	return err
-}
-
-func (s *Service) resyncProduct(ctx context.Context, resourceType directorresource.Type, resourceID string, productsFromDB []*model.Product, product model.ProductInput) error {
-	ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
-	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
-		return productsFromDB[i].OrdID == product.OrdID
-	}); found {
-		return s.productSvc.Update(ctx, resourceType, productsFromDB[i].ID, product)
-	}
-
-	_, err := s.productSvc.Create(ctx, resourceType, resourceID, product)
 	return err
 }
 

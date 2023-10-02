@@ -111,17 +111,6 @@ type PackageService interface {
 	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error)
 }
 
-// ProductService is responsible for the service-layer Product operations.
-//
-//go:generate mockery --name=ProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ProductService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.ProductInput) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.ProductInput) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appID string) ([]*model.Product, error)
-}
-
 // GlobalProductService is responsible for the service-layer operations for Global Product (with NULL app_id) without tenant isolation.
 //
 //go:generate mockery --name=GlobalProductService --output=automock --outpkg=automock --case=underscore --disable-version-string

@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -45,6 +46,17 @@ func NewService(productRepo ProductRepository, uidService UIDService) *service {
 	return &service{
 		productRepo: productRepo,
 		uidService:  uidService,
+	}
+}
+
+// NewDefaultService creates a new instance of Product Service with default product repo and uid service
+func NewDefaultService() *service {
+	uidSvc := uid.NewService()
+	productConverter := NewConverter()
+	productRepo := NewRepository(productConverter)
+	return &service{
+		productRepo: productRepo,
+		uidService:  uidSvc,
 	}
 }
 
