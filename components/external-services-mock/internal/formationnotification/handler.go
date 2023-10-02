@@ -444,11 +444,11 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
-		if err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
+
 	h.asyncFAResponse(ctx, writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
 }
 
@@ -486,8 +486,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
-		if err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
@@ -502,11 +501,11 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
-		if err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
+
 	h.asyncFAResponse(ctx, writer, r, Unassign, "", responseFunc)
 }
 
@@ -515,11 +514,11 @@ func (h *Handler) AsyncDestinationDelete(writer http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID)
-		if err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, ReadyAssignmentState, config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
+
 	h.asyncFAResponse(ctx, writer, r, Unassign, "", responseFunc)
 }
 
@@ -552,8 +551,7 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 			state = DeleteErrorAssignmentState
 			h.ShouldReturnError = false
 		}
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID)
-		if err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
@@ -582,8 +580,7 @@ func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 			state = DeleteErrorAssignmentState
 		}
 
-		err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID)
-		if err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, state, config, formationID, formationAssignmentID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
 	}
@@ -700,9 +697,10 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 				httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 				return
 			}
-			log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds", delay, delay)
+			log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds...", delay, delay)
 			time.Sleep(time.Duration(delay) * time.Second)
 		}
+
 		responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
 	}()
 
