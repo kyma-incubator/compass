@@ -644,15 +644,6 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
-	if delayStr, ok := routeVars[ExtraDelayParam]; ok {
-		delay, err := strconv.Atoi(delayStr)
-		if err != nil {
-			httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
-			return
-		}
-		log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds", delay, delay)
-		time.Sleep(time.Duration(delay) * time.Second)
-	}
 	if _, ok := h.Mappings[id]; !ok {
 		h.Mappings[id] = make([]Response, 0, 1)
 	}
@@ -702,7 +693,18 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		return
 	}
 
-	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
+	go func() {
+		if delayStr, ok := routeVars[ExtraDelayParam]; ok {
+			delay, err := strconv.Atoi(delayStr)
+			if err != nil {
+				httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+				return
+			}
+			log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds", delay, delay)
+			time.Sleep(time.Duration(delay) * time.Second)
+		}
+		responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
+	}()
 
 	writer.WriteHeader(http.StatusAccepted)
 }
