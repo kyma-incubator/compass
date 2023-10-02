@@ -1549,7 +1549,7 @@ func TestResolver_RootTenant(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetCustomerIDParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("GetParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModel, nil).Once()
 				return TenantSvc
 			},
 		},
@@ -1563,7 +1563,7 @@ func TestResolver_RootTenant(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetCustomerIDParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(nil, testError).Once()
+				TenantSvc.On("GetParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(nil, testError).Once()
 				return TenantSvc
 			},
 			ExpectedError: testError,
@@ -1573,7 +1573,7 @@ func TestResolver_RootTenant(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetCustomerIDParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("GetParentRecursivelyByExternalTenant", txtest.CtxWithDBMatcher(), externalTenant).Return(expectedTenantModel, nil).Once()
 				return TenantSvc
 			},
 			ExpectedError: testError,

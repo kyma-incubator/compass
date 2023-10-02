@@ -485,8 +485,8 @@ func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenan
 	return dest.ExternalCustomerTenant, nil
 }
 
-// GetCustomerIDParentRecursivelyByExternalTenant gets the top parent external ID (customer_id) for a given external tenant
-func (r *pgRepository) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+// GetParentRecursivelyByExternalTenant gets the top parent for a given external tenant
+func (r *pgRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.parent, t1.type
                     FROM business_tenant_mappings t1

@@ -1591,7 +1591,7 @@ func TestPgRepository_GetCustomerIDParentRecursivelyByExternalTenant(t *testing.
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		parentTenant, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testExternal)
+		parentTenant, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.NoError(t, err)
@@ -1609,7 +1609,7 @@ func TestPgRepository_GetCustomerIDParentRecursivelyByExternalTenant(t *testing.
 		tenantMappingRepo := tenant.NewRepository(nil)
 
 		// WHEN
-		parentTenant, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testExternal)
+		parentTenant, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
 
 		// THEN
 		require.Error(t, err)
@@ -1623,7 +1623,7 @@ func TestPgRepository_GetCustomerIDParentRecursivelyByExternalTenant(t *testing.
 		ctx := context.TODO()
 		tenantMappingRepo := tenant.NewRepository(nil)
 		// WHEN
-		_, err := tenantMappingRepo.GetCustomerIDParentRecursivelyByExternalTenant(ctx, testExternal)
+		_, err := tenantMappingRepo.GetParentRecursivelyByExternalTenant(ctx, testExternal)
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})

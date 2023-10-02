@@ -34,7 +34,7 @@ type BusinessTenantMappingService interface {
 	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
-	GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
+	GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -202,7 +202,7 @@ func (r *Resolver) RootTenant(ctx context.Context, externalTenant string) (*grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	result, err := r.srv.GetCustomerIDParentRecursivelyByExternalTenant(ctx, externalTenant)
+	result, err := r.srv.GetParentRecursivelyByExternalTenant(ctx, externalTenant)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching the top parent ID for a external tenant %q", externalTenant)
 	}
