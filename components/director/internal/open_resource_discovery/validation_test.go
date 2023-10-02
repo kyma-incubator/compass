@@ -958,6 +958,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Containing not valid terms in `title ` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Title = "This title is deprecated or decommissioned"
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `shortDescription` field for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()

@@ -342,7 +342,7 @@ func validateTitleDoesNotContainsTerms(value interface{}) error {
 
 	titleLower := strings.ToLower(title)
 	if strings.Contains(titleLower, DeprecatedTerm) || strings.Contains(titleLower, DecommissionedTerm) {
-		return errors.New("title must not contain the terms 'Deprecated' or 'Decommissioned'")
+		return errors.New(fmt.Sprintf("title must not contain the terms %q or %q", DeprecatedTerm, DecommissionedTerm))
 	}
 	return nil
 }
