@@ -3,6 +3,7 @@ package ord_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"strconv"
 	"strings"
 	"time"
@@ -252,7 +253,7 @@ var (
 
 	credentialExchangeStrategyType           = "sap.ucl:tenant-mapping:v1"
 	credentialExchangeStrategyVersion        = "v1"
-	credentialExchangeStrategyTenantMappings = map[string]ord.CredentialExchangeStrategyTenantMapping{
+	credentialExchangeStrategyTenantMappings = map[string]processors.CredentialExchangeStrategyTenantMapping{
 		credentialExchangeStrategyType: {
 			Mode:    model.WebhookModeSync,
 			Version: credentialExchangeStrategyVersion,

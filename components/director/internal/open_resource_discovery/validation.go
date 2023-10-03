@@ -3,6 +3,7 @@ package ord
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -322,7 +323,7 @@ func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, packagesF
 		})))
 }
 
-func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
+func validateBundleInput(bndl *model.BundleCreateInput, credentialExchangeStrategyTenantMappings map[string]processors.CredentialExchangeStrategyTenantMapping) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
@@ -1127,14 +1128,14 @@ func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validat
 	return nil
 }
 
-func validateCustomType(credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) func(el gjson.Result) error {
+func validateCustomType(credentialExchangeStrategyTenantMappings map[string]processors.CredentialExchangeStrategyTenantMapping) func(el gjson.Result) error {
 	return func(el gjson.Result) error {
 		if el.Get("customType").Exists() && el.Get("type").String() != custom {
 			return errors.New("if customType is provided, type should be set to 'custom'")
 		}
 
 		customType := el.Get("customType").String()
-		if _, ok := credentialExchangeStrategyTenantMappings[customType]; strings.Contains(customType, TenantMappingCustomTypeIdentifier) && !ok {
+		if _, ok := credentialExchangeStrategyTenantMappings[customType]; strings.Contains(customType, processors.TenantMappingCustomTypeIdentifier) && !ok {
 			return errors.New("credential exchange strategy's tenant mapping customType is not valid")
 		}
 

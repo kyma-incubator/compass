@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,20 +16,6 @@ type TombstoneProcessor interface {
 	Process(ctx context.Context, resourceType resource.Type, resourceID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error)
 }
 
-// WebhookService is responsible for the service-layer Webhook operations.
-//
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type WebhookService interface {
-	GetByIDAndWebhookTypeGlobal(ctx context.Context, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
-	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
-	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	ListForApplicationGlobal(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
-	EnrichWebhooksWithTenantMappingWebhooks(in []*graphql.WebhookInput) ([]*graphql.WebhookInput, error)
-	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
-	Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error
-}
-
 // ApplicationService is responsible for the service-layer Application operations.
 //
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -40,17 +24,6 @@ type ApplicationService interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
-}
-
-// BundleService is responsible for the service-layer Bundle operations.
-//
-//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type BundleService interface {
-	CreateBundle(ctx context.Context, resourceType resource.Type, resourceID string, in model.BundleCreateInput, bndlHash uint64) (string, error)
-	UpdateBundle(ctx context.Context, resourceType resource.Type, id string, in model.BundleUpdateInput, bndlHash uint64) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
-	ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error)
-	ListByApplicationTemplateVersionIDNoPaging(ctx context.Context, appTemplateVersionID string) ([]*model.Bundle, error)
 }
 
 // BundleReferenceService is responsible for the service-layer BundleReference operations.
@@ -150,13 +123,6 @@ type ApplicationTemplateVersionService interface {
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-}
-
-// WebhookConverter is responsible for converting webhook structs
-//
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type WebhookConverter interface {
-	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
 }
 
 // LabelService is responsible for the service-layer Label operations

@@ -3,6 +3,7 @@ package ord_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"strings"
 	"testing"
 
@@ -2044,7 +2045,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Invalid `customType` field when `type` field is set to `custom` for `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToWrongTenantMappingCustomType, ord.TenantMappingCustomTypeIdentifier))
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToWrongTenantMappingCustomType, processors.TenantMappingCustomTypeIdentifier))
 
 				return []*ord.Document{doc}
 			},

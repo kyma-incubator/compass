@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"net/http"
 	"time"
 
@@ -32,13 +33,13 @@ type AggregationResources struct {
 type handler struct {
 	opMgr           OperationsManager
 	appSvc          ApplicationService
-	webhookSvc      WebhookService
+	webhookSvc      processors.WebhookService
 	transact        persistence.Transactioner
 	onDemandChannel chan string
 }
 
 // NewORDAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewORDAggregatorHTTPHandler(opMgr OperationsManager, appSvc ApplicationService, webhookSvc WebhookService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
+func NewORDAggregatorHTTPHandler(opMgr OperationsManager, appSvc ApplicationService, webhookSvc processors.WebhookService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
 	return &handler{
 		opMgr:           opMgr,
 		appSvc:          appSvc,

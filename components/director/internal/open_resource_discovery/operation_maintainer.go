@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -32,12 +33,12 @@ type OperationService interface {
 type ORDOperationMaintainer struct {
 	transact   persistence.Transactioner
 	opSvc      OperationService
-	webhookSvc WebhookService
+	webhookSvc processors.WebhookService
 	appSvc     ApplicationService
 }
 
 // NewOperationMaintainer creates OperationMaintainer based on kind
-func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, webhookSvc WebhookService, appSvc ApplicationService) OperationMaintainer {
+func NewOperationMaintainer(kind model.OperationType, transact persistence.Transactioner, opSvc OperationService, webhookSvc processors.WebhookService, appSvc ApplicationService) OperationMaintainer {
 	if kind == model.OperationTypeOrdAggregation {
 		return &ORDOperationMaintainer{
 			transact:   transact,

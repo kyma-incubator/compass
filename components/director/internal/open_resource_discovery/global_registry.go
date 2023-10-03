@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -36,11 +37,11 @@ type globalRegistryService struct {
 
 	ordClient Client
 
-	credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping
+	credentialExchangeStrategyTenantMappings map[string]processors.CredentialExchangeStrategyTenantMapping
 }
 
 // NewGlobalRegistryService creates new instance of GlobalRegistryService.
-func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) *globalRegistryService {
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]processors.CredentialExchangeStrategyTenantMapping) *globalRegistryService {
 	return &globalRegistryService{
 		transact:                                 transact,
 		config:                                   config,

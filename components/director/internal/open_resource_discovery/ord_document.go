@@ -2,6 +2,7 @@ package ord
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processors"
 	"net/url"
 	"path"
 	"regexp"
@@ -133,7 +134,7 @@ type ResourceIDs struct {
 }
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB ResourcesFromDB, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) error {
+func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB ResourcesFromDB, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool, credentialExchangeStrategyTenantMappings map[string]processors.CredentialExchangeStrategyTenantMapping) error {
 	var (
 		errs                *multierror.Error
 		baseURL             = calculatedBaseURL
@@ -278,7 +279,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 	return errs.ErrorOrNil()
 }
 
-func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
+func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint DocumentPerspective, forbidDuplications bool, resourcesFromDB ResourcesFromDB, resourceID ResourceIDs, resourceHashes map[string]uint64, credentialExchangeStrategyTenantMappings map[string]processors.CredentialExchangeStrategyTenantMapping) (ResourceIDs, *multierror.Error) {
 	errs := &multierror.Error{}
 
 	resourceIDs := ResourceIDs{
