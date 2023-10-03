@@ -356,6 +356,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/no-configuration/{tenantId}", notificationHandler.RespondWithNoConfig).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/no-configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}", notificationHandler.RespondWithIncomplete).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/configuration/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/with-state/{tenantId}", notificationHandler.PatchWithState).Methods(http.MethodPatch)
@@ -366,6 +368,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/fail/{tenantId}/{applicationId}", notificationHandler.FailResponse).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/reset-should-fail", notificationHandler.ResetShouldFail).Methods(http.MethodDelete)
 	// formation assignment notifications handlers for kyma integration
+	router.HandleFunc("/v1/tenants/emptyCredentials", notificationHandler.KymaEmptyCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/basicCredentials", notificationHandler.KymaBasicCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	router.HandleFunc("/v1/tenants/oauthCredentials", notificationHandler.KymaOauthCredentials).Methods(http.MethodPatch, http.MethodDelete)
 	// formation assignment notifications async handlers
@@ -380,8 +383,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// formation assignment notifications handler for the destination creation/deletion
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}", notificationHandler.RespondWithIncompleteAndDestinationDetails).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/destinations/configuration/{tenantId}/{applicationId}", notificationHandler.DestinationDelete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/async/destinations/{tenantId}", notificationHandler.AsyncDestinationPatch).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/async/destinations/{tenantId}/{applicationId}", notificationHandler.AsyncDestinationDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/async/destinations/{delay}/{tenantId}", notificationHandler.AsyncDestinationPatch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/async/destinations/{delay}/{tenantId}/{applicationId}", notificationHandler.AsyncDestinationDelete).Methods(http.MethodDelete)
 	// formation(lifecycle) notifications sync handlers
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
 	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)

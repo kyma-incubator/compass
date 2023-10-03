@@ -162,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.6.2"
+  KYMA_CLI_VERSION="2.7.0"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)
@@ -214,6 +214,15 @@ function installCompassOld() {
   COMPASS_OVERRIDES="$PWD/compass_benchmark_overrides.yaml"
   COMPASS_COMMON_OVERRIDES="$PWD/compass_common_overrides.yaml"
 
+  # Added with Kyma 2.6.3 upgrade can be removed after it reaches main
+  kubectl create ns compass-system --dry-run=client -o yaml | kubectl apply -f -
+  kubectl label ns compass-system istio-injection=enabled --overwrite
+
+  kubectl create ns ory --dry-run=client -o yaml | kubectl apply -f -
+  kubectl label ns ory istio-injection=enabled --overwrite
+
+  # -------------------------------------------------------------------
+
   echo "Installing Ory"
   installOry
 
@@ -224,9 +233,7 @@ function installCompassOld() {
   echo "DB installation status ${STATUS}"
 
   echo 'Installing Compass'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
-  echo "Compass installation status ${STATUS}"
+  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 }
 
 function installCompassNew() {
@@ -258,9 +265,7 @@ function installCompassNew() {
   echo "DB installation status ${STATUS}"
 
   echo 'Installing Compass'
-  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s
-  STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
-  echo "Compass installation status ${STATUS}"
+  bash "${COMPASS_SCRIPTS_DIR}"/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --overrides-file "${COMPASS_COMMON_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 
   if [ -n "$(kubectl get service -n kyma-system apiserver-proxy-ssl --ignore-not-found)" ]; then
     log::info "Create DNS Record for Apiserver proxy IP"

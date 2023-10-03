@@ -3,6 +3,7 @@ package subscription
 import (
 	"bytes"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -89,4 +90,69 @@ func BuildSubscriptionRequest(t *testing.T, subscriptionToken, subscriptionUrl, 
 	subscribeReq.Header.Add(subscriptionFlowHeaderKey, subscriptionFlow)
 
 	return subscribeReq
+}
+
+func CreateSubscription(t *testing.T, conf Config, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, expectedToPass, unsubscribeFirst bool, subscriptionFlow string) {
+	subscribeReq := BuildSubscriptionRequest(t, subscriptionToken, conf.URL, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue, conf.PropagatedProviderSubaccountHeader, subscriptionFlow, conf.SubscriptionFlowHeaderKey)
+
+	if unsubscribeFirst {
+		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+		//In case there isn't subscription it will fail-safe without error
+		BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.URL, apiPath, subscriptionToken, conf.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, subscriptionFlow, conf.SubscriptionFlowHeaderKey)
+	}
+
+	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
+	resp, err := httpClient.Do(subscribeReq)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	require.NoError(t, err)
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	if !expectedToPass {
+		require.Equal(t, http.StatusInternalServerError, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+		t.Logf("As expected subscription was not created between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
+		return
+	}
+	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+	subJobStatusPath := resp.Header.Get(LocationHeader)
+	require.NotEmpty(t, subJobStatusPath)
+	subJobStatusURL := conf.URL + subJobStatusPath
+	require.Eventually(t, func() bool {
+		return GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == JobSucceededStatus
+	}, EventuallyTimeout, EventuallyTick)
+	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
+}
+
+func CreateRuntimeSubscription(t *testing.T, conf Config, httpClient *http.Client, providerRuntime graphql.RuntimeExt, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, shouldUnsubscribeFirst bool, subscriptionFlow string) {
+	subscribeReq := BuildSubscriptionRequest(t, subscriptionToken, conf.URL, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue, conf.PropagatedProviderSubaccountHeader, subscriptionFlow, conf.SubscriptionFlowHeaderKey)
+
+	if shouldUnsubscribeFirst {
+		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+		// In case there isn't subscription it will fail-safe without error
+		BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.URL, apiPath, subscriptionToken, conf.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.StandardFlow, conf.SubscriptionFlowHeaderKey)
+	}
+
+	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+	resp, err := httpClient.Do(subscribeReq)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	require.NoError(t, err)
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+	subJobStatusPath := resp.Header.Get(LocationHeader)
+	require.NotEmpty(t, subJobStatusPath)
+	subJobStatusURL := conf.URL + subJobStatusPath
+	require.Eventually(t, func() bool {
+		return GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == JobSucceededStatus
+	}, EventuallyTimeout, EventuallyTick)
+	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 }

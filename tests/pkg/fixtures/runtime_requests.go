@@ -37,6 +37,22 @@ func FixRuntimeUpdateInput(placeholder string) graphql.RuntimeUpdateInput {
 	}
 }
 
+func FixRuntimeUpdateInputWithoutLabels(name string) graphql.RuntimeUpdateInput {
+	return graphql.RuntimeUpdateInput{
+		Name:        name,
+		Description: ptr.String(fmt.Sprintf("%s-description", name)),
+		Labels:      graphql.Labels{},
+	}
+}
+
+func FixRuntimeRegisterInputWithoutLabels(name string) graphql.RuntimeRegisterInput {
+	return graphql.RuntimeRegisterInput{
+		Name:        name,
+		Description: ptr.String(fmt.Sprintf("%s-description", name)),
+		Labels:      graphql.Labels{},
+	}
+}
+
 func FixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
