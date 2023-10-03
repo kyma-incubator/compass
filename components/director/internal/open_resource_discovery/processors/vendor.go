@@ -3,7 +3,6 @@ package processors
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -99,19 +98,4 @@ func (vp *VendorProcessor) resyncVendor(ctx context.Context, resourceType direct
 
 	_, err := vp.vendorSvc.Create(ctx, resourceType, resourceID, vendor)
 	return err
-}
-
-func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context.Context {
-	logger := log.LoggerFromContext(ctx)
-	logger = logger.WithField(fieldName, fieldValue)
-	return log.ContextWithLogger(ctx, logger)
-}
-
-func searchInSlice(length int, f func(i int) bool) (int, bool) {
-	for i := 0; i < length; i++ {
-		if f(i) {
-			return i, true
-		}
-	}
-	return -1, false
 }
