@@ -8,8 +8,10 @@ import (
 
 // OperationsManagerConfig destination service configuration
 type OperationsManagerConfig struct {
-	// ElectionConfig ia s congiguratin for leader election
-	ElectionConfig cronjob.ElectionConfig
+	// RescheduleOpsElectionConfig is a leader election configuration for reschedule operations job
+	RescheduleOpsElectionConfig cronjob.ElectionConfig
+	// RescheduleHangedOpsElectionConfig is a leader election configuration for reschedule hanged operations job
+	RescheduleHangedOpsElectionConfig cronjob.ElectionConfig
 	// PriorityQueueLimit is the number of operations returned from priority queue. Should be larger (+1) than the number of pods.
 	PriorityQueueLimit int `envconfig:"APP_OPERATIONS_MANAGER_PRIORITY_QUEUE_LIMIT,default=10"`
 	// RescheduleOperationsJobInterval how frequently the reschedule job for (refresh data) will be executed
