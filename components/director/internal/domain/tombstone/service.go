@@ -2,6 +2,7 @@ package tombstone
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -43,6 +44,17 @@ func NewService(tombstoneRepo TombstoneRepository, uidService UIDService) *servi
 	return &service{
 		tombstoneRepo: tombstoneRepo,
 		uidService:    uidService,
+	}
+}
+
+// NewDefaultService missing godoc
+func NewDefaultService() *service {
+	uidSvc := uid.NewService()
+	tombstoneConverter := NewConverter()
+	tombstoneRepo := NewRepository(tombstoneConverter)
+	return &service{
+		tombstoneRepo: tombstoneRepo,
+		uidService:    uidSvc,
 	}
 }
 
