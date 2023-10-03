@@ -1408,6 +1408,49 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 			},
 			expectedStatusCode: http.StatusBadRequest,
 		},
+		{
+			name:       "Fail when updating assignment",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime(model.ReadyAssignmentState), nil).Once()
+				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp(model.ReadyAssignmentState), nil).Once()
+				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faWithSourceAppAndTargetRuntime(model.ConfigPendingAssignmentState)).Return(nil).Once()
+				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, reverseFAWithSourceRuntimeAndTargetApp(model.InitialAssignmentState)).Return(testErr).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ConfigPendingAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+		},
+		{
+			name:       "Fail when updating reverse assignment",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime(model.ReadyAssignmentState), nil).Once()
+				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp(model.ReadyAssignmentState), nil).Once()
+				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faWithSourceAppAndTargetRuntime(model.ReadyAssignmentState)).Return(testErr).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tCase := range testCases {
