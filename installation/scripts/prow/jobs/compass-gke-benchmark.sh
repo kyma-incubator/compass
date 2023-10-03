@@ -288,7 +288,7 @@ if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
     export JOB_NAME_PATTERN="(pull-.*)"
     export JOBGUARD_TIMEOUT="60m"
-    "${COMPASS_SOURCES_DIR}/installation/scripts/kyma-scripts/jobguard/scripts/run.sh"
+    "${COMPASS_SCRIPTS_DIR}/kyma-scripts/jobguard/scripts/run.sh"
 fi
 
 log::info "Create new cluster"

@@ -27,6 +27,6 @@ args=(
 if [ -x "/prow-tools/jobguard" ]; then
   /prow-tools/jobguard "${args[@]}"
 else
-  cd "${ROOT_PATH}/installation/scripts/kyma-scripts/jobguard/cmd/jobguard" || exit 1
+  cd "${ROOT_PATH}/cmd/jobguard" || exit 1
   go run main.go "${args[@]}"
 fi
