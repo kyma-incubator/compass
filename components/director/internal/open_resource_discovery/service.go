@@ -103,7 +103,7 @@ type Service struct {
 	productProcessor      processors.ProductProcessor
 	vendorSvc             processors.VendorService
 	vendorProcessor       processors.VendorProcessor
-	tombstoneProcessor    processors.TombstoneProcessor
+	tombstoneProcessor    TombstoneProcessor
 	tenantSvc             TenantService
 	appTemplateVersionSvc ApplicationTemplateVersionService
 	appTemplateSvc        ApplicationTemplateService
@@ -119,7 +119,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc processors.PackageService, packageProcessor processors.PackageProcessor, productSvc processors.ProductService, productProcessor processors.ProductProcessor, vendorSvc processors.VendorService, vendorProcessor processors.VendorProcessor, tombstoneProcessor processors.TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc processors.PackageService, packageProcessor processors.PackageProcessor, productSvc processors.ProductService, productProcessor processors.ProductProcessor, vendorSvc processors.VendorService, vendorProcessor processors.VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
 	return &Service{
 		config:                config,
 		metricsCfg:            metricsCfg,
