@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/onrik/logrus/filename"
 
@@ -44,7 +45,9 @@ var (
 	defaultEntry = logrus.NewEntry(logrus.StandardLogger())
 
 	supportedFormatters = map[string]logrus.Formatter{
-		jsonFormatterKey: &logrus.JSONFormatter{},
+		jsonFormatterKey: &logrus.JSONFormatter{
+			TimestampFormat: time.RFC3339Nano,
+		},
 		textFormatterKey: &logrus.TextFormatter{},
 	}
 
