@@ -322,6 +322,8 @@ func (r *repository) referenceObjectFieldName(objectType model.SpecReferenceObje
 		return apiDefIDColumn, nil
 	case model.EventSpecReference:
 		return eventAPIDefIDColumn, nil
+	case model.CapabilitySpecReference:
+		return capabilityIDColumn, nil
 	}
 
 	return "", apperrors.NewInternalError("Invalid type of the Specification reference object")

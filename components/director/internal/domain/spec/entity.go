@@ -31,13 +31,14 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParent TODO what is this
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 	if e.APIDefID.Valid {
 		return resource.API, e.APIDefID.String
+	} else if e.EventAPIDefID.Valid {
+		return resource.EventDefinition, e.EventAPIDefID.String
 	}
-	return resource.EventDefinition, e.EventAPIDefID.String
+	return resource.Capability, e.CapabilityID.String
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

@@ -17,12 +17,14 @@ func TestRepository_GetByID(t *testing.T) {
 	apiSpecEntity := fixAPISpecEntity()
 	eventSpecModel := fixModelEventSpec()
 	eventSpecEntity := fixEventSpecEntity()
+	capabilitySpecModel := fixModelCapabilitySpec()
+	capabilitySpecEntity := fixCapabilitySpecEntity()
 
 	apiSpecSuite := testdb.RepoGetTestSuite{
 		Name: "Get API Spec By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{specID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -46,7 +48,7 @@ func TestRepository_GetByID(t *testing.T) {
 		Name: "Get Event Spec By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{specID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -66,8 +68,33 @@ func TestRepository_GetByID(t *testing.T) {
 		MethodArgs:          []interface{}{tenant, specID, model.EventSpecReference},
 	}
 
+	capabilitySpecSuite := testdb.RepoGetTestSuite{
+		Name: "Get Capability Spec by ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{specID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixCapabilitySpecRow()...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		ExpectedModelEntity: capabilitySpecModel,
+		ExpectedDBEntity:    capabilitySpecEntity,
+		MethodArgs:          []interface{}{tenant, specID, model.CapabilitySpecReference},
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_GetByIDGlobal(t *testing.T) {
@@ -75,12 +102,14 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 	apiSpecEntity := fixAPISpecEntity()
 	eventSpecModel := fixModelEventSpec()
 	eventSpecEntity := fixEventSpecEntity()
+	capabilitySpecModel := fixModelCapabilitySpec()
+	capabilitySpecEntity := fixCapabilitySpecEntity()
 
 	apiSpecSuite := testdb.RepoGetTestSuite{
 		Name: "Get API Spec By ID Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE id = $1`),
 				Args:     []driver.Value{specID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -105,7 +134,7 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Event Spec By ID Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE id = $1`),
 				Args:     []driver.Value{specID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -126,8 +155,34 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 		MethodName:          "GetByIDGlobal",
 	}
 
+	capabilitySpecSuite := testdb.RepoGetTestSuite{
+		Name: "Get Capability Spec by ID Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE id = $1`),
+				Args:     []driver.Value{specID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixCapabilitySpecRow()...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		ExpectedModelEntity: capabilitySpecModel,
+		ExpectedDBEntity:    capabilitySpecEntity,
+		MethodArgs:          []interface{}{specID},
+		MethodName:          "GetByIDGlobal",
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_Create(t *testing.T) {
@@ -136,6 +191,8 @@ func TestRepository_Create(t *testing.T) {
 	apiSpecEntity := fixAPISpecEntity()
 	eventSpecModel := fixModelEventSpec()
 	eventSpecEntity := fixEventSpecEntity()
+	capabilitySpecModel := fixModelCapabilitySpec()
+	capabilitySpecEntity := fixCapabilitySpecEntity()
 
 	apiSpecSuite := testdb.RepoCreateTestSuite{
 		Name: "Create API Specification",
@@ -199,8 +256,40 @@ func TestRepository_Create(t *testing.T) {
 		DisableConverterErrorTest: true,
 	}
 
+	capabilitySpecSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Capability Specification",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM capabilities_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenant, capabilityID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.specifications \(.+\) VALUES \(.+\)$`,
+				Args:        fixCapabilitySpecCreteArgs(capabilitySpecModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               capabilitySpecModel,
+		DBEntity:                  capabilitySpecEntity,
+		NilModelEntity:            nilSpecModel,
+		TenantID:                  tenant,
+		DisableConverterErrorTest: true,
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_CreateGlobal(t *testing.T) {
@@ -209,6 +298,8 @@ func TestRepository_CreateGlobal(t *testing.T) {
 	apiSpecEntity := fixAPISpecEntity()
 	eventSpecModel := fixModelEventSpec()
 	eventSpecEntity := fixEventSpecEntity()
+	capabilitySpecModel := fixModelCapabilitySpec()
+	capabilitySpecEntity := fixCapabilitySpecEntity()
 
 	apiSpecSuite := testdb.RepoCreateTestSuite{
 		Name: "Create API Specification Global",
@@ -252,8 +343,30 @@ func TestRepository_CreateGlobal(t *testing.T) {
 		MethodName:                "CreateGlobal",
 	}
 
+	capabilitySpecSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Capability Specification Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:       `^INSERT INTO public.specifications \(.+\) VALUES \(.+\)$`,
+				Args:        fixCapabilitySpecCreteArgs(capabilitySpecModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               capabilitySpecModel,
+		DBEntity:                  capabilitySpecEntity,
+		NilModelEntity:            nilSpecModel,
+		DisableConverterErrorTest: true,
+		IsGlobal:                  true,
+		MethodName:                "CreateGlobal",
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_ListIDByReferenceObjectID(t *testing.T) {
@@ -348,11 +461,11 @@ func TestRepository_ListIDByReferenceObjectIDGlobal(t *testing.T) {
 	}
 
 	eventSpecSuite := testdb.RepoListTestSuite{
-		Name: "List Event Spec IDs By Ref Object ID",
+		Name: "List Event Spec IDs By Ref Object ID Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
-				Args:     []driver.Value{apiID, tenant},
+				Query:    regexp.QuoteMeta(`SELECT id FROM public.specifications WHERE event_def_id = $1`),
+				Args:     []driver.Value{apiID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixEventSpecRowWithID("1")...).AddRow(fixEventSpecRowWithID("2")...)}
@@ -369,13 +482,41 @@ func TestRepository_ListIDByReferenceObjectIDGlobal(t *testing.T) {
 		RepoConstructorFunc:       spec.NewRepository,
 		ExpectedModelEntities:     []interface{}{&idOne, &idTwo},
 		ExpectedDBEntities:        []interface{}{idOne, idTwo},
-		MethodArgs:                []interface{}{tenant, model.EventSpecReference, apiID},
-		MethodName:                "ListIDByReferenceObjectID",
+		MethodArgs:                []interface{}{model.EventSpecReference, apiID},
+		MethodName:                "ListIDByReferenceObjectIDGlobal",
+		DisableConverterErrorTest: true,
+	}
+
+	capabilitySpecSuite := testdb.RepoListTestSuite{
+		Name: "List Capability Spec IDs by Ref Object ID Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id FROM public.specifications WHERE capability_id = $1`),
+				Args:     []driver.Value{capabilityID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixCapabilitySpecRowWithID(idOne)...).AddRow(fixCapabilitySpecRowWithID(idTwo)...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		ShouldSkipMockFromEntity:  true,
+		RepoConstructorFunc:       spec.NewRepository,
+		ExpectedModelEntities:     []interface{}{&idOne, &idTwo},
+		ExpectedDBEntities:        []interface{}{idOne, idTwo},
+		MethodArgs:                []interface{}{model.CapabilitySpecReference, capabilityID},
+		MethodName:                "ListIDByReferenceObjectIDGlobal",
 		DisableConverterErrorTest: true,
 	}
 
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_ListByReferenceObjectID(t *testing.T) {
@@ -388,7 +529,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		Name: "List API Specs By Ref Object ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -418,7 +559,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		Name: "List Event Specs By Ref Object ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -439,8 +580,39 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		MethodName:            "ListByReferenceObjectID",
 	}
 
+	capabilitySpecModel1 := fixModelCapabilitySpecWithID("1")
+	capabilitySpecModel2 := fixModelCapabilitySpecWithID("2")
+	capabilitySpecEntity1 := fixCapabilitySpecEntityWithID("1")
+	capabilitySpecEntity2 := fixCapabilitySpecEntityWithID("2")
+
+	capabilitySpecSuite := testdb.RepoListTestSuite{
+		Name: "List Capability Specs by Ref Object ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE capability_id = $1 AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{capabilityID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixCapabilitySpecRowWithID("1")...).AddRow(fixCapabilitySpecRowWithID("2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{capabilitySpecModel1, capabilitySpecModel2},
+		ExpectedDBEntities:    []interface{}{&capabilitySpecEntity1, &capabilitySpecEntity2},
+		MethodArgs:            []interface{}{tenant, model.CapabilitySpecReference, capabilityID},
+		MethodName:            "ListByReferenceObjectID",
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_ListByReferenceObjectIDGlobal(t *testing.T) {
@@ -453,7 +625,7 @@ func TestRepository_ListByReferenceObjectIDGlobal(t *testing.T) {
 		Name: "List API Specs By Ref Object ID Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1`),
 				Args:     []driver.Value{apiID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -483,7 +655,7 @@ func TestRepository_ListByReferenceObjectIDGlobal(t *testing.T) {
 		Name: "List Event Specs By Ref Object ID Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1`),
 				Args:     []driver.Value{apiID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -504,8 +676,39 @@ func TestRepository_ListByReferenceObjectIDGlobal(t *testing.T) {
 		MethodName:            "ListByReferenceObjectIDGlobal",
 	}
 
+	capabilitySpecModel1 := fixModelCapabilitySpecWithID("1")
+	capabilitySpecModel2 := fixModelCapabilitySpecWithID("2")
+	capabilitySpecEntity1 := fixCapabilitySpecEntityWithID("1")
+	capabilitySpecEntity2 := fixCapabilitySpecEntityWithID("2")
+
+	capabilitySpecSuite := testdb.RepoListTestSuite{
+		Name: "List Capability Specs by Ref Object ID Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications WHERE capability_id = $1`),
+				Args:     []driver.Value{capabilityID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixCapabilitySpecRowWithID("1")...).AddRow(fixCapabilitySpecRowWithID("2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{capabilitySpecModel1, capabilitySpecModel2},
+		ExpectedDBEntities:    []interface{}{&capabilitySpecEntity1, &capabilitySpecEntity2},
+		MethodArgs:            []interface{}{model.CapabilitySpecReference, capabilityID},
+		MethodName:            "ListByReferenceObjectIDGlobal",
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
@@ -523,10 +726,10 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		Name: "List API Specifications by Object IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications 
 												WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $1)) AND api_def_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
  											   UNION
-												(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												(SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications 
 												WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $5)) AND api_def_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
 				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
 				IsSelect: true,
@@ -568,10 +771,10 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		Name: "List Event Specifications by Object IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications 
 												WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $1)) AND event_def_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
  											   UNION
-												(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												(SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications 
 												WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $5)) AND event_def_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
 				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
 				IsSelect: true,
@@ -604,8 +807,54 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		MethodName:            "ListByReferenceObjectIDs",
 	}
 
+	capabilitySpecModel1 := fixModelCapabilitySpecWithIDs(firstFrID, firstRefID)
+	capabilitySpecModel2 := fixModelCapabilitySpecWithIDs(secondFrID, secondRefID)
+	capabilitySpecEntity1 := fixCapabilitySpecEntityWithIDs(firstFrID, firstRefID)
+	capabilitySpecEntity2 := fixCapabilitySpecEntityWithIDs(secondFrID, secondRefID)
+
+	capabilitySpecSuite := testdb.RepoListTestSuite{
+		Name: "List Capability Specifications by Object IDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications 
+												WHERE capability_id IS NOT NULL AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $1)) AND capability_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
+ 											   UNION
+												(SELECT id, api_def_id, event_def_id, capability_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, capability_spec_format, capability_spec_type, custom_type FROM public.specifications 
+												WHERE capability_id IS NOT NULL AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $5)) AND capability_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
+				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixCapabilitySpecRowWithIDs(firstFrID, firstRefID)...).AddRow(fixCapabilitySpecRowWithIDs(secondFrID, secondRefID)...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT capability_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE capability_id IS NOT NULL AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $1)) GROUP BY capability_id ORDER BY capability_id ASC`),
+				Args:     []driver.Value{tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 1).AddRow(secondRefID, 1)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 0).AddRow(secondRefID, 0)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{capabilitySpecModel1, capabilitySpecModel2},
+		ExpectedDBEntities:    []interface{}{&capabilitySpecEntity1, &capabilitySpecEntity2},
+		MethodArgs:            []interface{}{tenant, model.CapabilitySpecReference, []string{firstRefID, secondRefID}},
+		MethodName:            "ListByReferenceObjectIDs",
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_Delete(t *testing.T) {
@@ -643,8 +892,26 @@ func TestRepository_Delete(t *testing.T) {
 		MethodArgs:          []interface{}{tenant, specID, model.EventSpecReference},
 	}
 
+	capabilitySpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "Capability Spec Delete",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{specID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{tenant, specID, model.CapabilitySpecReference},
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
@@ -686,8 +953,28 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		IsDeleteMany:        true,
 	}
 
+	capabilitySpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "Capability Spec DeleteByReferenceObjectID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE capability_id = $1 AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{capabilityID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{tenant, model.CapabilitySpecReference, capabilityID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_DeleteByReferenceObjectIDGlobal(t *testing.T) {
@@ -729,8 +1016,28 @@ func TestRepository_DeleteByReferenceObjectIDGlobal(t *testing.T) {
 		IsDeleteMany:        true,
 	}
 
+	capabilitySpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "Capability Spec DeleteByReferenceObjectIDGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE capability_id = $1`),
+				Args:          []driver.Value{capabilityID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{model.CapabilitySpecReference, capabilityID},
+		MethodName:          "DeleteByReferenceObjectIDGlobal",
+		IsDeleteMany:        true,
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_Update(t *testing.T) {
@@ -739,13 +1046,15 @@ func TestRepository_Update(t *testing.T) {
 	apiSpecEntity := fixAPISpecEntity()
 	eventSpecModel := fixModelEventSpec()
 	eventSpecEntity := fixEventSpecEntity()
+	capabilitySpecModel := fixModelCapabilitySpec()
+	capabilitySpecEntity := fixCapabilitySpecEntity()
 
 	apiSpecSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update API Spec",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID, tenant},
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ?, capability_spec_format = ?, capability_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.CapabilitySpecFormat, apiSpecEntity.CapabilitySpecType, apiSpecEntity.ID, tenant},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -765,8 +1074,8 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update Event Spec",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID, tenant},
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ?, capability_spec_format = ?, capability_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.CapabilitySpecFormat, eventSpecEntity.CapabilitySpecType, eventSpecEntity.ID, tenant},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -782,8 +1091,30 @@ func TestRepository_Update(t *testing.T) {
 		DisableConverterErrorTest: true,
 	}
 
+	capabilitySpecSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Capability Spec",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ?, capability_spec_format = ?, capability_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{capabilitySpecEntity.SpecData, capabilitySpecEntity.APISpecFormat, capabilitySpecEntity.APISpecType, capabilitySpecEntity.EventSpecFormat, capabilitySpecEntity.EventSpecType, capabilitySpecEntity.CapabilitySpecFormat, capabilitySpecEntity.CapabilitySpecType, capabilitySpecEntity.ID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               capabilitySpecModel,
+		DBEntity:                  capabilitySpecEntity,
+		NilModelEntity:            nilSpecModel,
+		TenantID:                  tenant,
+		DisableConverterErrorTest: true,
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_UpdateGlobal(t *testing.T) {
@@ -792,13 +1123,15 @@ func TestRepository_UpdateGlobal(t *testing.T) {
 	apiSpecEntity := fixAPISpecEntity()
 	eventSpecModel := fixModelEventSpec()
 	eventSpecEntity := fixEventSpecEntity()
+	capabilitySpecModel := fixModelCapabilitySpec()
+	capabilitySpecEntity := fixCapabilitySpecEntity()
 
 	apiSpecSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update API Spec",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ?`),
-				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID},
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ?, capability_spec_format = ?, capability_spec_type = ? WHERE id = ?`),
+				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.CapabilitySpecFormat, apiSpecEntity.CapabilitySpecType, apiSpecEntity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -819,8 +1152,8 @@ func TestRepository_UpdateGlobal(t *testing.T) {
 		Name: "Update Event Spec",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ?`),
-				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID},
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ?, capability_spec_format = ?, capability_spec_type = ? WHERE id = ?`),
+				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.CapabilitySpecFormat, eventSpecEntity.CapabilitySpecType, eventSpecEntity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -837,8 +1170,31 @@ func TestRepository_UpdateGlobal(t *testing.T) {
 		UpdateMethodName:          "UpdateGlobal",
 	}
 
+	capabilitySpecSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Capability Spec",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ?, capability_spec_format = ?, capability_spec_type = ? WHERE id = ?`),
+				Args:          []driver.Value{capabilitySpecEntity.SpecData, capabilitySpecEntity.APISpecFormat, capabilitySpecEntity.APISpecType, capabilitySpecEntity.EventSpecFormat, capabilitySpecEntity.EventSpecType, capabilitySpecEntity.CapabilitySpecFormat, capabilitySpecEntity.CapabilitySpecType, capabilitySpecEntity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               capabilitySpecModel,
+		DBEntity:                  capabilitySpecEntity,
+		NilModelEntity:            nilSpecModel,
+		DisableConverterErrorTest: true,
+		IsGlobal:                  true,
+		UpdateMethodName:          "UpdateGlobal",
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }
 
 func TestRepository_Exists(t *testing.T) {
@@ -894,6 +1250,33 @@ func TestRepository_Exists(t *testing.T) {
 		MethodArgs:          []interface{}{tenant, specID, model.EventSpecReference},
 	}
 
+	capabilitySpecSuite := testdb.RepoExistTestSuite{
+		Name: "Capability Specification Exists",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{specID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		TargetID:            specID,
+		TenantID:            tenant,
+		RefEntity:           model.CapabilitySpecReference,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenant, specID, model.CapabilitySpecReference},
+	}
+
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
+	capabilitySpecSuite.Run(t)
 }

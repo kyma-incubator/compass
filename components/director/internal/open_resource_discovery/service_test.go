@@ -954,7 +954,12 @@ func TestService_Processing(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.ApplicationTemplateVersion, api2ID).Return(nil).Once()
 				return apiSvc
 			},
-			eventSvcFn:              successfulEventUpdateForStaticDoc,
+			eventSvcFn: successfulEventUpdateForStaticDoc,
+			capabilitySvcFn: func() *automock.CapabilityService {
+				capabilitySvc := &automock.CapabilityService{}
+				capabilitySvc.On("ListByApplicationTemplateVersionID", txtest.CtxWithDBMatcher(), appTemplateVersionID).Return(nil, nil)
+				return capabilitySvc
+			},
 			specSvcFn:               successfulSpecRecreateAndUpdateForStaticDoc,
 			fetchReqFn:              successfulFetchRequestFetchAndUpdateForStaticDoc,
 			packageSvcFn:            successfulPackageUpdateForStaticDoc,

@@ -171,11 +171,13 @@ func (c *universalCreator) createChildEntity(ctx context.Context, tenant string,
 func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	var parentID string
 	var parentResourceType resource.Type
+	fmt.Println(dbEntity)
 	if childEntity, ok := dbEntity.(ChildEntity); ok {
 		parentResourceType, parentID = childEntity.GetParent(resourceType)
 	}
-
+	fmt.Println(parentResourceType, "s")
 	if len(parentID) == 0 || len(parentResourceType) == 0 {
+		fmt.Println("??")
 		return errors.Errorf("unknown parent for entity type %s", resourceType)
 	}
 
