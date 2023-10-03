@@ -4,7 +4,7 @@ export GO111MODULE=on
 ROOT_PATH=$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")
 
 KYMA_PROJECT_DIR=${KYMA_PROJECT_DIR:-"/home/prow/go/src/github.com/kyma-incubator"}
-JOB_NAME_PATTERN=${JOB_NAME_PATTERN:-"(pre-main-kyma-components-.*)|(pre-main-kyma-tests-.*)|(pre-kyma-components-.*)|(pre-kyma-tests-.*)|(pull-.*-build)"}
+JOB_NAME_PATTERN=${JOB_NAME_PATTERN:-"(pull-.*)"}
 TIMEOUT=${JOBGUARD_TIMEOUT:-"15m"}
 
 if [ -z "$PULL_PULL_SHA" ]; then
