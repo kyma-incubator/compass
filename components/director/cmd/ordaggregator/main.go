@@ -277,11 +277,6 @@ func main() {
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo)
 	appTemplateVersionSvc := apptemplateversion.NewService(appTemplateVersionRepo, appTemplateSvc, uidSvc, timeSvc)
 
-	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
-
-	ordClientWithTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
-	ordClientWithoutTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
-
 	vendorSvc := ordvendor.NewDefaultService()
 	vendorProcessor := processors.NewVendorProcessor(transact, vendorSvc)
 
@@ -294,14 +289,11 @@ func main() {
 	tombstoneSvc := tombstone.NewDefaultService()
 	tombstoneProcessor := processors.NewTombstoneProcessor(transact, tombstoneSvc)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
+	bundleProcessor := processors.NewBundleProcessor(transact, bundleSvc, webhookSvc, webhookConverter, credentialExchangeStrategyTenantMappings)
 
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uuid.NewService())
 
-	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, *packageProcessor, productSvc, *productProcessor, vendorSvc, *vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 
 	jwtHTTPClient := &http.Client{
@@ -329,7 +321,7 @@ func main() {
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, *packageProcessor, productSvc, *productProcessor, vendorSvc, *vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc, *bundleProcessor)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -564,8 +556,8 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 	go periodicExecutor.Run(ctx)
 }
 
-func unmarshalMappings(tenantMappings string) (map[string]ord.CredentialExchangeStrategyTenantMapping, error) {
-	var mappingsFromEnv map[string]ord.CredentialExchangeStrategyTenantMapping
+func unmarshalMappings(tenantMappings string) (map[string]processors.CredentialExchangeStrategyTenantMapping, error) {
+	var mappingsFromEnv map[string]processors.CredentialExchangeStrategyTenantMapping
 	if err := json.Unmarshal([]byte(tenantMappings), &mappingsFromEnv); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling tenant mappings")
 	}
