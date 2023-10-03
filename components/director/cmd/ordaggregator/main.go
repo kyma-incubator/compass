@@ -183,7 +183,6 @@ func main() {
 	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
 	extSvcMtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
@@ -323,6 +322,14 @@ func main() {
 		shutdownMainSrv()
 	}()
 
+	clientConfig := ord.NewClientConfig(cfg.MaxParallelDocumentsPerApplication)
+	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
+	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
+
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
+
+	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, labelSvc, ordWebhookMapping, opSvc)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -379,6 +386,32 @@ func main() {
 	}()
 
 	runMainSrv()
+}
+
+func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache certloader.Cache) *ord.ORDDocumentsClient {
+	httpClient := &http.Client{
+		Timeout: cfg.ClientTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.SkipSSLValidation,
+			},
+		},
+	}
+	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
+}
+
+func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig, certCache certloader.Cache) *ord.ORDDocumentsClient {
+	httpClient := &http.Client{
+		Timeout: cfg.ClientTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.SkipSSLValidation,
+			},
+		},
+	}
+	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 }
 
 func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) (string, error) {
