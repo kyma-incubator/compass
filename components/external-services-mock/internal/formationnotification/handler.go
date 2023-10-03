@@ -233,6 +233,18 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
+// RespondWithNoConfig handles synchronous formation assignment notification requests for Assign operation
+// It always returns no configuration
+func (h *Handler) RespondWithNoConfig(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(bodyBytes []byte) {
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
 // RespondWithIncomplete handles synchronous formation assignment notification requests for Assign operation
 // that based on the provided config in the request body we return either so called "incomplete" status coe(204) without config in case the config is not provided
 // or if the config is provided we just return it with "success" status code(200)
