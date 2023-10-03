@@ -135,6 +135,20 @@ func (_m *FormationAssignmentService) SetAssignmentToErrorState(ctx context.Cont
 	return r0
 }
 
+// Update provides a mock function with given fields: ctx, id, fa
+func (_m *FormationAssignmentService) Update(ctx context.Context, id string, fa *model.FormationAssignment) error {
+	ret := _m.Called(ctx, id, fa)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment) error); ok {
+		r0 = rf(ctx, id, fa)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewFormationAssignmentService interface {
 	mock.TestingT
 	Cleanup(func())
