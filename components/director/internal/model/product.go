@@ -71,6 +71,7 @@ func (i *ProductInput) ToProduct(id string, resourceType resource.Type, resource
 func (p *Product) SetFromUpdateInput(update ProductInput) {
 	p.Title = update.Title
 	p.ShortDescription = update.ShortDescription
+	p.Description = update.Description
 	p.Vendor = update.Vendor
 	p.Parent = update.Parent
 	p.CorrelationIDs = update.CorrelationIDs

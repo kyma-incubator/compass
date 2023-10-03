@@ -15,6 +15,7 @@ const (
 	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
+	description      = "desc"
 )
 
 var (
@@ -35,7 +36,7 @@ func fixEntityTombstoneWithID(id string) *tombstone.Entity {
 		ID:          id,
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
-		Description: repo.NewValidNullableString("desc"),
+		Description: repo.NewValidNullableString(description),
 	}
 }
 
@@ -64,7 +65,7 @@ func fixTombstoneModelWithID(id string) *model.Tombstone {
 		ID:          id,
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
-		Description: str.Ptr("desc"),
+		Description: str.Ptr(description),
 	}
 }
 
@@ -84,7 +85,7 @@ func fixTombstoneModelInput() *model.TombstoneInput {
 	return &model.TombstoneInput{
 		OrdID:       ordID,
 		RemovalDate: "removalDate",
-		Description: str.Ptr("desc"),
+		Description: str.Ptr(description),
 	}
 }
 
@@ -101,13 +102,13 @@ func fixTombstoneRowForAppTemplateVersion() []driver.Value {
 }
 
 func fixTombstoneRowWithIDForApp(id string) []driver.Value {
-	return []driver.Value{ordID, appID, repo.NewValidNullableString(""), "removalDate", id, "desc"}
+	return []driver.Value{ordID, appID, repo.NewValidNullableString(""), "removalDate", id, description}
 }
 
 func fixTombstoneRowWithIDForAppTemplateVersion(id string) []driver.Value {
-	return []driver.Value{ordID, repo.NewValidNullableString(""), appTemplateVersionID, "removalDate", id, "desc"}
+	return []driver.Value{ordID, repo.NewValidNullableString(""), appTemplateVersionID, "removalDate", id, description}
 }
 
 func fixTombstoneUpdateArgs() []driver.Value {
-	return []driver.Value{"removalDate", "desc"}
+	return []driver.Value{"removalDate", description}
 }

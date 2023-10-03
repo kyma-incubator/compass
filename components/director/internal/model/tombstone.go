@@ -44,4 +44,5 @@ func (i *TombstoneInput) ToTombstone(id string, resourceType resource.Type, reso
 // SetFromUpdateInput missing godoc
 func (p *Tombstone) SetFromUpdateInput(update TombstoneInput) {
 	p.RemovalDate = update.RemovalDate
+	p.Description = update.Description
 }

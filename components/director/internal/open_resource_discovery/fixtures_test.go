@@ -888,7 +888,8 @@ func fixProducts() []*model.Product {
 			OrdID:               productORDID,
 			ApplicationID:       str.Ptr(appID),
 			Title:               "PRODUCT TITLE",
-			ShortDescription:    "lorem ipsum",
+			Description:         str.Ptr("long description"),
+			ShortDescription:    "short description",
 			Vendor:              vendorORDID,
 			Parent:              str.Ptr(product2ORDID),
 			CorrelationIDs:      json.RawMessage(`["foo.bar.baz:123456"]`),
@@ -1330,6 +1331,7 @@ func fixTombstones() []*model.Tombstone {
 			OrdID:         api2ORDID,
 			ApplicationID: &appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
+			Description:   str.Ptr("description"),
 		},
 	}
 }
