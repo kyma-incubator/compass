@@ -142,8 +142,8 @@ global:
       version: "v20230918-de877e42"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3349"
+      dir: prod/incubator/
+      version: "v20231003-5e44e3d4"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -187,8 +187,8 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3346"
+      dir: prod/incubator/
+      version: "v20231003-092adc30"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
