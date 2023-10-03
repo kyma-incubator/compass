@@ -100,17 +100,6 @@ type FetchRequestService interface {
 	UpdateGlobal(ctx context.Context, fr *model.FetchRequest) error
 }
 
-// PackageService is responsible for the service-layer Package operations.
-//
-//go:generate mockery --name=PackageService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type PackageService interface {
-	Create(ctx context.Context, resourceType resource.Type, resourceID string, in model.PackageInput, pkgHash uint64) (string, error)
-	Update(ctx context.Context, resourceType resource.Type, id string, in model.PackageInput, pkgHash uint64) error
-	Delete(ctx context.Context, resourceType resource.Type, id string) error
-	ListByApplicationID(ctx context.Context, appID string) ([]*model.Package, error)
-	ListByApplicationTemplateVersionID(ctx context.Context, appTemplateVersionID string) ([]*model.Package, error)
-}
-
 // GlobalProductService is responsible for the service-layer operations for Global Product (with NULL app_id) without tenant isolation.
 //
 //go:generate mockery --name=GlobalProductService --output=automock --outpkg=automock --case=underscore --disable-version-string

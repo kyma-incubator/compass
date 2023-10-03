@@ -2,6 +2,7 @@ package ordpackage
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -45,6 +46,17 @@ func NewService(pkgRepo PackageRepository, uidService UIDService) *service {
 	return &service{
 		pkgRepo:    pkgRepo,
 		uidService: uidService,
+	}
+}
+
+// NewDefaultService missing godoc
+func NewDefaultService() *service {
+	uidSvc := uid.NewService()
+	pkgConverter := NewConverter()
+	pkgRepo := NewRepository(pkgConverter)
+	return &service{
+		pkgRepo:    pkgRepo,
+		uidService: uidSvc,
 	}
 }
 
