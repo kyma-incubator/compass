@@ -146,7 +146,7 @@ func TestQueryRootTenant(t *testing.T) {
 		log.D().Info("Successfully cleanup tenants")
 	}()
 
-	// assert the top parent for subbacount 1
+	// assert the top parent for subaccount 1
 	var actualRootTenantForSubaccount1 graphql.Tenant
 	getRootTenant := fixtures.FixRootTenantRequest(subaccountExternalTenants[0])
 	t.Logf("Query root tenant for external tenant: %q", subaccountExternalTenants[0])
