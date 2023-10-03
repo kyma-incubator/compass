@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -121,6 +122,7 @@ import (
 )
 
 const envPrefix = "APP"
+const test = "HELL"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
@@ -223,6 +225,8 @@ func main() {
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
+
+	fmt.Println(test)
 
 	defer func() {
 		err := closeFunc()
