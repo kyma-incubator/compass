@@ -154,6 +154,8 @@ func TestQueryRootTenant(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForSubaccount1)
 	require.NoError(t, err)
 	require.Equal(t, customerExternalTenant, actualRootTenantForSubaccount1.ID)
+	require.Equal(t, customerName, *actualRootTenantForSubaccount1.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForSubaccount1.Type)
 	example.SaveExample(t, getRootTenant.Query(), "get root tenant")
 
 	// assert the top parent for subaccount 2
@@ -163,7 +165,10 @@ func TestQueryRootTenant(t *testing.T) {
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForSubaccount2)
 	require.NoError(t, err)
+
 	require.Equal(t, customerExternalTenant, actualRootTenantForSubaccount2.ID)
+	require.Equal(t, customerName, *actualRootTenantForSubaccount2.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForSubaccount2.Type)
 
 	// assert the top parent for account
 	var actualRootTenantForAccount graphql.Tenant
@@ -173,6 +178,8 @@ func TestQueryRootTenant(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForAccount)
 	require.NoError(t, err)
 	require.Equal(t, customerExternalTenant, actualRootTenantForAccount.ID)
+	require.Equal(t, customerName, *actualRootTenantForAccount.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForAccount.Type)
 
 	// assert the top parent for customer
 	var actualRootTenantForCustomer graphql.Tenant
@@ -182,4 +189,6 @@ func TestQueryRootTenant(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRootTenant, &actualRootTenantForCustomer)
 	require.NoError(t, err)
 	require.Equal(t, customerExternalTenant, actualRootTenantForCustomer.ID)
+	require.Equal(t, customerName, *actualRootTenantForCustomer.Name)
+	require.Equal(t, string(tenant.Customer), actualRootTenantForCustomer.Type)
 }

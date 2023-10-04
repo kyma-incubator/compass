@@ -1544,7 +1544,7 @@ func TestPgRepository_GetCustomerIDParentRecursively(t *testing.T) {
 	})
 }
 
-func TestPgRepository_GetCustomerIDParentRecursivelyByExternalTenant(t *testing.T) {
+func TestPgRepository_GetParentRecursivelyByExternalTenant(t *testing.T) {
 	dbQuery := `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.parent, t1.type
                     FROM business_tenant_mappings t1
