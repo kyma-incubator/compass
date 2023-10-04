@@ -113,7 +113,7 @@ func (s *Service) createDesignTimeDestinations(ctx context.Context, destinationD
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
@@ -172,7 +172,7 @@ func (s *Service) createBasicCredentialDestination(ctx context.Context, destinat
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
@@ -234,7 +234,7 @@ func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinatio
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {
@@ -290,7 +290,7 @@ func (s *Service) createClientCertificateAuthenticationDestination(ctx context.C
 		if !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		log.C(ctx).Infof("No destination with name: %q and tenant ID: %q found in our DB, it will be created...", destinationDetails.Name, tenantID)
+		log.C(ctx).Infof("Destination with name: %q and tenant ID: %q was not found in our DB, it will be created...", destinationDetails.Name, tenantID)
 	}
 
 	if destinationFromDB != nil && destinationFromDB.FormationAssignmentID != nil && *destinationFromDB.FormationAssignmentID != formationAssignment.ID {

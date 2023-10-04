@@ -114,8 +114,9 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -124,7 +125,6 @@ func (s *Service) CreateDesignTimeDestinations(ctx context.Context, destinationD
 		return errors.Wrapf(err, "while building destination URL")
 	}
 
-	destinationName := destinationDetails.Name
 	destReqBody := &NoAuthDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:                 destinationName,
@@ -171,8 +171,9 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -186,7 +187,6 @@ func (s *Service) CreateBasicCredentialDestinations(ctx context.Context, destina
 		return err
 	}
 
-	destinationName := destinationDetails.Name
 	log.C(ctx).Infof("Creating inbound basic destination with name: %q, subaccount ID: %q and assignment ID: %q in the destination service", destinationName, subaccountID, formationAssignment.ID)
 	_, statusCode, err := s.executeCreateRequest(ctx, strURL, reqBody, destinationName)
 	if err != nil {
@@ -218,8 +218,9 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -233,7 +234,6 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	}
 
-	destinationName := destinationDetails.Name
 	destReqBody := &SAMLAssertionDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationName,
@@ -306,8 +306,9 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	destinationName := destinationDetails.Name
 	strURL, err := buildDestinationURL(ctx, s.config.DestinationAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   destinationName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationDetails.InstanceID,
@@ -321,7 +322,6 @@ func (s *Service) CreateClientCertificateDestination(ctx context.Context, destin
 		return errors.Wrapf(err, "while getting destination certificate name for destination auth type: %s", destinationcreatorpkg.AuthTypeClientCertificate)
 	}
 
-	destinationName := destinationDetails.Name
 	destReqBody := &ClientCertAuthDestinationRequestBody{
 		BaseDestinationRequestBody: BaseDestinationRequestBody{
 			Name:               destinationName,
@@ -390,19 +390,19 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []o
 		return nil, errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	certName, err := GetDestinationCertificateName(ctx, destinationAuthType, formationAssignment.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
-		EntityName:   "",
+		EntityName:   certName,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   destinationsDetails[0].InstanceID,
 	}, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while building certificate URL")
-	}
-
-	certName, err := GetDestinationCertificateName(ctx, destinationAuthType, formationAssignment.ID)
-	if err != nil {
-		return nil, err
 	}
 
 	certReqBody := &CertificateRequestBody{Name: certName}

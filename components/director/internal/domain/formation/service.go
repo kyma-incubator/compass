@@ -881,10 +881,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return ft.formation, nil
 	}
 
-	// In case of unassign, we want to persist the formation assignments in DELETING state in isolated transaction
+	// In case of Unassign, we want to persist the formation assignments in DELETING state in isolated transaction
 	// similar to the Assign operation and to cover the case when we have both type of webhook - sync and async.
 	// So if the async notification was sent, and we're processing the sync notification, meanwhile the async participant sends
-	// FA status update request, he will have the latest state of the formation assignment even though we didn't finish the sync notification processing.
+	// FA status update request, he will have the latest state of the formation assignment even when we didn't finish the sync notification processing.
 	if err = s.transaction(ctx, func(ctxWithTransact context.Context) error {
 		return s.updateFormationAssignmentsWithStateForObjectID(ctxWithTransact, formationFromDB.ID, objectID, string(objectType), string(model.DeletingAssignmentState))
 	}); err != nil {
