@@ -93,6 +93,8 @@ const (
 	APISpecTypeRfcMetadata APISpecType = "sap-rfc-metadata-v1"
 	// APISpecTypeSQLAPIDefinitionV1 is the SQL API Definition Specification.
 	APISpecTypeSQLAPIDefinitionV1 APISpecType = "sap-sql-api-definition-v1"
+	// APISpecTypeGraphqlSDL is the Graphql Specification.
+	APISpecTypeGraphqlSDL APISpecType = "graphql-sdl"
 	// APISpecTypeCustom is the Custom Specification.
 	APISpecTypeCustom APISpecType = "custom"
 )
