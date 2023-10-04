@@ -58,30 +58,6 @@ func (_m *BusinessTenantMappingService) DeleteTenantAccessForResourceRecursively
 	return r0
 }
 
-// GetCustomerIDParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *BusinessTenantMappingService) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error) {
-	ret := _m.Called(ctx, externalTenant)
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, externalTenant)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, externalTenant)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, externalTenant)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetInternalTenant provides a mock function with given fields: ctx, externalTenant
 func (_m *BusinessTenantMappingService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
 	ret := _m.Called(ctx, externalTenant)
@@ -112,13 +88,39 @@ func (_m *BusinessTenantMappingService) GetLowestOwnerForResource(ctx context.Co
 
 	var r0 string
 	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, externalTenant)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, externalTenant)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, externalTenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *BusinessTenantMappingService) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalTenant)
+
+	var r0 string
+	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) (string, error)); ok {
 		return rf(ctx, resourceType, objectID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) string); ok {
 		r0 = rf(ctx, resourceType, objectID)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {

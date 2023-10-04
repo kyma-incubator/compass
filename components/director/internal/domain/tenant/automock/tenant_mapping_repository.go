@@ -156,9 +156,9 @@ func (_m *TenantMappingRepository) GetCustomerIDParentRecursively(ctx context.Co
 	return r0, r1
 }
 
-// GetCustomerIDParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *TenantMappingRepository) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error) {
-	ret := _m.Called(ctx, externalTenant)
+// GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
+func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	ret := _m.Called(ctx, resourceType, objectID)
 
 	var r0 string
 	var r1 error
@@ -180,9 +180,9 @@ func (_m *TenantMappingRepository) GetCustomerIDParentRecursivelyByExternalTenan
 	return r0, r1
 }
 
-// GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
-func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	ret := _m.Called(ctx, resourceType, objectID)
+// GetParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *TenantMappingRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalTenant)
 
 	var r0 string
 	var r1 error
@@ -192,7 +192,9 @@ func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) string); ok {
 		r0 = rf(ctx, resourceType, objectID)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {

@@ -485,43 +485,32 @@ func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenan
 	return dest.ExternalCustomerTenant, nil
 }
 
-// GetCustomerIDParentRecursivelyByExternalTenant gets the top parent external ID (customer_id) for a given external tenant
-func (r *pgRepository) GetCustomerIDParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (string, error) {
+// GetParentRecursivelyByExternalTenant gets the top parent for a given external tenant
+func (r *pgRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	recursiveQuery := `WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.parent, t1.external_tenant, t1.type
+                   (SELECT t1.id, t1.external_name, t1.external_tenant, t1.provider_name, t1.status, t1.parent, t1.type
                     FROM business_tenant_mappings t1
                     WHERE external_tenant = $1
                     UNION ALL
-                    SELECT t2.id, t2.parent, t2.external_tenant, t2.type
+                    SELECT t2.id, t2.external_name, t2.external_tenant, t2.provider_name, t2.status, t2.parent, t2.type
                     FROM business_tenant_mappings t2
                              INNER JOIN parents p on p.parent = t2.id)
-			SELECT external_tenant, type FROM parents WHERE parent is null`
+			SELECT id, external_name, external_tenant, provider_name, status, parent, type FROM parents WHERE parent is null`
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	log.C(ctx).Debugf("Executing DB query: %s", recursiveQuery)
 
-	dest := struct {
-		ExternalCustomerTenant string `db:"external_tenant"`
-		Type                   string `db:"type"`
-	}{}
+	var entity tenant.Entity
 
-	if err := persist.GetContext(ctx, &dest, recursiveQuery, externalTenant); err != nil {
-		return "", persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for external tenant: %q", externalTenant)
+	if err := persist.GetContext(ctx, &entity, recursiveQuery, externalTenant); err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for external tenant: %q", externalTenant)
 	}
 
-	if dest.Type != tenant.TypeToStr(tenant.Customer) {
-		return "", nil
-	}
-
-	if dest.ExternalCustomerTenant == "" {
-		return "", errors.Errorf("external parent customer ID for internal tenant ID: %s can not be empty", externalTenant)
-	}
-
-	return dest.ExternalCustomerTenant, nil
+	return r.conv.FromEntity(&entity), nil
 }
 
 func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {

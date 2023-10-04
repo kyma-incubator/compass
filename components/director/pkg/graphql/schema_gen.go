@@ -936,7 +936,7 @@ type QueryResolver interface {
 	TenantByExternalID(ctx context.Context, id string) (*Tenant, error)
 	TenantByInternalID(ctx context.Context, id string) (*Tenant, error)
 	TenantByLowestOwnerForResource(ctx context.Context, id string, resource string) (string, error)
-	RootTenant(ctx context.Context, externalTenant string) (string, error)
+	RootTenant(ctx context.Context, externalTenant string) (*Tenant, error)
 	AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignments(ctx context.Context, first *int, after *PageCursor) (*AutomaticScenarioAssignmentPage, error)
@@ -6817,7 +6817,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
-	rootTenant(externalTenant: String!): String! @hasScopes(path: "graphql.query.rootTenant")
+	rootTenant(externalTenant: String!): Tenant! @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -27740,10 +27740,10 @@ func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(string); ok {
+		if data, ok := tmp.(*Tenant); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27755,9 +27755,9 @@ func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Tenant)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
