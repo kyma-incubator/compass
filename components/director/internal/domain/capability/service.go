@@ -167,20 +167,6 @@ func (s *service) updateCapability(ctx context.Context, api *model.Capability, r
 	return s.repo.Update(ctx, tnt, api)
 }
 
-func (s *service) handleSpecsInCapability(ctx context.Context, id string, specIn *model.SpecInput, resourceType resource.Type) error {
-	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, resourceType, model.CapabilitySpecReference, id)
-	if err != nil {
-		return errors.Wrapf(err, "while getting spec for Capability with id %q", id)
-	}
-
-	if dbSpec == nil {
-		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, resourceType, model.CapabilitySpecReference, id)
-		return err
-	}
-
-	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, resourceType, model.CapabilitySpecReference, id)
-}
-
 func (s *service) processSpecs(ctx context.Context, capabilityID string, specs []*model.SpecInput, resourceType resource.Type) error {
 	for _, spec := range specs {
 		if spec == nil {

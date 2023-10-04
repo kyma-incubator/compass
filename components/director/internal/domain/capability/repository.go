@@ -12,8 +12,6 @@ import (
 const capabilityTable string = `"public"."capabilities"`
 
 var (
-	//idColumn          = "id"
-	//appIDColumn       = "app_id"
 	capabilityColumns = []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "tags", "links", "release_status", "labels", "visibility",
 		"version_value", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids"}

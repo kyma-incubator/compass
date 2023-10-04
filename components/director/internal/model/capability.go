@@ -108,6 +108,7 @@ func (cd *CapabilityDefinition) ToSpec() *SpecInput {
 	}
 }
 
+// ToCapability missing godoc
 func (a *CapabilityInput) ToCapability(id string, resourceType resource.Type, resourceID string, packageID *string, capabilityHash uint64) *Capability {
 	if a == nil {
 		return nil

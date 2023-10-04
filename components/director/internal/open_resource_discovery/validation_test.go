@@ -4698,8 +4698,6 @@ func TestDocument_ValidateCapability(t *testing.T) {
 			} else {
 				require.Error(t, err)
 			}
-
-			fmt.Println(err)
 		})
 	}
 }

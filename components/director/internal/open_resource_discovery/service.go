@@ -2206,7 +2206,7 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 
 			hash, err := HashObject(normalizedCapabilities)
 			if err != nil {
-				return nil, errors.Wrapf(err, "while hashing capabiltiy with ORD ID: %s", str.PtrStrToStr(normalizedCapabilities.OrdID))
+				return nil, errors.Wrapf(err, "while hashing capability with ORD ID: %s", str.PtrStrToStr(normalizedCapabilities.OrdID))
 			}
 
 			resourceHashes[str.PtrStrToStr(capabilityInput.OrdID)] = hash

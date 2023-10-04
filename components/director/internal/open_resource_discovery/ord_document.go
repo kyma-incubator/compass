@@ -2,7 +2,6 @@ package ord
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"path"
 	"regexp"
@@ -415,7 +414,6 @@ func (docs Documents) validateAndCheckForDuplications(perspectiveConstraint Docu
 				}
 				resourceIDs.CapabilityIDs[*capability.OrdID] = true
 			}
-			fmt.Println(errs)
 		}
 
 		for i, vendor := range doc.Vendors {
