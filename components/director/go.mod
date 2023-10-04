@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/director
 
-go 1.18
+go 1.21
 
 require (
 	dario.cat/mergo v1.0.0
@@ -20,9 +20,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231004120724-65d43eed263b
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231004120724-65d43eed263b
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004120724-65d43eed263b
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231004090518-4b987a14062c
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231004090518-4b987a14062c
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004090518-4b987a14062c
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.9
@@ -50,7 +50,7 @@ require (
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
-	sigs.k8s.io/controller-runtime v0.16.2
+	sigs.k8s.io/controller-runtime v0.14.6
 )
 
 require (
@@ -93,6 +93,7 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/matryer/is v1.4.1 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
@@ -119,7 +120,6 @@ require (
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
