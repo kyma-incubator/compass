@@ -22,6 +22,10 @@ func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentNot
 	ret := _m.Called(ctx, formationAssignment, operation)
 
 	var r0 *webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, formationAssignment, operation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, model.FormationOperation) *webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, formationAssignment, operation)
 	} else {
@@ -30,7 +34,6 @@ func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentNot
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationAssignment, model.FormationOperation) error); ok {
 		r1 = rf(ctx, formationAssignment, operation)
 	} else {
@@ -40,13 +43,12 @@ func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentNot
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationAssignmentNotificationService interface {
+// NewFormationAssignmentNotificationService creates a new instance of FormationAssignmentNotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationAssignmentNotificationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationAssignmentNotificationService creates a new instance of FormationAssignmentNotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentNotificationService(t mockConstructorTestingTNewFormationAssignmentNotificationService) *FormationAssignmentNotificationService {
+}) *FormationAssignmentNotificationService {
 	mock := &FormationAssignmentNotificationService{}
 	mock.Mock.Test(t)
 

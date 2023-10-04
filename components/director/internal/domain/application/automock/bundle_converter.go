@@ -19,6 +19,10 @@ func (_m *BundleConverter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCr
 	ret := _m.Called(in)
 
 	var r0 []*model.BundleCreateInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.BundleCreateInput) []*model.BundleCreateInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *BundleConverter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCr
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*graphql.BundleCreateInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *BundleConverter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bun
 	ret := _m.Called(in)
 
 	var r0 []*graphql.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.Bundle) ([]*graphql.Bundle, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.Bundle) []*graphql.Bundle); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *BundleConverter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bun
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.Bundle) error); ok {
 		r1 = rf(in)
 	} else {
@@ -65,6 +71,10 @@ func (_m *BundleConverter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) 
 	ret := _m.Called(in)
 
 	var r0 *graphql.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Bundle) (*graphql.Bundle, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Bundle) *graphql.Bundle); ok {
 		r0 = rf(in)
 	} else {
@@ -73,7 +83,6 @@ func (_m *BundleConverter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Bundle) error); ok {
 		r1 = rf(in)
 	} else {
@@ -83,13 +92,12 @@ func (_m *BundleConverter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBundleConverter interface {
+// NewBundleConverter creates a new instance of BundleConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleConverter creates a new instance of BundleConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleConverter(t mockConstructorTestingTNewBundleConverter) *BundleConverter {
+}) *BundleConverter {
 	mock := &BundleConverter{}
 	mock.Mock.Test(t)
 

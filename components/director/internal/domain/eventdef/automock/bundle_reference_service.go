@@ -48,6 +48,10 @@ func (_m *BundleReferenceService) GetForBundle(ctx context.Context, objectType m
 	ret := _m.Called(ctx, objectType, objectID, bundleID)
 
 	var r0 *model.BundleReference
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, *string, *string) (*model.BundleReference, error)); ok {
+		return rf(ctx, objectType, objectID, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, *string, *string) *model.BundleReference); ok {
 		r0 = rf(ctx, objectType, objectID, bundleID)
 	} else {
@@ -56,7 +60,6 @@ func (_m *BundleReferenceService) GetForBundle(ctx context.Context, objectType m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.BundleReferenceObjectType, *string, *string) error); ok {
 		r1 = rf(ctx, objectType, objectID, bundleID)
 	} else {
@@ -71,6 +74,11 @@ func (_m *BundleReferenceService) ListByBundleIDs(ctx context.Context, objectTyp
 	ret := _m.Called(ctx, objectType, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.BundleReference
+	var r1 map[string]int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) ([]*model.BundleReference, map[string]int, error)); ok {
+		return rf(ctx, objectType, bundleIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) []*model.BundleReference); ok {
 		r0 = rf(ctx, objectType, bundleIDs, pageSize, cursor)
 	} else {
@@ -79,7 +87,6 @@ func (_m *BundleReferenceService) ListByBundleIDs(ctx context.Context, objectTyp
 		}
 	}
 
-	var r1 map[string]int
 	if rf, ok := ret.Get(1).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) map[string]int); ok {
 		r1 = rf(ctx, objectType, bundleIDs, pageSize, cursor)
 	} else {
@@ -88,7 +95,6 @@ func (_m *BundleReferenceService) ListByBundleIDs(ctx context.Context, objectTyp
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, model.BundleReferenceObjectType, []string, int, string) error); ok {
 		r2 = rf(ctx, objectType, bundleIDs, pageSize, cursor)
 	} else {
@@ -112,13 +118,12 @@ func (_m *BundleReferenceService) UpdateByReferenceObjectID(ctx context.Context,
 	return r0
 }
 
-type mockConstructorTestingTNewBundleReferenceService interface {
+// NewBundleReferenceService creates a new instance of BundleReferenceService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleReferenceService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleReferenceService creates a new instance of BundleReferenceService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleReferenceService(t mockConstructorTestingTNewBundleReferenceService) *BundleReferenceService {
+}) *BundleReferenceService {
 	mock := &BundleReferenceService{}
 	mock.Mock.Test(t)
 

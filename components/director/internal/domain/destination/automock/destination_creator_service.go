@@ -108,13 +108,16 @@ func (_m *DestinationCreatorService) DetermineDestinationSubaccount(ctx context.
 	ret := _m.Called(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, bool) (string, error)); ok {
+		return rf(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, bool) string); ok {
 		r0 = rf(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, bool) error); ok {
 		r1 = rf(ctx, externalDestSubaccountID, formationAssignment, skipSubaccountValidation)
 	} else {
@@ -143,13 +146,16 @@ func (_m *DestinationCreatorService) GetConsumerTenant(ctx context.Context, form
 	ret := _m.Called(ctx, formationAssignment)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) (string, error)); ok {
+		return rf(ctx, formationAssignment)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) string); ok {
 		r0 = rf(ctx, formationAssignment)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationAssignment) error); ok {
 		r1 = rf(ctx, formationAssignment)
 	} else {
@@ -164,6 +170,10 @@ func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context
 	ret := _m.Called(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 
 	var r0 *destinationcreator.BasicAuthDestinationRequestBody
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) (*destinationcreator.BasicAuthDestinationRequestBody, error)); ok {
+		return rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) *destinationcreator.BasicAuthDestinationRequestBody); ok {
 		r0 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 	} else {
@@ -172,7 +182,6 @@ func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string) error); ok {
 		r1 = rf(ctx, destinationDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs)
 	} else {
@@ -182,13 +191,12 @@ func (_m *DestinationCreatorService) PrepareBasicRequestBody(ctx context.Context
 	return r0, r1
 }
 
-type mockConstructorTestingTNewDestinationCreatorService interface {
+// NewDestinationCreatorService creates a new instance of DestinationCreatorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationCreatorService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationCreatorService creates a new instance of DestinationCreatorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationCreatorService(t mockConstructorTestingTNewDestinationCreatorService) *DestinationCreatorService {
+}) *DestinationCreatorService {
 	mock := &DestinationCreatorService{}
 	mock.Mock.Test(t)
 

@@ -19,6 +19,11 @@ func (_m *EventConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinition
 	ret := _m.Called(in)
 
 	var r0 []*model.EventDefinitionInput
+	var r1 []*model.SpecInput
+	var r2 error
+	if rf, ok := ret.Get(0).(func([]*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.EventDefinitionInput) []*model.EventDefinitionInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +32,6 @@ func (_m *EventConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinition
 		}
 	}
 
-	var r1 []*model.SpecInput
 	if rf, ok := ret.Get(1).(func([]*graphql.EventDefinitionInput) []*model.SpecInput); ok {
 		r1 = rf(in)
 	} else {
@@ -36,7 +40,6 @@ func (_m *EventConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinition
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func([]*graphql.EventDefinitionInput) error); ok {
 		r2 = rf(in)
 	} else {
@@ -51,6 +54,10 @@ func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, specs [
 	ret := _m.Called(in, specs, bundleRefs)
 
 	var r0 []*graphql.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) ([]*graphql.EventDefinition, error)); ok {
+		return rf(in, specs, bundleRefs)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) []*graphql.EventDefinition); ok {
 		r0 = rf(in, specs, bundleRefs)
 	} else {
@@ -59,7 +66,6 @@ func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, specs [
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) error); ok {
 		r1 = rf(in, specs, bundleRefs)
 	} else {
@@ -74,6 +80,10 @@ func (_m *EventConverter) ToGraphQL(in *model.EventDefinition, spec *model.Spec,
 	ret := _m.Called(in, spec, bundleReference)
 
 	var r0 *graphql.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) (*graphql.EventDefinition, error)); ok {
+		return rf(in, spec, bundleReference)
+	}
 	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) *graphql.EventDefinition); ok {
 		r0 = rf(in, spec, bundleReference)
 	} else {
@@ -82,7 +92,6 @@ func (_m *EventConverter) ToGraphQL(in *model.EventDefinition, spec *model.Spec,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) error); ok {
 		r1 = rf(in, spec, bundleReference)
 	} else {
@@ -92,13 +101,12 @@ func (_m *EventConverter) ToGraphQL(in *model.EventDefinition, spec *model.Spec,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventConverter interface {
+// NewEventConverter creates a new instance of EventConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventConverter creates a new instance of EventConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventConverter(t mockConstructorTestingTNewEventConverter) *EventConverter {
+}) *EventConverter {
 	mock := &EventConverter{}
 	mock.Mock.Test(t)
 

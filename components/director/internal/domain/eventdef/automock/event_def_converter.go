@@ -19,6 +19,11 @@ func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) 
 	ret := _m.Called(in)
 
 	var r0 *model.EventDefinitionInput
+	var r1 *model.SpecInput
+	var r2 error
+	if rf, ok := ret.Get(0).(func(*graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*graphql.EventDefinitionInput) *model.EventDefinitionInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +32,6 @@ func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) 
 		}
 	}
 
-	var r1 *model.SpecInput
 	if rf, ok := ret.Get(1).(func(*graphql.EventDefinitionInput) *model.SpecInput); ok {
 		r1 = rf(in)
 	} else {
@@ -36,7 +40,6 @@ func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) 
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(*graphql.EventDefinitionInput) error); ok {
 		r2 = rf(in)
 	} else {
@@ -51,6 +54,11 @@ func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinit
 	ret := _m.Called(in)
 
 	var r0 []*model.EventDefinitionInput
+	var r1 []*model.SpecInput
+	var r2 error
+	if rf, ok := ret.Get(0).(func([]*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.EventDefinitionInput) []*model.EventDefinitionInput); ok {
 		r0 = rf(in)
 	} else {
@@ -59,7 +67,6 @@ func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinit
 		}
 	}
 
-	var r1 []*model.SpecInput
 	if rf, ok := ret.Get(1).(func([]*graphql.EventDefinitionInput) []*model.SpecInput); ok {
 		r1 = rf(in)
 	} else {
@@ -68,7 +75,6 @@ func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinit
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func([]*graphql.EventDefinitionInput) error); ok {
 		r2 = rf(in)
 	} else {
@@ -83,6 +89,10 @@ func (_m *EventDefConverter) MultipleToGraphQL(in []*model.EventDefinition, spec
 	ret := _m.Called(in, specs, bundleRefs)
 
 	var r0 []*graphql.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) ([]*graphql.EventDefinition, error)); ok {
+		return rf(in, specs, bundleRefs)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) []*graphql.EventDefinition); ok {
 		r0 = rf(in, specs, bundleRefs)
 	} else {
@@ -91,7 +101,6 @@ func (_m *EventDefConverter) MultipleToGraphQL(in []*model.EventDefinition, spec
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) error); ok {
 		r1 = rf(in, specs, bundleRefs)
 	} else {
@@ -106,6 +115,10 @@ func (_m *EventDefConverter) ToGraphQL(in *model.EventDefinition, spec *model.Sp
 	ret := _m.Called(in, spec, bundleReference)
 
 	var r0 *graphql.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) (*graphql.EventDefinition, error)); ok {
+		return rf(in, spec, bundleReference)
+	}
 	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) *graphql.EventDefinition); ok {
 		r0 = rf(in, spec, bundleReference)
 	} else {
@@ -114,7 +127,6 @@ func (_m *EventDefConverter) ToGraphQL(in *model.EventDefinition, spec *model.Sp
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) error); ok {
 		r1 = rf(in, spec, bundleReference)
 	} else {
@@ -124,13 +136,12 @@ func (_m *EventDefConverter) ToGraphQL(in *model.EventDefinition, spec *model.Sp
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEventDefConverter interface {
+// NewEventDefConverter creates a new instance of EventDefConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventDefConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventDefConverter creates a new instance of EventDefConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventDefConverter(t mockConstructorTestingTNewEventDefConverter) *EventDefConverter {
+}) *EventDefConverter {
 	mock := &EventDefConverter{}
 	mock.Mock.Test(t)
 

@@ -20,6 +20,10 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 	ret := _m.Called(ctx, tenant, scenarios)
 
 	var r0 []*model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {
+		return rf(ctx, tenant, scenarios)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Application); ok {
 		r0 = rf(ctx, tenant, scenarios)
 	} else {
@@ -28,7 +32,6 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios)
 	} else {
@@ -38,13 +41,12 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationRepository interface {
+// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationRepository(t mockConstructorTestingTNewApplicationRepository) *ApplicationRepository {
+}) *ApplicationRepository {
 	mock := &ApplicationRepository{}
 	mock.Mock.Test(t)
 

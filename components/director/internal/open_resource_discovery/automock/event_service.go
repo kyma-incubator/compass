@@ -21,13 +21,16 @@ func (_m *EventService) Create(ctx context.Context, resourceType resource.Type, 
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, packageID, in, specs, bundleIDs, eventHash, defaultBundleID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, *string, *string, model.EventDefinitionInput, []*model.SpecInput, []string, uint64, string) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, packageID, in, specs, bundleIDs, eventHash, defaultBundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, *string, *string, model.EventDefinitionInput, []*model.SpecInput, []string, uint64, string) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, packageID, in, specs, bundleIDs, eventHash, defaultBundleID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, *string, *string, model.EventDefinitionInput, []*model.SpecInput, []string, uint64, string) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, packageID, in, specs, bundleIDs, eventHash, defaultBundleID)
 	} else {
@@ -56,6 +59,10 @@ func (_m *EventService) ListByApplicationID(ctx context.Context, appID string) (
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.EventDefinition, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.EventDefinition); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *EventService) ListByApplicationID(ctx context.Context, appID string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *EventService) ListByApplicationTemplateVersionID(ctx context.Context, 
 	ret := _m.Called(ctx, appTemplateVersionID)
 
 	var r0 []*model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.EventDefinition, error)); ok {
+		return rf(ctx, appTemplateVersionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.EventDefinition); ok {
 		r0 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -87,7 +97,6 @@ func (_m *EventService) ListByApplicationTemplateVersionID(ctx context.Context, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -111,13 +120,12 @@ func (_m *EventService) UpdateInManyBundles(ctx context.Context, resourceType re
 	return r0
 }
 
-type mockConstructorTestingTNewEventService interface {
+// NewEventService creates a new instance of EventService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventService creates a new instance of EventService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventService(t mockConstructorTestingTNewEventService) *EventService {
+}) *EventService {
 	mock := &EventService{}
 	mock.Mock.Test(t)
 

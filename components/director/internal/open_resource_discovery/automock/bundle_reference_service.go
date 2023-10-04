@@ -19,6 +19,10 @@ func (_m *BundleReferenceService) GetBundleIDsForObject(ctx context.Context, obj
 	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, *string) ([]string, error)); ok {
+		return rf(ctx, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.BundleReferenceObjectType, *string) []string); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
@@ -27,7 +31,6 @@ func (_m *BundleReferenceService) GetBundleIDsForObject(ctx context.Context, obj
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.BundleReferenceObjectType, *string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {
@@ -37,13 +40,12 @@ func (_m *BundleReferenceService) GetBundleIDsForObject(ctx context.Context, obj
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBundleReferenceService interface {
+// NewBundleReferenceService creates a new instance of BundleReferenceService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleReferenceService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleReferenceService creates a new instance of BundleReferenceService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleReferenceService(t mockConstructorTestingTNewBundleReferenceService) *BundleReferenceService {
+}) *BundleReferenceService {
 	mock := &BundleReferenceService{}
 	mock.Mock.Test(t)
 

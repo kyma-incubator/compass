@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/kyma-adapter
 
-go 1.18
+go 1.20
 
 require (
 	github.com/avast/retry-go/v4 v4.3.4

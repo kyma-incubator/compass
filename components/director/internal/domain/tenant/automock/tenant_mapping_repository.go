@@ -37,13 +37,16 @@ func (_m *TenantMappingRepository) Exists(ctx context.Context, id string) (bool,
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -58,13 +61,16 @@ func (_m *TenantMappingRepository) ExistsByExternalTenant(ctx context.Context, e
 	ret := _m.Called(ctx, externalTenant)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, externalTenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, externalTenant)
 	} else {
@@ -79,6 +85,10 @@ func (_m *TenantMappingRepository) Get(ctx context.Context, id string) (*model.B
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -87,7 +97,6 @@ func (_m *TenantMappingRepository) Get(ctx context.Context, id string) (*model.B
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -102,6 +111,10 @@ func (_m *TenantMappingRepository) GetByExternalTenant(ctx context.Context, exte
 	ret := _m.Called(ctx, externalTenant)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalTenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
@@ -110,7 +123,6 @@ func (_m *TenantMappingRepository) GetByExternalTenant(ctx context.Context, exte
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, externalTenant)
 	} else {
@@ -125,13 +137,16 @@ func (_m *TenantMappingRepository) GetCustomerIDParentRecursively(ctx context.Co
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -146,13 +161,16 @@ func (_m *TenantMappingRepository) GetCustomerIDParentRecursivelyByExternalTenan
 	ret := _m.Called(ctx, externalTenant)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, externalTenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, externalTenant)
 	} else {
@@ -167,13 +185,16 @@ func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context
 	ret := _m.Called(ctx, resourceType, objectID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) (string, error)); ok {
+		return rf(ctx, resourceType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) string); ok {
 		r0 = rf(ctx, resourceType, objectID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {
 		r1 = rf(ctx, resourceType, objectID)
 	} else {
@@ -188,6 +209,10 @@ func (_m *TenantMappingRepository) List(ctx context.Context) ([]*model.BusinessT
 	ret := _m.Called(ctx)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx)
 	} else {
@@ -196,7 +221,6 @@ func (_m *TenantMappingRepository) List(ctx context.Context) ([]*model.BusinessT
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -211,6 +235,10 @@ func (_m *TenantMappingRepository) ListByExternalTenants(ctx context.Context, ex
 	ret := _m.Called(ctx, externalTenant)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalTenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
@@ -219,7 +247,6 @@ func (_m *TenantMappingRepository) ListByExternalTenants(ctx context.Context, ex
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, externalTenant)
 	} else {
@@ -234,6 +261,10 @@ func (_m *TenantMappingRepository) ListByParentAndType(ctx context.Context, pare
 	ret := _m.Called(ctx, parentID, tenantType)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, pkgtenant.Type) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, parentID, tenantType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, pkgtenant.Type) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, parentID, tenantType)
 	} else {
@@ -242,7 +273,6 @@ func (_m *TenantMappingRepository) ListByParentAndType(ctx context.Context, pare
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, pkgtenant.Type) error); ok {
 		r1 = rf(ctx, parentID, tenantType)
 	} else {
@@ -257,6 +287,10 @@ func (_m *TenantMappingRepository) ListByType(ctx context.Context, tenantType pk
 	ret := _m.Called(ctx, tenantType)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, pkgtenant.Type) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, tenantType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, pkgtenant.Type) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, tenantType)
 	} else {
@@ -265,7 +299,6 @@ func (_m *TenantMappingRepository) ListByType(ctx context.Context, tenantType pk
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, pkgtenant.Type) error); ok {
 		r1 = rf(ctx, tenantType)
 	} else {
@@ -280,6 +313,10 @@ func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, sea
 	ret := _m.Called(ctx, searchTerm, pageSize, cursor)
 
 	var r0 *model.BusinessTenantMappingPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.BusinessTenantMappingPage, error)); ok {
+		return rf(ctx, searchTerm, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.BusinessTenantMappingPage); ok {
 		r0 = rf(ctx, searchTerm, pageSize, cursor)
 	} else {
@@ -288,7 +325,6 @@ func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, sea
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, searchTerm, pageSize, cursor)
 	} else {
@@ -340,13 +376,12 @@ func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.Busine
 	return r0
 }
 
-type mockConstructorTestingTNewTenantMappingRepository interface {
+// NewTenantMappingRepository creates a new instance of TenantMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantMappingRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantMappingRepository creates a new instance of TenantMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantMappingRepository(t mockConstructorTestingTNewTenantMappingRepository) *TenantMappingRepository {
+}) *TenantMappingRepository {
 	mock := &TenantMappingRepository{}
 	mock.Mock.Test(t)
 

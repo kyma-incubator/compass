@@ -1,6 +1,6 @@
 APP_NAME = compass-operations-controller
 APP_PATH = components/operations-controller
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 VERIFY_IGNORE := /vendor\|/automock\|/api/v1alpha1/zz_generated.deepcopy.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 CHART_PATH = $(realpath $(shell pwd)/../..)/chart/compass/charts/operations-controller

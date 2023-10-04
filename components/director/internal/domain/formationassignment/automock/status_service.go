@@ -58,13 +58,12 @@ func (_m *StatusService) UpdateWithConstraints(ctx context.Context, fa *model.Fo
 	return r0
 }
 
-type mockConstructorTestingTNewStatusService interface {
+// NewStatusService creates a new instance of StatusService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStatusService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewStatusService creates a new instance of StatusService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStatusService(t mockConstructorTestingTNewStatusService) *StatusService {
+}) *StatusService {
 	mock := &StatusService{}
 	mock.Mock.Test(t)
 

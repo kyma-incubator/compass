@@ -22,6 +22,10 @@ func (_m *Watcher) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	ret := _m.Called(ctx, opts)
 
 	var r0 watch.Interface
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, v1.ListOptions) (watch.Interface, error)); ok {
+		return rf(ctx, opts)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, v1.ListOptions) watch.Interface); ok {
 		r0 = rf(ctx, opts)
 	} else {
@@ -30,7 +34,6 @@ func (_m *Watcher) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, v1.ListOptions) error); ok {
 		r1 = rf(ctx, opts)
 	} else {
@@ -40,13 +43,12 @@ func (_m *Watcher) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	return r0, r1
 }
 
-type mockConstructorTestingTNewWatcher interface {
+// NewWatcher creates a new instance of Watcher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWatcher(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWatcher creates a new instance of Watcher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWatcher(t mockConstructorTestingTNewWatcher) *Watcher {
+}) *Watcher {
 	mock := &Watcher{}
 	mock.Mock.Test(t)
 

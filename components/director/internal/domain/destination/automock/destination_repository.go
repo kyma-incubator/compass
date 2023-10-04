@@ -34,6 +34,10 @@ func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Conte
 	ret := _m.Called(ctx, destinationName, tenantID)
 
 	var r0 *model.Destination
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Destination, error)); ok {
+		return rf(ctx, destinationName, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Destination); ok {
 		r0 = rf(ctx, destinationName, tenantID)
 	} else {
@@ -42,7 +46,6 @@ func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Conte
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, destinationName, tenantID)
 	} else {
@@ -57,6 +60,10 @@ func (_m *DestinationRepository) ListByAssignmentID(ctx context.Context, formati
 	ret := _m.Called(ctx, formationAssignmentID)
 
 	var r0 []*model.Destination
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Destination, error)); ok {
+		return rf(ctx, formationAssignmentID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Destination); ok {
 		r0 = rf(ctx, formationAssignmentID)
 	} else {
@@ -65,7 +72,6 @@ func (_m *DestinationRepository) ListByAssignmentID(ctx context.Context, formati
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, formationAssignmentID)
 	} else {
@@ -89,13 +95,12 @@ func (_m *DestinationRepository) UpsertWithEmbeddedTenant(ctx context.Context, _
 	return r0
 }
 
-type mockConstructorTestingTNewDestinationRepository interface {
+// NewDestinationRepository creates a new instance of DestinationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationRepository creates a new instance of DestinationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationRepository(t mockConstructorTestingTNewDestinationRepository) *DestinationRepository {
+}) *DestinationRepository {
 	mock := &DestinationRepository{}
 	mock.Mock.Test(t)
 

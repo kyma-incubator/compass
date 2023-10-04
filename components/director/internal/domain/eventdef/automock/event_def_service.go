@@ -22,13 +22,16 @@ func (_m *EventDefService) CreateInApplication(ctx context.Context, appID string
 	ret := _m.Called(ctx, appID, in, spec)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) (string, error)); ok {
+		return rf(ctx, appID, in, spec)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) string); ok {
 		r0 = rf(ctx, appID, in, spec)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
 		r1 = rf(ctx, appID, in, spec)
 	} else {
@@ -43,13 +46,16 @@ func (_m *EventDefService) CreateInBundle(ctx context.Context, resourceType reso
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, in, spec)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.EventDefinitionInput, *model.SpecInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, in, spec)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.EventDefinitionInput, *model.SpecInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, in, spec)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, in, spec)
 	} else {
@@ -78,6 +84,10 @@ func (_m *EventDefService) Get(ctx context.Context, id string) (*model.EventDefi
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.EventDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.EventDefinition, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.EventDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -86,7 +96,6 @@ func (_m *EventDefService) Get(ctx context.Context, id string) (*model.EventDefi
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -101,6 +110,10 @@ func (_m *EventDefService) ListByApplicationIDPage(ctx context.Context, appID st
 	ret := _m.Called(ctx, appID, pageSize, cursor)
 
 	var r0 *model.EventDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.EventDefinitionPage, error)); ok {
+		return rf(ctx, appID, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.EventDefinitionPage); ok {
 		r0 = rf(ctx, appID, pageSize, cursor)
 	} else {
@@ -109,7 +122,6 @@ func (_m *EventDefService) ListByApplicationIDPage(ctx context.Context, appID st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
 		r1 = rf(ctx, appID, pageSize, cursor)
 	} else {
@@ -124,6 +136,10 @@ func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIDs []
 	ret := _m.Called(ctx, eventDefIDs)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, eventDefIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, eventDefIDs)
 	} else {
@@ -132,7 +148,6 @@ func (_m *EventDefService) ListFetchRequests(ctx context.Context, eventDefIDs []
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, eventDefIDs)
 	} else {
@@ -170,13 +185,12 @@ func (_m *EventDefService) UpdateForApplication(ctx context.Context, id string, 
 	return r0
 }
 
-type mockConstructorTestingTNewEventDefService interface {
+// NewEventDefService creates a new instance of EventDefService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventDefService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventDefService creates a new instance of EventDefService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventDefService(t mockConstructorTestingTNewEventDefService) *EventDefService {
+}) *EventDefService {
 	mock := &EventDefService{}
 	mock.Mock.Test(t)
 

@@ -23,6 +23,10 @@ func (_m *PersistenceOp) ExecContext(ctx context.Context, query string, args ...
 	ret := _m.Called(_ca...)
 
 	var r0 sql.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) (sql.Result, error)); ok {
+		return rf(ctx, query, args...)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) sql.Result); ok {
 		r0 = rf(ctx, query, args...)
 	} else {
@@ -31,7 +35,6 @@ func (_m *PersistenceOp) ExecContext(ctx context.Context, query string, args ...
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, ...interface{}) error); ok {
 		r1 = rf(ctx, query, args...)
 	} else {
@@ -63,6 +66,10 @@ func (_m *PersistenceOp) NamedExecContext(ctx context.Context, query string, arg
 	ret := _m.Called(ctx, query, arg)
 
 	var r0 sql.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) (sql.Result, error)); ok {
+		return rf(ctx, query, arg)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) sql.Result); ok {
 		r0 = rf(ctx, query, arg)
 	} else {
@@ -71,7 +78,6 @@ func (_m *PersistenceOp) NamedExecContext(ctx context.Context, query string, arg
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
 		r1 = rf(ctx, query, arg)
 	} else {
@@ -98,13 +104,12 @@ func (_m *PersistenceOp) SelectContext(ctx context.Context, dest interface{}, qu
 	return r0
 }
 
-type mockConstructorTestingTNewPersistenceOp interface {
+// NewPersistenceOp creates a new instance of PersistenceOp. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewPersistenceOp(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewPersistenceOp creates a new instance of PersistenceOp. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewPersistenceOp(t mockConstructorTestingTNewPersistenceOp) *PersistenceOp {
+}) *PersistenceOp {
 	mock := &PersistenceOp{}
 	mock.Mock.Test(t)
 
