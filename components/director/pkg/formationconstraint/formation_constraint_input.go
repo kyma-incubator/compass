@@ -49,8 +49,9 @@ type DestinationCreatorInput struct {
 
 // ConfigMutatorInput input for ConfigMutator operator
 type ConfigMutatorInput struct {
-	State                                  string                   `json:"state"`
-	Configuration                          string                   `json:"configuration"`
+	State                                  *string                  `json:"state"`
+	LastFormationAssignmentState           string                   `json:"last_formation_assignment_state"`
+	Configuration                          *string                  `json:"configuration"`
 	Operation                              model.FormationOperation `json:"operation"`
 	ResourceType                           model.ResourceType       `json:"resource_type"`
 	ResourceSubtype                        string                   `json:"resource_subtype"`

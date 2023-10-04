@@ -377,6 +377,8 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter, r *http.Request, responseFunc SyncFAResponseFn) {
+
+	log.C(ctx).Infof("Processing sync notification with method %s", r.Method)
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	routeVars := mux.Vars(r)

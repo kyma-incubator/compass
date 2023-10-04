@@ -94,7 +94,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 }
 
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
-func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
@@ -125,13 +125,15 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
+	log.C(ctx).Infof("Generating join point details - old:%s, new:%s", lastFormationAssignmentState, fa.State)
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
-		ResourceType:               targetType,
-		ResourceSubtype:            targetSubtype,
-		Operation:                  operation,
-		FormationAssignment:        fa,
-		ReverseFormationAssignment: reverseFa,
-		Formation:                  formation,
+		ResourceType:                 targetType,
+		ResourceSubtype:              targetSubtype,
+		LastFormationAssignmentState: lastFormationAssignmentState,
+		Operation:                    operation,
+		FormationAssignment:          fa,
+		ReverseFormationAssignment:   reverseFa,
+		Formation:                    formation,
 	}, nil
 }
 
