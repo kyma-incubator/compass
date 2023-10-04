@@ -4,8 +4,8 @@ go 1.21
 
 require (
 	github.com/go-logr/logr v1.2.4
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231004120724-65d43eed263b
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004120724-65d43eed263b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231004132913-1b0a7f1a7590
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004090518-4b987a14062c
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
@@ -15,7 +15,7 @@ require (
 	k8s.io/api v0.28.1
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
-	sigs.k8s.io/controller-runtime v0.16.2
+	sigs.k8s.io/controller-runtime v0.14.6
 )
 
 require (
@@ -90,7 +90,6 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
