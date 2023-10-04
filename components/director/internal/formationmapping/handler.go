@@ -169,8 +169,8 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
-		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, reqBody.State)
-		fa.State = string(reqBody.State)
+		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, assignmentReqBody.State)
+		fa.State = string(assignmentReqBody.State)
 		if err = h.faService.Update(ctx, fa.ID, fa); err != nil {
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
@@ -525,7 +525,7 @@ func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, format
 	return true, nil
 }
 
-func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string, reset bool) {
+func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
