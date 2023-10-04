@@ -91,7 +91,7 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Tombstone",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.tombstones SET removal_date = ? WHERE id = ? AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = ? AND owner = true))`),
+				Query:         regexp.QuoteMeta(`UPDATE public.tombstones SET removal_date = ?, description = ? WHERE id = ? AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = ? AND owner = true))`),
 				Args:          append(fixTombstoneUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -119,7 +119,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 		Name: "Update Tombstone Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.tombstones SET removal_date = ? WHERE id = ?`),
+				Query:         regexp.QuoteMeta(`UPDATE public.tombstones SET removal_date = ?, description = ? WHERE id = ?`),
 				Args:          append(fixTombstoneUpdateArgs(), entity.ID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -195,7 +195,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Tombstone",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id, description FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{tombstoneID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -223,7 +223,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Tombstone Global",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id FROM public.tombstones WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id, description FROM public.tombstones WHERE id = $1`),
 				Args:     []driver.Value{tombstoneID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -252,7 +252,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List Tombstones for Application",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id FROM public.tombstones WHERE app_id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id, description FROM public.tombstones WHERE app_id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -277,7 +277,7 @@ func TestPgRepository_ListByResourceID(t *testing.T) {
 		Name: "List Tombstones for Application Template Version",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id FROM public.tombstones WHERE app_template_version_id = $1 FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, app_template_version_id, removal_date, id, description FROM public.tombstones WHERE app_template_version_id = $1 FOR UPDATE`),
 				Args:     []driver.Value{appTemplateVersionID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
