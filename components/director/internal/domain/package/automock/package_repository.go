@@ -77,13 +77,16 @@ func (_m *PackageRepository) Exists(ctx context.Context, tenant string, id strin
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -98,6 +101,10 @@ func (_m *PackageRepository) GetByID(ctx context.Context, tenant string, id stri
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Package
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Package, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Package); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -106,7 +113,6 @@ func (_m *PackageRepository) GetByID(ctx context.Context, tenant string, id stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -121,6 +127,10 @@ func (_m *PackageRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Package
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Package, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Package); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -129,7 +139,6 @@ func (_m *PackageRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -144,6 +153,10 @@ func (_m *PackageRepository) ListByResourceID(ctx context.Context, tenantID stri
 	ret := _m.Called(ctx, tenantID, resourceID, resourceType)
 
 	var r0 []*model.Package
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) ([]*model.Package, error)); ok {
+		return rf(ctx, tenantID, resourceID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) []*model.Package); ok {
 		r0 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -152,7 +165,6 @@ func (_m *PackageRepository) ListByResourceID(ctx context.Context, tenantID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
 		r1 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -190,13 +202,12 @@ func (_m *PackageRepository) UpdateGlobal(ctx context.Context, _a1 *model.Packag
 	return r0
 }
 
-type mockConstructorTestingTNewPackageRepository interface {
+// NewPackageRepository creates a new instance of PackageRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewPackageRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewPackageRepository creates a new instance of PackageRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewPackageRepository(t mockConstructorTestingTNewPackageRepository) *PackageRepository {
+}) *PackageRepository {
 	mock := &PackageRepository{}
 	mock.Mock.Test(t)
 

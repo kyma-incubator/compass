@@ -19,13 +19,16 @@ func (_m *BundleReferenceConverter) FromEntity(in bundlereferences.Entity) (mode
 	ret := _m.Called(in)
 
 	var r0 model.BundleReference
+	var r1 error
+	if rf, ok := ret.Get(0).(func(bundlereferences.Entity) (model.BundleReference, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(bundlereferences.Entity) model.BundleReference); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.BundleReference)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(bundlereferences.Entity) error); ok {
 		r1 = rf(in)
 	} else {
@@ -49,13 +52,12 @@ func (_m *BundleReferenceConverter) ToEntity(in model.BundleReference) bundleref
 	return r0
 }
 
-type mockConstructorTestingTNewBundleReferenceConverter interface {
+// NewBundleReferenceConverter creates a new instance of BundleReferenceConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleReferenceConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleReferenceConverter creates a new instance of BundleReferenceConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleReferenceConverter(t mockConstructorTestingTNewBundleReferenceConverter) *BundleReferenceConverter {
+}) *BundleReferenceConverter {
 	mock := &BundleReferenceConverter{}
 	mock.Mock.Test(t)
 

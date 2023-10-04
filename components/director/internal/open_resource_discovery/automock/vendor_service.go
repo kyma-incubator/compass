@@ -21,13 +21,16 @@ func (_m *VendorService) Create(ctx context.Context, resourceType resource.Type,
 	ret := _m.Called(ctx, resourceType, resourceID, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.VendorInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, model.VendorInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, model.VendorInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, in)
 	} else {
@@ -56,6 +59,10 @@ func (_m *VendorService) ListByApplicationID(ctx context.Context, appID string) 
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Vendor, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Vendor); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *VendorService) ListByApplicationID(ctx context.Context, appID string) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *VendorService) ListByApplicationTemplateVersionID(ctx context.Context,
 	ret := _m.Called(ctx, appTemplateVersionID)
 
 	var r0 []*model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Vendor, error)); ok {
+		return rf(ctx, appTemplateVersionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Vendor); ok {
 		r0 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -87,7 +97,6 @@ func (_m *VendorService) ListByApplicationTemplateVersionID(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -111,13 +120,12 @@ func (_m *VendorService) Update(ctx context.Context, resourceType resource.Type,
 	return r0
 }
 
-type mockConstructorTestingTNewVendorService interface {
+// NewVendorService creates a new instance of VendorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewVendorService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewVendorService creates a new instance of VendorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewVendorService(t mockConstructorTestingTNewVendorService) *VendorService {
+}) *VendorService {
 	mock := &VendorService{}
 	mock.Mock.Test(t)
 

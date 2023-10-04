@@ -9,13 +9,12 @@ type HealthCheckRepository struct {
 	mock.Mock
 }
 
-type mockConstructorTestingTNewHealthCheckRepository interface {
+// NewHealthCheckRepository creates a new instance of HealthCheckRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewHealthCheckRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewHealthCheckRepository creates a new instance of HealthCheckRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewHealthCheckRepository(t mockConstructorTestingTNewHealthCheckRepository) *HealthCheckRepository {
+}) *HealthCheckRepository {
 	mock := &HealthCheckRepository{}
 	mock.Mock.Test(t)
 

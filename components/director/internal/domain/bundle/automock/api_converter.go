@@ -19,6 +19,11 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 	ret := _m.Called(in)
 
 	var r0 []*model.APIDefinitionInput
+	var r1 []*model.SpecInput
+	var r2 error
+	if rf, ok := ret.Get(0).(func([]*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func([]*graphql.APIDefinitionInput) []*model.APIDefinitionInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +32,6 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 		}
 	}
 
-	var r1 []*model.SpecInput
 	if rf, ok := ret.Get(1).(func([]*graphql.APIDefinitionInput) []*model.SpecInput); ok {
 		r1 = rf(in)
 	} else {
@@ -36,7 +40,6 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 		}
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func([]*graphql.APIDefinitionInput) error); ok {
 		r2 = rf(in)
 	} else {
@@ -51,6 +54,10 @@ func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, specs []*mo
 	ret := _m.Called(in, specs, bundleRefs)
 
 	var r0 []*graphql.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) ([]*graphql.APIDefinition, error)); ok {
+		return rf(in, specs, bundleRefs)
+	}
 	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) []*graphql.APIDefinition); ok {
 		r0 = rf(in, specs, bundleRefs)
 	} else {
@@ -59,7 +66,6 @@ func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, specs []*mo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) error); ok {
 		r1 = rf(in, specs, bundleRefs)
 	} else {
@@ -74,6 +80,10 @@ func (_m *APIConverter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bun
 	ret := _m.Called(in, spec, bundleRef)
 
 	var r0 *graphql.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) (*graphql.APIDefinition, error)); ok {
+		return rf(in, spec, bundleRef)
+	}
 	if rf, ok := ret.Get(0).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) *graphql.APIDefinition); ok {
 		r0 = rf(in, spec, bundleRef)
 	} else {
@@ -82,7 +92,6 @@ func (_m *APIConverter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bun
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) error); ok {
 		r1 = rf(in, spec, bundleRef)
 	} else {
@@ -92,13 +101,12 @@ func (_m *APIConverter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bun
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAPIConverter interface {
+// NewAPIConverter creates a new instance of APIConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIConverter creates a new instance of APIConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIConverter(t mockConstructorTestingTNewAPIConverter) *APIConverter {
+}) *APIConverter {
 	mock := &APIConverter{}
 	mock.Mock.Test(t)
 

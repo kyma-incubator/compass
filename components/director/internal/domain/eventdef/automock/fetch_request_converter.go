@@ -19,6 +19,10 @@ func (_m *FetchRequestConverter) ToGraphQL(in *model.FetchRequest) (*graphql.Fet
 	ret := _m.Called(in)
 
 	var r0 *graphql.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.FetchRequest) (*graphql.FetchRequest, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.FetchRequest) *graphql.FetchRequest); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *FetchRequestConverter) ToGraphQL(in *model.FetchRequest) (*graphql.Fet
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.FetchRequest) error); ok {
 		r1 = rf(in)
 	} else {
@@ -37,13 +40,12 @@ func (_m *FetchRequestConverter) ToGraphQL(in *model.FetchRequest) (*graphql.Fet
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFetchRequestConverter interface {
+// NewFetchRequestConverter creates a new instance of FetchRequestConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFetchRequestConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFetchRequestConverter creates a new instance of FetchRequestConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFetchRequestConverter(t mockConstructorTestingTNewFetchRequestConverter) *FetchRequestConverter {
+}) *FetchRequestConverter {
 	mock := &FetchRequestConverter{}
 	mock.Mock.Test(t)
 

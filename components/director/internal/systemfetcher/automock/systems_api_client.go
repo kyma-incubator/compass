@@ -21,6 +21,10 @@ func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant st
 	ret := _m.Called(ctx, tenant, mutex)
 
 	var r0 []systemfetcher.System
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *sync.Mutex) ([]systemfetcher.System, error)); ok {
+		return rf(ctx, tenant, mutex)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *sync.Mutex) []systemfetcher.System); ok {
 		r0 = rf(ctx, tenant, mutex)
 	} else {
@@ -29,7 +33,6 @@ func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *sync.Mutex) error); ok {
 		r1 = rf(ctx, tenant, mutex)
 	} else {
@@ -39,13 +42,12 @@ func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant st
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSystemsAPIClient interface {
+// NewSystemsAPIClient creates a new instance of SystemsAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemsAPIClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemsAPIClient creates a new instance of SystemsAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemsAPIClient(t mockConstructorTestingTNewSystemsAPIClient) *SystemsAPIClient {
+}) *SystemsAPIClient {
 	mock := &SystemsAPIClient{}
 	mock.Mock.Test(t)
 

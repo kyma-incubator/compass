@@ -47,6 +47,10 @@ func (_m *OperationService) ListAllByType(ctx context.Context, opType model.Oper
 	ret := _m.Called(ctx, opType)
 
 	var r0 []*model.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) ([]*model.Operation, error)); ok {
+		return rf(ctx, opType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) []*model.Operation); ok {
 		r0 = rf(ctx, opType)
 	} else {
@@ -55,7 +59,6 @@ func (_m *OperationService) ListAllByType(ctx context.Context, opType model.Oper
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.OperationType) error); ok {
 		r1 = rf(ctx, opType)
 	} else {
@@ -65,13 +68,12 @@ func (_m *OperationService) ListAllByType(ctx context.Context, opType model.Oper
 	return r0, r1
 }
 
-type mockConstructorTestingTNewOperationService interface {
+// NewOperationService creates a new instance of OperationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOperationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOperationService creates a new instance of OperationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOperationService(t mockConstructorTestingTNewOperationService) *OperationService {
+}) *OperationService {
 	mock := &OperationService{}
 	mock.Mock.Test(t)
 

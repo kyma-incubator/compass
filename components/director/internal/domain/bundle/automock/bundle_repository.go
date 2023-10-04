@@ -77,13 +77,16 @@ func (_m *BundleRepository) Exists(ctx context.Context, tenant string, id string
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -98,6 +101,10 @@ func (_m *BundleRepository) GetByID(ctx context.Context, tenant string, id strin
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Bundle, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Bundle); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -106,7 +113,6 @@ func (_m *BundleRepository) GetByID(ctx context.Context, tenant string, id strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -121,6 +127,10 @@ func (_m *BundleRepository) GetByIDGlobal(ctx context.Context, id string) (*mode
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Bundle, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Bundle); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -129,7 +139,6 @@ func (_m *BundleRepository) GetByIDGlobal(ctx context.Context, id string) (*mode
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -144,6 +153,10 @@ func (_m *BundleRepository) GetForApplication(ctx context.Context, tenant string
 	ret := _m.Called(ctx, tenant, id, applicationID)
 
 	var r0 *model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.Bundle, error)); ok {
+		return rf(ctx, tenant, id, applicationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Bundle); ok {
 		r0 = rf(ctx, tenant, id, applicationID)
 	} else {
@@ -152,7 +165,6 @@ func (_m *BundleRepository) GetForApplication(ctx context.Context, tenant string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, applicationID)
 	} else {
@@ -167,6 +179,10 @@ func (_m *BundleRepository) ListByApplicationIDs(ctx context.Context, tenantID s
 	ret := _m.Called(ctx, tenantID, applicationIDs, pageSize, cursor)
 
 	var r0 []*model.BundlePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.BundlePage, error)); ok {
+		return rf(ctx, tenantID, applicationIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.BundlePage); ok {
 		r0 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	} else {
@@ -175,7 +191,6 @@ func (_m *BundleRepository) ListByApplicationIDs(ctx context.Context, tenantID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, applicationIDs, pageSize, cursor)
 	} else {
@@ -190,6 +205,10 @@ func (_m *BundleRepository) ListByResourceIDNoPaging(ctx context.Context, tenant
 	ret := _m.Called(ctx, tenantID, appID, resourceType)
 
 	var r0 []*model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) ([]*model.Bundle, error)); ok {
+		return rf(ctx, tenantID, appID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) []*model.Bundle); ok {
 		r0 = rf(ctx, tenantID, appID, resourceType)
 	} else {
@@ -198,7 +217,6 @@ func (_m *BundleRepository) ListByResourceIDNoPaging(ctx context.Context, tenant
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
 		r1 = rf(ctx, tenantID, appID, resourceType)
 	} else {
@@ -236,13 +254,12 @@ func (_m *BundleRepository) UpdateGlobal(ctx context.Context, _a1 *model.Bundle)
 	return r0
 }
 
-type mockConstructorTestingTNewBundleRepository interface {
+// NewBundleRepository creates a new instance of BundleRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleRepository creates a new instance of BundleRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleRepository(t mockConstructorTestingTNewBundleRepository) *BundleRepository {
+}) *BundleRepository {
 	mock := &BundleRepository{}
 	mock.Mock.Test(t)
 

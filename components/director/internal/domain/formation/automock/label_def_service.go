@@ -32,6 +32,10 @@ func (_m *LabelDefService) GetAvailableScenarios(ctx context.Context, tenantID s
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]string, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []string); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
@@ -40,7 +44,6 @@ func (_m *LabelDefService) GetAvailableScenarios(ctx context.Context, tenantID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -78,13 +81,12 @@ func (_m *LabelDefService) ValidateExistingLabelsAgainstSchema(ctx context.Conte
 	return r0
 }
 
-type mockConstructorTestingTNewLabelDefService interface {
+// NewLabelDefService creates a new instance of LabelDefService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelDefService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelDefService creates a new instance of LabelDefService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelDefService(t mockConstructorTestingTNewLabelDefService) *LabelDefService {
+}) *LabelDefService {
 	mock := &LabelDefService{}
 	mock.Mock.Test(t)
 
