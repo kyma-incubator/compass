@@ -6,8 +6,8 @@ require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/go-openapi/runtime v0.26.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231004120724-65d43eed263b
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231004120724-65d43eed263b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231004133415-270164975a46
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231004133415-270164975a46
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
@@ -48,7 +48,6 @@ require (
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matryer/is v1.4.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
