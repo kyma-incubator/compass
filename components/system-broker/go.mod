@@ -10,7 +10,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.3.1
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231004134614-67400befa469
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231004141310-d950f560eefd
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
@@ -24,9 +24,9 @@ require (
 	github.com/tidwall/gjson v1.17.0
 	github.com/vektah/gqlparser/v2 v2.5.10
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.28.1
-	k8s.io/apimachinery v0.28.1
-	k8s.io/client-go v0.28.1
+	k8s.io/api v0.26.9
+	k8s.io/apimachinery v0.26.9
+	k8s.io/client-go v0.26.9
 	sigs.k8s.io/controller-runtime v0.14.6
 )
 
@@ -51,6 +51,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect

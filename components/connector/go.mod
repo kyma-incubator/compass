@@ -6,15 +6,16 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gorilla/mux v1.8.0
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231004132913-1b0a7f1a7590
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	github.com/vektah/gqlparser/v2 v2.5.10
 	github.com/vrischmann/envconfig v1.3.0
-	k8s.io/api v0.28.1
-	k8s.io/apimachinery v0.28.1
-	k8s.io/client-go v0.28.1
+	k8s.io/api v0.26.9
+	k8s.io/apimachinery v0.26.9
+	k8s.io/client-go v0.26.9
 )
 
 require (
@@ -35,6 +36,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -42,8 +44,8 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231004134614-67400befa469
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/matryer/is v1.4.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
