@@ -709,9 +709,9 @@ func buildConsumerTokenURL(providerTokenURL, consumerSubdomain string) (string, 
 	return tokenURL, nil
 }
 
-func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
+func executeFAStatusResetReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, state, testConfig, tnt, formationID, formationAssignmentID string, expectedStatusCode int) {
 	reqBody := FormationAssignmentRequestBody{
-		State:         "READY",
+		State:         state,
 		Configuration: json.RawMessage(testConfig),
 	}
 	marshalBody, err := json.Marshal(reqBody)
