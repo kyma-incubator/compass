@@ -23,8 +23,8 @@ require (
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20231004133415-270164975a46
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231004133415-270164975a46
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20231004133758-74170e2cc5ba
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231004133758-74170e2cc5ba
 	github.com/prometheus/client_golang v1.16.0
 	golang.org/x/oauth2 v0.12.0
 )
@@ -60,7 +60,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004133415-270164975a46 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004133758-74170e2cc5ba // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
@@ -103,7 +103,7 @@ require (
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
-	sigs.k8s.io/controller-runtime v0.16.2 // indirect
+	sigs.k8s.io/controller-runtime v0.14.6 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
