@@ -1,0 +1,11 @@
+tag-template: "v{{ .Date }}-{{ .ShortSHA }}"
+registry:
+  - europe-docker.pkg.dev/kyma-project/prod
+dev-registry:
+  - europe-docker.pkg.dev/kyma-project/dev
+reproducible: false
+log-format: json
+cache:
+  enabled: true
+  cache-repo: europe-docker.pkg.dev/kyma-project/cache/cache
+  cache-run-layers: true
