@@ -31,6 +31,7 @@ const (
 	invalidCustomType             = "wrongCustomType"
 	invalidMediaType              = "invalid/type"
 	invalidBundleOrdID            = "ns:wrongConsumptionBundle:v1"
+	invalidShortDescSapCore       = "no:colons:no&special%chars"
 
 	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
 	unknownProductOrdID = "nsUNKNOWN:product:id:"
@@ -115,6 +116,19 @@ var (
         {
           "type": "custom",
           "url": "https://example2.com/en/legal/terms-of-use.html",
+        }
+      ]`
+
+	invalidPackageLinksDueToDuplicateTitles = `[
+        {
+		  "title": "link title",
+          "type": "payment",
+          "url": "https://example.com/en/legal/terms-of-use.html"
+        },
+        {
+		  "title": "link title",
+          "type": "client-registration",
+          "url": "https://example2.com/en/legal/terms-of-use.html"
         }
       ]`
 
@@ -715,23 +729,6 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "`ApplicationNamespace` values are not valid",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(invalidNamespace)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "`ApplicationNamespace` values are valid",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(validNamespace)
-
-				return []*ord.Document{doc}
-			},
-			ExpectedToBeValid: true,
-		}, {
 			Name: "Valid missing `localTenantID` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -958,6 +955,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Title = strings.Repeat("a", invalidTitleLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Containing not valid terms in `title ` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Title = "This title is deprecated or decommissioned"
 
 				return []*ord.Document{doc}
 			},
@@ -1249,6 +1254,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `Links` field due to duplicate titles for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage(invalidPackageLinksDueToDuplicateTitles)
 
 				return []*ord.Document{doc}
 			},
@@ -2283,6 +2296,34 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid `shortDescription` field when containing `name` field for API and policy level is sap core",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.APIResources[0].Name = "lorem ipsum"
+				doc.APIResources[0].ShortDescription = str.Ptr("lorem ipsum dolor nsq sme")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field when exceeding max length for API and policy level is sap core",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.APIResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `shortDescription` field when doesn't match regex for API and policy level is sap core",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.APIResources[0].ShortDescription = str.Ptr(invalidShortDescSapCore)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `description` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2295,6 +2336,16 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field when containing `shortDescription` field for API and policy level is sap core",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(policyLevel)
+				doc.APIResources[0].Description = str.Ptr("lorem ipsum dolor nsq sme")
+				doc.APIResources[0].ShortDescription = str.Ptr("lorem ipsum")
 
 				return []*ord.Document{doc}
 			},
@@ -4010,6 +4061,19 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Missing `Graphql-sdl` definitions when APIResources has policyLevel `sap-core` and apiProtocol is `graphql`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.PolicyLevel = str.Ptr(ord.PolicyLevelSap)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolGraphql
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid type of `direction` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5339,7 +5403,8 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				doc.Products = append(doc.Products, &model.ProductInput{
 					OrdID:            "sap:product:test:",
 					Title:            "title",
-					ShortDescription: "Description",
+					ShortDescription: "short desc",
+					Description:      str.Ptr("long desc"),
 					Vendor:           ord.SapVendor,
 					Parent:           nil,
 					CorrelationIDs:   nil,
@@ -5401,6 +5466,14 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products[0].ShortDescription = `newLine\n`
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `description` field for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].Description = str.Ptr(strings.Repeat("a", maxDescriptionLength+1))
 
 				return []*ord.Document{doc}
 			},
@@ -5801,6 +5874,14 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Tombstones[0].RemovalDate = "0000-00-00T15:04:05Z"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `description` field for Tombstone",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Tombstones[0].Description = str.Ptr(strings.Repeat("a", maxDescriptionLength+1))
 
 				return []*ord.Document{doc}
 			},
