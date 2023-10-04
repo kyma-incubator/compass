@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -75,7 +76,7 @@ type tenantRepository interface {
 }
 
 // Used for testing
-//nolint
+// nolint
 //
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 type templateInput interface {
