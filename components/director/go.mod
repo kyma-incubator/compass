@@ -20,9 +20,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231004134614-67400befa469
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231004134614-67400befa469
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004134614-67400befa469
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231004132913-1b0a7f1a7590
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231004132913-1b0a7f1a7590
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231004132913-1b0a7f1a7590
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.9
@@ -46,9 +46,9 @@ require (
 	golang.org/x/oauth2 v0.12.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/text v0.13.0
-	k8s.io/api v0.28.1
-	k8s.io/apimachinery v0.28.1
-	k8s.io/client-go v0.28.1
+	k8s.io/api v0.26.9
+	k8s.io/apimachinery v0.26.9
+	k8s.io/client-go v0.26.9
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	sigs.k8s.io/controller-runtime v0.14.6
 )
@@ -79,6 +79,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -130,8 +131,8 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.28.0 // indirect
-	k8s.io/component-base v0.28.1 // indirect
+	k8s.io/apiextensions-apiserver v0.26.9 // indirect
+	k8s.io/component-base v0.26.9 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
