@@ -348,8 +348,6 @@ func TestResolver_APIs(t *testing.T) {
 	// API Specs
 	apiDefFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.APISpecReference, ObjectID: firstAPIID}
 	apiDefSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.APISpecReference, ObjectID: secondAPIID}
-	specsFirstAPI := []*model.Spec{apiDefFirstSpec}
-	specsSecondAPI := []*model.Spec{apiDefSecondSpec}
 	specs := []*model.Spec{apiDefFirstSpec, apiDefSecondSpec}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -388,8 +386,8 @@ func TestResolver_APIs(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlAPIDefsFirstBundle, nil).Once()
-				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlAPIDefsSecondBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, bundleRefsFirstAPI).Return(gqlAPIDefsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsSecondBundle, bundleRefsSecondAPI).Return(gqlAPIDefsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlAPIDefPages,
@@ -525,7 +523,7 @@ func TestResolver_APIs(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(nil, testErr).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, bundleRefsFirstAPI).Return(nil, testErr).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -551,8 +549,8 @@ func TestResolver_APIs(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleToGraphQL", apiDefsFirstBundle, specsFirstAPI, bundleRefsFirstAPI).Return(gqlAPIDefsFirstBundle, nil).Once()
-				conv.On("MultipleToGraphQL", apiDefsSecondBundle, specsSecondAPI, bundleRefsSecondAPI).Return(gqlAPIDefsSecondBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsFirstBundle, bundleRefsFirstAPI).Return(gqlAPIDefsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", apiDefsSecondBundle, bundleRefsSecondAPI).Return(gqlAPIDefsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -940,8 +938,6 @@ func TestResolver_Events(t *testing.T) {
 	// Event Specs
 	eventFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.EventSpecReference, ObjectID: firstEventID}
 	eventSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.EventSpecReference, ObjectID: secondEventID}
-	specsFirstEvent := []*model.Spec{eventFirstSpec}
-	specsSecondEvent := []*model.Spec{eventSecondSpec}
 	specs := []*model.Spec{eventFirstSpec, eventSecondSpec}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -980,8 +976,8 @@ func TestResolver_Events(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleToGraphQL", eventsFirstBundle, specsFirstEvent, bundleRefsFirstEvent).Return(gqlEventsFirstBundle, nil).Once()
-				conv.On("MultipleToGraphQL", eventsSecondBundle, specsSecondEvent, bundleRefsSecondEvent).Return(gqlEventsSecondBundle, nil).Once()
+				conv.On("MultipleToGraphQL", eventsFirstBundle, bundleRefsFirstEvent).Return(gqlEventsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", eventsSecondBundle, bundleRefsSecondEvent).Return(gqlEventsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlEventPages,
@@ -1091,7 +1087,7 @@ func TestResolver_Events(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleToGraphQL", eventsFirstBundle, specsFirstEvent, bundleRefsFirstEvent).Return(nil, testErr).Once()
+				conv.On("MultipleToGraphQL", eventsFirstBundle, bundleRefsFirstEvent).Return(nil, testErr).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -1117,8 +1113,8 @@ func TestResolver_Events(t *testing.T) {
 			},
 			ConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleToGraphQL", eventsFirstBundle, specsFirstEvent, bundleRefsFirstEvent).Return(gqlEventsFirstBundle, nil).Once()
-				conv.On("MultipleToGraphQL", eventsSecondBundle, specsSecondEvent, bundleRefsSecondEvent).Return(gqlEventsSecondBundle, nil).Once()
+				conv.On("MultipleToGraphQL", eventsFirstBundle, bundleRefsFirstEvent).Return(gqlEventsFirstBundle, nil).Once()
+				conv.On("MultipleToGraphQL", eventsSecondBundle, bundleRefsSecondEvent).Return(gqlEventsSecondBundle, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,

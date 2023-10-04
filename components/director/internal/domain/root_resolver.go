@@ -111,6 +111,14 @@ type RootResolver struct {
 	certSubjectMapping  *certsubjectmapping.Resolver
 }
 
+func (r *RootResolver) EventDefinition() graphql.EventDefinitionResolver {
+	return &eventDefinitionResolver{r}
+}
+
+func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
+	return &apiDefinitionResolver{r}
+}
+
 // NewRootResolver missing godoc
 func NewRootResolver(
 	appNameNormalizer normalizer.Normalizator,
@@ -1309,6 +1317,22 @@ func (r *BundleResolver) EventDefinition(ctx context.Context, obj *graphql.Bundl
 // Document missing godoc
 func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
 	return r.mpBundle.Document(ctx, obj, id)
+}
+
+type eventDefinitionResolver struct {
+	*RootResolver
+}
+
+func (r *eventDefinitionResolver) Spec(ctx context.Context, obj *graphql.EventDefinition) (*graphql.EventSpec, error) {
+	return r.eventAPI.Spec(ctx, obj)
+}
+
+type apiDefinitionResolver struct {
+	*RootResolver
+}
+
+func (r *apiDefinitionResolver) Spec(ctx context.Context, obj *graphql.APIDefinition) (*graphql.APISpec, error) {
+	return r.api.Spec(ctx, obj)
 }
 
 type tenantResolver struct {
