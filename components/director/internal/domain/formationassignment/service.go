@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -658,7 +659,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
 		assignment.Error = nil
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+			return errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
 		}
 
 		return nil
@@ -802,7 +803,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
 			}
-			return false, errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+			return false, errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
 		}
 		return false, nil
 	}
@@ -890,13 +891,13 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	}}
 	marshaled, err := json.Marshal(assignmentError)
 	if err != nil {
-		return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
+		return errors.Wrapf(err, "while preparing error message for assignment with ID: %q", assignment.ID)
 	}
 	assignment.Error = marshaled
 	if err := s.Update(ctx, assignment.ID, assignment); err != nil {
-		return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+		return errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
 	}
-	log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
+	log.C(ctx).Infof("Assignment with ID: %s set to state: %s", assignment.ID, assignment.State)
 	return nil
 }
 

@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -47,7 +46,6 @@ const (
 var (
 	TenantIDParam      = "tenantId"
 	ApplicationIDParam = "applicationId"
-	ExtraDelayParam    = "delay"
 	formationIDParam   = "uclFormationId"
 	respErrorMsg       = "An unexpected error occurred while processing the request"
 )
@@ -273,10 +271,7 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 			return
 		}
 
-		response := FormationAssignmentResponseBodyWithState{
-			State: ReadyAssignmentState,
-		}
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -294,10 +289,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) DestinationDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	responseFunc := func([]byte) {
-		response := FormationAssignmentResponseBodyWithState{
-			State: ReadyAssignmentState,
-		}
-		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage("{\"state\": \"READY\"}"))
 	}
 
 	h.syncFAResponse(ctx, writer, r, responseFunc)
@@ -690,19 +682,7 @@ func (h *Handler) asyncFAResponse(ctx context.Context, writer http.ResponseWrite
 		return
 	}
 
-	go func() {
-		if delayStr, ok := routeVars[ExtraDelayParam]; ok {
-			delay, err := strconv.Atoi(delayStr)
-			if err != nil {
-				httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while converting delay to int from request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
-				return
-			}
-			log.C(ctx).Infof("There are %d seconds of extra delay. Sleeping for %d seconds...", delay, delay)
-			time.Sleep(time.Duration(delay) * time.Second)
-		}
-
-		responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
-	}()
+	go responseFunc(certAuthorizedHTTPClient, correlationID, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
 }

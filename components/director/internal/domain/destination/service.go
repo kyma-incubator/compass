@@ -222,7 +222,7 @@ func (s *Service) CreateSAMLAssertionDestination(ctx context.Context, destinatio
 }
 
 // createSAMLAssertionDestination is responsible to create SAML assertion destination resource in the remote destination service as well as in our DB
-func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCredentials *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool, ) error {
+func (s *Service) createSAMLAssertionDestination(ctx context.Context, destinationDetails operators.Destination, samlAssertionAuthCredentials *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, destinationDetails.SubaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", destinationDetails.SubaccountID)
@@ -278,7 +278,7 @@ func (s *Service) CreateClientCertificateAuthenticationDestination(ctx context.C
 	return nil
 }
 
-func (s *Service) createClientCertificateAuthenticationDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCredentials *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool, ) error {
+func (s *Service) createClientCertificateAuthenticationDestination(ctx context.Context, destinationDetails operators.Destination, clientCertAuthCredentials *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	t, err := s.tenantRepo.GetByExternalTenant(ctx, destinationDetails.SubaccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant by external ID: %q", destinationDetails.SubaccountID)

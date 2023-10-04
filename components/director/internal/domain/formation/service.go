@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -519,8 +520,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 
 		// The defer statement after the formation assignment persistence depends on the value of the variable err.
-		// If err is used for the name of the returned error value a new variable that shadows the err variable from the outer scope
-		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the err variable in the same scope
+		// If 'err' is used for the name of the returned error, a new variable that shadows the 'err' variable from the outer scope
+		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the 'err' variable in the same scope
 		// which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
 		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if terr != nil {
@@ -534,18 +535,15 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// Formation assignments are generated.
 		// Execute W1, then execute W2. W2 takes, for example, 10 seconds. Before the W2 processing finishes, an FA status update request for W1 is received.
 		// When fetching the corresponding FA from the DB we get an object not found error, as the status update is performed in new transaction and the transaction in which the FA were generated is still running.
-		tx, terr := s.transact.Begin()
-		if terr != nil {
-			return nil, terr
-		}
-		transactionCtx := persistence.SaveToContext(ctx, tx)
-		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+		var assignments []*model.FormationAssignment
+		if terr = s.transaction(ctx, func(ctxWithTransact context.Context) error {
+			assignments, terr = s.formationAssignmentService.PersistAssignments(ctxWithTransact, tnt, assignmentInputs)
+			if terr != nil {
+				return terr
+			}
 
-		assignments, terr := s.formationAssignmentService.PersistAssignments(transactionCtx, tnt, assignmentInputs)
-		if terr != nil {
-			return nil, terr
-		}
-		if terr = tx.Commit(); terr != nil {
+			return nil
+		}); terr != nil {
 			return nil, terr
 		}
 
@@ -883,6 +881,16 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return ft.formation, nil
 	}
 
+	// In case of unassign, we want to persist the formation assignments in DELETING state in isolated transaction
+	// similar to the Assign operation and to cover the case when we have both type of webhook - sync and async.
+	// So if the async notification was sent, and we're processing the sync notification, meanwhile the async participant sends
+	// FA status update request, he will have the latest state of the formation assignment even though we didn't finish the sync notification processing.
+	if err = s.transaction(ctx, func(ctxWithTransact context.Context) error {
+		return s.updateFormationAssignmentsWithStateForObjectID(ctxWithTransact, formationFromDB.ID, objectID, string(objectType), string(model.DeletingAssignmentState))
+	}); err != nil {
+		return nil, err
+	}
+
 	// It is important that all operations regarding formation assignments should be in the inner transaction
 	tx, err := s.transact.Begin()
 	if err != nil {
@@ -926,8 +934,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrapf(err, "while committing transaction")
 	}
 
@@ -1762,4 +1769,45 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 	}
 
 	return true
+}
+
+// updateFormationAssignmentsWithStateForObjectID lists all formation assignments for a given objectID that are either source or target of the assignment
+// and update every one of them with the provided state
+func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Context, formationID, objectID, objectType, faState string) error {
+	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
+	if err != nil {
+		return errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
+	}
+
+	for _, fa := range formationAssignmentsForObject {
+		log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", fa.State, fa.ID)
+		fa.State = faState
+		if err := s.formationAssignmentService.Update(ctx, fa.ID, fa); err != nil {
+			return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", fa.ID, fa.State)
+		}
+	}
+
+	return nil
+}
+
+// transaction wraps a given function into an isolated DB transaction
+func (s *service) transaction(ctx context.Context, dbCalls func(ctxWithTransact context.Context) error) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to begin DB transaction")
+		return err
+	}
+	ctx = persistence.SaveToContext(ctx, tx)
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	if err := dbCalls(ctx); err != nil {
+		log.C(ctx).WithError(err).Error("Failed to execute database calls")
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).WithError(err).Error("Failed to commit database transaction")
+		return err
+	}
+	return nil
 }
