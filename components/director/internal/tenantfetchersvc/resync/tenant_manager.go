@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -317,7 +318,14 @@ func fetchTenants(ctx context.Context, eventAPIClient EventAPIClient, eventsType
 }
 
 func fetchWithRetries(retryAttempts uint, applyFunc func() error) error {
-	return retry.Do(applyFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelaySeconds*time.Second))
+	return retry.Do(applyFunc,
+		retry.Attempts(retryAttempts),
+		retry.Delay(retryDelaySeconds*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 }
 
 func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), applyFunc func(*EventsPage) error) error {

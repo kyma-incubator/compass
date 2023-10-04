@@ -3,6 +3,7 @@ package retry
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -56,7 +57,14 @@ func (he *HTTPExecutor) Execute(doRequest ExecutableHTTPFunc) (*http.Response, e
 		}
 
 		return errors.New(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
-	}, retry.Attempts(he.attempts), retry.Delay(he.delay))
+	},
+		retry.Attempts(he.attempts),
+		retry.Delay(he.delay),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 
 	return resp, err
 }
