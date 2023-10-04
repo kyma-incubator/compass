@@ -236,7 +236,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	if shouldProcessNotifications {
 		// The formation assignment notifications processing is independent of the status update request handling.
 		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-		go h.processFormationAssignmentNotifications(fa, correlationID, reset)
+		go h.processFormationAssignmentNotifications(fa, correlationID)
 	}
 
 	httputils.Respond(w, http.StatusOK)
