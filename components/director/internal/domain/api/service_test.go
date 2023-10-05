@@ -2146,3 +2146,8 @@ func emptySpecService() *automock.SpecService {
 	svc := &automock.SpecService{}
 	return svc
 }
+
+func emptySpecConverter() *automock.SpecConverter {
+	conv := &automock.SpecConverter{}
+	return conv
+}

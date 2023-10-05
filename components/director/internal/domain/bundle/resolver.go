@@ -70,7 +70,7 @@ type APIService interface {
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
-	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error)
+	MultipleToGraphQL(in []*model.APIDefinition, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
 }
 
@@ -89,7 +89,7 @@ type EventService interface {
 //go:generate mockery --name=EventConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
-	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error)
+	MultipleToGraphQL(in []*model.EventDefinition, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 }
 
@@ -479,11 +479,6 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 		}
 	}
 
-	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
-	if err != nil {
-		return nil, []error{err}
-	}
-
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
@@ -494,17 +489,10 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
-	apiDefIDtoSpec := make(map[string]*model.Spec)
-	for _, spec := range specs {
-		apiDefIDtoSpec[spec.ObjectID] = spec
-	}
-
 	gqlAPIDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
 	for i, apisPage := range apiDefPages {
-		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
 		for _, api := range apisPage.Data {
-			apiSpecs = append(apiSpecs, apiDefIDtoSpec[api.ID])
 			br, err := getBundleReferenceForAPI(api.ID, refsByBundleID[bundleIDs[i]])
 			if err != nil {
 				return nil, []error{err}
@@ -512,7 +500,7 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 			apiBundleRefs = append(apiBundleRefs, br)
 		}
 
-		gqlAPIs, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
+		gqlAPIs, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiBundleRefs)
 		if err != nil {
 			return nil, []error{errors.Wrapf(err, "while converting api definitions")}
 		}
@@ -623,19 +611,9 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		}
 	}
 
-	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
-	if err != nil {
-		return nil, []error{err}
-	}
-
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
-	}
-
-	eventAPIDefIDtoSpec := make(map[string]*model.Spec)
-	for _, spec := range specs {
-		eventAPIDefIDtoSpec[spec.ObjectID] = spec
 	}
 
 	eventAPIDefIDtoRef := make(map[string]*model.BundleReference)
@@ -645,14 +623,12 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 
 	gqlEventDefs := make([]*graphql.EventDefinitionPage, 0, len(eventAPIDefPages))
 	for _, eventPage := range eventAPIDefPages {
-		eventSpecs := make([]*model.Spec, 0, len(eventPage.Data))
 		eventBundleRefs := make([]*model.BundleReference, 0, len(eventPage.Data))
 		for _, event := range eventPage.Data {
-			eventSpecs = append(eventSpecs, eventAPIDefIDtoSpec[event.ID])
 			eventBundleRefs = append(eventBundleRefs, eventAPIDefIDtoRef[event.ID])
 		}
 
-		gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventPage.Data, eventSpecs, eventBundleRefs)
+		gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventPage.Data, eventBundleRefs)
 		if err != nil {
 			return nil, []error{errors.Wrapf(err, "while converting event definitions")}
 		}

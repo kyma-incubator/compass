@@ -3,8 +3,9 @@ package subscription_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription/automock"
