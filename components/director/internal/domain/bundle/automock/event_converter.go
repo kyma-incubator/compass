@@ -55,19 +55,19 @@ func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, bundleR
 
 	var r0 []*graphql.EventDefinition
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) ([]*graphql.EventDefinition, error)); ok {
-		return rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.BundleReference) ([]*graphql.EventDefinition, error)); ok {
+		return rf(in, bundleRefs)
 	}
-	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) []*graphql.EventDefinition); ok {
-		r0 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.BundleReference) []*graphql.EventDefinition); ok {
+		r0 = rf(in, bundleRefs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*graphql.EventDefinition)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) error); ok {
-		r1 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.BundleReference) error); ok {
+		r1 = rf(in, bundleRefs)
 	} else {
 		r1 = ret.Error(1)
 	}

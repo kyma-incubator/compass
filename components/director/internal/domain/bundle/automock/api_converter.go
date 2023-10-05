@@ -55,19 +55,19 @@ func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, bundleRefs 
 
 	var r0 []*graphql.APIDefinition
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) ([]*graphql.APIDefinition, error)); ok {
-		return rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.BundleReference) ([]*graphql.APIDefinition, error)); ok {
+		return rf(in, bundleRefs)
 	}
-	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) []*graphql.APIDefinition); ok {
-		r0 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.BundleReference) []*graphql.APIDefinition); ok {
+		r0 = rf(in, bundleRefs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*graphql.APIDefinition)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) error); ok {
-		r1 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(1).(func([]*model.APIDefinition, []*model.BundleReference) error); ok {
+		r1 = rf(in, bundleRefs)
 	} else {
 		r1 = ret.Error(1)
 	}
