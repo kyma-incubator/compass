@@ -21,6 +21,10 @@ func (_m *RuntimeCtxService) ListByFilter(ctx context.Context, runtimeID string,
 	ret := _m.Called(ctx, runtimeID, filter, pageSize, cursor)
 
 	var r0 *model.RuntimeContextPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.RuntimeContextPage, error)); ok {
+		return rf(ctx, runtimeID, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.RuntimeContextPage); ok {
 		r0 = rf(ctx, runtimeID, filter, pageSize, cursor)
 	} else {
@@ -29,7 +33,6 @@ func (_m *RuntimeCtxService) ListByFilter(ctx context.Context, runtimeID string,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, runtimeID, filter, pageSize, cursor)
 	} else {
@@ -39,13 +42,12 @@ func (_m *RuntimeCtxService) ListByFilter(ctx context.Context, runtimeID string,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeCtxService interface {
+// NewRuntimeCtxService creates a new instance of RuntimeCtxService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeCtxService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeCtxService creates a new instance of RuntimeCtxService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeCtxService(t mockConstructorTestingTNewRuntimeCtxService) *RuntimeCtxService {
+}) *RuntimeCtxService {
 	mock := &RuntimeCtxService{}
 	mock.Mock.Test(t)
 

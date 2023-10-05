@@ -19,6 +19,10 @@ func (_m *SystemsSyncRepository) List(ctx context.Context) ([]*model.SystemSynch
 	ret := _m.Called(ctx)
 
 	var r0 []*model.SystemSynchronizationTimestamp
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.SystemSynchronizationTimestamp, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.SystemSynchronizationTimestamp); ok {
 		r0 = rf(ctx)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SystemsSyncRepository) List(ctx context.Context) ([]*model.SystemSynch
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -51,13 +54,12 @@ func (_m *SystemsSyncRepository) Upsert(ctx context.Context, in *model.SystemSyn
 	return r0
 }
 
-type mockConstructorTestingTNewSystemsSyncRepository interface {
+// NewSystemsSyncRepository creates a new instance of SystemsSyncRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemsSyncRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemsSyncRepository creates a new instance of SystemsSyncRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemsSyncRepository(t mockConstructorTestingTNewSystemsSyncRepository) *SystemsSyncRepository {
+}) *SystemsSyncRepository {
 	mock := &SystemsSyncRepository{}
 	mock.Mock.Test(t)
 

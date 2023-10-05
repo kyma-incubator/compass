@@ -21,13 +21,16 @@ func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.Appli
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -42,13 +45,16 @@ func (_m *ApplicationTemplateService) CreateWithLabels(ctx context.Context, in m
 	ret := _m.Called(ctx, in, labels)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) (string, error)); ok {
+		return rf(ctx, in, labels)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) string); ok {
 		r0 = rf(ctx, in, labels)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) error); ok {
 		r1 = rf(ctx, in, labels)
 	} else {
@@ -77,6 +83,10 @@ func (_m *ApplicationTemplateService) Get(ctx context.Context, id string) (*mode
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -85,7 +95,6 @@ func (_m *ApplicationTemplateService) Get(ctx context.Context, id string) (*mode
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -100,6 +109,10 @@ func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter [
 	ret := _m.Called(ctx, filter)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -108,7 +121,6 @@ func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter [
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -123,6 +135,10 @@ func (_m *ApplicationTemplateService) GetByNameAndRegion(ctx context.Context, na
 	ret := _m.Called(ctx, name, region)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, name, region)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, name, region)
 	} else {
@@ -131,7 +147,6 @@ func (_m *ApplicationTemplateService) GetByNameAndRegion(ctx context.Context, na
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
 		r1 = rf(ctx, name, region)
 	} else {
@@ -146,6 +161,10 @@ func (_m *ApplicationTemplateService) GetLabel(ctx context.Context, appTemplateI
 	ret := _m.Called(ctx, appTemplateID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
+		return rf(ctx, appTemplateID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
 		r0 = rf(ctx, appTemplateID, key)
 	} else {
@@ -154,7 +173,6 @@ func (_m *ApplicationTemplateService) GetLabel(ctx context.Context, appTemplateI
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, appTemplateID, key)
 	} else {
@@ -169,13 +187,16 @@ func (_m *ApplicationTemplateService) List(ctx context.Context, filter []*labelf
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 model.ApplicationTemplatePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (model.ApplicationTemplatePage, error)); ok {
+		return rf(ctx, filter, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) model.ApplicationTemplatePage); ok {
 		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationTemplatePage)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
@@ -190,6 +211,10 @@ func (_m *ApplicationTemplateService) ListByFilters(ctx context.Context, filter 
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, filter)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, filter)
 	} else {
@@ -198,7 +223,6 @@ func (_m *ApplicationTemplateService) ListByFilters(ctx context.Context, filter 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
@@ -213,6 +237,10 @@ func (_m *ApplicationTemplateService) ListByName(ctx context.Context, name strin
 	ret := _m.Called(ctx, name)
 
 	var r0 []*model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, name)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, name)
 	} else {
@@ -221,7 +249,6 @@ func (_m *ApplicationTemplateService) ListByName(ctx context.Context, name strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, name)
 	} else {
@@ -236,6 +263,10 @@ func (_m *ApplicationTemplateService) ListLabels(ctx context.Context, appTemplat
 	ret := _m.Called(ctx, appTemplateID)
 
 	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, appTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, appTemplateID)
 	} else {
@@ -244,7 +275,6 @@ func (_m *ApplicationTemplateService) ListLabels(ctx context.Context, appTemplat
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateID)
 	} else {
@@ -259,13 +289,16 @@ func (_m *ApplicationTemplateService) PrepareApplicationCreateInputJSON(appTempl
 	ret := _m.Called(appTemplate, values)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.ApplicationTemplate, model.ApplicationFromTemplateInputValues) (string, error)); ok {
+		return rf(appTemplate, values)
+	}
 	if rf, ok := ret.Get(0).(func(*model.ApplicationTemplate, model.ApplicationFromTemplateInputValues) string); ok {
 		r0 = rf(appTemplate, values)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.ApplicationTemplate, model.ApplicationFromTemplateInputValues) error); ok {
 		r1 = rf(appTemplate, values)
 	} else {
@@ -289,13 +322,12 @@ func (_m *ApplicationTemplateService) Update(ctx context.Context, id string, in 
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationTemplateService interface {
+// NewApplicationTemplateService creates a new instance of ApplicationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateService creates a new instance of ApplicationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateService(t mockConstructorTestingTNewApplicationTemplateService) *ApplicationTemplateService {
+}) *ApplicationTemplateService {
 	mock := &ApplicationTemplateService{}
 	mock.Mock.Test(t)
 

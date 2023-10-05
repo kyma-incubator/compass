@@ -47,6 +47,10 @@ func (_m *WebhookRepository) GetByID(ctx context.Context, tenant string, id stri
 	ret := _m.Called(ctx, tenant, id, objectType)
 
 	var r0 *model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType) (*model.Webhook, error)); ok {
+		return rf(ctx, tenant, id, objectType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType) *model.Webhook); ok {
 		r0 = rf(ctx, tenant, id, objectType)
 	} else {
@@ -55,7 +59,6 @@ func (_m *WebhookRepository) GetByID(ctx context.Context, tenant string, id stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.WebhookReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenant, id, objectType)
 	} else {
@@ -70,6 +73,10 @@ func (_m *WebhookRepository) GetByIDAndWebhookTypeGlobal(ctx context.Context, ob
 	ret := _m.Called(ctx, objectID, objectType, webhookType)
 
 	var r0 *model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType, model.WebhookType) (*model.Webhook, error)); ok {
+		return rf(ctx, objectID, objectType, webhookType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType, model.WebhookType) *model.Webhook); ok {
 		r0 = rf(ctx, objectID, objectType, webhookType)
 	} else {
@@ -78,7 +85,6 @@ func (_m *WebhookRepository) GetByIDAndWebhookTypeGlobal(ctx context.Context, ob
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookReferenceObjectType, model.WebhookType) error); ok {
 		r1 = rf(ctx, objectID, objectType, webhookType)
 	} else {
@@ -93,6 +99,10 @@ func (_m *WebhookRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Webhook, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Webhook); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -101,7 +111,6 @@ func (_m *WebhookRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -116,6 +125,10 @@ func (_m *WebhookRepository) ListByApplicationTemplateID(ctx context.Context, ap
 	ret := _m.Called(ctx, applicationTemplateID)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Webhook, error)); ok {
+		return rf(ctx, applicationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
 		r0 = rf(ctx, applicationTemplateID)
 	} else {
@@ -124,7 +137,6 @@ func (_m *WebhookRepository) ListByApplicationTemplateID(ctx context.Context, ap
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, applicationTemplateID)
 	} else {
@@ -139,6 +151,10 @@ func (_m *WebhookRepository) ListByReferenceObjectID(ctx context.Context, tenant
 	ret := _m.Called(ctx, tenant, objID, objType)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType) ([]*model.Webhook, error)); ok {
+		return rf(ctx, tenant, objID, objType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType) []*model.Webhook); ok {
 		r0 = rf(ctx, tenant, objID, objType)
 	} else {
@@ -147,7 +163,6 @@ func (_m *WebhookRepository) ListByReferenceObjectID(ctx context.Context, tenant
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.WebhookReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenant, objID, objType)
 	} else {
@@ -162,6 +177,10 @@ func (_m *WebhookRepository) ListByReferenceObjectIDGlobal(ctx context.Context, 
 	ret := _m.Called(ctx, objID, objType)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType) ([]*model.Webhook, error)); ok {
+		return rf(ctx, objID, objType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType) []*model.Webhook); ok {
 		r0 = rf(ctx, objID, objType)
 	} else {
@@ -170,7 +189,6 @@ func (_m *WebhookRepository) ListByReferenceObjectIDGlobal(ctx context.Context, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookReferenceObjectType) error); ok {
 		r1 = rf(ctx, objID, objType)
 	} else {
@@ -185,6 +203,10 @@ func (_m *WebhookRepository) ListByWebhookType(ctx context.Context, webhookType 
 	ret := _m.Called(ctx, webhookType)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.WebhookType) ([]*model.Webhook, error)); ok {
+		return rf(ctx, webhookType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.WebhookType) []*model.Webhook); ok {
 		r0 = rf(ctx, webhookType)
 	} else {
@@ -193,7 +215,6 @@ func (_m *WebhookRepository) ListByWebhookType(ctx context.Context, webhookType 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.WebhookType) error); ok {
 		r1 = rf(ctx, webhookType)
 	} else {
@@ -217,13 +238,12 @@ func (_m *WebhookRepository) Update(ctx context.Context, tenant string, item *mo
 	return r0
 }
 
-type mockConstructorTestingTNewWebhookRepository interface {
+// NewWebhookRepository creates a new instance of WebhookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWebhookRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWebhookRepository creates a new instance of WebhookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookRepository(t mockConstructorTestingTNewWebhookRepository) *WebhookRepository {
+}) *WebhookRepository {
 	mock := &WebhookRepository{}
 	mock.Mock.Test(t)
 

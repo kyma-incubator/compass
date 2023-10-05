@@ -46,13 +46,12 @@ func (_m *APIDefinitionConverter) ToEntity(apiModel *model.APIDefinition) *api.E
 	return r0
 }
 
-type mockConstructorTestingTNewAPIDefinitionConverter interface {
+// NewAPIDefinitionConverter creates a new instance of APIDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIDefinitionConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIDefinitionConverter creates a new instance of APIDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIDefinitionConverter(t mockConstructorTestingTNewAPIDefinitionConverter) *APIDefinitionConverter {
+}) *APIDefinitionConverter {
 	mock := &APIDefinitionConverter{}
 	mock.Mock.Test(t)
 

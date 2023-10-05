@@ -21,13 +21,16 @@ func (_m *APIService) CreateInBundle(ctx context.Context, resourceType resource.
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, in, spec)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.APIDefinitionInput, *model.SpecInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, in, spec)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.APIDefinitionInput, *model.SpecInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, in, spec)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, in, spec)
 	} else {
@@ -56,6 +59,10 @@ func (_m *APIService) GetForBundle(ctx context.Context, id string, bundleID stri
 	ret := _m.Called(ctx, id, bundleID)
 
 	var r0 *model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.APIDefinition, error)); ok {
+		return rf(ctx, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.APIDefinition); ok {
 		r0 = rf(ctx, id, bundleID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *APIService) GetForBundle(ctx context.Context, id string, bundleID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, bundleID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *APIService) ListByBundleIDs(ctx context.Context, bundleIDs []string, p
 	ret := _m.Called(ctx, bundleIDs, pageSize, cursor)
 
 	var r0 []*model.APIDefinitionPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.APIDefinitionPage, error)); ok {
+		return rf(ctx, bundleIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.APIDefinitionPage); ok {
 		r0 = rf(ctx, bundleIDs, pageSize, cursor)
 	} else {
@@ -87,7 +97,6 @@ func (_m *APIService) ListByBundleIDs(ctx context.Context, bundleIDs []string, p
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
 		r1 = rf(ctx, bundleIDs, pageSize, cursor)
 	} else {
@@ -97,13 +106,12 @@ func (_m *APIService) ListByBundleIDs(ctx context.Context, bundleIDs []string, p
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAPIService interface {
+// NewAPIService creates a new instance of APIService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIService creates a new instance of APIService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIService(t mockConstructorTestingTNewAPIService) *APIService {
+}) *APIService {
 	mock := &APIService{}
 	mock.Mock.Test(t)
 

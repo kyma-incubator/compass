@@ -33,6 +33,10 @@ func (_m *TenantMover) TenantsToMove(ctx context.Context, region string, fromTim
 	ret := _m.Called(ctx, region, fromTimestamp)
 
 	var r0 []model.MovedSubaccountMappingInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]model.MovedSubaccountMappingInput, error)); ok {
+		return rf(ctx, region, fromTimestamp)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []model.MovedSubaccountMappingInput); ok {
 		r0 = rf(ctx, region, fromTimestamp)
 	} else {
@@ -41,7 +45,6 @@ func (_m *TenantMover) TenantsToMove(ctx context.Context, region string, fromTim
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, region, fromTimestamp)
 	} else {
@@ -51,13 +54,12 @@ func (_m *TenantMover) TenantsToMove(ctx context.Context, region string, fromTim
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantMover interface {
+// NewTenantMover creates a new instance of TenantMover. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantMover(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantMover creates a new instance of TenantMover. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantMover(t mockConstructorTestingTNewTenantMover) *TenantMover {
+}) *TenantMover {
 	mock := &TenantMover{}
 	mock.Mock.Test(t)
 

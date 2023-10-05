@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	tenantmapping "github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	mock "github.com/stretchr/testify/mock"
@@ -31,8 +30,12 @@ func (_m *StaticGroupRepository) Get(ctx context.Context, groupnames []string) t
 	return r0
 }
 
-// NewStaticGroupRepository creates a new instance of StaticGroupRepository. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStaticGroupRepository(t testing.TB) *StaticGroupRepository {
+// NewStaticGroupRepository creates a new instance of StaticGroupRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewStaticGroupRepository(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *StaticGroupRepository {
 	mock := &StaticGroupRepository{}
 	mock.Mock.Test(t)
 

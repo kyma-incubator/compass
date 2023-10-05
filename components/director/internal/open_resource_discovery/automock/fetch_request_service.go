@@ -21,6 +21,10 @@ func (_m *FetchRequestService) FetchSpec(ctx context.Context, fr *model.FetchReq
 	ret := _m.Called(ctx, fr, headers)
 
 	var r0 *string
+	var r1 *model.FetchRequestStatus
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest, *sync.Map) (*string, *model.FetchRequestStatus)); ok {
+		return rf(ctx, fr, headers)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FetchRequest, *sync.Map) *string); ok {
 		r0 = rf(ctx, fr, headers)
 	} else {
@@ -29,7 +33,6 @@ func (_m *FetchRequestService) FetchSpec(ctx context.Context, fr *model.FetchReq
 		}
 	}
 
-	var r1 *model.FetchRequestStatus
 	if rf, ok := ret.Get(1).(func(context.Context, *model.FetchRequest, *sync.Map) *model.FetchRequestStatus); ok {
 		r1 = rf(ctx, fr, headers)
 	} else {
@@ -69,13 +72,12 @@ func (_m *FetchRequestService) UpdateGlobal(ctx context.Context, fr *model.Fetch
 	return r0
 }
 
-type mockConstructorTestingTNewFetchRequestService interface {
+// NewFetchRequestService creates a new instance of FetchRequestService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFetchRequestService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFetchRequestService creates a new instance of FetchRequestService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFetchRequestService(t mockConstructorTestingTNewFetchRequestService) *FetchRequestService {
+}) *FetchRequestService {
 	mock := &FetchRequestService{}
 	mock.Mock.Test(t)
 

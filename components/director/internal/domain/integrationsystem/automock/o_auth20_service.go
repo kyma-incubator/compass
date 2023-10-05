@@ -29,13 +29,12 @@ func (_m *OAuth20Service) DeleteMultipleClientCredentials(ctx context.Context, a
 	return r0
 }
 
-type mockConstructorTestingTNewOAuth20Service interface {
+// NewOAuth20Service creates a new instance of OAuth20Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOAuth20Service(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOAuth20Service creates a new instance of OAuth20Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOAuth20Service(t mockConstructorTestingTNewOAuth20Service) *OAuth20Service {
+}) *OAuth20Service {
 	mock := &OAuth20Service{}
 	mock.Mock.Test(t)
 

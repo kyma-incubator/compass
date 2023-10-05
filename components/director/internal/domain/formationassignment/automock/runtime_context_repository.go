@@ -20,6 +20,10 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -28,7 +32,6 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -43,6 +46,10 @@ func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant 
 	ret := _m.Called(ctx, tenant, scenarios)
 
 	var r0 []*model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, scenarios)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, scenarios)
 	} else {
@@ -51,7 +58,6 @@ func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios)
 	} else {
@@ -61,13 +67,12 @@ func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeContextRepository interface {
+// NewRuntimeContextRepository creates a new instance of RuntimeContextRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeContextRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeContextRepository creates a new instance of RuntimeContextRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextRepository(t mockConstructorTestingTNewRuntimeContextRepository) *RuntimeContextRepository {
+}) *RuntimeContextRepository {
 	mock := &RuntimeContextRepository{}
 	mock.Mock.Test(t)
 

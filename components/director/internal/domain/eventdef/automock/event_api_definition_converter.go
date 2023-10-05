@@ -46,13 +46,12 @@ func (_m *EventAPIDefinitionConverter) ToEntity(apiModel *model.EventDefinition)
 	return r0
 }
 
-type mockConstructorTestingTNewEventAPIDefinitionConverter interface {
+// NewEventAPIDefinitionConverter creates a new instance of EventAPIDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEventAPIDefinitionConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEventAPIDefinitionConverter creates a new instance of EventAPIDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventAPIDefinitionConverter(t mockConstructorTestingTNewEventAPIDefinitionConverter) *EventAPIDefinitionConverter {
+}) *EventAPIDefinitionConverter {
 	mock := &EventAPIDefinitionConverter{}
 	mock.Mock.Test(t)
 

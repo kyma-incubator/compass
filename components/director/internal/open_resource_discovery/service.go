@@ -12,7 +12,7 @@ import (
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"

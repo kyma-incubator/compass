@@ -19,6 +19,10 @@ func (_m *SystemsService) GetBySystemNumber(ctx context.Context, systemNumber st
 	ret := _m.Called(ctx, systemNumber)
 
 	var r0 *model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
+		return rf(ctx, systemNumber)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, systemNumber)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SystemsService) GetBySystemNumber(ctx context.Context, systemNumber st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, systemNumber)
 	} else {
@@ -65,13 +68,12 @@ func (_m *SystemsService) TrustedUpsertFromTemplate(ctx context.Context, in mode
 	return r0
 }
 
-type mockConstructorTestingTNewSystemsService interface {
+// NewSystemsService creates a new instance of SystemsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemsService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemsService creates a new instance of SystemsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemsService(t mockConstructorTestingTNewSystemsService) *SystemsService {
+}) *SystemsService {
 	mock := &SystemsService{}
 	mock.Mock.Test(t)
 

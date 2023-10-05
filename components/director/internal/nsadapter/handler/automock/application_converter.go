@@ -20,13 +20,16 @@ func (_m *ApplicationConverter) CreateInputJSONToModel(ctx context.Context, in s
 	ret := _m.Called(ctx, in)
 
 	var r0 model.ApplicationRegisterInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (model.ApplicationRegisterInput, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) model.ApplicationRegisterInput); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationRegisterInput)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -36,13 +39,12 @@ func (_m *ApplicationConverter) CreateInputJSONToModel(ctx context.Context, in s
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationConverter interface {
+// NewApplicationConverter creates a new instance of ApplicationConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationConverter creates a new instance of ApplicationConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationConverter(t mockConstructorTestingTNewApplicationConverter) *ApplicationConverter {
+}) *ApplicationConverter {
 	mock := &ApplicationConverter{}
 	mock.Mock.Test(t)
 
