@@ -130,44 +130,44 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-connector
     connectivity_adapter:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-pairing-adapter
     director:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
       version: "v20230927-8a1c8843"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-kyma-adapter
     instance_creator:
       dir: prod/incubator/
       version: "v20230912-308fbb42"
       name: compass-instance-creator
     gateway:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-gateway
     operations_controller:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-operations-controller
     ord_service:
       dir: prod/incubator/
@@ -178,8 +178,8 @@ global:
       version: "v20230925-d2a6ce68"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -187,16 +187,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: dev/incubator/
-      version: "PR-3364"
+      dir: prod/incubator/
+      version: "v20231005-a31a5c8d"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
