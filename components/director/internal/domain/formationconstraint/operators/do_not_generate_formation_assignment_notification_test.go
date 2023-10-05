@@ -1,8 +1,9 @@
 package operators_test
 
 import (
-	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"

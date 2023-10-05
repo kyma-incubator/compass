@@ -46,13 +46,13 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 	return r0, r1, r2
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in, specs, bundleRefs
-func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
-	ret := _m.Called(in, specs, bundleRefs)
+// MultipleToGraphQL provides a mock function with given fields: in, bundleRefs
+func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
+	ret := _m.Called(in, bundleRefs)
 
 	var r0 []*graphql.APIDefinition
-	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) []*graphql.APIDefinition); ok {
-		r0 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.BundleReference) []*graphql.APIDefinition); ok {
+		r0 = rf(in, bundleRefs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*graphql.APIDefinition)
@@ -60,8 +60,8 @@ func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, specs []*mo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func([]*model.APIDefinition, []*model.Spec, []*model.BundleReference) error); ok {
-		r1 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(1).(func([]*model.APIDefinition, []*model.BundleReference) error); ok {
+		r1 = rf(in, bundleRefs)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -45,8 +45,6 @@ type RuntimeService interface {
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
-	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error)
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
 
@@ -451,6 +449,38 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 	log.C(ctx).Infof("Successfully refetched APISpec for APIDefinition with id %s", apiID)
 	return converted, nil
+}
+
+// Spec Fetches API Spec for a given APIDefinition
+func (r *Resolver) Spec(ctx context.Context, obj *graphql.APIDefinition) (*graphql.APISpec, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("API cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.APISpecReference, obj.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", obj.ID)
+	}
+
+	gqlSpec, err := r.specConverter.ToGraphQLAPISpec(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlSpec, nil
 }
 
 // FetchRequest returns a FetchRequest by a given EventSpec via dataloaders.

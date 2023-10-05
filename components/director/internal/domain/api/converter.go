@@ -87,8 +87,8 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 }
 
 // MultipleToGraphQL converts the provided service-layer representations of an APIDefinition to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
-	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
+func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
+	if len(in) != len(bundleRefs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
@@ -98,7 +98,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 			continue
 		}
 
-		api, err := c.ToGraphQL(a, specs[i], bundleRefs[i])
+		api, err := c.ToGraphQL(a, nil, bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
