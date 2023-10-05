@@ -25,6 +25,10 @@ func (_m *DestinationCreatorService) CreateCertificate(ctx context.Context, dest
 	ret := _m.Called(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
 
 	var r0 *operators.CertificateData
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool) (*operators.CertificateData, error)); ok {
+		return rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool) *operators.CertificateData); ok {
 		r0 = rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
 	} else {
@@ -33,7 +37,6 @@ func (_m *DestinationCreatorService) CreateCertificate(ctx context.Context, dest
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool) error); ok {
 		r1 = rf(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation)
 	} else {
@@ -48,6 +51,10 @@ func (_m *DestinationCreatorService) EnrichAssignmentConfigWithCertificateData(a
 	ret := _m.Called(assignmentConfig, destinationTypePath, certData)
 
 	var r0 json.RawMessage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(json.RawMessage, string, *operators.CertificateData) (json.RawMessage, error)); ok {
+		return rf(assignmentConfig, destinationTypePath, certData)
+	}
 	if rf, ok := ret.Get(0).(func(json.RawMessage, string, *operators.CertificateData) json.RawMessage); ok {
 		r0 = rf(assignmentConfig, destinationTypePath, certData)
 	} else {
@@ -56,7 +63,6 @@ func (_m *DestinationCreatorService) EnrichAssignmentConfigWithCertificateData(a
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(json.RawMessage, string, *operators.CertificateData) error); ok {
 		r1 = rf(assignmentConfig, destinationTypePath, certData)
 	} else {
@@ -71,6 +77,10 @@ func (_m *DestinationCreatorService) EnrichAssignmentConfigWithSAMLCertificateDa
 	ret := _m.Called(assignmentConfig, destinationTypePath, certData)
 
 	var r0 json.RawMessage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(json.RawMessage, string, *operators.CertificateData) (json.RawMessage, error)); ok {
+		return rf(assignmentConfig, destinationTypePath, certData)
+	}
 	if rf, ok := ret.Get(0).(func(json.RawMessage, string, *operators.CertificateData) json.RawMessage); ok {
 		r0 = rf(assignmentConfig, destinationTypePath, certData)
 	} else {
@@ -79,7 +89,6 @@ func (_m *DestinationCreatorService) EnrichAssignmentConfigWithSAMLCertificateDa
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(json.RawMessage, string, *operators.CertificateData) error); ok {
 		r1 = rf(assignmentConfig, destinationTypePath, certData)
 	} else {
@@ -89,13 +98,12 @@ func (_m *DestinationCreatorService) EnrichAssignmentConfigWithSAMLCertificateDa
 	return r0, r1
 }
 
-type mockConstructorTestingTNewDestinationCreatorService interface {
+// NewDestinationCreatorService creates a new instance of DestinationCreatorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationCreatorService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationCreatorService creates a new instance of DestinationCreatorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationCreatorService(t mockConstructorTestingTNewDestinationCreatorService) *DestinationCreatorService {
+}) *DestinationCreatorService {
 	mock := &DestinationCreatorService{}
 	mock.Mock.Test(t)
 

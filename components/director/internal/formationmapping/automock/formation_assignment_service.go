@@ -36,6 +36,10 @@ func (_m *FormationAssignmentService) GetGlobalByIDAndFormationID(ctx context.Co
 	ret := _m.Called(ctx, formationAssignmentID, formationID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, formationAssignmentID, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, formationAssignmentID, formationID)
 	} else {
@@ -44,7 +48,6 @@ func (_m *FormationAssignmentService) GetGlobalByIDAndFormationID(ctx context.Co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, formationAssignmentID, formationID)
 	} else {
@@ -59,6 +62,10 @@ func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Co
 	ret := _m.Called(ctx, formationID, sourceID, targetID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, formationID, sourceID, targetID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, formationID, sourceID, targetID)
 	} else {
@@ -67,7 +74,6 @@ func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, formationID, sourceID, targetID)
 	} else {
@@ -82,6 +88,10 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 	ret := _m.Called(ctx, formationID, objectID)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, formationID, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, formationID, objectID)
 	} else {
@@ -90,7 +100,6 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, formationID, objectID)
 	} else {
@@ -105,13 +114,16 @@ func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context
 	ret := _m.Called(ctx, mappingPair)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)); ok {
+		return rf(ctx, mappingPair)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) bool); ok {
 		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) error); ok {
 		r1 = rf(ctx, mappingPair)
 	} else {
@@ -149,13 +161,12 @@ func (_m *FormationAssignmentService) Update(ctx context.Context, id string, fa 
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentService interface {
+// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationAssignmentService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentService(t mockConstructorTestingTNewFormationAssignmentService) *FormationAssignmentService {
+}) *FormationAssignmentService {
 	mock := &FormationAssignmentService{}
 	mock.Mock.Test(t)
 

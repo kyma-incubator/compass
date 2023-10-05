@@ -59,13 +59,12 @@ func (_m *FormationAssignmentStatusService) UpdateWithConstraints(ctx context.Co
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentStatusService interface {
+// NewFormationAssignmentStatusService creates a new instance of FormationAssignmentStatusService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationAssignmentStatusService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationAssignmentStatusService creates a new instance of FormationAssignmentStatusService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentStatusService(t mockConstructorTestingTNewFormationAssignmentStatusService) *FormationAssignmentStatusService {
+}) *FormationAssignmentStatusService {
 	mock := &FormationAssignmentStatusService{}
 	mock.Mock.Test(t)
 

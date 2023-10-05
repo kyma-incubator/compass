@@ -22,13 +22,16 @@ func (_m *DocumentService) CreateInBundle(ctx context.Context, resourceType reso
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.DocumentInput) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, string, model.DocumentInput) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, string, model.DocumentInput) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, in)
 	} else {
@@ -57,6 +60,10 @@ func (_m *DocumentService) Get(ctx context.Context, id string) (*model.Document,
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Document
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Document, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Document); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -65,7 +72,6 @@ func (_m *DocumentService) Get(ctx context.Context, id string) (*model.Document,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -80,6 +86,10 @@ func (_m *DocumentService) ListFetchRequests(ctx context.Context, documentIDs []
 	ret := _m.Called(ctx, documentIDs)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, documentIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, documentIDs)
 	} else {
@@ -88,7 +98,6 @@ func (_m *DocumentService) ListFetchRequests(ctx context.Context, documentIDs []
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, documentIDs)
 	} else {
@@ -98,13 +107,12 @@ func (_m *DocumentService) ListFetchRequests(ctx context.Context, documentIDs []
 	return r0, r1
 }
 
-type mockConstructorTestingTNewDocumentService interface {
+// NewDocumentService creates a new instance of DocumentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDocumentService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDocumentService creates a new instance of DocumentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDocumentService(t mockConstructorTestingTNewDocumentService) *DocumentService {
+}) *DocumentService {
 	mock := &DocumentService{}
 	mock.Mock.Test(t)
 

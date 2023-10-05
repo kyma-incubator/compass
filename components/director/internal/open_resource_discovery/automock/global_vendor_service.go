@@ -19,13 +19,16 @@ func (_m *GlobalVendorService) CreateGlobal(ctx context.Context, in model.Vendor
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.VendorInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.VendorInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.VendorInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -54,6 +57,10 @@ func (_m *GlobalVendorService) ListGlobal(ctx context.Context) ([]*model.Vendor,
 	ret := _m.Called(ctx)
 
 	var r0 []*model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.Vendor, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.Vendor); ok {
 		r0 = rf(ctx)
 	} else {
@@ -62,7 +69,6 @@ func (_m *GlobalVendorService) ListGlobal(ctx context.Context) ([]*model.Vendor,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -86,13 +92,12 @@ func (_m *GlobalVendorService) UpdateGlobal(ctx context.Context, id string, in m
 	return r0
 }
 
-type mockConstructorTestingTNewGlobalVendorService interface {
+// NewGlobalVendorService creates a new instance of GlobalVendorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewGlobalVendorService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewGlobalVendorService creates a new instance of GlobalVendorService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewGlobalVendorService(t mockConstructorTestingTNewGlobalVendorService) *GlobalVendorService {
+}) *GlobalVendorService {
 	mock := &GlobalVendorService{}
 	mock.Mock.Test(t)
 

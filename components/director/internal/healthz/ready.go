@@ -10,6 +10,7 @@ import (
 )
 
 // Repository missing godoc
+//
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	GetVersion(ctx context.Context) (string, bool, error)

@@ -1,7 +1,7 @@
 
 APP_NAME = compass-ias-adapter
 APP_PATH = components/ias-adapter
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20230323-a1ac96db # 1.20
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 NAMESPACE="compass-system"
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on

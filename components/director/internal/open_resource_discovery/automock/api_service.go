@@ -21,13 +21,16 @@ func (_m *APIService) Create(ctx context.Context, resourceType resource.Type, re
 	ret := _m.Called(ctx, resourceType, resourceID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash, defaultBundleID)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, *string, *string, model.APIDefinitionInput, []*model.SpecInput, map[string]string, uint64, string) (string, error)); ok {
+		return rf(ctx, resourceType, resourceID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash, defaultBundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, *string, *string, model.APIDefinitionInput, []*model.SpecInput, map[string]string, uint64, string) string); ok {
 		r0 = rf(ctx, resourceType, resourceID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash, defaultBundleID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string, *string, *string, model.APIDefinitionInput, []*model.SpecInput, map[string]string, uint64, string) error); ok {
 		r1 = rf(ctx, resourceType, resourceID, bundleID, packageID, in, spec, targetURLsPerBundle, apiHash, defaultBundleID)
 	} else {
@@ -56,6 +59,10 @@ func (_m *APIService) ListByApplicationID(ctx context.Context, appID string) ([]
 	ret := _m.Called(ctx, appID)
 
 	var r0 []*model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.APIDefinition, error)); ok {
+		return rf(ctx, appID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.APIDefinition); ok {
 		r0 = rf(ctx, appID)
 	} else {
@@ -64,7 +71,6 @@ func (_m *APIService) ListByApplicationID(ctx context.Context, appID string) ([]
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appID)
 	} else {
@@ -79,6 +85,10 @@ func (_m *APIService) ListByApplicationTemplateVersionID(ctx context.Context, ap
 	ret := _m.Called(ctx, appTemplateVersionID)
 
 	var r0 []*model.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.APIDefinition, error)); ok {
+		return rf(ctx, appTemplateVersionID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.APIDefinition); ok {
 		r0 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -87,7 +97,6 @@ func (_m *APIService) ListByApplicationTemplateVersionID(ctx context.Context, ap
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateVersionID)
 	} else {
@@ -111,13 +120,12 @@ func (_m *APIService) UpdateInManyBundles(ctx context.Context, resourceType reso
 	return r0
 }
 
-type mockConstructorTestingTNewAPIService interface {
+// NewAPIService creates a new instance of APIService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIService creates a new instance of APIService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIService(t mockConstructorTestingTNewAPIService) *APIService {
+}) *APIService {
 	mock := &APIService{}
 	mock.Mock.Test(t)
 

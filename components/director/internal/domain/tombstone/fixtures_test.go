@@ -2,6 +2,7 @@ package tombstone_test
 
 import (
 	"database/sql/driver"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"

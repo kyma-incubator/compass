@@ -22,6 +22,10 @@ func (_m *NotificationService) SendNotification(ctx context.Context, webhookNoti
 	ret := _m.Called(ctx, webhookNotificationReq)
 
 	var r0 *webhook.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) (*webhook.Response, error)); ok {
+		return rf(ctx, webhookNotificationReq)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookExtRequest) *webhook.Response); ok {
 		r0 = rf(ctx, webhookNotificationReq)
 	} else {
@@ -30,7 +34,6 @@ func (_m *NotificationService) SendNotification(ctx context.Context, webhookNoti
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookExtRequest) error); ok {
 		r1 = rf(ctx, webhookNotificationReq)
 	} else {
@@ -40,13 +43,12 @@ func (_m *NotificationService) SendNotification(ctx context.Context, webhookNoti
 	return r0, r1
 }
 
-type mockConstructorTestingTNewNotificationService interface {
+// NewNotificationService creates a new instance of NotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewNotificationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewNotificationService creates a new instance of NotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationService(t mockConstructorTestingTNewNotificationService) *NotificationService {
+}) *NotificationService {
 	mock := &NotificationService{}
 	mock.Mock.Test(t)
 
