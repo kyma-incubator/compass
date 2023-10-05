@@ -18,6 +18,7 @@ func TestProductInput_ToProduct(t *testing.T) {
 	appTemplateVersionID := "vaz"
 	vendor := "Sample"
 	name := "sample"
+	description := "desc"
 	labels := json.RawMessage("{}")
 
 	testCases := []struct {
@@ -30,15 +31,17 @@ func TestProductInput_ToProduct(t *testing.T) {
 		{
 			Name: "All properties given for App",
 			Input: &model.ProductInput{
-				OrdID:  ordID,
-				Title:  name,
-				Vendor: vendor,
-				Labels: labels,
+				OrdID:       ordID,
+				Title:       name,
+				Description: &description,
+				Vendor:      vendor,
+				Labels:      labels,
 			},
 			Expected: &model.Product{
 				ID:            id,
 				OrdID:         ordID,
 				ApplicationID: &appID,
+				Description:   &description,
 				Title:         name,
 				Vendor:        vendor,
 				Labels:        labels,
@@ -49,16 +52,18 @@ func TestProductInput_ToProduct(t *testing.T) {
 		{
 			Name: "All properties given for App Template Version",
 			Input: &model.ProductInput{
-				OrdID:  ordID,
-				Title:  name,
-				Vendor: vendor,
-				Labels: labels,
+				OrdID:       ordID,
+				Title:       name,
+				Description: &description,
+				Vendor:      vendor,
+				Labels:      labels,
 			},
 			Expected: &model.Product{
 				ID:                           id,
 				OrdID:                        ordID,
 				ApplicationTemplateVersionID: &appTemplateVersionID,
 				Title:                        name,
+				Description:                  &description,
 				Vendor:                       vendor,
 				Labels:                       labels,
 			},

@@ -162,8 +162,16 @@ func FixTenantsPageSearchRequest(searchTerm string, first int) *gcli.Request {
 func FixRootTenantRequest(externalTenant string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-				result: rootTenant(externalTenant: "%s")
-				}`, externalTenant))
+                result: rootTenant(externalTenant: "%s") {
+                  id
+                  internalID
+                  initialized
+                  parentID
+                  provider
+                  type
+                  name
+                }
+              }`, externalTenant))
 }
 
 func FixTenantRequest(externalID string) *gcli.Request {

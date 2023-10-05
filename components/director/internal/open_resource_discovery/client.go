@@ -55,15 +55,16 @@ type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error)
 }
 
-type client struct {
+// ORDDocumentsClient defines ORD documents client
+type ORDDocumentsClient struct {
 	config ClientConfig
 	*http.Client
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
-	return &client{
+func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *ORDDocumentsClient {
+	return &ORDDocumentsClient{
 		config:                         config,
 		Client:                         httpClient,
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
@@ -71,7 +72,7 @@ func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecu
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
+func (c *ORDDocumentsClient) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource Resource, webhook *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (Documents, string, error) {
 	var tenantValue string
 
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference && resource.Type != directorresource.ApplicationTemplate; needsTenantHeader {
@@ -159,7 +160,7 @@ func convertErrorsToStrings(errors []error) (result []string) {
 	return result
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
+func (c *ORDDocumentsClient) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
@@ -207,7 +208,7 @@ func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
 	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
-func (c *client) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
+func (c *ORDDocumentsClient) fetchConfig(ctx context.Context, resource Resource, webhook *model.Webhook, tenantValue string, requestObject directorwh.OpenResourceDiscoveryWebhookRequestObject) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 
