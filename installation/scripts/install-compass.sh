@@ -96,7 +96,7 @@ echo "Compass installation status ${STATUS}"
 
 if [[ $(uname -m) == "arm64" ]]; then
   echo "Patching image on octopus for arm64..."
- 	kubectl set image -n compass-system statefulset/compass-octopus "manager=europe-west1-docker.pkg.dev/sap-cp-cmp-dev/ucl-dev/octopus:5f353cd5"
+ 	kubectl set image -n "${RELEASE_NS}" statefulset/compass-octopus "manager=europe-west1-docker.pkg.dev/sap-cp-cmp-dev/ucl-dev/octopus:5f353cd5"
 fi
 
 if [[ ${SQL_HELM_BACKEND} ]]; then
