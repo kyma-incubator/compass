@@ -134,8 +134,8 @@ global:
       version: "v20230918-de877e42"
       name: compass-connector
     connectivity_adapter:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3365"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: prod/incubator/
@@ -143,7 +143,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3340"
+      version: "PR-3365"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -155,7 +155,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3336"
+      version: "PR-3365"
       name: compass-kyma-adapter
     instance_creator:
       dir: prod/incubator/
