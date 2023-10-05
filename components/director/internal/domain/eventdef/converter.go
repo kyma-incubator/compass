@@ -75,9 +75,9 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 }
 
 // MultipleToGraphQL converts the provided service-layer representations of an EventDefinition to the graphql-layer ones.
-func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
-	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
-		return nil, errors.New("different events, specs and bundleRefs count provided")
+func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
+	if len(in) != len(bundleRefs) {
+		return nil, errors.New("different events and bundleRefs count provided")
 	}
 
 	events := make([]*graphql.EventDefinition, 0, len(in))
@@ -86,7 +86,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 			continue
 		}
 
-		event, err := c.ToGraphQL(e, specs[i], bundleRefs[i])
+		event, err := c.ToGraphQL(e, nil, bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}
