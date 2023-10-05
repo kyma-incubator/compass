@@ -49,9 +49,9 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 	return r0, r1, r2
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in, specs, bundleRefs
-func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
-	ret := _m.Called(in, specs, bundleRefs)
+// MultipleToGraphQL provides a mock function with given fields: in, bundleRefs
+func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
+	ret := _m.Called(in, bundleRefs)
 
 	var r0 []*graphql.APIDefinition
 	var r1 error

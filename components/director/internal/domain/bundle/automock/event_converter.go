@@ -49,9 +49,9 @@ func (_m *EventConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinition
 	return r0, r1, r2
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in, specs, bundleRefs
-func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
-	ret := _m.Called(in, specs, bundleRefs)
+// MultipleToGraphQL provides a mock function with given fields: in, bundleRefs
+func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
+	ret := _m.Called(in, bundleRefs)
 
 	var r0 []*graphql.EventDefinition
 	var r1 error
