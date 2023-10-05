@@ -99,12 +99,12 @@ var (
 	linksFormat = removeWhitespace(`[
         {
 		  "description": "lorem ipsum dolor nem",
-          "title": "Link Title",
+          "title": "Link Title 1",
           "url": "https://example.com/2018/04/11/testing/"
         },
 		{
 		  "description": "lorem ipsum dolor nem",
-          "title": "Link Title",
+          "title": "Link Title 2",
           "url": "%s/testing/relative"
         }
       ]`)
@@ -143,10 +143,6 @@ var (
 	documentLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
-
-	hierarchy = removeWhitespace(`[
-        "testHierarchy"
-      ]`)
 
 	supportedUseCases = removeWhitespace(`[
         "mass-extraction"
@@ -385,8 +381,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				OrdID:               packageORDID,
 				Vendor:              str.Ptr(vendorORDID),
 				Title:               "PACKAGE 1 TITLE",
-				ShortDescription:    "lorem ipsum",
-				Description:         "lorem ipsum dolor set",
+				ShortDescription:    "short desc",
+				Description:         "longer desc",
 				Version:             "1.1.2",
 				PackageLinks:        json.RawMessage(fmt.Sprintf(packageLinksFormat, providedBaseURL)),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
@@ -422,7 +418,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			{
 				OrdID:               productORDID,
 				Title:               "PRODUCT TITLE",
-				ShortDescription:    "lorem ipsum",
+				ShortDescription:    "short desc",
+				Description:         str.Ptr("long desc"),
 				Vendor:              vendorORDID,
 				Parent:              str.Ptr(product2ORDID),
 				CorrelationIDs:      json.RawMessage(correlationIDs),
@@ -437,9 +434,9 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:                           str.Ptr(localTenantID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "API TITLE",
-				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+				Description:                             str.Ptr("long desc"),
 				TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1","https://exmaple.com/test/v2"]`),
-				ShortDescription:                        str.Ptr("lorem ipsum"),
+				ShortDescription:                        str.Ptr("short desc"),
 				SystemInstanceAware:                     &boolPtr,
 				APIProtocol:                             str.Ptr("odata-v2"),
 				Tags:                                    json.RawMessage(`["apiTestTag"]`),
@@ -451,7 +448,6 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Successors:                              nil,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
-				Hierarchy:                               json.RawMessage(hierarchy),
 				SupportedUseCases:                       json.RawMessage(supportedUseCases),
 				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
@@ -512,9 +508,9 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:                           str.Ptr(localTenantID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "Gateway Sample Service",
-				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
+				Description:                             str.Ptr("long desc"),
 				TargetURLs:                              json.RawMessage(`["http://localhost:8080/some-api/v1"]`),
-				ShortDescription:                        str.Ptr("lorem ipsum"),
+				ShortDescription:                        str.Ptr("short desc"),
 				SystemInstanceAware:                     &boolPtr,
 				APIProtocol:                             str.Ptr("odata-v2"),
 				Tags:                                    json.RawMessage(`["ZGWSAMPLE"]`),
@@ -526,7 +522,6 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
-				Hierarchy:                               json.RawMessage(hierarchy),
 				SupportedUseCases:                       json.RawMessage(supportedUseCases),
 				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
@@ -575,8 +570,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:                           str.Ptr(localTenantID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "EVENT TITLE",
-				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
-				ShortDescription:                        str.Ptr("lorem ipsum"),
+				Description:                             str.Ptr("long desc"),
+				ShortDescription:                        str.Ptr("short desc"),
 				SystemInstanceAware:                     &boolPtr,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
@@ -586,7 +581,6 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SunsetDate:                              nil,
 				Successors:                              nil,
 				Labels:                                  json.RawMessage(labels),
-				Hierarchy:                               json.RawMessage(hierarchy),
 				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                &boolPtr,
@@ -623,8 +617,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE 2",
-				Description:         str.Ptr("lorem ipsum dolor sit amet"),
-				ShortDescription:    str.Ptr("lorem ipsum"),
+				Description:         str.Ptr("long desc"),
+				ShortDescription:    str.Ptr("short desc"),
 				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
@@ -634,7 +628,6 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SunsetDate:          str.Ptr("2020-12-08T15:47:04+0000"),
 				Successors:          json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID)),
 				Labels:              json.RawMessage(labels),
-				Hierarchy:           json.RawMessage(hierarchy),
 				DocumentationLabels: json.RawMessage(documentLabels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            nil,
@@ -702,6 +695,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			{
 				OrdID:       api2ORDID,
 				RemovalDate: "2020-12-02T14:12:59Z",
+				Description: str.Ptr("long description"),
 			},
 		},
 		Vendors: []*model.VendorInput{
@@ -935,7 +929,8 @@ func fixProducts() []*model.Product {
 			OrdID:               productORDID,
 			ApplicationID:       str.Ptr(appID),
 			Title:               "PRODUCT TITLE",
-			ShortDescription:    "lorem ipsum",
+			Description:         str.Ptr("long description"),
+			ShortDescription:    "short description",
 			Vendor:              vendorORDID,
 			Parent:              str.Ptr(product2ORDID),
 			CorrelationIDs:      json.RawMessage(`["foo.bar.baz:123456"]`),
@@ -951,7 +946,8 @@ func fixGlobalProducts() []*model.Product {
 			ID:               productID,
 			OrdID:            globalProductORDID,
 			Title:            "SAP Business Technology Platform",
-			ShortDescription: "Accelerate business outcomes with integration, data to value, and extensibility.",
+			ShortDescription: "Enhance business results",
+			Description:      str.Ptr("Accelerate business outcomes with integration, data to value, and extensibility."),
 			Vendor:           vendorORDID,
 		},
 	}
@@ -1419,6 +1415,7 @@ func fixTombstones() []*model.Tombstone {
 			OrdID:         api2ORDID,
 			ApplicationID: &appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
+			Description:   str.Ptr("description"),
 		},
 	}
 }
@@ -1468,7 +1465,8 @@ func fixGlobalRegistryORDDocument() *ord.Document {
 			{
 				OrdID:            globalProductORDID,
 				Title:            "SAP Business Technology Platform",
-				ShortDescription: "Accelerate business outcomes with integration, data to value, and extensibility.",
+				ShortDescription: "Enhance business results.",
+				Description:      str.Ptr("Accelerate business outcomes with integration, data to value, and extensibility."),
 				Vendor:           vendorORDID,
 			},
 		},

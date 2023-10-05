@@ -87,6 +87,26 @@ var (
 	invalidTenantAccessModel = &model.TenantAccess{
 		ResourceType: invalidResourceType,
 	}
+	expectedTenantModel = &model.BusinessTenantMapping{
+		ID:             testExternal,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         "",
+		Type:           tenant.Account,
+		Provider:       testProvider,
+		Status:         tenant.Active,
+		Initialized:    nil,
+	}
+
+	expectedTenantGQL = &graphql.Tenant{
+		ID:          testExternal,
+		InternalID:  testInternal,
+		Name:        str.Ptr(testName),
+		Type:        string(tenant.Account),
+		ParentID:    "",
+		Initialized: nil,
+		Labels:      nil,
+	}
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
