@@ -39,8 +39,6 @@ type EventDefService interface {
 //go:generate mockery --name=EventDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventDefConverter interface {
 	ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleReference *model.BundleReference) (*graphql.EventDefinition, error)
-	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error)
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error)
 }
 
@@ -483,4 +481,36 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 
 	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
 	return gqlFetchRequests, nil
+}
+
+// Spec fetches the Spec for a given EventDefinition
+func (r *Resolver) Spec(ctx context.Context, obj *graphql.EventDefinition) (*graphql.EventSpec, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Event cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	spec, err := r.specService.GetByReferenceObjectID(ctx, resource.Application, model.EventSpecReference, obj.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for Eventefinition with id %q", obj.ID)
+	}
+
+	gqlSpec, err := r.specConverter.ToGraphQLEventSpec(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlSpec, nil
 }

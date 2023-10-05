@@ -46,13 +46,13 @@ func (_m *EventConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinition
 	return r0, r1, r2
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in, specs, bundleRefs
-func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
-	ret := _m.Called(in, specs, bundleRefs)
+// MultipleToGraphQL provides a mock function with given fields: in, bundleRefs
+func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
+	ret := _m.Called(in, bundleRefs)
 
 	var r0 []*graphql.EventDefinition
-	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) []*graphql.EventDefinition); ok {
-		r0 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.BundleReference) []*graphql.EventDefinition); ok {
+		r0 = rf(in, bundleRefs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*graphql.EventDefinition)
@@ -60,8 +60,8 @@ func (_m *EventConverter) MultipleToGraphQL(in []*model.EventDefinition, specs [
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.Spec, []*model.BundleReference) error); ok {
-		r1 = rf(in, specs, bundleRefs)
+	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.BundleReference) error); ok {
+		r1 = rf(in, bundleRefs)
 	} else {
 		r1 = ret.Error(1)
 	}
