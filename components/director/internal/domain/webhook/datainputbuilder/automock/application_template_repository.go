@@ -20,6 +20,10 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -28,7 +32,6 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -43,6 +46,10 @@ func (_m *ApplicationTemplateRepository) ListByIDs(ctx context.Context, ids []st
 	ret := _m.Called(ctx, ids)
 
 	var r0 []*model.ApplicationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.ApplicationTemplate, error)); ok {
+		return rf(ctx, ids)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, ids)
 	} else {
@@ -51,7 +58,6 @@ func (_m *ApplicationTemplateRepository) ListByIDs(ctx context.Context, ids []st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, ids)
 	} else {
@@ -61,13 +67,12 @@ func (_m *ApplicationTemplateRepository) ListByIDs(ctx context.Context, ids []st
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationTemplateRepository interface {
+// NewApplicationTemplateRepository creates a new instance of ApplicationTemplateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateRepository creates a new instance of ApplicationTemplateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateRepository(t mockConstructorTestingTNewApplicationTemplateRepository) *ApplicationTemplateRepository {
+}) *ApplicationTemplateRepository {
 	mock := &ApplicationTemplateRepository{}
 	mock.Mock.Test(t)
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"

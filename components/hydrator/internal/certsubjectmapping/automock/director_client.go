@@ -19,6 +19,10 @@ func (_m *DirectorClient) ListCertificateSubjectMappings(ctx context.Context, af
 	ret := _m.Called(ctx, after)
 
 	var r0 *graphql.CertificateSubjectMappingPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.CertificateSubjectMappingPage, error)); ok {
+		return rf(ctx, after)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.CertificateSubjectMappingPage); ok {
 		r0 = rf(ctx, after)
 	} else {
@@ -27,7 +31,6 @@ func (_m *DirectorClient) ListCertificateSubjectMappings(ctx context.Context, af
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, after)
 	} else {
@@ -37,13 +40,12 @@ func (_m *DirectorClient) ListCertificateSubjectMappings(ctx context.Context, af
 	return r0, r1
 }
 
-type mockConstructorTestingTNewDirectorClient interface {
+// NewDirectorClient creates a new instance of DirectorClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDirectorClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDirectorClient creates a new instance of DirectorClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDirectorClient(t mockConstructorTestingTNewDirectorClient) *DirectorClient {
+}) *DirectorClient {
 	mock := &DirectorClient{}
 	mock.Mock.Test(t)
 

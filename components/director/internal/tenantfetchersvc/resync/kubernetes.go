@@ -12,6 +12,7 @@ import (
 )
 
 // KubeClient missing godoc
+//
 //go:generate mockery --name=KubeClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type KubeClient interface {
 	GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error)

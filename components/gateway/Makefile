@@ -1,7 +1,7 @@
 APP_NAME = compass-gateway
 APP_PATH = components/gateway
 ENTRYPOINT = cmd/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20230323-a1ac96db
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"

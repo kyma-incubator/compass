@@ -21,13 +21,16 @@ func (_m *OperationService) Create(ctx context.Context, in *model.OperationInput
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.OperationInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.OperationInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.OperationInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -70,6 +73,10 @@ func (_m *OperationService) Get(ctx context.Context, operationID string) (*model
 	ret := _m.Called(ctx, operationID)
 
 	var r0 *model.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Operation, error)); ok {
+		return rf(ctx, operationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Operation); ok {
 		r0 = rf(ctx, operationID)
 	} else {
@@ -78,7 +85,6 @@ func (_m *OperationService) Get(ctx context.Context, operationID string) (*model
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, operationID)
 	} else {
@@ -93,6 +99,10 @@ func (_m *OperationService) GetByDataAndType(ctx context.Context, data interface
 	ret := _m.Called(ctx, data, opType)
 
 	var r0 *model.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}, model.OperationType) (*model.Operation, error)); ok {
+		return rf(ctx, data, opType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, interface{}, model.OperationType) *model.Operation); ok {
 		r0 = rf(ctx, data, opType)
 	} else {
@@ -101,7 +111,6 @@ func (_m *OperationService) GetByDataAndType(ctx context.Context, data interface
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, interface{}, model.OperationType) error); ok {
 		r1 = rf(ctx, data, opType)
 	} else {
@@ -116,6 +125,10 @@ func (_m *OperationService) ListAllByType(ctx context.Context, opType model.Oper
 	ret := _m.Called(ctx, opType)
 
 	var r0 []*model.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) ([]*model.Operation, error)); ok {
+		return rf(ctx, opType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType) []*model.Operation); ok {
 		r0 = rf(ctx, opType)
 	} else {
@@ -124,7 +137,6 @@ func (_m *OperationService) ListAllByType(ctx context.Context, opType model.Oper
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.OperationType) error); ok {
 		r1 = rf(ctx, opType)
 	} else {
@@ -139,6 +151,10 @@ func (_m *OperationService) ListPriorityQueue(ctx context.Context, queueLimit in
 	ret := _m.Called(ctx, queueLimit, opType)
 
 	var r0 []*model.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, model.OperationType) ([]*model.Operation, error)); ok {
+		return rf(ctx, queueLimit, opType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, model.OperationType) []*model.Operation); ok {
 		r0 = rf(ctx, queueLimit, opType)
 	} else {
@@ -147,7 +163,6 @@ func (_m *OperationService) ListPriorityQueue(ctx context.Context, queueLimit in
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, model.OperationType) error); ok {
 		r1 = rf(ctx, queueLimit, opType)
 	} else {
@@ -162,13 +177,16 @@ func (_m *OperationService) LockOperation(ctx context.Context, operationID strin
 	ret := _m.Called(ctx, operationID)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, operationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, operationID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, operationID)
 	} else {
@@ -262,13 +280,12 @@ func (_m *OperationService) Update(ctx context.Context, input *model.Operation) 
 	return r0
 }
 
-type mockConstructorTestingTNewOperationService interface {
+// NewOperationService creates a new instance of OperationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOperationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOperationService creates a new instance of OperationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOperationService(t mockConstructorTestingTNewOperationService) *OperationService {
+}) *OperationService {
 	mock := &OperationService{}
 	mock.Mock.Test(t)
 

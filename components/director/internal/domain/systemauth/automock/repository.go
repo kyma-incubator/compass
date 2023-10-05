@@ -61,6 +61,10 @@ func (_m *Repository) GetByIDForObject(ctx context.Context, tenant string, id st
 	ret := _m.Called(ctx, tenant, id, objType)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SystemAuthReferenceObjectType) (*model.SystemAuth, error)); ok {
+		return rf(ctx, tenant, id, objType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SystemAuthReferenceObjectType) *model.SystemAuth); ok {
 		r0 = rf(ctx, tenant, id, objType)
 	} else {
@@ -69,7 +73,6 @@ func (_m *Repository) GetByIDForObject(ctx context.Context, tenant string, id st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.SystemAuthReferenceObjectType) error); ok {
 		r1 = rf(ctx, tenant, id, objType)
 	} else {
@@ -84,6 +87,10 @@ func (_m *Repository) GetByIDForObjectGlobal(ctx context.Context, id string, obj
 	ret := _m.Called(ctx, id, objType)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) (*model.SystemAuth, error)); ok {
+		return rf(ctx, id, objType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) *model.SystemAuth); ok {
 		r0 = rf(ctx, id, objType)
 	} else {
@@ -92,7 +99,6 @@ func (_m *Repository) GetByIDForObjectGlobal(ctx context.Context, id string, obj
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType) error); ok {
 		r1 = rf(ctx, id, objType)
 	} else {
@@ -107,6 +113,10 @@ func (_m *Repository) GetByIDGlobal(ctx context.Context, id string) (*model.Syst
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.SystemAuth, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -115,7 +125,6 @@ func (_m *Repository) GetByIDGlobal(ctx context.Context, id string) (*model.Syst
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -130,6 +139,10 @@ func (_m *Repository) GetByJSONValue(ctx context.Context, value map[string]inter
 	ret := _m.Called(ctx, value)
 
 	var r0 *model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) (*model.SystemAuth, error)); ok {
+		return rf(ctx, value)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) *model.SystemAuth); ok {
 		r0 = rf(ctx, value)
 	} else {
@@ -138,7 +151,6 @@ func (_m *Repository) GetByJSONValue(ctx context.Context, value map[string]inter
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}) error); ok {
 		r1 = rf(ctx, value)
 	} else {
@@ -153,6 +165,10 @@ func (_m *Repository) ListForObject(ctx context.Context, tenant string, objectTy
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 []model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string) ([]model.SystemAuth, error)); ok {
+		return rf(ctx, tenant, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string) []model.SystemAuth); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -161,7 +177,6 @@ func (_m *Repository) ListForObject(ctx context.Context, tenant string, objectTy
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -176,6 +191,10 @@ func (_m *Repository) ListForObjectGlobal(ctx context.Context, objectType model.
 	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 []model.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) ([]model.SystemAuth, error)); ok {
+		return rf(ctx, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) []model.SystemAuth); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
@@ -184,7 +203,6 @@ func (_m *Repository) ListForObjectGlobal(ctx context.Context, objectType model.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {
@@ -208,13 +226,12 @@ func (_m *Repository) Update(ctx context.Context, item *model.SystemAuth) error 
 	return r0
 }
 
-type mockConstructorTestingTNewRepository interface {
+// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRepository(t mockConstructorTestingTNewRepository) *Repository {
+}) *Repository {
 	mock := &Repository{}
 	mock.Mock.Test(t)
 

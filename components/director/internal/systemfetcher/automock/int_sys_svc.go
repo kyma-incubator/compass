@@ -19,13 +19,16 @@ func (_m *IntSysSvc) Create(ctx context.Context, in model.IntegrationSystemInput
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.IntegrationSystemInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.IntegrationSystemInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.IntegrationSystemInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -40,13 +43,16 @@ func (_m *IntSysSvc) List(ctx context.Context, pageSize int, cursor string) (mod
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 model.IntegrationSystemPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (model.IntegrationSystemPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) model.IntegrationSystemPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.IntegrationSystemPage)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -56,13 +62,12 @@ func (_m *IntSysSvc) List(ctx context.Context, pageSize int, cursor string) (mod
 	return r0, r1
 }
 
-type mockConstructorTestingTNewIntSysSvc interface {
+// NewIntSysSvc creates a new instance of IntSysSvc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewIntSysSvc(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewIntSysSvc creates a new instance of IntSysSvc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewIntSysSvc(t mockConstructorTestingTNewIntSysSvc) *IntSysSvc {
+}) *IntSysSvc {
 	mock := &IntSysSvc{}
 	mock.Mock.Test(t)
 

@@ -13,6 +13,7 @@ import (
 )
 
 // IntegrationSystemRepository missing godoc
+//
 //go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemRepository interface {
 	Create(ctx context.Context, item model.IntegrationSystem) error
@@ -24,6 +25,7 @@ type IntegrationSystemRepository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string

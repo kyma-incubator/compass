@@ -19,6 +19,10 @@ func (_m *SpecConverter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (
 	ret := _m.Called(in)
 
 	var r0 *model.SpecInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.EventSpecInput) (*model.SpecInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*graphql.EventSpecInput) *model.SpecInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SpecConverter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*graphql.EventSpecInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *SpecConverter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec,
 	ret := _m.Called(in)
 
 	var r0 *graphql.EventSpec
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Spec) (*graphql.EventSpec, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Spec) *graphql.EventSpec); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *SpecConverter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Spec) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *SpecConverter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSpecConverter interface {
+// NewSpecConverter creates a new instance of SpecConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSpecConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSpecConverter creates a new instance of SpecConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSpecConverter(t mockConstructorTestingTNewSpecConverter) *SpecConverter {
+}) *SpecConverter {
 	mock := &SpecConverter{}
 	mock.Mock.Test(t)
 

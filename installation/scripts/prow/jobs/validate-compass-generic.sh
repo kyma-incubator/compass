@@ -4,6 +4,8 @@ set -o errexit
 
 readonly TEST_INFRA_SOURCES_DIR="${KYMA_PROJECT_DIR}/test-infra"
 
+export COMPASS_SCRIPTS_SOURCES_DIR="/home/prow/go/src/github.com/kyma-incubator/compass/installation/scripts"
+
 # shellcheck source=prow/scripts/lib/log.sh
 source "${TEST_INFRA_SOURCES_DIR}/prow/scripts/lib/log.sh"
 # shellcheck source=prow/scripts/lib/utils.sh
@@ -13,7 +15,7 @@ if [[ "${BUILD_TYPE}" == "pr" ]]; then
     log::info "Execute Job Guard"
     export JOB_NAME_PATTERN="(pull-.*)"
     export JOBGUARD_TIMEOUT="60m"
-    "${TEST_INFRA_SOURCES_DIR}/development/jobguard/scripts/run.sh"
+    "${COMPASS_SCRIPTS_SOURCES_DIR}/kyma-scripts/jobguard/scripts/run.sh"
 fi
 
 log::info "Installing gcloud CLI"

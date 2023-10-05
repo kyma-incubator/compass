@@ -18,20 +18,23 @@ func (_m *KubeClient) GetTenantFetcherConfigMapData(ctx context.Context) (string
 	ret := _m.Called(ctx)
 
 	var r0 string
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, string, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
 		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 string
 	if rf, ok := ret.Get(1).(func(context.Context) string); ok {
 		r1 = rf(ctx)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
-	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
 		r2 = rf(ctx)
 	} else {
@@ -55,13 +58,12 @@ func (_m *KubeClient) UpdateTenantFetcherConfigMapData(ctx context.Context, last
 	return r0
 }
 
-type mockConstructorTestingTNewKubeClient interface {
+// NewKubeClient creates a new instance of KubeClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewKubeClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewKubeClient creates a new instance of KubeClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewKubeClient(t mockConstructorTestingTNewKubeClient) *KubeClient {
+}) *KubeClient {
 	mock := &KubeClient{}
 	mock.Mock.Test(t)
 

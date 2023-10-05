@@ -28,13 +28,12 @@ func (_m *LabelUpsertService) UpsertLabel(ctx context.Context, _a1 string, label
 	return r0
 }
 
-type mockConstructorTestingTNewLabelUpsertService interface {
+// NewLabelUpsertService creates a new instance of LabelUpsertService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelUpsertService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelUpsertService creates a new instance of LabelUpsertService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelUpsertService(t mockConstructorTestingTNewLabelUpsertService) *LabelUpsertService {
+}) *LabelUpsertService {
 	mock := &LabelUpsertService{}
 	mock.Mock.Test(t)
 

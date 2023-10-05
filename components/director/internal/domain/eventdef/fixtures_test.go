@@ -107,7 +107,6 @@ func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefin
 		CustomImplementationStandardDescription: str.Ptr("customImplementationStandardDescription"),
 		Extensible:                              json.RawMessage(extensible),
 		Version:                                 v,
-		Hierarchy:                               json.RawMessage("[]"),
 		DocumentationLabels:                     json.RawMessage("[]"),
 		CorrelationIDs:                          json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
@@ -265,7 +264,6 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 			ForRemoval:      repo.NewValidNullableBool(false),
 		},
 		ResourceHash:        repo.NewValidNullableString(resourceHash),
-		Hierarchy:           repo.NewValidNullableString("[]"),
 		DocumentationLabels: repo.NewValidNullableString("[]"),
 		CorrelationIDs:      repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
@@ -285,7 +283,7 @@ func fixEventDefinitionColumns() []string {
 		"changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard",
-		"custom_implementation_standard_description", "extensible", "successors", "resource_hash", "hierarchy", "documentation_labels", "correlation_ids"}
+		"custom_implementation_standard_description", "extensible", "successors", "resource_hash", "documentation_labels", "correlation_ids"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
@@ -293,7 +291,7 @@ func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, localTenantID, "shortDescription", &boolVar, nil, nil,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, "implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(extensible),
-		repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
@@ -303,7 +301,7 @@ func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value 
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,
 		event.Disabled, repo.NewNullableStringFromJSONRawMessage(event.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(event.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(event.Industry),
 		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error, event.ImplementationStandard, event.CustomImplementationStandard, event.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(event.Extensible),
-		repo.NewNullableStringFromJSONRawMessage(event.Successors), resourceHash, repo.NewNullableStringFromJSONRawMessage(event.Hierarchy), repo.NewNullableStringFromJSONRawMessage(event.DocumentationLabels), repo.NewNullableStringFromJSONRawMessage(event.CorrelationIDs)}
+		repo.NewNullableStringFromJSONRawMessage(event.Successors), resourceHash, repo.NewNullableStringFromJSONRawMessage(event.DocumentationLabels), repo.NewNullableStringFromJSONRawMessage(event.CorrelationIDs)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
