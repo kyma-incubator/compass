@@ -20,9 +20,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231005084245-aea7f3d60ebd
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231005084245-aea7f3d60ebd
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231005084245-aea7f3d60ebd
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20231005085713-dab01d7b4162
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231005085713-dab01d7b4162
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20231005085713-dab01d7b4162
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.9
@@ -38,7 +38,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/sjson v1.2.5
-	github.com/vektah/gqlparser/v2 v2.5.10
+	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/mod v0.12.0
@@ -93,6 +93,7 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/matryer/is v1.4.1 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
