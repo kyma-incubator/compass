@@ -2,7 +2,6 @@ package resource_providers
 
 import (
 	"context"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	gcli "github.com/machinebox/graphql"
@@ -87,7 +86,6 @@ func (c *FormationTemplateProvider) Provide(t *testing.T, ctx context.Context, g
 		LeadingProductIDs:      c.leadingProductIDs,
 		SupportsReset:          &c.supportsReset,
 	}
-	spew.Dump(in)
 	formationTemplate := fixtures.CreateFormationTemplate(t, ctx, gqlClient, in)
 	c.template = formationTemplate
 
