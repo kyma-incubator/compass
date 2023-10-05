@@ -536,7 +536,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// Execute W1, then execute W2. W2 takes, for example, 10 seconds. Before the W2 processing finishes, an FA status update request for W1 is received.
 		// When fetching the corresponding FA from the DB we get an object not found error, as the status update is performed in new transaction and the transaction in which the FA were generated is still running.
 		var assignments []*model.FormationAssignment
-		if terr = s.transaction(ctx, func(ctxWithTransact context.Context) error {
+		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 			assignments, terr = s.formationAssignmentService.PersistAssignments(ctxWithTransact, tnt, assignmentInputs)
 			if terr != nil {
 				return terr
@@ -885,7 +885,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	// similar to the Assign operation and to cover the case when we have both type of webhook - sync and async.
 	// So if the async notification was sent, and we're processing the sync notification, meanwhile the async participant sends
 	// FA status update request, he will have the latest state of the formation assignment even when we didn't finish the sync notification processing.
-	if err = s.transaction(ctx, func(ctxWithTransact context.Context) error {
+	if err = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		return s.updateFormationAssignmentsWithStateForObjectID(ctxWithTransact, formationFromDB.ID, objectID, string(objectType), string(model.DeletingAssignmentState))
 	}); err != nil {
 		return nil, err
@@ -1078,7 +1078,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 
 		if notificationForFA != nil && notificationForFA.Webhook.Mode != nil && *notificationForFA.Webhook.Mode == graphql.WebhookModeAsyncCallback && operation == model.UnassignFormation {
 			fa.State = string(model.DeletingAssignmentState)
-			if err := s.formationAssignmentService.Update(ctx, fa.ID, fa); err != nil {
+			if err := s.formationAssignmentService.Update(transactCtx, fa.ID, fa); err != nil {
 				return nil, errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", fa.ID, fa.State)
 			}
 		}
@@ -1799,7 +1799,7 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 
 // updateFormationAssignmentsWithStateForObjectID lists all formation assignments for a given objectID that are either source or target of the assignment
 // and update every one of them with the provided state
-func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Context, formationID, objectID, objectType, faState string) error {
+func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Context, formationID, objectID, objectType, newState string) error {
 	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
 	if err != nil {
 		return errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
@@ -1807,7 +1807,7 @@ func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Con
 
 	for _, fa := range formationAssignmentsForObject {
 		log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", fa.State, fa.ID)
-		fa.State = faState
+		fa.State = newState
 		if err := s.formationAssignmentService.Update(ctx, fa.ID, fa); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", fa.ID, fa.State)
 		}
@@ -1816,8 +1816,8 @@ func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Con
 	return nil
 }
 
-// transaction wraps a given function into an isolated DB transaction
-func (s *service) transaction(ctx context.Context, dbCalls func(ctxWithTransact context.Context) error) error {
+// executeInTransaction wraps a given function into an isolated DB transaction
+func (s *service) executeInTransaction(ctx context.Context, dbCalls func(ctxWithTransact context.Context) error) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to begin DB transaction")
