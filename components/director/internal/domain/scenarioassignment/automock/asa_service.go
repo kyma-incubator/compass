@@ -19,13 +19,16 @@ func (_m *AsaService) GetForScenarioName(ctx context.Context, scenarioName strin
 	ret := _m.Called(ctx, scenarioName)
 
 	var r0 model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, scenarioName)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, scenarioName)
 	} else {
 		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, scenarioName)
 	} else {
@@ -40,6 +43,10 @@ func (_m *AsaService) List(ctx context.Context, pageSize int, cursor string) (*m
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 *model.AutomaticScenarioAssignmentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.AutomaticScenarioAssignmentPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.AutomaticScenarioAssignmentPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
@@ -48,7 +55,6 @@ func (_m *AsaService) List(ctx context.Context, pageSize int, cursor string) (*m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -63,6 +69,10 @@ func (_m *AsaService) ListForTargetTenant(ctx context.Context, targetTenantInter
 	ret := _m.Called(ctx, targetTenantInternalID)
 
 	var r0 []*model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, targetTenantInternalID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, targetTenantInternalID)
 	} else {
@@ -71,7 +81,6 @@ func (_m *AsaService) ListForTargetTenant(ctx context.Context, targetTenantInter
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, targetTenantInternalID)
 	} else {
@@ -81,13 +90,12 @@ func (_m *AsaService) ListForTargetTenant(ctx context.Context, targetTenantInter
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAsaService interface {
+// NewAsaService creates a new instance of AsaService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAsaService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAsaService creates a new instance of AsaService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAsaService(t mockConstructorTestingTNewAsaService) *AsaService {
+}) *AsaService {
 	mock := &AsaService{}
 	mock.Mock.Test(t)
 

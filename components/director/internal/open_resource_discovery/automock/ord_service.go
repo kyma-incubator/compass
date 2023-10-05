@@ -55,13 +55,12 @@ func (_m *ORDService) ProcessApplicationTemplate(ctx context.Context, appTemplat
 	return r0
 }
 
-type mockConstructorTestingTNewORDService interface {
+// NewORDService creates a new instance of ORDService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewORDService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewORDService creates a new instance of ORDService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewORDService(t mockConstructorTestingTNewORDService) *ORDService {
+}) *ORDService {
 	mock := &ORDService{}
 	mock.Mock.Test(t)
 

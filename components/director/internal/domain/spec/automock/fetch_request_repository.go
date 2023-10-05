@@ -75,6 +75,10 @@ func (_m *FetchRequestRepository) GetByReferenceObjectID(ctx context.Context, te
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 *model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, string) (*model.FetchRequest, error)); ok {
+		return rf(ctx, tenant, objectType, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, string) *model.FetchRequest); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -83,7 +87,6 @@ func (_m *FetchRequestRepository) GetByReferenceObjectID(ctx context.Context, te
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
@@ -98,6 +101,10 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, 
 	ret := _m.Called(ctx, tenant, objectType, objectIDs)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, tenant, objectType, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
@@ -106,7 +113,6 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDs(ctx context.Context, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.FetchRequestReferenceObjectType, []string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectIDs)
 	} else {
@@ -121,6 +127,10 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDsGlobal(ctx context.Con
 	ret := _m.Called(ctx, objectType, objectIDs)
 
 	var r0 []*model.FetchRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.FetchRequestReferenceObjectType, []string) ([]*model.FetchRequest, error)); ok {
+		return rf(ctx, objectType, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.FetchRequestReferenceObjectType, []string) []*model.FetchRequest); ok {
 		r0 = rf(ctx, objectType, objectIDs)
 	} else {
@@ -129,7 +139,6 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDsGlobal(ctx context.Con
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.FetchRequestReferenceObjectType, []string) error); ok {
 		r1 = rf(ctx, objectType, objectIDs)
 	} else {
@@ -139,13 +148,12 @@ func (_m *FetchRequestRepository) ListByReferenceObjectIDsGlobal(ctx context.Con
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFetchRequestRepository interface {
+// NewFetchRequestRepository creates a new instance of FetchRequestRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFetchRequestRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFetchRequestRepository creates a new instance of FetchRequestRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFetchRequestRepository(t mockConstructorTestingTNewFetchRequestRepository) *FetchRequestRepository {
+}) *FetchRequestRepository {
 	mock := &FetchRequestRepository{}
 	mock.Mock.Test(t)
 

@@ -86,13 +86,12 @@ func (_m *DestinationService) DeleteDestinations(ctx context.Context, formationA
 	return r0
 }
 
-type mockConstructorTestingTNewDestinationService interface {
+// NewDestinationService creates a new instance of DestinationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationService creates a new instance of DestinationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationService(t mockConstructorTestingTNewDestinationService) *DestinationService {
+}) *DestinationService {
 	mock := &DestinationService{}
 	mock.Mock.Test(t)
 

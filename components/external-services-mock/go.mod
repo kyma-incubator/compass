@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/external-services-mock
 
-go 1.18
+go 1.20
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

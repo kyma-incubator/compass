@@ -35,6 +35,10 @@ func (_m *BundleService) GetForApplication(ctx context.Context, id string, appli
 	ret := _m.Called(ctx, id, applicationID)
 
 	var r0 *model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Bundle, error)); ok {
+		return rf(ctx, id, applicationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Bundle); ok {
 		r0 = rf(ctx, id, applicationID)
 	} else {
@@ -43,7 +47,6 @@ func (_m *BundleService) GetForApplication(ctx context.Context, id string, appli
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, applicationID)
 	} else {
@@ -58,6 +61,10 @@ func (_m *BundleService) ListByApplicationIDs(ctx context.Context, applicationID
 	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
 
 	var r0 []*model.BundlePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.BundlePage, error)); ok {
+		return rf(ctx, applicationIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.BundlePage); ok {
 		r0 = rf(ctx, applicationIDs, pageSize, cursor)
 	} else {
@@ -66,7 +73,6 @@ func (_m *BundleService) ListByApplicationIDs(ctx context.Context, applicationID
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
 		r1 = rf(ctx, applicationIDs, pageSize, cursor)
 	} else {
@@ -76,13 +82,12 @@ func (_m *BundleService) ListByApplicationIDs(ctx context.Context, applicationID
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBundleService interface {
+// NewBundleService creates a new instance of BundleService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleService creates a new instance of BundleService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleService(t mockConstructorTestingTNewBundleService) *BundleService {
+}) *BundleService {
 	mock := &BundleService{}
 	mock.Mock.Test(t)
 

@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.21-alpine3.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.1-alpine3.18 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/ias-broker
 WORKDIR ${BASE_APP_DIR}
@@ -12,7 +12,7 @@ COPY internal ./internal
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /main cmd/adapter/main.go
 
-FROM alpine:3.18.3 as runtime
+FROM alpine:3.18.4 as runtime
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

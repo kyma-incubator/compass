@@ -30,13 +30,12 @@ func (_m *FormationConstraintConverter) MultipleToGraphQL(in []*model.FormationC
 	return r0
 }
 
-type mockConstructorTestingTNewFormationConstraintConverter interface {
+// NewFormationConstraintConverter creates a new instance of FormationConstraintConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationConstraintConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationConstraintConverter creates a new instance of FormationConstraintConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintConverter(t mockConstructorTestingTNewFormationConstraintConverter) *FormationConstraintConverter {
+}) *FormationConstraintConverter {
 	mock := &FormationConstraintConverter{}
 	mock.Mock.Test(t)
 

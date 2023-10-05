@@ -20,6 +20,10 @@ func (_m *BundleRepo) ListByDestination(ctx context.Context, tenantID string, de
 	ret := _m.Called(ctx, tenantID, destination)
 
 	var r0 []*model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.DestinationInput) ([]*model.Bundle, error)); ok {
+		return rf(ctx, tenantID, destination)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.DestinationInput) []*model.Bundle); ok {
 		r0 = rf(ctx, tenantID, destination)
 	} else {
@@ -28,7 +32,6 @@ func (_m *BundleRepo) ListByDestination(ctx context.Context, tenantID string, de
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.DestinationInput) error); ok {
 		r1 = rf(ctx, tenantID, destination)
 	} else {
@@ -38,13 +41,12 @@ func (_m *BundleRepo) ListByDestination(ctx context.Context, tenantID string, de
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBundleRepo interface {
+// NewBundleRepo creates a new instance of BundleRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewBundleRepo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewBundleRepo creates a new instance of BundleRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBundleRepo(t mockConstructorTestingTNewBundleRepo) *BundleRepo {
+}) *BundleRepo {
 	mock := &BundleRepo{}
 	mock.Mock.Test(t)
 

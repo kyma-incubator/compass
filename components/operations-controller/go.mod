@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/operations-controller
 
-go 1.18
+go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3

@@ -20,6 +20,10 @@ func (_m *RuntimeCtxRepository) GetByID(ctx context.Context, tenant string, id s
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -28,7 +32,6 @@ func (_m *RuntimeCtxRepository) GetByID(ctx context.Context, tenant string, id s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -38,13 +41,12 @@ func (_m *RuntimeCtxRepository) GetByID(ctx context.Context, tenant string, id s
 	return r0, r1
 }
 
-type mockConstructorTestingTNewRuntimeCtxRepository interface {
+// NewRuntimeCtxRepository creates a new instance of RuntimeCtxRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeCtxRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeCtxRepository creates a new instance of RuntimeCtxRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeCtxRepository(t mockConstructorTestingTNewRuntimeCtxRepository) *RuntimeCtxRepository {
+}) *RuntimeCtxRepository {
 	mock := &RuntimeCtxRepository{}
 	mock.Mock.Test(t)
 
