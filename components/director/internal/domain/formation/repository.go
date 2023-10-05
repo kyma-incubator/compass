@@ -63,7 +63,7 @@ func (r *repository) Create(ctx context.Context, item *model.Formation) error {
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.C(ctx).Debugf("Converting Formation with name: %q to entity", item.Name)
+	log.C(ctx).Debugf("Converting Formation with name: %q to entity...", item.Name)
 	entity := r.conv.ToEntity(item)
 
 	log.C(ctx).Debugf("Persisting Formation entity with name: %q to the DB", item.Name)
