@@ -298,6 +298,27 @@ func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context
 	return r0, r1
 }
 
+// ProcessFormationAssignmentPairWithReset provides a mock function with given fields: ctx, mappingPair, reset
+func (_m *FormationAssignmentService) ProcessFormationAssignmentPairWithReset(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation, reset bool) (bool, error) {
+	ret := _m.Called(ctx, mappingPair, reset)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation, bool) bool); ok {
+		r0 = rf(ctx, mappingPair, reset)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation, bool) error); ok {
+		r1 = rf(ctx, mappingPair, reset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ProcessFormationAssignments provides a mock function with given fields: ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests, operation, formationOperation
 func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	ret := _m.Called(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests, operation, formationOperation)

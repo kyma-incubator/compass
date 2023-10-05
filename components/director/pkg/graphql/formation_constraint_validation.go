@@ -26,6 +26,7 @@ const DoNotGenerateFormationAssignmentNotificationForLoopsOperator = "DoNotGener
 // DestinationCreator contains the name of the DestinationCreator operator
 const DestinationCreator = "DestinationCreator"
 
+// ConfigMutatorOperator contains the name of the ConfigMutator
 const ConfigMutatorOperator = "ConfigMutator"
 
 // OperatorInput represent the input needed by the operators

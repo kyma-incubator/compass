@@ -1080,7 +1080,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		switch fa.State {
 		case string(model.InitialAssignmentState), string(model.CreateErrorAssignmentState):
 			assignmentPair.Operation = model.AssignFormation
-			if _, err = s.formationAssignmentService.ProcessFormationAssignmentPair(faResyncTransactionCtx, &assignmentPair); err != nil {
+			if _, err = s.formationAssignmentService.ProcessFormationAssignmentPairWithReset(faResyncTransactionCtx, &assignmentPair, true); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		case string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState):

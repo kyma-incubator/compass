@@ -594,12 +594,16 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssi
 
 // ProcessFormationAssignmentPair prepares and update the `State` and `Config` of the formation assignment based on the response and process the notifications
 func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation) (bool, error) {
+	return s.ProcessFormationAssignmentPairWithReset(ctx, mappingPair, false)
+}
+
+func (s *service) ProcessFormationAssignmentPairWithReset(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation, reset bool) (bool, error) {
 	var isReverseProcessed bool
-	err := s.processFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0, &isReverseProcessed)
+	err := s.processFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0, &isReverseProcessed, reset)
 	return isReverseProcessed, err
 }
 
-func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation, depth int, isReverseProcessed *bool) error {
+func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation, depth int, isReverseProcessed *bool, reset bool) error {
 	fa := mappingPair.AssignmentReqMapping.FormationAssignment
 	log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType, fa.State)
 	assignmentReqMappingClone := mappingPair.AssignmentReqMapping.Clone()
@@ -654,7 +658,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	requestWebhookMode := assignmentReqMappingClone.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
 		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment state to: %q and waiting for the receiver to report the status on the status API...", assignmentReqMappingClone.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
-		//assignment.State = string(model.InitialFormationState)
+		if reset {
+			assignment.State = string(model.InitialFormationState)
+		}
+
 		// Cleanup the error if present as new notification has been sent. The previous configuration should be left intact.
 		assignment.Error = nil
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
@@ -732,7 +739,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 			Operation: mappingPair.Operation,
 		}
 
-		if err = s.processFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1, isReverseProcessed); err != nil {
+		if err = s.processFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1, isReverseProcessed, reset); err != nil {
 			return errors.Wrap(err, "while sending reverse notification")
 		}
 	}

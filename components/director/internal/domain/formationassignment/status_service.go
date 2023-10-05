@@ -3,8 +3,6 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -39,13 +37,12 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	faFromDb, err := fau.repo.Get(ctx, id, tenantID)
+	faFromDB, err := fau.repo.Get(ctx, id, tenantID)
 	if err != nil {
 		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
 	}
 
-	fmt.Println("<<<<<<<<<<< State in async api is: ", faFromDb.State, " new state is: ", fa.State)
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDb.State)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDB.State)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}
@@ -99,7 +96,7 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 	if err != nil {
 		return errors.Wrapf(err, "while getting formation assignment with id %q for tenant with id %q", id, tenantID)
 	}
-	faStateFromDb := fa.State
+	faStateFromDB := fa.State
 
 	fa.State = string(model.ReadyAssignmentState)
 	fa.Value = nil
@@ -107,7 +104,7 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while updating formation asssignment with ID: %s to: %q state", id, model.ReadyAssignmentState)
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, faStateFromDb)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, faStateFromDB)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}

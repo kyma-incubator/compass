@@ -102,6 +102,8 @@ var (
 	}
 	applicationTypeLabel = &model.Label{Value: appSubtype}
 	runtimeTypeLabel     = &model.Label{Value: rtmSubtype}
+
+	lastFormationAssignmentState = configPendingState
 )
 
 func Test_GenerateFormationAssignmentNotification(t *testing.T) {
@@ -1934,7 +1936,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{})
+	expectedDetailsForApp := fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, reverseFaWithTargetTypeApplication, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState)
 
 	testCases := []struct {
 		name                    string
@@ -1984,7 +1986,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, runtimeLabelInput).Return(runtimeTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeResourceType, rtmSubtype, faWithTargetTypeRuntime, reverseFaWithTargetTypeRuntime, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState),
 		},
 		{
 			name:                "Success for FA with target type runtime context",
@@ -2009,7 +2011,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				rtmCtxRepo.On("GetByID", emptyCtx, TestTenantID, TestTarget).Return(&model.RuntimeContext{RuntimeID: TestTarget}, nil).Once()
 				return rtmCtxRepo
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.RuntimeContextResourceType, rtmSubtype, faWithTargetTypeRuntimeCtx, reverseFaWithTargetTypeRuntimeCtx, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState),
 		},
 		{
 			name:                "Success for application when there is no reverse fa",
@@ -2029,7 +2031,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 				lblSvc.On("GetLabel", emptyCtx, TestTenantID, applicationLabelInput).Return(applicationTypeLabel, nil).Once()
 				return lblSvc
 			},
-			expectedDetails: fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}),
+			expectedDetails: fixNotificationStatusReturnedDetails(model.ApplicationResourceType, appSubtype, faWithTargetTypeApplication, nil, formationconstraint.JoinPointLocation{}, lastFormationAssignmentState),
 		},
 		{
 			name:                "Error when can't get reverse fa",
@@ -2143,7 +2145,7 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 			faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(faRepo, nil, nil, nil, nil, formationRepo, nil, rtmCtxSvc, labelSvc, rtmTypeLabelKey, appTypeLabelKey)
 
 			// WHEN
-			notificationReq, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation)
+			notificationReq, err := faNotificationSvc.PrepareDetailsForNotificationStatusReturned(emptyCtx, TestTenantID, tCase.formationAssignment, model.AssignFormation, lastFormationAssignmentState)
 
 			// THEN
 			if tCase.expectedErrMsg != "" {

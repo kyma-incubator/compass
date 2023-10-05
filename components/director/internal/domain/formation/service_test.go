@@ -2714,8 +2714,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2747,8 +2747,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2794,8 +2794,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2833,8 +2833,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2868,8 +2868,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2903,8 +2903,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2940,8 +2940,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -2982,8 +2982,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -3025,8 +3025,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, testErr).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, testErr).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, testErr).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, testErr).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, testErr).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, testErr).Once()
 
@@ -3156,8 +3156,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
@@ -3543,10 +3543,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[0]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[1]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[2]).Return(false, nil).Once()
-				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[3]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[0], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[1], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[2], true).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentInitialPairs[3], true).Return(false, nil).Once()
 
 				return svc
 			},

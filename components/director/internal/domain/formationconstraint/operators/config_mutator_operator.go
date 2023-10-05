@@ -3,8 +3,6 @@ package operators
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -36,9 +34,7 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 		return false, err
 	}
 
-	fmt.Println(">>>>>>>>> Assignment STATE is: ", formationAssignment.State)
 	if i.State != nil {
-		fmt.Println(">>>>>>>>> SETTING STATE TO: ", *i.State)
 		formationAssignment.State = *i.State
 	}
 
@@ -46,6 +42,5 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 		formationAssignment.Value = json.RawMessage(*i.Configuration)
 	}
 
-	spew.Dump("FORMATION ASSIGNMENT UPDATED:::::: ", formationAssignment)
 	return true, nil
 }

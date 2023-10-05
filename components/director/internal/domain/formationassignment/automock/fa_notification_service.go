@@ -43,13 +43,13 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 	return r0, r1
 }
 
-// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation
-func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
-	ret := _m.Called(ctx, tenantID, fa, operation)
+// PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation, lastFormationAssignmentState
+func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, lastFormationAssignmentState string) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
+	ret := _m.Called(ctx, tenantID, fa, operation, lastFormationAssignmentState)
 
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
-		r0 = rf(ctx, tenantID, fa, operation)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string) *formationconstraint.NotificationStatusReturnedOperationDetails); ok {
+		r0 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*formationconstraint.NotificationStatusReturnedOperationDetails)
@@ -57,8 +57,8 @@ func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation) error); ok {
-		r1 = rf(ctx, tenantID, fa, operation)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.FormationAssignment, model.FormationOperation, string) error); ok {
+		r1 = rf(ctx, tenantID, fa, operation, lastFormationAssignmentState)
 	} else {
 		r1 = ret.Error(1)
 	}
