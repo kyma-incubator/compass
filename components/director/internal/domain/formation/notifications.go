@@ -6,7 +6,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	_ "github.com/ecoshub/jin"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/operations"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -15,19 +16,19 @@ type FormationAssignmentsAsyncAsserter struct {
 	delay int64
 }
 
-func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string, formationID string, delay int64) *FormationAssignmentsAsyncAsserter {
+func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string, delay int64) *FormationAssignmentsAsyncAsserter {
 	f := FormationAssignmentsAsyncAsserter{}
 	f.expectations = expectations
 	f.expectedAssignmentsCount = expectedAssignmentsCount
 	f.certSecuredGraphQLClient = certSecuredGraphQLClient
 	f.tenantID = tenantID
-	f.formationID = formationID
 	f.delay = delay
 	return &f
 }
 
 func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	a.assertFormationAssignmentsAsynchronously(t, ctx, a.certSecuredGraphQLClient, a.tenantID, a.formationID, a.expectedAssignmentsCount, a.expectations)
+	formationID := ctx.Value(operations.FormationIDKey).(string)
+	a.assertFormationAssignmentsAsynchronously(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations)
 }
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {

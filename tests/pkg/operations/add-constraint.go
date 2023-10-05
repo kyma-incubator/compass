@@ -9,44 +9,73 @@ import (
 	"testing"
 )
 
-//in := graphql.FormationConstraintInput{
-//	Name:            "mutate",
-//	ConstraintType:  graphql.ConstraintTypePre,
-//	TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-//	Operator:        "ConfigMutator",
-//	ResourceType:    graphql.ResourceTypeApplication,
-//	ResourceSubtype: "app-type-1",
-//	InputTemplate:   "{\\\"configuration\\\":\\\"{\\\\\\\"tmp\\\\\\\":\\\\\\\"tmpval\\\\\\\"}\\\",\\\"state\\\":\\\"DELETING\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
-//	ConstraintScope: graphql.ConstraintScopeFormationType,
-//}
-
-//constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
-
 type AddConstraintOperation struct {
-	name                string
-	constraintType      graphql.ConstraintType
-	targetOperation     graphql.TargetOperation
-	operator            string
-	resourceType        graphql.ResourceType
-	resourceSubtype     string
-	inputTemplate       string
-	constraintScope     graphql.ConstraintScope
-	formationTemplateID string
-	tenantID            string
-	constraintID        string
-	asserters           []asserters.Asserter
+	name            string
+	constraintType  graphql.ConstraintType
+	targetOperation graphql.TargetOperation
+	operator        string
+	resourceType    graphql.ResourceType
+	resourceSubtype string
+	inputTemplate   string
+	constraintScope graphql.ConstraintScope
+	tenantID        string
+	constraintID    string
+	asserters       []asserters.Asserter
 }
 
-func NewAddConstraintOperation(name string, constraintType graphql.ConstraintType, targetOperation graphql.TargetOperation, operator string, resourceType graphql.ResourceType, resourceSubtype string, inputTemplate string, constraintScope graphql.ConstraintScope, formationTemplateID string, tenantID string) *AddConstraintOperation {
-	return &AddConstraintOperation{name: name, constraintType: constraintType, targetOperation: targetOperation, operator: operator, resourceType: resourceType, resourceSubtype: resourceSubtype, inputTemplate: inputTemplate, constraintScope: constraintScope, formationTemplateID: formationTemplateID, tenantID: tenantID}
+func NewAddConstraintOperation(name string) *AddConstraintOperation {
+	return &AddConstraintOperation{name: name, constraintType: graphql.ConstraintTypePre, targetOperation: graphql.TargetOperationAssignFormation, constraintScope: graphql.ConstraintScopeFormationType}
 }
 
-func (o *AddConstraintOperation) WithAsserter(asserter asserters.Asserter) *AddConstraintOperation {
-	o.asserters = append(o.asserters, asserter)
+func (o *AddConstraintOperation) WithType(constraintType graphql.ConstraintType) *AddConstraintOperation {
+	o.constraintType = constraintType
+	return o
+}
+
+func (o *AddConstraintOperation) WithTargetOperation(targetOperation graphql.TargetOperation) *AddConstraintOperation {
+	o.targetOperation = targetOperation
+	return o
+}
+
+func (o *AddConstraintOperation) WithOperator(operator string) *AddConstraintOperation {
+	o.operator = operator
+	return o
+}
+
+func (o *AddConstraintOperation) WithResourceType(resourceType graphql.ResourceType) *AddConstraintOperation {
+	o.resourceType = resourceType
+	return o
+}
+
+func (o *AddConstraintOperation) WithResourceSubtype(resourceSubtype string) *AddConstraintOperation {
+	o.resourceSubtype = resourceSubtype
+	return o
+}
+
+func (o *AddConstraintOperation) WithInputTemplate(inputTemplate string) *AddConstraintOperation {
+	o.inputTemplate = inputTemplate
+	return o
+}
+
+func (o *AddConstraintOperation) WithScope(constraintScope graphql.ConstraintScope) *AddConstraintOperation {
+	o.constraintScope = constraintScope
+	return o
+}
+func (o *AddConstraintOperation) WithTenant(tenantID string) *AddConstraintOperation {
+	o.tenantID = tenantID
+	return o
+}
+
+func (o *AddConstraintOperation) WithAsserters(asserters ...asserters.Asserter) *AddConstraintOperation {
+	for i, _ := range asserters {
+		o.asserters = append(o.asserters, asserters[i])
+	}
 	return o
 }
 
 func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+	formationTemplateID := ctx.Value(FormationTemplateIDKey).(string)
+
 	in := graphql.FormationConstraintInput{
 		Name:            o.name,
 		ConstraintType:  o.constraintType,
@@ -60,7 +89,7 @@ func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlC
 
 	constraint := fixtures.CreateFormationConstraint(t, ctx, gqlClient, in)
 	o.constraintID = constraint.ID
-	fixtures.AttachConstraintToFormationTemplate(t, ctx, gqlClient, constraint.ID, o.formationTemplateID)
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, gqlClient, constraint.ID, formationTemplateID)
 	t.Logf("Created formation constraint")
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
@@ -68,7 +97,9 @@ func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlC
 }
 
 func (o *AddConstraintOperation) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.DetachConstraintFromFormationTemplate(t, ctx, gqlClient, o.constraintID, o.formationTemplateID)
+	formationTemplateID := ctx.Value(FormationTemplateIDKey).(string)
+
+	fixtures.DetachConstraintFromFormationTemplate(t, ctx, gqlClient, o.constraintID, formationTemplateID)
 	fixtures.CleanupFormationConstraint(t, ctx, gqlClient, o.constraintID)
 }
 

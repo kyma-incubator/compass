@@ -125,7 +125,6 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 		log.C(ctx).Debugf("Reverse assignment with source %q and target %q in formation with ID %q is not found.", fa.Target, fa.Source, formation.ID)
 	}
 
-	log.C(ctx).Infof("Generating join point details - old:%s, new:%s", lastFormationAssignmentState, fa.State)
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:                 targetType,
 		ResourceSubtype:              targetSubtype,

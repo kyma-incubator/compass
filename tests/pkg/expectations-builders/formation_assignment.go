@@ -1,25 +1,25 @@
-package mock_data
+package expectations_builders
 
 import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"k8s.io/utils/strings/slices"
 )
 
-type FANNotificationExpectationsBuilder struct {
+type FAExpectationsBuilder struct {
 	expectations map[string]map[string]fixtures.AssignmentState
 }
 
-func NewFANNotificationExpectationsBuilder() *FANNotificationExpectationsBuilder {
-	return &FANNotificationExpectationsBuilder{
+func NewFAExpectationsBuilder() *FAExpectationsBuilder {
+	return &FAExpectationsBuilder{
 		expectations: map[string]map[string]fixtures.AssignmentState{},
 	}
 }
 
-func (b *FANNotificationExpectationsBuilder) GetExpectations() map[string]map[string]fixtures.AssignmentState {
+func (b *FAExpectationsBuilder) GetExpectations() map[string]map[string]fixtures.AssignmentState {
 	return b.expectations
 }
 
-func (b *FANNotificationExpectationsBuilder) GetExpectedAssignmentsCount() int {
+func (b *FAExpectationsBuilder) GetExpectedAssignmentsCount() int {
 	count := 0
 	for _, val := range b.expectations {
 		count += len(val)
@@ -27,7 +27,7 @@ func (b *FANNotificationExpectationsBuilder) GetExpectedAssignmentsCount() int {
 	return count
 }
 
-func (b *FANNotificationExpectationsBuilder) getCurrentParticipants() []string {
+func (b *FAExpectationsBuilder) getCurrentParticipants() []string {
 	participants := make([]string, 0, len(b.expectations))
 	for participantID, _ := range b.expectations {
 		participants = append(participants, participantID)
@@ -36,7 +36,7 @@ func (b *FANNotificationExpectationsBuilder) getCurrentParticipants() []string {
 	return participants
 }
 
-func (b *FANNotificationExpectationsBuilder) WithParticipant(participantID string) *FANNotificationExpectationsBuilder {
+func (b *FAExpectationsBuilder) WithParticipant(participantID string) *FAExpectationsBuilder {
 	if _, ok := b.expectations[participantID]; ok {
 		return b
 	}
@@ -81,14 +81,14 @@ func (n *NotificationData) getAssignmentState() fixtures.AssignmentState {
 	return as
 }
 
-func (b *FANNotificationExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FANNotificationExpectationsBuilder {
+func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FAExpectationsBuilder {
 	for _, notification := range notifications {
 		b.expectations[notification.TargetID][notification.SourceID] = notification.getAssignmentState()
 	}
 	return b
 }
 
-func (b *FANNotificationExpectationsBuilder) WithoutParticipantAsync(participantID string, participantsAsyncForRemovedParticipant, asyncForParticipants []string) *FANNotificationExpectationsBuilder {
+func (b *FAExpectationsBuilder) WithoutParticipantAsync(participantID string, participantsAsyncForRemovedParticipant, asyncForParticipants []string) *FAExpectationsBuilder {
 	for key, val := range b.expectations {
 		if !slices.Contains(asyncForParticipants, key) {
 			delete(val, participantID)

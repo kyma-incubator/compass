@@ -4,6 +4,7 @@ import (
 	"context"
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/operations"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
@@ -11,15 +12,14 @@ import (
 )
 
 type FormationStatusAsserter struct {
-	formationID              string
 	tenant                   string
 	certSecuredGraphQLClient *graphql.Client
 	condition                gql.FormationStatusCondition
 	errors                   []*gql.FormationStatusError
 }
 
-func NewFormationStatusAsserter(formationID string, tenant string, certSecuredGraphQLClient *graphql.Client) *FormationStatusAsserter {
-	return &FormationStatusAsserter{formationID: formationID, tenant: tenant, certSecuredGraphQLClient: certSecuredGraphQLClient, condition: gql.FormationStatusConditionReady, errors: nil}
+func NewFormationStatusAsserter(tenant string, certSecuredGraphQLClient *graphql.Client) *FormationStatusAsserter {
+	return &FormationStatusAsserter{tenant: tenant, certSecuredGraphQLClient: certSecuredGraphQLClient, condition: gql.FormationStatusConditionReady, errors: nil}
 }
 
 func (a *FormationStatusAsserter) WithCondition(condition gql.FormationStatusCondition) *FormationStatusAsserter {
@@ -33,7 +33,8 @@ func (a *FormationStatusAsserter) WithErrors(errors []*gql.FormationStatusError)
 }
 
 func (a *FormationStatusAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	a.assertFormationStatus(t, ctx, a.tenant, a.formationID, gql.FormationStatus{
+	formationID := ctx.Value(operations.FormationIDKey).(string)
+	a.assertFormationStatus(t, ctx, a.tenant, formationID, gql.FormationStatus{
 		Condition: a.condition,
 		Errors:    a.errors,
 	})

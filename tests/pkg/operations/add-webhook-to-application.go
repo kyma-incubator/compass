@@ -45,8 +45,10 @@ func (o *AddWebhookToApplicationOperation) WithOutputTemplate(outputTemplate str
 	return o
 }
 
-func (o *AddWebhookToApplicationOperation) WithAsserter(asserter asserters.Asserter) *AddWebhookToApplicationOperation {
-	o.asserters = append(o.asserters, asserter)
+func (o *AddWebhookToApplicationOperation) WithAsserters(asserters ...asserters.Asserter) *AddWebhookToApplicationOperation {
+	for i, _ := range asserters {
+		o.asserters = append(o.asserters, asserters[i])
+	}
 	return o
 }
 

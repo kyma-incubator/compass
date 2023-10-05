@@ -10,23 +10,25 @@ import (
 )
 
 type UnassignAppToFormationOperation struct {
-	formationName string
 	applicationID string
 	tenantID      string
 	asserters     []asserters.Asserter
 }
 
-func NewUnassignAppToFormationOperation(formationName string, applicationID string, tenantID string) *UnassignAppToFormationOperation {
-	return &UnassignAppToFormationOperation{formationName: formationName, applicationID: applicationID, tenantID: tenantID}
+func NewUnassignAppToFormationOperation(applicationID string, tenantID string) *UnassignAppToFormationOperation {
+	return &UnassignAppToFormationOperation{applicationID: applicationID, tenantID: tenantID}
 }
 
-func (o *UnassignAppToFormationOperation) WithAsserter(asserter asserters.Asserter) *UnassignAppToFormationOperation {
-	o.asserters = append(o.asserters, asserter)
+func (o *UnassignAppToFormationOperation) WithAsserters(asserters ...asserters.Asserter) *UnassignAppToFormationOperation {
+	for i, _ := range asserters {
+		o.asserters = append(o.asserters, asserters[i])
+	}
 	return o
 }
 
 func (o *UnassignAppToFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: o.formationName}, o.applicationID, o.tenantID)
+	formationName := ctx.Value(FormationNameKey).(string)
+	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
 	}

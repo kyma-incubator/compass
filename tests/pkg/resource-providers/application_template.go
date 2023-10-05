@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 type ApplicationTemplateProvider struct {
@@ -16,10 +17,11 @@ type ApplicationTemplateProvider struct {
 	namespace               string
 	namePlaceholder         string
 	displayNamePlaceholder  string
+	tenantID                string
 	applicationWebhookInput *graphql.WebhookInput
 }
 
-func NewApplicationTemplateProvider(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookInput *graphql.WebhookInput) *ApplicationTemplateProvider {
+func NewApplicationTemplateProvider(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, tenantID string, webhookInput *graphql.WebhookInput) *ApplicationTemplateProvider {
 	a := &ApplicationTemplateProvider{
 		applicationType:         applicationType,
 		localTenantID:           localTenantID,
@@ -27,20 +29,25 @@ func NewApplicationTemplateProvider(applicationType, localTenantID, region, name
 		namespace:               namespace,
 		namePlaceholder:         namePlaceholder,
 		displayNamePlaceholder:  displayNamePlaceholder,
+		tenantID:                tenantID,
 		applicationWebhookInput: webhookInput,
 	}
 
 	return a
 }
 
-func (a *ApplicationTemplateProvider) Provide(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) Participant {
+func (a *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
 	in := fixtures.FixApplicationTemplateWithWebhookInput(a.applicationType, a.localTenantID, a.region, a.namespace, a.namePlaceholder, a.displayNamePlaceholder, a.applicationWebhookInput)
-	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, tenant, in)
+	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, a.tenantID, in)
 	require.NoError(t, err)
 	a.applicationTemplate = appTpl
-	return NewApplicationTemplateParticipant(appTpl)
+	return appTpl.ID
 }
 
-func (a *ApplicationTemplateProvider) TearDown(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string) {
-	fixtures.CleanupApplicationTemplate(t, ctx, gqlClient, tenant, a.applicationTemplate)
+func (a *ApplicationTemplateProvider) TearDown(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+	fixtures.CleanupApplicationTemplate(t, ctx, gqlClient, a.tenantID, a.applicationTemplate)
+}
+
+func (a *ApplicationTemplateProvider) GetResource() Resource {
+	return NewApplicationTemplateParticipant(a.applicationTemplate)
 }

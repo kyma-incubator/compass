@@ -8,14 +8,6 @@ import (
 	"testing"
 )
 
-type Participant interface {
-	GetType() string
-	GetName() string
-	GetArtifactKind() *graphql.ArtifactType // used only for runtimes, otherwise return empty
-	GetDisplayName() *string                // used only for runtimes, otherwise return empty
-	GetID() string
-}
-
 type Constraint interface {
 	Attach(templateID string)
 }
@@ -25,13 +17,13 @@ type Webhook interface {
 }
 
 type FormationTemplateProvider struct {
-	formationTypeName string
-	supportsReset     bool
-	leadingProductIDs []string
-	participants      []Participant
-	constraints       []Constraint
-	webhook           Webhook
-	template          graphql.FormationTemplate
+	formationTypeName  string
+	supportsReset      bool
+	leadingProductIDs  []string
+	supportedResources []Resource
+	constraints        []Constraint
+	webhook            Webhook
+	template           graphql.FormationTemplate
 }
 
 func NewFormationTemplateCreator(formationTypeName string) *FormationTemplateProvider {
@@ -47,8 +39,8 @@ func (c *FormationTemplateProvider) WithConstraint(constraint Constraint) *Forma
 	c.constraints = append(c.constraints, constraint)
 	return c
 }
-func (c *FormationTemplateProvider) WithParticipant(participant Participant) *FormationTemplateProvider {
-	c.participants = append(c.participants, participant)
+func (c *FormationTemplateProvider) WithSupportedResources(resource ...Resource) *FormationTemplateProvider {
+	c.supportedResources = append(c.supportedResources, resource...)
 	return c
 }
 
@@ -67,13 +59,13 @@ func (c *FormationTemplateProvider) Provide(t *testing.T, ctx context.Context, g
 	var runtimeTypes []string
 	var runtimeTypeDisplayName *string
 	var runtimeArtifactKind *graphql.ArtifactType
-	for _, participant := range c.participants {
-		if participant.GetType() == "APPLICATION" {
-			applicationTypes = append(applicationTypes, participant.GetName())
-		} else if participant.GetType() == "RUNTIME" {
-			runtimeTypes = append(runtimeTypes, participant.GetName())
-			runtimeArtifactKind = participant.GetArtifactKind()
-			runtimeTypeDisplayName = participant.GetDisplayName()
+	for _, resource := range c.supportedResources {
+		if resource.GetType() == "APPLICATION" {
+			applicationTypes = append(applicationTypes, resource.GetName())
+		} else if resource.GetType() == "RUNTIME" {
+			runtimeTypes = append(runtimeTypes, resource.GetName())
+			runtimeArtifactKind = resource.GetArtifactKind()
+			runtimeTypeDisplayName = resource.GetDisplayName()
 		}
 	}
 

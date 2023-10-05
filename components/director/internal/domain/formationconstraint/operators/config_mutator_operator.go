@@ -36,10 +36,12 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 	}
 
 	if i.State != nil {
+		log.C(ctx).Infof("Updating formation assignment state for formation assignment with ID: %s from: %s, to: %s", formationAssignment.ID, formationAssignment.State, *i.State)
 		formationAssignment.State = *i.State
 	}
 
 	if i.Configuration != nil {
+		log.C(ctx).Infof("Updating formation assignment configuration for formation assignment with ID: %s", formationAssignment.ID)
 		formationAssignment.Value = json.RawMessage(*i.Configuration)
 	}
 

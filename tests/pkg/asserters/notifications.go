@@ -3,6 +3,7 @@ package asserters
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/operations"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -18,7 +19,6 @@ const (
 type NotificationsAsserter struct {
 	expectedNotificationsCount         int
 	op                                 string
-	formationID                        string
 	targetObjectID                     string
 	sourceObjectID                     string
 	localTenantID                      string
@@ -30,17 +30,19 @@ type NotificationsAsserter struct {
 	client                             *http.Client
 }
 
-func NewNotificationsAsserter(expectedNotificationsCount int, op string, formationID string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
-	return &NotificationsAsserter{expectedNotificationsCount: expectedNotificationsCount, op: op, formationID: formationID, targetObjectID: targetObjectID, sourceObjectID: sourceObjectID, localTenantID: localTenantID, appNamespace: appNamespace, region: region, tenant: tenant, tenantParentCustomer: tenantParentCustomer, externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL, client: client}
+func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
+	return &NotificationsAsserter{expectedNotificationsCount: expectedNotificationsCount, op: op, targetObjectID: targetObjectID, sourceObjectID: sourceObjectID, localTenantID: localTenantID, appNamespace: appNamespace, region: region, tenant: tenant, tenantParentCustomer: tenantParentCustomer, externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL, client: client}
 }
 
-func (a *NotificationsAsserter) AssertExpectations(t *testing.T, _ context.Context) {
+func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
+	formationID := ctx.Value(operations.FormationIDKey).(string)
+
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
 	assertNotificationsCount(t, body, a.targetObjectID, a.expectedNotificationsCount)
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]
-	assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, assignNotificationAboutSource, assignOperation, a.formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, nil)
+	assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, nil)
 }
 
 func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client, ExternalServicesMockMtlsSecuredURL string) []byte {
