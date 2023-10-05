@@ -10,7 +10,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.3.1
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231005084245-aea7f3d60ebd
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231005091458-43f4702564b2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tidwall/gjson v1.17.0
-	github.com/vektah/gqlparser/v2 v2.5.10
+	github.com/vektah/gqlparser/v2 v2.1.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.9
 	k8s.io/apimachinery v0.26.9
@@ -67,7 +67,6 @@ require (
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matryer/is v1.4.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
