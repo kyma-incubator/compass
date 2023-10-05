@@ -162,17 +162,17 @@ func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, externalTenant)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) (string, error)); ok {
+		return rf(ctx, resourceType, objectID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, externalTenant)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) string); ok {
+		r0 = rf(ctx, resourceType, objectID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, externalTenant)
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {
+		r1 = rf(ctx, resourceType, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -184,21 +184,21 @@ func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context
 func (_m *TenantMappingRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, externalTenant)
 
-	var r0 string
+	var r0 *model.BusinessTenantMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) (string, error)); ok {
-		return rf(ctx, resourceType, objectID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalTenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string) string); ok {
-		r0 = rf(ctx, resourceType, objectID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, externalTenant)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.BusinessTenantMapping)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {
-		r1 = rf(ctx, resourceType, objectID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, externalTenant)
 	} else {
 		r1 = ret.Error(1)
 	}
