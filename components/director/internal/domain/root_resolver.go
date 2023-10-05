@@ -111,14 +111,6 @@ type RootResolver struct {
 	certSubjectMapping  *certsubjectmapping.Resolver
 }
 
-func (r *RootResolver) EventDefinition() graphql.EventDefinitionResolver {
-	return &eventDefinitionResolver{r}
-}
-
-func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
-	return &apiDefinitionResolver{r}
-}
-
 // NewRootResolver missing godoc
 func NewRootResolver(
 	appNameNormalizer normalizer.Normalizator,
@@ -429,6 +421,16 @@ func (r *RootResolver) OneTimeTokenForRuntime() graphql.OneTimeTokenForRuntimeRe
 // Tenant missing godoc
 func (r *RootResolver) Tenant() graphql.TenantResolver {
 	return &tenantResolver{r}
+}
+
+// EventDefinition resolver for Event Defs
+func (r *RootResolver) EventDefinition() graphql.EventDefinitionResolver {
+	return &eventDefinitionResolver{r}
+}
+
+// APIDefinition resolver for API Defs
+func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
+	return &apiDefinitionResolver{r}
 }
 
 type queryResolver struct {

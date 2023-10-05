@@ -483,6 +483,7 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 	return gqlFetchRequests, nil
 }
 
+// Spec fetches the Spec for a given EventDefinition
 func (r *Resolver) Spec(ctx context.Context, obj *graphql.EventDefinition) (*graphql.EventSpec, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Event cannot be empty")
