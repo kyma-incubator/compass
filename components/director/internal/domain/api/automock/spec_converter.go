@@ -19,6 +19,10 @@ func (_m *SpecConverter) InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*mod
 	ret := _m.Called(in)
 
 	var r0 *model.SpecInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.APISpecInput) (*model.SpecInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*graphql.APISpecInput) *model.SpecInput); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SpecConverter) InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*graphql.APISpecInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -42,6 +45,10 @@ func (_m *SpecConverter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, err
 	ret := _m.Called(in)
 
 	var r0 *graphql.APISpec
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.Spec) (*graphql.APISpec, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.Spec) *graphql.APISpec); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *SpecConverter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, err
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Spec) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *SpecConverter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, err
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSpecConverter interface {
+// NewSpecConverter creates a new instance of SpecConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSpecConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSpecConverter creates a new instance of SpecConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSpecConverter(t mockConstructorTestingTNewSpecConverter) *SpecConverter {
+}) *SpecConverter {
 	mock := &SpecConverter{}
 	mock.Mock.Test(t)
 

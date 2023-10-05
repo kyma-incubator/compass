@@ -55,6 +55,10 @@ func (_m *CertificateUtility) LoadCSR(encodedData []byte) (*x509.CertificateRequ
 	ret := _m.Called(encodedData)
 
 	var r0 *x509.CertificateRequest
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func([]byte) (*x509.CertificateRequest, apperrors.AppError)); ok {
+		return rf(encodedData)
+	}
 	if rf, ok := ret.Get(0).(func([]byte) *x509.CertificateRequest); ok {
 		r0 = rf(encodedData)
 	} else {
@@ -63,7 +67,6 @@ func (_m *CertificateUtility) LoadCSR(encodedData []byte) (*x509.CertificateRequ
 		}
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func([]byte) apperrors.AppError); ok {
 		r1 = rf(encodedData)
 	} else {
@@ -80,6 +83,10 @@ func (_m *CertificateUtility) LoadCert(encodedData []byte) (*x509.Certificate, a
 	ret := _m.Called(encodedData)
 
 	var r0 *x509.Certificate
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func([]byte) (*x509.Certificate, apperrors.AppError)); ok {
+		return rf(encodedData)
+	}
 	if rf, ok := ret.Get(0).(func([]byte) *x509.Certificate); ok {
 		r0 = rf(encodedData)
 	} else {
@@ -88,7 +95,6 @@ func (_m *CertificateUtility) LoadCert(encodedData []byte) (*x509.Certificate, a
 		}
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func([]byte) apperrors.AppError); ok {
 		r1 = rf(encodedData)
 	} else {
@@ -105,6 +111,10 @@ func (_m *CertificateUtility) LoadKey(encodedData []byte) (*rsa.PrivateKey, appe
 	ret := _m.Called(encodedData)
 
 	var r0 *rsa.PrivateKey
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func([]byte) (*rsa.PrivateKey, apperrors.AppError)); ok {
+		return rf(encodedData)
+	}
 	if rf, ok := ret.Get(0).(func([]byte) *rsa.PrivateKey); ok {
 		r0 = rf(encodedData)
 	} else {
@@ -113,7 +123,6 @@ func (_m *CertificateUtility) LoadKey(encodedData []byte) (*rsa.PrivateKey, appe
 		}
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func([]byte) apperrors.AppError); ok {
 		r1 = rf(encodedData)
 	} else {
@@ -130,6 +139,10 @@ func (_m *CertificateUtility) SignCSR(caCrt *x509.Certificate, csr *x509.Certifi
 	ret := _m.Called(caCrt, csr, caKey)
 
 	var r0 []byte
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(*x509.Certificate, *x509.CertificateRequest, *rsa.PrivateKey) ([]byte, apperrors.AppError)); ok {
+		return rf(caCrt, csr, caKey)
+	}
 	if rf, ok := ret.Get(0).(func(*x509.Certificate, *x509.CertificateRequest, *rsa.PrivateKey) []byte); ok {
 		r0 = rf(caCrt, csr, caKey)
 	} else {
@@ -138,7 +151,6 @@ func (_m *CertificateUtility) SignCSR(caCrt *x509.Certificate, csr *x509.Certifi
 		}
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func(*x509.Certificate, *x509.CertificateRequest, *rsa.PrivateKey) apperrors.AppError); ok {
 		r1 = rf(caCrt, csr, caKey)
 	} else {
@@ -148,4 +160,18 @@ func (_m *CertificateUtility) SignCSR(caCrt *x509.Certificate, csr *x509.Certifi
 	}
 
 	return r0, r1
+}
+
+// NewCertificateUtility creates a new instance of CertificateUtility. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertificateUtility(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *CertificateUtility {
+	mock := &CertificateUtility{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

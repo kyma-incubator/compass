@@ -20,6 +20,10 @@ func (_m *LabelRepo) GetByKey(ctx context.Context, tenant string, objectType mod
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) (*model.Label, error)); ok {
+		return rf(ctx, tenant, objectType, objectID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) *model.Label); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -28,7 +32,6 @@ func (_m *LabelRepo) GetByKey(ctx context.Context, tenant string, objectType mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -43,6 +46,10 @@ func (_m *LabelRepo) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, 
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Label, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Label); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
@@ -51,7 +58,6 @@ func (_m *LabelRepo) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -61,13 +67,12 @@ func (_m *LabelRepo) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelRepo interface {
+// NewLabelRepo creates a new instance of LabelRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelRepo(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelRepo creates a new instance of LabelRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelRepo(t mockConstructorTestingTNewLabelRepo) *LabelRepo {
+}) *LabelRepo {
 	mock := &LabelRepo{}
 	mock.Mock.Test(t)
 

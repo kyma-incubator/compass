@@ -18,6 +18,10 @@ func (_m *DestinationManager) FetchDestinationsSensitiveData(ctx context.Context
 	ret := _m.Called(ctx, tenantID, destinationNames)
 
 	var r0 []byte
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]byte, error)); ok {
+		return rf(ctx, tenantID, destinationNames)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []byte); ok {
 		r0 = rf(ctx, tenantID, destinationNames)
 	} else {
@@ -26,7 +30,6 @@ func (_m *DestinationManager) FetchDestinationsSensitiveData(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenantID, destinationNames)
 	} else {
@@ -41,6 +44,10 @@ func (_m *DestinationManager) GetSubscribedTenantIDs(ctx context.Context) ([]str
 	ret := _m.Called(ctx)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
 		r0 = rf(ctx)
 	} else {
@@ -49,7 +56,6 @@ func (_m *DestinationManager) GetSubscribedTenantIDs(ctx context.Context) ([]str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -64,13 +70,16 @@ func (_m *DestinationManager) IsTenantSubscribed(ctx context.Context, tenantID s
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -94,13 +103,12 @@ func (_m *DestinationManager) SyncTenantDestinations(ctx context.Context, tenant
 	return r0
 }
 
-type mockConstructorTestingTNewDestinationManager interface {
+// NewDestinationManager creates a new instance of DestinationManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewDestinationManager(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewDestinationManager creates a new instance of DestinationManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDestinationManager(t mockConstructorTestingTNewDestinationManager) *DestinationManager {
+}) *DestinationManager {
 	mock := &DestinationManager{}
 	mock.Mock.Test(t)
 

@@ -60,6 +60,7 @@ type certSubjectInputBuilder interface {
 }
 
 // DataInputBuilder is responsible to prepare and build different entity data needed for a webhook input
+//
 //go:generate mockery --exported --name=DataInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DataInputBuilder interface {
 	PrepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, error)

@@ -13,6 +13,7 @@ import (
 )
 
 // K8SClient missing godoc
+//
 //go:generate mockery --name=K8SClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type K8SClient interface {
 	Create(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)

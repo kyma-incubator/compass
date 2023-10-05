@@ -19,13 +19,16 @@ func (_m *RuntimeContextService) Create(ctx context.Context, in model.RuntimeCon
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeContextInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeContextInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.RuntimeContextInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -54,6 +57,10 @@ func (_m *RuntimeContextService) GetByID(ctx context.Context, id string) (*model
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.RuntimeContext
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.RuntimeContext, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.RuntimeContext); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -62,7 +69,6 @@ func (_m *RuntimeContextService) GetByID(ctx context.Context, id string) (*model
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -77,6 +83,10 @@ func (_m *RuntimeContextService) ListLabels(ctx context.Context, runtimeID strin
 	ret := _m.Called(ctx, runtimeID)
 
 	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
 		r0 = rf(ctx, runtimeID)
 	} else {
@@ -85,7 +95,6 @@ func (_m *RuntimeContextService) ListLabels(ctx context.Context, runtimeID strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, runtimeID)
 	} else {
@@ -109,13 +118,12 @@ func (_m *RuntimeContextService) Update(ctx context.Context, id string, in model
 	return r0
 }
 
-type mockConstructorTestingTNewRuntimeContextService interface {
+// NewRuntimeContextService creates a new instance of RuntimeContextService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRuntimeContextService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRuntimeContextService creates a new instance of RuntimeContextService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextService(t mockConstructorTestingTNewRuntimeContextService) *RuntimeContextService {
+}) *RuntimeContextService {
 	mock := &RuntimeContextService{}
 	mock.Mock.Test(t)
 

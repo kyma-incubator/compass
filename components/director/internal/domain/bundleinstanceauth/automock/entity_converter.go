@@ -19,6 +19,10 @@ func (_m *EntityConverter) FromEntity(entity *bundleinstanceauth.Entity) (*model
 	ret := _m.Called(entity)
 
 	var r0 *model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*bundleinstanceauth.Entity) (*model.BundleInstanceAuth, error)); ok {
+		return rf(entity)
+	}
 	if rf, ok := ret.Get(0).(func(*bundleinstanceauth.Entity) *model.BundleInstanceAuth); ok {
 		r0 = rf(entity)
 	} else {
@@ -27,7 +31,6 @@ func (_m *EntityConverter) FromEntity(entity *bundleinstanceauth.Entity) (*model
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*bundleinstanceauth.Entity) error); ok {
 		r1 = rf(entity)
 	} else {
@@ -42,6 +45,10 @@ func (_m *EntityConverter) ToEntity(in *model.BundleInstanceAuth) (*bundleinstan
 	ret := _m.Called(in)
 
 	var r0 *bundleinstanceauth.Entity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) (*bundleinstanceauth.Entity, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) *bundleinstanceauth.Entity); ok {
 		r0 = rf(in)
 	} else {
@@ -50,7 +57,6 @@ func (_m *EntityConverter) ToEntity(in *model.BundleInstanceAuth) (*bundleinstan
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.BundleInstanceAuth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -60,13 +66,12 @@ func (_m *EntityConverter) ToEntity(in *model.BundleInstanceAuth) (*bundleinstan
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEntityConverter interface {
+// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEntityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
+}) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

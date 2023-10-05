@@ -19,6 +19,10 @@ func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Applic
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -27,7 +31,6 @@ func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Applic
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -42,6 +45,10 @@ func (_m *ApplicationService) GetGlobalByID(ctx context.Context, id string) (*mo
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -50,7 +57,6 @@ func (_m *ApplicationService) GetGlobalByID(ctx context.Context, id string) (*mo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -65,6 +71,10 @@ func (_m *ApplicationService) ListAllByApplicationTemplateID(ctx context.Context
 	ret := _m.Called(ctx, applicationTemplateID)
 
 	var r0 []*model.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Application, error)); ok {
+		return rf(ctx, applicationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Application); ok {
 		r0 = rf(ctx, applicationTemplateID)
 	} else {
@@ -73,7 +83,6 @@ func (_m *ApplicationService) ListAllByApplicationTemplateID(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, applicationTemplateID)
 	} else {
@@ -97,13 +106,12 @@ func (_m *ApplicationService) Update(ctx context.Context, id string, in model.Ap
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationService interface {
+// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationService(t mockConstructorTestingTNewApplicationService) *ApplicationService {
+}) *ApplicationService {
 	mock := &ApplicationService{}
 	mock.Mock.Test(t)
 

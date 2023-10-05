@@ -77,13 +77,16 @@ func (_m *VendorRepository) Exists(ctx context.Context, tenant string, id string
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -98,6 +101,10 @@ func (_m *VendorRepository) GetByID(ctx context.Context, tenant string, id strin
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Vendor, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Vendor); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -106,7 +113,6 @@ func (_m *VendorRepository) GetByID(ctx context.Context, tenant string, id strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -121,6 +127,10 @@ func (_m *VendorRepository) GetByIDGlobal(ctx context.Context, id string) (*mode
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Vendor, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Vendor); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -129,7 +139,6 @@ func (_m *VendorRepository) GetByIDGlobal(ctx context.Context, id string) (*mode
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -144,6 +153,10 @@ func (_m *VendorRepository) ListByResourceID(ctx context.Context, tenantID strin
 	ret := _m.Called(ctx, tenantID, resourceID, resourceType)
 
 	var r0 []*model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) ([]*model.Vendor, error)); ok {
+		return rf(ctx, tenantID, resourceID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) []*model.Vendor); ok {
 		r0 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -152,7 +165,6 @@ func (_m *VendorRepository) ListByResourceID(ctx context.Context, tenantID strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
 		r1 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
@@ -167,6 +179,10 @@ func (_m *VendorRepository) ListGlobal(ctx context.Context) ([]*model.Vendor, er
 	ret := _m.Called(ctx)
 
 	var r0 []*model.Vendor
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.Vendor, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.Vendor); ok {
 		r0 = rf(ctx)
 	} else {
@@ -175,7 +191,6 @@ func (_m *VendorRepository) ListGlobal(ctx context.Context) ([]*model.Vendor, er
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -213,13 +228,12 @@ func (_m *VendorRepository) UpdateGlobal(ctx context.Context, _a1 *model.Vendor)
 	return r0
 }
 
-type mockConstructorTestingTNewVendorRepository interface {
+// NewVendorRepository creates a new instance of VendorRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewVendorRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewVendorRepository creates a new instance of VendorRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewVendorRepository(t mockConstructorTestingTNewVendorRepository) *VendorRepository {
+}) *VendorRepository {
 	mock := &VendorRepository{}
 	mock.Mock.Test(t)
 

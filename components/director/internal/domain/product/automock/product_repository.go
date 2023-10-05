@@ -77,13 +77,16 @@ func (_m *ProductRepository) Exists(ctx context.Context, tenant string, id strin
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -98,6 +101,10 @@ func (_m *ProductRepository) GetByID(ctx context.Context, tenant string, id stri
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Product, error)); ok {
+		return rf(ctx, tenant, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Product); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
@@ -106,7 +113,6 @@ func (_m *ProductRepository) GetByID(ctx context.Context, tenant string, id stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, id)
 	} else {
@@ -121,6 +127,10 @@ func (_m *ProductRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Product, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Product); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -129,7 +139,6 @@ func (_m *ProductRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -144,6 +153,10 @@ func (_m *ProductRepository) ListByResourceID(ctx context.Context, tenantID stri
 	ret := _m.Called(ctx, tenantID, appID, resourceType)
 
 	var r0 []*model.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) ([]*model.Product, error)); ok {
+		return rf(ctx, tenantID, appID, resourceType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) []*model.Product); ok {
 		r0 = rf(ctx, tenantID, appID, resourceType)
 	} else {
@@ -152,7 +165,6 @@ func (_m *ProductRepository) ListByResourceID(ctx context.Context, tenantID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
 		r1 = rf(ctx, tenantID, appID, resourceType)
 	} else {
@@ -167,6 +179,10 @@ func (_m *ProductRepository) ListGlobal(ctx context.Context) ([]*model.Product, 
 	ret := _m.Called(ctx)
 
 	var r0 []*model.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.Product, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []*model.Product); ok {
 		r0 = rf(ctx)
 	} else {
@@ -175,7 +191,6 @@ func (_m *ProductRepository) ListGlobal(ctx context.Context) ([]*model.Product, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -213,13 +228,12 @@ func (_m *ProductRepository) UpdateGlobal(ctx context.Context, _a1 *model.Produc
 	return r0
 }
 
-type mockConstructorTestingTNewProductRepository interface {
+// NewProductRepository creates a new instance of ProductRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewProductRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewProductRepository creates a new instance of ProductRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewProductRepository(t mockConstructorTestingTNewProductRepository) *ProductRepository {
+}) *ProductRepository {
 	mock := &ProductRepository{}
 	mock.Mock.Test(t)
 
