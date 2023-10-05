@@ -44,7 +44,6 @@ type Entity struct {
 	CustomImplementationStandardDescription sql.NullString `db:"custom_implementation_standard_description"`
 	Extensible                              sql.NullString `db:"extensible"`
 	ResourceHash                            sql.NullString `db:"resource_hash"`
-	Hierarchy                               sql.NullString `db:"hierarchy"`
 	SupportedUseCases                       sql.NullString `db:"supported_use_cases"`
 	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
 	CorrelationIDs                          sql.NullString `db:"correlation_ids"`

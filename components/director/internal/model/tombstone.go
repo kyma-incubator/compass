@@ -9,12 +9,14 @@ type Tombstone struct {
 	ApplicationID                *string
 	ApplicationTemplateVersionID *string
 	RemovalDate                  string
+	Description                  *string
 }
 
 // TombstoneInput missing godoc
 type TombstoneInput struct {
-	OrdID       string `json:"ordId"`
-	RemovalDate string `json:"removalDate"`
+	OrdID       string  `json:"ordId"`
+	RemovalDate string  `json:"removalDate"`
+	Description *string `json:"description"`
 }
 
 // ToTombstone missing godoc
@@ -27,6 +29,7 @@ func (i *TombstoneInput) ToTombstone(id string, resourceType resource.Type, reso
 		ID:          id,
 		OrdID:       i.OrdID,
 		RemovalDate: i.RemovalDate,
+		Description: i.Description,
 	}
 
 	if resourceType.IsTenantIgnorable() {
@@ -41,4 +44,5 @@ func (i *TombstoneInput) ToTombstone(id string, resourceType resource.Type, reso
 // SetFromUpdateInput missing godoc
 func (p *Tombstone) SetFromUpdateInput(update TombstoneInput) {
 	p.RemovalDate = update.RemovalDate
+	p.Description = update.Description
 }

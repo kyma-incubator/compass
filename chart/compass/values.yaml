@@ -130,24 +130,24 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3360"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
       version: "PR-3365"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3360"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
       version: "PR-3365"
       name: compass-director
     hydrator:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3360"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -162,24 +162,24 @@ global:
       version: "v20230912-308fbb42"
       name: compass-instance-creator
     gateway:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3360"
       name: compass-gateway
     operations_controller:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3360"
       name: compass-operations-controller
     ord_service:
-      dir: prod/incubator/
-      version: "v20230920-2a65749f"
+      dir: dev/incubator/
+      version: "PR-100"
       name: compass-ord-service
     schema_migrator:
-      dir: prod/incubator/
-      version: "v20230925-d2a6ce68"
+      dir: dev/incubator/
+      version: "PR-3338"
       name: compass-schema-migrator
     system_broker:
-      dir: prod/incubator/
-      version: "v20230918-de877e42"
+      dir: dev/incubator/
+      version: "PR-3360"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -188,7 +188,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3340"
+      version: "PR-3360"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
