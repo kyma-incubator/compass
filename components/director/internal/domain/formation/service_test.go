@@ -2706,7 +2706,9 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		// Business logic tests for tenant mapping notifications only
 		{
 			Name: "success when resynchronization is successful and there are leftover formation assignments",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -2739,7 +2741,9 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		{
 			Name: "success when resynchronization is successful and there no left formation assignments should unassign",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -2785,7 +2789,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name: "returns error when failing unassign formation",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2825,7 +2829,9 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		{
 			Name: "returns error when failing to commit transaction after sending notifications",
-			TxFn: txGen.ThatFailsOnCommit,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(1)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -2859,7 +2865,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name: "returns error when failing to begin transaction after sending notifications",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(1)
+				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2894,7 +2900,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name: "returns error when failing to commit transaction after checking for unassign",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(1)
+				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2931,7 +2937,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name: "returns error when failing to unassign from formation after resynchronizing",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2973,7 +2979,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name: "returns error when failing to list formation assignments for participant",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -3017,7 +3023,9 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		{
 			Name: "returns error when failing processing formation assignments fails",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -3147,7 +3155,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name: "success when both formation and formation assignment resynchronization are successful and there no left formation assignments should unassign",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
+				return txGen.ThatSucceedsMultipleTimes(4)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -3530,7 +3538,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name:        "success when reset and resynchronize is successful and there are leftover formation assignments",
 			ShouldReset: true,
-			TxFn:        txGen.ThatSucceeds,
+			TxFn:        txGen.ThatSucceedsTwice,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignmentsInInitialState, nil).Once()

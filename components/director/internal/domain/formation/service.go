@@ -1003,38 +1003,37 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 }
 
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
-	faResyncTx, err := s.transact.Begin()
+	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
-	faResyncTransactionCtx := persistence.SaveToContext(ctx, faResyncTx)
+	transactCtx := persistence.SaveToContext(ctx, tx)
+	defer s.transact.RollbackUnlessCommitted(transactCtx, tx)
 
-	defer s.transact.RollbackUnlessCommitted(faResyncTransactionCtx, faResyncTx)
 	formationID := formation.ID
-
 	if shouldReset {
-		formationTemplate, err := s.formationTemplateRepository.Get(faResyncTransactionCtx, formation.FormationTemplateID)
+		formationTemplate, err := s.formationTemplateRepository.Get(transactCtx, formation.FormationTemplateID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
 		}
 		if !formationTemplate.SupportsReset {
 			return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("formation template %q does not support resetting", formationTemplate.Name))
 		}
-		assignmentsForFormation, err := s.formationAssignmentService.GetAssignmentsForFormation(faResyncTransactionCtx, tenantID, formationID)
+		assignmentsForFormation, err := s.formationAssignmentService.GetAssignmentsForFormation(transactCtx, tenantID, formationID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting formation assignments for formation with ID %q", formationID)
 		}
 		for _, assignment := range assignmentsForFormation {
 			assignment.State = string(model.InitialAssignmentState)
 			formationassignment.ResetAssignmentConfigAndError(assignment) // reset the assignments
-			err = s.formationAssignmentService.Update(faResyncTransactionCtx, assignment.ID, assignment)
+			err = s.formationAssignmentService.Update(transactCtx, assignment.ID, assignment)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	resyncableFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(faResyncTransactionCtx, tenantID, formationID,
+	resyncableFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(transactCtx, tenantID, formationID,
 		[]string{string(model.InitialAssignmentState),
 			string(model.DeletingAssignmentState),
 			string(model.CreateErrorAssignmentState),
@@ -1045,23 +1044,25 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(resyncableFormationAssignments))
 	var errs *multierror.Error
+	assignmentIDToAssignmentPair := make(map[string]formationassignment.AssignmentMappingPairWithOperation)
+
 	for _, fa := range resyncableFormationAssignments {
 		operation := model.AssignFormation
 		if fa.State == string(model.DeleteErrorAssignmentState) || fa.State == string(model.DeletingAssignmentState) {
 			operation = model.UnassignFormation
 		}
 		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
-		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(faResyncTransactionCtx, fa, operation)
+		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(transactCtx, fa, operation)
 		if err != nil {
 			return nil, err
 		}
 
-		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(faResyncTransactionCtx, fa.FormationID, fa.Source, fa.Target)
+		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(transactCtx, fa.FormationID, fa.Source, fa.Target)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return nil, err
 		}
 		if reverseFA != nil {
-			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(faResyncTransactionCtx, reverseFA, operation)
+			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(transactCtx, reverseFA, operation)
 			if err != nil && !apperrors.IsNotFoundError(err) {
 				return nil, err
 			}
@@ -1075,6 +1076,13 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 		}
 
+		if notificationForFA != nil && notificationForFA.Webhook.Mode != nil && *notificationForFA.Webhook.Mode == graphql.WebhookModeAsyncCallback && operation == model.UnassignFormation {
+			fa.State = string(model.DeletingAssignmentState)
+			if err := s.formationAssignmentService.Update(ctx, fa.ID, fa); err != nil {
+				return nil, errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", fa.ID, fa.State)
+			}
+		}
+
 		assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 				AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
@@ -1084,6 +1092,24 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				ReverseAssignmentReqMapping: reverseReqMapping,
 			},
 		}
+
+		assignmentIDToAssignmentPair[fa.ID] = assignmentPair
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	faResyncTx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	faResyncTransactionCtx := persistence.SaveToContext(ctx, faResyncTx)
+	defer s.transact.RollbackUnlessCommitted(faResyncTransactionCtx, faResyncTx)
+
+	for _, fa := range resyncableFormationAssignments {
+		assignmentPair := assignmentIDToAssignmentPair[fa.ID]
 		switch fa.State {
 		case string(model.InitialAssignmentState), string(model.CreateErrorAssignmentState):
 			assignmentPair.Operation = model.AssignFormation

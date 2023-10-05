@@ -150,10 +150,8 @@ func (g txCtxGenerator) ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(times
 	persistTx.On("Commit").Return(nil).Once()
 
 	transact := &automock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Times(times)
-	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(times)
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+	transact.On("Begin").Return(persistTx, nil).Times(times + 1)
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(times + 1)
 
 	return persistTx, transact
 }

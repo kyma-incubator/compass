@@ -771,6 +771,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	extendedRequest, err := s.faNotificationService.GenerateFormationAssignmentNotificationExt(ctx, mappingPair.AssignmentReqMapping, mappingPair.ReverseAssignmentReqMapping, mappingPair.Operation)
 	if err != nil {
+		if updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState); updateError != nil {
+			return false, errors.Wrapf(
+				updateError,
+				"while updating error state: %s",
+				errors.Wrapf(err, "while generating notifications for formation assignment with ID: %q", assignment.ID).Error())
+		}
 		return false, errors.Wrap(err, "while creating extended formation assignment request")
 	}
 
@@ -794,17 +800,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	requestWebhookMode := mappingPair.AssignmentReqMapping.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Updating the assignment with ID: %q to state: %q and waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback, assignment.ID, string(model.DeletingAssignmentState))
-		assignment.State = string(model.DeletingAssignmentState)
-		// clearing the error and configuration as new notification has been sent
-		ResetAssignmentConfigAndError(assignment)
-		if err = s.Update(ctx, assignment.ID, assignment); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
-				return false, nil
-			}
-			return false, errors.Wrapf(err, "while updating formation assignment with ID: %s", assignment.ID)
-		}
+		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", mappingPair.AssignmentReqMapping.Request.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		return false, nil
 	}
 
