@@ -3,14 +3,15 @@ package formationconstraint
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
+	"text/template"
+
 	_ "github.com/itchyny/gojq"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"strings"
-	"text/template"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )

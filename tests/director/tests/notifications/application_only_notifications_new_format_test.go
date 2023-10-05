@@ -2,6 +2,11 @@ package notifications
 
 import (
 	"context"
+	resource_providers "github.com/kyma-incubator/compass/tests/pkg/resource-providers"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/asserters"
@@ -12,13 +17,9 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	mock_data "github.com/kyma-incubator/compass/tests/pkg/mock-data"
 	"github.com/kyma-incubator/compass/tests/pkg/operations"
-	"github.com/kyma-incubator/compass/tests/pkg/resource-providers"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestNewFormat(t *testing.T) {
