@@ -27,6 +27,7 @@ import (
 type Config struct {
 	Level                  string `envconfig:"APP_LOG_LEVEL,default=info"`
 	Format                 string `envconfig:"APP_LOG_FORMAT,default=text"`
+	TimestampFormatted     bool   `envconfig:"APP_LOG_TIMESTAMP_FORMATTED,default=false"`
 	Output                 string `envconfig:"APP_LOG_OUTPUT,default=/dev/stdout"`
 	BootstrapCorrelationID string `envconfig:"APP_LOG_BOOTSTRAP_CORRELATION_ID,default=bootstrap"`
 }
