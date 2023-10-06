@@ -395,7 +395,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
-		capabilitiesFromDB, eventFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
+		capabilitiesFromDB, capabilitiesFetchRequests, err := s.processCapabilities(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
 		if err != nil {
 			return err
 		}
@@ -405,7 +405,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 			return err
 		}
 
-		fetchRequests := append(apiFetchRequests, eventFetchRequests...)
+		fetchRequests := appendFetchRequests(apiFetchRequests, eventFetchRequests, capabilitiesFetchRequests)
 		fetchRequests, err = s.deleteTombstonedResources(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, capabilitiesFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
 			return err
@@ -1557,7 +1557,7 @@ func (s *Service) resyncCapability(ctx context.Context, resourceType directorres
 	}
 
 	if !isCapabilityFound {
-		capabilityID, err := s.capabilitySvc.Create(ctx, resourceType, resourceID, packageID, capability, specs, capabilityHash)
+		capabilityID, err := s.capabilitySvc.Create(ctx, resourceType, resourceID, packageID, capability, nil, capabilityHash)
 		if err != nil {
 			return nil, err
 		}
@@ -1689,7 +1689,7 @@ func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType dire
 	)
 
 	if resourceType == directorresource.ApplicationTemplateVersion {
-		//capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
+		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
 	} else {
 		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
 	}
@@ -2329,6 +2329,15 @@ func searchInSlice(length int, f func(i int) bool) (int, bool) {
 		}
 	}
 	return -1, false
+}
+
+func appendFetchRequests(fetchRequestsSlices ...[]*ordFetchRequest) []*ordFetchRequest {
+	result := make([]*ordFetchRequest, 0)
+	for _, frSlice := range fetchRequestsSlices {
+		result = append(result, frSlice...)
+	}
+
+	return result
 }
 
 func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context.Context {
