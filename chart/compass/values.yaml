@@ -433,7 +433,6 @@ global:
   log:
     format: "text"
     formatJson: "json"
-    timestampFormatted: true
   tenantConfig:
     useDefaultTenants: true
     dbPool:

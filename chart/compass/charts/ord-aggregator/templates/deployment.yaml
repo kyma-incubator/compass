@@ -108,8 +108,6 @@ spec:
               value: "{{ .Values.global.ordAggregator.http.retry.attempts }}"
             - name: APP_HTTP_RETRY_DELAY
               value: "{{ .Values.global.ordAggregator.http.retry.delay }}"
-            - name: APP_LOG_TIMESTAMP_FORMATTED
-              value: {{ .Values.global.log.timestampFormatted | quote }}
             - name: APP_LOG_FORMAT
               value: {{ .Values.global.log.formatJson | quote }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}

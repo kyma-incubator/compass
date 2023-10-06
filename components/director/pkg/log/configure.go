@@ -45,11 +45,6 @@ var (
 	defaultEntry = logrus.NewEntry(logrus.StandardLogger())
 
 	supportedFormatters = map[string]logrus.Formatter{
-		jsonFormatterKey: &logrus.JSONFormatter{},
-		textFormatterKey: &logrus.TextFormatter{},
-	}
-
-	supportedFormattersWithTimestamp = map[string]logrus.Formatter{
 		jsonFormatterKey: &logrus.JSONFormatter{
 			TimestampFormat: time.RFC3339Nano,
 		},
@@ -99,9 +94,6 @@ func Configure(ctx context.Context, config *Config) (context.Context, error) {
 	}
 
 	formatter := supportedFormatters[config.Format]
-	if config.TimestampFormatted {
-		formatter = supportedFormattersWithTimestamp[config.Format]
-	}
 
 	output := supportedOutputs[config.Output]
 
