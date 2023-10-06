@@ -33,13 +33,16 @@ func (_m *ApplicationTemplateVersionRepository) Exists(ctx context.Context, id s
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -54,6 +57,10 @@ func (_m *ApplicationTemplateVersionRepository) GetByAppTemplateIDAndVersion(ctx
 	ret := _m.Called(ctx, appTemplateID, version)
 
 	var r0 *model.ApplicationTemplateVersion
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.ApplicationTemplateVersion, error)); ok {
+		return rf(ctx, appTemplateID, version)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.ApplicationTemplateVersion); ok {
 		r0 = rf(ctx, appTemplateID, version)
 	} else {
@@ -62,7 +69,6 @@ func (_m *ApplicationTemplateVersionRepository) GetByAppTemplateIDAndVersion(ctx
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, appTemplateID, version)
 	} else {
@@ -77,6 +83,10 @@ func (_m *ApplicationTemplateVersionRepository) ListByAppTemplateID(ctx context.
 	ret := _m.Called(ctx, appTemplateID)
 
 	var r0 []*model.ApplicationTemplateVersion
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.ApplicationTemplateVersion, error)); ok {
+		return rf(ctx, appTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplateVersion); ok {
 		r0 = rf(ctx, appTemplateID)
 	} else {
@@ -85,7 +95,6 @@ func (_m *ApplicationTemplateVersionRepository) ListByAppTemplateID(ctx context.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, appTemplateID)
 	} else {
@@ -109,13 +118,12 @@ func (_m *ApplicationTemplateVersionRepository) Update(ctx context.Context, _a1 
 	return r0
 }
 
-type mockConstructorTestingTNewApplicationTemplateVersionRepository interface {
+// NewApplicationTemplateVersionRepository creates a new instance of ApplicationTemplateVersionRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewApplicationTemplateVersionRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewApplicationTemplateVersionRepository creates a new instance of ApplicationTemplateVersionRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateVersionRepository(t mockConstructorTestingTNewApplicationTemplateVersionRepository) *ApplicationTemplateVersionRepository {
+}) *ApplicationTemplateVersionRepository {
 	mock := &ApplicationTemplateVersionRepository{}
 	mock.Mock.Test(t)
 

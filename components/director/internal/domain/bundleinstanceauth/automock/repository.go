@@ -47,6 +47,10 @@ func (_m *Repository) GetByID(ctx context.Context, tenantID string, id string) (
 	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, tenantID, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, tenantID, id)
 	} else {
@@ -55,7 +59,6 @@ func (_m *Repository) GetByID(ctx context.Context, tenantID string, id string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id)
 	} else {
@@ -70,6 +73,10 @@ func (_m *Repository) GetForBundle(ctx context.Context, tenant string, id string
 	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, tenant, id, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -78,7 +85,6 @@ func (_m *Repository) GetForBundle(ctx context.Context, tenant string, id string
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
@@ -93,6 +99,10 @@ func (_m *Repository) ListByBundleID(ctx context.Context, tenantID string, bundl
 	ret := _m.Called(ctx, tenantID, bundleID)
 
 	var r0 []*model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, tenantID, bundleID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, tenantID, bundleID)
 	} else {
@@ -101,7 +111,6 @@ func (_m *Repository) ListByBundleID(ctx context.Context, tenantID string, bundl
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, bundleID)
 	} else {
@@ -116,6 +125,10 @@ func (_m *Repository) ListByRuntimeID(ctx context.Context, tenantID string, runt
 	ret := _m.Called(ctx, tenantID, runtimeID)
 
 	var r0 []*model.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.BundleInstanceAuth, error)); ok {
+		return rf(ctx, tenantID, runtimeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, tenantID, runtimeID)
 	} else {
@@ -124,7 +137,6 @@ func (_m *Repository) ListByRuntimeID(ctx context.Context, tenantID string, runt
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, runtimeID)
 	} else {
@@ -148,13 +160,12 @@ func (_m *Repository) Update(ctx context.Context, tenant string, item *model.Bun
 	return r0
 }
 
-type mockConstructorTestingTNewRepository interface {
+// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRepository(t mockConstructorTestingTNewRepository) *Repository {
+}) *Repository {
 	mock := &Repository{}
 	mock.Mock.Test(t)
 

@@ -25,6 +25,7 @@ var (
 )
 
 // entityConverter converts between the internal model and entity
+//
 //go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type entityConverter interface {
 	ToEntity(in *model.CertSubjectMapping) (*Entity, error)

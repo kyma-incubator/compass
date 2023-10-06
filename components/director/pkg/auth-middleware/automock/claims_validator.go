@@ -28,13 +28,12 @@ func (_m *ClaimsValidator) Validate(_a0 context.Context, _a1 idtokenclaims.Claim
 	return r0
 }
 
-type mockConstructorTestingTNewClaimsValidator interface {
+// NewClaimsValidator creates a new instance of ClaimsValidator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewClaimsValidator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewClaimsValidator creates a new instance of ClaimsValidator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewClaimsValidator(t mockConstructorTestingTNewClaimsValidator) *ClaimsValidator {
+}) *ClaimsValidator {
 	mock := &ClaimsValidator{}
 	mock.Mock.Test(t)
 

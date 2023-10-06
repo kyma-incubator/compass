@@ -19,13 +19,16 @@ func (_m *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (str
 	ret := _m.Called(ctx, op)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *operation.Operation) (string, error)); ok {
+		return rf(ctx, op)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *operation.Operation) string); ok {
 		r0 = rf(ctx, op)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *operation.Operation) error); ok {
 		r1 = rf(ctx, op)
 	} else {
@@ -35,13 +38,12 @@ func (_m *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (str
 	return r0, r1
 }
 
-type mockConstructorTestingTNewScheduler interface {
+// NewScheduler creates a new instance of Scheduler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewScheduler(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewScheduler creates a new instance of Scheduler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewScheduler(t mockConstructorTestingTNewScheduler) *Scheduler {
+}) *Scheduler {
 	mock := &Scheduler{}
 	mock.Mock.Test(t)
 

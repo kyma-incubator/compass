@@ -19,6 +19,10 @@ func (_m *APIDefinitionConverter) ToGraphQL(in *model.APIDefinition, spec *model
 	ret := _m.Called(in, spec, bundleRef)
 
 	var r0 *graphql.APIDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) (*graphql.APIDefinition, error)); ok {
+		return rf(in, spec, bundleRef)
+	}
 	if rf, ok := ret.Get(0).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) *graphql.APIDefinition); ok {
 		r0 = rf(in, spec, bundleRef)
 	} else {
@@ -27,7 +31,6 @@ func (_m *APIDefinitionConverter) ToGraphQL(in *model.APIDefinition, spec *model
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) error); ok {
 		r1 = rf(in, spec, bundleRef)
 	} else {
@@ -37,13 +40,12 @@ func (_m *APIDefinitionConverter) ToGraphQL(in *model.APIDefinition, spec *model
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAPIDefinitionConverter interface {
+// NewAPIDefinitionConverter creates a new instance of APIDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAPIDefinitionConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAPIDefinitionConverter creates a new instance of APIDefinitionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAPIDefinitionConverter(t mockConstructorTestingTNewAPIDefinitionConverter) *APIDefinitionConverter {
+}) *APIDefinitionConverter {
 	mock := &APIDefinitionConverter{}
 	mock.Mock.Test(t)
 

@@ -66,8 +66,8 @@ func TestRuntimeRegisterInput_Validate_Description(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name: "ExpectedValid",
-			Value: str.Ptr("valid	valid"),
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("valid	valid"),
 			ExpectedValid: true,
 		},
 		{
@@ -211,8 +211,8 @@ func TestRuntimeRegisterInput_Validate_Application_Namespace(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name: "ExpectedValid",
-			Value: str.Ptr("valid	valid"),
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("valid	valid"),
 			ExpectedValid: true,
 		},
 		{
@@ -312,8 +312,8 @@ func TestRuntimeUpdateInput_Validate_Description(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name: "ExpectedValid",
-			Value: str.Ptr("valid	valid"),
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("valid	valid"),
 			ExpectedValid: true,
 		},
 		{
@@ -415,8 +415,8 @@ func TestRuntimeUpdateInput_Validate_Application_Namespace(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name: "ExpectedValid",
-			Value: str.Ptr("valid	valid"),
+			Name:          "ExpectedValid",
+			Value:         str.Ptr("valid	valid"),
 			ExpectedValid: true,
 		},
 		{

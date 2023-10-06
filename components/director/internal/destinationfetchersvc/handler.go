@@ -22,8 +22,9 @@ type handler struct {
 	config             HandlerConfig
 }
 
-//go:generate mockery --name=DestinationManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 // DestinationManager missing godoc
+//
+//go:generate mockery --name=DestinationManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DestinationManager interface {
 	IsTenantSubscribed(ctx context.Context, tenantID string) (bool, error)
 	GetSubscribedTenantIDs(ctx context.Context) ([]string, error)

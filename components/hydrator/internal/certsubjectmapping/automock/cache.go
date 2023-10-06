@@ -33,13 +33,12 @@ func (_m *Cache) Put(certSubjectMappings []certsubjectmapping.SubjectConsumerTyp
 	_m.Called(certSubjectMappings)
 }
 
-type mockConstructorTestingTNewCache interface {
+// NewCache creates a new instance of Cache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCache(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCache creates a new instance of Cache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCache(t mockConstructorTestingTNewCache) *Cache {
+}) *Cache {
 	mock := &Cache{}
 	mock.Mock.Test(t)
 

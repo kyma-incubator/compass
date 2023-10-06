@@ -21,6 +21,10 @@ func (_m *Transactioner) Begin() (persistence.PersistenceTx, error) {
 	ret := _m.Called()
 
 	var r0 persistence.PersistenceTx
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (persistence.PersistenceTx, error)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() persistence.PersistenceTx); ok {
 		r0 = rf()
 	} else {
@@ -29,7 +33,6 @@ func (_m *Transactioner) Begin() (persistence.PersistenceTx, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
 	} else {
@@ -81,13 +84,12 @@ func (_m *Transactioner) Stats() sql.DBStats {
 	return r0
 }
 
-type mockConstructorTestingTNewTransactioner interface {
+// NewTransactioner creates a new instance of Transactioner. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTransactioner(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTransactioner creates a new instance of Transactioner. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTransactioner(t mockConstructorTestingTNewTransactioner) *Transactioner {
+}) *Transactioner {
 	mock := &Transactioner{}
 	mock.Mock.Test(t)
 

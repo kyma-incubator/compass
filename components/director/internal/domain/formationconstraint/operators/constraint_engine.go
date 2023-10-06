@@ -84,6 +84,7 @@ type formationTemplateRepo interface {
 }
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
+//
 //go:generate mockery --name=formationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentRepository interface {
 	Update(ctx context.Context, model *model.FormationAssignment) error

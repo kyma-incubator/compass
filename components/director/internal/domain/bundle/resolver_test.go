@@ -3,9 +3,10 @@ package bundle_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/stretchr/testify/mock"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
