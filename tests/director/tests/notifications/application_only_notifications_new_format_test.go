@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	resource_providers "github.com/kyma-incubator/compass/tests/pkg/resource-providers"
 	"strings"
 	"testing"
@@ -123,7 +124,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	ftProvider := resource_providers.NewFormationTemplateCreator(formationTemplateName)
 	defer ftProvider.TearDown(t, ctx, certSecuredGraphQLClient)
 	ftplID := ftProvider.WithSupportedResources(appTemplateProvider.GetResource(), appTemplateProvider2.GetResource()).WithLeadingProductIDs([]string{internalConsumerID}).Provide(t, ctx, certSecuredGraphQLClient)
-	ctx = context.WithValue(ctx, operations.FormationTemplateIDKey, ftplID)
+	ctx = context.WithValue(ctx, context_keys.FormationTemplateIDKey, ftplID)
 
 	t.Logf("Create application 1 from template %q", applicationType1)
 	appProvider1 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
@@ -140,8 +141,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	formationProvider := resource_providers.NewFormationProvider(formationName, tnt, &formationTemplateName)
 	defer formationProvider.TearDown(t, ctx, certSecuredGraphQLClient)
 	formationID := formationProvider.Provide(t, ctx, certSecuredGraphQLClient)
-	ctx = context.WithValue(ctx, operations.FormationIDKey, formationID)
-	ctx = context.WithValue(ctx, operations.FormationNameKey, formationName)
+	ctx = context.WithValue(ctx, context_keys.FormationIDKey, formationID)
+	ctx = context.WithValue(ctx, context_keys.FormationNameKey, formationName)
 
 	expectationsBuilder := mock_data.NewFAExpectationsBuilder()
 	asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
@@ -235,7 +236,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithOperator("ConfigMutator").
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType1).
-			WithInputTemplate("{ \\\"last_formation_assignment_state\\\":\\\"{{.LastFormationAssignmentState}}\\\",\\\"configuration\\\":\\\"{\\\\\\\"tmp\\\\\\\":\\\\\\\"tmpval\\\\\\\"}\\\",\\\"state\\\":{{if eq .LastFormationAssignmentState \\\"INITIAL\\\"}}\\\"CONFIG_PENDING\\\"{{ else }}\\\"{{.FormationAssignment.State}}\\\"{{ end }},\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}").
+			WithInputTemplate(`{ \"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\",\"configuration\":\"{\\\"tmp\\\":\\\"tmpval\\\"}\",\"state\":{{if eq .LastFormationAssignmentState \"INITIAL\"}}\"CONFIG_PENDING\"{{ else }}\"{{.FormationAssignment.State}}\"{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -245,7 +246,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithOperator("ConfigMutator").
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType2).
-			WithInputTemplate("{ \\\"last_formation_assignment_state\\\":\\\"{{.LastFormationAssignmentState}}\\\",\\\"configuration\\\":\\\"{\\\\\\\"tmp\\\\\\\":\\\\\\\"tmpvalll\\\\\\\"}\\\",\\\"state\\\":{{if eq .LastFormationAssignmentState \\\"INITIAL\\\"}}\\\"CONFIG_PENDING\\\"{{ else }}\\\"{{.FormationAssignment.State}}\\\"{{ end }},\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"details_formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"details_reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}").
+			WithInputTemplate(`{ \"last_formation_assignment_state\":\"{{.LastFormationAssignmentState}}\",\"configuration\": {{ $slice := mkslice \"{\\\"key\\\":\\\"key\\\",\\\"value\\\": \\\"example.com\\\"}\" \"{\\\"key\\\":\\\"ID\\\", \\\"value\\\":\\\"0000-0000000-0000\\\"}\" \"{\\\"key\\\":\\\"config\\\":\\\"value\\\":{\\\"clientID\\\":\\\"1111-11111\\\", \\\"clientSecret\\\":\\\"secret\\\"}}\" }} {{updateAndCopy .FormationAssignment.Value \"key2\" $slice}}{{if eq .LastFormationAssignmentState \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .FormationAssignment }}\"details_formation_assignment_memory_address\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\"details_reverse_formation_assignment_memory_address\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -304,7 +305,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Assign application 2 to formation %s", formationName)
-		expectedConfig := str.Ptr("{\"tmp\":\"tmpvalll\"}")
+		expectedConfig := str.Ptr("{\"key\":\"example.com\",\"ID\":\"0000-0000000-0000\",\"config\":{\"clientID\":\"1111-11111\", \"clientSecret\":\"secret\"}}")
 		expectedConf2 := str.Ptr("{\"tmp\":\"tmpval\"}")
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipant(app1ID).

@@ -3,13 +3,10 @@ package formationconstraint
 import (
 	"bytes"
 	"encoding/json"
-	"strings"
 	"text/template"
 
 	_ "github.com/itchyny/gojq"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 
@@ -29,25 +26,34 @@ var templateFuncMap = template.FuncMap{
 	"copy": func(jsonstring, path string) string {
 		return gjson.Get(jsonstring, path).String()
 	},
-	"updateAndCopy": func(fa model.FormationAssignment, path string, pathToValuePairs []string) string {
-		configuration := str.StringifyJSONRawMessage(fa.Value)
-		content := gjson.Get(configuration, path).String()
+	"updateAndCopy": func(input json.RawMessage, path string, entries []string) string {
+		jsonstring := string(input)
+		var content string
+		if path == "." || path == "" {
+			content = jsonstring
+		} else {
+			content = gjson.Get(jsonstring, path).String()
+		}
 		var err error
-		for _, pvPair := range pathToValuePairs {
-			pvPairSplit := strings.Split(pvPair, "^")
-			pathToUpdate := pvPairSplit[0]
-			newValue := pvPairSplit[1]
-			if json.Valid([]byte(newValue)) {
-				content, err = sjson.SetRaw(content, pathToUpdate, newValue)
+		for _, entry := range entries {
+			key := gjson.Get(entry, "key").String()
+			value := gjson.Get(entry, "value").String()
+			if json.Valid([]byte(value)) {
+				content, err = sjson.SetRaw(content, key, value)
 			} else {
-				content, err = sjson.Set(content, pathToUpdate, newValue)
+				content, err = sjson.Set(content, key, value)
 			}
 			if err != nil {
-				log.D().Errorf("Failed to update and copy configuration of formation assignment with ID %q from formation %q", fa.ID, fa.FormationID)
+				log.D().Errorf("Failed to update and copy configuration")
 				return ""
 			}
 		}
-		return content
+		byteContext, err := json.Marshal(content)
+		if err != nil {
+			log.D().Errorf("Failed to marshal the new configuration")
+			return ""
+		}
+		return string(byteContext)
 	},
 	"mkslice": func(args ...string) []string {
 		return args

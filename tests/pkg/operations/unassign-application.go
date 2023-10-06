@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/asserters"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	gcli "github.com/machinebox/graphql"
 	"testing"
@@ -27,7 +28,7 @@ func (o *UnassignAppToFormationOperation) WithAsserters(asserters ...asserters.A
 }
 
 func (o *UnassignAppToFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	formationName := ctx.Value(FormationNameKey).(string)
+	formationName := ctx.Value(context_keys.FormationNameKey).(string)
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)

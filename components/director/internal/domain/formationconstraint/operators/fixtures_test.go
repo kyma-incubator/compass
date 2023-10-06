@@ -316,6 +316,19 @@ func fixDestinationCreatorInputForUnassignWithLocationOperation(operationName mo
 	}
 }
 
+func fixConfigMutatorInput(fa *model.FormationAssignment, state, config *string) *formationconstraintpkg.ConfigMutatorInput {
+	return &formationconstraintpkg.ConfigMutatorInput{
+		Operation:                       model.UnassignFormation,
+		JoinPointDetailsFAMemoryAddress: fa.GetAddress(),
+		Location: formationconstraintpkg.JoinPointLocation{
+			OperationName:  model.NotificationStatusReturned,
+			ConstraintType: model.PreOperation,
+		},
+		Configuration: config,
+		State:         state,
+	}
+}
+
 func fixJoinPointLocation(operationName model.TargetOperation, constraintType model.FormationConstraintType) formationconstraintpkg.JoinPointLocation {
 	return formationconstraintpkg.JoinPointLocation{
 		OperationName:  operationName,

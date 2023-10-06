@@ -3,8 +3,8 @@ package asserters
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/operations"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -27,7 +27,7 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 }
 
 func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formationID := ctx.Value(operations.FormationIDKey).(string)
+	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 	a.assertFormationAssignmentsAsynchronously(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations)
 }
 

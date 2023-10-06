@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/asserters"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	gcli "github.com/machinebox/graphql"
 	"testing"
@@ -74,7 +75,7 @@ func (o *AddConstraintOperation) WithAsserters(asserters ...asserters.Asserter) 
 }
 
 func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	formationTemplateID := ctx.Value(FormationTemplateIDKey).(string)
+	formationTemplateID := ctx.Value(context_keys.FormationTemplateIDKey).(string)
 
 	in := graphql.FormationConstraintInput{
 		Name:            o.name,
@@ -97,7 +98,7 @@ func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlC
 }
 
 func (o *AddConstraintOperation) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	formationTemplateID := ctx.Value(FormationTemplateIDKey).(string)
+	formationTemplateID := ctx.Value(context_keys.FormationTemplateIDKey).(string)
 
 	fixtures.DetachConstraintFromFormationTemplate(t, ctx, gqlClient, o.constraintID, formationTemplateID)
 	fixtures.CleanupFormationConstraint(t, ctx, gqlClient, o.constraintID)

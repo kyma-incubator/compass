@@ -3,7 +3,7 @@ package asserters
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/operations"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -35,7 +35,7 @@ func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetO
 }
 
 func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formationID := ctx.Value(operations.FormationIDKey).(string)
+	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
 	assertNotificationsCount(t, body, a.targetObjectID, a.expectedNotificationsCount)

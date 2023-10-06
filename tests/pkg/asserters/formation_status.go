@@ -3,8 +3,8 @@ package asserters
 import (
 	"context"
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/context-keys"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/operations"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
@@ -33,7 +33,7 @@ func (a *FormationStatusAsserter) WithErrors(errors []*gql.FormationStatusError)
 }
 
 func (a *FormationStatusAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formationID := ctx.Value(operations.FormationIDKey).(string)
+	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 	a.assertFormationStatus(t, ctx, a.tenant, formationID, gql.FormationStatus{
 		Condition: a.condition,
 		Errors:    a.errors,
