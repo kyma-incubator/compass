@@ -247,14 +247,8 @@ func fetchMovedSubaccountsWithRetries(ctx context.Context, eventAPIClient EventA
 		}
 		tenants = fetchedTenants
 		return nil
-	},
-		retry.Attempts(retryAttempts),
-		retry.Delay(retryDelaySeconds*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "connection refused") ||
-				strings.Contains(err.Error(), "connection reset by peer")
-		}))
+	}, retry.Attempts(retryAttempts), retry.Delay(retryDelaySeconds*time.Second))
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "while fetching moved tenants after %d retries", retryAttempts)
 	}

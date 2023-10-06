@@ -138,11 +138,6 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 			retry.OnRetry(func(n uint, err error) {
 				log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
 			}),
-			retry.LastErrorOnly(true),
-			retry.RetryIf(func(err error) bool {
-				return strings.Contains(err.Error(), "connection refused") ||
-					strings.Contains(err.Error(), "connection reset by peer")
-			}),
 		)
 
 		atomic.AddUint64(&currentRPS, ^uint64(0))
