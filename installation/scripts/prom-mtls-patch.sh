@@ -1,7 +1,7 @@
 function prometheusMTLSPatch() {
   enableNodeExporterMTLS
   patchKymaServiceMonitorsForMTLS
-  removeKymaPeerAuthsForPrometheus
+#  removeKymaPeerAuthsForPrometheus
 }
 
 function enableNodeExporterMTLS() {
@@ -164,7 +164,7 @@ function patchKymaServiceMonitorsForMTLS() {
   # Some of the ServiceMonitor MTLS overrides were moved to the Kyma Helm chart overrides
   kymaSvcMonitors=(
     monitoring-operator
-    monitoring-prometheus-pushgateway
+#    monitoring-prometheus-pushgateway
     ory-stack-oathkeeper-maester
   )
 
@@ -200,8 +200,8 @@ function patchKymaServiceMonitorsForMTLS() {
   done
 }
 
-function removeKymaPeerAuthsForPrometheus() {
-  crd="peerauthentications.security.istio.io"
-
-  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy
-}
+#function removeKymaPeerAuthsForPrometheus() {
+#  crd="peerauthentications.security.istio.io"
+#
+#  kubectl delete ${crd} -n kyma-system monitoring-grafana-policy
+#}

@@ -31,6 +31,7 @@ helm-broker:
         memory: 256Mi
 istio:
   global:
+    # Use official images that have support for arm and amd as Kyma's images are only for amd
     images:
       istio_proxyv2:
         name: "proxyv2"
@@ -52,48 +53,9 @@ istio:
     egressGateways:
       enabled: false
     ingressGateways:
-      config:
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - preference:
-                  matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
-                weight: 2
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
       enabled: true
     pilot:
       config:
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - preference:
-                  matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
-                weight: 2
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
         hpaSpec:
           maxReplicas: 5
           metrics:
@@ -109,7 +71,7 @@ istio:
         resources:
           limits:
             cpu: 2000m
-            memory: 1024Mi
+            memory: 2048Mi
           requests:
             cpu: 100m
             memory: 128Mi
@@ -132,10 +94,6 @@ istio:
           requests:
             cpu: 50m
             memory: 160Mi
-    pilot:
-      resources:
-        limits:
-          memory: 2048Mi
   meshConfig:
     defaultConfig:
       holdApplicationUntilProxyStarts: true
