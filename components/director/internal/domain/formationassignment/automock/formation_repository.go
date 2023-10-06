@@ -20,6 +20,10 @@ func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID stri
 	ret := _m.Called(ctx, id, tenantID)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Formation, error)); ok {
+		return rf(ctx, id, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Formation); ok {
 		r0 = rf(ctx, id, tenantID)
 	} else {
@@ -28,7 +32,6 @@ func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID stri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, tenantID)
 	} else {
@@ -38,13 +41,12 @@ func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID stri
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationRepository interface {
+// NewFormationRepository creates a new instance of FormationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationRepository creates a new instance of FormationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationRepository(t mockConstructorTestingTNewFormationRepository) *FormationRepository {
+}) *FormationRepository {
 	mock := &FormationRepository{}
 	mock.Mock.Test(t)
 

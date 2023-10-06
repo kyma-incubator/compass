@@ -20,13 +20,16 @@ func (_m *FormationTemplateService) Create(ctx context.Context, in *model.Format
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationTemplateInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -55,6 +58,10 @@ func (_m *FormationTemplateService) Get(ctx context.Context, id string) (*model.
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.FormationTemplate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationTemplate, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -63,7 +70,6 @@ func (_m *FormationTemplateService) Get(ctx context.Context, id string) (*model.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -78,6 +84,10 @@ func (_m *FormationTemplateService) List(ctx context.Context, name *string, page
 	ret := _m.Called(ctx, name, pageSize, cursor)
 
 	var r0 *model.FormationTemplatePage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *string, int, string) (*model.FormationTemplatePage, error)); ok {
+		return rf(ctx, name, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *string, int, string) *model.FormationTemplatePage); ok {
 		r0 = rf(ctx, name, pageSize, cursor)
 	} else {
@@ -86,7 +96,6 @@ func (_m *FormationTemplateService) List(ctx context.Context, name *string, page
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *string, int, string) error); ok {
 		r1 = rf(ctx, name, pageSize, cursor)
 	} else {
@@ -101,6 +110,10 @@ func (_m *FormationTemplateService) ListWebhooksForFormationTemplate(ctx context
 	ret := _m.Called(ctx, formationTemplateID)
 
 	var r0 []*model.Webhook
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Webhook, error)); ok {
+		return rf(ctx, formationTemplateID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
 		r0 = rf(ctx, formationTemplateID)
 	} else {
@@ -109,7 +122,6 @@ func (_m *FormationTemplateService) ListWebhooksForFormationTemplate(ctx context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, formationTemplateID)
 	} else {
@@ -133,13 +145,12 @@ func (_m *FormationTemplateService) Update(ctx context.Context, id string, in *m
 	return r0
 }
 
-type mockConstructorTestingTNewFormationTemplateService interface {
+// NewFormationTemplateService creates a new instance of FormationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationTemplateService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationTemplateService creates a new instance of FormationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationTemplateService(t mockConstructorTestingTNewFormationTemplateService) *FormationTemplateService {
+}) *FormationTemplateService {
 	mock := &FormationTemplateService{}
 	mock.Mock.Test(t)
 

@@ -21,13 +21,16 @@ func (_m *Service) SignCSR(ctx context.Context, encodedCSR []byte, subject certi
 	ret := _m.Called(ctx, encodedCSR, subject)
 
 	var r0 certificates.EncodedCertificateChain
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, certificates.CSRSubject) (certificates.EncodedCertificateChain, apperrors.AppError)); ok {
+		return rf(ctx, encodedCSR, subject)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []byte, certificates.CSRSubject) certificates.EncodedCertificateChain); ok {
 		r0 = rf(ctx, encodedCSR, subject)
 	} else {
 		r0 = ret.Get(0).(certificates.EncodedCertificateChain)
 	}
 
-	var r1 apperrors.AppError
 	if rf, ok := ret.Get(1).(func(context.Context, []byte, certificates.CSRSubject) apperrors.AppError); ok {
 		r1 = rf(ctx, encodedCSR, subject)
 	} else {
@@ -37,4 +40,18 @@ func (_m *Service) SignCSR(ctx context.Context, encodedCSR []byte, subject certi
 	}
 
 	return r0, r1
+}
+
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewService(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *Service {
+	mock := &Service{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

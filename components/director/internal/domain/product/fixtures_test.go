@@ -37,6 +37,7 @@ func fixEntityProductWithTitle(title string) *product.Entity {
 		OrdID:            ordID,
 		Title:            title,
 		ShortDescription: "short desc",
+		Description:      repo.NewValidNullableString("desc"),
 		Vendor:           "vendorID",
 		Parent: sql.NullString{
 			String: "parent",
@@ -85,6 +86,7 @@ func fixProductModelWithTitle(title string) *model.Product {
 		OrdID:               ordID,
 		Title:               title,
 		ShortDescription:    "short desc",
+		Description:         str.Ptr("desc"),
 		Vendor:              "vendorID",
 		Parent:              &parent,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
@@ -113,6 +115,7 @@ func fixGlobalProductModel() *model.Product {
 		OrdID:               ordID,
 		Title:               "title",
 		ShortDescription:    "short desc",
+		Description:         str.Ptr("desc"),
 		Vendor:              "vendorID",
 		Parent:              &parent,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
@@ -128,6 +131,7 @@ func fixProductModelInput() *model.ProductInput {
 		OrdID:               ordID,
 		Title:               "title",
 		ShortDescription:    "short desc",
+		Description:         str.Ptr("desc"),
 		Vendor:              "vendorID",
 		Parent:              &parent,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
@@ -138,7 +142,7 @@ func fixProductModelInput() *model.ProductInput {
 }
 
 func fixProductColumns() []string {
-	return []string{"ord_id", "app_id", "app_template_version_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
+	return []string{"ord_id", "app_id", "app_template_version_id", "title", "short_description", "description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
 }
 
 func fixProductRow() []driver.Value {
@@ -146,15 +150,15 @@ func fixProductRow() []driver.Value {
 }
 
 func fixProductRowWithTitleForApp(title string) []driver.Value {
-	return []driver.Value{ordID, appID, repo.NewValidNullableString(""), title, "short desc", "vendorID", "parent",
+	return []driver.Value{ordID, appID, repo.NewValidNullableString(""), title, "short desc", "desc", "vendorID", "parent",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID, repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}")}
 }
 
 func fixProductRowWithTitleForAppTemplateVersion(title string) []driver.Value {
-	return []driver.Value{ordID, repo.NewValidNullableString(""), appTemplateVersionID, title, "short desc", "vendorID", "parent",
+	return []driver.Value{ordID, repo.NewValidNullableString(""), appTemplateVersionID, title, "short desc", "desc", "vendorID", "parent",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID, repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}")}
 }
 
 func fixProductUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}")}
+	return []driver.Value{"title", "short desc", "desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}")}
 }

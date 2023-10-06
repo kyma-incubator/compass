@@ -27,13 +27,12 @@ func (_m *Service) Now() time.Time {
 	return r0
 }
 
-type mockConstructorTestingTNewService interface {
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewService(t mockConstructorTestingTNewService) *Service {
+}) *Service {
 	mock := &Service{}
 	mock.Mock.Test(t)
 

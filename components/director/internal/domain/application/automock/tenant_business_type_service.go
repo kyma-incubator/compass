@@ -19,6 +19,10 @@ func (_m *TenantBusinessTypeService) GetByID(ctx context.Context, id string) (*m
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.TenantBusinessType
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.TenantBusinessType, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.TenantBusinessType); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -27,7 +31,6 @@ func (_m *TenantBusinessTypeService) GetByID(ctx context.Context, id string) (*m
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -37,13 +40,12 @@ func (_m *TenantBusinessTypeService) GetByID(ctx context.Context, id string) (*m
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantBusinessTypeService interface {
+// NewTenantBusinessTypeService creates a new instance of TenantBusinessTypeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantBusinessTypeService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantBusinessTypeService creates a new instance of TenantBusinessTypeService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantBusinessTypeService(t mockConstructorTestingTNewTenantBusinessTypeService) *TenantBusinessTypeService {
+}) *TenantBusinessTypeService {
 	mock := &TenantBusinessTypeService{}
 	mock.Mock.Test(t)
 

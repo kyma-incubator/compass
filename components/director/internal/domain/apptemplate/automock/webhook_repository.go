@@ -42,13 +42,12 @@ func (_m *WebhookRepository) DeleteAllByApplicationTemplateID(ctx context.Contex
 	return r0
 }
 
-type mockConstructorTestingTNewWebhookRepository interface {
+// NewWebhookRepository creates a new instance of WebhookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewWebhookRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewWebhookRepository creates a new instance of WebhookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookRepository(t mockConstructorTestingTNewWebhookRepository) *WebhookRepository {
+}) *WebhookRepository {
 	mock := &WebhookRepository{}
 	mock.Mock.Test(t)
 

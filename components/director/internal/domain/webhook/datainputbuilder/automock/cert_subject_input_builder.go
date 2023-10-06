@@ -20,6 +20,10 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObject(ctx context.Context,
 	ret := _m.Called(ctx, objectID)
 
 	var r0 *webhook.TrustDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*webhook.TrustDetails, error)); ok {
+		return rf(ctx, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *webhook.TrustDetails); ok {
 		r0 = rf(ctx, objectID)
 	} else {
@@ -28,7 +32,6 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObject(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, objectID)
 	} else {
@@ -43,6 +46,10 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObjects(ctx context.Context
 	ret := _m.Called(ctx, objectIDs)
 
 	var r0 map[string]*webhook.TrustDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) (map[string]*webhook.TrustDetails, error)); ok {
+		return rf(ctx, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string) map[string]*webhook.TrustDetails); ok {
 		r0 = rf(ctx, objectIDs)
 	} else {
@@ -51,7 +58,6 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObjects(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, objectIDs)
 	} else {
@@ -61,13 +67,12 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObjects(ctx context.Context
 	return r0, r1
 }
 
-type mockConstructorTestingTNewCertSubjectInputBuilder interface {
+// NewCertSubjectInputBuilder creates a new instance of CertSubjectInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertSubjectInputBuilder(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertSubjectInputBuilder creates a new instance of CertSubjectInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertSubjectInputBuilder(t mockConstructorTestingTNewCertSubjectInputBuilder) *CertSubjectInputBuilder {
+}) *CertSubjectInputBuilder {
 	mock := &CertSubjectInputBuilder{}
 	mock.Mock.Test(t)
 

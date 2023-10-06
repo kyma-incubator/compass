@@ -126,24 +126,27 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
-	event1, spec1, bundleRef1 := fixFullEventDefinitionModel("test1")
-	event2, spec2, bundleRef2 := fixFullEventDefinitionModel("test2")
+	event1, _, bundleRef1 := fixFullEventDefinitionModel("test1")
+	event2, _, bundleRef2 := fixFullEventDefinitionModel("test2")
 
 	inputAPIs := []*model.EventDefinition{
 		&event1, &event2, {BaseEntity: &model.BaseEntity{}}, nil,
-	}
-
-	inputSpecs := []*model.Spec{
-		&spec1, &spec2, {}, nil,
 	}
 
 	inputBundleRefs := []*model.BundleReference{
 		&bundleRef1, &bundleRef2, {}, nil,
 	}
 
+	var emptySpec *model.Spec
+
+	eventDef1 := fixFullGQLEventDefinition("test1")
+	eventDef1.Spec = nil
+	eventDef2 := fixFullGQLEventDefinition("test2")
+	eventDef2.Spec = nil
+
 	expected := []*graphql.EventDefinition{
-		fixFullGQLEventDefinition("test1"),
-		fixFullGQLEventDefinition("test2"),
+		eventDef1,
+		eventDef2,
 		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
@@ -155,12 +158,12 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			continue
 		}
 		versionConverter.On("ToGraphQL", event.Version).Return(expected[i].Version).Once()
-		specConverter.On("ToGraphQLEventSpec", inputSpecs[i]).Return(expected[i].Spec, nil).Once()
+		specConverter.On("ToGraphQLEventSpec", emptySpec).Return(nil, nil).Once()
 	}
 
 	// WHEN
 	converter := event.NewConverter(versionConverter, specConverter)
-	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
+	res, err := converter.MultipleToGraphQL(inputAPIs, inputBundleRefs)
 	assert.NoError(t, err)
 
 	// then

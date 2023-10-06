@@ -24,6 +24,10 @@ func (_m *NotificationsGenerator) GenerateFormationLifecycleNotifications(ctx co
 	ret := _m.Called(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error)); ok {
+		return rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationNotificationRequest); ok {
 		r0 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
 	} else {
@@ -32,7 +36,6 @@ func (_m *NotificationsGenerator) GenerateFormationLifecycleNotifications(ctx co
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*model.Webhook, string, *model.Formation, string, string, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
 	} else {
@@ -47,6 +50,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 	ret := _m.Called(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 	} else {
@@ -55,7 +62,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 	} else {
@@ -70,6 +76,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 	ret := _m.Called(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 	} else {
@@ -78,7 +88,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 	} else {
@@ -93,6 +102,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 	ret := _m.Called(ctx, tenant, appID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
@@ -101,7 +114,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
@@ -116,6 +128,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 	ret := _m.Called(ctx, tenant, appID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
@@ -124,7 +140,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
@@ -139,6 +154,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 	ret := _m.Called(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 	} else {
@@ -147,7 +166,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 	} else {
@@ -162,6 +180,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 	ret := _m.Called(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 	} else {
@@ -170,7 +192,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 	} else {
@@ -185,6 +206,10 @@ func (_m *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 	ret := _m.Called(ctx, tenant, appID, _a3, operation, customerTenantContext)
 
 	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
+		return rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
@@ -193,7 +218,6 @@ func (_m *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) error); ok {
 		r1 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
@@ -203,13 +227,12 @@ func (_m *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 	return r0, r1
 }
 
-type mockConstructorTestingTNewNotificationsGenerator interface {
+// NewNotificationsGenerator creates a new instance of NotificationsGenerator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewNotificationsGenerator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewNotificationsGenerator creates a new instance of NotificationsGenerator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationsGenerator(t mockConstructorTestingTNewNotificationsGenerator) *NotificationsGenerator {
+}) *NotificationsGenerator {
 	mock := &NotificationsGenerator{}
 	mock.Mock.Test(t)
 

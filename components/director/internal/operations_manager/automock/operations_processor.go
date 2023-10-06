@@ -28,13 +28,12 @@ func (_m *OperationsProcessor) Process(ctx context.Context, operation *model.Ope
 	return r0
 }
 
-type mockConstructorTestingTNewOperationsProcessor interface {
+// NewOperationsProcessor creates a new instance of OperationsProcessor. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOperationsProcessor(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOperationsProcessor creates a new instance of OperationsProcessor. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOperationsProcessor(t mockConstructorTestingTNewOperationsProcessor) *OperationsProcessor {
+}) *OperationsProcessor {
 	mock := &OperationsProcessor{}
 	mock.Mock.Test(t)
 

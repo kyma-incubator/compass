@@ -62,13 +62,16 @@ func (_m *FormationAssignmentRepository) Exists(ctx context.Context, id string, 
 	ret := _m.Called(ctx, id, tenantID)
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, id, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(ctx, id, tenantID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, tenantID)
 	} else {
@@ -83,6 +86,10 @@ func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, ten
 	ret := _m.Called(ctx, id, tenantID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, id, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, id, tenantID)
 	} else {
@@ -91,7 +98,6 @@ func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, ten
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, tenantID)
 	} else {
@@ -106,6 +112,10 @@ func (_m *FormationAssignmentRepository) GetAssignmentsForFormation(ctx context.
 	ret := _m.Called(ctx, tenantID, formationID)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, formationID)
 	} else {
@@ -114,7 +124,6 @@ func (_m *FormationAssignmentRepository) GetAssignmentsForFormation(ctx context.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, formationID)
 	} else {
@@ -129,6 +138,10 @@ func (_m *FormationAssignmentRepository) GetAssignmentsForFormationWithStates(ct
 	ret := _m.Called(ctx, tenantID, formationID, states)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, formationID, states)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, formationID, states)
 	} else {
@@ -137,7 +150,6 @@ func (_m *FormationAssignmentRepository) GetAssignmentsForFormationWithStates(ct
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
 		r1 = rf(ctx, tenantID, formationID, states)
 	} else {
@@ -152,6 +164,10 @@ func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Contex
 	ret := _m.Called(ctx, target, source, tenantID, formationID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, target, source, tenantID, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, target, source, tenantID, formationID)
 	} else {
@@ -160,7 +176,6 @@ func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Contex
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
 		r1 = rf(ctx, target, source, tenantID, formationID)
 	} else {
@@ -175,6 +190,10 @@ func (_m *FormationAssignmentRepository) GetForFormation(ctx context.Context, te
 	ret := _m.Called(ctx, tenantID, id, formationID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, id, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, id, formationID)
 	} else {
@@ -183,7 +202,6 @@ func (_m *FormationAssignmentRepository) GetForFormation(ctx context.Context, te
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id, formationID)
 	} else {
@@ -198,6 +216,10 @@ func (_m *FormationAssignmentRepository) GetGlobalByID(ctx context.Context, id s
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -206,7 +228,6 @@ func (_m *FormationAssignmentRepository) GetGlobalByID(ctx context.Context, id s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -221,6 +242,10 @@ func (_m *FormationAssignmentRepository) GetGlobalByIDAndFormationID(ctx context
 	ret := _m.Called(ctx, id, formationID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, id, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, id, formationID)
 	} else {
@@ -229,7 +254,6 @@ func (_m *FormationAssignmentRepository) GetGlobalByIDAndFormationID(ctx context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, formationID)
 	} else {
@@ -244,6 +268,10 @@ func (_m *FormationAssignmentRepository) GetReverseBySourceAndTarget(ctx context
 	ret := _m.Called(ctx, tenantID, formationID, sourceID, targetID)
 
 	var r0 *model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, formationID, sourceID, targetID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, formationID, sourceID, targetID)
 	} else {
@@ -252,7 +280,6 @@ func (_m *FormationAssignmentRepository) GetReverseBySourceAndTarget(ctx context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
 		r1 = rf(ctx, tenantID, formationID, sourceID, targetID)
 	} else {
@@ -267,6 +294,10 @@ func (_m *FormationAssignmentRepository) List(ctx context.Context, pageSize int,
 	ret := _m.Called(ctx, pageSize, cursor, tenantID)
 
 	var r0 *model.FormationAssignmentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string, string) (*model.FormationAssignmentPage, error)); ok {
+		return rf(ctx, pageSize, cursor, tenantID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string, string) *model.FormationAssignmentPage); ok {
 		r0 = rf(ctx, pageSize, cursor, tenantID)
 	} else {
@@ -275,7 +306,6 @@ func (_m *FormationAssignmentRepository) List(ctx context.Context, pageSize int,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor, tenantID)
 	} else {
@@ -290,6 +320,10 @@ func (_m *FormationAssignmentRepository) ListAllForObject(ctx context.Context, t
 	ret := _m.Called(ctx, tenant, formationID, objectID)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenant, formationID, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenant, formationID, objectID)
 	} else {
@@ -298,7 +332,6 @@ func (_m *FormationAssignmentRepository) ListAllForObject(ctx context.Context, t
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, formationID, objectID)
 	} else {
@@ -313,6 +346,10 @@ func (_m *FormationAssignmentRepository) ListAllForObjectIDs(ctx context.Context
 	ret := _m.Called(ctx, tenant, formationID, objectIDs)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenant, formationID, objectIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenant, formationID, objectIDs)
 	} else {
@@ -321,7 +358,6 @@ func (_m *FormationAssignmentRepository) ListAllForObjectIDs(ctx context.Context
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
 		r1 = rf(ctx, tenant, formationID, objectIDs)
 	} else {
@@ -336,6 +372,10 @@ func (_m *FormationAssignmentRepository) ListByFormationIDs(ctx context.Context,
 	ret := _m.Called(ctx, tenantID, formationIDs, pageSize, cursor)
 
 	var r0 []*model.FormationAssignmentPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.FormationAssignmentPage, error)); ok {
+		return rf(ctx, tenantID, formationIDs, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) []*model.FormationAssignmentPage); ok {
 		r0 = rf(ctx, tenantID, formationIDs, pageSize, cursor)
 	} else {
@@ -344,7 +384,6 @@ func (_m *FormationAssignmentRepository) ListByFormationIDs(ctx context.Context,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, formationIDs, pageSize, cursor)
 	} else {
@@ -359,6 +398,10 @@ func (_m *FormationAssignmentRepository) ListByFormationIDsNoPaging(ctx context.
 	ret := _m.Called(ctx, tenantID, formationIDs)
 
 	var r0 [][]*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([][]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenantID, formationIDs)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) [][]*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenantID, formationIDs)
 	} else {
@@ -367,7 +410,6 @@ func (_m *FormationAssignmentRepository) ListByFormationIDsNoPaging(ctx context.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenantID, formationIDs)
 	} else {
@@ -382,6 +424,10 @@ func (_m *FormationAssignmentRepository) ListForIDs(ctx context.Context, tenant 
 	ret := _m.Called(ctx, tenant, ids)
 
 	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenant, ids)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.FormationAssignment); ok {
 		r0 = rf(ctx, tenant, ids)
 	} else {
@@ -390,7 +436,6 @@ func (_m *FormationAssignmentRepository) ListForIDs(ctx context.Context, tenant 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
 		r1 = rf(ctx, tenant, ids)
 	} else {
@@ -414,13 +459,12 @@ func (_m *FormationAssignmentRepository) Update(ctx context.Context, _a1 *model.
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentRepository interface {
+// NewFormationAssignmentRepository creates a new instance of FormationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationAssignmentRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationAssignmentRepository creates a new instance of FormationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentRepository(t mockConstructorTestingTNewFormationAssignmentRepository) *FormationAssignmentRepository {
+}) *FormationAssignmentRepository {
 	mock := &FormationAssignmentRepository{}
 	mock.Mock.Test(t)
 

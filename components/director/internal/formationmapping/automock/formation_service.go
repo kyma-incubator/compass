@@ -22,6 +22,10 @@ func (_m *FormationService) Get(ctx context.Context, id string) (*model.Formatio
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -30,7 +34,6 @@ func (_m *FormationService) Get(ctx context.Context, id string) (*model.Formatio
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -45,6 +48,10 @@ func (_m *FormationService) GetGlobalByID(ctx context.Context, id string) (*mode
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -53,7 +60,6 @@ func (_m *FormationService) GetGlobalByID(ctx context.Context, id string) (*mode
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -68,6 +74,10 @@ func (_m *FormationService) ResynchronizeFormationNotifications(ctx context.Cont
 	ret := _m.Called(ctx, formationID, reset)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (*model.Formation, error)); ok {
+		return rf(ctx, formationID, reset)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *model.Formation); ok {
 		r0 = rf(ctx, formationID, reset)
 	} else {
@@ -76,7 +86,6 @@ func (_m *FormationService) ResynchronizeFormationNotifications(ctx context.Cont
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
 		r1 = rf(ctx, formationID, reset)
 	} else {
@@ -91,6 +100,10 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
 
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, formation)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -99,7 +112,6 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -109,13 +121,12 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationService interface {
+// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationService(t mockConstructorTestingTNewFormationService) *FormationService {
+}) *FormationService {
 	mock := &FormationService{}
 	mock.Mock.Test(t)
 

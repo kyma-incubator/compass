@@ -19,13 +19,16 @@ func (_m *OperationsManager) CreateOperation(ctx context.Context, in *model.Oper
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.OperationInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.OperationInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.OperationInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -40,6 +43,10 @@ func (_m *OperationsManager) FindOperationByData(ctx context.Context, data inter
 	ret := _m.Called(ctx, data)
 
 	var r0 *model.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) (*model.Operation, error)); ok {
+		return rf(ctx, data)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, interface{}) *model.Operation); ok {
 		r0 = rf(ctx, data)
 	} else {
@@ -48,7 +55,6 @@ func (_m *OperationsManager) FindOperationByData(ctx context.Context, data inter
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, interface{}) error); ok {
 		r1 = rf(ctx, data)
 	} else {
@@ -72,13 +78,12 @@ func (_m *OperationsManager) RescheduleOperation(ctx context.Context, operationI
 	return r0
 }
 
-type mockConstructorTestingTNewOperationsManager interface {
+// NewOperationsManager creates a new instance of OperationsManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOperationsManager(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOperationsManager creates a new instance of OperationsManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOperationsManager(t mockConstructorTestingTNewOperationsManager) *OperationsManager {
+}) *OperationsManager {
 	mock := &OperationsManager{}
 	mock.Mock.Test(t)
 

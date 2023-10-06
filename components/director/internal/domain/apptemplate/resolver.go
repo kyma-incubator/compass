@@ -5,10 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	"regexp"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 

@@ -20,13 +20,16 @@ func (_m *IntegrationSystemService) Create(ctx context.Context, in model.Integra
 	ret := _m.Called(ctx, in)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.IntegrationSystemInput) (string, error)); ok {
+		return rf(ctx, in)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.IntegrationSystemInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.IntegrationSystemInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
@@ -55,6 +58,10 @@ func (_m *IntegrationSystemService) Get(ctx context.Context, id string) (*model.
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.IntegrationSystem
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.IntegrationSystem, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.IntegrationSystem); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -63,7 +70,6 @@ func (_m *IntegrationSystemService) Get(ctx context.Context, id string) (*model.
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -78,13 +84,16 @@ func (_m *IntegrationSystemService) List(ctx context.Context, pageSize int, curs
 	ret := _m.Called(ctx, pageSize, cursor)
 
 	var r0 model.IntegrationSystemPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (model.IntegrationSystemPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) model.IntegrationSystemPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.IntegrationSystemPage)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -108,13 +117,12 @@ func (_m *IntegrationSystemService) Update(ctx context.Context, id string, in mo
 	return r0
 }
 
-type mockConstructorTestingTNewIntegrationSystemService interface {
+// NewIntegrationSystemService creates a new instance of IntegrationSystemService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewIntegrationSystemService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewIntegrationSystemService creates a new instance of IntegrationSystemService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewIntegrationSystemService(t mockConstructorTestingTNewIntegrationSystemService) *IntegrationSystemService {
+}) *IntegrationSystemService {
 	mock := &IntegrationSystemService{}
 	mock.Mock.Test(t)
 
