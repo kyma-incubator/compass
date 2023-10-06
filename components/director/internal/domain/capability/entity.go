@@ -16,7 +16,7 @@ type Entity struct {
 	Description                  sql.NullString `db:"description"`
 	OrdID                        sql.NullString `db:"ord_id"`
 	Type                         string         `db:"type"`
-	CustomType                   sql.NullString `db:"customType"`
+	CustomType                   sql.NullString `db:"custom_type"`
 	LocalTenantID                sql.NullString `db:"local_tenant_id"`
 	ShortDescription             sql.NullString `db:"short_description"`
 	SystemInstanceAware          sql.NullBool   `db:"system_instance_aware"`
@@ -36,7 +36,6 @@ type Entity struct {
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 	if e.ApplicationID.Valid {
-
 		return resource.Application, e.ApplicationID.String
 	} else if e.ApplicationTemplateVersionID.Valid {
 		return resource.ApplicationTemplateVersion, e.ApplicationTemplateVersionID.String

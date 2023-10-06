@@ -12,13 +12,13 @@ import (
 const capabilityTable string = `"public"."capabilities"`
 
 var (
-	capabilityColumns = []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "ord_id", "local_tenant_id",
+	capabilityColumns = []string{"id", "app_id", "app_template_version_id", "package_id", "name", "description", "ord_id", "type", "custom_type", "local_tenant_id",
 		"short_description", "system_instance_aware", "tags", "links", "release_status", "labels", "visibility",
-		"version_value", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids"}
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids"}
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"package_id", "name", "description", "ord_id", "local_tenant_id",
+	updatableColumns = []string{"package_id", "name", "description", "ord_id", "type", "custom_type", "local_tenant_id",
 		"short_description", "system_instance_aware", "tags", "links", "release_status",
-		"labels", "visibility", "version_value", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids"}
+		"labels", "visibility", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids"}
 )
 
 // CapabilityConverter converts Capabilities between the model.Capability service-layer representation and the repo-layer representation Entity.
@@ -52,7 +52,7 @@ func NewRepository(conv CapabilityConverter) *pgRepository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Capability, capabilityTable, capabilityColumns),
 		creator:            repo.NewCreator(capabilityTable, capabilityColumns),
 		creatorGlobal:      repo.NewCreatorGlobal(resource.Capability, capabilityTable, capabilityColumns),
-		updater:            repo.NewUpdater(capabilityTable, capabilityColumns, idColumns),
+		updater:            repo.NewUpdater(capabilityTable, updatableColumns, idColumns),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Capability, capabilityTable, updatableColumns, idColumns),
 		deleter:            repo.NewDeleter(capabilityTable),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Capability, capabilityTable),
@@ -97,7 +97,7 @@ func (r *pgRepository) ListByResourceID(ctx context.Context, tenantID string, re
 // GetByID retrieves a Capability by ID.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.Capability, error) {
 	var capabilityEntity Entity
-	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &capabilityEntity)
+	err := r.singleGetter.Get(ctx, resource.Capability, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &capabilityEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting Capability")
 	}
