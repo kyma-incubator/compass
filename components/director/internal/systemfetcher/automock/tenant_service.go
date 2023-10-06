@@ -21,13 +21,16 @@ func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant s
 	ret := _m.Called(ctx, externalTenant)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, externalTenant)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, externalTenant)
 	} else {
@@ -42,6 +45,10 @@ func (_m *TenantService) GetTenantByExternalID(ctx context.Context, id string) (
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -50,7 +57,6 @@ func (_m *TenantService) GetTenantByExternalID(ctx context.Context, id string) (
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -65,6 +71,10 @@ func (_m *TenantService) ListByType(ctx context.Context, tenantType tenant.Type)
 	ret := _m.Called(ctx, tenantType)
 
 	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, tenant.Type) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, tenantType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, tenant.Type) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, tenantType)
 	} else {
@@ -73,7 +83,6 @@ func (_m *TenantService) ListByType(ctx context.Context, tenantType tenant.Type)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, tenant.Type) error); ok {
 		r1 = rf(ctx, tenantType)
 	} else {
@@ -83,13 +92,12 @@ func (_m *TenantService) ListByType(ctx context.Context, tenantType tenant.Type)
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantService interface {
+// NewTenantService creates a new instance of TenantService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantService creates a new instance of TenantService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantService(t mockConstructorTestingTNewTenantService) *TenantService {
+}) *TenantService {
 	mock := &TenantService{}
 	mock.Mock.Test(t)
 

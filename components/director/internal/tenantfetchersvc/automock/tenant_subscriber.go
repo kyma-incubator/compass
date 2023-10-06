@@ -42,13 +42,12 @@ func (_m *TenantSubscriber) Unsubscribe(ctx context.Context, tenantSubscriptionR
 	return r0
 }
 
-type mockConstructorTestingTNewTenantSubscriber interface {
+// NewTenantSubscriber creates a new instance of TenantSubscriber. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantSubscriber(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantSubscriber creates a new instance of TenantSubscriber. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantSubscriber(t mockConstructorTestingTNewTenantSubscriber) *TenantSubscriber {
+}) *TenantSubscriber {
 	mock := &TenantSubscriber{}
 	mock.Mock.Test(t)
 

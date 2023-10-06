@@ -51,6 +51,10 @@ func (_m *HTTPRoundTripper) RoundTrip(_a0 *nethttp.Request) (*nethttp.Response, 
 	ret := _m.Called(_a0)
 
 	var r0 *nethttp.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*nethttp.Request) (*nethttp.Response, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(*nethttp.Request) *nethttp.Response); ok {
 		r0 = rf(_a0)
 	} else {
@@ -59,7 +63,6 @@ func (_m *HTTPRoundTripper) RoundTrip(_a0 *nethttp.Request) (*nethttp.Response, 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*nethttp.Request) error); ok {
 		r1 = rf(_a0)
 	} else {
@@ -69,13 +72,12 @@ func (_m *HTTPRoundTripper) RoundTrip(_a0 *nethttp.Request) (*nethttp.Response, 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewHTTPRoundTripper interface {
+// NewHTTPRoundTripper creates a new instance of HTTPRoundTripper. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewHTTPRoundTripper(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewHTTPRoundTripper creates a new instance of HTTPRoundTripper. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewHTTPRoundTripper(t mockConstructorTestingTNewHTTPRoundTripper) *HTTPRoundTripper {
+}) *HTTPRoundTripper {
 	mock := &HTTPRoundTripper{}
 	mock.Mock.Test(t)
 

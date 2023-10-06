@@ -14,6 +14,10 @@ func (_m *ClientDetailsConfigProvider) GetRequiredGrantTypes(path string) ([]str
 	ret := _m.Called(path)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]string, error)); ok {
+		return rf(path)
+	}
 	if rf, ok := ret.Get(0).(func(string) []string); ok {
 		r0 = rf(path)
 	} else {
@@ -22,7 +26,6 @@ func (_m *ClientDetailsConfigProvider) GetRequiredGrantTypes(path string) ([]str
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(path)
 	} else {
@@ -37,6 +40,10 @@ func (_m *ClientDetailsConfigProvider) GetRequiredScopes(path string) ([]string,
 	ret := _m.Called(path)
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]string, error)); ok {
+		return rf(path)
+	}
 	if rf, ok := ret.Get(0).(func(string) []string); ok {
 		r0 = rf(path)
 	} else {
@@ -45,7 +52,6 @@ func (_m *ClientDetailsConfigProvider) GetRequiredScopes(path string) ([]string,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(path)
 	} else {
@@ -55,13 +61,12 @@ func (_m *ClientDetailsConfigProvider) GetRequiredScopes(path string) ([]string,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewClientDetailsConfigProvider interface {
+// NewClientDetailsConfigProvider creates a new instance of ClientDetailsConfigProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewClientDetailsConfigProvider(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewClientDetailsConfigProvider creates a new instance of ClientDetailsConfigProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewClientDetailsConfigProvider(t mockConstructorTestingTNewClientDetailsConfigProvider) *ClientDetailsConfigProvider {
+}) *ClientDetailsConfigProvider {
 	mock := &ClientDetailsConfigProvider{}
 	mock.Mock.Test(t)
 

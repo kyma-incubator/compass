@@ -28,13 +28,12 @@ func (_m *formationAssignmentRepository) Update(ctx context.Context, _a1 *model.
 	return r0
 }
 
-type mockConstructorTestingTnewFormationAssignmentRepository interface {
+// newFormationAssignmentRepository creates a new instance of formationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func newFormationAssignmentRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// newFormationAssignmentRepository creates a new instance of formationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func newFormationAssignmentRepository(t mockConstructorTestingTnewFormationAssignmentRepository) *formationAssignmentRepository {
+}) *formationAssignmentRepository {
 	mock := &formationAssignmentRepository{}
 	mock.Mock.Test(t)
 

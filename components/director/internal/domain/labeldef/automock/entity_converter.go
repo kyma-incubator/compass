@@ -19,13 +19,16 @@ func (_m *EntityConverter) FromEntity(in labeldef.Entity) (model.LabelDefinition
 	ret := _m.Called(in)
 
 	var r0 model.LabelDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(labeldef.Entity) (model.LabelDefinition, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(labeldef.Entity) model.LabelDefinition); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.LabelDefinition)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(labeldef.Entity) error); ok {
 		r1 = rf(in)
 	} else {
@@ -40,13 +43,16 @@ func (_m *EntityConverter) ToEntity(in model.LabelDefinition) (labeldef.Entity, 
 	ret := _m.Called(in)
 
 	var r0 labeldef.Entity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(model.LabelDefinition) (labeldef.Entity, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(model.LabelDefinition) labeldef.Entity); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(labeldef.Entity)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(model.LabelDefinition) error); ok {
 		r1 = rf(in)
 	} else {
@@ -56,13 +62,12 @@ func (_m *EntityConverter) ToEntity(in model.LabelDefinition) (labeldef.Entity, 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewEntityConverter interface {
+// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewEntityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
+}) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

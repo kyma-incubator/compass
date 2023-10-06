@@ -11,6 +11,7 @@ import (
 )
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
+//
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Create(ctx context.Context, item *model.FormationTemplate) error
@@ -22,24 +23,28 @@ type FormationTemplateRepository interface {
 }
 
 // UIDService generates UUIDs for new entities
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // TenantService is responsible for service-layer tenant operations
+//
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
 	ExtractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error)
 }
 
 // WebhookRepository is responsible for repo-layer Webhook operations
+//
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 // WebhookService represents the Webhook service layer
+//
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForFormationTemplate(ctx context.Context, tenant, formationTemplateID string) ([]*model.Webhook, error)
