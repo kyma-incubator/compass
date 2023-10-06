@@ -3,6 +3,7 @@ package formationassignment_test
 import (
 	"database/sql"
 	"encoding/json"
+
 	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

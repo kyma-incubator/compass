@@ -19,13 +19,16 @@ func (_m *Converter) CreateInputFromGraphQL(in graphql.BundleInstanceAuthCreateI
 	ret := _m.Called(in)
 
 	var r0 model.BundleInstanceAuthCreateInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthCreateInput) (model.BundleInstanceAuthCreateInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthCreateInput) model.BundleInstanceAuthCreateInput); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.BundleInstanceAuthCreateInput)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthCreateInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -54,13 +57,16 @@ func (_m *Converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) 
 	ret := _m.Called(in)
 
 	var r0 model.BundleInstanceAuthSetInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthSetInput) model.BundleInstanceAuthSetInput); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.BundleInstanceAuthSetInput)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthSetInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -75,6 +81,10 @@ func (_m *Converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleIns
 	ret := _m.Called(in)
 
 	var r0 *graphql.BundleInstanceAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) *graphql.BundleInstanceAuth); ok {
 		r0 = rf(in)
 	} else {
@@ -83,7 +93,6 @@ func (_m *Converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleIns
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.BundleInstanceAuth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -98,13 +107,16 @@ func (_m *Converter) UpdateInputFromGraphQL(in graphql.BundleInstanceAuthUpdateI
 	ret := _m.Called(in)
 
 	var r0 model.BundleInstanceAuthUpdateInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthUpdateInput) (model.BundleInstanceAuthUpdateInput, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthUpdateInput) model.BundleInstanceAuthUpdateInput); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(model.BundleInstanceAuthUpdateInput)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthUpdateInput) error); ok {
 		r1 = rf(in)
 	} else {
@@ -114,13 +126,12 @@ func (_m *Converter) UpdateInputFromGraphQL(in graphql.BundleInstanceAuthUpdateI
 	return r0, r1
 }
 
-type mockConstructorTestingTNewConverter interface {
+// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+}) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

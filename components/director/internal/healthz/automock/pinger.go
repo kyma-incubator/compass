@@ -27,13 +27,12 @@ func (_m *Pinger) PingContext(ctx context.Context) error {
 	return r0
 }
 
-type mockConstructorTestingTNewPinger interface {
+// NewPinger creates a new instance of Pinger. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewPinger(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewPinger creates a new instance of Pinger. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewPinger(t mockConstructorTestingTNewPinger) *Pinger {
+}) *Pinger {
 	mock := &Pinger{}
 	mock.Mock.Test(t)
 

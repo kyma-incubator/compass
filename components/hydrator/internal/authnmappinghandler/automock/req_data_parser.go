@@ -4,7 +4,6 @@ package automock
 
 import (
 	http "net/http"
-	testing "testing"
 
 	oathkeeper "github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	mock "github.com/stretchr/testify/mock"
@@ -20,13 +19,16 @@ func (_m *ReqDataParser) Parse(req *http.Request) (oathkeeper.ReqData, error) {
 	ret := _m.Called(req)
 
 	var r0 oathkeeper.ReqData
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*http.Request) (oathkeeper.ReqData, error)); ok {
+		return rf(req)
+	}
 	if rf, ok := ret.Get(0).(func(*http.Request) oathkeeper.ReqData); ok {
 		r0 = rf(req)
 	} else {
 		r0 = ret.Get(0).(oathkeeper.ReqData)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*http.Request) error); ok {
 		r1 = rf(req)
 	} else {
@@ -36,8 +38,12 @@ func (_m *ReqDataParser) Parse(req *http.Request) (oathkeeper.ReqData, error) {
 	return r0, r1
 }
 
-// NewReqDataParser creates a new instance of ReqDataParser. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewReqDataParser(t testing.TB) *ReqDataParser {
+// NewReqDataParser creates a new instance of ReqDataParser. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewReqDataParser(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *ReqDataParser {
 	mock := &ReqDataParser{}
 	mock.Mock.Test(t)
 

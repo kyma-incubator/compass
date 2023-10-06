@@ -6,7 +6,7 @@ import (
 	"path"
 	"regexp"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 
 	"github.com/hashicorp/go-multierror"
 

@@ -33,6 +33,10 @@ func (_m *LabelService) GetByKey(ctx context.Context, tenant string, objectType 
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) (*model.Label, error)); ok {
+		return rf(ctx, tenant, objectType, objectID, key)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) *model.Label); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -41,7 +45,6 @@ func (_m *LabelService) GetByKey(ctx context.Context, tenant string, objectType 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID, key)
 	} else {
@@ -56,6 +59,10 @@ func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput 
 	ret := _m.Called(ctx, tenant, labelInput)
 
 	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) (*model.Label, error)); ok {
+		return rf(ctx, tenant, labelInput)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) *model.Label); ok {
 		r0 = rf(ctx, tenant, labelInput)
 	} else {
@@ -64,7 +71,6 @@ func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.LabelInput) error); ok {
 		r1 = rf(ctx, tenant, labelInput)
 	} else {
@@ -102,13 +108,12 @@ func (_m *LabelService) UpsertLabel(ctx context.Context, tenant string, labelInp
 	return r0
 }
 
-type mockConstructorTestingTNewLabelService interface {
+// NewLabelService creates a new instance of LabelService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewLabelService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewLabelService creates a new instance of LabelService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelService(t mockConstructorTestingTNewLabelService) *LabelService {
+}) *LabelService {
 	mock := &LabelService{}
 	mock.Mock.Test(t)
 

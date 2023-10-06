@@ -21,6 +21,10 @@ func (_m *Manager) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	ret := _m.Called(ctx, opts)
 
 	var r0 watch.Interface
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, v1.ListOptions) (watch.Interface, error)); ok {
+		return rf(ctx, opts)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, v1.ListOptions) watch.Interface); ok {
 		r0 = rf(ctx, opts)
 	} else {
@@ -29,7 +33,6 @@ func (_m *Manager) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, v1.ListOptions) error); ok {
 		r1 = rf(ctx, opts)
 	} else {
@@ -39,13 +42,12 @@ func (_m *Manager) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	return r0, r1
 }
 
-type mockConstructorTestingTNewManager interface {
+// NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewManager(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewManager(t mockConstructorTestingTNewManager) *Manager {
+}) *Manager {
 	mock := &Manager{}
 	mock.Mock.Test(t)
 

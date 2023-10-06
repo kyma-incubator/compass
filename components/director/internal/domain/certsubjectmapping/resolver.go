@@ -16,6 +16,7 @@ import (
 )
 
 // CertSubjectMappingService is responsible for service-layer certificate subject mapping operations
+//
 //go:generate mockery --name=CertSubjectMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertSubjectMappingService interface {
 	Create(ctx context.Context, in *model.CertSubjectMapping) (string, error)
@@ -27,6 +28,7 @@ type CertSubjectMappingService interface {
 }
 
 // Converter converts between the graphql and internal model
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToGraphQL(in *model.CertSubjectMapping) *graphql.CertificateSubjectMapping
@@ -35,6 +37,7 @@ type Converter interface {
 }
 
 // UIDService generates UUIDs for new entities
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string

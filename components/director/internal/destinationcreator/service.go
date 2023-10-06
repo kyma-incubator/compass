@@ -69,6 +69,7 @@ type tenantRepository interface {
 }
 
 // UIDService generates UUIDs for new entities
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string

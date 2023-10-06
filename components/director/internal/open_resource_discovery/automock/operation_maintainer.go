@@ -27,13 +27,12 @@ func (_m *OperationMaintainer) Maintain(ctx context.Context) error {
 	return r0
 }
 
-type mockConstructorTestingTNewOperationMaintainer interface {
+// NewOperationMaintainer creates a new instance of OperationMaintainer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOperationMaintainer(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOperationMaintainer creates a new instance of OperationMaintainer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOperationMaintainer(t mockConstructorTestingTNewOperationMaintainer) *OperationMaintainer {
+}) *OperationMaintainer {
 	mock := &OperationMaintainer{}
 	mock.Mock.Test(t)
 

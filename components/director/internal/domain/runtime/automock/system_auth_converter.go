@@ -19,6 +19,10 @@ func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAu
 	ret := _m.Called(in)
 
 	var r0 graphql.SystemAuth
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.SystemAuth) (graphql.SystemAuth, error)); ok {
+		return rf(in)
+	}
 	if rf, ok := ret.Get(0).(func(*model.SystemAuth) graphql.SystemAuth); ok {
 		r0 = rf(in)
 	} else {
@@ -27,7 +31,6 @@ func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAu
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.SystemAuth) error); ok {
 		r1 = rf(in)
 	} else {
@@ -37,13 +40,12 @@ func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAu
 	return r0, r1
 }
 
-type mockConstructorTestingTNewSystemAuthConverter interface {
+// NewSystemAuthConverter creates a new instance of SystemAuthConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewSystemAuthConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewSystemAuthConverter creates a new instance of SystemAuthConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemAuthConverter(t mockConstructorTestingTNewSystemAuthConverter) *SystemAuthConverter {
+}) *SystemAuthConverter {
 	mock := &SystemAuthConverter{}
 	mock.Mock.Test(t)
 

@@ -192,3 +192,12 @@ monitoring:
   kube-state-metrics:
     podAnnotations:
       sidecar.istio.io/inject: "true"
+    prometheus:
+      monitor:
+        scheme: https
+        # By default in Kyma, Prometheus injects the Istio certificates from a sidecar
+        tlsConfig:
+          caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+          certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+          keyFile: /etc/prometheus/secrets/istio.default/key.pem
+          insecureSkipVerify: true
