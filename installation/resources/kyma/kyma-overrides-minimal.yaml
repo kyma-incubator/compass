@@ -30,6 +30,24 @@ helm-broker:
       limits:
         memory: 256Mi
 istio:
+  global:
+    images:
+      istio_proxyv2:
+        name: "proxyv2"
+        version: "1.15.3-distroless"
+        directory: "istio"
+        containerRegistryPath: "docker.io"
+      istio_pilot:
+        name: "pilot"
+        version: "1.15.3-distroless"
+        directory: "istio"
+        containerRegistryPath: "docker.io"
+      istio_install-cni:
+        name: "install-cni"
+        version: "1.15.3-distroless"
+        directory: "istio"
+        containerRegistryPath: "docker.io"
+
   components:
     egressGateways:
       enabled: false
