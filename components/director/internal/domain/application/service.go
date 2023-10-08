@@ -90,6 +90,7 @@ type ApplicationRepository interface {
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	GetByKeyGlobal(ctx context.Context, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error)
 	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
@@ -790,6 +791,29 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 	return label, nil
 }
 
+// GetScenariosLabelGlobal missing godoc
+func (s *service) GetScenariosLabelGlobal(ctx context.Context, applicationID string) (*model.Label, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking Application existence")
+	}
+	if !appExists {
+		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
+	}
+
+	label, err := s.labelRepo.GetByKeyGlobal(ctx, model.ApplicationLabelableObject, applicationID, model.ScenariosKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting label for Application")
+	}
+
+	return label, nil
+}
+
 // ListLabels missing godoc
 func (s *service) ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -1233,7 +1257,7 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 func (s *service) getScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
-	applicationLabel, err := s.GetLabel(ctx, applicationID, model.ScenariosKey)
+	applicationLabel, err := s.GetScenariosLabelGlobal(ctx, applicationID)
 	if err != nil {
 		if apperrors.ErrorCode(err) == apperrors.NotFound {
 			log.C(ctx).Infof("No scenarios found for application")
