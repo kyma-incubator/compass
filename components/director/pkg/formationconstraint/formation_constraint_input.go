@@ -51,6 +51,9 @@ type DestinationCreatorInput struct {
 type ConfigMutatorInput struct {
 	State                                  *string                  `json:"state"`
 	LastFormationAssignmentState           string                   `json:"last_formation_assignment_state"`
+	LastFormationAssignmentConfiguration   string                   `json:"last_formation_assignment_configuration"`
+	Tenant                                 string                   `json:"tenant"`
+	OnlyForSourceSubtypes                  []string                 `json:"only_for_source_subtypes"`
 	Configuration                          *string                  `json:"configuration"`
 	Operation                              model.FormationOperation `json:"operation"`
 	ResourceType                           model.ResourceType       `json:"resource_type"`

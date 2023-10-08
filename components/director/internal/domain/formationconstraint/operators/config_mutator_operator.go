@@ -3,6 +3,7 @@ package operators
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -33,6 +34,25 @@ func (e *ConstraintEngine) MutateConfig(ctx context.Context, input OperatorInput
 	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, i.JoinPointDetailsFAMemoryAddress)
 	if err != nil {
 		return false, err
+	}
+
+	if len(i.OnlyForSourceSubtypes) != 0 {
+		sourceSubType, err := e.getObjectSubtype(ctx, i.Tenant, model.ResourceType(formationAssignment.SourceType), formationAssignment.Source)
+		if err != nil {
+			return false, errors.Wrapf(err, "while getting subtype of resource with type: %q and id: %q", formationAssignment.SourceType, formationAssignment.Source)
+		}
+
+		sourceSubtypeIsSupported := false
+		for _, subtype := range i.OnlyForSourceSubtypes {
+			if sourceSubType == subtype {
+				sourceSubtypeIsSupported = true
+				break
+			}
+		}
+		if !sourceSubtypeIsSupported {
+			log.C(ctx).Infof("Skipping configuration and state mutation of assignment with ID: %q source resource of type: %q, subtype: %q, ID: %q, and target resource of type: %q and ID: %q", formationAssignment.ID, formationAssignment.SourceType, sourceSubType, formationAssignment.Source, formationAssignment.TargetType, formationAssignment.Target)
+			return true, nil
+		}
 	}
 
 	if i.State != nil {

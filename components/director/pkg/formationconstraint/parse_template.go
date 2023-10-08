@@ -3,6 +3,7 @@ package formationconstraint
 import (
 	"bytes"
 	"encoding/json"
+	"strconv"
 	"text/template"
 
 	_ "github.com/itchyny/gojq"
@@ -48,12 +49,7 @@ var templateFuncMap = template.FuncMap{
 				return ""
 			}
 		}
-		byteContext, err := json.Marshal(content)
-		if err != nil {
-			log.D().Errorf("Failed to marshal the new configuration")
-			return ""
-		}
-		return string(byteContext)
+		return strconv.Quote(content)
 	},
 	"mkslice": func(args ...string) []string {
 		return args
