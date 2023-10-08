@@ -3038,7 +3038,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
 
-				for i := 0; i < len(formationAssignments) - 1; i++ {
+				for i := 0; i < len(formationAssignments)-1; i++ {
 					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[i].Source, formationAssignments[i].Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
 				}
 

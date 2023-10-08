@@ -504,8 +504,8 @@ func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsF
 	for _, notification := range notificationsForConsumerTenant.Array() {
 		rtCtxIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
 		op := notification.Get("Operation").String()
-		t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
 		if rtCtxIDFromNotification == rtCtx.ID && op == operationType {
+			t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
 			actualNumberOfNotifications++
 			err := verifyFormationNotificationForApplicationWithItemsStructure(notification, operationType, formationID, rtCtx.ID, rtCtx.Value, region, "", expectedTenant, expectedCustomerID)
 			assert.NoError(t, err)
