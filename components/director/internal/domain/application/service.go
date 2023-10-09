@@ -791,8 +791,8 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 	return label, nil
 }
 
-// GetScenariosLabelGlobal missing godoc
-func (s *service) GetScenariosLabelGlobal(ctx context.Context, applicationID string) (*model.Label, error) {
+// GetScenarios list the scenario labels for the application globally and merges their values
+func (s *service) GetScenarios(ctx context.Context, applicationID string) ([]string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -806,12 +806,22 @@ func (s *service) GetScenariosLabelGlobal(ctx context.Context, applicationID str
 		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
-	label, err := s.labelRepo.GetByKeyGlobal(ctx, model.ApplicationLabelableObject, applicationID, model.ScenariosKey)
+	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting label for Application")
 	}
 
-	return label, nil
+	var scenarios []string
+	for _, lbl := range labels {
+		scenariosFromLabel, err := label.ValueToStringsSlice(lbl.Value)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while parsing application label values")
+		}
+
+		scenarios = append(scenarios, scenariosFromLabel...)
+	}
+
+	return scenarios, nil
 }
 
 // ListLabels missing godoc
@@ -1257,18 +1267,13 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 func (s *service) getScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error) {
 	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
 
-	applicationLabel, err := s.GetScenariosLabelGlobal(ctx, applicationID)
+	scenarios, err := s.GetScenarios(ctx, applicationID)
 	if err != nil {
 		if apperrors.ErrorCode(err) == apperrors.NotFound {
 			log.C(ctx).Infof("No scenarios found for application")
 			return nil, nil
 		}
 		return nil, err
-	}
-
-	scenarios, err := label.ValueToStringsSlice(applicationLabel.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while parsing application label values")
 	}
 
 	return scenarios, nil

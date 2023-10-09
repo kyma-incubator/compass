@@ -2636,7 +2636,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2653,7 +2653,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2670,7 +2670,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2686,7 +2686,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil).Once()
 				return repo
 			},
 			InputID:            id,
@@ -2788,7 +2788,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2814,7 +2814,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2840,7 +2840,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2865,7 +2865,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", mock.Anything, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", mock.Anything, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2891,7 +2891,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2919,7 +2919,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2947,7 +2947,7 @@ func TestService_Unpair(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -3086,7 +3086,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3117,7 +3117,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithFalseManaged, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3146,7 +3146,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKeyGlobal")
+				repo.AssertNotCalled(t, "ListGlobalByKeyAndObjects")
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3173,7 +3173,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3199,7 +3199,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKeyGlobal")
+				repo.AssertNotCalled(t, "ListGlobalByKeyAndObjects")
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3226,7 +3226,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
@@ -3255,7 +3255,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
@@ -3284,7 +3284,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3313,7 +3313,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3342,7 +3342,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3371,7 +3371,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3400,7 +3400,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(appTemplateLabelsWithSelfRegDistLabelKey, nil)
@@ -3430,7 +3430,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(nil, testErr)
@@ -3481,7 +3481,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil, testErr)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				return repo
@@ -3509,7 +3509,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(nil, testErr)
 
 				return repo
@@ -4923,15 +4923,27 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 
 	testErr := errors.New("Test error")
 
+	scenario := "value1"
+	scenario2 := "value2"
 	applicationID := "foo"
-	labelKey := "key"
-	labelValue := []string{"value1"}
+	labelValue := []interface{}{scenario}
 
 	modelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
 		Tenant:     str.Ptr(tnt),
-		Key:        labelKey,
+		Key:        model.ScenariosKey,
 		Value:      labelValue,
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	labelValue2 := []interface{}{scenario2}
+
+	modelLabel2 := &model.Label{
+		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
+		Tenant:     str.Ptr(tnt),
+		Key:        model.ScenariosKey,
+		Value:      labelValue2,
 		ObjectID:   applicationID,
 		ObjectType: model.ApplicationLabelableObject,
 	}
@@ -4941,7 +4953,7 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 		RepositoryFn       func() *automock.ApplicationRepository
 		LabelRepositoryFn  func() *automock.LabelRepository
 		InputApplicationID string
-		ExpectedLabel      *model.Label
+		ExpectedScenarios  []string
 		ExpectedErrMessage string
 	}{
 		{
@@ -4953,12 +4965,40 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(modelLabel, nil).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return([]*model.Label{modelLabel}, nil).Once()
 				return repo
 			},
 			InputApplicationID: applicationID,
-			ExpectedLabel:      modelLabel,
-			ExpectedErrMessage: "",
+			ExpectedScenarios:  []string{scenario},
+		},
+		{
+			Name: "Success when no labels are found",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return(nil, nil).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+		},
+		{
+			Name: "Success when multiple scenarios labels are present",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return([]*model.Label{modelLabel, modelLabel2}, nil).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+			ExpectedScenarios:  []string{scenario, scenario2},
 		},
 		{
 			Name: "Returns error when label receiving failed",
@@ -4970,11 +5010,10 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKeyGlobal", ctx, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(nil, testErr).Once()
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return(nil, testErr).Once()
 				return repo
 			},
 			InputApplicationID: applicationID,
-			ExpectedLabel:      nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -4998,12 +5037,12 @@ func TestService_GetScenariosLabelGlobal(t *testing.T) {
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
-			l, err := svc.GetScenariosLabelGlobal(ctx, testCase.InputApplicationID)
+			scenarios, err := svc.GetScenarios(ctx, testCase.InputApplicationID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, l, testCase.ExpectedLabel)
+				assert.Equal(t, testCase.ExpectedScenarios, scenarios)
 			} else {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
