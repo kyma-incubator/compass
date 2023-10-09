@@ -27,13 +27,13 @@ cp ${KYMA_OVERRIDES_MINIMAL} ${MINIMAL_OVERRIDES_TEMP}
 yq -i ".istio.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${MINIMAL_OVERRIDES_TEMP}"
 
 if [[ $(uname -m) == 'arm64' ]]; then
-  yq -i ".istio.global.images.istio_proxyv2.containerRegistryPath = \"ghcr.io\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_proxyv2.directory = \"resf/istio\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_proxyv2.version = \"1.14.3-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.version = \"1.14.4-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
 
-  yq -i ".istio.global.images.istio_pilot.containerRegistryPath = \"ghcr.io\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_pilot.directory = \"resf/istio\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio_pilot.version = \"1.14.3-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.version = \"1.14.4-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
 fi
 
 trap "rm -f ${MINIMAL_OVERRIDES_TEMP}" EXIT INT TERM
@@ -54,3 +54,7 @@ fi
 
 echo "Installing minimal Kyma"
 kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source=local --workspace "$KYMA_WORKSPACE"
+
+# Needed since Kyma 2.5.2 to gather metrics
+echo "Patch the metrics port of the kube state metrics service resource to have 'http-' prefix"
+kubectl get services -n kyma-system monitoring-kube-state-metrics -o yaml | sed 's/name: metrics/name: http-metrics/g' | kubectl apply -f -
