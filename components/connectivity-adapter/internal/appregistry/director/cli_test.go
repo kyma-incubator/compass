@@ -18,7 +18,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testErr = errors.New("Test error")
+var (
+	testErr       = errors.New("Test error")
+	connectionErr = errors.New("connection refused")
+)
 
 func TestDirectorClient_CreateBundle(t *testing.T) {
 	appID := "foo"
@@ -68,7 +71,7 @@ func TestDirectorClient_CreateBundle(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -105,14 +108,14 @@ func TestDirectorClient_CreateBundle(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -120,7 +123,7 @@ func TestDirectorClient_CreateBundle(t *testing.T) {
 				am.On("BundleCreateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -173,7 +176,6 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 				am.On("BundleUpdateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
 			Name: "Success - retry",
@@ -183,7 +185,7 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -196,7 +198,6 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 				am.On("BundleUpdateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
 			Name: "Error - GraphQL input",
@@ -212,14 +213,14 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -227,7 +228,7 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 				am.On("BundleUpdateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -292,7 +293,7 @@ func TestDirectorClient_GetBundle(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -311,17 +312,17 @@ func TestDirectorClient_GetBundle(t *testing.T) {
 			ExpectedResult: &successResult,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -388,7 +389,7 @@ func TestDirectorClient_ListBundles(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -407,17 +408,17 @@ func TestDirectorClient_ListBundles(t *testing.T) {
 			ExpectedResult: successResult,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -463,7 +464,6 @@ func TestDirectorClient_DeleteBundle(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
 			Name: "Success - retry",
@@ -473,7 +473,7 @@ func TestDirectorClient_DeleteBundle(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -481,20 +481,19 @@ func TestDirectorClient_DeleteBundle(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -565,7 +564,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -602,14 +601,14 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -617,7 +616,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 				am.On("APIDefinitionInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -664,7 +663,6 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
 			Name: "Success - retry",
@@ -674,7 +672,7 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -682,20 +680,19 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -766,7 +763,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -803,14 +800,14 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -818,7 +815,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 				am.On("EventDefinitionInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -865,7 +862,6 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
 			Name: "Success - retry",
@@ -875,7 +871,7 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -883,20 +879,19 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -967,7 +962,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -1004,14 +999,14 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
@@ -1019,7 +1014,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 				am.On("DocumentInputToGQL", &in).Return("input", nil).Once()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -1066,7 +1061,6 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
 			Name: "Success - retry",
@@ -1076,7 +1070,7 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -1084,20 +1078,19 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 				).Return(nil).Once()
 				return am
 			},
-			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					nil,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
@@ -1153,7 +1146,7 @@ func TestDirectorClient_SetApplicationLabel(t *testing.T) {
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Once()
+				).Return(connectionErr).Once()
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
@@ -1163,17 +1156,17 @@ func TestDirectorClient_SetApplicationLabel(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error - GraphQL client",
+			Name: "Error - GraphQL client has connectivity problems",
 			GQLClientFn: func() *gcliautomock.GraphQLClient {
 				am := &gcliautomock.GraphQLClient{}
 				am.On("Run",
 					mock.Anything,
 					gqlRequest,
 					mock.Anything,
-				).Return(testErr).Twice()
+				).Return(connectionErr).Twice()
 				return am
 			},
-			ExpectedErr: testErr,
+			ExpectedErr: connectionErr,
 		},
 	}
 	for _, tC := range tests {
