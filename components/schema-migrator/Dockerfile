@@ -3,8 +3,7 @@ FROM golang:1.21.1-alpine3.18 as builder
 WORKDIR /
 RUN apk --update --no-cache add bash git
 
-# Currently the commit hash of the version, as there hasn't been a release since April 2022
-ARG VERSION="dc26c41ac9dac4a1023c87723ffda644e41af1fe"
+ARG VERSION="v4.16.2"
 ARG DATABASE="postgres"
 ARG SOURCE="file"
 
