@@ -60,12 +60,6 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex
 	mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
-	for s, s2 := range qp {
-		fmt.Println(s, s2)
-	}
-
-	fmt.Println("-------------")
-
 	var systems []System
 
 	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
