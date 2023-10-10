@@ -1,8 +1,3 @@
-api-gateway:
-  deployment:
-    resources:
-      limits:
-        cpu: 200m
 cluster-essentials:
   global:
     disableLegacyConnectivity: true
