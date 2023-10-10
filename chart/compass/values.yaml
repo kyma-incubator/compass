@@ -171,11 +171,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-102"
+      version: "PR-103"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3366"
+      version: "PR-3355"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
