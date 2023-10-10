@@ -235,7 +235,7 @@ func NewService(
 }
 
 // Used for testing
-//nolint
+// nolint
 //
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {
@@ -1063,6 +1063,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
 	resyncableFormationAssignments := make([]*model.FormationAssignment, 0)
+	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0)
 	assignmentIDToAssignmentPair := make(map[string]formationassignment.AssignmentMappingPairWithOperation)
 
 	formationID := formation.ID
@@ -1097,6 +1098,12 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		if err != nil {
 			return errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
 		}
+
+		for _, rfa := range resyncableFAs {
+			if rfa.State == string(model.DeleteErrorAssignmentState) {
+				failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, rfa)
+			}
+		}
 		resyncableFormationAssignments = resyncableFAs
 
 		for _, fa := range resyncableFormationAssignments {
@@ -1129,7 +1136,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				}
 			}
 
-			if notificationForFA != nil && notificationForFA.Webhook.Mode != nil && *notificationForFA.Webhook.Mode == graphql.WebhookModeAsyncCallback && operation == model.UnassignFormation {
+			if notificationForFA != nil && operation == model.UnassignFormation {
 				fa.State = string(model.DeletingAssignmentState)
 				formationassignment.ResetAssignmentConfigAndError(fa)
 				if err := s.formationAssignmentService.Update(ctxWithTransact, fa.ID, fa); err != nil {
@@ -1145,6 +1152,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					},
 					ReverseAssignmentReqMapping: reverseReqMapping,
 				},
+				Operation: operation,
 			}
 
 			assignmentIDToAssignmentPair[fa.ID] = assignmentPair
@@ -1155,26 +1163,19 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		return nil, err
 	}
 
-	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(resyncableFormationAssignments))
 	var errs *multierror.Error
-
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, fa := range resyncableFormationAssignments {
 			assignmentPair := assignmentIDToAssignmentPair[fa.ID]
-			switch fa.State {
-			case string(model.InitialAssignmentState), string(model.CreateErrorAssignmentState):
-				assignmentPair.Operation = model.AssignFormation
+			switch assignmentPair.Operation {
+			case model.AssignFormation:
 				if _, err := s.formationAssignmentService.ProcessFormationAssignmentPair(ctxWithTransact, &assignmentPair); err != nil {
 					errs = multierror.Append(errs, err)
 				}
-			case string(model.DeletingAssignmentState), string(model.DeleteErrorAssignmentState):
-				assignmentPair.Operation = model.UnassignFormation
+			case model.UnassignFormation:
 				if _, err := s.formationAssignmentService.CleanupFormationAssignment(ctxWithTransact, &assignmentPair); err != nil {
 					errs = multierror.Append(errs, err)
 				}
-			}
-			if fa.State == string(model.DeleteErrorAssignmentState) {
-				failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, fa)
 			}
 		}
 
@@ -1843,7 +1844,7 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 }
 
 // updateFormationAssignmentsWithStateForObjectID lists all formation assignments for a given objectID that are either source or target of the assignment
-// and update every one of them with the provided state
+// and update every one of them with the provided state. Also, resetting the assignments' configuration and error fields.
 func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Context, formationID, objectID, objectType, newState string) error {
 	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
 	if err != nil {
