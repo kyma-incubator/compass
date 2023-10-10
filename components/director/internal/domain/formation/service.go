@@ -235,7 +235,7 @@ func NewService(
 }
 
 // Used for testing
-// nolint
+//nolint
 //
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {
@@ -883,7 +883,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	// We need the formation assignments data before updating them to DELETING state (and resetting their configuration) in the transaction below,
 	// so in case of any failures that can happen before the processing of these formation assignments (e.g. generating notifications for them),
-	// we could revert changes made in the transaction below
+	// we could revert the changes made in the transaction below
 	initialAssignmentsData, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
@@ -892,14 +892,23 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	// Flag that is used to determine whether to revert the changes made in the transaction below or not.
 	// If any errors occur after we committed the transaction below but before the formation assignments processing, we need to revert them.
 	// If errors occur after formation assignments processing, we should not revert them
-	shouldRevertAssignmentStateAndConfigUpdateTransaction := true
+	shouldRevertAssignmentsUpdateFromTransaction := true
 
-	// In case of Unassign, we want to persist the formation assignments in DELETING state in isolated transaction
+	// In case of Unassign, we want to persist the formation assignments in DELETING state and resetting their configuration and error in isolated transaction
 	// similar to the Assign operation and to cover the case when we have both type of webhook - sync and async.
 	// So if the async notification was sent, and we're processing the sync notification, meanwhile the async participant sends
 	// FA status update request, he will have the latest state of the formation assignment even when we didn't finish the sync notification processing.
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-		return s.updateFormationAssignmentsWithStateForObjectID(ctxWithTransact, formationFromDB.ID, objectID, string(objectType), string(model.DeletingAssignmentState))
+		for _, ia := range initialAssignmentsData {
+			log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", ia.State, ia.ID)
+			faClone := ia.Clone()
+			faClone.State = string(model.DeletingAssignmentState)
+			formationassignment.ResetAssignmentConfigAndError(faClone)
+			if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
+				return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", ia.ID, ia.State)
+			}
+		}
+		return nil
 	}); err != nil {
 		return nil, err
 	}
@@ -909,7 +918,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return
 		}
 
-		if !shouldRevertAssignmentStateAndConfigUpdateTransaction {
+		if !shouldRevertAssignmentsUpdateFromTransaction {
 			return
 		}
 
@@ -954,25 +963,24 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 	}
 
-	formationAssignmentsForObject, nerr := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
-	err = nerr
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	formationAssignmentClonesForObject := make([]*model.FormationAssignment, 0)
+	for _, ia := range initialAssignmentsData {
+		formationAssignmentClonesForObject = append(formationAssignmentClonesForObject, ia.Clone())
 	}
 
-	rtmContextIDsMapping, nerr := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, formationAssignmentsForObject)
-	err = nerr
-	if err != nil {
-		return nil, err
-	}
-
-	applicationIDToApplicationTemplateIDMapping, nerr := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, formationAssignmentsForObject)
+	rtmContextIDsMapping, nerr := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, formationAssignmentClonesForObject)
 	err = nerr
 	if err != nil {
 		return nil, err
 	}
 
-	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
+	applicationIDToApplicationTemplateIDMapping, nerr := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, formationAssignmentClonesForObject)
+	err = nerr
+	if err != nil {
+		return nil, err
+	}
+
+	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentClonesForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
 		err = nerr
 		if commitErr := tx.Commit(); commitErr != nil {
 			err = errors.Wrapf(
@@ -982,7 +990,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		shouldRevertAssignmentStateAndConfigUpdateTransaction = false
+		shouldRevertAssignmentsUpdateFromTransaction = false
 		return nil, err
 	}
 
@@ -993,7 +1001,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 	// The formation assignments processing executed in the current transaction has finished,
 	// and if an error occurred in any of the operations executed afterward should not revert the initially updated formation assignments in the first transaction.
-	shouldRevertAssignmentStateAndConfigUpdateTransaction = false
+	shouldRevertAssignmentsUpdateFromTransaction = false
 
 	// It is important that we have committed the previous transaction before formation assignments are listed
 	// They could be deleted by either it or another operation altogether (e.g. async API status report)
@@ -1137,10 +1145,11 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 
 			if notificationForFA != nil && operation == model.UnassignFormation {
-				fa.State = string(model.DeletingAssignmentState)
-				formationassignment.ResetAssignmentConfigAndError(fa)
-				if err := s.formationAssignmentService.Update(ctxWithTransact, fa.ID, fa); err != nil {
-					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", fa.ID, fa.State)
+				faClone := fa.Clone()
+				faClone.State = string(model.DeletingAssignmentState)
+				formationassignment.ResetAssignmentConfigAndError(faClone)
+				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
+					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
 			}
 
@@ -1841,26 +1850,6 @@ func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectTyp
 	}
 
 	return true
-}
-
-// updateFormationAssignmentsWithStateForObjectID lists all formation assignments for a given objectID that are either source or target of the assignment
-// and update every one of them with the provided state. Also, resetting the assignments' configuration and error fields.
-func (s *service) updateFormationAssignmentsWithStateForObjectID(ctx context.Context, formationID, objectID, objectType, newState string) error {
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
-	if err != nil {
-		return errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	for _, fa := range formationAssignmentsForObject {
-		log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", fa.State, fa.ID)
-		fa.State = newState
-		formationassignment.ResetAssignmentConfigAndError(fa)
-		if err := s.formationAssignmentService.Update(ctx, fa.ID, fa); err != nil {
-			return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", fa.ID, fa.State)
-		}
-	}
-
-	return nil
 }
 
 // executeInTransaction wraps a given function into an isolated DB transaction

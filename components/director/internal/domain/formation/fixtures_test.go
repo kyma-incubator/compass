@@ -1404,12 +1404,6 @@ func fixFormationAssignmentModelWithParameters(id, formationID, source, target s
 	}
 }
 
-func fixSetAssignmentsToState(state model.FormationAssignmentState, assignments ...*model.FormationAssignment) {
-	for _, a := range assignments {
-		a.State = string(state)
-	}
-}
-
 func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
 	res := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
