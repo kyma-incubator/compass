@@ -190,6 +190,17 @@ func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli
 	require.NoError(t, err)
 }
 
+func UnregisterApplicationExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt, expectedError string) {
+	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
+		return
+	}
+	deleteRequest := FixUnregisterApplicationRequest(app.ID)
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), expectedError)
+}
+
 func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {
 	deleteRequest := FixDeleteApplicationLabelRequest(id, labelKey)
 

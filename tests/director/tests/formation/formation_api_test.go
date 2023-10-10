@@ -123,9 +123,12 @@ func TestListFormations(t *testing.T) {
 func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	newFormation := "ADDITIONAL"
+	formation := "first"
+	secondFormation := "second"
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	//secondTenantID := tenant.TestTenants.GetTenantByName(tenant.TestAtomResourceGroup).ExternalTenant
+	secondTenantID := "7e1f2df8-36dc-4e40-8be3-d1555d50c91c"
 
 	t.Log("Create application")
 	app := graphql.ApplicationExt{} // needed so the 'defer' can be above the application creation
@@ -134,22 +137,22 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
-	t.Logf("Should create formation: %s", newFormation)
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation)
-	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation)
+	t.Logf("Should create formation: %s", formation)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formation)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formation)
 
 	nonExistingFormation := "nonExistingFormation"
 	t.Logf("Shoud not assign application to formation %s, as it is not in the label definition", nonExistingFormation)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: nonExistingFormation}, app.ID, tenantId)
 	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: nonExistingFormation}, app.ID, tenantId)
 
-	t.Logf("Assign application to formation %s", newFormation)
+	t.Logf("Assign application to formation %s", formation)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: nonExistingFormation}, app.ID, tenantId)
-	assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), formation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
-	require.Equal(t, newFormation, assignFormation.Name)
+	require.Equal(t, formation, assignFormation.Name)
 
 	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign application to formation")
 
@@ -162,7 +165,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	scenariosLabel, ok := app.Labels[ScenariosLabel].([]interface{})
 	require.True(t, ok)
 
-	formations := []string{newFormation}
+	formations := []string{formation}
 
 	var actualScenariosEnum []string
 	for _, v := range scenariosLabel {
@@ -171,26 +174,41 @@ func TestApplicationFormationFlow(t *testing.T) {
 	assert.Equal(t, formations, actualScenariosEnum)
 
 	t.Log("Should not delete formation while application is assigned")
-	deleteRequest := fixtures.FixDeleteFormationRequest(newFormation)
+	deleteRequest := fixtures.FixDeleteFormationRequest(formation)
 	var nilFormation *graphql.Formation
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, nilFormation)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "are not valid against empty schema")
 	assert.Nil(t, nilFormation)
 
-	t.Logf("Unassign Application from formation %s", newFormation)
-	unassignReq := fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), newFormation)
-	var unassignFormation graphql.Formation
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
-	require.NoError(t, err)
-	require.Equal(t, newFormation, unassignFormation.Name)
+	t.Logf("Tenant: %s should fail to delete appliaction: %s as it is part of formation: %s in tenant: %s", tenantId, app.ID, formation, tenantId)
+	fixtures.UnregisterApplicationExpectError(t, ctx, certSecuredGraphQLClient, tenantId, &app, fmt.Sprintf("System app is part of the following formations : %s", formation))
 
-	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign application from formation")
+	t.Logf("Should create formation: %s in tenant: %s", secondFormation, secondTenantID)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, secondTenantID, secondFormation)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, secondTenantID, secondFormation)
+
+	t.Logf("Add access to application: %s for tenant: %s", app.ID, secondTenantID)
+	fixtures.AddTenantAccess(t, ctx, certSecuredGraphQLClient, secondTenantID, app.ID)
+
+	t.Logf("Assign appliaction: %s to formation: %s in tenant: %s", app.ID, secondFormation, secondTenantID)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: secondFormation}, app.ID, secondTenantID)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: secondFormation}, app.ID, secondTenantID)
+
+	t.Logf("Tenant: %s should fail to delete appliaction: %s as it is part of formation: %s in tenant: %s", tenantId, app.ID, secondFormation, secondTenantID)
+	fixtures.UnregisterApplicationExpectError(t, ctx, certSecuredGraphQLClient, tenantId, &app, fmt.Sprintf("System app is part of the following formations : %s, %s", formation, secondFormation))
+
+	t.Logf("Unassign Application from formation %s", secondFormation)
+	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: secondFormation}, app.ID, secondTenantID)
+
+	t.Logf("Unassign Application from formation %s", formation)
+	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formation}, app.ID, tenantId)
+
+	t.Logf("Tenant: %s should succeed deleting appliaction: %s", tenantId, app.ID)
+	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
 
 	t.Log("Should be able to delete formation after application is unassigned")
-	fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, newFormation)
-
-	example.SaveExample(t, deleteRequest.Query(), "delete formation")
+	fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formation)
 }
 
 func TestApplicationOnlyFormationFlow(t *testing.T) {
