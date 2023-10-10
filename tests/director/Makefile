@@ -4,6 +4,7 @@ BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 DIRECTOR_GRAPHQL_API = "http://compass-dev-director:3000"
+withExamples=false
 export DIRECTOR_GRAPHQL_API
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
