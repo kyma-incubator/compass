@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -425,7 +426,160 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
 
+	id := "foo"
+	spec := "spec"
+	frURL := "foo.bar"
+
+	modelInput := model.CapabilityInput{
+		Name:         "foo",
+		Type:         CapabilityTypeMDICapabilityDefinitionV1,
+		VersionInput: &model.VersionInput{},
+	}
+
+	modelSpecInput := model.SpecInput{
+		Data: &spec,
+		FetchRequest: &model.FetchRequestInput{
+			URL: frURL,
+		},
+	}
+
+	modelSpec := &model.Spec{
+		ID:         id,
+		ObjectType: model.CapabilitySpecReference,
+		ObjectID:   id,
+		Data:       &spec,
+	}
+
+	inputCapabilityModel := mock.MatchedBy(func(capability *model.Capability) bool {
+		return capability.Name == modelInput.Name
+	})
+
+	capabilityModelForApp := &model.Capability{
+		Name:          "Bar",
+		Version:       &model.Version{},
+		ApplicationID: &appID,
+	}
+
+	capabilityModelForAppTemplateVersion := &model.Capability{
+		Name:                         "Bar",
+		Version:                      &model.Version{},
+		ApplicationTemplateVersionID: &appTemplateVersionID,
+	}
+
+	ctx := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name            string
+		RepositoryFn    func() *automock.CapabilityRepository
+		SpecServiceFn   func() *automock.SpecService
+		Input           model.CapabilityInput
+		InputID         string
+		SpecInput       *model.SpecInput
+		DefaultBundleID string
+		ResourceType    resource.Type
+		Ctx             context.Context
+		ExpectedErr     error
+	}{
+		{
+			Name: "Success for Application",
+			RepositoryFn: func() *automock.CapabilityRepository {
+				repo := &automock.CapabilityRepository{}
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(capabilityModelForApp, nil).Once()
+				repo.On("Update", ctxWithTenant, tenantID, inputCapabilityModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctxWithTenant, resource.Application, model.CapabilitySpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctxWithTenant, id, modelSpecInput, resource.Application, model.CapabilitySpecReference, id).Return(nil).Once()
+				return svc
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			SpecInput:    &modelSpecInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Success for Application Template Version",
+			RepositoryFn: func() *automock.CapabilityRepository {
+				repo := &automock.CapabilityRepository{}
+				repo.On("GetByIDGlobal", ctx, id).Return(capabilityModelForAppTemplateVersion, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputCapabilityModel).Return(nil).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				svc := &automock.SpecService{}
+				svc.On("GetByReferenceObjectID", ctx, resource.ApplicationTemplateVersion, model.CapabilitySpecReference, id).Return(modelSpec, nil).Once()
+				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, resource.ApplicationTemplateVersion, model.CapabilitySpecReference, id).Return(nil).Once()
+				return svc
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			SpecInput:    &modelSpecInput,
+			ResourceType: resource.ApplicationTemplateVersion,
+			Ctx:          ctx,
+			ExpectedErr:  nil,
+		},
+		{
+			Name: "Error while updating Capability",
+			RepositoryFn: func() *automock.CapabilityRepository {
+				repo := &automock.CapabilityRepository{}
+				repo.On("GetByID", ctxWithTenant, tenantID, id).Return(capabilityModelForApp, nil).Once()
+				repo.On("Update", ctxWithTenant, tenantID, inputCapabilityModel).Return(testErr).Once()
+				return repo
+			},
+			SpecServiceFn: func() *automock.SpecService {
+				return &automock.SpecService{}
+			},
+			InputID:      "foo",
+			Input:        modelInput,
+			SpecInput:    &modelSpecInput,
+			ResourceType: resource.Application,
+			ExpectedErr:  testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			specSvc := testCase.SpecServiceFn()
+
+			svc := capability.NewService(repo, nil, specSvc)
+			svc.SetTimestampGen(func() time.Time { return fixedTimestamp })
+
+			defaultCtx := ctxWithTenant
+			if testCase.Ctx != nil {
+				defaultCtx = testCase.Ctx
+			}
+
+			// WHEN
+			err := svc.Update(defaultCtx, testCase.ResourceType, testCase.InputID, testCase.Input, testCase.SpecInput, 0)
+
+			// then
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+
+			repo.AssertExpectations(t)
+			specSvc.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := capability.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Update(context.TODO(), resource.Application, "", model.CapabilityInput{}, &model.SpecInput{}, 0)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }
 
 func TestService_Delete(t *testing.T) {

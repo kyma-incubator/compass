@@ -107,7 +107,7 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error {
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, specIn *model.SpecInput, capabilityHash uint64) error {
 	capability, err := s.getCapability(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Capability with ID %s for %s", id, resourceType)
@@ -119,6 +119,11 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 	err = s.updateCapability(ctx, capability, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Capability with ID %s for %s", id, resourceType)
+	}
+
+	// specs?
+	if specIn != nil {
+		return s.handleSpecsInCapability(ctx, capability.ID, specIn, resourceType)
 	}
 
 	return nil
@@ -153,6 +158,20 @@ func (s *service) getCapability(ctx context.Context, id string, resourceType res
 		return s.repo.GetByIDGlobal(ctx, id)
 	}
 	return s.Get(ctx, id)
+}
+
+func (s *service) handleSpecsInCapability(ctx context.Context, id string, specIn *model.SpecInput, resourceType resource.Type) error {
+	dbSpec, err := s.specService.GetByReferenceObjectID(ctx, resourceType, model.CapabilitySpecReference, id)
+	if err != nil {
+		return errors.Wrapf(err, "while getting spec for Capability with id %q", id)
+	}
+
+	if dbSpec == nil {
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, resourceType, model.CapabilitySpecReference, id)
+		return err
+	}
+
+	return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, resourceType, model.CapabilitySpecReference, id)
 }
 
 func (s *service) updateCapability(ctx context.Context, api *model.Capability, resourceType resource.Type) error {
