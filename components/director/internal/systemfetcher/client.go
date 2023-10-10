@@ -60,6 +60,12 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string, mutex
 	mutex.Unlock()
 	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
 
+	for s, s2 := range qp {
+		fmt.Println(s, s2)
+	}
+
+	fmt.Println("-------------")
+
 	var systems []System
 
 	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
@@ -160,30 +166,32 @@ func (c *Client) buildFilter() map[string]string {
 			continue
 		}
 
-		lblToString, ok := lbl.Value.(string)
+		lblToArr, ok := lbl.Value.([]interface{})
 		if !ok {
-			lblToString = ""
+			continue
 		}
-		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
-		lblExists := false
-		minTime := time.Now()
+		for _, lblStr := range lblToArr {
+			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblStr.(string))
 
-		for _, s := range SystemSynchronizationTimestamps {
-			v, ok := s[lblToString]
-			if ok {
-				lblExists = true
-				if v.LastSyncTimestamp.Before(minTime) {
-					minTime = v.LastSyncTimestamp
+			lblExists := false
+			minTime := time.Now()
+
+			for _, systemTimestamps := range SystemSynchronizationTimestamps {
+				if timestamp, ok := systemTimestamps[lblStr.(string)]; ok {
+					lblExists = true
+					if timestamp.LastSyncTimestamp.Before(minTime) {
+						minTime = timestamp.LastSyncTimestamp
+					}
 				}
 			}
-		}
 
-		if lblExists {
-			expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
-			filterBuilder.addFilter(expr1, expr2)
-		} else {
-			filterBuilder.addFilter(expr1)
+			if lblExists {
+				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
+				filterBuilder.addFilter(expr1, expr2)
+			} else {
+				filterBuilder.addFilter(expr1)
+			}
 		}
 	}
 	result := map[string]string{"fetchAcrossZones": "true"}
