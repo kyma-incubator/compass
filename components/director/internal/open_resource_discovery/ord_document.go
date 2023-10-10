@@ -169,7 +169,6 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		}
 	}
 
-	// delete this ?
 	resourceIDs := ResourceIDs{
 		PackageIDs:          make(map[string]bool),
 		PackagePolicyLevels: make(map[string]string),
@@ -234,7 +233,7 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 		}
 		for i, api := range doc.APIResources {
 			if api.OrdPackageID != nil && !resourceIDs.PackageIDs[*api.OrdPackageID] {
-				errs = multierror.Append(errs, errors.Errorf("api with id %q has a REFERENCEe to unknown package %q", *api.OrdID, *api.OrdPackageID))
+				errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID))
 				invalidApisIndices = append(invalidApisIndices, i)
 			}
 			if api.PartOfConsumptionBundles != nil {
@@ -274,7 +273,6 @@ func (docs Documents) Validate(calculatedBaseURL string, resourcesFromDB Resourc
 			}
 		}
 
-		// validation for capability
 		for i, capability := range doc.Capabilities {
 			if capability.OrdPackageID != nil && !resourceIDs.PackageIDs[*capability.OrdPackageID] {
 				errs = multierror.Append(errs, errors.Errorf("capability with id %q has a reference to unknown package %q", *capability.OrdID, *capability.OrdPackageID))

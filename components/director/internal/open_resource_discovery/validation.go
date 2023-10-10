@@ -67,8 +67,6 @@ const (
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
 	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
-	// OrdNamespaceRegex represents the valid structure of a Ord Namespace
-	OrdNamespaceRegex = "^[a-z0-9]+(?:[.][a-z0-9]+)*$"
 	// CapabilityCustomTypeRegex represents the valid structure of a Capability custom type
 	CapabilityCustomTypeRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// ShortDescriptionSapCorePolicyRegex represents the valid structure of a short description field due to sap core policy
@@ -178,12 +176,10 @@ const (
 	// PartnerVendor is a valid partner Vendor ordID
 	PartnerVendor = "partner:vendor:SAP:"
 
-	// CapabilityTypeCustom s
-	CapabilityTypeCustom string = custom
-	// CapabilityTypeMDICapabilityDefinitionV1 is the MDI Capability V1 Specification
-	CapabilityTypeMDICapabilityDefinitionV1 string = "sap.mdo:mdi-capability:v1"
-	// CapabilitySpecTypeMDICapabilityDefinitionV1 is the MDI Capability Definition V1 Specification
-	CapabilitySpecTypeMDICapabilityDefinitionV1 string = "sap.mdo:mdi-capability-definition:v1"
+	// CapabilityTypeCustom is one of the available Capability type options
+	CapabilityTypeCustom = custom
+	// CapabilityTypeMDICapabilityV1 is the MDI Capability V1 Specification
+	CapabilityTypeMDICapabilityV1 string = "sap.mdo:mdi-capability:v1"
 	// DeprecatedTerm represents a term which all titles must not contain (except link titles) due to sap core policy
 	DeprecatedTerm = "deprecated"
 	// DecommissionedTerm represents a term which all titles must not contain (except link titles) due to sap core policy
@@ -632,7 +628,7 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 		validation.Field(&capability.Name, validation.Required),
 		validation.Field(&capability.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&capability.OrdID, validation.Required, validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
-		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityDefinitionV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
+		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
 		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
 		validation.Field(&capability.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&capability.ShortDescription, shortDescriptionRules...),
@@ -1004,13 +1000,18 @@ func validateCapabilityDefinitions(value interface{}, capability model.Capabilit
 		return nil
 	}
 
-	capabilityVisibility := str.PtrStrToStr(capability.Visibility)
-
 	capabilityDefinitions := capability.CapabilityDefinitions
 
-	isCapabilityDefinitionMandatory := capabilityVisibility != CapabilityVisibilityPrivate
-	if len(capabilityDefinitions) == 0 && isCapabilityDefinitionMandatory {
-		return errors.New("when capability resource visibility is public or internal, capability definitions must be provided")
+	capabilityDefinitionTypes := make(map[model.CapabilitySpecType]bool)
+
+	for _, cd := range capabilityDefinitions {
+		capabilityDefinitionType := cd.Type
+		capabilityDefinitionTypes[capabilityDefinitionType] = true
+	}
+
+	mdiCapabilitySpecTypeExists := capabilityDefinitionTypes[model.CapabilitySpecTypeMDICapabilityDefinitionV1]
+	if capability.Type != CapabilityTypeMDICapabilityV1 && mdiCapabilitySpecTypeExists {
+		return errors.New("when capability definition type is `sap.mdo:mdi-capability-definition:v1`, capability type should be `sap.mdo:mdi-capability:v1`")
 	}
 
 	return nil

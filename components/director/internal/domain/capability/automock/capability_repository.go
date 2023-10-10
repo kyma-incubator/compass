@@ -77,6 +77,10 @@ func (_m *CapabilityRepository) GetByID(ctx context.Context, tenantID string, id
 	ret := _m.Called(ctx, tenantID, id)
 
 	var r0 *model.Capability
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Capability, error)); ok {
+		return rf(ctx, tenantID, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Capability); ok {
 		r0 = rf(ctx, tenantID, id)
 	} else {
@@ -85,7 +89,6 @@ func (_m *CapabilityRepository) GetByID(ctx context.Context, tenantID string, id
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantID, id)
 	} else {
@@ -100,6 +103,10 @@ func (_m *CapabilityRepository) GetByIDGlobal(ctx context.Context, id string) (*
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Capability
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Capability, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Capability); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -108,7 +115,6 @@ func (_m *CapabilityRepository) GetByIDGlobal(ctx context.Context, id string) (*
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -123,6 +129,10 @@ func (_m *CapabilityRepository) ListByResourceID(ctx context.Context, tenantID s
 	ret := _m.Called(ctx, tenantID, resourceType, resourceID)
 
 	var r0 []*model.Capability
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type, string) ([]*model.Capability, error)); ok {
+		return rf(ctx, tenantID, resourceType, resourceID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type, string) []*model.Capability); ok {
 		r0 = rf(ctx, tenantID, resourceType, resourceID)
 	} else {
@@ -131,7 +141,6 @@ func (_m *CapabilityRepository) ListByResourceID(ctx context.Context, tenantID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Type, string) error); ok {
 		r1 = rf(ctx, tenantID, resourceType, resourceID)
 	} else {
@@ -169,13 +178,12 @@ func (_m *CapabilityRepository) UpdateGlobal(ctx context.Context, item *model.Ca
 	return r0
 }
 
-type mockConstructorTestingTNewCapabilityRepository interface {
+// NewCapabilityRepository creates a new instance of CapabilityRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCapabilityRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCapabilityRepository creates a new instance of CapabilityRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCapabilityRepository(t mockConstructorTestingTNewCapabilityRepository) *CapabilityRepository {
+}) *CapabilityRepository {
 	mock := &CapabilityRepository{}
 	mock.Mock.Test(t)
 

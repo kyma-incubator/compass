@@ -430,27 +430,11 @@ func TestService_Update(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	spec := "spec"
-	frURL := "foo.bar"
 
 	modelInput := model.CapabilityInput{
 		Name:         "foo",
 		Type:         CapabilityTypeMDICapabilityDefinitionV1,
 		VersionInput: &model.VersionInput{},
-	}
-
-	modelSpecInput := model.SpecInput{
-		Data: &spec,
-		FetchRequest: &model.FetchRequestInput{
-			URL: frURL,
-		},
-	}
-
-	modelSpec := &model.Spec{
-		ID:         id,
-		ObjectType: model.CapabilitySpecReference,
-		ObjectID:   id,
-		Data:       &spec,
 	}
 
 	inputCapabilityModel := mock.MatchedBy(func(capability *model.Capability) bool {
@@ -475,10 +459,8 @@ func TestService_Update(t *testing.T) {
 	testCases := []struct {
 		Name            string
 		RepositoryFn    func() *automock.CapabilityRepository
-		SpecServiceFn   func() *automock.SpecService
 		Input           model.CapabilityInput
 		InputID         string
-		SpecInput       *model.SpecInput
 		DefaultBundleID string
 		ResourceType    resource.Type
 		Ctx             context.Context
@@ -492,15 +474,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctxWithTenant, tenantID, inputCapabilityModel).Return(nil).Once()
 				return repo
 			},
-			SpecServiceFn: func() *automock.SpecService {
-				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctxWithTenant, resource.Application, model.CapabilitySpecReference, id).Return(modelSpec, nil).Once()
-				svc.On("UpdateByReferenceObjectID", ctxWithTenant, id, modelSpecInput, resource.Application, model.CapabilitySpecReference, id).Return(nil).Once()
-				return svc
-			},
 			InputID:      "foo",
 			Input:        modelInput,
-			SpecInput:    &modelSpecInput,
 			ResourceType: resource.Application,
 			ExpectedErr:  nil,
 		},
@@ -512,15 +487,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("UpdateGlobal", ctx, inputCapabilityModel).Return(nil).Once()
 				return repo
 			},
-			SpecServiceFn: func() *automock.SpecService {
-				svc := &automock.SpecService{}
-				svc.On("GetByReferenceObjectID", ctx, resource.ApplicationTemplateVersion, model.CapabilitySpecReference, id).Return(modelSpec, nil).Once()
-				svc.On("UpdateByReferenceObjectID", ctx, id, modelSpecInput, resource.ApplicationTemplateVersion, model.CapabilitySpecReference, id).Return(nil).Once()
-				return svc
-			},
 			InputID:      "foo",
 			Input:        modelInput,
-			SpecInput:    &modelSpecInput,
 			ResourceType: resource.ApplicationTemplateVersion,
 			Ctx:          ctx,
 			ExpectedErr:  nil,
@@ -533,12 +501,8 @@ func TestService_Update(t *testing.T) {
 				repo.On("Update", ctxWithTenant, tenantID, inputCapabilityModel).Return(testErr).Once()
 				return repo
 			},
-			SpecServiceFn: func() *automock.SpecService {
-				return &automock.SpecService{}
-			},
 			InputID:      "foo",
 			Input:        modelInput,
-			SpecInput:    &modelSpecInput,
 			ResourceType: resource.Application,
 			ExpectedErr:  testErr,
 		},
@@ -547,9 +511,8 @@ func TestService_Update(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			repo := testCase.RepositoryFn()
-			specSvc := testCase.SpecServiceFn()
 
-			svc := capability.NewService(repo, nil, specSvc)
+			svc := capability.NewService(repo, nil, nil)
 			svc.SetTimestampGen(func() time.Time { return fixedTimestamp })
 
 			defaultCtx := ctxWithTenant
@@ -558,7 +521,7 @@ func TestService_Update(t *testing.T) {
 			}
 
 			// WHEN
-			err := svc.Update(defaultCtx, testCase.ResourceType, testCase.InputID, testCase.Input, testCase.SpecInput, 0)
+			err := svc.Update(defaultCtx, testCase.ResourceType, testCase.InputID, testCase.Input, 0)
 
 			// then
 			if testCase.ExpectedErr == nil {
@@ -569,13 +532,12 @@ func TestService_Update(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
-			specSvc.AssertExpectations(t)
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := capability.NewService(nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), resource.Application, "", model.CapabilityInput{}, &model.SpecInput{}, 0)
+		err := svc.Update(context.TODO(), resource.Application, "", model.CapabilityInput{}, 0)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

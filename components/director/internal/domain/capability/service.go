@@ -90,7 +90,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Capability, error)
 	return capability, nil
 }
 
-// Create creates Capability.
+// Create creates a Capability.
 func (s *service) Create(ctx context.Context, resourceType resource.Type, resourceID string, packageID *string, in model.CapabilityInput, specs []*model.SpecInput, capabilityHash uint64) (string, error) {
 	id := s.uidService.Generate()
 
@@ -107,7 +107,8 @@ func (s *service) Create(ctx context.Context, resourceType resource.Type, resour
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, specIn *model.SpecInput, capabilityHash uint64) error {
+// Update updates a Capability.
+func (s *service) Update(ctx context.Context, resourceType resource.Type, id string, in model.CapabilityInput, capabilityHash uint64) error {
 	capability, err := s.getCapability(ctx, id, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Capability with ID %s for %s", id, resourceType)
@@ -119,11 +120,6 @@ func (s *service) Update(ctx context.Context, resourceType resource.Type, id str
 	err = s.updateCapability(ctx, capability, resourceType)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Capability with ID %s for %s", id, resourceType)
-	}
-
-	// specs?
-	if specIn != nil {
-		return s.handleSpecsInCapability(ctx, capability.ID, specIn, resourceType)
 	}
 
 	return nil

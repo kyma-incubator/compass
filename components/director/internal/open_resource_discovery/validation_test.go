@@ -4461,14 +4461,6 @@ func TestDocument_ValidateCapability(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `capabilityDefinitions` field for Capability when `visibility` is public or internal",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.Capabilities[0].CapabilityDefinitions = nil
-
-				return []*ord.Document{doc}
-			},
-		}, {
 			Name: "Valid missing `capabilityDefinitions` field for Capability when `visibility` is private",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()

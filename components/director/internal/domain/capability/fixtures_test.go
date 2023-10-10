@@ -26,9 +26,8 @@ const (
 )
 
 var (
-	fixedTimestamp = time.Now()
-	appID          = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-
+	fixedTimestamp       = time.Now()
+	appID                = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	appTemplateVersionID = "fffffffff-ffff-aaaa-ffff-aaaaaaaaaaaa"
 )
 

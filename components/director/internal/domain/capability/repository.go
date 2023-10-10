@@ -135,7 +135,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ca
 	return nil
 }
 
-// CreateGlobal creates a Capability.
+// CreateGlobal creates a Capability without tenant isolation.
 func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.Capability) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -150,7 +150,7 @@ func (r *pgRepository) CreateGlobal(ctx context.Context, item *model.Capability)
 	return nil
 }
 
-// Update updates an Capability.
+// Update updates a Capability.
 func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Capability) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")

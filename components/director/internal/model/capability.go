@@ -58,7 +58,7 @@ type CapabilityInput struct {
 	ReleaseStatus         *string                 `json:"releaseStatus"`
 	Labels                json.RawMessage         `json:"labels"`
 	Visibility            *string                 `json:"visibility"`
-	CapabilityDefinitions []*CapabilityDefinition `json:"capabilityDefinitions"`
+	CapabilityDefinitions []*CapabilityDefinition `json:"definitions"`
 	DocumentationLabels   json.RawMessage         `json:"documentationLabels"`
 	CorrelationIDs        json.RawMessage         `json:"correlationIds,omitempty"`
 
@@ -76,10 +76,12 @@ type CapabilityDefinition struct {
 
 // Validate missing godoc
 func (cd *CapabilityDefinition) Validate() error {
-	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	const CustomTypeRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(cd,
 		validation.Field(&cd.Type, validation.Required, validation.In(CapabilitySpecTypeMDICapabilityDefinitionV1, CapabilitySpecTypeCustom), validation.When(cd.CustomType != "", validation.In(CapabilitySpecTypeCustom))),
-		validation.Field(&cd.CustomType, validation.When(cd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
+		validation.Field(&cd.CustomType, validation.When(cd.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex))),
+			validation.Length(0, 255),
+			validation.When(cd.Type == CapabilitySpecTypeCustom, validation.Required)),
 		validation.Field(&cd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
 			validation.When(cd.Type == CapabilitySpecTypeMDICapabilityDefinitionV1, validation.In(SpecFormatApplicationJSON))),
 		validation.Field(&cd.URL, validation.Required, is.RequestURI),

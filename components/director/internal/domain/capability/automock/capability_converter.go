@@ -46,13 +46,12 @@ func (_m *CapabilityConverter) ToEntity(apiModel *model.Capability) *capability.
 	return r0
 }
 
-type mockConstructorTestingTNewCapabilityConverter interface {
+// NewCapabilityConverter creates a new instance of CapabilityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCapabilityConverter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCapabilityConverter creates a new instance of CapabilityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCapabilityConverter(t mockConstructorTestingTNewCapabilityConverter) *CapabilityConverter {
+}) *CapabilityConverter {
 	mock := &CapabilityConverter{}
 	mock.Mock.Test(t)
 

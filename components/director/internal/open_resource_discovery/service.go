@@ -1442,6 +1442,7 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 	}
 
 	var fetchRequests []*model.FetchRequest
+	// TODO change with lastUpdate
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
 		fetchRequests, err = s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs, resourceType)
 		if err != nil {
