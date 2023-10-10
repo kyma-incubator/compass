@@ -110,7 +110,7 @@ func CreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantA
 		return err
 	}
 
-	insertTenantAccessStmt := fmt.Sprintf(RecursiveCreateTenantAccessCTEQuery, m2mTable, strings.Join(M2MColumns, ", "))
+	insertTenantAccessStmt := fmt.Sprintf(RecursiveUpsertTenantAccessCTEQuery, m2mTable, strings.Join(M2MColumns, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
 	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, tenantAccess)

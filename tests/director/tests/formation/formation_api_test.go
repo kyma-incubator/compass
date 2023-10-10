@@ -127,8 +127,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	secondFormation := "second"
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
-	//secondTenantID := tenant.TestTenants.GetTenantByName(tenant.TestAtomResourceGroup).ExternalTenant
-	secondTenantID := "7e1f2df8-36dc-4e40-8be3-d1555d50c91c"
+	secondTenantID := tenant.TestTenants.GetTenantByName(tenant.TestAtomResourceGroup).ExternalTenant
 
 	t.Log("Create application")
 	app := graphql.ApplicationExt{} // needed so the 'defer' can be above the application creation
