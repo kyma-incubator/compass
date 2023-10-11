@@ -163,7 +163,6 @@ EOF
 function patchKymaServiceMonitorsForMTLS() {
   # Some of the ServiceMonitor MTLS overrides were moved to the Kyma Helm chart overrides
   kymaSvcMonitors=(
-    monitoring-kube-state-metrics
     monitoring-operator
     monitoring-prometheus-pushgateway
     ory-stack-oathkeeper-maester

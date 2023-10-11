@@ -280,9 +280,6 @@ fi
 
 patchJWKS&
 
-echo "Patch the metrics port of the kube state metrics service resource to have 'http-' prefix"
-kubectl get services -n kyma-system monitoring-kube-state-metrics -o yaml | sed 's/name: metrics/name: http-metrics/g' | kubectl apply -f -
-
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
 bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 

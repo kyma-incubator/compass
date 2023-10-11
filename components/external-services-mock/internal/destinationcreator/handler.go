@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/gorilla/mux"
