@@ -152,6 +152,7 @@ func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context,
 		}
 	}
 }
+
 func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
 	// Get the formation with its status
 	t.Logf("Getting formation with ID: %q", formationID)
