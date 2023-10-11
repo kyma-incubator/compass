@@ -534,6 +534,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&api.Direction, validation.In(APIDirectionInbound, APIDirectionMixed, APIDirectionOutbound)),
+		validation.Field(&api.LastUpdate, validation.When(api.LastUpdate != nil, validation.By(isValidDate))),
 	)
 }
 
@@ -612,6 +613,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
+		validation.Field(&event.LastUpdate, validation.When(event.LastUpdate != nil, validation.By(isValidDate))),
 	)
 }
 
@@ -646,6 +648,7 @@ func validateCapabilityInput(capability *model.CapabilityInput) error {
 		validation.Field(&capability.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
+		validation.Field(&capability.LastUpdate, validation.When(capability.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&capability.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 	)
 }

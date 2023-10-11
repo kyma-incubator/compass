@@ -33,6 +33,7 @@ type Capability struct {
 	ResourceHash                 *string
 	DocumentationLabels          json.RawMessage
 	CorrelationIDs               json.RawMessage
+	LastUpdate                   *string
 	*BaseEntity
 }
 
@@ -61,6 +62,7 @@ type CapabilityInput struct {
 	CapabilityDefinitions []*CapabilityDefinition `json:"definitions"`
 	DocumentationLabels   json.RawMessage         `json:"documentationLabels"`
 	CorrelationIDs        json.RawMessage         `json:"correlationIds,omitempty"`
+	LastUpdate            *string
 
 	*VersionInput `hash:"ignore"`
 }
@@ -139,6 +141,7 @@ func (a *CapabilityInput) ToCapability(id string, resourceType resource.Type, re
 		Version:             a.VersionInput.ToVersion(),
 		DocumentationLabels: a.DocumentationLabels,
 		CorrelationIDs:      a.CorrelationIDs,
+		LastUpdate:          a.LastUpdate,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

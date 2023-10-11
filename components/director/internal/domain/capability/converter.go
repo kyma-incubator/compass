@@ -47,6 +47,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Capability {
 		ResourceHash:                 repo.StringPtrFromNullableString(entity.ResourceHash),
 		DocumentationLabels:          repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		CorrelationIDs:               repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		LastUpdate:                   repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -86,6 +87,7 @@ func (c *converter) ToEntity(capabilityModel *model.Capability) *Entity {
 		ResourceHash:                 repo.NewNullableString(capabilityModel.ResourceHash),
 		DocumentationLabels:          repo.NewNullableStringFromJSONRawMessage(capabilityModel.DocumentationLabels),
 		CorrelationIDs:               repo.NewNullableStringFromJSONRawMessage(capabilityModel.CorrelationIDs),
+		LastUpdate:                   repo.NewNullableString(capabilityModel.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        capabilityModel.ID,
 			Ready:     capabilityModel.Ready,

@@ -84,6 +84,7 @@ const (
 	appTemplateName         = "appTemplateName"
 
 	applicationTypeLabelValue = "customType"
+	lastUpdateTimestamp       = "2023-10-11T08:06:56.52Z"
 )
 
 var (
@@ -699,6 +700,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
+				LastUpdate: str.Ptr(lastUpdateTimestamp),
 			},
 			{
 				OrdID:               str.Ptr(capability2ORDID),

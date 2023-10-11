@@ -13,16 +13,17 @@ import (
 )
 
 const (
-	capabilityID                                   = "cccccccccc-cccc-cccc-cccc-cccccccccccc"
-	specID                                         = "sssssssss-ssss-ssss-ssss-ssssssssssss"
-	tenantID                                       = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	externalTenantID                               = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	packageID                                      = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
-	ordID                                          = "com.compass.ord.v1"
-	localTenantID                                  = "localTenantID"
-	resourceHash                                   = "123456"
-	publicVisibility                               = "public"
-	CapabilityTypeMDICapabilityDefinitionV1 string = "sap.mdo:mdi-capability:v1"
+	capabilityID                            = "cccccccccc-cccc-cccc-cccc-cccccccccccc"
+	specID                                  = "sssssssss-ssss-ssss-ssss-ssssssssssss"
+	tenantID                                = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	externalTenantID                        = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	packageID                               = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	ordID                                   = "com.compass.ord.v1"
+	localTenantID                           = "localTenantID"
+	resourceHash                            = "123456"
+	publicVisibility                        = "public"
+	CapabilityTypeMDICapabilityDefinitionV1 = "sap.mdo:mdi-capability:v1"
+	lastUpdateTimestamp                     = "2023-10-11T08:06:56.52Z"
 )
 
 var (
@@ -108,6 +109,7 @@ func fixFullCapabilityModel(capabilityID, name string) (model.Capability, model.
 		ResourceHash:        str.Ptr(resourceHash),
 		DocumentationLabels: json.RawMessage("[]"),
 		CorrelationIDs:      json.RawMessage("[]"),
+		LastUpdate:          str.Ptr(lastUpdateTimestamp),
 		BaseEntity: &model.BaseEntity{
 			ID:        capabilityID,
 			Ready:     true,
@@ -166,6 +168,7 @@ func fixFullEntityCapability(capabilityID, name string) capability.Entity {
 		ResourceHash:        repo.NewValidNullableString(resourceHash),
 		DocumentationLabels: repo.NewValidNullableString("[]"),
 		CorrelationIDs:      repo.NewValidNullableString("[]"),
+		LastUpdate:          repo.NewValidNullableString(lastUpdateTimestamp),
 		BaseEntity: &repo.BaseEntity{
 			ID:        capabilityID,
 			Ready:     true,
@@ -181,7 +184,7 @@ func fixCapabilityColumns() []string {
 	return []string{
 		"id", "app_id", "app_template_version_id", "package_id", "name", "description", "ord_id", "type", "custom_type", "local_tenant_id",
 		"short_description", "system_instance_aware", "tags", "links", "release_status", "labels", "visibility",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids"}
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "resource_hash", "documentation_labels", "correlation_ids", "last_update"}
 }
 
 func fixCapabilityRow(id, name string) []driver.Value {
@@ -189,7 +192,7 @@ func fixCapabilityRow(id, name string) []driver.Value {
 	return []driver.Value{id, appID, repo.NewValidNullableString(""), packageID, name, "desc_" + name, ordID, CapabilityTypeMDICapabilityDefinitionV1, nil, localTenantID,
 		"shortDescription", &boolVar, repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus",
 		repo.NewValidNullableString("[]"), publicVisibility, "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(resourceHash),
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(lastUpdateTimestamp)}
 }
 
 func fixCapabilityRowForAppTemplateVersion(id, name string) []driver.Value {
@@ -197,7 +200,7 @@ func fixCapabilityRowForAppTemplateVersion(id, name string) []driver.Value {
 	return []driver.Value{id, repo.NewValidNullableString(""), appTemplateVersionID, packageID, name, "desc_" + name, ordID, CapabilityTypeMDICapabilityDefinitionV1, nil, localTenantID,
 		"shortDescription", &boolVar, repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus",
 		repo.NewValidNullableString("[]"), publicVisibility, "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(resourceHash),
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(lastUpdateTimestamp)}
 }
 
 func fixCapabilityCreateArgs(id string, capability *model.Capability) []driver.Value {
@@ -205,5 +208,5 @@ func fixCapabilityCreateArgs(id string, capability *model.Capability) []driver.V
 		capability.OrdID, capability.Type, capability.CustomType, capability.LocalTenantID, capability.ShortDescription, capability.SystemInstanceAware, repo.NewNullableStringFromJSONRawMessage(capability.Tags),
 		repo.NewNullableStringFromJSONRawMessage(capability.Links), capability.ReleaseStatus, repo.NewNullableStringFromJSONRawMessage(capability.Labels), capability.Visibility,
 		capability.Version.Value, capability.Version.Deprecated, capability.Version.DeprecatedSince, capability.Version.ForRemoval, capability.Ready, capability.CreatedAt, capability.UpdatedAt, capability.DeletedAt, capability.Error, capability.ResourceHash, repo.NewNullableStringFromJSONRawMessage(capability.DocumentationLabels),
-		repo.NewNullableStringFromJSONRawMessage(capability.CorrelationIDs)}
+		repo.NewNullableStringFromJSONRawMessage(capability.CorrelationIDs), capability.LastUpdate}
 }

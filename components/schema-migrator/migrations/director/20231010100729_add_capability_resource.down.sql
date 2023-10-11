@@ -1,5 +1,6 @@
 BEGIN;
 
+-- Drop views
 DROP VIEW IF EXISTS tags_capabilities;
 DROP VIEW IF EXISTS links_capabilities;
 DROP VIEW IF EXISTS ord_labels_capabilities;
@@ -9,19 +10,23 @@ DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_capabilities;
 DROP VIEW IF EXISTS capability_definitions;
 
+-- Alter table specifications - remove columns capability_def_id, capability_spec_type and capability_spec_format
 ALTER TABLE specifications
     DROP CONSTRAINT specifications_capability_id_fkey,
     DROP COLUMN capability_def_id,
     DROP COLUMN capability_spec_type,
     DROP COLUMN capability_spec_format;
 
+-- Drop types associated with capability specification
 DROP TYPE capability_spec_type;
 DROP TYPE capability_spec_format;
 
+-- Drop table capability
 DROP TABLE IF EXISTS capabilities;
+-- Drop type associated with capability
 DROP TYPE capability_type;
 
-
+-- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, custom_type, created_at)

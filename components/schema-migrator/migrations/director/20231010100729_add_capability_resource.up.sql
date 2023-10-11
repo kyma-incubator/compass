@@ -1,9 +1,12 @@
 BEGIN;
 
+-- Drop view
 DROP VIEW IF EXISTS tenants_specifications;
 
+-- Create db type for Capability Type
 CREATE TYPE capability_type AS ENUM ('custom', 'sap.mdo:mdi-capability:v1');
 
+-- Create table for capabilities
 CREATE TABLE IF NOT EXISTS capabilities
 (
     id                      UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
@@ -43,8 +46,10 @@ CREATE TABLE IF NOT EXISTS capabilities
     error JSONB
 );
 
+-- Create db type for Capability Specification type
 CREATE TYPE capability_spec_type AS ENUM ('custom', 'sap.mdo:mdi-capability-definition:v1');
 
+-- Create db type for Capability Specification format
 CREATE TYPE capability_spec_format AS ENUM (
     'application/json',
     'text/yaml',
@@ -53,12 +58,14 @@ CREATE TYPE capability_spec_format AS ENUM (
     'application/octet-stream'
 );
 
+-- Alter table specifications - add capability_def_id, capability_spec_type and capability_spec_format
 ALTER TABLE specifications
     ADD COLUMN capability_def_id UUID,
     ADD CONSTRAINT specifications_capability_id_fkey FOREIGN KEY (capability_def_id) REFERENCES capabilities (id) ON DELETE CASCADE,
     ADD COLUMN capability_spec_type capability_spec_type,
     ADD COLUMN capability_spec_format capability_spec_format;
 
+-- Create helper views for tags, links, ord_labels, correlation_ids and ord_documentation_labels of Capability
 CREATE VIEW tags_capabilities AS
 SELECT id                  AS capability_id,
        elements.value      AS value
@@ -95,6 +102,7 @@ FROM capabilities,
      jsonb_each(capabilities.documentation_labels) AS expand,
      jsonb_array_elements_text(expand.value) AS elements;
 
+-- Create views tenants_capabilities and capability_definitions
 CREATE VIEW tenants_capabilities
             (tenant_id, formation_id, id, app_id, name, description, type, custom_type, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
@@ -158,6 +166,7 @@ SELECT capability_def_id,
 FROM specifications
 WHERE capability_def_id IS NOT NULL;
 
+-- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
              event_spec_type, capability_def_id, capability_spec_type, capability_spec_format, custom_type, created_at)

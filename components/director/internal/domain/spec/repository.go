@@ -16,7 +16,7 @@ const (
 	specificationsTable = `public.specifications`
 	apiDefIDColumn      = "api_def_id"
 	eventAPIDefIDColumn = "event_def_id"
-	capabilityIDColumn  = "capability_id"
+	capabilityIDColumn  = "capability_def_id"
 	pageSize            = 1
 	cursor              = ""
 )

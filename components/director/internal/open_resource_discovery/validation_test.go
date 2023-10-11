@@ -4081,6 +4081,22 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid format of `lastUpdate` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LastUpdate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lastUpdate` field value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LastUpdate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
 		},
 		// Test invalid entity relations
 
@@ -4600,7 +4616,7 @@ func TestDocument_ValidateCapability(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, // +++ TODO: validation tests for correlation IDs
+		},
 		{
 			Name: "Invalid value for `correlationIDs` field for Capability",
 			DocumentProvider: func() []*ord.Document {
@@ -4642,10 +4658,23 @@ func TestDocument_ValidateCapability(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		},
-		//++
-		//////
-		{
+		}, {
+			Name: "Invalid format of `lastUpdate` field for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].LastUpdate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lastUpdate` field value for Capability",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Capabilities[0].LastUpdate = str.Ptr("string value")
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `version` field for Capability",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5949,6 +5978,22 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].CustomImplementationStandardDescription = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid format of `lastUpdate` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LastUpdate = str.Ptr("0000-00-00T09:35:30+0000")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lastUpdate` field value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LastUpdate = str.Ptr("string value")
 
 				return []*ord.Document{doc}
 			},

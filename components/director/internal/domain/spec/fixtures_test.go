@@ -243,7 +243,7 @@ func fixGQLEventSpecInputWithFetchRequest() *graphql.EventSpecInput {
 }
 
 func fixSpecColumns() []string {
-	return []string{"id", "api_def_id", "event_def_id", "capability_id", "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "capability_spec_format", "capability_spec_type", "custom_type"}
+	return []string{"id", "api_def_id", "event_def_id", "capability_def_id", "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "capability_spec_format", "capability_spec_type", "custom_type"}
 }
 
 func fixAPISpecRow() []driver.Value {
