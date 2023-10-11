@@ -33,10 +33,8 @@ const (
                     SELECT t2.id, t2.parent
                     FROM business_tenant_mappings t2
                              INNER JOIN parents t on t2.id = t.parent)
-			INSERT INTO %s ( %s ) (SELECT parents.id AS tenant_id, :id as id, :owner AS owner FROM parents)`
-
-	// RecursiveUpsertTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
-	RecursiveUpsertTenantAccessCTEQuery = RecursiveCreateTenantAccessCTEQuery + " ON CONFLICT ( tenant_id, id ) DO NOTHING"
+			INSERT INTO %s ( %s ) (SELECT parents.id AS tenant_id, :id as id, :owner AS owner FROM parents)
+			ON CONFLICT ( tenant_id, id ) DO NOTHING`
 
 	// RecursiveDeleteTenantAccessCTEQuery is a recursive SQL query that deletes tenant accesses based on given conditions for a tenant and all its parents.
 	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE parents AS
@@ -103,35 +101,19 @@ func CreateSingleTenantAccess(ctx context.Context, m2mTable string, tenantAccess
 }
 
 // CreateTenantAccessRecursively creates the given tenantAccess in the provided m2mTable while making sure to recursively
-// add it to all the parents of the given tenant.
+// add it to all the parents of the given tenant. In case of conflict the entry is not updated
 func CreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	insertTenantAccessStmt := fmt.Sprintf(RecursiveUpsertTenantAccessCTEQuery, m2mTable, strings.Join(M2MColumns, ", "))
+	insertTenantAccessStmt := fmt.Sprintf(RecursiveCreateTenantAccessCTEQuery, m2mTable, strings.Join(M2MColumns, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
 	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, tenantAccess)
 
 	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
-}
-
-// UpsertTenantAccessRecursively upserts the given tenantAccess in the provided m2mTable while making sure to recursively
-// add it to all the parents of the given tenant.
-func UpsertTenantAccessRecursively(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	insertTenantAccessStmt := fmt.Sprintf(RecursiveUpsertTenantAccessCTEQuery, m2mTable, strings.Join(M2MColumns, ", "))
-
-	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
-	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, tenantAccess)
-
-	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Create, "while upserting tenant access record to '%s' table", m2mTable)
 }
 
 // DeleteTenantAccessRecursively deletes all the accesses to the provided resource IDs for the given tenant and all its parents.
