@@ -19,7 +19,6 @@ package tests
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -185,11 +184,6 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.Equal(t, "name1", appResp.Name)
 
 	require.ElementsMatch(t, expectedApps, actualApps)
-	empJSON, err := json.MarshalIndent(expectedApps, "", "  ")
-	fmt.Printf("Expected\n %s\n", string(empJSON))
-
-	empJSON, err = json.MarshalIndent(actualApps, "", "  ")
-	fmt.Printf("Actual\n %s\n", string(empJSON))
 }
 
 func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
