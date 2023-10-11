@@ -91,7 +91,7 @@ func (o *AddConstraintOperation) Execute(t *testing.T, ctx context.Context, gqlC
 	constraint := fixtures.CreateFormationConstraint(t, ctx, gqlClient, in)
 	o.constraintID = constraint.ID
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, gqlClient, constraint.ID, formationTemplateID)
-	t.Logf("Created formation constraint")
+	t.Logf("Created formation constraint with name: %s with type: %s for operation: %s", constraint.Name, constraint.ConstraintType, constraint.TargetOperation)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
 	}

@@ -21,7 +21,7 @@ type ApplicationProvider struct {
 }
 
 func NewApplicationProvider(applicationType, namePlaceholder, name, displayNamePlaceholder, displayName, tenantID string) *ApplicationProvider {
-	a := &ApplicationProvider{
+	p := &ApplicationProvider{
 		applicationType:        applicationType,
 		namePlaceholder:        namePlaceholder,
 		name:                   name,
@@ -30,22 +30,22 @@ func NewApplicationProvider(applicationType, namePlaceholder, name, displayNameP
 		tenantID:               tenantID,
 	}
 
-	return a
+	return p
 }
 
-func (a *ApplicationProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
-	appFromTmplSrc := fixtures.FixApplicationFromTemplateInput(a.applicationType, a.namePlaceholder, a.name, a.displayNamePlaceholder, a.displayName)
+func (p *ApplicationProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
+	appFromTmplSrc := fixtures.FixApplicationFromTemplateInput(p.applicationType, p.namePlaceholder, p.name, p.displayNamePlaceholder, p.displayName)
 	appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
 	require.NoError(t, err)
 	createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, a.tenantID, createAppFromTmplFirstRequest, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, p.tenantID, createAppFromTmplFirstRequest, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
-	a.app = app
+	p.app = app
 	return app.ID
 }
 
-func (a *ApplicationProvider) TearDown(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.CleanupApplication(t, ctx, gqlClient, a.tenantID, &a.app)
+func (p *ApplicationProvider) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+	fixtures.CleanupApplication(t, ctx, gqlClient, p.tenantID, &p.app)
 }

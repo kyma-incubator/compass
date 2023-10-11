@@ -22,7 +22,7 @@ type ApplicationTemplateProvider struct {
 }
 
 func NewApplicationTemplateProvider(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, tenantID string, webhookInput *graphql.WebhookInput) *ApplicationTemplateProvider {
-	a := &ApplicationTemplateProvider{
+	p := &ApplicationTemplateProvider{
 		applicationType:         applicationType,
 		localTenantID:           localTenantID,
 		region:                  region,
@@ -33,21 +33,52 @@ func NewApplicationTemplateProvider(applicationType, localTenantID, region, name
 		applicationWebhookInput: webhookInput,
 	}
 
-	return a
+	return p
 }
 
-func (a *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
-	in := fixtures.FixApplicationTemplateWithWebhookInput(a.applicationType, a.localTenantID, a.region, a.namespace, a.namePlaceholder, a.displayNamePlaceholder, a.applicationWebhookInput)
-	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, a.tenantID, in)
+func (p *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
+	in := fixtures.FixApplicationTemplateWithWebhookInput(p.applicationType, p.localTenantID, p.region, p.namespace, p.namePlaceholder, p.displayNamePlaceholder, p.applicationWebhookInput)
+	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, p.tenantID, in)
 	require.NoError(t, err)
-	a.applicationTemplate = appTpl
+	p.applicationTemplate = appTpl
 	return appTpl.ID
 }
 
-func (a *ApplicationTemplateProvider) TearDown(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.CleanupApplicationTemplate(t, ctx, gqlClient, a.tenantID, a.applicationTemplate)
+func (p *ApplicationTemplateProvider) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+	fixtures.CleanupApplicationTemplate(t, ctx, gqlClient, p.tenantID, p.applicationTemplate)
 }
 
-func (a *ApplicationTemplateProvider) GetResource() Resource {
-	return NewApplicationTemplateParticipant(a.applicationTemplate)
+func (p *ApplicationTemplateProvider) GetResource() Resource {
+	return NewApplicationTemplateResource(p.applicationTemplate)
+}
+
+type ApplicationTemplateResource struct {
+	tpl graphql.ApplicationTemplate
+}
+
+func NewApplicationTemplateResource(tpl graphql.ApplicationTemplate) *ApplicationTemplateResource {
+	return &ApplicationTemplateResource{
+		tpl: tpl,
+	}
+}
+
+func (p *ApplicationTemplateResource) GetType() graphql.ResourceType {
+	return graphql.ResourceTypeApplication
+}
+
+func (p *ApplicationTemplateResource) GetName() string {
+	return p.tpl.Name
+}
+
+// GetArtifactKind used only for runtimes, otherwise return empty
+func (p *ApplicationTemplateResource) GetArtifactKind() *graphql.ArtifactType {
+	return nil
+}
+
+func (p *ApplicationTemplateResource) GetDisplayName() *string {
+	return nil
+}
+
+func (p *ApplicationTemplateResource) GetID() string {
+	return p.tpl.ID
 }

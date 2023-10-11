@@ -17,12 +17,15 @@ type FormationAssignmentsAsyncAsserter struct {
 }
 
 func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string, delay int64) *FormationAssignmentsAsyncAsserter {
-	f := FormationAssignmentsAsyncAsserter{}
-	f.expectations = expectations
-	f.expectedAssignmentsCount = expectedAssignmentsCount
-	f.certSecuredGraphQLClient = certSecuredGraphQLClient
-	f.tenantID = tenantID
-	f.delay = delay
+	f := FormationAssignmentsAsyncAsserter{
+		FormationAssignmentsAsserter: FormationAssignmentsAsserter{
+			expectations:             expectations,
+			expectedAssignmentsCount: expectedAssignmentsCount,
+			certSecuredGraphQLClient: certSecuredGraphQLClient,
+			tenantID:                 tenantID,
+		},
+		delay: delay,
+	}
 	return &f
 }
 

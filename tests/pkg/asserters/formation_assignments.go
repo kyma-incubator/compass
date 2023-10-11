@@ -15,7 +15,6 @@ type FormationAssignmentsAsserter struct {
 	expectedAssignmentsCount int
 	certSecuredGraphQLClient *graphql.Client
 	tenantID                 string
-	delay                    int
 }
 
 func NewFormationAssignmentAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsserter {

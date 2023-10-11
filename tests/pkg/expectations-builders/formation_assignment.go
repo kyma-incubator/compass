@@ -46,7 +46,7 @@ func (b *FAExpectationsBuilder) WithParticipant(participantID string) *FAExpecta
 	}
 
 	currentParticipants := b.getCurrentParticipants()
-	b.expectations[participantID] = make(map[string]fixtures.AssignmentState, len(currentParticipants))
+	b.expectations[participantID] = make(map[string]fixtures.AssignmentState, len(currentParticipants)+1)
 	b.expectations[participantID][participantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
 	for _, participant := range currentParticipants {
 		b.expectations[participantID][participant] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}

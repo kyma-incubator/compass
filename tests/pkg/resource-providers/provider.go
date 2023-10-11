@@ -8,5 +8,5 @@ import (
 
 type Provider interface {
 	Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string
-	TearDown(t *testing.T, ctx context.Context, gqlClient *gcli.Client)
+	Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client)
 }

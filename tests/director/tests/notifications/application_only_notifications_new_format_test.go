@@ -89,7 +89,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 	t.Logf("Create application template for type: %q", applicationType1)
 	appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil)
-	defer appTemplateProvider.TearDown(t, ctx, oauthGraphQLClient)
+	defer appTemplateProvider.Cleanup(t, ctx, oauthGraphQLClient)
 	appTplID := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
 	internalConsumerID := appTplID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 
@@ -118,28 +118,28 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	applicationType2 := "app-type-2"
 	t.Logf("Create application template for type %q", applicationType2)
 	appTemplateProvider2 := resource_providers.NewApplicationTemplateProvider(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil)
-	defer appTemplateProvider2.TearDown(t, ctx, oauthGraphQLClient)
+	defer appTemplateProvider2.Cleanup(t, ctx, oauthGraphQLClient)
 	appTemplateProvider2.Provide(t, ctx, oauthGraphQLClient)
 
 	ftProvider := resource_providers.NewFormationTemplateCreator(formationTemplateName)
-	defer ftProvider.TearDown(t, ctx, certSecuredGraphQLClient)
+	defer ftProvider.Cleanup(t, ctx, certSecuredGraphQLClient)
 	ftplID := ftProvider.WithSupportedResources(appTemplateProvider.GetResource(), appTemplateProvider2.GetResource()).WithLeadingProductIDs([]string{internalConsumerID}).Provide(t, ctx, certSecuredGraphQLClient)
 	ctx = context.WithValue(ctx, context_keys.FormationTemplateIDKey, ftplID)
 
 	t.Logf("Create application 1 from template %q", applicationType1)
 	appProvider1 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
-	defer appProvider1.TearDown(t, ctx, certSecuredGraphQLClient)
+	defer appProvider1.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app1ID := appProvider1.Provide(t, ctx, certSecuredGraphQLClient)
 
 	t.Logf("Create application 2 from template %q", applicationType2)
 	appProvider2 := resource_providers.NewApplicationProvider(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
-	defer appProvider2.TearDown(t, ctx, certSecuredGraphQLClient)
+	defer appProvider2.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app2ID := appProvider2.Provide(t, ctx, certSecuredGraphQLClient)
 
 	formationName := "app-to-app-formation-name"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTemplateName)
 	formationProvider := resource_providers.NewFormationProvider(formationName, tnt, &formationTemplateName)
-	defer formationProvider.TearDown(t, ctx, certSecuredGraphQLClient)
+	defer formationProvider.Cleanup(t, ctx, certSecuredGraphQLClient)
 	formationID := formationProvider.Provide(t, ctx, certSecuredGraphQLClient)
 	ctx = context.WithValue(ctx, context_keys.FormationIDKey, formationID)
 	ctx = context.WithValue(ctx, context_keys.FormationNameKey, formationName)
@@ -230,7 +230,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		//constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
 		op := operations.NewAddConstraintOperation("mutate").
 			WithTargetOperation(graphql.TargetOperationNotificationStatusReturned).
 			WithOperator("ConfigMutator").

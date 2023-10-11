@@ -10,24 +10,24 @@ import (
 	"testing"
 )
 
-type UnassignAppToFormationOperation struct {
+type UnassignAppFromFormationOperation struct {
 	applicationID string
 	tenantID      string
 	asserters     []asserters.Asserter
 }
 
-func NewUnassignAppToFormationOperation(applicationID string, tenantID string) *UnassignAppToFormationOperation {
-	return &UnassignAppToFormationOperation{applicationID: applicationID, tenantID: tenantID}
+func NewUnassignAppToFormationOperation(applicationID string, tenantID string) *UnassignAppFromFormationOperation {
+	return &UnassignAppFromFormationOperation{applicationID: applicationID, tenantID: tenantID}
 }
 
-func (o *UnassignAppToFormationOperation) WithAsserters(asserters ...asserters.Asserter) *UnassignAppToFormationOperation {
+func (o *UnassignAppFromFormationOperation) WithAsserters(asserters ...asserters.Asserter) *UnassignAppFromFormationOperation {
 	for i, _ := range asserters {
 		o.asserters = append(o.asserters, asserters[i])
 	}
 	return o
 }
 
-func (o *UnassignAppToFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+func (o *UnassignAppFromFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
 	formationName := ctx.Value(context_keys.FormationNameKey).(string)
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
 	for _, asserter := range o.asserters {
@@ -35,10 +35,10 @@ func (o *UnassignAppToFormationOperation) Execute(t *testing.T, ctx context.Cont
 	}
 }
 
-func (o *UnassignAppToFormationOperation) Cleanup(_ *testing.T, _ context.Context, _ *gcli.Client) {
+func (o *UnassignAppFromFormationOperation) Cleanup(_ *testing.T, _ context.Context, _ *gcli.Client) {
 	//nothing to defer
 }
 
-func (o *UnassignAppToFormationOperation) Operation() Operation {
+func (o *UnassignAppFromFormationOperation) Operation() Operation {
 	return o
 }
