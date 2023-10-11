@@ -155,24 +155,29 @@ func (c *Client) buildFilter() map[string]string {
 	var filterBuilder FilterBuilder
 
 	for _, at := range ApplicationTemplates {
-		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
+		appTemplateLblFilter, ok := at.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}
 
-		lblToArr, ok := lbl.Value.([]interface{})
+		appTemplateLblFilterArr, ok := appTemplateLblFilter.Value.([]interface{})
 		if !ok {
 			continue
 		}
 
-		for _, lblStr := range lblToArr {
-			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblStr.(string))
+		for _, lbl := range appTemplateLblFilterArr {
+			appTemplateLblStr, ok := lbl.(string)
+			if !ok {
+				continue
+			}
+
+			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", appTemplateLblStr)
 
 			lblExists := false
 			minTime := time.Now()
 
 			for _, systemTimestamps := range SystemSynchronizationTimestamps {
-				if timestamp, ok := systemTimestamps[lblStr.(string)]; ok {
+				if timestamp, ok := systemTimestamps[appTemplateLblStr]; ok {
 					lblExists = true
 					if timestamp.LastSyncTimestamp.Before(minTime) {
 						minTime = timestamp.LastSyncTimestamp
