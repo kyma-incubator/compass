@@ -389,7 +389,15 @@ func (c *Client) sendRequestWithRetry(req *http.Request) (*http.Response, error)
 			return errors.Wrap(err, "failed to read response body")
 		}
 		return errors.Errorf("request failed with status code %d, error message: %v", res.StatusCode, string(body))
-	}, retry.Attempts(c.apiConfig.RetryAttempts), retry.Delay(c.apiConfig.RetryInterval))
+	},
+		retry.Attempts(c.apiConfig.RetryAttempts),
+		retry.Delay(c.apiConfig.RetryInterval),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer") ||
+				strings.Contains(err.Error(), fmt.Sprintf("status code %d", http.StatusInternalServerError))
+		}))
 
 	return response, err
 }
