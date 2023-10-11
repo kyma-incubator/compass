@@ -135,7 +135,7 @@ global:
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3365"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
@@ -155,7 +155,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3369"
+      version: "PR-3365"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/

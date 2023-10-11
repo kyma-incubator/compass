@@ -43,20 +43,24 @@ func (he *HTTPExecutor) WithAcceptableStatusCodes(statusCodes []int) {
 func (he *HTTPExecutor) Execute(doRequest ExecutableHTTPFunc) (*http.Response, error) {
 	var resp *http.Response
 	var err error
-	err = retry.Do(func() error {
-		resp, err = doRequest()
-		if err != nil {
-			return err
-		}
-
-		for _, code := range he.acceptableStatusCodes {
-			if resp.StatusCode == code {
-				return nil
+	err = retry.Do(
+		func() error {
+			resp, err = doRequest()
+			if err != nil {
+				return err
 			}
-		}
 
-		return errors.New(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
-	}, retry.Attempts(he.attempts), retry.Delay(he.delay))
+			for _, code := range he.acceptableStatusCodes {
+				if resp.StatusCode == code {
+					return nil
+				}
+			}
+
+			return errors.New(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
+		},
+		retry.Attempts(he.attempts),
+		retry.Delay(he.delay),
+	)
 
 	return resp, err
 }

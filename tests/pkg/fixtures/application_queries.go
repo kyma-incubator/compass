@@ -186,7 +186,14 @@ func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli
 		}
 		return nil
 	}
-	err := retry.Do(deleteApplicationFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	err := retry.Do(deleteApplicationFunc,
+		retry.Attempts(retryAttempts),
+		retry.Delay(retryDelayMilliseconds*time.Millisecond),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "connection reset by peer")
+		}))
 	require.NoError(t, err)
 }
 
