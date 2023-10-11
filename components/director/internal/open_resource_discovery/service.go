@@ -1443,12 +1443,12 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 
 	var fetchRequests []*model.FetchRequest
 
-	shouldFetchSpec, err := check(api.LastUpdate, apisFromDB[i].LastUpdate)
+	shouldFetchSpecs, err := checkIfShouldFetchSpecs(api.LastUpdate, apisFromDB[i].LastUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	if shouldFetchSpec {
+	if shouldFetchSpecs {
 		fetchRequests, err = s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs, resourceType)
 		if err != nil {
 			return nil, err
@@ -1460,24 +1460,6 @@ func (s *Service) resyncAPI(ctx context.Context, resourceType directorresource.T
 		}
 	}
 	return fetchRequests, nil
-}
-
-func check(lastUpdateFromDocString, lastUpdateFromDBString *string) (bool, error) {
-	if lastUpdateFromDocString == nil || lastUpdateFromDBString == nil {
-		return true, nil
-	}
-
-	lastUpdateFromDocTime, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateFromDocString))
-	if err != nil {
-		return false, err
-	}
-
-	lastUpdateFromDBTime, _ := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateFromDBString))
-	if err != nil {
-		return false, err
-	}
-
-	return lastUpdateFromDocTime.After(lastUpdateFromDBTime), nil
 }
 
 func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource.Type, resourceID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput, eventHash uint64) ([]*model.FetchRequest, error) {
@@ -1547,12 +1529,12 @@ func (s *Service) resyncEvent(ctx context.Context, resourceType directorresource
 	}
 
 	var fetchRequests []*model.FetchRequest
-	shouldFetchSpec, err := check(event.LastUpdate, eventsFromDB[i].LastUpdate)
+	shouldFetchSpecs, err := checkIfShouldFetchSpecs(event.LastUpdate, eventsFromDB[i].LastUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	if shouldFetchSpec {
+	if shouldFetchSpecs {
 		fetchRequests, err = s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs, resourceType)
 		if err != nil {
 			return nil, err
@@ -1605,12 +1587,12 @@ func (s *Service) resyncCapability(ctx context.Context, resourceType directorres
 	}
 
 	var fetchRequests []*model.FetchRequest
-	shouldFetchSpec, err := check(capability.LastUpdate, capabilitiesFromDB[i].LastUpdate)
+	shouldFetchSpecs, err := checkIfShouldFetchSpecs(capability.LastUpdate, capabilitiesFromDB[i].LastUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	if shouldFetchSpec {
+	if shouldFetchSpecs {
 		fetchRequests, err = s.resyncSpecs(ctx, model.CapabilitySpecReference, capabilitiesFromDB[i].ID, specs, resourceType)
 		if err != nil {
 			return nil, err
@@ -1622,6 +1604,24 @@ func (s *Service) resyncCapability(ctx context.Context, resourceType directorres
 		}
 	}
 	return fetchRequests, nil
+}
+
+func checkIfShouldFetchSpecs(lastUpdateFromDocString, lastUpdateFromDBString *string) (bool, error) {
+	if lastUpdateFromDocString == nil || lastUpdateFromDBString == nil {
+		return true, nil
+	}
+
+	lastUpdateFromDocTime, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateFromDocString))
+	if err != nil {
+		return false, err
+	}
+
+	lastUpdateFromDBTime, _ := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateFromDBString))
+	if err != nil {
+		return false, err
+	}
+
+	return lastUpdateFromDocTime.After(lastUpdateFromDBTime), nil
 }
 
 func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
