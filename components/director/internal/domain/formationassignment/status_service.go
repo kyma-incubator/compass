@@ -44,7 +44,13 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDB.State, strconv.Quote(string(faFromDB.Value)))
+	var lastFormationAssignmentState string
+	if faFromDB.Value == nil {
+		lastFormationAssignmentState = ""
+	} else {
+		lastFormationAssignmentState = strconv.Quote(string(faFromDB.Value))
+	}
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, faFromDB.State, lastFormationAssignmentState)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}
@@ -99,7 +105,12 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while getting formation assignment with id %q for tenant with id %q", id, tenantID)
 	}
 	faStateFromDB := fa.State
-	faValueFromDB := strconv.Quote(string(fa.Value))
+	var faValueFromDB string
+	if fa.Value == nil {
+		faValueFromDB = ""
+	} else {
+		faValueFromDB = strconv.Quote(string(fa.Value))
+	}
 
 	fa.State = string(model.ReadyAssignmentState)
 	fa.Value = nil

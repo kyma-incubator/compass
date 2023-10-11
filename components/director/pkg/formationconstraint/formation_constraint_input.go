@@ -50,8 +50,6 @@ type DestinationCreatorInput struct {
 // ConfigMutatorInput input for ConfigMutator operator
 type ConfigMutatorInput struct {
 	State                                  *string                  `json:"state"`
-	LastFormationAssignmentState           string                   `json:"last_formation_assignment_state"`
-	LastFormationAssignmentConfiguration   string                   `json:"last_formation_assignment_configuration"`
 	Tenant                                 string                   `json:"tenant"`
 	OnlyForSourceSubtypes                  []string                 `json:"only_for_source_subtypes"`
 	Configuration                          *string                  `json:"configuration"`
