@@ -58,6 +58,7 @@ const (
 	RuntimeContextID        = "rt-ctx-id"
 	RuntimeContext2ID       = "rt-ctx-id-2"
 	FormationID             = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
+	FormationID2            = "119f7e1f-dab1-4660-a7eb-a57c179ec4db"
 
 	// Webhook IDs
 	WebhookID  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
