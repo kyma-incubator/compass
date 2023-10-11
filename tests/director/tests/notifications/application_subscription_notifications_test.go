@@ -318,8 +318,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			// first app
 			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
 			asyncCallbackWebhookMode := graphql.WebhookModeAsyncCallback
-			urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/destinations/12/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
+			urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/destinations/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\":\\\"{{.Body.error}}\\\",\\\"success_status_code\\\":202}"
 
 			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication)
@@ -465,7 +465,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				},
 			}
 
-			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID, 15)
+			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			t.Logf("Assert formation assignment notifications for %s operation...", assignOperation)
@@ -475,14 +475,16 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			validateFormationNameInAssignmentNotification(t, notificationsForApp1Tenant.Array()[0], formationName)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp1Tenant.Array(), []*applicationFormationExpectations{
 				{
-					op:            assignOperation,
-					formationID:   formation.ID,
-					objectID:      app1.ID,
-					localTenantID: subscriptionConsumerTenantID,
-					objectRegion:  appRegion,
-					configuration: "",
-					tenant:        subscriptionConsumerAccountID,
-					customerID:    emptyParentCustomerID,
+					op:                  assignOperation,
+					formationID:         formation.ID,
+					objectID:            app1.ID,
+					localTenantID:       subscriptionConsumerTenantID,
+					objectRegion:        appRegion,
+					configuration:       "",
+					tenant:              subscriptionConsumerAccountID,
+					customerID:          emptyParentCustomerID,
+					receiverTenantState: initialAssignmentState,
+					assignedTenantState: initialAssignmentState,
 				},
 				{
 					op:                                     assignOperation,
@@ -493,6 +495,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					configuration:                          destinationDetailsConfig,
 					tenant:                                 subscriptionConsumerAccountID,
 					customerID:                             emptyParentCustomerID,
+					receiverTenantState:                    configPendingAssignmentState,
+					assignedTenantState:                    readyAssignmentState,
 					shouldRemoveDestinationCertificateData: true,
 				},
 			})
@@ -501,14 +505,16 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			validateFormationNameInAssignmentNotification(t, notificationsForApp2Tenant.Array()[0], formationName)
 			assertExpectationsForApplicationNotifications(t, notificationsForApp2Tenant.Array(), []*applicationFormationExpectations{
 				{
-					op:            assignOperation,
-					formationID:   formation.ID,
-					objectID:      app2.ID,
-					localTenantID: localTenantID2,
-					objectRegion:  appRegion,
-					configuration: "",
-					tenant:        subscriptionConsumerAccountID,
-					customerID:    emptyParentCustomerID,
+					op:                  assignOperation,
+					formationID:         formation.ID,
+					objectID:            app2.ID,
+					localTenantID:       localTenantID2,
+					objectRegion:        appRegion,
+					configuration:       "",
+					tenant:              subscriptionConsumerAccountID,
+					customerID:          emptyParentCustomerID,
+					receiverTenantState: initialAssignmentState,
+					assignedTenantState: configPendingAssignmentState,
 				},
 			})
 
@@ -538,28 +544,33 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
+			unassignStartTime := time.Now()
 			var unassignFormation graphql.Formation
 			t.Logf("Unassign Application 1 from formation %s", formationName)
 			unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, graphql.FormationObjectTypeApplication.String(), formationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 			require.NoError(t, err)
 			require.Equal(t, formationName, unassignFormation.Name)
+			unassignDuration := time.Since(unassignStartTime)
 
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {
-					app2.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
-				},
-				app2.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				},
+			// assert the intermediate FA state only if the unassign operation duration is within the fixed tenant mapping async delay
+			if unassignDuration < time.Second*time.Duration(conf.TenantMappingAsyncResponseDelay) {
+				expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+					app1.ID: {
+						app2.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
+					},
+					app2.ID: {
+						app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					},
+				}
+
+				t.Logf("Assert formation assignments intermediate state during %s operation of the first app...", unassignOperation)
+				assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignmentsBySourceID)
+				// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+				assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+				require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
+				require.Empty(t, formation.Error)
 			}
-
-			t.Logf("Assert formation assignments during %s operation of the first app...", unassignOperation)
-			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignmentsBySourceID)
-			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
-			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
-			require.Empty(t, formation.Error)
 
 			t.Logf("Assert destinations and destination certificates are deleted as part of the unassign operation...")
 			assertNoDestinationIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, "", destinationProviderToken)
@@ -575,7 +586,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 				},
 			}
-			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID, 15)
+			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 			t.Logf("Assert formation assignment notifications for %s operation of the first app...", unassignOperation)
@@ -584,13 +595,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			notificationsForApp1 := gjson.GetBytes(body, subscriptionConsumerTenantID)
 			unassignNotificationForApp1 := notificationsForApp1.Array()[0]
 			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp1, formationName)
-			assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, subscriptionConsumerTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotification(t, unassignNotificationForApp1, unassignOperation, formation.ID, app2.ID, app1.ID, readyAssignmentState, readyAssignmentState, subscriptionConsumerTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			assertNotificationsCountForTenant(t, body, localTenantID2, 1)
 			notificationsForApp2 := gjson.GetBytes(body, localTenantID2)
 			unassignNotificationForApp2 := notificationsForApp2.Array()[0]
 			validateFormationNameInAssignmentNotification(t, unassignNotificationForApp2, formationName)
-			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+			assertFormationAssignmentsNotification(t, unassignNotificationForApp2, unassignOperation, formation.ID, app1.ID, app2.ID, readyAssignmentState, readyAssignmentState, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 			t.Logf("Unassign Application 2 from formation %s", formationName)
 			unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, graphql.FormationObjectTypeApplication.String(), formationName)

@@ -2620,18 +2620,18 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		Version:    0,
 	}
 
-	formationAssignments := []*model.FormationAssignment{
-		fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState),
-		fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorFormationState),
-		fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingFormationState),
-		fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorFormationState),
-	}
-	formationAssignmentsInInitialState := []*model.FormationAssignment{
-		fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState),
-		fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.InitialFormationState),
-		fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.InitialFormationState),
-		fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.InitialFormationState),
-	}
+	fa1 := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
+	fa2 := fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorFormationState)
+	fa3 := fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingFormationState)
+	fa4 := fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorFormationState)
+	formationAssignments := []*model.FormationAssignment{fa1, fa2, fa3, fa4}
+
+	formationAssignmentsInDeletingState := cloneFormationAssignments(formationAssignments)
+	setAssignmentsToState(model.DeletingAssignmentState, formationAssignmentsInDeletingState...)
+
+	formationAssignmentsInInitialState := cloneFormationAssignments(formationAssignments)
+	setAssignmentsToState(model.InitialAssignmentState, formationAssignmentsInInitialState...)
+
 	reverseAssignment := &model.FormationAssignment{
 		ID:          "id1",
 		FormationID: FormationID,
@@ -2642,6 +2642,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		State:       string(model.ReadyAssignmentState),
 	}
 
+	webhookModeAsyncCallback := graphql.WebhookModeAsyncCallback
 	notificationsForAssignments := []*webhookclient.FormationAssignmentNotificationRequest{
 		{
 			Webhook: graphql.Webhook{
@@ -2655,7 +2656,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		{
 			Webhook: graphql.Webhook{
-				ID: Webhook3ID,
+				ID:   Webhook3ID,
+				Mode: &webhookModeAsyncCallback,
 			},
 		},
 		{
@@ -2687,6 +2689,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 
 	testCases := []struct {
 		Name                                     string
+		FormationAssignments                     []*model.FormationAssignment
 		ShouldReset                              bool
 		TxFn                                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		LabelServiceFn                           func() *automock.LabelService
@@ -2705,8 +2708,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	}{
 		// Business logic tests for tenant mapping notifications only
 		{
-			Name: "success when resynchronization is successful and there are leftover formation assignments",
-			TxFn: txGen.ThatSucceedsTwice,
+			Name:                 "success when resynchronization is successful and there are leftover formation assignments",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -2721,6 +2727,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 				return svc
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
@@ -2738,8 +2746,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 		{
-			Name: "success when resynchronization is successful and there no left formation assignments should unassign",
-			TxFn: txGen.ThatSucceedsTwice,
+			Name:                 "success when resynchronization is successful and there are NO left formation assignments should unassign",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -2754,6 +2765,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return(nil, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 				return svc
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
@@ -2783,9 +2796,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 		{
-			Name: "returns error when failing unassign formation",
+			Name:                 "returns error when failing unassign formation",
+			FormationAssignments: formationAssignments,
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2801,6 +2815,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return(nil, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 				return svc
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
@@ -2908,8 +2924,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("ProcessFormationAssignmentPairWithReset", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1], true).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
-
-				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 
 				return svc
 			},
@@ -2929,9 +2945,88 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedErrMessage: transactionError.Error(),
 		},
 		{
-			Name: "returns error when failing to unassign from formation after resynchronizing",
+			Name:                 "returns error when failing to begin transaction after sending notifications",
+			FormationAssignments: formationAssignments,
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(2)
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+
+				for _, fa := range formationAssignments {
+					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+				}
+
+				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
+				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
+
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: transactionError.Error(),
+		},
+		{
+			Name:                 "returns error when failing to commit transaction after checking for unassign",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(2)
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+
+				for _, fa := range formationAssignments {
+					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+				}
+
+				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[0]).Return(false, nil).Once()
+				svc.On("ProcessFormationAssignmentPair", txtest.CtxWithDBMatcher(), formationAssignmentPairs[1]).Return(false, nil).Once()
+				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[2]).Return(false, nil).Once()
+				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
+
+				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
+
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: transactionError.Error(),
+		},
+		{
+			Name:                 "returns error when failing to unassign from formation after resynchronizing",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2947,6 +3042,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{}, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 
 				return svc
 			},
@@ -2971,9 +3068,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "returns error when failing to list formation assignments for participant",
+			Name:                 "returns error when failing to list formation assignments for participant",
+			FormationAssignments: formationAssignments,
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2989,6 +3087,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, mock.Anything).Return(nil, testErr).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 				return svc
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
@@ -3016,8 +3116,103 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "returns error when failing processing formation assignments fails",
-			TxFn: txGen.ThatSucceedsTwice,
+			Name: "Error when updating formation assignment to deleting state in case of async_callback webhook",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+
+				for i := 0; i < len(formationAssignments)-1; i++ {
+					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[i].Source, formationAssignments[i].Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+				}
+
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignments[2]).Return(testErr).Once()
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:                 "Error when committing the first transaction",
+			FormationAssignments: formationAssignments,
+			TxFn:                 txGen.ThatFailsOnCommit,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+
+				for _, fa := range formationAssignments {
+					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+				}
+
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: transactionError.Error(),
+		},
+		{
+			Name:                 "Error when the second transaction fail to begin",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(1)
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+
+				for _, fa := range formationAssignments {
+					svc.On("GetReverseBySourceAndTarget", txtest.CtxWithDBMatcher(), FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, "")).Once()
+				}
+
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
+				return svc
+			},
+			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
+				svc := &automock.FormationAssignmentNotificationsService{}
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[0], model.AssignFormation).Return(notificationsForAssignments[0], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[1], model.AssignFormation).Return(notificationsForAssignments[1], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[2], model.UnassignFormation).Return(notificationsForAssignments[2], nil).Once()
+				svc.On("GenerateFormationAssignmentNotification", txtest.CtxWithDBMatcher(), formationAssignments[3], model.UnassignFormation).Return(notificationsForAssignments[3], nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: transactionError.Error(),
+		},
+		{
+			Name:                 "returns error when failing processing formation assignments fails",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
@@ -3032,6 +3227,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, testErr).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 				return svc
 			},
 			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
@@ -3145,9 +3342,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		// Business logic tests for formation and tenant mapping notifications
 		{
-			Name: "success when both formation and formation assignment resynchronization are successful and there no left formation assignments should unassign",
+			Name:                 "success when both formation and formation assignment resynchronization are successful and there no left formation assignments should unassign",
+			FormationAssignments: formationAssignments,
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
+				return txGen.ThatSucceedsMultipleTimes(4)
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -3163,6 +3361,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("CleanupFormationAssignment", txtest.CtxWithDBMatcher(), formationAssignmentPairs[3]).Return(false, nil).Once()
 
 				svc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, formationAssignmentsInDeletingState[2]).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, formationAssignmentsInDeletingState[3]).Return(nil).Once()
 				return svc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -3530,7 +3730,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		{
 			Name:        "success when reset and resynchronize is successful and there are leftover formation assignments",
 			ShouldReset: true,
-			TxFn:        txGen.ThatSucceeds,
+			TxFn:        txGen.ThatSucceedsTwice,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignmentsInInitialState, nil).Once()
@@ -3705,6 +3905,16 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				statusService = testCase.StatusServiceFn()
 			}
 
+			assignmentsBeforeModifications := make(map[string]*model.FormationAssignment)
+			for _, a := range testCase.FormationAssignments {
+				assignmentsBeforeModifications[a.ID] = a.Clone()
+			}
+			defer func() {
+				for i, a := range testCase.FormationAssignments {
+					testCase.FormationAssignments[i] = assignmentsBeforeModifications[a.ID]
+				}
+			}()
+
 			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, nil, statusService)
 
 			// WHEN
@@ -3729,18 +3939,14 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 
 func cloneFormationAssignments(assignments []*model.FormationAssignment) []*model.FormationAssignment {
 	clonedAssignments := make([]*model.FormationAssignment, 0, len(assignments))
-	for _, assignment := range assignments {
-		clonedAssignments = append(clonedAssignments, &model.FormationAssignment{
-			ID:          assignment.ID,
-			FormationID: assignment.FormationID,
-			TenantID:    assignment.TenantID,
-			Source:      assignment.Source,
-			SourceType:  assignment.SourceType,
-			Target:      assignment.Target,
-			TargetType:  assignment.TargetType,
-			State:       assignment.State,
-			Value:       assignment.Value,
-		})
+	for _, a := range assignments {
+		clonedAssignments = append(clonedAssignments, a.Clone())
 	}
 	return clonedAssignments
+}
+
+func setAssignmentsToState(state model.FormationAssignmentState, assignments ...*model.FormationAssignment) {
+	for _, a := range assignments {
+		a.State = string(state)
+	}
 }
