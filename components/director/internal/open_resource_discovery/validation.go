@@ -141,6 +141,13 @@ const (
 	// APIVisibilityInternal is one of the available api visibility options
 	APIVisibilityInternal = internal
 
+	// EventVisibilityPublic is one of the available event visibility options
+	EventVisibilityPublic = public
+	// EventVisibilityPrivate is one of the available event visibility options
+	EventVisibilityPrivate = private
+	// EventVisibilityInternal is one of the available event visibility options
+	EventVisibilityInternal = internal
+
 	// CapabilityVisibilityPublic is one of the available Capability visibility options
 	CapabilityVisibilityPublic = public
 	// CapabilityVisibilityPrivate is one of the available Capability visibility options
@@ -561,7 +568,7 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.CustomPolicyLevel, validation.When(event.PolicyLevel != nil && *event.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&event.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
+		validation.Field(&event.Visibility, validation.Required, validation.In(EventVisibilityPublic, EventVisibilityInternal, EventVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),

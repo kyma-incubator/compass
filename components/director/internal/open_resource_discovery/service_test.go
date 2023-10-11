@@ -1106,7 +1106,7 @@ func TestService_Processing(t *testing.T) {
 		ExpectedErr             error
 	}{
 		{
-			Name: "Success for Application Template webhook with Static ORD data when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
+			Name: "Success for Application Template webhook with Static ORD data when resources are already in db and APIs/Events last update fields are newer should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(38)
 			},
@@ -1137,7 +1137,7 @@ func TestService_Processing(t *testing.T) {
 			processFnName:           processApplicationTemplateFnName,
 		},
 		{
-			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
+			Name: "Success when resources are already in db and APIs/Events last update fields are newer should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(38)
 			},
@@ -1177,7 +1177,7 @@ func TestService_Processing(t *testing.T) {
 			labelSvcFn:              successfulLabelGetByKey,
 		},
 		{
-			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
+			Name: "Success when resources are already in db and APIs/Events last update fields are NOT newer should Update them and refetch only failed API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(38)
 			},
@@ -1189,27 +1189,27 @@ func TestService_Processing(t *testing.T) {
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, api2ID, *sanitizedDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}, api2PreSanitizedHash, "").Return(nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Twice()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Twice()
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
 				return apiSvc
 			},
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Once()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, event2PreSanitizedHash, "").Return(nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Twice()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Twice()
 				return eventSvc
 			},
 			capabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
-				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoVersionBump(), nil).Once()
+				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Once()
 				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, capability1ID, *sanitizedStaticDoc.Capabilities[0], capability1PreSanitizedHash).Return(nil).Once()
 				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, capability2ID, *sanitizedStaticDoc.Capabilities[1], capability2PreSanitizedHash).Return(nil).Once()
-				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoVersionBump(), nil).Twice()
+				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Twice()
 				return capabilitySvc
 			},
 			specSvcFn:    successfulSpecRefetch,
@@ -3633,7 +3633,7 @@ func TestService_Processing(t *testing.T) {
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Twice()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Twice()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
 				return apiSvc
 			},
@@ -3674,7 +3674,7 @@ func TestService_Processing(t *testing.T) {
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Twice()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Twice()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
 				return apiSvc
 			},
@@ -3714,7 +3714,7 @@ func TestService_Processing(t *testing.T) {
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Times(3)
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoNewerLastUpdate(), nil).Times(3)
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, api2ID, *sanitizedDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}, api2PreSanitizedHash, "").Return(nil).Once()
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), resource.Application, api2ID).Return(nil).Once()
@@ -4183,7 +4183,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Twice()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Twice()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
@@ -4233,7 +4233,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Twice()
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Twice()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
@@ -4317,7 +4317,7 @@ func TestService_Processing(t *testing.T) {
 			},
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Times(3)
+				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoNewerLastUpdate(), nil).Times(3)
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), resource.Application, event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, event2PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
@@ -4719,7 +4719,7 @@ func TestService_Processing(t *testing.T) {
 			eventSvcFn: successfulEventUpdate,
 			capabilitySvcFn: func() *automock.CapabilityService {
 				capabilitySvc := &automock.CapabilityService{}
-				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoVersionBump(), nil).Twice()
+				capabilitySvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixCapabilitiesNoNewerLastUpdate(), nil).Twice()
 				capabilitySvc.On("Update", txtest.CtxWithDBMatcher(), resource.Application, capability1ID, *sanitizedStaticDoc.Capabilities[0], capability1PreSanitizedHash).Return(nil).Once()
 				return capabilitySvc
 			},

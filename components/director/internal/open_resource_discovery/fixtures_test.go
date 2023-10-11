@@ -84,7 +84,6 @@ const (
 	appTemplateName         = "appTemplateName"
 
 	applicationTypeLabelValue = "customType"
-	lastUpdateTimestamp       = "2023-10-11T08:06:56.52Z"
 )
 
 var (
@@ -470,6 +469,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
 				Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				LastUpdate:                              str.Ptr("2023-01-26T15:47:04+00:00"),
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "openapi-v3",
@@ -543,6 +543,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 				CustomImplementationStandard:            nil,
 				CustomImplementationStandardDescription: nil,
+				LastUpdate:                              str.Ptr("2022-01-26T15:47:04+00:00"),
 				ResourceDefinitions: []*model.APIResourceDefinition{
 					{
 						Type:      "edmx",
@@ -602,6 +603,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				ImplementationStandard:                  str.Ptr(custom),
 				CustomImplementationStandard:            str.Ptr("sap.foo.bar:some-event-contract:v1"),
 				CustomImplementationStandardDescription: str.Ptr("description"),
+				LastUpdate:                              str.Ptr("2023-01-26T15:47:04+00:00"),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -646,6 +648,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 				Extensible:          json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
+				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
 				ResourceDefinitions: []*model.EventResourceDefinition{
 					{
 						Type:      "asyncapi-v2",
@@ -700,7 +703,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				VersionInput: &model.VersionInput{
 					Value: "2.1.2",
 				},
-				LastUpdate: str.Ptr(lastUpdateTimestamp),
+				LastUpdate: str.Ptr("2023-01-26T15:47:04+00:00"),
 			},
 			{
 				OrdID:               str.Ptr(capability2ORDID),
@@ -717,6 +720,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				ReleaseStatus:       str.Ptr("active"),
 				Labels:              json.RawMessage(labels),
 				Visibility:          str.Ptr("public"),
+				LastUpdate:          str.Ptr("2022-01-26T15:47:04+00:00"),
 				CapabilityDefinitions: []*model.CapabilityDefinition{
 					{
 						Type:      "sap.mdo:mdi-capability-definition:v1",
@@ -1169,6 +1173,7 @@ func fixAPIs() []*model.APIDefinition {
 			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 			CustomImplementationStandard:            nil,
 			CustomImplementationStandardDescription: nil,
+			LastUpdate:                              str.Ptr("2023-01-25T15:47:04+00:00"),
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
@@ -1203,6 +1208,7 @@ func fixAPIs() []*model.APIDefinition {
 			ImplementationStandard:                  str.Ptr(apiImplementationStandard),
 			CustomImplementationStandard:            nil,
 			CustomImplementationStandardDescription: nil,
+			LastUpdate:                              str.Ptr("2022-01-25T15:47:04+00:00"),
 			Version: &model.Version{
 				Value: "1.1.1",
 			},
@@ -1215,11 +1221,11 @@ func fixAPIs() []*model.APIDefinition {
 	}
 }
 
-func fixAPIsNoVersionBump() []*model.APIDefinition {
+func fixAPIsNoNewerLastUpdate() []*model.APIDefinition {
 	apis := fixAPIs()
 	doc := fixORDDocument()
 	for i, api := range apis {
-		api.Version.Value = doc.APIResources[i].VersionInput.Value
+		api.LastUpdate = doc.APIResources[i].LastUpdate
 	}
 	return apis
 }
@@ -1269,6 +1275,7 @@ func fixEvents() []*model.EventDefinition {
 			PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+			LastUpdate:          str.Ptr("2023-01-25T15:47:04+00:00"),
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
@@ -1296,6 +1303,7 @@ func fixEvents() []*model.EventDefinition {
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
 			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+			LastUpdate:       str.Ptr("2022-01-25T15:47:04+00:00"),
 			Version: &model.Version{
 				Value: "1.1.1",
 			},
@@ -1308,11 +1316,11 @@ func fixEvents() []*model.EventDefinition {
 	}
 }
 
-func fixEventsNoVersionBump() []*model.EventDefinition {
+func fixEventsNoNewerLastUpdate() []*model.EventDefinition {
 	events := fixEvents()
 	doc := fixORDDocument()
 	for i, event := range events {
-		event.Version.Value = doc.EventResources[i].VersionInput.Value
+		event.LastUpdate = doc.EventResources[i].LastUpdate
 	}
 	return events
 }
@@ -1335,6 +1343,7 @@ func fixCapabilities() []*model.Capability {
 			ReleaseStatus:       str.Ptr("active"),
 			Labels:              json.RawMessage(mergedLabels),
 			Visibility:          str.Ptr("public"),
+			LastUpdate:          str.Ptr("2023-01-25T15:47:04+00:00"),
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
@@ -1360,6 +1369,7 @@ func fixCapabilities() []*model.Capability {
 			ReleaseStatus:       str.Ptr("active"),
 			Labels:              json.RawMessage(mergedLabels),
 			Visibility:          str.Ptr("public"),
+			LastUpdate:          str.Ptr("2022-01-25T15:47:04+00:00"),
 			Version: &model.Version{
 				Value: "1.1.0",
 			},
@@ -1372,11 +1382,11 @@ func fixCapabilities() []*model.Capability {
 	}
 }
 
-func fixCapabilitiesNoVersionBump() []*model.Capability {
+func fixCapabilitiesNoNewerLastUpdate() []*model.Capability {
 	capabilities := fixCapabilities()
 	doc := fixORDDocument()
 	for i, capability := range capabilities {
-		capability.Version.Value = doc.Capabilities[i].VersionInput.Value
+		capability.LastUpdate = doc.Capabilities[i].LastUpdate
 	}
 	return capabilities
 }
