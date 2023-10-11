@@ -1,6 +1,10 @@
 BEGIN;
 
 -- Drop views
+DROP VIEW IF EXISTS api_specifications_tenants;
+DROP VIEW IF EXISTS event_specifications_tenants;
+DROP VIEW IF EXISTS capability_specifications_tenants;
+
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
@@ -16,7 +20,7 @@ ALTER TABLE event_api_definitions
 ALTER TABLE capabilities
     DROP COLUMN last_update;
 
--- Recreate views for tenant_apis, tenant_events and tenant_capabilities
+-- Recreate views
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id,
@@ -219,6 +223,25 @@ FROM capabilities c
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps ON c.app_id = t_apps.id;
+
+
+-- Recreate views api_specifications_tenants, event_specifications_tenants and capability_specifications_tenants
+CREATE OR REPLACE VIEW api_specifications_tenants AS
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                             INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
+                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id);
+
+
+CREATE OR REPLACE VIEW event_specifications_tenants AS
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                            INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
+                                            INNER JOIN tenant_applications ta on ta.id = ead.app_id);
+
+
+CREATE OR REPLACE VIEW capability_specifications_tenants AS
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                             INNER JOIN capabilities AS cd ON cd.id = s.capability_def_id
+                                             INNER JOIN tenant_applications ta on ta.id = cd.app_id);
 
 
 -- Recreate view for tenants_specifications

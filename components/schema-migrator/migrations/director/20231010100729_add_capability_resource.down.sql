@@ -6,9 +6,16 @@ DROP VIEW IF EXISTS links_capabilities;
 DROP VIEW IF EXISTS ord_labels_capabilities;
 DROP VIEW IF EXISTS correlation_ids_capabilities;
 DROP VIEW IF EXISTS ord_documentation_labels_capabilities;
+
+DROP VIEW IF EXISTS capability_definitions;
+
+DROP VIEW IF EXISTS api_specifications_tenants;
+DROP VIEW IF EXISTS event_specifications_tenants;
+DROP VIEW IF EXISTS capability_specifications_tenants;
+DROP VIEW IF EXISTS capabilities_tenants;
+
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_capabilities;
-DROP VIEW IF EXISTS capability_definitions;
 
 -- Alter table specifications - remove columns capability_def_id, capability_spec_type and capability_spec_format
 ALTER TABLE specifications
@@ -25,6 +32,19 @@ DROP TYPE capability_spec_format;
 DROP TABLE IF EXISTS capabilities;
 -- Drop type associated with capability
 DROP TYPE capability_type;
+
+-- Recreate views api_specifications_tenants and event_specifications_tenants
+CREATE OR REPLACE VIEW api_specifications_tenants AS
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                             INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
+                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id);
+
+
+CREATE OR REPLACE VIEW event_specifications_tenants AS
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                            INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
+                                            INNER JOIN tenant_applications ta on ta.id = ead.app_id);
+
 
 -- Recreate view tenants_specifications
 CREATE OR REPLACE VIEW tenants_specifications

@@ -1606,22 +1606,22 @@ func (s *Service) resyncCapability(ctx context.Context, resourceType directorres
 	return fetchRequests, nil
 }
 
-func checkIfShouldFetchSpecs(lastUpdateFromDocString, lastUpdateFromDBString *string) (bool, error) {
-	if lastUpdateFromDocString == nil || lastUpdateFromDBString == nil {
+func checkIfShouldFetchSpecs(lastUpdateValueFromDoc, lastUpdateValueFromDB *string) (bool, error) {
+	if lastUpdateValueFromDoc == nil || lastUpdateValueFromDB == nil {
 		return true, nil
 	}
 
-	lastUpdateFromDocTime, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateFromDocString))
+	lastUpdateTimeFromDoc, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateValueFromDoc))
 	if err != nil {
 		return false, err
 	}
 
-	lastUpdateFromDBTime, _ := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateFromDBString))
+	lastUpdateTimeFromDB, err := time.Parse(time.RFC3339, str.PtrStrToStr(lastUpdateValueFromDB))
 	if err != nil {
 		return false, err
 	}
 
-	return lastUpdateFromDocTime.After(lastUpdateFromDBTime), nil
+	return lastUpdateTimeFromDoc.After(lastUpdateTimeFromDB), nil
 }
 
 func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput, resourceType directorresource.Type) ([]*model.FetchRequest, error) {
