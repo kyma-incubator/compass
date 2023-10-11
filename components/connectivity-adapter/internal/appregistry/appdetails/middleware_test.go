@@ -154,7 +154,7 @@ func TestMiddleware(t *testing.T) {
 		//THEN
 		assert.Equal(t, http.StatusInternalServerError, rw.Code)
 		mock.AssertExpectationsForObjects(t, gqlClient, cliProvider)
-		assertLastLogEntryError(t, "while getting service: All attempts fail:\n#1: test error\n#2: test error", hook)
+		assertLastLogEntryError(t, "while getting service: test error", hook)
 	})
 
 	t.Run("director returns unauthorized error", func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestMiddleware(t *testing.T) {
 		//THEN
 		assert.Equal(t, http.StatusUnauthorized, rw.Code)
 		mock.AssertExpectationsForObjects(t, gqlClient, cliProvider)
-		assertLastLogEntryError(t, "while getting service: All attempts fail:\n#1: insufficient scopes provided\n#2: insufficient scopes provided", hook)
+		assertLastLogEntryError(t, "while getting service: insufficient scopes provided", hook)
 	})
 }
 
