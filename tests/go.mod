@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231005103340-fffd3ee4e20f
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20231005103340-fffd3ee4e20f
-	github.com/kyma-incubator/compass/components/director v0.0.0-20231008191710-56af90535d41
+	github.com/kyma-incubator/compass/components/director v0.0.0-20231011112026-d8c78d0fae89
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231005103340-fffd3ee4e20f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20231005103340-fffd3ee4e20f
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20231005103340-fffd3ee4e20f
@@ -48,7 +48,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/huandu/xstrings v1.3.3 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

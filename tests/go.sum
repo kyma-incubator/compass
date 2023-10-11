@@ -44,7 +44,7 @@ github.com/evanphx/json-patch v4.12.0+incompatible h1:4onqiflcdA9EOZ4RxV643DvftH
 github.com/evanphx/json-patch/v5 v5.6.0 h1:b91NhWfaz02IuVxO9faSllyAtNXHMPkC5J8sJCLunww=
 github.com/evanphx/json-patch/v5 v5.6.0/go.mod h1:G79N1coSVB93tBe7j6PhzjmR3/2VvlbKOFpnXhI9Bw4=
 github.com/form3tech-oss/jwt-go v3.2.5+incompatible h1:/l4kBbb4/vGSsdtB5nUe8L7B9mImVMaBPw9L/0TBHU8=
-github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3ZUKE=
+github.com/frankban/quicktest v1.14.4 h1:g2rn0vABPOOXmZUj+vbmUp0lPoXEMuhTpIluN0XL9UY=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 h1:Mn26/9ZMNWSw9C9ERFA1PUxfmGpolnw2v0bKOREu5ew=
 github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
@@ -107,8 +107,9 @@ github.com/hashicorp/errwrap v1.1.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brv
 github.com/hashicorp/go-multierror v1.1.1 h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+lD48awMYo=
 github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
-github.com/huandu/xstrings v1.3.3 h1:/Gcsuc1x8JVbJ9/rlye4xZnVAbEkGauT8lbebqcQws4=
 github.com/huandu/xstrings v1.3.3/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
+github.com/huandu/xstrings v1.4.0 h1:D17IlohoQq4UcpqD7fDk80P7l+lwAmlFaBHgOipl2FU=
+github.com/huandu/xstrings v1.4.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/imdario/mergo v0.3.11/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
 github.com/imdario/mergo v0.3.14 h1:fOqeC1+nCuuk6PKQdg9YmosXX7Y7mHX6R/0ZldI9iHo=
 github.com/imdario/mergo v0.3.14/go.mod h1:WBLT9ZmE3lPoWsEzCh9LPo3TiwVN+ZKEjmz+hD27ysY=
@@ -131,8 +132,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2023100
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20231005103340-fffd3ee4e20f/go.mod h1:8gSseqAcV+R1k1HHxMd+TEyXONb6i6c0mg2RnyikxjU=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231005103340-fffd3ee4e20f h1:Rid/GOzLiGOlonhlSdrXIl+uQg0qbIbw0b+ojoVlFto=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20231005103340-fffd3ee4e20f/go.mod h1:tbptP7PBVnr9lYG9wu+ls5Bpmu8XRkYmg1Lm5XHW71I=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231008191710-56af90535d41 h1:nWx4JJRMbtDtsyUxevQVJzKrSH82nWDI2lUg693Ra94=
-github.com/kyma-incubator/compass/components/director v0.0.0-20231008191710-56af90535d41/go.mod h1:pZJemxhO295nTFy3zW2hmJjrzCie5SUKhcyOSmwsYXk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231011112026-d8c78d0fae89 h1:1LehnPQpEoIFIlN4SCW62hVecC1IzX4hs11WC216yQc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20231011112026-d8c78d0fae89/go.mod h1:cifGGuc6kMLMokytiLe2RkVIswmHKl51S2NSM3MOV34=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231005103340-fffd3ee4e20f h1:eM8gi+xkrZ0JaFn1+R/SCqCLntrJdildyy+DEaIW3uE=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20231005103340-fffd3ee4e20f/go.mod h1:85rn1EI2ashx+dqxLSI5SD5o3n9HFTXF9c/xVkYYYHk=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20231005103340-fffd3ee4e20f h1:HHuZ20xcJAALBTcsG8/dcGBHokdL/MM01P+U6LbYnos=
