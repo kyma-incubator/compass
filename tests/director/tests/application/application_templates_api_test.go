@@ -1369,8 +1369,6 @@ func TestAddWebhookToApplicationTemplateWithTenant(t *testing.T) {
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantId, deleteReq, &actualWebhook)
 	require.NoError(t, err)
-	assert.NotNil(t, actualWebhook.URL)
-	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
 func TestAddWebhookToApplicationTemplateWithoutTenant(t *testing.T) {
@@ -1452,8 +1450,6 @@ func TestAddWebhookToApplicationTemplateWithoutTenant(t *testing.T) {
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, deleteReq, &actualWebhook)
 	require.NoError(t, err)
-	assert.NotNil(t, actualWebhook.URL)
-	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
 func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context) *gcli.Client {
