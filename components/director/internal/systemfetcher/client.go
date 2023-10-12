@@ -155,35 +155,42 @@ func (c *Client) buildFilter() map[string]string {
 	var filterBuilder FilterBuilder
 
 	for _, at := range ApplicationTemplates {
-		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
+		appTemplateLblFilter, ok := at.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}
 
-		lblToString, ok := lbl.Value.(string)
+		appTemplateLblFilterArr, ok := appTemplateLblFilter.Value.([]interface{})
 		if !ok {
-			lblToString = ""
+			continue
 		}
-		expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", lblToString)
 
-		lblExists := false
-		minTime := time.Now()
+		for _, lbl := range appTemplateLblFilterArr {
+			appTemplateLblStr, ok := lbl.(string)
+			if !ok {
+				continue
+			}
 
-		for _, s := range SystemSynchronizationTimestamps {
-			v, ok := s[lblToString]
-			if ok {
-				lblExists = true
-				if v.LastSyncTimestamp.Before(minTime) {
-					minTime = v.LastSyncTimestamp
+			expr1 := filterBuilder.NewExpression(SystemSourceKey, "eq", appTemplateLblStr)
+
+			lblExists := false
+			minTime := time.Now()
+
+			for _, systemTimestamps := range SystemSynchronizationTimestamps {
+				if timestamp, ok := systemTimestamps[appTemplateLblStr]; ok {
+					lblExists = true
+					if timestamp.LastSyncTimestamp.Before(minTime) {
+						minTime = timestamp.LastSyncTimestamp
+					}
 				}
 			}
-		}
 
-		if lblExists {
-			expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
-			filterBuilder.addFilter(expr1, expr2)
-		} else {
-			filterBuilder.addFilter(expr1)
+			if lblExists {
+				expr2 := filterBuilder.NewExpression("lastChangeDateTime", "gt", minTime.String())
+				filterBuilder.addFilter(expr1, expr2)
+			} else {
+				filterBuilder.addFilter(expr1)
+			}
 		}
 	}
 	result := map[string]string{"fetchAcrossZones": "true"}
