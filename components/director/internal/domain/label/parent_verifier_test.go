@@ -130,7 +130,6 @@ func TestParentAccessVerifier_Verify(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
-
 		})
 	}
 }
